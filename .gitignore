@@ -17,4 +17,3 @@ cmake-build*
 
 # Skyrim archive files
 *.bsa
-/vcpkg_installed
