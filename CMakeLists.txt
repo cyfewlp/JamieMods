@@ -8,7 +8,20 @@ cmake_minimum_required(VERSION 3.21)
 
 # [BEGIN set_project_name]
 # Set your project name. This will be the name of your SKSE .dll file.
-project(HelloWorld VERSION 0.0.1 LANGUAGES CXX)
+project(
+    HelloWorld 
+    VERSION 0.0.1 
+    DESCRIPTION "Test plugin with Imgui."
+    LANGUAGES CXX)
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+        @ONLY)
+
+
+set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.0/um/x64")
+set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/build/mod_files")
 
 # [END set_project_name]
 
@@ -37,11 +50,46 @@ endif()
 # Otherwise, you can set OUTPUT_FOLDER to any place you'd like :)
 # set(OUTPUT_FOLDER "C:/path/to/any/folder")
 
+find_package(spdlog CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
+find_library(DETOURS_LIBRARY detours REQUIRED)
+
 # Setup your SKSE plugin as an SKSE plugin!
 find_package(CommonLibSSE CONFIG REQUIRED)
-add_commonlibsse_plugin(${PROJECT_NAME} SOURCES plugin.cpp) # <--- specifies plugin.cpp
+add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
+    src/plugin.cpp
+    src/input.cpp
+    src/RenderManager.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+) # <--- specifies plugin.cpp
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
-target_precompile_headers(${PROJECT_NAME} PRIVATE PCH.h) # <--- PCH.h is required!
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h) # <--- PCH.h is required!
+
+source_group(
+	TREE ${CMAKE_CURRENT_SOURCE_DIR}
+	FILES ${SOURCES}
+)
+
+# include dir
+target_include_directories(
+	${PROJECT_NAME}
+	PRIVATE
+        ${DETOURS_INCLUDE_DIRS}
+		${CMAKE_CURRENT_SOURCE_DIR}/src/include
+)
+
+# linkage
+target_link_libraries(
+	${PROJECT_NAME} 
+	PRIVATE
+		CommonLibSSE::CommonLibSSE
+		spdlog::spdlog
+		imgui::imgui
+        ${DETOURS_LIBRARY}
+        "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
+        "${WINDOWS_SDK_LIB_PATH}/dinput8.lib"
+)
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
