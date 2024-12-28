@@ -1,0 +1,33 @@
+#pragma once
+
+#include "RenderManager.h"
+#include "input.h"
+
+class Context final {
+private:
+    RenderManager* renderManager;
+    Input::Devices* devices;
+    Context() {};
+
+public:
+    Context(const Context&) = delete;
+    Context& operator=(const Context&) = delete;
+    Context(Context&&) = delete;
+    Context& operator=(Context&&) = delete;
+    static inline std::atomic<bool> inputEventsEnabled = true;
+
+    static auto& Singleton()
+    {
+        static Context context;
+        return context;
+    }
+
+    void Init()
+    {
+        this->renderManager = new RenderManager();
+        this->devices = new Input::Devices();
+    }
+
+    RenderManager* GetRenderManager() { return this->renderManager; }
+    Input::Devices* GetDevices() { return this->devices; }
+};

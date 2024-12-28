@@ -1,10 +1,10 @@
 
 #include <stddef.h>
 
-#include "RenderManager.h"
-#include "input.h"
+#include "Context.h"
 
-void InitializeLogging() {
+void InitializeLogging()
+{
     auto path = SKSE::log::log_directory();
     if (!path) {
         SKSE::stl::report_and_fail("Unable to lookup SKSE logs directory.");
@@ -23,28 +23,35 @@ void InitializeLogging() {
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
 }
 
-SKSEPluginLoad(const SKSE::LoadInterface *skse) {
+SKSEPluginLoad(const SKSE::LoadInterface* skse)
+{
     InitializeLogging();
 
-    auto *plugin = SKSE::PluginDeclaration::GetSingleton();
+    auto* plugin = SKSE::PluginDeclaration::GetSingleton();
     auto version = plugin->GetVersion();
     SKSE::log::info("{} {} is loading...", plugin->GetName(), "version");
 
     SKSE::Init(skse);
 
-    Input::detour();
-
     // This example prints "Hello, world!" to the Skyrim ~ console.
     // To view it, open the ~ console from the Skyrim Main Menu.
-    SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *message) {
+    SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
+        if (message->type == SKSE::MessagingInterface::kInputLoaded) {
+            // create our input device
+            auto* devices = Context::Singleton().GetDevices();
+            devices->RegisterInputEvent();
+        }
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
             RE::ConsoleLog::GetSingleton()->Print("Hello, world!");
         }
     });
 
-    LOG(info, "ready to install imgui demo");
-    auto &rm = RenderManager::Singleton();
-    rm.install();
+    LOG(debug, "Initializing Context.");
+    auto& context = Context::Singleton();
+    context.Init();
+
+    LOG(debug, "Ready to install imgui demo");
+    context.GetRenderManager()->install();
 
     SKSE::log::info("{} has finished loading.", plugin->GetName());
     return true;

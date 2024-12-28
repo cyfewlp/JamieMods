@@ -88,7 +88,6 @@ target_link_libraries(
 		imgui::imgui
         ${DETOURS_LIBRARY}
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
-        "${WINDOWS_SDK_LIB_PATH}/dinput8.lib"
 )
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.

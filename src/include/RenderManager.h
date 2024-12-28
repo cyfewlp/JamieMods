@@ -1,21 +1,8 @@
 
 #include <d3d11.h>
 
-class RenderManager final {
-private:
-    RenderManager(){};
-
+class RenderManager {
 public:
-    RenderManager(const RenderManager&) = delete;
-    RenderManager& operator=(const RenderManager&) = delete;
-    RenderManager(RenderManager&&) = delete;
-    RenderManager& operator=(RenderManager&&) = delete;
-
-    static auto& Singleton() {
-        static RenderManager rm;
-        return rm;
-    }
-
     struct WndProcHook {
         static LRESULT thunk(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
         static inline WNDPROC func;
