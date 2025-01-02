@@ -34,7 +34,7 @@ LRESULT RenderManager::WndProcHook::thunk(HWND hWnd, UINT uMsg, WPARAM wParam, L
 
     return func(hWnd, uMsg, wParam, lParam);
 }
-
+void ConfigImGui(HWND);
 void RenderManager::D3DInitHook::thunk()
 {
     func();
@@ -76,22 +76,33 @@ void RenderManager::D3DInitHook::thunk()
         return;
     }
 
-    RECT rect = { 0, 0, 0, 0 };
-    LOG(info, "rect right: {}, left: {}, top: {}, bottom: {}", rect.right, rect.left, rect.top, rect.bottom);
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    GetClientRect(sd.OutputWindow, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-
-    LOG(info, "ImGui initialized!");
-
+    ConfigImGui(sd.OutputWindow);
     initialized.store(true);
 
     WndProcHook::func = reinterpret_cast<WNDPROC>(
         SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcHook::thunk)));
     if (!WndProcHook::func)
         LOG(err, "SetWindowLongPtrA failed!");
+}
+
+void ConfigImGui(HWND hwnd)
+{
+    RECT rect = { 0, 0, 0, 0 };
+    LOG(info, "rect right: {}, left: {}, top: {}, bottom: {}", rect.right, rect.left, rect.top, rect.bottom);
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    GetClientRect(hwnd, &rect);
+    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+    // ImFontConfig config;
+    // config.SizePixels = 20.0f;
+    // io.Fonts->AddFontDefault(&config);
+    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
+
+    io.MouseDrawCursor = true;
+    io.ConfigNavMoveSetMousePos = true;
+
+    LOG(info, "ImGui initialized!");
 }
 
 void render(bool* show_demo_window, bool* show_another_window);
@@ -126,7 +137,6 @@ void render(bool* show_demo_window, bool* show_another_window)
         static int counter = 0;
 
         ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
         ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", show_demo_window); // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", show_another_window);
