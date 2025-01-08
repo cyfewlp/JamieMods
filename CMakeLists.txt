@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.21)
 project(
     HelloWorld 
     VERSION 0.0.1 
-    DESCRIPTION "Test plugin with Imgui."
+    DESCRIPTION "Test plugin with ImGui."
     LANGUAGES CXX)
 
 configure_file(
@@ -19,9 +19,16 @@ configure_file(
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
         @ONLY)
 
+add_executable(TestMain src/main.cpp)
+
+target_include_directories(
+    TestMain
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/include
+)
 
 set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.0/um/x64")
-set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/build/mod_files")
+#set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/build/mod_files")
 
 # [END set_project_name]
 
@@ -61,6 +68,8 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     src/plugin.cpp
     src/input.cpp
     src/RenderManager.cpp
+    src/Transmogrify.cpp
+    src/Hooks.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
 ) # <--- specifies plugin.cpp
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
@@ -71,7 +80,7 @@ source_group(
 	FILES ${SOURCES}
 )
 
-# include dir
+# include directories
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
@@ -88,6 +97,17 @@ target_link_libraries(
 		imgui::imgui
         ${DETOURS_LIBRARY}
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
+)
+target_link_libraries(
+	TestMain
+	PRIVATE
+		spdlog::spdlog
+)
+
+# Copy Data folder to the build directory
+add_custom_target(copy_data ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Data ${CMAKE_BINARY_DIR}/Data
 )
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.

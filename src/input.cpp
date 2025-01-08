@@ -18,7 +18,6 @@ void Input::TestInputEventSink::SendMouseEvent(RE::INPUT_DEVICE device, std::uin
         io.AddMouseWheelEvent(0, value * -1);
         break;
     default:
-        LOG(debug, "mouse button event {}", key);
         io.AddMouseButtonEvent(mouseKey, pressed);
         break;
     }
@@ -48,9 +47,10 @@ RE::BSEventNotifyControl Input::TestInputEventSink::ProcessEvent(
         RE::INPUT_DEVICE device = event->GetDevice();
         switch (device) {
         case RE::INPUT_DEVICE::kKeyboard:
-            if (buttonEvent->IsPressed()) {
-                LOG(debug, "pressed key {}", hotKey);
+            if (buttonEvent->GetIDCode() == 60 /*F2*/ && buttonEvent->IsDown()) {
+                RenderManager::showWindow = !RenderManager::showWindow;
             }
+
             SendKeyBoardEvent(device, hotKey, buttonEvent->Value(), buttonEvent->IsPressed());
             break;
         case RE::INPUT_DEVICE::kMouse:
@@ -67,7 +67,7 @@ void Input::Devices::RegisterInputEvent()
 {
     if (const auto inputMgr = RE::BSInputDeviceManager::GetSingleton()) {
         inputMgr->AddEventSink<RE::InputEvent*>(new TestInputEventSink());
-        LOG(info, "Registered TestInputEventSink.");
+        LOG(debug, "Registered TestInputEventSink.");
     }
 }
 

@@ -2,8 +2,10 @@
 #include <stddef.h>
 
 #include "Context.h"
+#include "Transmogrify.h"
+#include "Hooks.h"
 
-void InitializeLogging()
+static void InitializeLogging()
 {
     auto path = SKSE::log::log_directory();
     if (!path) {
@@ -32,6 +34,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
     SKSE::log::info("{} {} is loading...", plugin->GetName(), "version");
 
     SKSE::Init(skse);
+    Hooks::Install();
 
     // This example prints "Hello, world!" to the Skyrim ~ console.
     // To view it, open the ~ console from the Skyrim Main Menu.
@@ -42,16 +45,13 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
             devices->RegisterInputEvent();
         }
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
-            RE::ConsoleLog::GetSingleton()->Print("Hello, world!");
+            Transmogrify::CombineEventSinks::Install();
         }
     });
 
     LOG(debug, "Initializing Context.");
     auto& context = Context::Singleton();
     context.Init();
-
-    LOG(debug, "Ready to install imgui demo");
-    context.GetRenderManager()->install();
 
     SKSE::log::info("{} has finished loading.", plugin->GetName());
     return true;
