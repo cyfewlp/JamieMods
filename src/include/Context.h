@@ -3,9 +3,9 @@
 #include "RenderManager.h"
 #include "input.h"
 
-class Context final {
+class Context final
+{
 private:
-    RenderManager* renderManager;
     Input::Devices* devices;
     Context() {};
 
@@ -22,12 +22,7 @@ public:
         return context;
     }
 
-    void Init()
-    {
-        this->renderManager = new RenderManager();
-        this->devices = new Input::Devices();
-    }
+    void Init() { this->devices = new Input::Devices(); }
 
-    RenderManager* GetRenderManager() { return this->renderManager; }
     Input::Devices* GetDevices() { return this->devices; }
 };

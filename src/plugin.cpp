@@ -34,7 +34,6 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
     SKSE::log::info("{} {} is loading...", plugin->GetName(), "version");
 
     SKSE::Init(skse);
-    Hooks::Install();
 
     // This example prints "Hello, world!" to the Skyrim ~ console.
     // To view it, open the ~ console from the Skyrim Main Menu.
@@ -52,6 +51,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
     LOG(debug, "Initializing Context.");
     auto& context = Context::Singleton();
     context.Init();
+    Hooks::Install();
 
     SKSE::log::info("{} has finished loading.", plugin->GetName());
     return true;

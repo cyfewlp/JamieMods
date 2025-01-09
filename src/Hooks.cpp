@@ -1,4 +1,5 @@
 #include "Hooks.h"
+#include "RenderManager.h"
 
 #include <xbyak/xbyak.h>
 
@@ -6,9 +7,8 @@ void
 Hooks::Install()
 {
     LOG(debug, "Installing Hooks...");
-    D3DInitHook::Install();
-    D3DPresentHook::Install();
     InitWornFormHook::Install();
+    RenderManager::InstallHooks();
 }
 
 template<typename T>
@@ -20,18 +20,18 @@ __install(REL::Relocation<T> hook, void* func)
     return trampoline.write_call<5>(hook.address(), func);
 }
 
-void
-Hooks::D3DInitHook::Install()
+std::uintptr_t
+Hooks::D3DInitHook::Install(D3DInitFunc* func)
 {
     REL::Relocation<std::uintptr_t> hook{ id, offset };
-    func = __install(hook, thunk);
+    return __install(hook, func);
 }
 
-void
-Hooks::D3DPresentHook::Install()
+std::uintptr_t
+Hooks::D3DPresentHook::Install(D3DPresentFunc* func)
 {
     REL::Relocation<std::uint32_t> hook{ id, offset };
-    func = __install(hook, thunk);
+    return __install(hook, func);
 }
 
 void

@@ -8,7 +8,6 @@
 
 #include "RenderManager.h"
 
-#include <d3d11.h>
 #include <tchar.h>
 
 #include "Hooks.h"
@@ -17,28 +16,23 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 
-// Data
-static ID3D11Device* g_pd3dDevice = nullptr;
-static ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
-static IDXGISwapChain* g_pSwapChain = nullptr;
-static bool g_SwapChainOccluded = false;
-static UINT g_ResizeWidth = 0, g_ResizeHeight = 0;
-static ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
-
-LRESULT WINAPI
-WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 LRESULT
-Hooks::WndProcHook::thunk(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+RenderManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    return func(hWnd, uMsg, wParam, lParam);
+    return RealWndProc(hWnd, uMsg, wParam, lParam);
 }
 
-void ConfigImGui(HWND);
 void
-Hooks::D3DInitHook::thunk()
+RenderManager::InstallHooks()
 {
-    func();
+    RealD3dInitFunc = Hooks::D3DInitHook::Install(&D3DInit);
+    RealD3dPresentFunc = Hooks::D3DPresentHook::Install(&D3DPresent);
+}
+
+void
+RenderManager::D3DInit()
+{
+    RealD3dInitFunc();
 
     LOG(info, "D3DInit Hooked!");
     auto render_manager = RE::BSGraphics::Renderer::GetSingleton();
@@ -50,15 +44,15 @@ Hooks::D3DInitHook::thunk()
     auto render_data = render_manager->data;
 
     LOG(info, "Getting SwapChain...");
-    auto g_pSwapChain = render_data.renderWindows->swapChain;
-    if (!g_pSwapChain) {
+    auto pSwapChain = render_data.renderWindows->swapChain;
+    if (!pSwapChain) {
         LOG(err, "Cannot find SwapChain. Initialization failed!");
         return;
     }
 
     LOG(info, "Getting SwapChain desc...");
     DXGI_SWAP_CHAIN_DESC sd{};
-    if (g_pSwapChain->GetDesc(std::addressof(sd)) < 0) {
+    if (pSwapChain->GetDesc(std::addressof(sd)) < 0) {
         LOG(err, "IDXGISwapChain::GetDesc failed.");
         return;
     }
@@ -80,14 +74,15 @@ Hooks::D3DInitHook::thunk()
     ConfigImGui(sd.OutputWindow);
     initialized.store(true);
 
-    WndProcHook::func = reinterpret_cast<WNDPROC>(
-      SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcHook::thunk)));
-    if (!WndProcHook::func)
+    RealWndProc = reinterpret_cast<WNDPROC>(
+      SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RenderManager::WndProc)));
+    if (!RealWndProc) {
         LOG(err, "SetWindowLongPtrA failed!");
+    }
 }
 
 void
-ConfigImGui(HWND hwnd)
+RenderManager::ConfigImGui(HWND hwnd)
 {
     RECT rect = { 0, 0, 0, 0 };
     LOG(info, "rect right: {}, left: {}, top: {}, bottom: {}", rect.right, rect.left, rect.top, rect.bottom);
@@ -108,12 +103,10 @@ ConfigImGui(HWND hwnd)
 }
 
 void
-render(bool* show_demo_window, bool* show_another_window);
-void
-Hooks::D3DPresentHook::thunk(std::uint32_t a_p1)
+RenderManager::D3DPresent(std::uint32_t a_p1)
 {
-    func(a_p1);
-    if (!Hooks::D3DInitHook::initialized.load() || !RenderManager::showWindow) {
+    RealD3dPresentFunc(a_p1);
+    if (!initialized.load() || !RenderManager::showWindow) {
         return;
     }
 
@@ -130,7 +123,7 @@ Hooks::D3DPresentHook::thunk(std::uint32_t a_p1)
 }
 
 void
-render(bool* show_demo_window, bool* show_another_window)
+RenderManager::render(bool* show_demo_window, bool* show_another_window)
 {
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code
     // to learn more about Dear ImGui!).
@@ -151,8 +144,7 @@ render(bool* show_demo_window, bool* show_another_window)
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-        if (ImGui::Button(
-              "Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
+        if (ImGui::Button("Button"))
             counter++;
         if (ImGui::Button("Access player inventory")) {
             Transmogrify::AccessPlayerInventory();
@@ -175,6 +167,12 @@ render(bool* show_demo_window, bool* show_another_window)
             *show_another_window = false;
         ImGui::End();
     }
+}
+
+void
+RenderManager::SwitchShowWindow()
+{
+    showWindow = !showWindow;
 }
 
 void
