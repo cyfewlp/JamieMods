@@ -1,14 +1,16 @@
 #include "versionlibdb.h"
-// #include "versiondb.h"
 #include <iostream>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/spdlog.h>
 
+// #include "versiondb.h"
+
 void* MyAddress = NULL;
 unsigned long long MyOffset = 0;
 
-bool InitializeOffsets()
+static bool
+InitializeOffsets()
 {
     // Allocate on stack so it will be unloaded when we exit this function.
     // No need to have the whole database loaded and using up memory for no reason.
@@ -21,7 +23,7 @@ bool InitializeOffsets()
     } else {
         // "SkyrimSE.exe", "1.5.97.0"
         spdlog::info(
-            "Loaded database for %s version %s.", db.GetModuleName().c_str(), db.GetLoadedVersionString().c_str());
+          "Loaded database for %s version %s.", db.GetModuleName().c_str(), db.GetLoadedVersionString().c_str());
     }
 
     // This address already includes the base address of module so we can use the address directly.
@@ -41,7 +43,8 @@ bool InitializeOffsets()
     return true;
 }
 
-bool DumpSpecificVersion()
+bool
+DumpSpecificVersion()
 {
     VersionDb db;
 
@@ -57,8 +60,9 @@ bool DumpSpecificVersion()
     return true;
 }
 
-template <typename T>
- void exampleFunction(const T& container)
+template<typename T>
+void
+exampleFunction(const T& container)
 {
     // 使用 typename 关键字声明迭代器类型
     typename T::const_iterator it;
@@ -67,5 +71,3 @@ template <typename T>
         // 处理容器中的元素
     }
 }
-
-int main() { DumpSpecificVersion(); }

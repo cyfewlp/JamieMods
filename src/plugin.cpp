@@ -49,9 +49,9 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
     });
 
     LOG(debug, "Initializing Context.");
+    Hooks::Install();
     auto& context = Context::Singleton();
     context.Init();
-    Hooks::Install();
 
     SKSE::log::info("{} has finished loading.", plugin->GetName());
     return true;

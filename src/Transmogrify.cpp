@@ -1,6 +1,5 @@
 #include "Transmogrify.h"
 #include "Ext.h"
-#include <unordered_set>
 
 RE::InventoryChanges::IItemChangeVisitor::~IItemChangeVisitor() {};
 
@@ -69,11 +68,31 @@ Transmogrify::AccessPlayerInventory()
     printPlayerInventory(player);
 }
 
-Transmogrify::CombineEventSinks*
-Transmogrify::CombineEventSinks::GetSingleton()
+void
+Transmogrify::GetAllArmors(MapToSet* modToArmors)
 {
-    static CombineEventSinks singleton{};
-    return std::addressof(singleton);
+    auto* handler = RE::TESDataHandler::GetSingleton();
+    auto& armorList = handler->GetFormArray(RE::FormType::Armor);
+
+    for (auto& form : armorList) {
+        if (!form || form->GetFormType() != RE::FormType::Armor) {
+            continue;
+        }
+        auto armor = skyrim_cast<RE::TESObjectARMO*>(form);
+        if (!armor || armor->templateArmor) {
+            continue;
+        }
+        std::string armorName, modName;
+        auto file = armor->GetFile();
+        modName = file ? std::string(file->GetFilename()) : std::string("Unknown");
+        armorName = armor->GetFullName();
+
+        if (!armorName.empty()) {
+            LOG(debug, "mod: {}, armor: {}", modName, armorName);
+            auto [element, inserted] = modToArmors->try_emplace(modName, std::unordered_set<std::string>());
+            element->second.insert(armorName);
+        }
+    }
 }
 
 void

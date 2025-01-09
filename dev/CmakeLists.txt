@@ -1,0 +1,25 @@
+
+
+set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.0/um/x64")
+
+add_executable(DevTest 
+    "DumpAddress.cpp"
+    "ImGuiTest.cpp"
+)
+
+target_include_directories(
+    DevTest
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+find_package(spdlog CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+
+target_link_libraries(
+	DevTest
+	PRIVATE
+		spdlog::spdlog
+		imgui::imgui
+        "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
+)

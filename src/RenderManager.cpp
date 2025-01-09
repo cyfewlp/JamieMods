@@ -11,10 +11,10 @@
 #include <tchar.h>
 
 #include "Hooks.h"
-#include "Transmogrify.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include <unordered_set>
 
 LRESULT
 RenderManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -23,10 +23,17 @@ RenderManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 void
-RenderManager::InstallHooks()
+RenderManager::Init()
 {
     RealD3dInitFunc = Hooks::D3DInitHook::Install(&D3DInit);
     RealD3dPresentFunc = Hooks::D3DPresentHook::Install(&D3DPresent);
+
+    SKSE::GetTaskInterface()->AddTask([] {
+        Transmogrify::GetAllArmors(&uiState.modToArmors);
+        for (auto& pair : uiState.modToArmors) {
+            uiState.mods.push_back(pair.first);
+        }
+    });
 }
 
 void
@@ -133,24 +140,25 @@ RenderManager::render(bool* show_demo_window, bool* show_another_window)
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
         static float f = 0.0f;
-        static int counter = 0;
 
         ImGui::Begin("Hello, world!");                    // Create a window called "Hello, world!" and append into it.
         ImGui::Text("This is some useful text.");         // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", show_demo_window); // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", show_another_window);
+        ImGui::Checkbox("Show Mods", &RenderManager::uiState.showArmors);
+
+        if (RenderManager::uiState.showArmors) {
+            RenderArmors();
+        }
 
         ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-        if (ImGui::Button("Button"))
-            counter++;
         if (ImGui::Button("Access player inventory")) {
             Transmogrify::AccessPlayerInventory();
         }
         ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
 
         auto& io = ImGui::GetIO();
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -166,6 +174,24 @@ RenderManager::render(bool* show_demo_window, bool* show_another_window)
         if (ImGui::Button("Close Me"))
             *show_another_window = false;
         ImGui::End();
+    }
+}
+
+void
+RenderManager::RenderArmors()
+{
+    auto& uiState = RenderManager::uiState;
+    if (ImGui::BeginCombo("Mods", uiState.mods[uiState.selectedMod].c_str())) {
+        for (int n = 0; n < uiState.mods.size(); n++) {
+            const bool is_selected = (uiState.selectedMod == n);
+            if (ImGui::Selectable(uiState.mods[n].c_str(), is_selected))
+                uiState.selectedMod = n;
+
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
     }
 }
 

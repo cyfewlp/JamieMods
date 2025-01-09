@@ -8,7 +8,6 @@ Hooks::Install()
 {
     LOG(debug, "Installing Hooks...");
     InitWornFormHook::Install();
-    RenderManager::InstallHooks();
 }
 
 template<typename T>

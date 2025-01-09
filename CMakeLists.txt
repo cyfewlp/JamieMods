@@ -18,16 +18,8 @@ configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
         @ONLY)
-
-add_executable(TestMain src/main.cpp)
-
-target_include_directories(
-    TestMain
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/include
-)
-
-set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.0/um/x64")
+        
+add_subdirectory(dev)
 #set(OUTPUT_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/build/mod_files")
 
 # [END set_project_name]
@@ -96,12 +88,6 @@ target_link_libraries(
 		spdlog::spdlog
 		imgui::imgui
         ${DETOURS_LIBRARY}
-        "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
-)
-target_link_libraries(
-	TestMain
-	PRIVATE
-		spdlog::spdlog
 )
 
 # Copy Data folder to the build directory

@@ -22,7 +22,11 @@ public:
         return context;
     }
 
-    void Init() { this->devices = new Input::Devices(); }
+    void Init()
+    {
+        this->devices = new Input::Devices();
+        RenderManager::Init();
+    }
 
     Input::Devices* GetDevices() { return this->devices; }
 };

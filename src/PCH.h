@@ -22,7 +22,7 @@ public:
     Singleton& operator=(const Singleton&) = delete;
     Singleton& operator=(Singleton&&) = delete;
 
-    static auto GetSingleton() -> T*
+    static auto GetSingleton() -> T&
     {
         std::call_once(initFlag, []() { instance.reset(new T); });
         return *instance;
