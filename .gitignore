@@ -14,7 +14,11 @@ build
 cmake-build*
 *.dll
 *.pdb
+*.exe
+*.obj
+imgui.ini
 
 # Skyrim archive files
 *.bsa
 /vcpkg_installed
+Data/SKSE/Plugins/version*.bin

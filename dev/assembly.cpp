@@ -1,36 +1,27 @@
+#include <iostream>
+#include <vector>
 
-class A {
-    int a1;
+void
+stackAllocationExample()
+{
+    std::vector<int> vec(6); // vec 对象本身在栈上
+    vec.push_back(1);     // 元素 1 被分配到堆上
+    vec.push_back(2);     // 元素 2 被分配到堆上
+}
 
-public:
-    virtual int A_virt1();
-    virtual int A_virt2();
-    static void A_static1();
-    void A_simple1();
-};
+void
+heapAllocationExample()
+{
+    std::vector<int>* vec = new std::vector<int>(5); // vec 对象本身在堆上
+    vec->push_back(1);                            // 元素 1 被分配到堆上
+    vec->push_back(2);                            // 元素 2 被分配到堆上
+    delete vec;                                   // 释放 vec 对象本身和其元素的内存
+}
 
-class B {
-    int b1;
-    int b2;
-
-public:
-    virtual int B_virt1();
-    virtual int B_virt2();
-};
-
-class C : public A, public B {
-    int c1;
-
-public:
-    virtual int A_virt2();
-    virtual int B_virt2();
-};
-
-int __fastcall foo(int a, int b) { return a + b; }
-
-int main() { 
-    auto* pC = new C();
-    pC->A_virt2();
-    pC->B_virt1();
-    
-    return foo(1, 2); }
+int
+main()
+{
+    stackAllocationExample();
+    heapAllocationExample();
+    return 0;
+}

@@ -1,0 +1,2 @@
+#define LOG
+#define SKSEPluginInfo(__VA_ARGS__) extern "C" [[maybe_unused]] __declspec(dllexport) constinit ::SKSE::PluginDeclaration SKSEPlugin_Version({ __VA_ARGS__ }); extern "C" [[maybe_unused]] __declspec(dllexport) bool SKSEPlugin_Query(::SKSE::QueryInterface*, ::SKSE::PluginInfo* pluginInfo) { pluginInfo->infoVersion = ::SKSE::PluginInfo::kVersion; pluginInfo->name = SKSEPlugin_Version.GetName().data(); pluginInfo->version = static_cast<std::uint32_t>(SKSEPlugin_Version.GetVersion().pack()); return true; }

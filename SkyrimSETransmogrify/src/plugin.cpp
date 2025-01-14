@@ -2,10 +2,13 @@
 #include <stddef.h>
 
 #include "Context.h"
-#include "Transmogrify.h"
 #include "Hooks.h"
+#include "SKSEDetours.h"
+#include "Transmogrify.h"
+#include "input.h"
 
-static void InitializeLogging()
+static void
+InitializeLogging()
 {
     auto path = SKSE::log::log_directory();
     if (!path) {
@@ -28,6 +31,7 @@ static void InitializeLogging()
 SKSEPluginLoad(const SKSE::LoadInterface* skse)
 {
     InitializeLogging();
+    SKSEDetours::detours();
 
     auto* plugin = SKSE::PluginDeclaration::GetSingleton();
     auto version = plugin->GetVersion();
@@ -35,16 +39,10 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
 
     SKSE::Init(skse);
 
-    // This example prints "Hello, world!" to the Skyrim ~ console.
-    // To view it, open the ~ console from the Skyrim Main Menu.
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
-        if (message->type == SKSE::MessagingInterface::kInputLoaded) {
-            // create our input device
-            auto* devices = Context::Singleton().GetDevices();
-            devices->RegisterInputEvent();
-        }
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
             Transmogrify::CombineEventSinks::Install();
+            Transmogrify::Input::Install();
         }
     });
 

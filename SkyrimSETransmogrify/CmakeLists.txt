@@ -1,0 +1,94 @@
+project(
+    SkyrimSETransmogrify
+    VERSION 0.0.1 
+    DESCRIPTION "SkyrmiSE Transmogrify System"
+    LANGUAGES CXX
+)
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+        @ONLY
+)
+
+## Set Output folder
+if(DEFINED ENV{SKYRIM_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_FOLDER}/Data")
+    set(OUTPUT_FOLDER "$ENV{SKYRIM_FOLDER}/Data")
+endif()
+
+if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
+    set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
+endif()
+
+## Plugin setttings
+
+find_package(spdlog CONFIG REQUIRED)
+find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
+find_library(DETOURS_LIBRARY detours REQUIRED)
+find_package(CommonLibSSE CONFIG REQUIRED)
+
+add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
+    src/plugin.cpp
+    src/input.cpp
+    src/RenderManager.cpp
+    src/Transmogrify.cpp
+    src/Hooks.cpp
+    src/Context.cpp
+    src/SKSEDetours.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/utils.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+    MINIMUM_SKSE_VERSION "1.6.317"
+) # <--- specifies plugin.cpp
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h) # <--- PCH.h is required!
+
+# include directories
+target_include_directories(
+	${PROJECT_NAME}
+	PRIVATE
+        ${DETOURS_INCLUDE_DIRS}
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/../utils
+		# ${CMAKE_CURRENT_SOURCE_DIR}/../extern
+)
+
+# linkage
+target_link_libraries(
+	${PROJECT_NAME} 
+	PRIVATE
+		CommonLibSSE::CommonLibSSE
+		spdlog::spdlog
+		imgui
+        ${DETOURS_LIBRARY}
+)
+
+# When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
+# Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
+if(DEFINED OUTPUT_FOLDER)
+    # If you specify an <OUTPUT_FOLDER> (including via environment variables)
+    # then we'll copy your mod files into Skyrim or a mod manager for you!
+
+    # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
+    set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
+
+    message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
+
+    add_custom_command(
+        TARGET "${PROJECT_NAME}"
+        POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SkyrimTransmogrify.ini" "${DLL_FOLDER}/SkyrimTransmogrify.ini"
+        VERBATIM
+    )
+
+    # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_custom_command(
+            TARGET "${PROJECT_NAME}"
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
+            VERBATIM
+        )
+    endif()
+endif()

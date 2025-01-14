@@ -1,16 +1,15 @@
-#include "Context.h"
+#include "input.h"
+#include "RenderManager.h"
 #include "imgui.h"
 #include <dinput.h>
 
 typedef RE::BSWin32KeyboardDevice::Key KEY;
-static RE::WinAPI::GUID guid_keyboard = { 0x6F1D2B61,
-                                          0xD5A0,
-                                          0x11CF,
-                                          { 0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00 } };
 ImGuiKey ToImGuiKey(KEY);
 
+namespace Input = Transmogrify::Input;
+
 void
-Input::TestInputEventSink::SendMouseEvent(RE::INPUT_DEVICE device, std::uint32_t key, float value, bool pressed)
+Input::ImGuiInputEventSink::SendMouseEvent(std::uint32_t key, float value, bool pressed)
 {
     auto& io = ImGui::GetIO();
     switch (auto mouseKey = static_cast<RE::BSWin32MouseDevice::Key>(key)) {
@@ -27,7 +26,7 @@ Input::TestInputEventSink::SendMouseEvent(RE::INPUT_DEVICE device, std::uint32_t
 }
 
 void
-Input::TestInputEventSink::SendKeyBoardEvent(RE::INPUT_DEVICE device, std::uint32_t key, float value, bool pressed)
+Input::ImGuiInputEventSink::SendKeyBoardEvent(std::uint32_t key, float value, bool pressed)
 {
     ImGuiKey imguiKey{ ImGuiKey_None };
     imguiKey = ToImGuiKey(static_cast<KEY>(key));
@@ -35,9 +34,9 @@ Input::TestInputEventSink::SendKeyBoardEvent(RE::INPUT_DEVICE device, std::uint3
 }
 
 RE::BSEventNotifyControl
-Input::TestInputEventSink::ProcessEvent(RE::InputEvent* const* a_evn, RE::BSTEventSource<RE::InputEvent*>*)
+Input::ImGuiInputEventSink::ProcessEvent(RE::InputEvent* const* a_evn, RE::BSTEventSource<RE::InputEvent*>*)
 {
-    if (!Context::inputEventsEnabled)
+    if (!inputEventsEnabled)
         return RE::BSEventNotifyControl::kContinue;
 
     for (auto event = *a_evn; event; event = event->next) {
@@ -55,10 +54,10 @@ Input::TestInputEventSink::ProcessEvent(RE::InputEvent* const* a_evn, RE::BSTEve
                     RenderManager::SwitchShowWindow();
                 }
 
-                SendKeyBoardEvent(device, hotKey, buttonEvent->Value(), buttonEvent->IsPressed());
+                SendKeyBoardEvent(hotKey, buttonEvent->Value(), buttonEvent->IsPressed());
                 break;
             case RE::INPUT_DEVICE::kMouse:
-                SendMouseEvent(device, hotKey, buttonEvent->Value(), buttonEvent->IsPressed());
+                SendMouseEvent(hotKey, buttonEvent->Value(), buttonEvent->IsPressed());
                 break;
             default:
                 break;
@@ -68,11 +67,25 @@ Input::TestInputEventSink::ProcessEvent(RE::InputEvent* const* a_evn, RE::BSTEve
 }
 
 void
-Input::Devices::RegisterInputEvent()
+Input::Install()
 {
-    if (const auto inputMgr = RE::BSInputDeviceManager::GetSingleton()) {
-        inputMgr->AddEventSink<RE::InputEvent*>(new TestInputEventSink());
-        LOG(debug, "Registered TestInputEventSink.");
+    RealDispatchInputEventFunc = Hooks::DispatchInputEventHook::Install(&DispatchInputEvent);
+}
+
+void
+Input::DispatchInputEvent(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::InputEvent** a_evns)
+{
+    static RE::InputEvent* dummy[] = { nullptr };
+    if (!a_evns) {
+        RealDispatchInputEventFunc(a_dispatcher, a_evns);
+        return;
+    }
+    ImGuiInputEventSink::GetSingleton().ProcessEvent(a_evns, nullptr);
+    if (RenderManager::IsShowWindow()) {
+        RealDispatchInputEventFunc(a_dispatcher, dummy);
+        return;
+    } else {
+        RealDispatchInputEventFunc(a_dispatcher, a_evns);
     }
 }
 

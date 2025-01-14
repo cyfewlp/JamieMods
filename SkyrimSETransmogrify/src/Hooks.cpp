@@ -33,6 +33,13 @@ Hooks::D3DPresentHook::Install(D3DPresentFunc* func)
     return __install(hook, func);
 }
 
+std::uintptr_t
+Hooks::DispatchInputEventHook::Install(RealFunc* func)
+{
+    REL::Relocation<std::uintptr_t> hook{ id, offset };
+    return __install(hook, func);
+}
+
 void
 Hooks::InitWornFormHook::InitWornForm(RE::TESObjectARMO* a_armor,
                                       RE::TESRace* a_race,

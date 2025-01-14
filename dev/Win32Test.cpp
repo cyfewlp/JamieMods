@@ -11,11 +11,9 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "spdlog/spdlog.h"
-#include "utils.hpp"
 #include <d3d11.h>
 #include <format>
-#include <iostream>
-#include <vector>
+#include <tchar.h>
 
 #define LOG(a_type, ...)                                                                                               \
     spdlog::log(spdlog::source_loc(__FILE__, __LINE__, __FUNCTION__), spdlog::level::a_type, __VA_ARGS__)
@@ -27,7 +25,6 @@ static IDXGISwapChain* g_pSwapChain = nullptr;
 static bool g_SwapChainOccluded = false;
 static UINT g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
-static bool candChosen = false;
 
 // Forward declarations of helper functions
 bool
@@ -40,10 +37,6 @@ void
 CleanupRenderTarget();
 LRESULT WINAPI
 WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void
-Render();
-void
-UpdateKeyboardCodePage();
 
 // Main code
 int
@@ -51,11 +44,11 @@ main(int, char**)
 {
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();
-    WNDCLASSEXA wc = { sizeof(wc), CS_CLASSDC, WndProc,         0L,     0L, GetModuleHandle(nullptr), nullptr, nullptr,
-                       nullptr,    nullptr,    "ImGui Example", nullptr };
-    ::RegisterClassExA(&wc);
-    HWND hwnd = ::CreateWindowA(wc.lpszClassName,
-                                "Dear ImGui DirectX11 Example",
+    WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc,          0L,     0L, GetModuleHandle(nullptr), nullptr, nullptr,
+                       nullptr,    nullptr,    L"ImGui Example", nullptr };
+    ::RegisterClassExW(&wc);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName,
+                                L"Dear ImGui DirectX11 Example",
                                 WS_OVERLAPPEDWINDOW,
                                 100,
                                 100,
@@ -69,7 +62,7 @@ main(int, char**)
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd)) {
         CleanupDeviceD3D();
-        ::UnregisterClassA(wc.lpszClassName, wc.hInstance);
+        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
         return 1;
     }
 
@@ -112,8 +105,6 @@ main(int, char**)
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     // ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr,
     // io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != nullptr);
-    // io.Fonts->AddFontDefault();
-    // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
     io.Fonts->AddFontFromFileTTF(
       "C:\\Windows\\Fonts\\simsun.ttc", 16.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 
@@ -126,7 +117,6 @@ main(int, char**)
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f, &cfg, icons_ranges);
     io.Fonts->Build();
     ImGui::GetMainViewport()->PlatformHandleRaw = (void*)hwnd;
-    UpdateKeyboardCodePage();
 
     // Our state
     bool show_demo_window = true;
@@ -140,11 +130,6 @@ main(int, char**)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
         while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
-    LOG(info,
-        "msg: {}, wParam: {}, lParam: {}",
-        fmt::format("{:#x}", msg.message).c_str(),
-        fmt::format("{:#x}", msg.wParam).c_str(),
-        fmt::format("{:#x}", msg.lParam).c_str());
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
             if (msg.message == WM_QUIT)
@@ -184,7 +169,7 @@ main(int, char**)
             static int counter = 0;
 
             ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-            ImGui::Text("\xf0\x9f\x8d\x89 \xf0\x9f\x8d\x8a \xf0\x9f\x8d\x8b");
+
             ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
             ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
@@ -201,7 +186,6 @@ main(int, char**)
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
-        Render();
 
         // 3. Show another simple window.
         if (show_another_window) {
@@ -236,29 +220,9 @@ main(int, char**)
 
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
-    ::UnregisterClassA(wc.lpszClassName, wc.hInstance);
+    ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
     return 0;
-}
-
-static void
-Render()
-{
-    static char buf[64] = "";
-    static int selected = 0;
-    // ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() *
-    // 16));
-    if (ImGui::InputText("UTF-8 input", buf, IM_ARRAYSIZE(buf))) {
-        ImGui::SetKeyboardFocusHere(-1);
-    }
-    for (int i = 0; i < 5; i++) {
-        bool b = i == selected;
-        if (ImGui::Selectable(fmt::format("{}. select", i).c_str(), i == selected)) {
-            LOG(info, "selected {}", i);
-            selected = i;
-            // ImGui::GetIO().AddKeyEvent(ImGuiKey_Space, true);
-        }
-    }
 }
 
 // Helper functions
@@ -362,53 +326,6 @@ CleanupRenderTarget()
 extern IMGUI_IMPL_API LRESULT
 ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-void
-GetCandidateList(HIMC hIMC)
-{
-    // Get the size of the candidate list buffer
-    DWORD bufferSize = ImmGetCandidateList(hIMC, 0, NULL, 0);
-    if (bufferSize == 0) {
-        std::cerr << "Failed to get the size of the candidate list buffer." << std::endl;
-        return;
-    }
-
-    // Allocate buffer for the candidate list
-    std::vector<BYTE> buffer(bufferSize);
-    // LPCANDIDATELIST candList = reinterpret_cast<LPCANDIDATELIST>(buffer.data());
-    LPCANDIDATELIST candList = (LPCANDIDATELIST)GlobalAlloc(GPTR, bufferSize);
-
-    // Retrieve the candidate list
-    DWORD copiedSize = ImmGetCandidateList(hIMC, 0, candList, bufferSize);
-    if (copiedSize == 0) {
-        std::cerr << "Failed to retrieve the candidate list." << std::endl;
-        return;
-    }
-
-    // Output the candidate strings
-    std::wcout << L"Candidate List:" << std::endl;
-    for (DWORD i = 0; i < candList->dwCount; ++i) {
-        LPWSTR candidateStr = reinterpret_cast<LPWSTR>(reinterpret_cast<BYTE*>(candList) + candList->dwOffset[i]);
-        std::wcout << L"Candidate " << i + 1 << L": " << candidateStr << std::endl;
-    }
-    GlobalFree(candList);
-}
-
-static int keyboardPage = CP_ACP;
-
-static void
-UpdateKeyboardCodePage()
-{
-    // Retrieve keyboard code page, required for handling of non-Unicode Windows.
-    HKL keyboard_layout = ::GetKeyboardLayout(0);
-    LCID keyboard_lcid = MAKELCID(HIWORD(keyboard_layout), SORT_DEFAULT);
-    if (::GetLocaleInfoA(keyboard_lcid,
-                         (LOCALE_RETURN_NUMBER | LOCALE_IDEFAULTANSICODEPAGE),
-                         (LPSTR)&keyboardPage,
-                         sizeof(keyboardPage)) == 0)
-        keyboardPage = CP_ACP; // Fallback to default ANSI code page when fails.
-    std::cout << "Keybard page: " << keyboardPage << std::endl;
-}
-
 // Win32 message handler
 // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
 // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite
@@ -419,87 +336,28 @@ UpdateKeyboardCodePage()
 LRESULT WINAPI
 WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    // LOG(info,
-    //     "msg: {}, wParam: {}, lParam: {}",
-    //     fmt::format("{:#x}", msg).c_str(),
-    //     fmt::format("{:#x}", wParam).c_str(),
-    //     fmt::format("{:#x}", lParam).c_str());
+    LOG(info,
+        "msg: {}, wParam: {}, lParam: {}",
+        fmt::format("{:#x}", msg).c_str(),
+        fmt::format("{:#x}", wParam).c_str(),
+        fmt::format("{:#x}", lParam).c_str());
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+
     switch (msg) {
-        case WM_INPUTLANGCHANGE: {
-            UpdateKeyboardCodePage();
-            return S_OK;
-        }
-        case WM_CHAR: {
-            LOG(info, "MSG [WM_CHAR] {}", wParam);
-            break;
-        }
-        case WM_IME_CHAR: {
-            LOG(info, "MSG [WM_IME_CHAR] {}", wParam);
-            char mbstr[3]{ '\0' };
-            BYTE hiByte = HIBYTE(wParam);
-            BYTE loByte = LOBYTE(wParam);
-            if (hiByte == 0) {
-                mbstr[0] = loByte;
-            } else {
-                mbstr[0] = hiByte;
-                mbstr[1] = loByte;
-            }
-            wchar_t wstr[2];
-            MultiByteToWideChar(keyboardPage, MB_PRECOMPOSED, mbstr, -1, wstr, _countof(wstr));
-            if (ImGui::GetCurrentContext()) {
-                ImGuiIO& io = ImGui::GetIO();
-                io.AddInputCharacter(wstr[0]);
-                io.AddInputCharacter(wstr[1]);
-            }
-            Transmogrify::utils::NormalizeTest(wstr, keyboardPage);
-            LOG(info, "ime char: {}", Transmogrify::utils::WideStrToStrCodePage(wstr, keyboardPage));
-            return S_OK;
-            // break;
-        }
-        case WM_IME_NOTIFY: {
-            switch (wParam) {
-                case IMN_OPENCANDIDATE:
-                case IMN_SETCANDIDATEPOS:
-                case IMN_CHANGECANDIDATE: {
-                    HIMC hIMC = ImmGetContext(hWnd);
-                    if (!hIMC)
-                        break;
-                    DWORD dwBufLen = ImmGetCandidateList(hIMC, 0, nullptr, 0); // Get size first
-                    if (dwBufLen == 0) {
-                        ImmReleaseContext(hWnd, hIMC);
-                        break;
-                    }
-                    LOG(debug, "Candidate list length {}", dwBufLen);
-                    candChosen = true;
-                    ImmReleaseContext(hWnd, hIMC);
-                    break;
-                }
-                case IMN_CLOSECANDIDATE:
-                    candChosen = false;
-                    break;
-            }
-            break;
-        }
-        case WM_IME_SETCONTEXT:
-            return ::DefWindowProcW(hWnd, msg, wParam, lParam);
-        case WM_SIZE: {
+        case WM_SIZE:
             if (wParam == SIZE_MINIMIZED)
                 return 0;
             g_ResizeWidth = (UINT)LOWORD(lParam); // Queue resize
             g_ResizeHeight = (UINT)HIWORD(lParam);
             return 0;
-        }
-        case WM_SYSCOMMAND: {
+        case WM_SYSCOMMAND:
             if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
                 return 0;
             break;
-        }
         case WM_DESTROY:
             ::PostQuitMessage(0);
             return 0;
-        default:
-            if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-                return true;
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }

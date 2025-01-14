@@ -4,7 +4,18 @@
         {
             "name": "C++ Debugger",
             "type": "cppvsdbg",
-            "request": "attach",
+            "request": "attach"
+        },
+        {
+            "name": "DevTest",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/debug/dev/DevTest.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "console": "externalTerminal"
         }
     ]
 }

@@ -13,6 +13,10 @@
 
 using namespace std::literals;
 
+namespace Transmogrify {
+};
+using namespace Transmogrify;
+
 template<typename T>
 class Singleton
 {
@@ -37,7 +41,7 @@ private:
     static std::once_flag initFlag;
 };
 
-// ¾²Ì¬³ÉÔ±±äÁ¿µÄ³õÊ¼»¯
+// ï¿½ï¿½Ì¬ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½Ä³ï¿½Ê¼ï¿½ï¿½
 template<typename T>
 std::unique_ptr<T> Singleton<T>::instance = nullptr;
 

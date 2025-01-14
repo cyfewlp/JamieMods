@@ -1,20 +1,19 @@
 #pragma once
 
+#include "Config.h"
 #include "RenderManager.h"
-#include "input.h"
 
 class Context final
 {
 private:
-    Input::Devices* devices;
     Context() {};
+    Config* config;
 
 public:
     Context(const Context&) = delete;
     Context& operator=(const Context&) = delete;
     Context(Context&&) = delete;
     Context& operator=(Context&&) = delete;
-    static inline std::atomic<bool> inputEventsEnabled = true;
 
     static auto& Singleton()
     {
@@ -22,11 +21,7 @@ public:
         return context;
     }
 
-    void Init()
-    {
-        this->devices = new Input::Devices();
-        RenderManager::Init();
-    }
+    void Init();
 
-    Input::Devices* GetDevices() { return this->devices; }
+    Config* LoadSettings(const char* path);
 };

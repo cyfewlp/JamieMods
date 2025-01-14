@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Ext.h"
 #include <d3d11.h>
 
 namespace Hooks {
@@ -36,6 +35,17 @@ namespace Hooks {
         static constexpr auto id = REL::RelocationID(75461, 77246);
         static constexpr auto offset = REL::VariantOffset(0x9, 0x9, 0x00);
         static std::uintptr_t Install(D3DPresentFunc* func);
+    };
+
+    class DispatchInputEventHook
+    {
+    public:
+        using RealFunc = void(RE::BSTEventSource<RE::InputEvent*>*, RE::InputEvent**);
+        static std::uintptr_t Install(RealFunc* func);
+
+    private:
+        static constexpr auto id = REL::RelocationID(67315, 68617);
+        static constexpr auto offset = REL::VariantOffset(0x7B, 0x7B, 0x00);
     };
 
 } // namespace Hooks

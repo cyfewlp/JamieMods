@@ -5,21 +5,72 @@ set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.
 add_executable(DevTest 
     "DumpAddress.cpp"
     "ImGuiTest.cpp"
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/utils.cpp
+    #"Win32Test.cpp"
+)
+
+add_executable(Win32Test 
+    "Win32Test.cpp"
 )
 
 target_include_directories(
     DevTest
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/../utils
+)
+
+target_include_directories(
+    Win32Test
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/../utils
 )
 
 find_package(spdlog CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
+find_package(Freetype CONFIG REQUIRED)
 
 target_link_libraries(
 	DevTest
 	PRIVATE
 		spdlog::spdlog
-		imgui::imgui
+		imgui
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
+        "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 )
+
+target_link_libraries(
+	Win32Test
+	PRIVATE
+		spdlog::spdlog
+		imgui
+        "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
+        "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
+)
+# Copy Data folder to the build directory
+#add_custom_target(copy_data ALL
+#    COMMAND ${CMAKE_COMMAND} -E copy_directory
+#    ${CMAKE_SOURCE_DIR}/Data ${CMAKE_BINARY_DIR}/Data
+#)
+
+function(my_install)
+    set(options OPTIONAL FAST)
+    set(oneValueArgs DESTINATION RENAME)
+    set(multiValueArgs TARGETS CONFIGURATIONS)
+    cmake_parse_arguments(PARSE_ARGV 0 arg
+        "${options}" "${oneValueArgs}" "${multiValueArgs}"
+    )
+    message(DEPRECATION 
+    "arg_OPTIONAL=${arg_OPTIONAL}
+     arg_FAST=${arg_FAST}
+     arg_DESTINATION=${arg_DESTINATION}
+     arg_RENAME=${arg_RENAME}
+     arg_TARGETS=${arg_TARGETS}
+     arg_CONFIGURATIONS=${arg_CONFIGURATIONS}
+     arg_UNPARSED_ARGUMENTS=${arg_UNPARSED_ARGUMENTS}
+     arg_KEYWORDS_MISSING_VALUES=${arg_KEYWORDS_MISSING_VALUES}
+    "
+    )
+endfunction()
+
+my_install(TARGETS foo bar DESTINATION bin OPTIONAL blub CONFIGURATIONS)

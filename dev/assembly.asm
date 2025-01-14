@@ -9,253 +9,2343 @@
 INCLUDELIB LIBCMT
 INCLUDELIB OLDNAMES
 
-PUBLIC	??0A@@QAE@XZ					; A::A
-PUBLIC	??0B@@QAE@XZ					; B::B
-PUBLIC	??0C@@QAE@XZ					; C::C
-PUBLIC	?foo@@YIHHH@Z					; foo
+CONST	SEGMENT
+?_Fake_alloc@std@@3U_Fake_allocator@1@B	ORG $+1		; std::_Fake_alloc
+CONST	ENDS
+PUBLIC	??2@YAPAXIPAX@Z					; operator new
+PUBLIC	??0exception@std@@QAE@QBDH@Z			; std::exception::exception
+PUBLIC	??0exception@std@@QAE@ABV01@@Z			; std::exception::exception
+PUBLIC	??1exception@std@@UAE@XZ			; std::exception::~exception
+PUBLIC	?what@exception@std@@UBEPBDXZ			; std::exception::what
+PUBLIC	??_Gexception@std@@UAEPAXI@Z			; std::exception::`scalar deleting destructor'
+PUBLIC	??0bad_alloc@std@@AAE@QBD@Z			; std::bad_alloc::bad_alloc
+PUBLIC	??1bad_alloc@std@@UAE@XZ			; std::bad_alloc::~bad_alloc
+PUBLIC	??0bad_alloc@std@@QAE@ABV01@@Z			; std::bad_alloc::bad_alloc
+PUBLIC	??_Gbad_alloc@std@@UAEPAXI@Z			; std::bad_alloc::`scalar deleting destructor'
+PUBLIC	??0bad_array_new_length@std@@QAE@XZ		; std::bad_array_new_length::bad_array_new_length
+PUBLIC	??1bad_array_new_length@std@@UAE@XZ		; std::bad_array_new_length::~bad_array_new_length
+PUBLIC	??0bad_array_new_length@std@@QAE@ABV01@@Z	; std::bad_array_new_length::bad_array_new_length
+PUBLIC	??_Gbad_array_new_length@std@@UAEPAXI@Z		; std::bad_array_new_length::`scalar deleting destructor'
+PUBLIC	?_Throw_bad_array_new_length@std@@YAXXZ		; std::_Throw_bad_array_new_length
+PUBLIC	?_Allocate@_Default_allocate_traits@std@@SAPAXI@Z ; std::_Default_allocate_traits::_Allocate
+PUBLIC	?_Adjust_manually_vector_aligned@std@@YAXAAPAXAAI@Z ; std::_Adjust_manually_vector_aligned
+PUBLIC	?_Orphan_all@_Container_base0@std@@QAEXXZ	; std::_Container_base0::_Orphan_all
+PUBLIC	??0_Fake_proxy_ptr_impl@std@@QAE@ABU_Fake_allocator@1@ABU_Container_base0@1@@Z ; std::_Fake_proxy_ptr_impl::_Fake_proxy_ptr_impl
+PUBLIC	?_Release@_Fake_proxy_ptr_impl@std@@QAEXXZ	; std::_Fake_proxy_ptr_impl::_Release
+PUBLIC	?stackAllocationExample@@YAXXZ			; stackAllocationExample
+PUBLIC	??0?$allocator@H@std@@QAE@XZ			; std::allocator<int>::allocator<int>
+PUBLIC	?deallocate@?$allocator@H@std@@QAEXQAHI@Z	; std::allocator<int>::deallocate
+PUBLIC	?allocate@?$allocator@H@std@@QAEPAHI@Z		; std::allocator<int>::allocate
+PUBLIC	?max_size@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAIABV?$allocator@H@2@@Z ; std::_Default_allocator_traits<std::allocator<int> >::max_size
+PUBLIC	??0?$vector@HV?$allocator@H@std@@@std@@QAE@IABV?$allocator@H@1@@Z ; std::vector<int,std::allocator<int> >::vector<int,std::allocator<int> >
+PUBLIC	??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ	; std::vector<int,std::allocator<int> >::~vector<int,std::allocator<int> >
+PUBLIC	?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::vector<int,std::allocator<int> >::push_back
+PUBLIC	?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ; std::vector<int,std::allocator<int> >::max_size
+PUBLIC	?capacity@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ; std::vector<int,std::allocator<int> >::capacity
+PUBLIC	?_Calculate_growth@?$vector@HV?$allocator@H@std@@@std@@ABEII@Z ; std::vector<int,std::allocator<int> >::_Calculate_growth
+PUBLIC	?_Buy_raw@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ; std::vector<int,std::allocator<int> >::_Buy_raw
+PUBLIC	?_Buy_nonzero@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ; std::vector<int,std::allocator<int> >::_Buy_nonzero
+PUBLIC	?_Change_array@?$vector@HV?$allocator@H@std@@@std@@AAEXQAHII@Z ; std::vector<int,std::allocator<int> >::_Change_array
+PUBLIC	?_Tidy@?$vector@HV?$allocator@H@std@@@std@@AAEXXZ ; std::vector<int,std::allocator<int> >::_Tidy
+PUBLIC	?_Xlength@?$vector@HV?$allocator@H@std@@@std@@CAXXZ ; std::vector<int,std::allocator<int> >::_Xlength
+PUBLIC	?_Orphan_range@?$vector@HV?$allocator@H@std@@@std@@ABEXPAH0@Z ; std::vector<int,std::allocator<int> >::_Orphan_range
+PUBLIC	?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+PUBLIC	?_Getal@?$vector@HV?$allocator@H@std@@@std@@ABEABV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+PUBLIC	??0?$_Vector_val@U?$_Simple_types@H@std@@@std@@QAE@XZ ; std::_Vector_val<std::_Simple_types<int> >::_Vector_val<std::_Simple_types<int> >
+PUBLIC	?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAEAAV?$allocator@H@2@XZ ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first
+PUBLIC	?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QBEABV?$allocator@H@2@XZ ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first
+PUBLIC	??_G?$vector@HV?$allocator@H@std@@@std@@QAEPAXI@Z ; std::vector<int,std::allocator<int> >::`scalar deleting destructor'
+PUBLIC	?heapAllocationExample@@YAXXZ			; heapAllocationExample
 PUBLIC	_main
-PUBLIC	??_7A@@6B@					; A::`vftable'
-PUBLIC	??_7B@@6B@					; B::`vftable'
-PUBLIC	??_7C@@6BA@@@					; C::`vftable'
-PUBLIC	??_7C@@6BB@@@					; C::`vftable'
-PUBLIC	??_R4A@@6B@					; A::`RTTI Complete Object Locator'
-PUBLIC	??_R0?AVA@@@8					; A `RTTI Type Descriptor'
-PUBLIC	??_R3A@@8					; A::`RTTI Class Hierarchy Descriptor'
-PUBLIC	??_R2A@@8					; A::`RTTI Base Class Array'
-PUBLIC	??_R1A@?0A@EA@A@@8				; A::`RTTI Base Class Descriptor at (0,-1,0,64)'
-PUBLIC	??_R4B@@6B@					; B::`RTTI Complete Object Locator'
-PUBLIC	??_R0?AVB@@@8					; B `RTTI Type Descriptor'
-PUBLIC	??_R3B@@8					; B::`RTTI Class Hierarchy Descriptor'
-PUBLIC	??_R2B@@8					; B::`RTTI Base Class Array'
-PUBLIC	??_R1A@?0A@EA@B@@8				; B::`RTTI Base Class Descriptor at (0,-1,0,64)'
-PUBLIC	??_R4C@@6BA@@@					; C::`RTTI Complete Object Locator'
-PUBLIC	??_R0?AVC@@@8					; C `RTTI Type Descriptor'
-PUBLIC	??_R3C@@8					; C::`RTTI Class Hierarchy Descriptor'
-PUBLIC	??_R2C@@8					; C::`RTTI Base Class Array'
-PUBLIC	??_R1A@?0A@EA@C@@8				; C::`RTTI Base Class Descriptor at (0,-1,0,64)'
-PUBLIC	??_R17?0A@EA@B@@8				; B::`RTTI Base Class Descriptor at (8,-1,0,64)'
-PUBLIC	??_R4C@@6BB@@@					; C::`RTTI Complete Object Locator'
+PUBLIC	??$move@AAH@std@@YA$$QAHAAH@Z			; std::move<int &>
+PUBLIC	??$_Emplace_one_at_back@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z ; std::vector<int,std::allocator<int> >::_Emplace_one_at_back<int>
+PUBLIC	??$?0ABV?$allocator@H@std@@$$V@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAE@U_One_then_variadic_args_t@1@ABV?$allocator@H@1@@Z ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1><std::allocator<int> const &>
+PUBLIC	??$_Construct_n@$$V@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ; std::vector<int,std::allocator<int> >::_Construct_n<>
+PUBLIC	??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z ; std::_Destroy_range<std::allocator<int> >
+PUBLIC	??$_Deallocate@$07@std@@YAXPAXI@Z		; std::_Deallocate<8>
+PUBLIC	??$min@I@std@@YAABIABI0@Z			; std::min<unsigned int>
+PUBLIC	??$forward@H@std@@YA$$QAHAAH@Z			; std::forward<int>
+PUBLIC	??$_Emplace_back_with_unused_capacity@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z ; std::vector<int,std::allocator<int> >::_Emplace_back_with_unused_capacity<int>
+PUBLIC	??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z ; std::vector<int,std::allocator<int> >::_Emplace_reallocate<int>
+PUBLIC	??$forward@ABV?$allocator@H@std@@@std@@YAABV?$allocator@H@0@ABV10@@Z ; std::forward<std::allocator<int> const &>
+PUBLIC	??1?$_Tidy_guard@V?$vector@HV?$allocator@H@std@@@std@@@std@@QAE@XZ ; std::_Tidy_guard<std::vector<int,std::allocator<int> > >::~_Tidy_guard<std::vector<int,std::allocator<int> > >
+PUBLIC	??$_Uninitialized_value_construct_n@V?$allocator@H@std@@@std@@YAPAHPAHIAAV?$allocator@H@0@@Z ; std::_Uninitialized_value_construct_n<std::allocator<int> >
+PUBLIC	??$_Max_limit@H@std@@YAHXZ			; std::_Max_limit<int>
+PUBLIC	??$_Allocate_at_least_helper@V?$allocator@H@std@@@std@@YAPAHAAV?$allocator@H@0@AAI@Z ; std::_Allocate_at_least_helper<std::allocator<int> >
+PUBLIC	??$_Construct_in_place@HH@std@@YAXAAH$$QAH@Z	; std::_Construct_in_place<int,int>
+PUBLIC	??$_Unfancy@H@std@@YAPAHPAH@Z			; std::_Unfancy<int>
+PUBLIC	??$construct@HH@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH$$QAH@Z ; std::_Default_allocator_traits<std::allocator<int> >::construct<int,int>
+PUBLIC	??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z ; std::_Uninitialized_move<int *,std::allocator<int> >
+PUBLIC	??$_Zero_range@PAH@std@@YAPAHQAH0@Z		; std::_Zero_range<int *>
+PUBLIC	??0?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@PAHAAV?$allocator@H@1@@Z ; std::_Uninitialized_backout_al<std::allocator<int> >::_Uninitialized_backout_al<std::allocator<int> >
+PUBLIC	??1?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@XZ ; std::_Uninitialized_backout_al<std::allocator<int> >::~_Uninitialized_backout_al<std::allocator<int> >
+PUBLIC	?_Release@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEPAHXZ ; std::_Uninitialized_backout_al<std::allocator<int> >::_Release
+PUBLIC	??$_Emplace_back@$$V@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEXXZ ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<>
+PUBLIC	??$_Get_size_of_n@$03@std@@YAII@Z		; std::_Get_size_of_n<4>
+PUBLIC	??$_Allocate@$07U_Default_allocate_traits@std@@@std@@YAPAXI@Z ; std::_Allocate<8,std::_Default_allocate_traits>
+PUBLIC	??$addressof@H@std@@YAPAHAAH@Z			; std::addressof<int>
+PUBLIC	??$_Get_unwrapped@ABQAH@std@@YA?A_TABQAH@Z	; std::_Get_unwrapped<int * const &>
+PUBLIC	??$_Copy_memmove@PAHPAH@std@@YAPAHPAH00@Z	; std::_Copy_memmove<int *,int *>
+PUBLIC	??$_Emplace_back@H@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<int>
+PUBLIC	??$_To_address@PAH@std@@YA?A_PABQAH@Z		; std::_To_address<int *>
+PUBLIC	??$construct@H$$V@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH@Z ; std::_Default_allocator_traits<std::allocator<int> >::construct<int>
+PUBLIC	??$_Allocate_manually_vector_aligned@U_Default_allocate_traits@std@@@std@@YAPAXI@Z ; std::_Allocate_manually_vector_aligned<std::_Default_allocate_traits>
+PUBLIC	??_7exception@std@@6B@				; std::exception::`vftable'
+PUBLIC	??_C@_0BC@EOODALEL@Unknown?5exception@		; `string'
+PUBLIC	??_7bad_alloc@std@@6B@				; std::bad_alloc::`vftable'
+PUBLIC	??_7bad_array_new_length@std@@6B@		; std::bad_array_new_length::`vftable'
+PUBLIC	??_C@_0BF@KINCDENJ@bad?5array?5new?5length@	; `string'
+PUBLIC	??_R0?AVexception@std@@@8			; std::exception `RTTI Type Descriptor'
+PUBLIC	__CT??_R0?AVexception@std@@@8??0exception@std@@QAE@ABV01@@Z12
+PUBLIC	__TI3?AVbad_array_new_length@std@@
+PUBLIC	__CTA3?AVbad_array_new_length@std@@
+PUBLIC	??_R0?AVbad_array_new_length@std@@@8		; std::bad_array_new_length `RTTI Type Descriptor'
+PUBLIC	__CT??_R0?AVbad_array_new_length@std@@@8??0bad_array_new_length@std@@QAE@ABV01@@Z12
+PUBLIC	??_R0?AVbad_alloc@std@@@8			; std::bad_alloc `RTTI Type Descriptor'
+PUBLIC	__CT??_R0?AVbad_alloc@std@@@8??0bad_alloc@std@@QAE@ABV01@@Z12
+PUBLIC	??_C@_0BA@FOIKENOD@vector?5too?5long@		; `string'
+PUBLIC	??_R4exception@std@@6B@				; std::exception::`RTTI Complete Object Locator'
+PUBLIC	??_R3exception@std@@8				; std::exception::`RTTI Class Hierarchy Descriptor'
+PUBLIC	??_R2exception@std@@8				; std::exception::`RTTI Base Class Array'
+PUBLIC	??_R1A@?0A@EA@exception@std@@8			; std::exception::`RTTI Base Class Descriptor at (0,-1,0,64)'
+PUBLIC	??_R4bad_array_new_length@std@@6B@		; std::bad_array_new_length::`RTTI Complete Object Locator'
+PUBLIC	??_R3bad_array_new_length@std@@8		; std::bad_array_new_length::`RTTI Class Hierarchy Descriptor'
+PUBLIC	??_R2bad_array_new_length@std@@8		; std::bad_array_new_length::`RTTI Base Class Array'
+PUBLIC	??_R1A@?0A@EA@bad_array_new_length@std@@8	; std::bad_array_new_length::`RTTI Base Class Descriptor at (0,-1,0,64)'
+PUBLIC	??_R1A@?0A@EA@bad_alloc@std@@8			; std::bad_alloc::`RTTI Base Class Descriptor at (0,-1,0,64)'
+PUBLIC	??_R3bad_alloc@std@@8				; std::bad_alloc::`RTTI Class Hierarchy Descriptor'
+PUBLIC	??_R2bad_alloc@std@@8				; std::bad_alloc::`RTTI Base Class Array'
+PUBLIC	??_R4bad_alloc@std@@6B@				; std::bad_alloc::`RTTI Complete Object Locator'
 EXTRN	??2@YAPAXI@Z:PROC				; operator new
-EXTRN	?A_virt1@A@@UAEHXZ:PROC				; A::A_virt1
-EXTRN	?A_virt2@A@@UAEHXZ:PROC				; A::A_virt2
-EXTRN	?B_virt1@B@@UAEHXZ:PROC				; B::B_virt1
-EXTRN	?B_virt2@B@@UAEHXZ:PROC				; B::B_virt2
-EXTRN	?A_virt2@C@@UAEHXZ:PROC				; C::A_virt2
-EXTRN	?B_virt2@C@@UAEHXZ:PROC				; C::B_virt2
+EXTRN	??3@YAXPAXI@Z:PROC				; operator delete
+EXTRN	__invalid_parameter_noinfo_noreturn:PROC
+EXTRN	_memmove:PROC
+EXTRN	_memset:PROC
+EXTRN	?_Xlength_error@std@@YAXPBD@Z:PROC		; std::_Xlength_error
+EXTRN	___std_exception_copy:PROC
+EXTRN	___std_exception_destroy:PROC
+EXTRN	??_Eexception@std@@UAEPAXI@Z:PROC		; std::exception::`vector deleting destructor'
+EXTRN	??_Ebad_alloc@std@@UAEPAXI@Z:PROC		; std::bad_alloc::`vector deleting destructor'
+EXTRN	??_Ebad_array_new_length@std@@UAEPAXI@Z:PROC	; std::bad_array_new_length::`vector deleting destructor'
+EXTRN	@__security_check_cookie@4:PROC
+EXTRN	__CxxThrowException@8:PROC
+EXTRN	___CxxFrameHandler3:PROC
+EXTRN	_memset:PROC
 EXTRN	??_7type_info@@6B@:QWORD			; type_info::`vftable'
-;	COMDAT ??_R4C@@6BB@@@
+EXTRN	___security_cookie:DWORD
+;	COMDAT ??_R4bad_alloc@std@@6B@
 rdata$r	SEGMENT
-??_R4C@@6BB@@@ DD 00H					; C::`RTTI Complete Object Locator'
-	DD	08H
+??_R4bad_alloc@std@@6B@ DD 00H				; std::bad_alloc::`RTTI Complete Object Locator'
 	DD	00H
-	DD	FLAT:??_R0?AVC@@@8
-	DD	FLAT:??_R3C@@8
+	DD	00H
+	DD	FLAT:??_R0?AVbad_alloc@std@@@8
+	DD	FLAT:??_R3bad_alloc@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R17?0A@EA@B@@8
+;	COMDAT ??_R2bad_alloc@std@@8
 rdata$r	SEGMENT
-??_R17?0A@EA@B@@8 DD FLAT:??_R0?AVB@@@8			; B::`RTTI Base Class Descriptor at (8,-1,0,64)'
+??_R2bad_alloc@std@@8 DD FLAT:??_R1A@?0A@EA@bad_alloc@std@@8 ; std::bad_alloc::`RTTI Base Class Array'
+	DD	FLAT:??_R1A@?0A@EA@exception@std@@8
+rdata$r	ENDS
+;	COMDAT ??_R3bad_alloc@std@@8
+rdata$r	SEGMENT
+??_R3bad_alloc@std@@8 DD 00H				; std::bad_alloc::`RTTI Class Hierarchy Descriptor'
 	DD	00H
-	DD	08H
+	DD	02H
+	DD	FLAT:??_R2bad_alloc@std@@8
+rdata$r	ENDS
+;	COMDAT ??_R1A@?0A@EA@bad_alloc@std@@8
+rdata$r	SEGMENT
+??_R1A@?0A@EA@bad_alloc@std@@8 DD FLAT:??_R0?AVbad_alloc@std@@@8 ; std::bad_alloc::`RTTI Base Class Descriptor at (0,-1,0,64)'
+	DD	01H
+	DD	00H
 	DD	0ffffffffH
 	DD	00H
 	DD	040H
-	DD	FLAT:??_R3B@@8
+	DD	FLAT:??_R3bad_alloc@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R1A@?0A@EA@C@@8
+;	COMDAT ??_R1A@?0A@EA@bad_array_new_length@std@@8
 rdata$r	SEGMENT
-??_R1A@?0A@EA@C@@8 DD FLAT:??_R0?AVC@@@8		; C::`RTTI Base Class Descriptor at (0,-1,0,64)'
+??_R1A@?0A@EA@bad_array_new_length@std@@8 DD FLAT:??_R0?AVbad_array_new_length@std@@@8 ; std::bad_array_new_length::`RTTI Base Class Descriptor at (0,-1,0,64)'
 	DD	02H
 	DD	00H
 	DD	0ffffffffH
 	DD	00H
 	DD	040H
-	DD	FLAT:??_R3C@@8
+	DD	FLAT:??_R3bad_array_new_length@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R2C@@8
+;	COMDAT ??_R2bad_array_new_length@std@@8
 rdata$r	SEGMENT
-??_R2C@@8 DD	FLAT:??_R1A@?0A@EA@C@@8			; C::`RTTI Base Class Array'
-	DD	FLAT:??_R1A@?0A@EA@A@@8
-	DD	FLAT:??_R17?0A@EA@B@@8
+??_R2bad_array_new_length@std@@8 DD FLAT:??_R1A@?0A@EA@bad_array_new_length@std@@8 ; std::bad_array_new_length::`RTTI Base Class Array'
+	DD	FLAT:??_R1A@?0A@EA@bad_alloc@std@@8
+	DD	FLAT:??_R1A@?0A@EA@exception@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R3C@@8
+;	COMDAT ??_R3bad_array_new_length@std@@8
 rdata$r	SEGMENT
-??_R3C@@8 DD	00H					; C::`RTTI Class Hierarchy Descriptor'
-	DD	01H
+??_R3bad_array_new_length@std@@8 DD 00H			; std::bad_array_new_length::`RTTI Class Hierarchy Descriptor'
+	DD	00H
 	DD	03H
-	DD	FLAT:??_R2C@@8
+	DD	FLAT:??_R2bad_array_new_length@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R0?AVC@@@8
-data$rs	SEGMENT
-??_R0?AVC@@@8 DD FLAT:??_7type_info@@6B@		; C `RTTI Type Descriptor'
-	DD	00H
-	DB	'.?AVC@@', 00H
-data$rs	ENDS
-;	COMDAT ??_R4C@@6BA@@@
+;	COMDAT ??_R4bad_array_new_length@std@@6B@
 rdata$r	SEGMENT
-??_R4C@@6BA@@@ DD 00H					; C::`RTTI Complete Object Locator'
+??_R4bad_array_new_length@std@@6B@ DD 00H		; std::bad_array_new_length::`RTTI Complete Object Locator'
 	DD	00H
 	DD	00H
-	DD	FLAT:??_R0?AVC@@@8
-	DD	FLAT:??_R3C@@8
+	DD	FLAT:??_R0?AVbad_array_new_length@std@@@8
+	DD	FLAT:??_R3bad_array_new_length@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R1A@?0A@EA@B@@8
+;	COMDAT ??_R1A@?0A@EA@exception@std@@8
 rdata$r	SEGMENT
-??_R1A@?0A@EA@B@@8 DD FLAT:??_R0?AVB@@@8		; B::`RTTI Base Class Descriptor at (0,-1,0,64)'
+??_R1A@?0A@EA@exception@std@@8 DD FLAT:??_R0?AVexception@std@@@8 ; std::exception::`RTTI Base Class Descriptor at (0,-1,0,64)'
 	DD	00H
 	DD	00H
 	DD	0ffffffffH
 	DD	00H
 	DD	040H
-	DD	FLAT:??_R3B@@8
+	DD	FLAT:??_R3exception@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R2B@@8
+;	COMDAT ??_R2exception@std@@8
 rdata$r	SEGMENT
-??_R2B@@8 DD	FLAT:??_R1A@?0A@EA@B@@8			; B::`RTTI Base Class Array'
+??_R2exception@std@@8 DD FLAT:??_R1A@?0A@EA@exception@std@@8 ; std::exception::`RTTI Base Class Array'
 rdata$r	ENDS
-;	COMDAT ??_R3B@@8
+;	COMDAT ??_R3exception@std@@8
 rdata$r	SEGMENT
-??_R3B@@8 DD	00H					; B::`RTTI Class Hierarchy Descriptor'
+??_R3exception@std@@8 DD 00H				; std::exception::`RTTI Class Hierarchy Descriptor'
 	DD	00H
 	DD	01H
-	DD	FLAT:??_R2B@@8
+	DD	FLAT:??_R2exception@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R0?AVB@@@8
-data$rs	SEGMENT
-??_R0?AVB@@@8 DD FLAT:??_7type_info@@6B@		; B `RTTI Type Descriptor'
-	DD	00H
-	DB	'.?AVB@@', 00H
-data$rs	ENDS
-;	COMDAT ??_R4B@@6B@
+;	COMDAT ??_R4exception@std@@6B@
 rdata$r	SEGMENT
-??_R4B@@6B@ DD	00H					; B::`RTTI Complete Object Locator'
+??_R4exception@std@@6B@ DD 00H				; std::exception::`RTTI Complete Object Locator'
 	DD	00H
 	DD	00H
-	DD	FLAT:??_R0?AVB@@@8
-	DD	FLAT:??_R3B@@8
+	DD	FLAT:??_R0?AVexception@std@@@8
+	DD	FLAT:??_R3exception@std@@8
 rdata$r	ENDS
-;	COMDAT ??_R1A@?0A@EA@A@@8
-rdata$r	SEGMENT
-??_R1A@?0A@EA@A@@8 DD FLAT:??_R0?AVA@@@8		; A::`RTTI Base Class Descriptor at (0,-1,0,64)'
+;	COMDAT ??_C@_0BA@FOIKENOD@vector?5too?5long@
+CONST	SEGMENT
+??_C@_0BA@FOIKENOD@vector?5too?5long@ DB 'vector too long', 00H ; `string'
+CONST	ENDS
+;	COMDAT __CT??_R0?AVbad_alloc@std@@@8??0bad_alloc@std@@QAE@ABV01@@Z12
+xdata$x	SEGMENT
+__CT??_R0?AVbad_alloc@std@@@8??0bad_alloc@std@@QAE@ABV01@@Z12 DD 010H
+	DD	FLAT:??_R0?AVbad_alloc@std@@@8
 	DD	00H
+	DD	0ffffffffH
+	ORG $+4
+	DD	0cH
+	DD	FLAT:??0bad_alloc@std@@QAE@ABV01@@Z
+xdata$x	ENDS
+;	COMDAT ??_R0?AVbad_alloc@std@@@8
+data$r	SEGMENT
+??_R0?AVbad_alloc@std@@@8 DD FLAT:??_7type_info@@6B@	; std::bad_alloc `RTTI Type Descriptor'
+	DD	00H
+	DB	'.?AVbad_alloc@std@@', 00H
+data$r	ENDS
+;	COMDAT __CT??_R0?AVbad_array_new_length@std@@@8??0bad_array_new_length@std@@QAE@ABV01@@Z12
+xdata$x	SEGMENT
+__CT??_R0?AVbad_array_new_length@std@@@8??0bad_array_new_length@std@@QAE@ABV01@@Z12 DD 00H
+	DD	FLAT:??_R0?AVbad_array_new_length@std@@@8
+	DD	00H
+	DD	0ffffffffH
+	ORG $+4
+	DD	0cH
+	DD	FLAT:??0bad_array_new_length@std@@QAE@ABV01@@Z
+xdata$x	ENDS
+;	COMDAT ??_R0?AVbad_array_new_length@std@@@8
+data$r	SEGMENT
+??_R0?AVbad_array_new_length@std@@@8 DD FLAT:??_7type_info@@6B@ ; std::bad_array_new_length `RTTI Type Descriptor'
+	DD	00H
+	DB	'.?AVbad_array_new_length@std@@', 00H
+data$r	ENDS
+;	COMDAT __CTA3?AVbad_array_new_length@std@@
+xdata$x	SEGMENT
+__CTA3?AVbad_array_new_length@std@@ DD 03H
+	DD	FLAT:__CT??_R0?AVbad_array_new_length@std@@@8??0bad_array_new_length@std@@QAE@ABV01@@Z12
+	DD	FLAT:__CT??_R0?AVbad_alloc@std@@@8??0bad_alloc@std@@QAE@ABV01@@Z12
+	DD	FLAT:__CT??_R0?AVexception@std@@@8??0exception@std@@QAE@ABV01@@Z12
+xdata$x	ENDS
+;	COMDAT __TI3?AVbad_array_new_length@std@@
+xdata$x	SEGMENT
+__TI3?AVbad_array_new_length@std@@ DD 00H
+	DD	FLAT:??1bad_array_new_length@std@@UAE@XZ
+	DD	00H
+	DD	FLAT:__CTA3?AVbad_array_new_length@std@@
+xdata$x	ENDS
+;	COMDAT __CT??_R0?AVexception@std@@@8??0exception@std@@QAE@ABV01@@Z12
+xdata$x	SEGMENT
+__CT??_R0?AVexception@std@@@8??0exception@std@@QAE@ABV01@@Z12 DD 00H
+	DD	FLAT:??_R0?AVexception@std@@@8
+	DD	00H
+	DD	0ffffffffH
+	ORG $+4
+	DD	0cH
+	DD	FLAT:??0exception@std@@QAE@ABV01@@Z
+xdata$x	ENDS
+;	COMDAT ??_R0?AVexception@std@@@8
+data$r	SEGMENT
+??_R0?AVexception@std@@@8 DD FLAT:??_7type_info@@6B@	; std::exception `RTTI Type Descriptor'
+	DD	00H
+	DB	'.?AVexception@std@@', 00H
+data$r	ENDS
+;	COMDAT ??_C@_0BF@KINCDENJ@bad?5array?5new?5length@
+CONST	SEGMENT
+??_C@_0BF@KINCDENJ@bad?5array?5new?5length@ DB 'bad array new length', 00H ; `string'
+CONST	ENDS
+;	COMDAT ??_7bad_array_new_length@std@@6B@
+CONST	SEGMENT
+??_7bad_array_new_length@std@@6B@ DD FLAT:??_R4bad_array_new_length@std@@6B@ ; std::bad_array_new_length::`vftable'
+	DD	FLAT:??_Ebad_array_new_length@std@@UAEPAXI@Z
+	DD	FLAT:?what@exception@std@@UBEPBDXZ
+CONST	ENDS
+;	COMDAT ??_7bad_alloc@std@@6B@
+CONST	SEGMENT
+??_7bad_alloc@std@@6B@ DD FLAT:??_R4bad_alloc@std@@6B@	; std::bad_alloc::`vftable'
+	DD	FLAT:??_Ebad_alloc@std@@UAEPAXI@Z
+	DD	FLAT:?what@exception@std@@UBEPBDXZ
+CONST	ENDS
+;	COMDAT ??_C@_0BC@EOODALEL@Unknown?5exception@
+CONST	SEGMENT
+??_C@_0BC@EOODALEL@Unknown?5exception@ DB 'Unknown exception', 00H ; `string'
+CONST	ENDS
+;	COMDAT ??_7exception@std@@6B@
+CONST	SEGMENT
+??_7exception@std@@6B@ DD FLAT:??_R4exception@std@@6B@	; std::exception::`vftable'
+	DD	FLAT:??_Eexception@std@@UAEPAXI@Z
+	DD	FLAT:?what@exception@std@@UBEPBDXZ
+CONST	ENDS
+;	COMDAT voltbl
+voltbl	SEGMENT
+_volmd	DB	09H
+voltbl	ENDS
+;	COMDAT xdata$x
+xdata$x	SEGMENT
+__catchsym$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z$2 DD 00H
+	DD	00H
+	DD	00H
+	DD	FLAT:__catch$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z$0
+__unwindtable$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z DD 0ffffffffH
 	DD	00H
 	DD	0ffffffffH
 	DD	00H
-	DD	040H
-	DD	FLAT:??_R3A@@8
-rdata$r	ENDS
-;	COMDAT ??_R2A@@8
-rdata$r	SEGMENT
-??_R2A@@8 DD	FLAT:??_R1A@?0A@EA@A@@8			; A::`RTTI Base Class Array'
-rdata$r	ENDS
-;	COMDAT ??_R3A@@8
-rdata$r	SEGMENT
-??_R3A@@8 DD	00H					; A::`RTTI Class Hierarchy Descriptor'
+__tryblocktable$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z DD 00H
 	DD	00H
 	DD	01H
-	DD	FLAT:??_R2A@@8
-rdata$r	ENDS
-;	COMDAT ??_R0?AVA@@@8
-data$rs	SEGMENT
-??_R0?AVA@@@8 DD FLAT:??_7type_info@@6B@		; A `RTTI Type Descriptor'
-	DD	00H
-	DB	'.?AVA@@', 00H
-data$rs	ENDS
-;	COMDAT ??_R4A@@6B@
-rdata$r	SEGMENT
-??_R4A@@6B@ DD	00H					; A::`RTTI Complete Object Locator'
+	DD	01H
+	DD	FLAT:__catchsym$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z$2
+__ehfuncinfo$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z DD 019930522H
+	DD	02H
+	DD	FLAT:__unwindtable$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z
+	DD	01H
+	DD	FLAT:__tryblocktable$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z
+	DD	2 DUP(00H)
 	DD	00H
 	DD	00H
-	DD	FLAT:??_R0?AVA@@@8
-	DD	FLAT:??_R3A@@8
-rdata$r	ENDS
-;	COMDAT ??_7C@@6BB@@@
-CONST	SEGMENT
-??_7C@@6BB@@@ DD FLAT:??_R4C@@6BB@@@			; C::`vftable'
-	DD	FLAT:?B_virt1@B@@UAEHXZ
-	DD	FLAT:?B_virt2@C@@UAEHXZ
-CONST	ENDS
-;	COMDAT ??_7C@@6BA@@@
-CONST	SEGMENT
-??_7C@@6BA@@@ DD FLAT:??_R4C@@6BA@@@			; C::`vftable'
-	DD	FLAT:?A_virt1@A@@UAEHXZ
-	DD	FLAT:?A_virt2@C@@UAEHXZ
-CONST	ENDS
-;	COMDAT ??_7B@@6B@
-CONST	SEGMENT
-??_7B@@6B@ DD	FLAT:??_R4B@@6B@			; B::`vftable'
-	DD	FLAT:?B_virt1@B@@UAEHXZ
-	DD	FLAT:?B_virt2@B@@UAEHXZ
-CONST	ENDS
-;	COMDAT ??_7A@@6B@
-CONST	SEGMENT
-??_7A@@6B@ DD	FLAT:??_R4A@@6B@			; A::`vftable'
-	DD	FLAT:?A_virt1@A@@UAEHXZ
-	DD	FLAT:?A_virt2@A@@UAEHXZ
-CONST	ENDS
+xdata$x	ENDS
 ; Function compile flags: /Odtp
-; File D:\repo\HelloWorld-using-CommonLibSSE-NG\dev\assembly.cpp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Allocate_manually_vector_aligned@U_Default_allocate_traits@std@@@std@@YAPAXI@Z
 _TEXT	SEGMENT
-tv70 = -12						; size = 4
-$T1 = -8						; size = 4
-_pC$ = -4						; size = 4
-_main	PROC
+__Ptr$ = -12						; size = 4
+__Block_size$ = -8					; size = 4
+__Ptr_container$ = -4					; size = 4
+__Bytes$ = 8						; size = 4
+??$_Allocate_manually_vector_aligned@U_Default_allocate_traits@std@@@std@@YAPAXI@Z PROC ; std::_Allocate_manually_vector_aligned<std::_Default_allocate_traits>, COMDAT
 
-; 31   : int main() { 
+; 151  : __declspec(allocator) void* _Allocate_manually_vector_aligned(const size_t _Bytes) {
 
 	push	ebp
 	mov	ebp, esp
 	sub	esp, 12					; 0000000cH
 
-; 32   :     auto* pC = new C();
+; 152  :     // allocate _Bytes manually aligned to at least _Big_allocation_alignment
+; 153  :     const size_t _Block_size = _Non_user_size + _Bytes;
 
-	push	24					; 00000018H
-	call	??2@YAPAXI@Z				; operator new
+	mov	eax, DWORD PTR __Bytes$[ebp]
+	add	eax, 35					; 00000023H
+	mov	DWORD PTR __Block_size$[ebp], eax
+
+; 154  :     if (_Block_size <= _Bytes) {
+
+	mov	ecx, DWORD PTR __Block_size$[ebp]
+	cmp	ecx, DWORD PTR __Bytes$[ebp]
+	ja	SHORT $LN8@Allocate_m
+
+; 155  :         _Throw_bad_array_new_length(); // add overflow
+
+	call	?_Throw_bad_array_new_length@std@@YAXXZ	; std::_Throw_bad_array_new_length
+	npad	1
+$LN8@Allocate_m:
+
+; 156  :     }
+; 157  : 
+; 158  :     const uintptr_t _Ptr_container = reinterpret_cast<uintptr_t>(_Traits::_Allocate(_Block_size));
+
+	mov	edx, DWORD PTR __Block_size$[ebp]
+	push	edx
+	call	?_Allocate@_Default_allocate_traits@std@@SAPAXI@Z ; std::_Default_allocate_traits::_Allocate
 	add	esp, 4
-	mov	DWORD PTR $T1[ebp], eax
-	cmp	DWORD PTR $T1[ebp], 0
-	je	SHORT $LN3@main
+	mov	DWORD PTR __Ptr_container$[ebp], eax
+$LN4@Allocate_m:
+
+; 159  :     _STL_VERIFY(_Ptr_container != 0, "invalid argument"); // validate even in release since we're doing p[-1]
+
+	cmp	DWORD PTR __Ptr_container$[ebp], 0
+	je	SHORT $LN9@Allocate_m
+	jmp	SHORT $LN6@Allocate_m
+$LN9@Allocate_m:
+	call	__invalid_parameter_noinfo_noreturn
+	npad	1
 	xor	eax, eax
-	mov	ecx, DWORD PTR $T1[ebp]
-	mov	DWORD PTR [ecx], eax
-	mov	DWORD PTR [ecx+4], eax
-	mov	DWORD PTR [ecx+8], eax
-	mov	DWORD PTR [ecx+12], eax
-	mov	DWORD PTR [ecx+16], eax
-	mov	DWORD PTR [ecx+20], eax
-	mov	ecx, DWORD PTR $T1[ebp]
-	call	??0C@@QAE@XZ
-	mov	DWORD PTR tv70[ebp], eax
-	jmp	SHORT $LN4@main
-$LN3@main:
-	mov	DWORD PTR tv70[ebp], 0
-$LN4@main:
-	mov	edx, DWORD PTR tv70[ebp]
-	mov	DWORD PTR _pC$[ebp], edx
+	jne	SHORT $LN9@Allocate_m
+$LN6@Allocate_m:
+	xor	ecx, ecx
+	jne	SHORT $LN4@Allocate_m
 
-; 33   :     pC->A_virt2();
+; 160  :     void* const _Ptr = reinterpret_cast<void*>((_Ptr_container + _Non_user_size) & ~(_Big_allocation_alignment - 1));
 
-	mov	eax, DWORD PTR _pC$[ebp]
-	mov	edx, DWORD PTR [eax]
-	mov	ecx, DWORD PTR _pC$[ebp]
-	mov	eax, DWORD PTR [edx+4]
-	call	eax
+	mov	edx, DWORD PTR __Ptr_container$[ebp]
+	add	edx, 35					; 00000023H
+	and	edx, -32				; ffffffe0H
+	mov	DWORD PTR __Ptr$[ebp], edx
 
-; 34   :     pC->B_virt1();
+; 161  :     static_cast<uintptr_t*>(_Ptr)[-1] = _Ptr_container;
 
-	mov	ecx, DWORD PTR _pC$[ebp]
-	add	ecx, 8
-	mov	edx, DWORD PTR _pC$[ebp]
-	mov	eax, DWORD PTR [edx+8]
-	mov	edx, DWORD PTR [eax]
-	call	edx
+	mov	eax, 4
+	imul	ecx, eax, -1
+	mov	edx, DWORD PTR __Ptr$[ebp]
+	mov	eax, DWORD PTR __Ptr_container$[ebp]
+	mov	DWORD PTR [edx+ecx], eax
 
-; 35   :     
-; 36   :     return foo(1, 2); }
+; 162  : 
+; 163  : #ifdef _DEBUG
+; 164  :     static_cast<uintptr_t*>(_Ptr)[-2] = _Big_allocation_sentinel;
+; 165  : #endif // defined(_DEBUG)
+; 166  :     return _Ptr;
 
-	mov	edx, 2
-	mov	ecx, 1
-	call	?foo@@YIHHH@Z				; foo
+	mov	eax, DWORD PTR __Ptr$[ebp]
+$LN1@Allocate_m:
+
+; 167  : }
+
 	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Allocate_manually_vector_aligned@U_Default_allocate_traits@std@@@std@@YAPAXI@Z ENDP ; std::_Allocate_manually_vector_aligned<std::_Default_allocate_traits>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$construct@H$$V@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH@Z
+_TEXT	SEGMENT
+$T1 = -8						; size = 4
+$T2 = -4						; size = 4
+___formal$ = 8						; size = 4
+__Ptr$ = 12						; size = 4
+??$construct@H$$V@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH@Z PROC ; std::_Default_allocator_traits<std::allocator<int> >::construct<int>, COMDAT
+
+; 696  :     static _CONSTEXPR20 void construct(_Alloc&, _Objty* const _Ptr, _Types&&... _Args) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 8
+
+; 697  : #if _HAS_CXX20
+; 698  :         _STD construct_at(_Ptr, _STD forward<_Types>(_Args)...);
+; 699  : #else // ^^^ _HAS_CXX20 / !_HAS_CXX20 vvv
+; 700  :         ::new (const_cast<void*>(static_cast<const volatile void*>(_Ptr))) _Objty(_STD forward<_Types>(_Args)...);
+
+	mov	DWORD PTR $T2[ebp], 4
+	mov	eax, DWORD PTR __Ptr$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR $T2[ebp]
+	push	ecx
+	call	??2@YAPAXIPAX@Z				; operator new
+	add	esp, 8
+	mov	DWORD PTR $T1[ebp], eax
+	mov	edx, DWORD PTR $T2[ebp]
+	push	edx
+	push	0
+	mov	eax, DWORD PTR $T1[ebp]
+	push	eax
+	call	_memset
+	add	esp, 12					; 0000000cH
+
+; 701  : #endif // ^^^ !_HAS_CXX20 ^^^
+; 702  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$construct@H$$V@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH@Z ENDP ; std::_Default_allocator_traits<std::allocator<int> >::construct<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility
+;	COMDAT ??$_To_address@PAH@std@@YA?A_PABQAH@Z
+_TEXT	SEGMENT
+__Val$ = 8						; size = 4
+??$_To_address@PAH@std@@YA?A_PABQAH@Z PROC		; std::_To_address<int *>, COMDAT
+
+; 4529 : _NODISCARD constexpr auto _To_address(const _Iter& _Val) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 4530 :     _STL_INTERNAL_STATIC_ASSERT(is_pointer_v<_Iter>);
+; 4531 :     return _Val;
+
+	mov	eax, DWORD PTR __Val$[ebp]
+	mov	eax, DWORD PTR [eax]
+
+; 4532 : }
+
+	pop	ebp
+	ret	0
+??$_To_address@PAH@std@@YA?A_PABQAH@Z ENDP		; std::_To_address<int *>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Emplace_back@H@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEX$$QAH@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+_<_Vals_0>$ = 8						; size = 4
+??$_Emplace_back@H@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEX$$QAH@Z PROC ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<int>, COMDAT
+; _this$ = ecx
+
+; 1778 :     _CONSTEXPR20 void _Emplace_back(_Types&&... _Vals) { // construct a new element at *_Last and increment
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1779 :         allocator_traits<_Alloc>::construct(_Al, _STD _Unfancy(_Last), _STD forward<_Types>(_Vals)...);
+
+	mov	eax, DWORD PTR _<_Vals_0>$[ebp]
+	push	eax
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	edx, DWORD PTR [ecx+4]
+	push	edx
+	call	??$_Unfancy@H@std@@YAPAHPAH@Z		; std::_Unfancy<int>
+	add	esp, 4
+	push	eax
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR [eax+8]
+	push	ecx
+	call	??$construct@HH@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH$$QAH@Z ; std::_Default_allocator_traits<std::allocator<int> >::construct<int,int>
+	add	esp, 12					; 0000000cH
+
+; 1780 :         ++_Last;
+
+	mov	edx, DWORD PTR _this$[ebp]
+	mov	eax, DWORD PTR [edx+4]
+	add	eax, 4
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [ecx+4], eax
+
+; 1781 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??$_Emplace_back@H@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEX$$QAH@Z ENDP ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility
+;	COMDAT ??$_Copy_memmove@PAHPAH@std@@YAPAHPAH00@Z
+_TEXT	SEGMENT
+__Last_ch$ = -28					; size = 4
+__DestPtr$ = -24					; size = 4
+__LastPtr$ = -20					; size = 4
+__FirstPtr$ = -16					; size = 4
+__Count$ = -12						; size = 4
+__Dest_ch$ = -8						; size = 4
+__First_ch$ = -4					; size = 4
+__First$ = 8						; size = 4
+__Last$ = 12						; size = 4
+__Dest$ = 16						; size = 4
+??$_Copy_memmove@PAHPAH@std@@YAPAHPAH00@Z PROC		; std::_Copy_memmove<int *,int *>, COMDAT
+
+; 4650 : _OutCtgIt _Copy_memmove(_CtgIt _First, _CtgIt _Last, _OutCtgIt _Dest) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 28					; 0000001cH
+
+; 4651 :     auto _FirstPtr              = _STD _To_address(_First);
+
+	lea	eax, DWORD PTR __First$[ebp]
+	push	eax
+	call	??$_To_address@PAH@std@@YA?A_PABQAH@Z	; std::_To_address<int *>
+	add	esp, 4
+	mov	DWORD PTR __FirstPtr$[ebp], eax
+
+; 4652 :     auto _LastPtr               = _STD _To_address(_Last);
+
+	lea	ecx, DWORD PTR __Last$[ebp]
+	push	ecx
+	call	??$_To_address@PAH@std@@YA?A_PABQAH@Z	; std::_To_address<int *>
+	add	esp, 4
+	mov	DWORD PTR __LastPtr$[ebp], eax
+
+; 4653 :     auto _DestPtr               = _STD _To_address(_Dest);
+
+	lea	edx, DWORD PTR __Dest$[ebp]
+	push	edx
+	call	??$_To_address@PAH@std@@YA?A_PABQAH@Z	; std::_To_address<int *>
+	add	esp, 4
+	mov	DWORD PTR __DestPtr$[ebp], eax
+
+; 4654 :     const char* const _First_ch = const_cast<const char*>(reinterpret_cast<const volatile char*>(_FirstPtr));
+
+	mov	eax, DWORD PTR __FirstPtr$[ebp]
+	mov	DWORD PTR __First_ch$[ebp], eax
+
+; 4655 :     const char* const _Last_ch  = const_cast<const char*>(reinterpret_cast<const volatile char*>(_LastPtr));
+
+	mov	ecx, DWORD PTR __LastPtr$[ebp]
+	mov	DWORD PTR __Last_ch$[ebp], ecx
+
+; 4656 :     char* const _Dest_ch        = const_cast<char*>(reinterpret_cast<const volatile char*>(_DestPtr));
+
+	mov	edx, DWORD PTR __DestPtr$[ebp]
+	mov	DWORD PTR __Dest_ch$[ebp], edx
+
+; 4657 :     const auto _Count           = static_cast<size_t>(_Last_ch - _First_ch);
+
+	mov	eax, DWORD PTR __Last_ch$[ebp]
+	sub	eax, DWORD PTR __First_ch$[ebp]
+	mov	DWORD PTR __Count$[ebp], eax
+
+; 4658 :     _CSTD memmove(_Dest_ch, _First_ch, _Count);
+
+	mov	ecx, DWORD PTR __Count$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __First_ch$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Dest_ch$[ebp]
+	push	eax
+	call	_memmove
+	add	esp, 12					; 0000000cH
+
+; 4659 :     if constexpr (is_pointer_v<_OutCtgIt>) {
+; 4660 :         return reinterpret_cast<_OutCtgIt>(_Dest_ch + _Count);
+
+	mov	eax, DWORD PTR __Dest_ch$[ebp]
+	add	eax, DWORD PTR __Count$[ebp]
+
+; 4661 :     } else {
+; 4662 :         return _Dest + static_cast<_Iter_diff_t<_OutCtgIt>>(_LastPtr - _FirstPtr);
+; 4663 :     }
+; 4664 : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Copy_memmove@PAHPAH@std@@YAPAHPAH00@Z ENDP		; std::_Copy_memmove<int *,int *>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility
+;	COMDAT ??$_Get_unwrapped@ABQAH@std@@YA?A_TABQAH@Z
+_TEXT	SEGMENT
+__It$ = 8						; size = 4
+??$_Get_unwrapped@ABQAH@std@@YA?A_TABQAH@Z PROC		; std::_Get_unwrapped<int * const &>, COMDAT
+
+; 1327 :     !_Unwrappable_v<_Iter> || _Has_nothrow_unwrapped<_Iter>) {
+
+	push	ebp
+	mov	ebp, esp
+
+; 1328 :     // unwrap an iterator previously subjected to _Adl_verify_range or otherwise validated
+; 1329 :     if constexpr (is_pointer_v<decay_t<_Iter>>) { // special-case pointers and arrays
+; 1330 :         return _It + 0;
+
+	mov	eax, DWORD PTR __It$[ebp]
+	mov	eax, DWORD PTR [eax]
+
+; 1331 :     } else if constexpr (_Unwrappable_v<_Iter>) {
+; 1332 :         return static_cast<_Iter&&>(_It)._Unwrapped();
+; 1333 :     } else {
+; 1334 :         return static_cast<_Iter&&>(_It);
+; 1335 :     }
+; 1336 : }
+
+	pop	ebp
+	ret	0
+??$_Get_unwrapped@ABQAH@std@@YA?A_TABQAH@Z ENDP		; std::_Get_unwrapped<int * const &>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\type_traits
+;	COMDAT ??$addressof@H@std@@YAPAHAAH@Z
+_TEXT	SEGMENT
+__Val$ = 8						; size = 4
+??$addressof@H@std@@YAPAHAAH@Z PROC			; std::addressof<int>, COMDAT
+
+; 1549 : _NODISCARD constexpr _Ty* addressof(_Ty& _Val) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 1550 :     return __builtin_addressof(_Val);
+
+	mov	eax, DWORD PTR __Val$[ebp]
+
+; 1551 : }
+
+	pop	ebp
+	ret	0
+??$addressof@H@std@@YAPAHAAH@Z ENDP			; std::addressof<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Allocate@$07U_Default_allocate_traits@std@@@std@@YAPAXI@Z
+_TEXT	SEGMENT
+__Bytes$ = 8						; size = 4
+??$_Allocate@$07U_Default_allocate_traits@std@@@std@@YAPAXI@Z PROC ; std::_Allocate<8,std::_Default_allocate_traits>, COMDAT
+
+; 194  : __declspec(allocator) _CONSTEXPR20 void* _Allocate(const size_t _Bytes) {
+
+	push	ebp
+	mov	ebp, esp
+
+; 195  :     // allocate _Bytes
+; 196  :     if (_Bytes == 0) {
+
+	cmp	DWORD PTR __Bytes$[ebp], 0
+	jne	SHORT $LN2@Allocate
+
+; 197  :         return nullptr;
+
+	xor	eax, eax
+	jmp	SHORT $LN1@Allocate
+$LN2@Allocate:
+
+; 198  :     }
+; 199  : 
+; 200  : #if _HAS_CXX20 // TRANSITION, GH-1532
+; 201  :     if (_STD is_constant_evaluated()) {
+; 202  :         return _Traits::_Allocate(_Bytes);
+; 203  :     }
+; 204  : #endif // _HAS_CXX20
+; 205  : 
+; 206  : #ifdef __cpp_aligned_new
+; 207  :     if constexpr (_Align > __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
+; 208  :         size_t _Passed_align = _Align;
+; 209  : #if defined(_M_IX86) || defined(_M_X64)
+; 210  :         if (_Bytes >= _Big_allocation_threshold) {
+; 211  :             // boost the alignment of big allocations to help autovectorization
+; 212  :             _Passed_align = (_STD max)(_Align, _Big_allocation_alignment);
+; 213  :         }
+; 214  : #endif // defined(_M_IX86) || defined(_M_X64)
+; 215  :         return _Traits::_Allocate_aligned(_Bytes, _Passed_align);
+; 216  :     } else
+; 217  : #endif // defined(__cpp_aligned_new)
+; 218  :     {
+; 219  : #if defined(_M_IX86) || defined(_M_X64)
+; 220  :         if (_Bytes >= _Big_allocation_threshold) {
+
+	cmp	DWORD PTR __Bytes$[ebp], 4096		; 00001000H
+	jb	SHORT $LN3@Allocate
+
+; 221  :             // boost the alignment of big allocations to help autovectorization
+; 222  :             return _Allocate_manually_vector_aligned<_Traits>(_Bytes);
+
+	mov	eax, DWORD PTR __Bytes$[ebp]
+	push	eax
+	call	??$_Allocate_manually_vector_aligned@U_Default_allocate_traits@std@@@std@@YAPAXI@Z ; std::_Allocate_manually_vector_aligned<std::_Default_allocate_traits>
+	add	esp, 4
+	jmp	SHORT $LN1@Allocate
+$LN3@Allocate:
+
+; 223  :         }
+; 224  : #endif // defined(_M_IX86) || defined(_M_X64)
+; 225  :         return _Traits::_Allocate(_Bytes);
+
+	mov	ecx, DWORD PTR __Bytes$[ebp]
+	push	ecx
+	call	?_Allocate@_Default_allocate_traits@std@@SAPAXI@Z ; std::_Default_allocate_traits::_Allocate
+	add	esp, 4
+$LN1@Allocate:
+
+; 226  :     }
+; 227  : }
+
+	pop	ebp
+	ret	0
+??$_Allocate@$07U_Default_allocate_traits@std@@@std@@YAPAXI@Z ENDP ; std::_Allocate<8,std::_Default_allocate_traits>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Get_size_of_n@$03@std@@YAII@Z
+_TEXT	SEGMENT
+__Max_possible$1 = -8					; size = 4
+__Overflow_is_possible$ = -1				; size = 1
+__Count$ = 8						; size = 4
+??$_Get_size_of_n@$03@std@@YAII@Z PROC			; std::_Get_size_of_n<4>, COMDAT
+
+; 79   : _NODISCARD constexpr size_t _Get_size_of_n(const size_t _Count) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 8
+
+; 80   :     constexpr bool _Overflow_is_possible = _Ty_size > 1;
+
+	mov	BYTE PTR __Overflow_is_possible$[ebp], 1
+
+; 81   : 
+; 82   :     if constexpr (_Overflow_is_possible) {
+; 83   :         constexpr size_t _Max_possible = static_cast<size_t>(-1) / _Ty_size;
+
+	mov	DWORD PTR __Max_possible$1[ebp], 1073741823 ; 3fffffffH
+
+; 84   :         if (_Count > _Max_possible) {
+
+	cmp	DWORD PTR __Count$[ebp], 1073741823	; 3fffffffH
+	jbe	SHORT $LN2@Get_size_o
+
+; 85   :             _Throw_bad_array_new_length(); // multiply overflow
+
+	call	?_Throw_bad_array_new_length@std@@YAXXZ	; std::_Throw_bad_array_new_length
+	npad	1
+$LN2@Get_size_o:
+
+; 86   :         }
+; 87   :     }
+; 88   : 
+; 89   :     return _Count * _Ty_size;
+
+	mov	eax, DWORD PTR __Count$[ebp]
+	shl	eax, 2
+$LN1@Get_size_o:
+
+; 90   : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Get_size_of_n@$03@std@@YAII@Z ENDP			; std::_Get_size_of_n<4>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Emplace_back@$$V@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEXXZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??$_Emplace_back@$$V@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEXXZ PROC ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<>, COMDAT
+; _this$ = ecx
+
+; 1778 :     _CONSTEXPR20 void _Emplace_back(_Types&&... _Vals) { // construct a new element at *_Last and increment
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1779 :         allocator_traits<_Alloc>::construct(_Al, _STD _Unfancy(_Last), _STD forward<_Types>(_Vals)...);
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR [eax+4]
+	push	ecx
+	call	??$_Unfancy@H@std@@YAPAHPAH@Z		; std::_Unfancy<int>
+	add	esp, 4
+	push	eax
+	mov	edx, DWORD PTR _this$[ebp]
+	mov	eax, DWORD PTR [edx+8]
+	push	eax
+	call	??$construct@H$$V@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH@Z ; std::_Default_allocator_traits<std::allocator<int> >::construct<int>
+	add	esp, 8
+
+; 1780 :         ++_Last;
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	edx, DWORD PTR [ecx+4]
+	add	edx, 4
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [eax+4], edx
+
+; 1781 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Emplace_back@$$V@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEXXZ ENDP ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Release@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEPAHXZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Release@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEPAHXZ PROC ; std::_Uninitialized_backout_al<std::allocator<int> >::_Release, COMDAT
+; _this$ = ecx
+
+; 1783 :     constexpr pointer _Release() { // suppress any exception handling backout and return _Last
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1784 :         _First = _Last;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	edx, DWORD PTR [ecx+4]
+	mov	DWORD PTR [eax], edx
+
+; 1785 :         return _Last;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	eax, DWORD PTR [eax+4]
+
+; 1786 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Release@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEPAHXZ ENDP ; std::_Uninitialized_backout_al<std::allocator<int> >::_Release
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??1?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??1?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@XZ PROC ; std::_Uninitialized_backout_al<std::allocator<int> >::~_Uninitialized_backout_al<std::allocator<int> >, COMDAT
+; _this$ = ecx
+
+; 1773 :     _CONSTEXPR20 ~_Uninitialized_backout_al() {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1774 :         _STD _Destroy_range(_First, _Last, _Al);
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR [eax+8]
+	push	ecx
+	mov	edx, DWORD PTR _this$[ebp]
+	mov	eax, DWORD PTR [edx+4]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	call	??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z ; std::_Destroy_range<std::allocator<int> >
+	add	esp, 12					; 0000000cH
+
+; 1775 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??1?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@XZ ENDP ; std::_Uninitialized_backout_al<std::allocator<int> >::~_Uninitialized_backout_al<std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??0?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@PAHAAV?$allocator@H@1@@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Dest$ = 8						; size = 4
+__Al_$ = 12						; size = 4
+??0?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@PAHAAV?$allocator@H@1@@Z PROC ; std::_Uninitialized_backout_al<std::allocator<int> >::_Uninitialized_backout_al<std::allocator<int> >, COMDAT
+; _this$ = ecx
+
+; 1768 :     _CONSTEXPR20 _Uninitialized_backout_al(pointer _Dest, _Alloc& _Al_) : _First(_Dest), _Last(_Dest), _Al(_Al_) {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR __Dest$[ebp]
+	mov	DWORD PTR [eax], ecx
+	mov	edx, DWORD PTR _this$[ebp]
+	mov	eax, DWORD PTR __Dest$[ebp]
+	mov	DWORD PTR [edx+4], eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	edx, DWORD PTR __Al_$[ebp]
+	mov	DWORD PTR [ecx+8], edx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+??0?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@PAHAAV?$allocator@H@1@@Z ENDP ; std::_Uninitialized_backout_al<std::allocator<int> >::_Uninitialized_backout_al<std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Zero_range@PAH@std@@YAPAHQAH0@Z
+_TEXT	SEGMENT
+__Last_ch$ = -8						; size = 4
+__First_ch$ = -4					; size = 4
+__First$ = 8						; size = 4
+__Last$ = 12						; size = 4
+??$_Zero_range@PAH@std@@YAPAHQAH0@Z PROC		; std::_Zero_range<int *>, COMDAT
+
+; 1993 : _Ptr _Zero_range(const _Ptr _First, const _Ptr _Last) { // fill [_First, _Last) with zeroes
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 8
+
+; 1994 :     char* const _First_ch = reinterpret_cast<char*>(_STD _To_address(_First));
+
+	lea	eax, DWORD PTR __First$[ebp]
+	push	eax
+	call	??$_To_address@PAH@std@@YA?A_PABQAH@Z	; std::_To_address<int *>
+	add	esp, 4
+	mov	DWORD PTR __First_ch$[ebp], eax
+
+; 1995 :     char* const _Last_ch  = reinterpret_cast<char*>(_STD _To_address(_Last));
+
+	lea	ecx, DWORD PTR __Last$[ebp]
+	push	ecx
+	call	??$_To_address@PAH@std@@YA?A_PABQAH@Z	; std::_To_address<int *>
+	add	esp, 4
+	mov	DWORD PTR __Last_ch$[ebp], eax
+
+; 1996 :     _CSTD memset(_First_ch, 0, static_cast<size_t>(_Last_ch - _First_ch));
+
+	mov	edx, DWORD PTR __Last_ch$[ebp]
+	sub	edx, DWORD PTR __First_ch$[ebp]
+	push	edx
+	push	0
+	mov	eax, DWORD PTR __First_ch$[ebp]
+	push	eax
+	call	_memset
+	add	esp, 12					; 0000000cH
+
+; 1997 :     return _Last;
+
+	mov	eax, DWORD PTR __Last$[ebp]
+
+; 1998 : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Zero_range@PAH@std@@YAPAHQAH0@Z ENDP		; std::_Zero_range<int *>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z
+_TEXT	SEGMENT
+__Backout$ = -24					; size = 12
+$T1 = -12						; size = 4
+__ULast$ = -8						; size = 4
+__UFirst$ = -4						; size = 4
+__First$ = 8						; size = 4
+__Last$ = 12						; size = 4
+__Dest$ = 16						; size = 4
+__Al$ = 20						; size = 4
+??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z PROC ; std::_Uninitialized_move<int *,std::allocator<int> >, COMDAT
+
+; 1904 :     const _InIt _First, const _InIt _Last, _Alloc_ptr_t<_Alloc> _Dest, _Alloc& _Al) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 24					; 00000018H
+
+; 1905 :     // move [_First, _Last) to raw _Dest, using _Al
+; 1906 :     // note: only called internally from elsewhere in the STL
+; 1907 :     using _Ptrval     = typename _Alloc::value_type*;
+; 1908 :     auto _UFirst      = _STD _Get_unwrapped(_First);
+
+	lea	eax, DWORD PTR __First$[ebp]
+	push	eax
+	call	??$_Get_unwrapped@ABQAH@std@@YA?A_TABQAH@Z ; std::_Get_unwrapped<int * const &>
+	add	esp, 4
+	mov	DWORD PTR __UFirst$[ebp], eax
+
+; 1909 :     const auto _ULast = _STD _Get_unwrapped(_Last);
+
+	lea	ecx, DWORD PTR __Last$[ebp]
+	push	ecx
+	call	??$_Get_unwrapped@ABQAH@std@@YA?A_TABQAH@Z ; std::_Get_unwrapped<int * const &>
+	add	esp, 4
+	mov	DWORD PTR __ULast$[ebp], eax
+
+; 1910 :     if constexpr (conjunction_v<bool_constant<_Iter_move_cat<decltype(_UFirst), _Ptrval>::_Bitcopy_constructible>,
+; 1911 :                       _Uses_default_construct<_Alloc, _Ptrval, decltype(_STD move(*_UFirst))>>) {
+; 1912 : #if _HAS_CXX20
+; 1913 :         if (!_STD is_constant_evaluated())
+; 1914 : #endif // _HAS_CXX20
+; 1915 :         {
+; 1916 :             _STD _Copy_memmove(_UFirst, _ULast, _STD _Unfancy(_Dest));
+
+	mov	edx, DWORD PTR __Dest$[ebp]
+	push	edx
+	call	??$_Unfancy@H@std@@YAPAHPAH@Z		; std::_Unfancy<int>
+	add	esp, 4
+	push	eax
+	mov	eax, DWORD PTR __ULast$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __UFirst$[ebp]
+	push	ecx
+	call	??$_Copy_memmove@PAHPAH@std@@YAPAHPAH00@Z ; std::_Copy_memmove<int *,int *>
+	add	esp, 12					; 0000000cH
+
+; 1917 :             return _Dest + (_ULast - _UFirst);
+
+	mov	edx, DWORD PTR __ULast$[ebp]
+	sub	edx, DWORD PTR __UFirst$[ebp]
+	sar	edx, 2
+	mov	eax, DWORD PTR __Dest$[ebp]
+	lea	eax, DWORD PTR [eax+edx*4]
+	jmp	SHORT $LN1@Uninitiali
+
+; 1918 :         }
+; 1919 :     }
+; 1920 : 
+; 1921 :     _Uninitialized_backout_al<_Alloc> _Backout{_Dest, _Al};
+
+	mov	ecx, DWORD PTR __Al$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __Dest$[ebp]
+	push	edx
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	??0?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@PAHAAV?$allocator@H@1@@Z ; std::_Uninitialized_backout_al<std::allocator<int> >::_Uninitialized_backout_al<std::allocator<int> >
+	npad	1
+
+; 1922 :     for (; _UFirst != _ULast; ++_UFirst) {
+
+	jmp	SHORT $LN4@Uninitiali
+$LN2@Uninitiali:
+	mov	eax, DWORD PTR __UFirst$[ebp]
+	add	eax, 4
+	mov	DWORD PTR __UFirst$[ebp], eax
+$LN4@Uninitiali:
+	mov	ecx, DWORD PTR __UFirst$[ebp]
+	cmp	ecx, DWORD PTR __ULast$[ebp]
+	je	SHORT $LN3@Uninitiali
+
+; 1923 :         _Backout._Emplace_back(_STD move(*_UFirst));
+
+	mov	edx, DWORD PTR __UFirst$[ebp]
+	push	edx
+	call	??$move@AAH@std@@YA$$QAHAAH@Z		; std::move<int &>
+	add	esp, 4
+	push	eax
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	??$_Emplace_back@H@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<int>
+	npad	1
+
+; 1924 :     }
+
+	jmp	SHORT $LN2@Uninitiali
+$LN3@Uninitiali:
+
+; 1925 : 
+; 1926 :     return _Backout._Release();
+
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	?_Release@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEPAHXZ ; std::_Uninitialized_backout_al<std::allocator<int> >::_Release
+	mov	DWORD PTR $T1[ebp], eax
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	??1?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@XZ ; std::_Uninitialized_backout_al<std::allocator<int> >::~_Uninitialized_backout_al<std::allocator<int> >
+	mov	eax, DWORD PTR $T1[ebp]
+$LN1@Uninitiali:
+
+; 1927 : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z ENDP ; std::_Uninitialized_move<int *,std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$construct@HH@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH$$QAH@Z
+_TEXT	SEGMENT
+$T1 = -4						; size = 4
+___formal$ = 8						; size = 4
+__Ptr$ = 12						; size = 4
+_<_Args_0>$ = 16					; size = 4
+??$construct@HH@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH$$QAH@Z PROC ; std::_Default_allocator_traits<std::allocator<int> >::construct<int,int>, COMDAT
+
+; 696  :     static _CONSTEXPR20 void construct(_Alloc&, _Objty* const _Ptr, _Types&&... _Args) {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+
+; 697  : #if _HAS_CXX20
+; 698  :         _STD construct_at(_Ptr, _STD forward<_Types>(_Args)...);
+; 699  : #else // ^^^ _HAS_CXX20 / !_HAS_CXX20 vvv
+; 700  :         ::new (const_cast<void*>(static_cast<const volatile void*>(_Ptr))) _Objty(_STD forward<_Types>(_Args)...);
+
+	mov	eax, DWORD PTR __Ptr$[ebp]
+	push	eax
+	push	4
+	call	??2@YAPAXIPAX@Z				; operator new
+	add	esp, 8
+	mov	DWORD PTR $T1[ebp], eax
+	mov	ecx, DWORD PTR _<_Args_0>$[ebp]
+	push	ecx
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	mov	edx, DWORD PTR $T1[ebp]
+	mov	eax, DWORD PTR [eax]
+	mov	DWORD PTR [edx], eax
+
+; 701  : #endif // ^^^ !_HAS_CXX20 ^^^
+; 702  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$construct@HH@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH$$QAH@Z ENDP ; std::_Default_allocator_traits<std::allocator<int> >::construct<int,int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Unfancy@H@std@@YAPAHPAH@Z
+_TEXT	SEGMENT
+__Ptr$ = 8						; size = 4
+??$_Unfancy@H@std@@YAPAHPAH@Z PROC			; std::_Unfancy<int>, COMDAT
+
+; 35   : _NODISCARD constexpr _Ty* _Unfancy(_Ty* _Ptr) noexcept { // do nothing for plain pointers
+
+	push	ebp
+	mov	ebp, esp
+
+; 36   :     return _Ptr;
+
+	mov	eax, DWORD PTR __Ptr$[ebp]
+
+; 37   : }
+
+	pop	ebp
+	ret	0
+??$_Unfancy@H@std@@YAPAHPAH@Z ENDP			; std::_Unfancy<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility
+;	COMDAT ??$_Construct_in_place@HH@std@@YAXAAH$$QAH@Z
+_TEXT	SEGMENT
+$T1 = -4						; size = 4
+__Obj$ = 8						; size = 4
+_<_Args_0>$ = 12					; size = 4
+??$_Construct_in_place@HH@std@@YAXAAH$$QAH@Z PROC	; std::_Construct_in_place<int,int>, COMDAT
+
+; 399  :     is_nothrow_constructible_v<_Ty, _Types...>) {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+
+; 400  : #if _HAS_CXX20
+; 401  :     if (_STD is_constant_evaluated()) {
+; 402  :         _STD construct_at(_STD addressof(_Obj), _STD forward<_Types>(_Args)...);
+; 403  :     } else
+; 404  : #endif // _HAS_CXX20
+; 405  :     {
+; 406  :         ::new (static_cast<void*>(_STD addressof(_Obj))) _Ty(_STD forward<_Types>(_Args)...);
+
+	mov	eax, DWORD PTR __Obj$[ebp]
+	push	eax
+	call	??$addressof@H@std@@YAPAHAAH@Z		; std::addressof<int>
+	add	esp, 4
+	push	eax
+	push	4
+	call	??2@YAPAXIPAX@Z				; operator new
+	add	esp, 8
+	mov	DWORD PTR $T1[ebp], eax
+	mov	ecx, DWORD PTR _<_Args_0>$[ebp]
+	push	ecx
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	mov	edx, DWORD PTR $T1[ebp]
+	mov	eax, DWORD PTR [eax]
+	mov	DWORD PTR [edx], eax
+
+; 407  :     }
+; 408  : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Construct_in_place@HH@std@@YAXAAH$$QAH@Z ENDP	; std::_Construct_in_place<int,int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Allocate_at_least_helper@V?$allocator@H@std@@@std@@YAPAHAAV?$allocator@H@0@AAI@Z
+_TEXT	SEGMENT
+__Al$ = 8						; size = 4
+__Count$ = 12						; size = 4
+??$_Allocate_at_least_helper@V?$allocator@H@std@@@std@@YAPAHAAV?$allocator@H@0@AAI@Z PROC ; std::_Allocate_at_least_helper<std::allocator<int> >, COMDAT
+
+; 2173 :     _Alloc& _Al, _CRT_GUARDOVERFLOW typename allocator_traits<_Alloc>::size_type& _Count) {
+
+	push	ebp
+	mov	ebp, esp
+
+; 2174 : #if _HAS_CXX23
+; 2175 :     if constexpr (_Should_allocate_at_least<_Alloc>) {
+; 2176 :         auto [_Ptr, _Allocated] = _Al.allocate_at_least(_Count);
+; 2177 :         _Count                  = _Allocated;
+; 2178 :         return _Ptr;
+; 2179 :     } else
+; 2180 : #endif // _HAS_CXX23
+; 2181 :     {
+; 2182 :         return _Al.allocate(_Count);
+
+	mov	eax, DWORD PTR __Count$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	push	ecx
+	mov	ecx, DWORD PTR __Al$[ebp]
+	call	?allocate@?$allocator@H@std@@QAEPAHI@Z	; std::allocator<int>::allocate
+
+; 2183 :     }
+; 2184 : }
+
+	pop	ebp
+	ret	0
+??$_Allocate_at_least_helper@V?$allocator@H@std@@@std@@YAPAHAAV?$allocator@H@0@AAI@Z ENDP ; std::_Allocate_at_least_helper<std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility
+;	COMDAT ??$_Max_limit@H@std@@YAHXZ
+_TEXT	SEGMENT
+__Unsigned_max$1 = -4					; size = 4
+??$_Max_limit@H@std@@YAHXZ PROC				; std::_Max_limit<int>, COMDAT
+
+; 854  : _NODISCARD constexpr _Ty _Max_limit() noexcept { // same as (numeric_limits<_Ty>::max)(), less throughput cost
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+
+; 855  :     _STL_INTERNAL_STATIC_ASSERT(is_integral_v<_Ty>); // doesn't attempt to handle all types
+; 856  :     if constexpr (is_signed_v<_Ty>) {
+; 857  :         constexpr auto _Unsigned_max = static_cast<make_unsigned_t<_Ty>>(-1);
+
+	mov	DWORD PTR __Unsigned_max$1[ebp], -1
+
+; 858  :         return static_cast<_Ty>(_Unsigned_max >> 1);
+
+	mov	eax, 2147483647				; 7fffffffH
+
+; 859  :     } else {
+; 860  :         return static_cast<_Ty>(-1);
+; 861  :     }
+; 862  : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Max_limit@H@std@@YAHXZ ENDP				; std::_Max_limit<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Uninitialized_value_construct_n@V?$allocator@H@std@@@std@@YAPAHPAHIAAV?$allocator@H@0@@Z
+_TEXT	SEGMENT
+__Backout$ = -20					; size = 12
+$T1 = -8						; size = 4
+__PFirst$2 = -4						; size = 4
+__First$ = 8						; size = 4
+__Count$ = 12						; size = 4
+__Al$ = 16						; size = 4
+??$_Uninitialized_value_construct_n@V?$allocator@H@std@@@std@@YAPAHPAHIAAV?$allocator@H@0@@Z PROC ; std::_Uninitialized_value_construct_n<std::allocator<int> >, COMDAT
+
+; 2002 :     _Alloc_ptr_t<_Alloc> _First, _Alloc_size_t<_Alloc> _Count, _Alloc& _Al) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 20					; 00000014H
+
+; 2003 :     // value-initialize _Count objects to raw _First, using _Al
+; 2004 :     using _Ptrty = typename _Alloc::value_type*;
+; 2005 :     if constexpr (_Use_memset_value_construct_v<_Ptrty> && _Uses_default_construct<_Alloc, _Ptrty>::value) {
+; 2006 : #if _HAS_CXX20
+; 2007 :         if (!_STD is_constant_evaluated())
+; 2008 : #endif // _HAS_CXX20
+; 2009 :         {
+; 2010 :             auto _PFirst = _Unfancy(_First);
+
+	mov	eax, DWORD PTR __First$[ebp]
+	push	eax
+	call	??$_Unfancy@H@std@@YAPAHPAH@Z		; std::_Unfancy<int>
+	add	esp, 4
+	mov	DWORD PTR __PFirst$2[ebp], eax
+
+; 2011 :             _Zero_range(_PFirst, _PFirst + _Count);
+
+	mov	ecx, DWORD PTR __Count$[ebp]
+	mov	edx, DWORD PTR __PFirst$2[ebp]
+	lea	eax, DWORD PTR [edx+ecx*4]
+	push	eax
+	mov	ecx, DWORD PTR __PFirst$2[ebp]
+	push	ecx
+	call	??$_Zero_range@PAH@std@@YAPAHQAH0@Z	; std::_Zero_range<int *>
+	add	esp, 8
+
+; 2012 :             return _First + _Count;
+
+	mov	edx, DWORD PTR __Count$[ebp]
+	mov	eax, DWORD PTR __First$[ebp]
+	lea	eax, DWORD PTR [eax+edx*4]
+	jmp	SHORT $LN1@Uninitiali
+
+; 2013 :         }
+; 2014 :     }
+; 2015 : 
+; 2016 :     _Uninitialized_backout_al<_Alloc> _Backout{_First, _Al};
+
+	mov	ecx, DWORD PTR __Al$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __First$[ebp]
+	push	edx
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	??0?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@PAHAAV?$allocator@H@1@@Z ; std::_Uninitialized_backout_al<std::allocator<int> >::_Uninitialized_backout_al<std::allocator<int> >
+	npad	1
+
+; 2017 :     for (; 0 < _Count; --_Count) {
+
+	jmp	SHORT $LN4@Uninitiali
+$LN2@Uninitiali:
+	mov	eax, DWORD PTR __Count$[ebp]
+	sub	eax, 1
+	mov	DWORD PTR __Count$[ebp], eax
+$LN4@Uninitiali:
+	cmp	DWORD PTR __Count$[ebp], 0
+	jbe	SHORT $LN3@Uninitiali
+
+; 2018 :         _Backout._Emplace_back();
+
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	??$_Emplace_back@$$V@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEXXZ ; std::_Uninitialized_backout_al<std::allocator<int> >::_Emplace_back<>
+	npad	1
+
+; 2019 :     }
+
+	jmp	SHORT $LN2@Uninitiali
+$LN3@Uninitiali:
+
+; 2020 : 
+; 2021 :     return _Backout._Release();
+
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	?_Release@?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAEPAHXZ ; std::_Uninitialized_backout_al<std::allocator<int> >::_Release
+	mov	DWORD PTR $T1[ebp], eax
+	lea	ecx, DWORD PTR __Backout$[ebp]
+	call	??1?$_Uninitialized_backout_al@V?$allocator@H@std@@@std@@QAE@XZ ; std::_Uninitialized_backout_al<std::allocator<int> >::~_Uninitialized_backout_al<std::allocator<int> >
+	mov	eax, DWORD PTR $T1[ebp]
+$LN1@Uninitiali:
+
+; 2022 : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$_Uninitialized_value_construct_n@V?$allocator@H@std@@@std@@YAPAHPAHIAAV?$allocator@H@0@@Z ENDP ; std::_Uninitialized_value_construct_n<std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??1?$_Tidy_guard@V?$vector@HV?$allocator@H@std@@@std@@@std@@QAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??1?$_Tidy_guard@V?$vector@HV?$allocator@H@std@@@std@@@std@@QAE@XZ PROC ; std::_Tidy_guard<std::vector<int,std::allocator<int> > >::~_Tidy_guard<std::vector<int,std::allocator<int> > >, COMDAT
+; _this$ = ecx
+
+; 53   :     _CONSTEXPR20 ~_Tidy_guard() {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 54   :         if (_Target) {
+
+	mov	eax, DWORD PTR _this$[ebp]
+	cmp	DWORD PTR [eax], 0
+	je	SHORT $LN2@Tidy_guard
+
+; 55   :             _Target->_Tidy();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR [ecx]
+	call	?_Tidy@?$vector@HV?$allocator@H@std@@@std@@AAEXXZ ; std::vector<int,std::allocator<int> >::_Tidy
+	npad	1
+$LN2@Tidy_guard:
+
+; 56   :         }
+; 57   :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??1?$_Tidy_guard@V?$vector@HV?$allocator@H@std@@@std@@@std@@QAE@XZ ENDP ; std::_Tidy_guard<std::vector<int,std::allocator<int> > >::~_Tidy_guard<std::vector<int,std::allocator<int> > >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\type_traits
+;	COMDAT ??$forward@ABV?$allocator@H@std@@@std@@YAABV?$allocator@H@0@ABV10@@Z
+_TEXT	SEGMENT
+__Arg$ = 8						; size = 4
+??$forward@ABV?$allocator@H@std@@@std@@YAABV?$allocator@H@0@ABV10@@Z PROC ; std::forward<std::allocator<int> const &>, COMDAT
+
+; 1526 : _NODISCARD _MSVC_INTRINSIC constexpr _Ty&& forward(remove_reference_t<_Ty>& _Arg) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 1527 :     return static_cast<_Ty&&>(_Arg);
+
+	mov	eax, DWORD PTR __Arg$[ebp]
+
+; 1528 : }
+
+	pop	ebp
+	ret	0
+??$forward@ABV?$allocator@H@std@@@std@@YAABV?$allocator@H@0@ABV10@@Z ENDP ; std::forward<std::allocator<int> const &>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z
+_TEXT	SEGMENT
+__Newsize$ = -64					; size = 4
+__Constructed_last$ = -60				; size = 4
+__Oldsize$ = -56					; size = 4
+__My_data$ = -52					; size = 4
+__Newcapacity$ = -48					; size = 4
+__Constructed_first$ = -44				; size = 4
+__Mylast$ = -40						; size = 4
+__Myfirst$ = -36					; size = 4
+__Whereoff$ = -32					; size = 4
+_this$ = -28						; size = 4
+__Al$ = -24						; size = 4
+__Newvec$ = -20						; size = 4
+__$EHRec$ = -16						; size = 16
+__Whereptr$ = 8						; size = 4
+_<_Val_0>$ = 12						; size = 4
+??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z PROC ; std::vector<int,std::allocator<int> >::_Emplace_reallocate<int>, COMDAT
+; _this$ = ecx
+
+; 806  :     _CONSTEXPR20 pointer _Emplace_reallocate(const pointer _Whereptr, _Valty&&... _Val) {
+
+	push	ebp
+	mov	ebp, esp
+	push	-1
+	push	__ehhandler$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z
+	mov	eax, DWORD PTR fs:0
+	push	eax
+	push	ecx
+	sub	esp, 48					; 00000030H
+	push	ebx
+	push	esi
+	push	edi
+	mov	eax, DWORD PTR ___security_cookie
+	xor	eax, ebp
+	push	eax
+	lea	eax, DWORD PTR __$EHRec$[ebp+4]
+	mov	DWORD PTR fs:0, eax
+	mov	DWORD PTR __$EHRec$[ebp], esp
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 807  :         // reallocate and insert by perfectly forwarding _Val at _Whereptr
+; 808  :         _Alty& _Al        = _Getal();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+	mov	DWORD PTR __Al$[ebp], eax
+
+; 809  :         auto& _My_data    = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 810  :         pointer& _Myfirst = _My_data._Myfirst;
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	DWORD PTR __Myfirst$[ebp], ecx
+
+; 811  :         pointer& _Mylast  = _My_data._Mylast;
+
+	mov	edx, DWORD PTR __My_data$[ebp]
+	add	edx, 4
+	mov	DWORD PTR __Mylast$[ebp], edx
+
+; 812  : 
+; 813  :         _STL_INTERNAL_CHECK(_Mylast == _My_data._Myend); // check that we have no unused capacity
+; 814  : 
+; 815  :         const auto _Whereoff = static_cast<size_type>(_Whereptr - _Myfirst);
+
+	mov	eax, DWORD PTR __Myfirst$[ebp]
+	mov	ecx, DWORD PTR __Whereptr$[ebp]
+	sub	ecx, DWORD PTR [eax]
+	sar	ecx, 2
+	mov	DWORD PTR __Whereoff$[ebp], ecx
+
+; 816  :         const auto _Oldsize  = static_cast<size_type>(_Mylast - _Myfirst);
+
+	mov	edx, DWORD PTR __Mylast$[ebp]
+	mov	eax, DWORD PTR __Myfirst$[ebp]
+	mov	ecx, DWORD PTR [edx]
+	sub	ecx, DWORD PTR [eax]
+	sar	ecx, 2
+	mov	DWORD PTR __Oldsize$[ebp], ecx
+
+; 817  : 
+; 818  :         if (_Oldsize == max_size()) {
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ; std::vector<int,std::allocator<int> >::max_size
+	cmp	DWORD PTR __Oldsize$[ebp], eax
+	jne	SHORT $LN2@Emplace_re
+
+; 819  :             _Xlength();
+
+	call	?_Xlength@?$vector@HV?$allocator@H@std@@@std@@CAXXZ ; std::vector<int,std::allocator<int> >::_Xlength
+	npad	1
+$LN2@Emplace_re:
+
+; 820  :         }
+; 821  : 
+; 822  :         const size_type _Newsize = _Oldsize + 1;
+
+	mov	edx, DWORD PTR __Oldsize$[ebp]
+	add	edx, 1
+	mov	DWORD PTR __Newsize$[ebp], edx
+
+; 823  :         size_type _Newcapacity   = _Calculate_growth(_Newsize);
+
+	mov	eax, DWORD PTR __Newsize$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Calculate_growth@?$vector@HV?$allocator@H@std@@@std@@ABEII@Z ; std::vector<int,std::allocator<int> >::_Calculate_growth
+	mov	DWORD PTR __Newcapacity$[ebp], eax
+
+; 824  : 
+; 825  :         const pointer _Newvec           = _STD _Allocate_at_least_helper(_Al, _Newcapacity);
+
+	lea	ecx, DWORD PTR __Newcapacity$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	call	??$_Allocate_at_least_helper@V?$allocator@H@std@@@std@@YAPAHAAV?$allocator@H@0@AAI@Z ; std::_Allocate_at_least_helper<std::allocator<int> >
+	add	esp, 8
+	mov	DWORD PTR __Newvec$[ebp], eax
+
+; 826  :         const pointer _Constructed_last = _Newvec + _Whereoff + 1;
+
+	mov	eax, DWORD PTR __Whereoff$[ebp]
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	lea	edx, DWORD PTR [ecx+eax*4+4]
+	mov	DWORD PTR __Constructed_last$[ebp], edx
+
+; 827  :         pointer _Constructed_first      = _Constructed_last;
+
+	mov	eax, DWORD PTR __Constructed_last$[ebp]
+	mov	DWORD PTR __Constructed_first$[ebp], eax
+
+; 828  : 
+; 829  :         _TRY_BEGIN
+
+	mov	DWORD PTR __$EHRec$[ebp+12], 0
+
+; 830  :         _Alty_traits::construct(_Al, _STD _Unfancy(_Newvec + _Whereoff), _STD forward<_Valty>(_Val)...);
+
+	mov	ecx, DWORD PTR _<_Val_0>$[ebp]
+	push	ecx
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	push	eax
+	mov	edx, DWORD PTR __Whereoff$[ebp]
+	mov	eax, DWORD PTR __Newvec$[ebp]
+	lea	ecx, DWORD PTR [eax+edx*4]
+	push	ecx
+	call	??$_Unfancy@H@std@@YAPAHPAH@Z		; std::_Unfancy<int>
+	add	esp, 4
+	push	eax
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	call	??$construct@HH@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAXAAV?$allocator@H@1@QAH$$QAH@Z ; std::_Default_allocator_traits<std::allocator<int> >::construct<int,int>
+	add	esp, 12					; 0000000cH
+
+; 831  :         _Constructed_first = _Newvec + _Whereoff;
+
+	mov	eax, DWORD PTR __Whereoff$[ebp]
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	lea	edx, DWORD PTR [ecx+eax*4]
+	mov	DWORD PTR __Constructed_first$[ebp], edx
+
+; 832  : 
+; 833  :         if (_Whereptr == _Mylast) { // at back, provide strong guarantee
+
+	mov	eax, DWORD PTR __Mylast$[ebp]
+	mov	ecx, DWORD PTR __Whereptr$[ebp]
+	cmp	ecx, DWORD PTR [eax]
+	jne	SHORT $LN4@Emplace_re
+
+; 834  :             if constexpr (is_nothrow_move_constructible_v<_Ty> || !is_copy_constructible_v<_Ty>) {
+; 835  :                 _STD _Uninitialized_move(_Myfirst, _Mylast, _Newvec, _Al);
+
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Newvec$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __Mylast$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	mov	eax, DWORD PTR __Myfirst$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	push	ecx
+	call	??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z ; std::_Uninitialized_move<int *,std::allocator<int> >
+	add	esp, 16					; 00000010H
+
+; 836  :             } else {
+; 837  :                 _STD _Uninitialized_copy(_Myfirst, _Mylast, _Newvec, _Al);
+; 838  :             }
+; 839  :         } else { // provide basic guarantee
+
+	jmp	SHORT $LN5@Emplace_re
+$LN4@Emplace_re:
+
+; 840  :             _STD _Uninitialized_move(_Myfirst, _Whereptr, _Newvec, _Al);
+
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Newvec$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __Whereptr$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __Myfirst$[ebp]
+	mov	eax, DWORD PTR [edx]
+	push	eax
+	call	??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z ; std::_Uninitialized_move<int *,std::allocator<int> >
+	add	esp, 16					; 00000010H
+
+; 841  :             _Constructed_first = _Newvec;
+
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	mov	DWORD PTR __Constructed_first$[ebp], ecx
+
+; 842  :             _STD _Uninitialized_move(_Whereptr, _Mylast, _Newvec + _Whereoff + 1, _Al);
+
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Whereoff$[ebp]
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	lea	edx, DWORD PTR [ecx+eax*4+4]
+	push	edx
+	mov	eax, DWORD PTR __Mylast$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	push	ecx
+	mov	edx, DWORD PTR __Whereptr$[ebp]
+	push	edx
+	call	??$_Uninitialized_move@PAHV?$allocator@H@std@@@std@@YAPAHQAH0PAHAAV?$allocator@H@0@@Z ; std::_Uninitialized_move<int *,std::allocator<int> >
+	add	esp, 16					; 00000010H
+$LN5@Emplace_re:
+	jmp	SHORT $LN7@Emplace_re
+__catch$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z$0:
+
+; 843  :         }
+; 844  :         _CATCH_ALL
+; 845  :         _STD _Destroy_range(_Constructed_first, _Constructed_last, _Al);
+
+	mov	eax, DWORD PTR __Al$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __Constructed_last$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __Constructed_first$[ebp]
+	push	edx
+	call	??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z ; std::_Destroy_range<std::allocator<int> >
+	add	esp, 12					; 0000000cH
+
+; 846  :         _Al.deallocate(_Newvec, _Newcapacity);
+
+	mov	eax, DWORD PTR __Newcapacity$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	push	ecx
+	mov	ecx, DWORD PTR __Al$[ebp]
+	call	?deallocate@?$allocator@H@std@@QAEXQAHI@Z ; std::allocator<int>::deallocate
+
+; 847  :         _RERAISE;
+
+	push	0
+	push	0
+	call	__CxxThrowException@8
+	npad	1
+
+; 848  :         _CATCH_END
+
+	mov	eax, $LN10@Emplace_re
+	ret	0
+$LN7@Emplace_re:
+	mov	DWORD PTR __$EHRec$[ebp+12], -1
+	jmp	SHORT $LN9@Emplace_re
+$LN10@Emplace_re:
+	mov	DWORD PTR __$EHRec$[ebp+12], -1
+$LN9@Emplace_re:
+
+; 849  : 
+; 850  :         _Change_array(_Newvec, _Newsize, _Newcapacity);
+
+	mov	edx, DWORD PTR __Newcapacity$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Newsize$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	push	ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Change_array@?$vector@HV?$allocator@H@std@@@std@@AAEXQAHII@Z ; std::vector<int,std::allocator<int> >::_Change_array
+
+; 851  :         return _Newvec + _Whereoff;
+
+	mov	edx, DWORD PTR __Whereoff$[ebp]
+	mov	eax, DWORD PTR __Newvec$[ebp]
+	lea	eax, DWORD PTR [eax+edx*4]
+$LN1@Emplace_re:
+
+; 852  :     }
+
+	mov	ecx, DWORD PTR __$EHRec$[ebp+4]
+	mov	DWORD PTR fs:0, ecx
+	pop	ecx
+	pop	edi
+	pop	esi
+	pop	ebx
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+	int	3
+	int	3
+	int	3
+	int	3
+	int	3
+_TEXT	ENDS
+;	COMDAT text$x
+text$x	SEGMENT
+__ehhandler$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z:
+	npad	1
+	npad	1
+	mov	edx, DWORD PTR [esp+8]
+	lea	eax, DWORD PTR [edx+12]
+	mov	ecx, DWORD PTR [edx-68]
+	xor	ecx, eax
+	call	@__security_check_cookie@4
+	mov	eax, OFFSET __ehfuncinfo$??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z
+	jmp	___CxxFrameHandler3
+text$x	ENDS
+??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z ENDP ; std::vector<int,std::allocator<int> >::_Emplace_reallocate<int>
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??$_Emplace_back_with_unused_capacity@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z
+_TEXT	SEGMENT
+__Result$ = -16						; size = 4
+__My_data$ = -12					; size = 4
+_this$ = -8						; size = 4
+__Mylast$ = -4						; size = 4
+_<_Val_0>$ = 8						; size = 4
+??$_Emplace_back_with_unused_capacity@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z PROC ; std::vector<int,std::allocator<int> >::_Emplace_back_with_unused_capacity<int>, COMDAT
+; _this$ = ecx
+
+; 783  :     _CONSTEXPR20 _Ty& _Emplace_back_with_unused_capacity(_Valty&&... _Val) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 16					; 00000010H
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 784  :         // insert by perfectly forwarding into element at end, provide strong guarantee
+; 785  :         auto& _My_data   = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 786  :         pointer& _Mylast = _My_data._Mylast;
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	add	ecx, 4
+	mov	DWORD PTR __Mylast$[ebp], ecx
+
+; 787  :         _STL_INTERNAL_CHECK(_Mylast != _My_data._Myend); // check that we have unused capacity
+; 788  :         if constexpr (conjunction_v<is_nothrow_constructible<_Ty, _Valty...>,
+; 789  :                           _Uses_default_construct<_Alloc, _Ty*, _Valty...>>) {
+; 790  :             _ASAN_VECTOR_MODIFY(1);
+; 791  :             _STD _Construct_in_place(*_Mylast, _STD forward<_Valty>(_Val)...);
+
+	mov	edx, DWORD PTR _<_Val_0>$[ebp]
+	push	edx
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	push	eax
+	mov	eax, DWORD PTR __Mylast$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	push	ecx
+	call	??$_Construct_in_place@HH@std@@YAXAAH$$QAH@Z ; std::_Construct_in_place<int,int>
+	add	esp, 8
+
+; 792  :         } else {
+; 793  :             _ASAN_VECTOR_EXTEND_GUARD(static_cast<size_type>(_Mylast - _My_data._Myfirst) + 1);
+; 794  :             _Alty_traits::construct(_Getal(), _Unfancy(_Mylast), _STD forward<_Valty>(_Val)...);
+; 795  :             _ASAN_VECTOR_RELEASE_GUARD;
+; 796  :         }
+; 797  : 
+; 798  :         _Orphan_range(_Mylast, _Mylast);
+
+	mov	edx, DWORD PTR __Mylast$[ebp]
+	mov	eax, DWORD PTR [edx]
+	push	eax
+	mov	ecx, DWORD PTR __Mylast$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Orphan_range@?$vector@HV?$allocator@H@std@@@std@@ABEXPAH0@Z ; std::vector<int,std::allocator<int> >::_Orphan_range
+
+; 799  :         _Ty& _Result = *_Mylast;
+
+	mov	eax, DWORD PTR __Mylast$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	mov	DWORD PTR __Result$[ebp], ecx
+
+; 800  :         ++_Mylast;
+
+	mov	edx, DWORD PTR __Mylast$[ebp]
+	mov	eax, DWORD PTR [edx]
+	add	eax, 4
+	mov	ecx, DWORD PTR __Mylast$[ebp]
+	mov	DWORD PTR [ecx], eax
+
+; 801  : 
+; 802  :         return _Result;
+
+	mov	eax, DWORD PTR __Result$[ebp]
+
+; 803  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??$_Emplace_back_with_unused_capacity@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z ENDP ; std::vector<int,std::allocator<int> >::_Emplace_back_with_unused_capacity<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\type_traits
+;	COMDAT ??$forward@H@std@@YA$$QAHAAH@Z
+_TEXT	SEGMENT
+__Arg$ = 8						; size = 4
+??$forward@H@std@@YA$$QAHAAH@Z PROC			; std::forward<int>, COMDAT
+
+; 1526 : _NODISCARD _MSVC_INTRINSIC constexpr _Ty&& forward(remove_reference_t<_Ty>& _Arg) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 1527 :     return static_cast<_Ty&&>(_Arg);
+
+	mov	eax, DWORD PTR __Arg$[ebp]
+
+; 1528 : }
+
+	pop	ebp
+	ret	0
+??$forward@H@std@@YA$$QAHAAH@Z ENDP			; std::forward<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\utility
+;	COMDAT ??$min@I@std@@YAABIABI0@Z
+_TEXT	SEGMENT
+$T1 = -8						; size = 4
+tv65 = -4						; size = 4
+__Left$ = 8						; size = 4
+__Right$ = 12						; size = 4
+??$min@I@std@@YAABIABI0@Z PROC				; std::min<unsigned int>, COMDAT
+
+; 99   :         noexcept(_Right < _Left)) /* strengthened */ {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 8
+
+; 100  :     // return smaller of _Left and _Right
+; 101  :     return _Right < _Left ? _Right : _Left;
+
+	mov	eax, DWORD PTR __Right$[ebp]
+	mov	ecx, DWORD PTR __Left$[ebp]
+	mov	edx, DWORD PTR [eax]
+	cmp	edx, DWORD PTR [ecx]
+	jae	SHORT $LN3@min
+	mov	eax, DWORD PTR __Right$[ebp]
+	mov	DWORD PTR tv65[ebp], eax
+	jmp	SHORT $LN4@min
+$LN3@min:
+	mov	ecx, DWORD PTR __Left$[ebp]
+	mov	DWORD PTR tv65[ebp], ecx
+$LN4@min:
+	mov	edx, DWORD PTR tv65[ebp]
+	mov	DWORD PTR $T1[ebp], edx
+	mov	eax, DWORD PTR $T1[ebp]
+
+; 102  : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??$min@I@std@@YAABIABI0@Z ENDP				; std::min<unsigned int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Deallocate@$07@std@@YAXPAXI@Z
+_TEXT	SEGMENT
+__Ptr$ = 8						; size = 4
+__Bytes$ = 12						; size = 4
+??$_Deallocate@$07@std@@YAXPAXI@Z PROC			; std::_Deallocate<8>, COMDAT
+
+; 230  : _CONSTEXPR20 void _Deallocate(void* _Ptr, size_t _Bytes) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 231  :     // deallocate storage allocated by _Allocate
+; 232  : #if _HAS_CXX20 // TRANSITION, GH-1532
+; 233  :     if (_STD is_constant_evaluated()) {
+; 234  :         ::operator delete(_Ptr);
+; 235  :         return;
+; 236  :     }
+; 237  : #endif // _HAS_CXX20
+; 238  : 
+; 239  : #ifdef __cpp_aligned_new
+; 240  :     if constexpr (_Align > __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
+; 241  :         size_t _Passed_align = _Align;
+; 242  : #if defined(_M_IX86) || defined(_M_X64)
+; 243  :         if (_Bytes >= _Big_allocation_threshold) {
+; 244  :             // boost the alignment of big allocations to help autovectorization
+; 245  :             _Passed_align = (_STD max)(_Align, _Big_allocation_alignment);
+; 246  :         }
+; 247  : #endif // defined(_M_IX86) || defined(_M_X64)
+; 248  :         ::operator delete(_Ptr, _Bytes, align_val_t{_Passed_align});
+; 249  :     } else
+; 250  : #endif // defined(__cpp_aligned_new)
+; 251  :     {
+; 252  : #if defined(_M_IX86) || defined(_M_X64)
+; 253  :         if (_Bytes >= _Big_allocation_threshold) {
+
+	cmp	DWORD PTR __Bytes$[ebp], 4096		; 00001000H
+	jb	SHORT $LN2@Deallocate
+
+; 254  :             // boost the alignment of big allocations to help autovectorization
+; 255  :             _Adjust_manually_vector_aligned(_Ptr, _Bytes);
+
+	lea	eax, DWORD PTR __Bytes$[ebp]
+	push	eax
+	lea	ecx, DWORD PTR __Ptr$[ebp]
+	push	ecx
+	call	?_Adjust_manually_vector_aligned@std@@YAXAAPAXAAI@Z ; std::_Adjust_manually_vector_aligned
+	add	esp, 8
+$LN2@Deallocate:
+
+; 256  :         }
+; 257  : #endif // defined(_M_IX86) || defined(_M_X64)
+; 258  :         ::operator delete(_Ptr, _Bytes);
+
+	mov	edx, DWORD PTR __Bytes$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Ptr$[ebp]
+	push	eax
+	call	??3@YAXPAXI@Z				; operator delete
+	add	esp, 8
+
+; 259  :     }
+; 260  : }
+
+	pop	ebp
+	ret	0
+??$_Deallocate@$07@std@@YAXPAXI@Z ENDP			; std::_Deallocate<8>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z
+_TEXT	SEGMENT
+__First$ = 8						; size = 4
+__Last$ = 12						; size = 4
+__Al$ = 16						; size = 4
+??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z PROC ; std::_Destroy_range<std::allocator<int> >, COMDAT
+
+; 1062 : _CONSTEXPR20 void _Destroy_range(_Alloc_ptr_t<_Alloc> _First, const _Alloc_ptr_t<_Alloc> _Last, _Alloc& _Al) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 1063 :     // note that this is an optimization for debug mode codegen; in release mode the BE removes all of this
+; 1064 :     using _Ty = typename _Alloc::value_type;
+; 1065 :     if constexpr (!conjunction_v<is_trivially_destructible<_Ty>, _Uses_default_destroy<_Alloc, _Ty*>>) {
+; 1066 :         for (; _First != _Last; ++_First) {
+; 1067 :             allocator_traits<_Alloc>::destroy(_Al, _STD _Unfancy(_First));
+; 1068 :         }
+; 1069 :     }
+; 1070 : }
+
+	pop	ebp
+	ret	0
+??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z ENDP ; std::_Destroy_range<std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??$_Construct_n@$$V@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z
+_TEXT	SEGMENT
+__Al$ = -24						; size = 4
+__Alproxy$ = -20					; size = 4
+__Guard$1 = -16						; size = 4
+__My_data$ = -12					; size = 4
+_this$ = -8						; size = 4
+__Proxy$ = -1						; size = 1
+__Count$ = 8						; size = 4
+??$_Construct_n@$$V@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z PROC ; std::vector<int,std::allocator<int> >::_Construct_n<>, COMDAT
+; _this$ = ecx
+
+; 2059 :     _CONSTEXPR20 void _Construct_n(_CRT_GUARDOVERFLOW const size_type _Count, _Valty&&... _Val) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 24					; 00000018H
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 2060 :         // Dispatches between the three sized constructions.
+; 2061 :         // 1-arg -> value-construction, e.g. vector(5)
+; 2062 :         // 2-arg -> fill, e.g. vector(5, "meow")
+; 2063 :         // 3-arg -> sized range construction, e.g. vector{"Hello", "Fluffy", "World"}
+; 2064 :         auto& _Al       = _Getal();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+	mov	DWORD PTR __Al$[ebp], eax
+
+; 2065 :         auto&& _Alproxy = _GET_PROXY_ALLOCATOR(_Alty, _Al);
+
+	mov	DWORD PTR __Alproxy$[ebp], OFFSET ?_Fake_alloc@std@@3U_Fake_allocator@1@B
+
+; 2066 :         auto& _My_data  = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 2067 :         _Container_proxy_ptr<_Alty> _Proxy(_Alproxy, _My_data);
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	push	ecx
+	mov	edx, DWORD PTR __Alproxy$[ebp]
+	push	edx
+	lea	ecx, DWORD PTR __Proxy$[ebp]
+	call	??0_Fake_proxy_ptr_impl@std@@QAE@ABU_Fake_allocator@1@ABU_Container_base0@1@@Z ; std::_Fake_proxy_ptr_impl::_Fake_proxy_ptr_impl
+	npad	1
+
+; 2068 :         if (_Count != 0) {
+
+	cmp	DWORD PTR __Count$[ebp], 0
+	je	SHORT $LN2@Construct_
+
+; 2069 :             _Buy_nonzero(_Count);
+
+	mov	eax, DWORD PTR __Count$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Buy_nonzero@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ; std::vector<int,std::allocator<int> >::_Buy_nonzero
+
+; 2070 :             _Tidy_guard<vector> _Guard{this};
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __Guard$1[ebp], ecx
+
+; 2071 :             if constexpr (sizeof...(_Val) == 0) {
+; 2072 :                 _My_data._Mylast = _STD _Uninitialized_value_construct_n(_My_data._Myfirst, _Count, _Al);
+
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Count$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	call	??$_Uninitialized_value_construct_n@V?$allocator@H@std@@@std@@YAPAHPAHIAAV?$allocator@H@0@@Z ; std::_Uninitialized_value_construct_n<std::allocator<int> >
+	add	esp, 12					; 0000000cH
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	DWORD PTR [ecx+4], eax
+
+; 2073 :             } else if constexpr (sizeof...(_Val) == 1) {
+; 2074 :                 _STL_INTERNAL_STATIC_ASSERT(is_same_v<_Valty..., const _Ty&>);
+; 2075 :                 _My_data._Mylast = _STD _Uninitialized_fill_n(_My_data._Myfirst, _Count, _Val..., _Al);
+; 2076 :             } else if constexpr (sizeof...(_Val) == 2) {
+; 2077 :                 _My_data._Mylast = _STD _Uninitialized_copy(_STD forward<_Valty>(_Val)..., _My_data._Myfirst, _Al);
+; 2078 :             } else {
+; 2079 :                 _STL_INTERNAL_STATIC_ASSERT(false); // unexpected number of arguments
+; 2080 :             }
+; 2081 :             _ASAN_VECTOR_CREATE;
+; 2082 :             _Guard._Target = nullptr;
+
+	mov	DWORD PTR __Guard$1[ebp], 0
+
+; 2083 :         }
+
+	lea	ecx, DWORD PTR __Guard$1[ebp]
+	call	??1?$_Tidy_guard@V?$vector@HV?$allocator@H@std@@@std@@@std@@QAE@XZ ; std::_Tidy_guard<std::vector<int,std::allocator<int> > >::~_Tidy_guard<std::vector<int,std::allocator<int> > >
+	npad	1
+$LN2@Construct_:
+
+; 2084 : 
+; 2085 :         _Proxy._Release();
+
+	lea	ecx, DWORD PTR __Proxy$[ebp]
+	call	?_Release@_Fake_proxy_ptr_impl@std@@QAEXXZ ; std::_Fake_proxy_ptr_impl::_Release
+	npad	1
+
+; 2086 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??$_Construct_n@$$V@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ENDP ; std::vector<int,std::allocator<int> >::_Construct_n<>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??$?0ABV?$allocator@H@std@@$$V@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAE@U_One_then_variadic_args_t@1@ABV?$allocator@H@1@@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___formal$ = 8						; size = 1
+__Val1$ = 12						; size = 4
+??$?0ABV?$allocator@H@std@@$$V@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAE@U_One_then_variadic_args_t@1@ABV?$allocator@H@1@@Z PROC ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1><std::allocator<int> const &>, COMDAT
+; _this$ = ecx
+
+; 1500 :         : _Ty1(_STD forward<_Other1>(_Val1)), _Myval2(_STD forward<_Other2>(_Val2)...) {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR __Val1$[ebp]
+	push	eax
+	call	??$forward@ABV?$allocator@H@std@@@std@@YAABV?$allocator@H@0@ABV10@@Z ; std::forward<std::allocator<int> const &>
+	add	esp, 4
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??0?$_Vector_val@U?$_Simple_types@H@std@@@std@@QAE@XZ ; std::_Vector_val<std::_Simple_types<int> >::_Vector_val<std::_Simple_types<int> >
+	npad	1
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+??$?0ABV?$allocator@H@std@@$$V@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAE@U_One_then_variadic_args_t@1@ABV?$allocator@H@1@@Z ENDP ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1><std::allocator<int> const &>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??$_Emplace_one_at_back@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z
+_TEXT	SEGMENT
+__Mylast$ = -12						; size = 4
+__My_data$ = -8						; size = 4
+_this$ = -4						; size = 4
+_<_Val_0>$ = 8						; size = 4
+??$_Emplace_one_at_back@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z PROC ; std::vector<int,std::allocator<int> >::_Emplace_one_at_back<int>, COMDAT
+; _this$ = ecx
+
+; 770  :     _CONSTEXPR20 _Ty& _Emplace_one_at_back(_Valty&&... _Val) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 12					; 0000000cH
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 771  :         // insert by perfectly forwarding into element at end, provide strong guarantee
+; 772  :         auto& _My_data   = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 773  :         pointer& _Mylast = _My_data._Mylast;
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	add	ecx, 4
+	mov	DWORD PTR __Mylast$[ebp], ecx
+
+; 774  : 
+; 775  :         if (_Mylast != _My_data._Myend) {
+
+	mov	edx, DWORD PTR __Mylast$[ebp]
+	mov	eax, DWORD PTR __My_data$[ebp]
+	mov	ecx, DWORD PTR [edx]
+	cmp	ecx, DWORD PTR [eax+8]
+	je	SHORT $LN2@Emplace_on
+
+; 776  :             return _Emplace_back_with_unused_capacity(_STD forward<_Valty>(_Val)...);
+
+	mov	edx, DWORD PTR _<_Val_0>$[ebp]
+	push	edx
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??$_Emplace_back_with_unused_capacity@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z ; std::vector<int,std::allocator<int> >::_Emplace_back_with_unused_capacity<int>
+	jmp	SHORT $LN1@Emplace_on
+$LN2@Emplace_on:
+
+; 777  :         }
+; 778  : 
+; 779  :         return *_Emplace_reallocate(_Mylast, _STD forward<_Valty>(_Val)...);
+
+	mov	eax, DWORD PTR _<_Val_0>$[ebp]
+	push	eax
+	call	??$forward@H@std@@YA$$QAHAAH@Z		; std::forward<int>
+	add	esp, 4
+	push	eax
+	mov	ecx, DWORD PTR __Mylast$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??$_Emplace_reallocate@H@?$vector@HV?$allocator@H@std@@@std@@AAEPAHQAH$$QAH@Z ; std::vector<int,std::allocator<int> >::_Emplace_reallocate<int>
+$LN1@Emplace_on:
+
+; 780  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??$_Emplace_one_at_back@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z ENDP ; std::vector<int,std::allocator<int> >::_Emplace_one_at_back<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\type_traits
+;	COMDAT ??$move@AAH@std@@YA$$QAHAAH@Z
+_TEXT	SEGMENT
+__Arg$ = 8						; size = 4
+??$move@AAH@std@@YA$$QAHAAH@Z PROC			; std::move<int &>, COMDAT
+
+; 1537 : _NODISCARD _MSVC_INTRINSIC constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 1538 :     return static_cast<remove_reference_t<_Ty>&&>(_Arg);
+
+	mov	eax, DWORD PTR __Arg$[ebp]
+
+; 1539 : }
+
+	pop	ebp
+	ret	0
+??$move@AAH@std@@YA$$QAHAAH@Z ENDP			; std::move<int &>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File D:\repo\HelloWorld-using-CommonLibSSE-NG\dev\assembly.cpp
+_TEXT	SEGMENT
+_main	PROC
+
+; 23   : {
+
+	push	ebp
+	mov	ebp, esp
+
+; 24   :     stackAllocationExample();
+
+	call	?stackAllocationExample@@YAXXZ		; stackAllocationExample
+
+; 25   :     heapAllocationExample();
+
+	call	?heapAllocationExample@@YAXXZ		; heapAllocationExample
+
+; 26   :     return 0;
+
+	xor	eax, eax
+
+; 27   : }
+
 	pop	ebp
 	ret	0
 _main	ENDP
@@ -263,85 +2353,1735 @@ _TEXT	ENDS
 ; Function compile flags: /Odtp
 ; File D:\repo\HelloWorld-using-CommonLibSSE-NG\dev\assembly.cpp
 _TEXT	SEGMENT
-_b$ = -8						; size = 4
-_a$ = -4						; size = 4
-?foo@@YIHHH@Z PROC					; foo
-; _a$ = ecx
-; _b$ = edx
+tv85 = -32						; size = 4
+$T1 = -28						; size = 4
+$T2 = -24						; size = 4
+$T3 = -20						; size = 4
+tv76 = -16						; size = 4
+$T4 = -12						; size = 4
+_vec$ = -8						; size = 4
+$T5 = -1						; size = 1
+?heapAllocationExample@@YAXXZ PROC			; heapAllocationExample
 
-; 29   : int __fastcall foo(int a, int b) { return a + b; }
+; 14   : {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 32					; 00000020H
+
+; 15   :     std::vector<int>* vec = new std::vector<int>(5); // vec 对象本身在堆上
+
+	push	12					; 0000000cH
+	call	??2@YAPAXI@Z				; operator new
+	add	esp, 4
+	mov	DWORD PTR $T4[ebp], eax
+	cmp	DWORD PTR $T4[ebp], 0
+	je	SHORT $LN3@heapAlloca
+	lea	ecx, DWORD PTR $T5[ebp]
+	call	??0?$allocator@H@std@@QAE@XZ		; std::allocator<int>::allocator<int>
+	push	eax
+	push	5
+	mov	ecx, DWORD PTR $T4[ebp]
+	call	??0?$vector@HV?$allocator@H@std@@@std@@QAE@IABV?$allocator@H@1@@Z ; std::vector<int,std::allocator<int> >::vector<int,std::allocator<int> >
+	mov	DWORD PTR tv76[ebp], eax
+	jmp	SHORT $LN4@heapAlloca
+$LN3@heapAlloca:
+	mov	DWORD PTR tv76[ebp], 0
+$LN4@heapAlloca:
+	mov	eax, DWORD PTR tv76[ebp]
+	mov	DWORD PTR _vec$[ebp], eax
+
+; 16   :     vec->push_back(1);                            // 元素 1 被分配到堆上
+
+	mov	DWORD PTR $T2[ebp], 1
+	lea	ecx, DWORD PTR $T2[ebp]
+	push	ecx
+	mov	ecx, DWORD PTR _vec$[ebp]
+	call	?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::vector<int,std::allocator<int> >::push_back
+	npad	1
+
+; 17   :     vec->push_back(2);                            // 元素 2 被分配到堆上
+
+	mov	DWORD PTR $T1[ebp], 2
+	lea	edx, DWORD PTR $T1[ebp]
+	push	edx
+	mov	ecx, DWORD PTR _vec$[ebp]
+	call	?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::vector<int,std::allocator<int> >::push_back
+	npad	1
+
+; 18   :     delete vec;                                   // 释放 vec 对象本身和其元素的内存
+
+	mov	eax, DWORD PTR _vec$[ebp]
+	mov	DWORD PTR $T3[ebp], eax
+	cmp	DWORD PTR $T3[ebp], 0
+	je	SHORT $LN5@heapAlloca
+	push	1
+	mov	ecx, DWORD PTR $T3[ebp]
+	call	??_G?$vector@HV?$allocator@H@std@@@std@@QAEPAXI@Z
+	mov	DWORD PTR tv85[ebp], eax
+	jmp	SHORT $LN6@heapAlloca
+$LN5@heapAlloca:
+	mov	DWORD PTR tv85[ebp], 0
+$LN6@heapAlloca:
+
+; 19   : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?heapAllocationExample@@YAXXZ ENDP			; heapAllocationExample
+_TEXT	ENDS
+; Function compile flags: /Odtp
+;	COMDAT ??_G?$vector@HV?$allocator@H@std@@@std@@QAEPAXI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___flags$ = 8						; size = 4
+??_G?$vector@HV?$allocator@H@std@@@std@@QAEPAXI@Z PROC	; std::vector<int,std::allocator<int> >::`scalar deleting destructor', COMDAT
+; _this$ = ecx
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ ; std::vector<int,std::allocator<int> >::~vector<int,std::allocator<int> >
+	mov	eax, DWORD PTR ___flags$[ebp]
+	and	eax, 1
+	je	SHORT $LN2@scalar
+	push	12					; 0000000cH
+	mov	ecx, DWORD PTR _this$[ebp]
+	push	ecx
+	call	??3@YAXPAXI@Z				; operator delete
+	add	esp, 8
+$LN2@scalar:
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??_G?$vector@HV?$allocator@H@std@@@std@@QAEPAXI@Z ENDP	; std::vector<int,std::allocator<int> >::`scalar deleting destructor'
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QBEABV?$allocator@H@2@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QBEABV?$allocator@H@2@XZ PROC ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first, COMDAT
+; _this$ = ecx
+
+; 1506 :     constexpr const _Ty1& _Get_first() const noexcept {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1507 :         return *this;
+
+	mov	eax, DWORD PTR _this$[ebp]
+
+; 1508 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QBEABV?$allocator@H@2@XZ ENDP ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAEAAV?$allocator@H@2@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAEAAV?$allocator@H@2@XZ PROC ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first, COMDAT
+; _this$ = ecx
+
+; 1502 :     constexpr _Ty1& _Get_first() noexcept {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1503 :         return *this;
+
+	mov	eax, DWORD PTR _this$[ebp]
+
+; 1504 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAEAAV?$allocator@H@2@XZ ENDP ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??0?$_Vector_val@U?$_Simple_types@H@std@@@std@@QAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??0?$_Vector_val@U?$_Simple_types@H@std@@@std@@QAE@XZ PROC ; std::_Vector_val<std::_Simple_types<int> >::_Vector_val<std::_Simple_types<int> >, COMDAT
+; _this$ = ecx
+
+; 400  :     _CONSTEXPR20 _Vector_val() noexcept : _Myfirst(), _Mylast(), _Myend() {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [eax], 0
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [ecx+4], 0
+	mov	edx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [edx+8], 0
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??0?$_Vector_val@U?$_Simple_types@H@std@@@std@@QAE@XZ ENDP ; std::_Vector_val<std::_Simple_types<int> >::_Vector_val<std::_Simple_types<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Getal@?$vector@HV?$allocator@H@std@@@std@@ABEABV?$allocator@H@2@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Getal@?$vector@HV?$allocator@H@std@@@std@@ABEABV?$allocator@H@2@XZ PROC ; std::vector<int,std::allocator<int> >::_Getal, COMDAT
+; _this$ = ecx
+
+; 2187 :     _NODISCARD _CONSTEXPR20 const _Alty& _Getal() const noexcept {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 2188 :         return _Mypair._Get_first();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QBEABV?$allocator@H@2@XZ ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first
+
+; 2189 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Getal@?$vector@HV?$allocator@H@std@@@std@@ABEABV?$allocator@H@2@XZ ENDP ; std::vector<int,std::allocator<int> >::_Getal
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ PROC ; std::vector<int,std::allocator<int> >::_Getal, COMDAT
+; _this$ = ecx
+
+; 2183 :     _NODISCARD _CONSTEXPR20 _Alty& _Getal() noexcept {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 2184 :         return _Mypair._Get_first();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Get_first@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAEAAV?$allocator@H@2@XZ ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Get_first
+
+; 2185 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ENDP ; std::vector<int,std::allocator<int> >::_Getal
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Orphan_range@?$vector@HV?$allocator@H@std@@@std@@ABEXPAH0@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___formal$ = 8						; size = 4
+___formal$ = 12						; size = 4
+?_Orphan_range@?$vector@HV?$allocator@H@std@@@std@@ABEXPAH0@Z PROC ; std::vector<int,std::allocator<int> >::_Orphan_range, COMDAT
+; _this$ = ecx
+
+; 2180 :     _CONSTEXPR20 void _Orphan_range(pointer, pointer) const {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+?_Orphan_range@?$vector@HV?$allocator@H@std@@@std@@ABEXPAH0@Z ENDP ; std::vector<int,std::allocator<int> >::_Orphan_range
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Xlength@?$vector@HV?$allocator@H@std@@@std@@CAXXZ
+_TEXT	SEGMENT
+?_Xlength@?$vector@HV?$allocator@H@std@@@std@@CAXXZ PROC ; std::vector<int,std::allocator<int> >::_Xlength, COMDAT
+
+; 2140 :     [[noreturn]] static void _Xlength() {
+
+	push	ebp
+	mov	ebp, esp
+
+; 2141 :         _Xlength_error("vector too long");
+
+	push	OFFSET ??_C@_0BA@FOIKENOD@vector?5too?5long@
+	call	?_Xlength_error@std@@YAXPBD@Z		; std::_Xlength_error
+	npad	1
+$LN1@Xlength:
+
+; 2142 :     }
+
+	pop	ebp
+	ret	0
+?_Xlength@?$vector@HV?$allocator@H@std@@@std@@CAXXZ ENDP ; std::vector<int,std::allocator<int> >::_Xlength
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Tidy@?$vector@HV?$allocator@H@std@@@std@@AAEXXZ
+_TEXT	SEGMENT
+__Myend$ = -24						; size = 4
+__Mylast$ = -20						; size = 4
+__Al$ = -16						; size = 4
+_this$ = -12						; size = 4
+__My_data$ = -8						; size = 4
+__Myfirst$ = -4						; size = 4
+?_Tidy@?$vector@HV?$allocator@H@std@@@std@@AAEXXZ PROC	; std::vector<int,std::allocator<int> >::_Tidy, COMDAT
+; _this$ = ecx
+
+; 2038 :     _CONSTEXPR20 void _Tidy() noexcept { // free all storage
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 24					; 00000018H
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 2039 :         auto& _Al         = _Getal();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+	mov	DWORD PTR __Al$[ebp], eax
+
+; 2040 :         auto& _My_data    = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 2041 :         pointer& _Myfirst = _My_data._Myfirst;
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	DWORD PTR __Myfirst$[ebp], ecx
+
+; 2042 :         pointer& _Mylast  = _My_data._Mylast;
+
+	mov	edx, DWORD PTR __My_data$[ebp]
+	add	edx, 4
+	mov	DWORD PTR __Mylast$[ebp], edx
+
+; 2043 :         pointer& _Myend   = _My_data._Myend;
+
+	mov	eax, DWORD PTR __My_data$[ebp]
+	add	eax, 8
+	mov	DWORD PTR __Myend$[ebp], eax
+
+; 2044 : 
+; 2045 :         _My_data._Orphan_all();
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	call	?_Orphan_all@_Container_base0@std@@QAEXXZ ; std::_Container_base0::_Orphan_all
+	npad	1
+
+; 2046 : 
+; 2047 :         if (_Myfirst) { // destroy and deallocate old array
+
+	mov	ecx, DWORD PTR __Myfirst$[ebp]
+	cmp	DWORD PTR [ecx], 0
+	je	SHORT $LN2@Tidy
+
+; 2048 :             _STD _Destroy_range(_Myfirst, _Mylast, _Al);
+
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Mylast$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	push	ecx
+	mov	edx, DWORD PTR __Myfirst$[ebp]
+	mov	eax, DWORD PTR [edx]
+	push	eax
+	call	??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z ; std::_Destroy_range<std::allocator<int> >
+	add	esp, 12					; 0000000cH
+
+; 2049 :             _ASAN_VECTOR_REMOVE;
+; 2050 :             _Al.deallocate(_Myfirst, static_cast<size_type>(_Myend - _Myfirst));
+
+	mov	ecx, DWORD PTR __Myend$[ebp]
+	mov	edx, DWORD PTR __Myfirst$[ebp]
+	mov	eax, DWORD PTR [ecx]
+	sub	eax, DWORD PTR [edx]
+	sar	eax, 2
+	push	eax
+	mov	ecx, DWORD PTR __Myfirst$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	mov	ecx, DWORD PTR __Al$[ebp]
+	call	?deallocate@?$allocator@H@std@@QAEXQAHI@Z ; std::allocator<int>::deallocate
+
+; 2051 : 
+; 2052 :             _Myfirst = nullptr;
+
+	mov	eax, DWORD PTR __Myfirst$[ebp]
+	mov	DWORD PTR [eax], 0
+
+; 2053 :             _Mylast  = nullptr;
+
+	mov	ecx, DWORD PTR __Mylast$[ebp]
+	mov	DWORD PTR [ecx], 0
+
+; 2054 :             _Myend   = nullptr;
+
+	mov	edx, DWORD PTR __Myend$[ebp]
+	mov	DWORD PTR [edx], 0
+$LN2@Tidy:
+
+; 2055 :         }
+; 2056 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Tidy@?$vector@HV?$allocator@H@std@@@std@@AAEXXZ ENDP	; std::vector<int,std::allocator<int> >::_Tidy
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Change_array@?$vector@HV?$allocator@H@std@@@std@@AAEXQAHII@Z
+_TEXT	SEGMENT
+__Myend$ = -24						; size = 4
+__Mylast$ = -20						; size = 4
+__Al$ = -16						; size = 4
+_this$ = -12						; size = 4
+__My_data$ = -8						; size = 4
+__Myfirst$ = -4						; size = 4
+__Newvec$ = 8						; size = 4
+__Newsize$ = 12						; size = 4
+__Newcapacity$ = 16					; size = 4
+?_Change_array@?$vector@HV?$allocator@H@std@@@std@@AAEXQAHII@Z PROC ; std::vector<int,std::allocator<int> >::_Change_array, COMDAT
+; _this$ = ecx
+
+; 2016 :     _CONSTEXPR20 void _Change_array(const pointer _Newvec, const size_type _Newsize, const size_type _Newcapacity) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 24					; 00000018H
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 2017 :         // orphan all iterators, discard old array, acquire new array
+; 2018 :         auto& _Al         = _Getal();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+	mov	DWORD PTR __Al$[ebp], eax
+
+; 2019 :         auto& _My_data    = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 2020 :         pointer& _Myfirst = _My_data._Myfirst;
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	DWORD PTR __Myfirst$[ebp], ecx
+
+; 2021 :         pointer& _Mylast  = _My_data._Mylast;
+
+	mov	edx, DWORD PTR __My_data$[ebp]
+	add	edx, 4
+	mov	DWORD PTR __Mylast$[ebp], edx
+
+; 2022 :         pointer& _Myend   = _My_data._Myend;
+
+	mov	eax, DWORD PTR __My_data$[ebp]
+	add	eax, 8
+	mov	DWORD PTR __Myend$[ebp], eax
+
+; 2023 : 
+; 2024 :         _My_data._Orphan_all();
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	call	?_Orphan_all@_Container_base0@std@@QAEXXZ ; std::_Container_base0::_Orphan_all
+	npad	1
+
+; 2025 : 
+; 2026 :         if (_Myfirst) { // destroy and deallocate old array
+
+	mov	ecx, DWORD PTR __Myfirst$[ebp]
+	cmp	DWORD PTR [ecx], 0
+	je	SHORT $LN2@Change_arr
+
+; 2027 :             _STD _Destroy_range(_Myfirst, _Mylast, _Al);
+
+	mov	edx, DWORD PTR __Al$[ebp]
+	push	edx
+	mov	eax, DWORD PTR __Mylast$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	push	ecx
+	mov	edx, DWORD PTR __Myfirst$[ebp]
+	mov	eax, DWORD PTR [edx]
+	push	eax
+	call	??$_Destroy_range@V?$allocator@H@std@@@std@@YAXPAHQAHAAV?$allocator@H@0@@Z ; std::_Destroy_range<std::allocator<int> >
+	add	esp, 12					; 0000000cH
+
+; 2028 :             _ASAN_VECTOR_REMOVE;
+; 2029 :             _Al.deallocate(_Myfirst, static_cast<size_type>(_Myend - _Myfirst));
+
+	mov	ecx, DWORD PTR __Myend$[ebp]
+	mov	edx, DWORD PTR __Myfirst$[ebp]
+	mov	eax, DWORD PTR [ecx]
+	sub	eax, DWORD PTR [edx]
+	sar	eax, 2
+	push	eax
+	mov	ecx, DWORD PTR __Myfirst$[ebp]
+	mov	edx, DWORD PTR [ecx]
+	push	edx
+	mov	ecx, DWORD PTR __Al$[ebp]
+	call	?deallocate@?$allocator@H@std@@QAEXQAHI@Z ; std::allocator<int>::deallocate
+	npad	1
+$LN2@Change_arr:
+
+; 2030 :         }
+; 2031 : 
+; 2032 :         _Myfirst = _Newvec;
+
+	mov	eax, DWORD PTR __Myfirst$[ebp]
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	mov	DWORD PTR [eax], ecx
+
+; 2033 :         _Mylast  = _Newvec + _Newsize;
+
+	mov	edx, DWORD PTR __Newsize$[ebp]
+	mov	eax, DWORD PTR __Newvec$[ebp]
+	lea	ecx, DWORD PTR [eax+edx*4]
+	mov	edx, DWORD PTR __Mylast$[ebp]
+	mov	DWORD PTR [edx], ecx
+
+; 2034 :         _Myend   = _Newvec + _Newcapacity;
+
+	mov	eax, DWORD PTR __Newcapacity$[ebp]
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	lea	edx, DWORD PTR [ecx+eax*4]
+	mov	eax, DWORD PTR __Myend$[ebp]
+	mov	DWORD PTR [eax], edx
+
+; 2035 :         _ASAN_VECTOR_CREATE;
+; 2036 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	12					; 0000000cH
+?_Change_array@?$vector@HV?$allocator@H@std@@@std@@AAEXQAHII@Z ENDP ; std::vector<int,std::allocator<int> >::_Change_array
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Buy_nonzero@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Newcapacity$ = 8					; size = 4
+?_Buy_nonzero@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z PROC ; std::vector<int,std::allocator<int> >::_Buy_nonzero, COMDAT
+; _this$ = ecx
+
+; 1998 :     _CONSTEXPR20 void _Buy_nonzero(const size_type _Newcapacity) {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1999 :         // allocate array with _Newcapacity elements
+; 2000 : #ifdef _ENABLE_STL_INTERNAL_CHECK
+; 2001 :         auto& _My_data    = _Mypair._Myval2;
+; 2002 :         pointer& _Myfirst = _My_data._Myfirst;
+; 2003 :         pointer& _Mylast  = _My_data._Mylast;
+; 2004 :         pointer& _Myend   = _My_data._Myend;
+; 2005 :         _STL_INTERNAL_CHECK(!_Myfirst && !_Mylast && !_Myend); // check that *this is tidy
+; 2006 :         _STL_INTERNAL_CHECK(0 < _Newcapacity);
+; 2007 : #endif // _ENABLE_STL_INTERNAL_CHECK
+; 2008 : 
+; 2009 :         if (_Newcapacity > max_size()) {
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ; std::vector<int,std::allocator<int> >::max_size
+	cmp	DWORD PTR __Newcapacity$[ebp], eax
+	jbe	SHORT $LN2@Buy_nonzer
+
+; 2010 :             _Xlength();
+
+	call	?_Xlength@?$vector@HV?$allocator@H@std@@@std@@CAXXZ ; std::vector<int,std::allocator<int> >::_Xlength
+	npad	1
+$LN2@Buy_nonzer:
+
+; 2011 :         }
+; 2012 : 
+; 2013 :         _Buy_raw(_Newcapacity);
+
+	mov	eax, DWORD PTR __Newcapacity$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Buy_raw@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ; std::vector<int,std::allocator<int> >::_Buy_raw
+	npad	1
+$LN1@Buy_nonzer:
+
+; 2014 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+?_Buy_nonzero@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ENDP ; std::vector<int,std::allocator<int> >::_Buy_nonzero
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Buy_raw@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z
+_TEXT	SEGMENT
+__Myend$ = -24						; size = 4
+__Mylast$ = -20						; size = 4
+__Myfirst$ = -16					; size = 4
+_this$ = -12						; size = 4
+__Newvec$ = -8						; size = 4
+__My_data$ = -4						; size = 4
+__Newcapacity$ = 8					; size = 4
+?_Buy_raw@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z PROC ; std::vector<int,std::allocator<int> >::_Buy_raw, COMDAT
+; _this$ = ecx
+
+; 1982 :     _CONSTEXPR20 void _Buy_raw(size_type _Newcapacity) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 24					; 00000018H
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1983 :         // allocate array with _Newcapacity elements
+; 1984 :         auto& _My_data    = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 1985 :         pointer& _Myfirst = _My_data._Myfirst;
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	DWORD PTR __Myfirst$[ebp], ecx
+
+; 1986 :         pointer& _Mylast  = _My_data._Mylast;
+
+	mov	edx, DWORD PTR __My_data$[ebp]
+	add	edx, 4
+	mov	DWORD PTR __Mylast$[ebp], edx
+
+; 1987 :         pointer& _Myend   = _My_data._Myend;
+
+	mov	eax, DWORD PTR __My_data$[ebp]
+	add	eax, 8
+	mov	DWORD PTR __Myend$[ebp], eax
+
+; 1988 : 
+; 1989 :         _STL_INTERNAL_CHECK(!_Myfirst && !_Mylast && !_Myend); // check that *this is tidy
+; 1990 :         _STL_INTERNAL_CHECK(0 < _Newcapacity && _Newcapacity <= max_size());
+; 1991 : 
+; 1992 :         const pointer _Newvec = _STD _Allocate_at_least_helper(_Getal(), _Newcapacity);
+
+	lea	ecx, DWORD PTR __Newcapacity$[ebp]
+	push	ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Getal@?$vector@HV?$allocator@H@std@@@std@@AAEAAV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+	push	eax
+	call	??$_Allocate_at_least_helper@V?$allocator@H@std@@@std@@YAPAHAAV?$allocator@H@0@AAI@Z ; std::_Allocate_at_least_helper<std::allocator<int> >
+	add	esp, 8
+	mov	DWORD PTR __Newvec$[ebp], eax
+
+; 1993 :         _Myfirst              = _Newvec;
+
+	mov	edx, DWORD PTR __Myfirst$[ebp]
+	mov	eax, DWORD PTR __Newvec$[ebp]
+	mov	DWORD PTR [edx], eax
+
+; 1994 :         _Mylast               = _Newvec;
+
+	mov	ecx, DWORD PTR __Mylast$[ebp]
+	mov	edx, DWORD PTR __Newvec$[ebp]
+	mov	DWORD PTR [ecx], edx
+
+; 1995 :         _Myend                = _Newvec + _Newcapacity;
+
+	mov	eax, DWORD PTR __Newcapacity$[ebp]
+	mov	ecx, DWORD PTR __Newvec$[ebp]
+	lea	edx, DWORD PTR [ecx+eax*4]
+	mov	eax, DWORD PTR __Myend$[ebp]
+	mov	DWORD PTR [eax], edx
+
+; 1996 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+?_Buy_raw@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ENDP ; std::vector<int,std::allocator<int> >::_Buy_raw
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?_Calculate_growth@?$vector@HV?$allocator@H@std@@@std@@ABEII@Z
+_TEXT	SEGMENT
+__Geometric$ = -16					; size = 4
+__Max$ = -12						; size = 4
+_this$ = -8						; size = 4
+__Oldcapacity$ = -4					; size = 4
+__Newsize$ = 8						; size = 4
+?_Calculate_growth@?$vector@HV?$allocator@H@std@@@std@@ABEII@Z PROC ; std::vector<int,std::allocator<int> >::_Calculate_growth, COMDAT
+; _this$ = ecx
+
+; 1964 :     _CONSTEXPR20 size_type _Calculate_growth(const size_type _Newsize) const {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 16					; 00000010H
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1965 :         // given _Oldcapacity and _Newsize, calculate geometric growth
+; 1966 :         const size_type _Oldcapacity = capacity();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?capacity@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ; std::vector<int,std::allocator<int> >::capacity
+	mov	DWORD PTR __Oldcapacity$[ebp], eax
+
+; 1967 :         const auto _Max              = max_size();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ; std::vector<int,std::allocator<int> >::max_size
+	mov	DWORD PTR __Max$[ebp], eax
+
+; 1968 : 
+; 1969 :         if (_Oldcapacity > _Max - _Oldcapacity / 2) {
+
+	mov	eax, DWORD PTR __Oldcapacity$[ebp]
+	shr	eax, 1
+	mov	ecx, DWORD PTR __Max$[ebp]
+	sub	ecx, eax
+	cmp	DWORD PTR __Oldcapacity$[ebp], ecx
+	jbe	SHORT $LN2@Calculate_
+
+; 1970 :             return _Max; // geometric growth would overflow
+
+	mov	eax, DWORD PTR __Max$[ebp]
+	jmp	SHORT $LN1@Calculate_
+$LN2@Calculate_:
+
+; 1971 :         }
+; 1972 : 
+; 1973 :         const size_type _Geometric = _Oldcapacity + _Oldcapacity / 2;
+
+	mov	edx, DWORD PTR __Oldcapacity$[ebp]
+	shr	edx, 1
+	add	edx, DWORD PTR __Oldcapacity$[ebp]
+	mov	DWORD PTR __Geometric$[ebp], edx
+
+; 1974 : 
+; 1975 :         if (_Geometric < _Newsize) {
+
+	mov	eax, DWORD PTR __Geometric$[ebp]
+	cmp	eax, DWORD PTR __Newsize$[ebp]
+	jae	SHORT $LN3@Calculate_
+
+; 1976 :             return _Newsize; // geometric growth would be insufficient
+
+	mov	eax, DWORD PTR __Newsize$[ebp]
+	jmp	SHORT $LN1@Calculate_
+$LN3@Calculate_:
+
+; 1977 :         }
+; 1978 : 
+; 1979 :         return _Geometric; // geometric growth is sufficient
+
+	mov	eax, DWORD PTR __Geometric$[ebp]
+$LN1@Calculate_:
+
+; 1980 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+?_Calculate_growth@?$vector@HV?$allocator@H@std@@@std@@ABEII@Z ENDP ; std::vector<int,std::allocator<int> >::_Calculate_growth
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?capacity@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ
+_TEXT	SEGMENT
+_this$ = -8						; size = 4
+__My_data$ = -4						; size = 4
+?capacity@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ PROC ; std::vector<int,std::allocator<int> >::capacity, COMDAT
+; _this$ = ecx
+
+; 1880 :     _NODISCARD _CONSTEXPR20 size_type capacity() const noexcept {
 
 	push	ebp
 	mov	ebp, esp
 	sub	esp, 8
-	mov	DWORD PTR _b$[ebp], edx
-	mov	DWORD PTR _a$[ebp], ecx
-	mov	eax, DWORD PTR _a$[ebp]
-	add	eax, DWORD PTR _b$[ebp]
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1881 :         auto& _My_data = _Mypair._Myval2;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR __My_data$[ebp], eax
+
+; 1882 :         return static_cast<size_type>(_My_data._Myend - _My_data._Myfirst);
+
+	mov	ecx, DWORD PTR __My_data$[ebp]
+	mov	edx, DWORD PTR __My_data$[ebp]
+	mov	eax, DWORD PTR [ecx+8]
+	sub	eax, DWORD PTR [edx]
+	sar	eax, 2
+
+; 1883 :     }
+
 	mov	esp, ebp
 	pop	ebp
 	ret	0
-?foo@@YIHHH@Z ENDP					; foo
+?capacity@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ENDP ; std::vector<int,std::allocator<int> >::capacity
 _TEXT	ENDS
 ; Function compile flags: /Odtp
-;	COMDAT ??0C@@QAE@XZ
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ
+_TEXT	SEGMENT
+$T1 = -12						; size = 4
+$T2 = -8						; size = 4
+_this$ = -4						; size = 4
+?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ PROC ; std::vector<int,std::allocator<int> >::max_size, COMDAT
+; _this$ = ecx
+
+; 1876 :     _NODISCARD _CONSTEXPR20 size_type max_size() const noexcept {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 12					; 0000000cH
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 1877 :         return (_STD min)(static_cast<size_type>(_STD _Max_limit<difference_type>()), _Alty_traits::max_size(_Getal()));
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Getal@?$vector@HV?$allocator@H@std@@@std@@ABEABV?$allocator@H@2@XZ ; std::vector<int,std::allocator<int> >::_Getal
+	push	eax
+	call	?max_size@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAIABV?$allocator@H@2@@Z ; std::_Default_allocator_traits<std::allocator<int> >::max_size
+	add	esp, 4
+	mov	DWORD PTR $T2[ebp], eax
+	call	??$_Max_limit@H@std@@YAHXZ		; std::_Max_limit<int>
+	mov	DWORD PTR $T1[ebp], eax
+	lea	eax, DWORD PTR $T2[ebp]
+	push	eax
+	lea	ecx, DWORD PTR $T1[ebp]
+	push	ecx
+	call	??$min@I@std@@YAABIABI0@Z		; std::min<unsigned int>
+	add	esp, 8
+	mov	eax, DWORD PTR [eax]
+
+; 1878 :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ ENDP ; std::vector<int,std::allocator<int> >::max_size
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z
 _TEXT	SEGMENT
 _this$ = -4						; size = 4
-??0C@@QAE@XZ PROC					; C::C, COMDAT
+__Val$ = 8						; size = 4
+?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z PROC ; std::vector<int,std::allocator<int> >::push_back, COMDAT
+; _this$ = ecx
+
+; 870  :     _CONSTEXPR20 void push_back(_Ty&& _Val) {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 871  :         // insert by moving into element at end, provide strong guarantee
+; 872  :         _Emplace_one_at_back(_STD move(_Val));
+
+	mov	eax, DWORD PTR __Val$[ebp]
+	push	eax
+	call	??$move@AAH@std@@YA$$QAHAAH@Z		; std::move<int &>
+	add	esp, 4
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??$_Emplace_one_at_back@H@?$vector@HV?$allocator@H@std@@@std@@AAEAAH$$QAH@Z ; std::vector<int,std::allocator<int> >::_Emplace_one_at_back<int>
+	npad	1
+
+; 873  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z ENDP ; std::vector<int,std::allocator<int> >::push_back
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ PROC	; std::vector<int,std::allocator<int> >::~vector<int,std::allocator<int> >, COMDAT
+; _this$ = ecx
+
+; 760  :     _CONSTEXPR20 ~vector() noexcept {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 761  :         _Tidy();
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	?_Tidy@?$vector@HV?$allocator@H@std@@@std@@AAEXXZ ; std::vector<int,std::allocator<int> >::_Tidy
+	npad	1
+
+; 762  : #if _ITERATOR_DEBUG_LEVEL != 0
+; 763  :         auto&& _Alproxy = _GET_PROXY_ALLOCATOR(_Alty, _Getal());
+; 764  :         _Delete_plain_internal(_Alproxy, _STD exchange(_Mypair._Myval2._Myproxy, nullptr));
+; 765  : #endif // _ITERATOR_DEBUG_LEVEL != 0
+; 766  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ ENDP	; std::vector<int,std::allocator<int> >::~vector<int,std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vector
+;	COMDAT ??0?$vector@HV?$allocator@H@std@@@std@@QAE@IABV?$allocator@H@1@@Z
+_TEXT	SEGMENT
+_this$ = -8						; size = 4
+$T1 = -1						; size = 1
+__Count$ = 8						; size = 4
+__Al$ = 12						; size = 4
+??0?$vector@HV?$allocator@H@std@@@std@@QAE@IABV?$allocator@H@1@@Z PROC ; std::vector<int,std::allocator<int> >::vector<int,std::allocator<int> >, COMDAT
+; _this$ = ecx
+
+; 610  :         : _Mypair(_One_then_variadic_args_t{}, _Al) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 8
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR __Al$[ebp]
+	push	eax
+	movzx	ecx, BYTE PTR $T1[ebp]
+	push	ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??$?0ABV?$allocator@H@std@@$$V@?$_Compressed_pair@V?$allocator@H@std@@V?$_Vector_val@U?$_Simple_types@H@std@@@2@$00@std@@QAE@U_One_then_variadic_args_t@1@ABV?$allocator@H@1@@Z ; std::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1>::_Compressed_pair<std::allocator<int>,std::_Vector_val<std::_Simple_types<int> >,1><std::allocator<int> const &>
+	npad	1
+
+; 611  :         _Construct_n(_Count);
+
+	mov	edx, DWORD PTR __Count$[ebp]
+	push	edx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??$_Construct_n@$$V@?$vector@HV?$allocator@H@std@@@std@@AAEXI@Z ; std::vector<int,std::allocator<int> >::_Construct_n<>
+	npad	1
+
+; 612  :     }
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+??0?$vector@HV?$allocator@H@std@@@std@@QAE@IABV?$allocator@H@1@@Z ENDP ; std::vector<int,std::allocator<int> >::vector<int,std::allocator<int> >
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?max_size@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAIABV?$allocator@H@2@@Z
+_TEXT	SEGMENT
+___formal$ = 8						; size = 4
+?max_size@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAIABV?$allocator@H@2@@Z PROC ; std::_Default_allocator_traits<std::allocator<int> >::max_size, COMDAT
+
+; 713  :     _NODISCARD static _CONSTEXPR20 size_type max_size(const _Alloc&) noexcept {
+
+	push	ebp
+	mov	ebp, esp
+
+; 714  :         return static_cast<size_t>(-1) / sizeof(value_type);
+
+	mov	eax, 1073741823				; 3fffffffH
+
+; 715  :     }
+
+	pop	ebp
+	ret	0
+?max_size@?$_Default_allocator_traits@V?$allocator@H@std@@@std@@SAIABV?$allocator@H@2@@Z ENDP ; std::_Default_allocator_traits<std::allocator<int> >::max_size
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?allocate@?$allocator@H@std@@QAEPAHI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Count$ = 8						; size = 4
+?allocate@?$allocator@H@std@@QAEPAHI@Z PROC		; std::allocator<int>::allocate, COMDAT
+; _this$ = ecx
+
+; 952  :     _NODISCARD_RAW_PTR_ALLOC _CONSTEXPR20 __declspec(allocator) _Ty* allocate(_CRT_GUARDOVERFLOW const size_t _Count) {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 953  :         static_assert(sizeof(value_type) > 0, "value_type must be complete before calling allocate.");
+; 954  :         return static_cast<_Ty*>(_STD _Allocate<_New_alignof<_Ty>>(_Get_size_of_n<sizeof(_Ty)>(_Count)));
+
+	mov	eax, DWORD PTR __Count$[ebp]
+	push	eax
+	call	??$_Get_size_of_n@$03@std@@YAII@Z	; std::_Get_size_of_n<4>
+	add	esp, 4
+	push	eax
+	call	??$_Allocate@$07U_Default_allocate_traits@std@@@std@@YAPAXI@Z ; std::_Allocate<8,std::_Default_allocate_traits>
+	add	esp, 4
+
+; 955  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+?allocate@?$allocator@H@std@@QAEPAHI@Z ENDP		; std::allocator<int>::allocate
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?deallocate@?$allocator@H@std@@QAEXQAHI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Ptr$ = 8						; size = 4
+__Count$ = 12						; size = 4
+?deallocate@?$allocator@H@std@@QAEXQAHI@Z PROC		; std::allocator<int>::deallocate, COMDAT
+; _this$ = ecx
+
+; 946  :     _CONSTEXPR20 void deallocate(_Ty* const _Ptr, const size_t _Count) {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 947  :         _STL_ASSERT(_Ptr != nullptr || _Count == 0, "null pointer cannot point to a block of non-zero size");
+; 948  :         // no overflow check on the following multiply; we assume _Allocate did that check
+; 949  :         _STD _Deallocate<_New_alignof<_Ty>>(_Ptr, sizeof(_Ty) * _Count);
+
+	mov	eax, DWORD PTR __Count$[ebp]
+	shl	eax, 2
+	push	eax
+	mov	ecx, DWORD PTR __Ptr$[ebp]
+	push	ecx
+	call	??$_Deallocate@$07@std@@YAXPAXI@Z	; std::_Deallocate<8>
+	add	esp, 8
+
+; 950  :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+?deallocate@?$allocator@H@std@@QAEXQAHI@Z ENDP		; std::allocator<int>::deallocate
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??0?$allocator@H@std@@QAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??0?$allocator@H@std@@QAE@XZ PROC			; std::allocator<int>::allocator<int>, COMDAT
+; _this$ = ecx
+
+; 938  :     constexpr allocator() noexcept {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??0?$allocator@H@std@@QAE@XZ ENDP			; std::allocator<int>::allocator<int>
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File D:\repo\HelloWorld-using-CommonLibSSE-NG\dev\assembly.cpp
+_TEXT	SEGMENT
+_vec$ = -24						; size = 12
+$T1 = -12						; size = 4
+$T2 = -8						; size = 4
+$T3 = -1						; size = 1
+?stackAllocationExample@@YAXXZ PROC			; stackAllocationExample
+
+; 6    : {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 24					; 00000018H
+
+; 7    :     std::vector<int> vec(6); // vec 对象本身在栈上
+
+	lea	ecx, DWORD PTR $T3[ebp]
+	call	??0?$allocator@H@std@@QAE@XZ		; std::allocator<int>::allocator<int>
+	push	eax
+	push	6
+	lea	ecx, DWORD PTR _vec$[ebp]
+	call	??0?$vector@HV?$allocator@H@std@@@std@@QAE@IABV?$allocator@H@1@@Z ; std::vector<int,std::allocator<int> >::vector<int,std::allocator<int> >
+	npad	1
+
+; 8    :     vec.push_back(1);     // 元素 1 被分配到堆上
+
+	mov	DWORD PTR $T2[ebp], 1
+	lea	eax, DWORD PTR $T2[ebp]
+	push	eax
+	lea	ecx, DWORD PTR _vec$[ebp]
+	call	?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::vector<int,std::allocator<int> >::push_back
+	npad	1
+
+; 9    :     vec.push_back(2);     // 元素 2 被分配到堆上
+
+	mov	DWORD PTR $T1[ebp], 2
+	lea	ecx, DWORD PTR $T1[ebp]
+	push	ecx
+	lea	ecx, DWORD PTR _vec$[ebp]
+	call	?push_back@?$vector@HV?$allocator@H@std@@@std@@QAEX$$QAH@Z ; std::vector<int,std::allocator<int> >::push_back
+	npad	1
+
+; 10   : }
+
+	lea	ecx, DWORD PTR _vec$[ebp]
+	call	??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ ; std::vector<int,std::allocator<int> >::~vector<int,std::allocator<int> >
+	npad	1
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?stackAllocationExample@@YAXXZ ENDP			; stackAllocationExample
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Release@_Fake_proxy_ptr_impl@std@@QAEXXZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Release@_Fake_proxy_ptr_impl@std@@QAEXXZ PROC		; std::_Fake_proxy_ptr_impl::_Release, COMDAT
+; _this$ = ecx
+
+; 1417 :     _CONSTEXPR20 void _Release() noexcept {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Release@_Fake_proxy_ptr_impl@std@@QAEXXZ ENDP		; std::_Fake_proxy_ptr_impl::_Release
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ??0_Fake_proxy_ptr_impl@std@@QAE@ABU_Fake_allocator@1@ABU_Container_base0@1@@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___formal$ = 8						; size = 4
+___formal$ = 12						; size = 4
+??0_Fake_proxy_ptr_impl@std@@QAE@ABU_Fake_allocator@1@ABU_Container_base0@1@@Z PROC ; std::_Fake_proxy_ptr_impl::_Fake_proxy_ptr_impl, COMDAT
+; _this$ = ecx
+
+; 1414 :     _CONSTEXPR20 _Fake_proxy_ptr_impl(const _Fake_allocator&, const _Container_base0&) noexcept {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+??0_Fake_proxy_ptr_impl@std@@QAE@ABU_Fake_allocator@1@ABU_Container_base0@1@@Z ENDP ; std::_Fake_proxy_ptr_impl::_Fake_proxy_ptr_impl
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Orphan_all@_Container_base0@std@@QAEXXZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+?_Orphan_all@_Container_base0@std@@QAEXXZ PROC		; std::_Container_base0::_Orphan_all, COMDAT
+; _this$ = ecx
+
+; 1148 :     _CONSTEXPR20 void _Orphan_all() noexcept {}
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Orphan_all@_Container_base0@std@@QAEXXZ ENDP		; std::_Container_base0::_Orphan_all
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Adjust_manually_vector_aligned@std@@YAXAAPAXAAI@Z
+_TEXT	SEGMENT
+__Min_back_shift$ = -16					; size = 4
+__Ptr_user$ = -12					; size = 4
+__Ptr_container$ = -8					; size = 4
+__Back_shift$ = -4					; size = 4
+__Ptr$ = 8						; size = 4
+__Bytes$ = 12						; size = 4
+?_Adjust_manually_vector_aligned@std@@YAXAAPAXAAI@Z PROC ; std::_Adjust_manually_vector_aligned, COMDAT
+
+; 169  : inline void _Adjust_manually_vector_aligned(void*& _Ptr, size_t& _Bytes) {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 16					; 00000010H
+
+; 170  :     // adjust parameters from _Allocate_manually_vector_aligned to pass to operator delete
+; 171  :     _Bytes += _Non_user_size;
+
+	mov	eax, DWORD PTR __Bytes$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	add	ecx, 35					; 00000023H
+	mov	edx, DWORD PTR __Bytes$[ebp]
+	mov	DWORD PTR [edx], ecx
+
+; 172  : 
+; 173  :     const uintptr_t* const _Ptr_user = static_cast<uintptr_t*>(_Ptr);
+
+	mov	eax, DWORD PTR __Ptr$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	mov	DWORD PTR __Ptr_user$[ebp], ecx
+
+; 174  :     const uintptr_t _Ptr_container   = _Ptr_user[-1];
+
+	mov	edx, 4
+	imul	eax, edx, -1
+	mov	ecx, DWORD PTR __Ptr_user$[ebp]
+	mov	edx, DWORD PTR [ecx+eax]
+	mov	DWORD PTR __Ptr_container$[ebp], edx
+
+; 175  : 
+; 176  :     // If the following asserts, it likely means that we are performing
+; 177  :     // an aligned delete on memory coming from an unaligned allocation.
+; 178  :     _STL_ASSERT(_Ptr_user[-2] == _Big_allocation_sentinel, "invalid argument");
+; 179  : 
+; 180  :     // Extra paranoia on aligned allocation/deallocation; ensure _Ptr_container is
+; 181  :     // in range [_Min_back_shift, _Non_user_size]
+; 182  : #ifdef _DEBUG
+; 183  :     constexpr uintptr_t _Min_back_shift = 2 * sizeof(void*);
+; 184  : #else // ^^^ defined(_DEBUG) / !defined(_DEBUG) vvv
+; 185  :     constexpr uintptr_t _Min_back_shift = sizeof(void*);
+
+	mov	DWORD PTR __Min_back_shift$[ebp], 4
+
+; 186  : #endif // ^^^ !defined(_DEBUG) ^^^
+; 187  :     const uintptr_t _Back_shift = reinterpret_cast<uintptr_t>(_Ptr) - _Ptr_container;
+
+	mov	eax, DWORD PTR __Ptr$[ebp]
+	mov	ecx, DWORD PTR [eax]
+	sub	ecx, DWORD PTR __Ptr_container$[ebp]
+	mov	DWORD PTR __Back_shift$[ebp], ecx
+$LN4@Adjust_man:
+
+; 188  :     _STL_VERIFY(_Back_shift >= _Min_back_shift && _Back_shift <= _Non_user_size, "invalid argument");
+
+	cmp	DWORD PTR __Back_shift$[ebp], 4
+	jb	SHORT $LN8@Adjust_man
+	cmp	DWORD PTR __Back_shift$[ebp], 35	; 00000023H
+	ja	SHORT $LN8@Adjust_man
+	jmp	SHORT $LN6@Adjust_man
+$LN8@Adjust_man:
+	call	__invalid_parameter_noinfo_noreturn
+	npad	1
+	xor	edx, edx
+	jne	SHORT $LN8@Adjust_man
+$LN6@Adjust_man:
+	xor	eax, eax
+	jne	SHORT $LN4@Adjust_man
+
+; 189  :     _Ptr = reinterpret_cast<void*>(_Ptr_container);
+
+	mov	ecx, DWORD PTR __Ptr$[ebp]
+	mov	edx, DWORD PTR __Ptr_container$[ebp]
+	mov	DWORD PTR [ecx], edx
+$LN1@Adjust_man:
+
+; 190  : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Adjust_manually_vector_aligned@std@@YAXAAPAXAAI@Z ENDP ; std::_Adjust_manually_vector_aligned
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Allocate@_Default_allocate_traits@std@@SAPAXI@Z
+_TEXT	SEGMENT
+__Bytes$ = 8						; size = 4
+?_Allocate@_Default_allocate_traits@std@@SAPAXI@Z PROC	; std::_Default_allocate_traits::_Allocate, COMDAT
+
+; 100  :         void* _Allocate(const size_t _Bytes) {
+
+	push	ebp
+	mov	ebp, esp
+
+; 101  :         return ::operator new(_Bytes);
+
+	mov	eax, DWORD PTR __Bytes$[ebp]
+	push	eax
+	call	??2@YAPAXI@Z				; operator new
+	add	esp, 4
+
+; 102  :     }
+
+	pop	ebp
+	ret	0
+?_Allocate@_Default_allocate_traits@std@@SAPAXI@Z ENDP	; std::_Default_allocate_traits::_Allocate
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xmemory
+;	COMDAT ?_Throw_bad_array_new_length@std@@YAXXZ
+_TEXT	SEGMENT
+$T1 = -12						; size = 12
+?_Throw_bad_array_new_length@std@@YAXXZ PROC		; std::_Throw_bad_array_new_length, COMDAT
+
+; 74   : [[noreturn]] inline void _Throw_bad_array_new_length() {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 12					; 0000000cH
+
+; 75   :     _THROW(bad_array_new_length{});
+
+	lea	ecx, DWORD PTR $T1[ebp]
+	call	??0bad_array_new_length@std@@QAE@XZ	; std::bad_array_new_length::bad_array_new_length
+	push	OFFSET __TI3?AVbad_array_new_length@std@@
+	lea	eax, DWORD PTR $T1[ebp]
+	push	eax
+	call	__CxxThrowException@8
+	npad	1
+$LN1@Throw_bad_:
+
+; 76   : }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?_Throw_bad_array_new_length@std@@YAXXZ ENDP		; std::_Throw_bad_array_new_length
+_TEXT	ENDS
+; Function compile flags: /Odtp
+;	COMDAT ??_Gbad_array_new_length@std@@UAEPAXI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___flags$ = 8						; size = 4
+??_Gbad_array_new_length@std@@UAEPAXI@Z PROC		; std::bad_array_new_length::`scalar deleting destructor', COMDAT
 ; _this$ = ecx
 	push	ebp
 	mov	ebp, esp
 	push	ecx
 	mov	DWORD PTR _this$[ebp], ecx
 	mov	ecx, DWORD PTR _this$[ebp]
-	call	??0A@@QAE@XZ
+	call	??1bad_array_new_length@std@@UAE@XZ
+	mov	eax, DWORD PTR ___flags$[ebp]
+	and	eax, 1
+	je	SHORT $LN2@scalar
+	push	12					; 0000000cH
 	mov	ecx, DWORD PTR _this$[ebp]
-	add	ecx, 8
-	call	??0B@@QAE@XZ
-	mov	eax, DWORD PTR _this$[ebp]
-	mov	DWORD PTR [eax], OFFSET ??_7C@@6BA@@@
-	mov	ecx, DWORD PTR _this$[ebp]
-	mov	DWORD PTR [ecx+8], OFFSET ??_7C@@6BB@@@
+	push	ecx
+	call	??3@YAXPAXI@Z				; operator delete
+	add	esp, 8
+$LN2@scalar:
 	mov	eax, DWORD PTR _this$[ebp]
 	mov	esp, ebp
 	pop	ebp
-	ret	0
-??0C@@QAE@XZ ENDP					; C::C
+	ret	4
+??_Gbad_array_new_length@std@@UAEPAXI@Z ENDP		; std::bad_array_new_length::`scalar deleting destructor'
 _TEXT	ENDS
 ; Function compile flags: /Odtp
-;	COMDAT ??0B@@QAE@XZ
+;	COMDAT ??0bad_array_new_length@std@@QAE@ABV01@@Z
 _TEXT	SEGMENT
 _this$ = -4						; size = 4
-??0B@@QAE@XZ PROC					; B::B, COMDAT
+___that$ = 8						; size = 4
+??0bad_array_new_length@std@@QAE@ABV01@@Z PROC		; std::bad_array_new_length::bad_array_new_length, COMDAT
 ; _this$ = ecx
 	push	ebp
 	mov	ebp, esp
 	push	ecx
 	mov	DWORD PTR _this$[ebp], ecx
-	mov	eax, DWORD PTR _this$[ebp]
-	mov	DWORD PTR [eax], OFFSET ??_7B@@6B@
+	mov	eax, DWORD PTR ___that$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??0bad_alloc@std@@QAE@ABV01@@Z
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [ecx], OFFSET ??_7bad_array_new_length@std@@6B@
 	mov	eax, DWORD PTR _this$[ebp]
 	mov	esp, ebp
 	pop	ebp
-	ret	0
-??0B@@QAE@XZ ENDP					; B::B
+	ret	4
+??0bad_array_new_length@std@@QAE@ABV01@@Z ENDP		; std::bad_array_new_length::bad_array_new_length
 _TEXT	ENDS
 ; Function compile flags: /Odtp
-;	COMDAT ??0A@@QAE@XZ
+;	COMDAT ??1bad_array_new_length@std@@UAE@XZ
 _TEXT	SEGMENT
 _this$ = -4						; size = 4
-??0A@@QAE@XZ PROC					; A::A, COMDAT
+??1bad_array_new_length@std@@UAE@XZ PROC		; std::bad_array_new_length::~bad_array_new_length, COMDAT
 ; _this$ = ecx
 	push	ebp
 	mov	ebp, esp
 	push	ecx
 	mov	DWORD PTR _this$[ebp], ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??1bad_alloc@std@@UAE@XZ
+	npad	1
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??1bad_array_new_length@std@@UAE@XZ ENDP		; std::bad_array_new_length::~bad_array_new_length
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_exception.h
+;	COMDAT ??0bad_array_new_length@std@@QAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??0bad_array_new_length@std@@QAE@XZ PROC		; std::bad_array_new_length::bad_array_new_length, COMDAT
+; _this$ = ecx
+
+; 144  :     {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 143  :         : bad_alloc("bad array new length")
+
+	push	OFFSET ??_C@_0BF@KINCDENJ@bad?5array?5new?5length@
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??0bad_alloc@std@@AAE@QBD@Z		; std::bad_alloc::bad_alloc
+
+; 144  :     {
+
 	mov	eax, DWORD PTR _this$[ebp]
-	mov	DWORD PTR [eax], OFFSET ??_7A@@6B@
+	mov	DWORD PTR [eax], OFFSET ??_7bad_array_new_length@std@@6B@
+
+; 145  :     }
+
 	mov	eax, DWORD PTR _this$[ebp]
 	mov	esp, ebp
 	pop	ebp
 	ret	0
-??0A@@QAE@XZ ENDP					; A::A
+??0bad_array_new_length@std@@QAE@XZ ENDP		; std::bad_array_new_length::bad_array_new_length
+_TEXT	ENDS
+; Function compile flags: /Odtp
+;	COMDAT ??_Gbad_alloc@std@@UAEPAXI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___flags$ = 8						; size = 4
+??_Gbad_alloc@std@@UAEPAXI@Z PROC			; std::bad_alloc::`scalar deleting destructor', COMDAT
+; _this$ = ecx
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??1bad_alloc@std@@UAE@XZ
+	mov	eax, DWORD PTR ___flags$[ebp]
+	and	eax, 1
+	je	SHORT $LN2@scalar
+	push	12					; 0000000cH
+	mov	ecx, DWORD PTR _this$[ebp]
+	push	ecx
+	call	??3@YAXPAXI@Z				; operator delete
+	add	esp, 8
+$LN2@scalar:
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??_Gbad_alloc@std@@UAEPAXI@Z ENDP			; std::bad_alloc::`scalar deleting destructor'
+_TEXT	ENDS
+; Function compile flags: /Odtp
+;	COMDAT ??0bad_alloc@std@@QAE@ABV01@@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___that$ = 8						; size = 4
+??0bad_alloc@std@@QAE@ABV01@@Z PROC			; std::bad_alloc::bad_alloc, COMDAT
+; _this$ = ecx
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR ___that$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??0exception@std@@QAE@ABV01@@Z		; std::exception::exception
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [ecx], OFFSET ??_7bad_alloc@std@@6B@
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??0bad_alloc@std@@QAE@ABV01@@Z ENDP			; std::bad_alloc::bad_alloc
+_TEXT	ENDS
+; Function compile flags: /Odtp
+;	COMDAT ??1bad_alloc@std@@UAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??1bad_alloc@std@@UAE@XZ PROC				; std::bad_alloc::~bad_alloc, COMDAT
+; _this$ = ecx
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??1exception@std@@UAE@XZ		; std::exception::~exception
+	npad	1
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??1bad_alloc@std@@UAE@XZ ENDP				; std::bad_alloc::~bad_alloc
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_exception.h
+;	COMDAT ??0bad_alloc@std@@AAE@QBD@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Message$ = 8						; size = 4
+??0bad_alloc@std@@AAE@QBD@Z PROC			; std::bad_alloc::bad_alloc, COMDAT
+; _this$ = ecx
+
+; 133  :     {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 132  :         : exception(_Message, 1)
+
+	push	1
+	mov	eax, DWORD PTR __Message$[ebp]
+	push	eax
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??0exception@std@@QAE@QBDH@Z		; std::exception::exception
+
+; 133  :     {
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [ecx], OFFSET ??_7bad_alloc@std@@6B@
+
+; 134  :     }
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??0bad_alloc@std@@AAE@QBD@Z ENDP			; std::bad_alloc::bad_alloc
+_TEXT	ENDS
+; Function compile flags: /Odtp
+;	COMDAT ??_Gexception@std@@UAEPAXI@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+___flags$ = 8						; size = 4
+??_Gexception@std@@UAEPAXI@Z PROC			; std::exception::`scalar deleting destructor', COMDAT
+; _this$ = ecx
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	ecx, DWORD PTR _this$[ebp]
+	call	??1exception@std@@UAE@XZ		; std::exception::~exception
+	mov	eax, DWORD PTR ___flags$[ebp]
+	and	eax, 1
+	je	SHORT $LN2@scalar
+	push	12					; 0000000cH
+	mov	ecx, DWORD PTR _this$[ebp]
+	push	ecx
+	call	??3@YAXPAXI@Z				; operator delete
+	add	esp, 8
+$LN2@scalar:
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??_Gexception@std@@UAEPAXI@Z ENDP			; std::exception::`scalar deleting destructor'
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_exception.h
+;	COMDAT ?what@exception@std@@UBEPBDXZ
+_TEXT	SEGMENT
+tv69 = -8						; size = 4
+_this$ = -4						; size = 4
+?what@exception@std@@UBEPBDXZ PROC			; std::exception::what, COMDAT
+; _this$ = ecx
+
+; 95   :     {
+
+	push	ebp
+	mov	ebp, esp
+	sub	esp, 8
+	mov	DWORD PTR _this$[ebp], ecx
+
+; 96   :         return _Data._What ? _Data._What : "Unknown exception";
+
+	mov	eax, DWORD PTR _this$[ebp]
+	cmp	DWORD PTR [eax+4], 0
+	je	SHORT $LN3@what
+	mov	ecx, DWORD PTR _this$[ebp]
+	mov	edx, DWORD PTR [ecx+4]
+	mov	DWORD PTR tv69[ebp], edx
+	jmp	SHORT $LN4@what
+$LN3@what:
+	mov	DWORD PTR tv69[ebp], OFFSET ??_C@_0BC@EOODALEL@Unknown?5exception@
+$LN4@what:
+	mov	eax, DWORD PTR tv69[ebp]
+
+; 97   :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+?what@exception@std@@UBEPBDXZ ENDP			; std::exception::what
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_exception.h
+;	COMDAT ??1exception@std@@UAE@XZ
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+??1exception@std@@UAE@XZ PROC				; std::exception::~exception, COMDAT
+; _this$ = ecx
+
+; 90   :     {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [eax], OFFSET ??_7exception@std@@6B@
+
+; 91   :         __std_exception_destroy(&_Data);
+
+	mov	ecx, DWORD PTR _this$[ebp]
+	add	ecx, 4
+	push	ecx
+	call	___std_exception_destroy
+	add	esp, 4
+
+; 92   :     }
+
+	mov	esp, ebp
+	pop	ebp
+	ret	0
+??1exception@std@@UAE@XZ ENDP				; std::exception::~exception
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_exception.h
+;	COMDAT ??0exception@std@@QAE@ABV01@@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Other$ = 8						; size = 4
+??0exception@std@@QAE@ABV01@@Z PROC			; std::exception::exception, COMDAT
+; _this$ = ecx
+
+; 73   :     {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [eax], OFFSET ??_7exception@std@@6B@
+
+; 72   :         : _Data()
+
+	xor	ecx, ecx
+	mov	edx, DWORD PTR _this$[ebp]
+	add	edx, 4
+	mov	DWORD PTR [edx], ecx
+	mov	DWORD PTR [edx+4], ecx
+
+; 74   :         __std_exception_copy(&_Other._Data, &_Data);
+
+	mov	eax, DWORD PTR _this$[ebp]
+	add	eax, 4
+	push	eax
+	mov	ecx, DWORD PTR __Other$[ebp]
+	add	ecx, 4
+	push	ecx
+	call	___std_exception_copy
+	add	esp, 8
+
+; 75   :     }
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	4
+??0exception@std@@QAE@ABV01@@Z ENDP			; std::exception::exception
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_exception.h
+;	COMDAT ??0exception@std@@QAE@QBDH@Z
+_TEXT	SEGMENT
+_this$ = -4						; size = 4
+__Message$ = 8						; size = 4
+___formal$ = 12						; size = 4
+??0exception@std@@QAE@QBDH@Z PROC			; std::exception::exception, COMDAT
+; _this$ = ecx
+
+; 67   :     {
+
+	push	ebp
+	mov	ebp, esp
+	push	ecx
+	mov	DWORD PTR _this$[ebp], ecx
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	DWORD PTR [eax], OFFSET ??_7exception@std@@6B@
+
+; 66   :         : _Data()
+
+	xor	ecx, ecx
+	mov	edx, DWORD PTR _this$[ebp]
+	add	edx, 4
+	mov	DWORD PTR [edx], ecx
+	mov	DWORD PTR [edx+4], ecx
+
+; 68   :         _Data._What = _Message;
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	ecx, DWORD PTR __Message$[ebp]
+	mov	DWORD PTR [eax+4], ecx
+
+; 69   :     }
+
+	mov	eax, DWORD PTR _this$[ebp]
+	mov	esp, ebp
+	pop	ebp
+	ret	8
+??0exception@std@@QAE@QBDH@Z ENDP			; std::exception::exception
+_TEXT	ENDS
+; Function compile flags: /Odtp
+; File C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\vcruntime_new.h
+;	COMDAT ??2@YAPAXIPAX@Z
+_TEXT	SEGMENT
+__Size$ = 8						; size = 4
+__Where$ = 12						; size = 4
+??2@YAPAXIPAX@Z PROC					; operator new, COMDAT
+
+; 164  :     {
+
+	push	ebp
+	mov	ebp, esp
+
+; 165  :         (void)_Size;
+; 166  :         return _Where;
+
+	mov	eax, DWORD PTR __Where$[ebp]
+
+; 167  :     }
+
+	pop	ebp
+	ret	0
+??2@YAPAXIPAX@Z ENDP					; operator new
 _TEXT	ENDS
 END
