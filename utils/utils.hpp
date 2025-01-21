@@ -23,4 +23,4 @@ namespace Transmogrify {
     };
 };
 
-#endif // _DETOURS_H_
+#endif // _TRANSMOGRIFY_UTILS

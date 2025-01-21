@@ -4,10 +4,10 @@
 
 Transmogrify::HideWnd::HideWnd()
 {
-    m_hInst      = NULL;
-    m_hParentWnd = NULL;
-    m_hWnd       = NULL;
-    m_pImeUI     = NULL;
+    m_hInst      = nullptr;
+    m_hParentWnd = nullptr;
+    m_hWnd       = nullptr;
+    m_pImeUI     = nullptr;
 }
 
 Transmogrify::HideWnd::~HideWnd()
@@ -48,7 +48,7 @@ BOOL Transmogrify::HideWnd::Initialize(HWND a_parent)
     //
     ImGui::GetPlatformIO().Platform_SetImeDataFn = MyPlatform_SetImeDataFn;
 
-    if (m_hWnd == NULL) return false;
+    if (m_hWnd == nullptr) return false;
     return true;
 }
 
@@ -57,8 +57,8 @@ BOOL Transmogrify::HideWnd::Initialize(HWND a_parent)
 void Transmogrify::HideWnd::MyPlatform_SetImeDataFn([[maybe_unused]] ImGuiContext *ctx, ImGuiViewport *viewport,
                                                     ImGuiPlatformImeData *data)
 {
-    HideWnd *pThis = (HideWnd *)viewport->PlatformUserData;
-    if (NULL == pThis) return;
+    auto *pThis = (HideWnd *)viewport->PlatformUserData;
+    if (nullptr == pThis) return;
     auto inputPos = data->InputPos;
     pThis->m_pImeUI->UpdateCaretPos(inputPos.x, inputPos.y);
 }
@@ -71,16 +71,16 @@ void Transmogrify::HideWnd::Focus()
 LRESULT
 Transmogrify::HideWnd::_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    HideWnd *pThis = (HideWnd *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-    if ((NULL == pThis) && (uMsg != WM_NCCREATE))
+    auto *pThis = (HideWnd *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+    if ((nullptr == pThis) && (uMsg != WM_NCCREATE))
     {
         return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
     switch (uMsg)
     {
     case WM_NCCREATE: {
-        LPCREATESTRUCT lpCs = (LPCREATESTRUCT)lParam;
-        pThis               = (HideWnd *)(lpCs->lpCreateParams);
+        auto lpCs = (LPCREATESTRUCT)lParam;
+        pThis     = (HideWnd *)(lpCs->lpCreateParams);
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pThis);
         // set the window handle
         pThis->m_hInst      = lpCs->hInstance;
@@ -94,7 +94,7 @@ Transmogrify::HideWnd::_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         return pThis->OnCreate();
     }
     case WM_DESTROY: {
-        ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+        ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
         return pThis->OnDestroy();
     }
     case WM_KEYUP:

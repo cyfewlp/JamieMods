@@ -5,7 +5,6 @@
     "detours",
     "simpleini",
     "spdlog",
-    "xbyak",
     "freetype"
   ]
 }

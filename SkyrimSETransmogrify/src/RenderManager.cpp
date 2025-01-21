@@ -7,9 +7,6 @@
 // - Introduction, links and more at the top of imgui.cpp
 
 #include "RenderManager.h"
-
-#include <tchar.h>
-
 #include "Hooks.h"
 #include "ImeUI.hpp"
 #include "Window.hpp"
@@ -19,9 +16,6 @@
 #include "imgui_impl_win32.h"
 #include "utils.hpp"
 #include <unordered_set>
-
-#define SPDLOG_WCHAR_TO_UTF8_SUPPORT
-#define DEFAULT_CAND_NUM_PER_PAGE 5
 
 // void            RenderManager::UpdateCandStrings(HWND hWnd)
 // {

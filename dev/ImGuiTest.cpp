@@ -49,7 +49,7 @@ static HWND      parentWnd;
 // Main code
 int main(int, char **)
 {
-    // AddressLibTool::DumpSpecialVerAddress(6, 1170);
+     AddressLibTool::DumpSpecialVerAddress(6, 1170);
 
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();

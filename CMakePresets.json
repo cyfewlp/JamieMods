@@ -17,10 +17,15 @@
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                 "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
                 "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake",
-                "OUTPUT_FOLDER": "D:\\GAME\\mo2\\SkyRim_Special_mods\\mods\\hello",
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
+        },
+        {
+            "name": "common",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}"
         },
         {
             "name": "generator-ninja",
@@ -50,7 +55,7 @@
                 "PROJECT_COMPILER": "clang",
                 "PROJECT_ARCHITECTURE": "x64",
                 "PROJECT_TEXT_FLAGS": "-DUNICODE -D_UNICODE",
-                "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 /WX -Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_lib_char8_t -D__cpp_consteval -D__cpp_lib_format"
+                "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 /WX -Wno-overloaded-virtual"
             }
         },
         {
@@ -82,6 +87,7 @@
         {
             "name": "debug-clang-cl-vcpkg",
             "inherits": [
+                "common",
                 "generator-ninja",
                 "builttype-debug",
                 "compiler-clang-cl",

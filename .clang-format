@@ -46,3 +46,4 @@ AlignConsecutiveMacros:
   AcrossComments: false
 BinPackArguments: true
 BinPackParameters: true
+IndentCaseLabels: true
