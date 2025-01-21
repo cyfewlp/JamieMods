@@ -2,9 +2,27 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C++ Debugger",
+            "name": "BUild & Launch Skyrim",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/buildAndLaunchSkyrim.ps1",
+            "cwd": "${cwd}"
+        },
+        {
+            "name": "SkyrimSE Debugger",
             "type": "cppvsdbg",
             "request": "attach"
+        },
+        {
+            "name": "BasicTest",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/debug/dev/BasicTest.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/debug/dev",
+            "environment": [],
+            "console": "externalTerminal"
         },
         {
             "name": "DevTest",
@@ -13,9 +31,24 @@
             "program": "${workspaceFolder}/build/debug/dev/DevTest.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}/build/debug/dev",
+            "console": "externalTerminal",
+            "environment": []
+        },
+        {
+            "name": "Win32Test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/debug/dev/Win32Test.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/debug/dev",
             "environment": [],
-            "console": "externalTerminal"
+            "console": "externalTerminal",
+            "logging": {
+                "moduleLoad": false,
+                "trace": true
+            }
         }
     ]
 }

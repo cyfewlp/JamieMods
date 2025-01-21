@@ -15,14 +15,34 @@
 #   and be sure to choose the option to add LLVM to your PATH
 #   when installing
 #
-UseTab: Never
+# UseTab: Never
+
+# We'll use defaults from the LLVM style, but with 4 columns indentation.
+#BasedOnStyle: LLVM
+
+Language: Cpp
 TabWidth: '4'
 IndentWidth: '4'
-BasedOnStyle: Mozilla   
+BasedOnStyle: Microsoft    
 AccessModifierOffset: -4
 ColumnLimit: 120
 NamespaceIndentation: All
 IndentPPDirectives: BeforeHash
 FixNamespaceComments: false
-
-...
+AlignAfterOpenBracket: Align 
+AlignArrayOfStructures: Left 
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+BinPackArguments: true
+BinPackParameters: true

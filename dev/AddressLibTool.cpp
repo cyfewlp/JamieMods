@@ -1,7 +1,7 @@
+#include "AddressLibTool.hpp"
 #include "versionlibdb.h"
+#include <fmt/format.h>
 #include <iostream>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/spdlog.h>
 
 // #include "versiondb.h"
@@ -9,8 +9,8 @@
 void* MyAddress = NULL;
 unsigned long long MyOffset = 0;
 
-static bool
-InitializeOffsets()
+bool
+AddressLibTool::InitializeOffsets()
 {
     // Allocate on stack so it will be unloaded when we exit this function.
     // No need to have the whole database loaded and using up memory for no reason.
@@ -44,30 +44,18 @@ InitializeOffsets()
 }
 
 bool
-DumpSpecificVersion()
+AddressLibTool::DumpSpecialVerAddress(unsigned int major, unsigned int minor)
 {
     VersionDb db;
-
     // Try to load database of version 1.5.62.0 regardless of running executable version.
-    if (!db.Load(1, 6, 353, 0)) {
-        spdlog::error("Failed to load database for 1.6.353.0!");
+    std::string s = fmt::format("1.{}.{}.0", major, minor);
+    if (!db.Load(1, major, minor, 0)) {
+        spdlog::error("Failed to load database for {}!", s.c_str());
         return false;
     }
 
     // Write out a file called offsets-1.5.62.0.txt where each line is the ID and offset.
-    db.Dump("offsets-1.6.353.txt");
-    spdlog::info("Dumped offsets for 1.6.353.0");
+    db.Dump(fmt::format("offset-{}.txt", s.c_str()).c_str());
+    spdlog::info("Dumped offsets for {}", s.c_str());
     return true;
-}
-
-template<typename T>
-void
-exampleFunction(const T& container)
-{
-    // 使用 typename 关键字声明迭代器类型
-    typename T::const_iterator it;
-
-    for (it = container.begin(); it != container.end(); ++it) {
-        // 处理容器中的元素
-    }
 }

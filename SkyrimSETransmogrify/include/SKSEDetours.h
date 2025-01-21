@@ -8,15 +8,13 @@
 
 struct Logger
 {
-    template<typename T>
-    static void log(int level, const T& value)
+    template <typename T> static void log(int level, const T &value)
     {
         if (level > 1)
             return;
         spdlog::log(static_cast<spdlog::level::level_enum>(level), value);
     }
-    template<typename... Types>
-    static void log(int level, const char* const message, const Types&... params)
+    template <typename... Types> static void log(int level, const char *const message, const Types &...params)
     {
         if (level > 1)
             return;
@@ -25,20 +23,21 @@ struct Logger
     }
 };
 
-namespace SKSEDetours {
-    typedef ATOM(WINAPI* FuncRegisterClass)(CONST WNDCLASSEXW*);
+namespace SKSEDetours
+{
+    typedef ATOM(WINAPI *FuncRegisterClass)(CONST WNDCLASSEXW *);
 
     static inline FuncRegisterClass RealRegisterClassW = NULL;
     static inline FuncRegisterClass RealRegisterClassA = NULL;
     static inline FuncRegisterClass RealRegisterClassExW = NULL;
     static inline FuncRegisterClass RealRegisterClassExA = NULL;
 
-    ATOM WINAPI MyRegisterClassW(CONST WNDCLASSEXW* wndClass);
-    ATOM WINAPI MyRegisterClassA(CONST WNDCLASSEXW* wndClass);
-    ATOM WINAPI MyRegisterClassExA(CONST WNDCLASSEXW* wndClass);
-    ATOM WINAPI MyRegisterClassExW(CONST WNDCLASSEXW* wndClass);
+    ATOM WINAPI                     MyRegisterClassW(CONST WNDCLASSEXW *wndClass);
+    ATOM WINAPI                     MyRegisterClassA(CONST WNDCLASSEXW *wndClass);
+    ATOM WINAPI                     MyRegisterClassExA(CONST WNDCLASSEXW *wndClass);
+    ATOM WINAPI                     MyRegisterClassExW(CONST WNDCLASSEXW *wndClass);
 
-    void detours();
+    void                            detours();
 };
 
 #endif // !_SKSEDetours_H

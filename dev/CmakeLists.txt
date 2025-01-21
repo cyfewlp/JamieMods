@@ -2,15 +2,31 @@
 
 set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.0/um/x64")
 
+
+find_package(spdlog CONFIG REQUIRED)
+find_package(Freetype CONFIG REQUIRED)
+
+### BasicTest
+
+add_executable(BasicTest 
+    "BasicTest.cpp"
+)
+
+target_link_libraries(
+	BasicTest
+	PRIVATE
+        "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
+)
+
+
+### DevTest
+
 add_executable(DevTest 
-    "DumpAddress.cpp"
+    "AddressLibTool.cpp"
+    "imeUI.cpp"
     "ImGuiTest.cpp"
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/utils.cpp
     #"Win32Test.cpp"
-)
-
-add_executable(Win32Test 
-    "Win32Test.cpp"
 )
 
 target_include_directories(
@@ -20,15 +36,10 @@ target_include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/../utils
 )
 
-target_include_directories(
-    Win32Test
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/../utils
+target_precompile_headers(
+    DevTest PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/PCH.hpp
 )
-
-find_package(spdlog CONFIG REQUIRED)
-find_package(Freetype CONFIG REQUIRED)
 
 target_link_libraries(
 	DevTest
@@ -39,6 +50,19 @@ target_link_libraries(
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 )
 
+
+### Win32Test
+add_executable(Win32Test WIN32
+    "Win32Test.cpp"
+)
+
+target_include_directories(
+    Win32Test
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/../utils
+)
+
 target_link_libraries(
 	Win32Test
 	PRIVATE
@@ -47,11 +71,23 @@ target_link_libraries(
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 )
+
+### TsfApp
+add_executable(
+    TsfApp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tsf/TsfApp.cpp
+)
+
+target_include_directories(
+    TsfApp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/tsf
+)
+
 # Copy Data folder to the build directory
-#add_custom_target(copy_data ALL
-#    COMMAND ${CMAKE_COMMAND} -E copy_directory
-#    ${CMAKE_SOURCE_DIR}/Data ${CMAKE_BINARY_DIR}/Data
-#)
+add_custom_target(copy_data ALL
+   COMMAND ${CMAKE_COMMAND} -E copy_directory
+   ${CMAKE_SOURCE_DIR}/Data ${CMAKE_BINARY_DIR}/Data
+)
 
 function(my_install)
     set(options OPTIONAL FAST)
