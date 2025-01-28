@@ -26,7 +26,6 @@ BOOL Transmogrify::HideWnd::Initialize(HWND a_parent)
     m_hInst          = GetModuleHandle(nullptr);
     wc.cbSize        = sizeof(wc);
     wc.style         = CS_CLASSDC;
-    wc.cbClsExtra    = 0;
     wc.lpfnWndProc   = HideWnd::_WndProc;
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 0;

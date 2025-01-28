@@ -1,7 +1,5 @@
 #pragma once
 
-#include "detours/detours.h"
-
 namespace HookUtils
 {
     template <class Signature>
@@ -19,7 +17,7 @@ namespace HookUtils
     public:
         inline CallHook(uintptr_t address, Return (*a_hook)(Args...))
         {
-            trampoline.create(14);
+            trampoline.create(32);
             original = trampoline.write_call<5>(address, reinterpret_cast<void *>(a_hook));
         }
 

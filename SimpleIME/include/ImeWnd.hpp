@@ -12,30 +12,30 @@ constexpr auto WM_CUSTOM = 0x7000;
 namespace SimpleIME
 {
     const static inline wchar_t *g_tMainClassName = L"SimpleIME";
+
     class ImeWnd
     {
     private:
+        HWND m_hWnd;
         HINSTANCE m_hInst;
-        HWND      m_hWnd;
         HWND      m_hParentWnd;
         ImeUI    *m_pImeUI;
-        bool      m_show;
 
     public:
         ImeWnd();
         ~ImeWnd();
-        BOOL Initialize(HWND a_parent);
-        void Focus();
-        void RenderImGui();
-        bool IsImeEnabled();
+        BOOL             Initialize(HWND a_parent);
+        void             Focus() const;
+        void             RenderImGui();
+        bool             IsShow() const;
+        RE::InputEvent **FilterInputEvent(RE::InputEvent **);
 
     private:
         static LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-        static void    MyPlatform_SetImeDataFn(ImGuiContext *ctx, ImGuiViewport *viewport, ImGuiPlatformImeData *data);
         LRESULT        OnCreate();
         LRESULT        OnDestroy();
         LRESULT        OnStartComposition();
         LRESULT        OnEndComposition();
-        LRESULT        OnComposition(HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT        OnComposition(HWND hWnd, LPARAM lParam);
     };
 } // namespace SimpleIME

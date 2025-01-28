@@ -1,4 +1,4 @@
-// Dear ImGui: standalone example application for DirectX 11
+﻿// Dear ImGui: standalone example application for DirectX 11
 
 // Learn about Dear ImGui:
 // - FAQ                  https://dearimgui.com/faq
@@ -9,6 +9,7 @@
 #include "imgui.h"
 #include "AddressLibTool.hpp"
 #include "ImeUI.hpp"
+#include "Status.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -18,6 +19,8 @@
 #include <format>
 #include <iostream>
 #include <vector>
+#include <windows.h>
+#include <windowsx.h>
 
 // Data
 static ID3D11Device           *g_pd3dDevice        = nullptr;
@@ -27,6 +30,7 @@ static bool                    g_SwapChainOccluded = false;
 static UINT                    g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView *g_mainRenderTargetView = nullptr;
 static bool                    candChosen             = false;
+static bool                    imeEnabled             = false;
 // compsition varibles
 static ImVec2       inputPos       = {};
 static ImVec2       compWindowSize = {};
@@ -43,18 +47,21 @@ LRESULT WINAPI ChildWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void           Render(HWND main, HWND child);
 void           UpdateKeyboardCodePage();
 static void    MyPlatform_SetImeDataFn_DefaultImpl(ImGuiContext *, ImGuiViewport *viewport, ImGuiPlatformImeData *data);
+static void    RenderImeState();
+void           OnStatusbarSize(HWND hWnd, UINT state, int cx, int cy);
 
 static HINSTANCE winst;
 static HWND      parentWnd;
+
 // Main code
 int main(int, char **)
 {
-     AddressLibTool::DumpSpecialVerAddress(6, 1170);
+    AddressLibTool::DumpSpecialVerAddress(6, 1170);
 
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();
-    WNDCLASSEXA wc = {sizeof(wc), CS_CLASSDC, WndProc,         0L,     0L, GetModuleHandle(nullptr), nullptr, nullptr,
-                      nullptr,    nullptr,    "ImGui Example", nullptr};
+    WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc,          0L,     0L, GetModuleHandle(nullptr), nullptr, nullptr,
+                      nullptr,    nullptr,    L"ImGui Example", nullptr};
     WNDCLASSEXW wchild = {sizeof(wc),
                           CS_CLASSDC,
                           ChildWndProc,
@@ -67,10 +74,10 @@ int main(int, char **)
                           NULL,
                           L"Child Window",
                           nullptr};
-    ::RegisterClassExA(&wc);
-    ::RegisterClassExW(&wchild);
+    ::RegisterClassExW(&wc);
+    //    ::RegisterClassExW(&wchild);
     winst     = wc.hInstance;
-    HWND hwnd = ::CreateWindowA(wc.lpszClassName, "Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280,
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280,
                                 800, nullptr, nullptr, wc.hInstance, nullptr);
     parentWnd = hwnd;
 
@@ -78,7 +85,7 @@ int main(int, char **)
     if (!CreateDeviceD3D(hwnd))
     {
         CleanupDeviceD3D();
-        ::UnregisterClassA(wc.lpszClassName, wc.hInstance);
+        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
         return 1;
     }
 
@@ -136,8 +143,9 @@ int main(int, char **)
     io.Fonts->Build();
     ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hwnd;
     UpdateKeyboardCodePage();
-    HWND child = ::CreateWindowW(wchild.lpszClassName, L"SKSE Transmogrify Window", WS_POPUP, 0, 0, 0, 0, hwnd, NULL,
-                                 winst, nullptr);
+    //    HWND child = ::CreateWindowW(wchild.lpszClassName, L"SKSE Transmogrify Window", WS_POPUP, 0, 0, 0, 0, hwnd,
+    //    NULL,
+    //                                 winst, nullptr);
 
     // Our state
     bool   show_demo_window                      = true;
@@ -155,10 +163,6 @@ int main(int, char **)
         while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
         {
             ::TranslateMessage(&msg);
-            if (msg.message == WM_IME_COMPOSITION)
-            {
-                LOG(info, "WM_IME_COMPOSITION: wParam {:#x}, lParam: {:#x}", msg.wParam, msg.lParam);
-            }
             ::DispatchMessage(&msg);
             if (msg.message == WM_QUIT) done = true;
         }
@@ -190,41 +194,42 @@ int main(int, char **)
         // to learn more about Dear ImGui!).
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        // 2. Show a simple window that we create ourselves.We use a Begin / End pair to create a named window.
         {
             static float f       = 0.0f;
             static int   counter = 0;
 
             ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-            ImGui::Text("\xf0\x9f\x8d\x89 \xf0\x9f\x8d\x8a \xf0\x9f\x8d\x8b");
-            ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
+            // ImGui::SameLine();
+            ImGui::Text("\xf0\x9f\x8d\x89 \xe2\x9c\x94\xef\xb8\x8f");
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+            ImGui::Checkbox("Demo Window", &show_demo_window);
             ImGui::Checkbox("Another Window", &show_another_window);
+            ImGui::EndGroup();
 
-            static char buf[64]  = "";
-            static int  selected = 0;
-            // ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN,
-            // ImGui::GetTextLineHeight() * 16));
+            static char buf[64] = "";
             ImGui::InputText("UTF-8 input", buf, IM_ARRAYSIZE(buf));
-            if (showCompWindow)
+            if (true)
             {
-                // ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32_WHITE);
+                ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32_WHITE);
                 ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32_WHITE);
                 ImGui::SetNextWindowPos(inputPos);
 
                 ImVec2 childSize = {(compStr.size() >> 1) * ImGui::GetFontSize(), ImGui::GetTextLineHeight()};
-                ImGui::BeginChild("A child", childSize, 0, ImGuiWindowFlags_NoDecoration);
+                ImGui::BeginChild("A child", childSize, 0, 0);
                 ImGui::GetForegroundDrawList()->AddLine({inputPos.x, inputPos.y + childSize.y},
                                                         {inputPos.x + childSize.x, inputPos.y + childSize.y},
                                                         IM_COL32(125, 125, 125, 255));
                 auto str = Transmogrify::utils::WideStrToStrUTF8(compStr);
                 ImGui::Text(str.c_str());
                 ImGui::EndChild();
-                ImGui::PopStyleColor(1);
+                ImGui::PopStyleColor(2);
             }
             ImGui::End();
         }
-        Render(hwnd, child);
+        //        Render(hwnd, child);
+        RenderImeState();
 
         // 3. Show another simple window.
         if (show_another_window)
@@ -238,7 +243,6 @@ int main(int, char **)
             ImGui::End();
         }
 
-        // Rendering
         ImGui::Render();
         const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w,
                                                  clear_color.z * clear_color.w, clear_color.w};
@@ -248,8 +252,10 @@ int main(int, char **)
 
         // Present
         HRESULT hr = g_pSwapChain->Present(1, 0); // Present with vsync
-        // HRESULT hr = g_pSwapChain->Present(0, 0); // Present without vsync
+        // HRESULT hr  = g_pSwapChain->Present(0, 0); // Present without vsync
         g_SwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);
+
+        UpdateWindow(hwnd);
     }
 
     // Cleanup
@@ -259,7 +265,7 @@ int main(int, char **)
 
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
-    ::UnregisterClassA(wc.lpszClassName, wc.hInstance);
+    ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
     return 0;
 }
@@ -292,6 +298,73 @@ static void MyPlatform_SetImeDataFn_DefaultImpl(ImGuiContext *, ImGuiViewport *v
 
 static void Render(HWND main, HWND child)
 {
+}
+
+static void RenderImeState()
+{
+    HIMC himc;
+    if (!(himc = ImmGetContext(parentWnd))) return;
+    DWORD conversion, sentence;
+    if (ImmGetConversionStatus(himc, &conversion, &sentence))
+    {
+
+        switch (conversion)
+        {
+            case IME_CMODE_ALPHANUMERIC:
+                ImGui::Text("IME Conversion: ALPHANUMERIC ");
+                break;
+            case IME_CMODE_NATIVE:
+                ImGui::Text("IME Conversion: NATIVE");
+                break;
+            case IME_CMODE_KATAKANA:
+                ImGui::Text("IME Conversion: KATAKANA");
+                break;
+            case IME_CMODE_LANGUAGE:
+                ImGui::Text("IME Conversion: LANGUAGE");
+                break;
+            case IME_CMODE_FULLSHAPE:
+                ImGui::Text("IME Conversion: FULLSHAPE");
+                break;
+            case IME_CMODE_ROMAN:
+                ImGui::Text("IME Conversion: ROMAN");
+                break;
+            case IME_CMODE_CHARCODE:
+                ImGui::Text("IME Conversion: CHARCODE");
+                break;
+            case IME_CMODE_HANJACONVERT:
+                ImGui::Text("IME Conversion: HANJACONVERT");
+                break;
+            case IME_CMODE_NATIVESYMBOL:
+                ImGui::Text("IME Conversion: NATIVESYMBOL");
+                break;
+        }
+        switch (sentence)
+        {
+            case IME_SMODE_NONE:
+                ImGui::Text("IME Sentence: NONE");
+                break;
+            case IME_SMODE_PLAURALCLAUSE:
+                ImGui::Text("IME Sentence: PLAURALCLAUSE");
+                break;
+            case IME_SMODE_SINGLECONVERT:
+                ImGui::Text("IME Sentence: SINGLECONVERT");
+                break;
+            case IME_SMODE_AUTOMATIC:
+                ImGui::Text("IME Sentence: AUTOMATIC");
+                break;
+            case IME_SMODE_PHRASEPREDICT:
+                ImGui::Text("IME Sentence: PHRASEPREDICT");
+                break;
+            case IME_SMODE_CONVERSATION:
+                ImGui::Text("IME Sentence: CONVERSATION");
+                break;
+            case IME_SMODE_RESERVED:
+                ImGui::Text("IME Sentence: RESERVED");
+                break;
+        }
+    }
+
+    ImmReleaseContext(parentWnd, himc);
 }
 
 // Helper functions
@@ -421,34 +494,38 @@ static void UpdateKeyboardCodePage()
     std::cout << "Keybard page: " << keyboardPage << std::endl;
 }
 
-bool ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam)
+static bool ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
     HIMC hIMC;
     switch (wParam)
     {
-    case IMN_OPENCANDIDATE: {
-        showCompWindow = true;
-        break;
-    }
-    case IMN_SETCANDIDATEPOS:
-    case IMN_CHANGECANDIDATE: {
-        hIMC = ImmGetContext(hWnd);
-        if (!hIMC) break;
-        DWORD dwBufLen = ImmGetCandidateList(hIMC, 0, nullptr, 0); // Get size first
-        if (dwBufLen == 0)
-        {
+        case IMN_SETOPENSTATUS: {
+            SetStatusItems(hWnd);
+            break;
+        }
+        case IMN_OPENCANDIDATE: {
+            showCompWindow = true;
+            break;
+        }
+        case IMN_SETCANDIDATEPOS:
+        case IMN_CHANGECANDIDATE: {
+            hIMC = ImmGetContext(hWnd);
+            if (!hIMC) break;
+            DWORD dwBufLen = ImmGetCandidateList(hIMC, 0, nullptr, 0); // Get size first
+            if (dwBufLen == 0)
+            {
+                ImmReleaseContext(hWnd, hIMC);
+                break;
+            }
+            LOG(info, "Candidate list length {}", dwBufLen);
+            candChosen = true;
             ImmReleaseContext(hWnd, hIMC);
             break;
         }
-        LOG(debug, "Candidate list length {}", dwBufLen);
-        candChosen = true;
-        ImmReleaseContext(hWnd, hIMC);
-        break;
-    }
-    case IMN_CLOSECANDIDATE:
-        candChosen     = false;
-        showCompWindow = false;
-        break;
+        case IMN_CLOSECANDIDATE:
+            candChosen     = false;
+            showCompWindow = false;
+            break;
     }
     return true;
 }
@@ -460,116 +537,140 @@ bool ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam)
 // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or
 // clear/overwrite your copy of the keyboard data. Generally you may always pass all inputs to dear imgui, and hide them
 // from your application based on those two flags.
+
+void OnPaint(HWND hwnd)
+{
+    PAINTSTRUCT ps;
+    HDC         hdc = BeginPaint(hwnd, &ps);
+    TextOut(hdc, 0, 0, L"Hello, Windows!", 15);
+    EndPaint(hwnd, &ps);
+}
+
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
     switch (msg)
     {
-    case WM_INPUTLANGCHANGE: {
-        UpdateKeyboardCodePage();
-        return S_OK;
-    }
-    case WM_IME_STARTCOMPOSITION:
-        // CheckProperty;
-        ImeUI::StartComposition(hWnd);
-        break;
-    case WM_IME_COMPOSITION: {
-        if (lParam & GCS_RESULTSTR)
-        {
-            ImeUI::GetResultStr(hWnd);
+        case WM_CREATE:
+            if (CreateStatus(hWnd, winst))
+            {
+                SetStatusItems(hWnd);
+                return S_OK;
+            }
+            return S_FALSE;
+        case WM_INPUTLANGCHANGE: {
+            UpdateKeyboardCodePage();
+            return S_OK;
         }
-        else if (lParam & GCS_COMPSTR)
-        {
-            ImeUI::GetCompositionStr(hWnd, lParam, compStr);
-        }
-        return S_OK;
-    }
-    case WM_IME_ENDCOMPOSITION:
-        ImeUI::EndComposition(hWnd);
-        break;
-    case WM_IME_CHAR: {
-        LOG(info, "Parebt msg: {}, wParam: {}, lParam: {}", fmt::format("{:#x}", msg).c_str(),
-            fmt::format("{:#x}", wParam).c_str(), fmt::format("{:#x}", lParam).c_str());
+        case WM_IME_CHAR: {
+            LOG(info, "Parebt msg: {}, wParam: {}, lParam: {}", fmt::format("{:#x}", msg).c_str(),
+                fmt::format("{:#x}", wParam).c_str(), fmt::format("{:#x}", lParam).c_str());
 
-        // try discard unable character
-        if (wParam == 63)
-        {
-            LOG(err, "unknown char");
+            // try discard unable character
+            if (wParam == 63)
+            {
+                LOG(err, "unknown char");
+            }
+
+            char mbstr[3]{'\0'};
+            BYTE hiByte = HIBYTE(wParam);
+            BYTE loByte = LOBYTE(wParam);
+            if (hiByte == 0)
+            {
+                mbstr[0] = loByte;
+            }
+            else
+            {
+                mbstr[0] = hiByte;
+                mbstr[1] = loByte;
+            }
+            wchar_t wstr[2];
+            MultiByteToWideChar(keyboardPage, MB_PRECOMPOSED, mbstr, -1, wstr, _countof(wstr));
+            //            if (ImGui::GetCurrentContext())
+            //            {
+            //                ImGuiIO &io = ImGui::GetIO();
+            //                io.AddInputCharacter(wstr[0]);
+            //                io.AddInputCharacter(wstr[1]);
+            //            }
+            LOG(info, "ime char: {}", Transmogrify::utils::WideStrToStrCodePage(wstr, keyboardPage));
+            return S_OK;
+            break;
+        }
+        case WM_CHAR: {
+            LOG(info, "MSG [WM_CHAR] {}", wParam);
+            break;
+        }
+        case WM_IME_NOTIFY: {
+            ImeNotify(hWnd, wParam, lParam);
+            return S_OK;
         }
 
-        char mbstr[3]{'\0'};
-        BYTE hiByte = HIBYTE(wParam);
-        BYTE loByte = LOBYTE(wParam);
-        if (hiByte == 0)
-        {
-            mbstr[0] = loByte;
+            HANDLE_MSG(hWnd, WM_SIZE, OnStatusbarSize);
+            HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
+        case WM_SYSCOMMAND: {
+            if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+                return 0;
+            break;
         }
-        else
-        {
-            mbstr[0] = hiByte;
-            mbstr[1] = loByte;
-        }
-        wchar_t wstr[2];
-        MultiByteToWideChar(keyboardPage, MB_PRECOMPOSED, mbstr, -1, wstr, _countof(wstr));
-        if (ImGui::GetCurrentContext())
-        {
-            ImGuiIO &io = ImGui::GetIO();
-            io.AddInputCharacter(wstr[0]);
-            io.AddInputCharacter(wstr[1]);
-        }
-        Transmogrify::utils::NormalizeTest(wstr, keyboardPage);
-        LOG(info, "ime char: {}", Transmogrify::utils::WideStrToStrCodePage(wstr, keyboardPage));
-        return S_OK;
-    }
-    case WM_CHAR: {
-        LOG(info, "MSG [WM_CHAR] {}", wParam);
-        break;
-    }
-    case WM_IME_NOTIFY: {
-        if (!ImeNotify(hWnd, wParam, lParam)) break;
-        return S_OK;
-    }
-    case WM_IME_SETCONTEXT:
-        return ::DefWindowProcW(hWnd, msg, wParam, lParam);
-    case WM_SIZE: {
-        if (wParam == SIZE_MINIMIZED) return 0;
-        g_ResizeWidth  = (UINT)LOWORD(lParam); // Queue resize
-        g_ResizeHeight = (UINT)HIWORD(lParam);
-        return 0;
-    }
-    case WM_SYSCOMMAND: {
-        if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+        case WM_IME_SETCONTEXT:
+            // lParam &= ~ISC_SHOWUICANDIDATEWINDOW;
+            return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
+        case WM_DESTROY:
+            ::PostQuitMessage(0);
             return 0;
-        break;
     }
-    case WM_DESTROY:
-        ::PostQuitMessage(0);
-        return 0;
-    }
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+}
+
+void OnStatusbarSize(HWND hWnd, UINT state, int cx, int cy)
+{
+    if (state == SIZE_MINIMIZED) return;
+    g_ResizeWidth  = cx; // Queue resize
+    g_ResizeHeight = cy;
+
+    RECT rcClient;
+    GetClientRect(hWnd, &rcClient);
+
+    int *pPartsWidth = (int *)LocalAlloc(LPTR, sizeof(int) * NUM_PARTS);
+    if (pPartsWidth == nullptr) return;
+    int nWidth    = rcClient.right / NUM_PARTS;
+    int rightEdge = nWidth;
+    for (int i = 0; i < NUM_PARTS; i++)
+    {
+        rightEdge += nPartsWidthTbl[i];
+        pPartsWidth[i] = nWidth;
+    }
+
+    SendMessage(hStatusWnd, SB_SETPARTS, (WPARAM)NUM_PARTS, (LPARAM)pPartsWidth);
+
+    LocalFree((HANDLE)pPartsWidth);
+    // Resize statusbar so it's always same width as parent's client area
+    SendMessage(hStatusWnd, WM_SIZE, 0, 0);
+    InvalidateRect(hWnd, &rcClient, TRUE);
+    UpdateWindow(hWnd);
 }
 
 LRESULT WINAPI ChildWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-    case WM_SYSCOMMAND:
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-    case WM_IME_SETCONTEXT:
-    case WM_INPUTLANGCHANGE:
-    case WM_IME_STARTCOMPOSITION:
-    // case WM_IME_COMPOSITION:
-    case WM_IME_ENDCOMPOSITION:
-    case WM_IME_NOTIFY:
-        ::SendMessage(parentWnd, msg, wParam, lParam);
-        return S_OK;
-    case WM_CHAR: {
-        ImGui::GetIO().AddInputCharacterUTF16((WCHAR)wParam);
-        return S_OK;
-    }
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+        case WM_SYSCOMMAND:
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_IME_SETCONTEXT:
+        case WM_INPUTLANGCHANGE:
+        case WM_IME_STARTCOMPOSITION:
+        // case WM_IME_COMPOSITION:
+        case WM_IME_ENDCOMPOSITION:
+        case WM_IME_NOTIFY:
+            ::SendMessage(parentWnd, msg, wParam, lParam);
+            return S_OK;
+        case WM_CHAR: {
+            ImGui::GetIO().AddInputCharacterUTF16((WCHAR)wParam);
+            return S_OK;
+        }
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }

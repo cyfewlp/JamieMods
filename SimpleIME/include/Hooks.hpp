@@ -1,33 +1,87 @@
 #pragma once
 
 #include <windows.h>
+#define NUMHOOKS      1
+#define GET_MSG_PROC  0
+
+#define MAKE_HOOK(name, id, offset, Func)                                                                              \
+    struct name                                                                                                        \
+    {                                                                                                                  \
+        static const inline auto Address = GetAddress(id, offset);                                                     \
+        using FuncType                   = Func;                                                                       \
+    }
 
 namespace SimpleIME
 {
-    void             HookGetMsgProc();
-    LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
+    static inline HINSTANCE hinst;
+    static inline DWORD mainThreadId;
 
-    struct D3DInitHook
+    static std::uintptr_t   GetAddress(REL::RelocationID id, REL::VariantOffset offset)
     {
-        static constexpr REL::RelocationID  id{75595, 77226};
-        static constexpr REL::VariantOffset offset{0x9, 0x275, 0x00};
-        std::uintptr_t                      address;
-        D3DInitHook()
+        return id.address() + offset.offset();
+    }
+
+    namespace Hooks
+    {
+        MAKE_HOOK(D3DInit, REL::RelocationID(75595, 77226), REL::VariantOffset(0x9, 0x275, 0x00), void());
+        MAKE_HOOK(D3DPresent, REL::RelocationID(75461, 77246), REL::VariantOffset(0x9, 0x9, 0x00), void(std::uint32_t));
+        MAKE_HOOK(DispatchInputEvent, REL::RelocationID(67315, 68617), /**/
+                  REL::VariantOffset(0x7B, 0x7B, 0x00),                /**/
+                  void(RE::BSTEventSource<RE::InputEvent *> *, RE::InputEvent **));
+
+        // Windows Hook
+        typedef struct _MYHOOKDATA
         {
-            REL::Relocation<std::uintptr_t> target{D3DInitHook::id, D3DInitHook::offset};
-            address = target.address();
-        }
+            int      nType;
+            HOOKPROC hkprc;
+            HHOOK    hhook;
+        } MYHOOKDATA;
+
+        LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
+        void             InstallCreateWindowHook();
+        void             InstallWindowsHooks();
+
+        template <typename T>
+        class CallHook
+        {
+        };
+
+        template <typename R, typename... Args>
+        class CallHook<R(Args...)>
+        {
+        public:
+            inline CallHook(std::uintptr_t a_address, R (*funcPtr)(Args...))
+            {
+                trampoline.create(14);
+                address      = a_address;
+                auto ptr     = trampoline.write_call<5>(a_address, reinterpret_cast<void *>(funcPtr));
+                originalFunc = ptr;
+            }
+
+            inline ~CallHook()
+            {
+                uintptr_t base = REL::Module::get().base();
+                logv(debug, "Detaching call hook from address 0x{:#x} (offset from image base of 0x{:#x} by 0x{:#x}...",
+                     address, base, address - base);
+            }
+
+            inline R operator()(Args... args) const noexcept
+            {
+                if constexpr (std::is_void_v<R>)
+                {
+                    originalFunc(args...);
+                }
+                else
+                {
+                    return originalFunc(args...);
+                }
+            }
+
+        private:
+            SKSE::Trampoline            trampoline{"CallHook"};
+            REL::Relocation<R(Args...)> originalFunc;
+            std::uintptr_t              address;
+        };
     };
 
-    struct D3DPresentHook
-    {
-        static constexpr auto id     = REL::RelocationID(75461, 77246);
-        static constexpr auto offset = REL::VariantOffset(0x9, 0x9, 0x00);
-        std::uintptr_t                      address;
-        D3DPresentHook()
-        {
-            REL::Relocation<std::uintptr_t> target{D3DPresentHook::id, D3DPresentHook::offset};
-            address = target.address();
-        }
-    };
 } // namespace SimpleIME
