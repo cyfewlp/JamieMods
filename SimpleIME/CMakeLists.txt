@@ -15,18 +15,25 @@ configure_file(
         @ONLY
 )
 
+set(headers
+    include/ImeUI.h
+    include/Hooks.hpp
+    include/SystemImeLoader.h
+)
+
 set(sources
     src/plugin.cpp
-		src/ImeApp.cpp
-    src/ImeWnd.cpp
+	src/ImeApp.cpp
     src/ImeUI.cpp
+    src/ImeWnd.cpp
     src/Hooks.cpp
+    src/SystemImeLoader.cpp
 )
 
 source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}
         FILES
-        ${sources})
+        ${sources} ${headers})
 
 ## Set Output folder
 
@@ -43,6 +50,7 @@ find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
     ${sources}
+	${headers}
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
@@ -82,7 +90,7 @@ if(DEFINED OUTPUT_FOLDER)
 			POST_BUILD
 			COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
 			COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-			COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SkyrimTransmogrify.ini" "${DLL_FOLDER}/SkyrimTransmogrify.ini"
+			COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
 			VERBATIM
 	)
 

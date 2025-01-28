@@ -5,6 +5,7 @@
 
 static HINSTANCE hInst;
 static HWND      hWndMain;
+static HWND      hWndEdit;
 
 void             InitLog();
 BOOL             InitApplication(HINSTANCE hInstance);
@@ -156,47 +157,24 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
     case WM_CHAR:
         spdlog::info("WM_CHAR: {:#x}", wParam);
         break;
-    case WM_INPUTLANGCHANGE: {
-        HIMC hIMC;
-        if ((hIMC = ImmGetContext(hWnd)))
-        {
-            COMPOSITIONFORM composition_form = {};
-            composition_form.ptCurrentPos.x  = 200L;
-            composition_form.ptCurrentPos.y  = 50L;
-            composition_form.dwStyle         = CFS_FORCE_POSITION;
-            ImmSetCompositionWindow(hIMC, &composition_form);
-            
-            CANDIDATEFORM candidate_form = {};
-            candidate_form.dwStyle = CFS_CANDIDATEPOS;
-            candidate_form.ptCurrentPos.x = 300L;
-            candidate_form.ptCurrentPos.y = 300L;
-            ImmSetCandidateWindow(hIMC, &candidate_form);
-            ImmReleaseContext(hWnd, hIMC);
+    case WM_IME_NOTIFY:
+    {
+        switch (wParam) {
+            case IMN_OPENCANDIDATE:
+            case IMN_CHANGECANDIDATE:
+            case IMN_SETCANDIDATEPOS:
+            case IMN_CLOSECANDIDATE:
+                HIMC hIMC;
+                hIMC = ImmGetContext(hWnd);
+                DWORD bufLen  = ImmGetCandidateListA(hIMC, 0, nullptr, 0);
+                spdlog::info("candidate len: {}", bufLen);
+                ImmReleaseContext(hWnd, hIMC);
+                break;
         }
-        // switch (wParam)
-        // {
-        // case IMN_SETOPENSTATUS: {
-        //     HIMC hIMC;
-        //     if ((hIMC = ImmGetContext(hWnd)))
-        //     {
-        //         COMPOSITIONFORM composition_form = {};
-        //         composition_form.ptCurrentPos.x  = 200L;
-        //         composition_form.ptCurrentPos.y  = 50L;
-        //         composition_form.dwStyle         = CFS_FORCE_POSITION;
-        //         ImmSetCompositionWindow(hIMC, &composition_form);
-        //         POINT point = {100, 100};
-        //         ImmSetStatusWindowPos(hIMC, &point);
-        //         CANDIDATEFORM candidate_form = {CFS_CANDIDATEPOS, 300, 300};
-        //         ImmSetCandidateWindow(hIMC, &candidate_form);
-        //         ImmReleaseContext(hWnd, hIMC);
-        //     }
-        //     return S_OK;
-        // }
-        // default:
-        //     break;
-        // }
-        break;
+        return S_OK;
     }
+    case WM_IME_SETCONTEXT:
+        return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
     default:
         break;
     }

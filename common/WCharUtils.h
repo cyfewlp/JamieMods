@@ -17,6 +17,16 @@ public:
         WideCharToMultiByte(codePage, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
         return strTo;
     }
+
+    static int CharLength(const std::wstring &wstr, UINT codePage = CP_UTF8)
+    {
+        return WideCharToMultiByte(codePage, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    }
+
+    static void ToString(const std::wstring &wstr, LPSTR lpStr, int length, UINT codePage = CP_UTF8)
+    {
+        WideCharToMultiByte(codePage, 0, &wstr[0], (int)wstr.size(), lpStr, length, NULL, NULL);
+    }
 };
 
 #endif // HELLOWORLD_WCHARUTILS_H

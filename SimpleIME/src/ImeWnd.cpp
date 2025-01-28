@@ -1,12 +1,13 @@
 #include "ImeWnd.hpp"
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 SimpleIME::ImeWnd::ImeWnd()
 {
     m_hInst      = nullptr;
     m_hParentWnd = nullptr;
     m_hWnd       = nullptr;
     m_pImeUI     = nullptr;
-    m_show       = false;
 }
 
 SimpleIME::ImeWnd::~ImeWnd()
@@ -17,34 +18,30 @@ SimpleIME::ImeWnd::~ImeWnd()
     }
 }
 
-BOOL SimpleIME::ImeWnd::Initialize(HWND a_parent)
+BOOL SimpleIME::ImeWnd::Initialize(HWND a_parent) noexcept(false)
 {
     WNDCLASSEXW wc;
     ZeroMemory(&wc, sizeof(wc));
 
     m_hInst          = GetModuleHandle(nullptr);
     wc.cbSize        = sizeof(wc);
-    wc.style         = CS_CLASSDC;
+    wc.style         = CS_PARENTDC;
     wc.cbClsExtra    = 0;
     wc.lpfnWndProc   = ImeWnd::WndProc;
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 0;
     wc.hInstance     = m_hInst;
     wc.lpszClassName = g_tMainClassName;
-    if (!::RegisterClassExW(&wc))
-    {
-        return false;
-    }
+    if (!::RegisterClassExW(&wc)) throw std::runtime_error("Register Class Failed");
 
-    RECT rect = {0, 0, 0, 0};
-    GetClientRect(a_parent, &rect);
-    m_hWnd = ::CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0,   //
-                               rect.right - rect.left, rect.bottom - rect.top, // width, height
-                               a_parent,                                       // a_parent,
+    m_hWnd = ::CreateWindowExW(WS_EX_TOOLWINDOW, g_tMainClassName, L"Hide", //
+                               WS_POPUP, 0, 0, 100, 100,                    // width, height
+                               nullptr,                                     // a_parent,
                                nullptr, wc.hInstance, (LPVOID)this);
     //
-    ImGui::GetPlatformIO().Platform_SetImeDataFn = MyPlatform_SetImeDataFn;
-    if (m_hWnd == nullptr) return false;
+    if (m_hWnd == nullptr) throw std::runtime_error("Create Ime Window failed");
+    m_hParentWnd = a_parent;
+    m_pImeUI->QueryAllInstalledIME();
     return true;
 }
 
@@ -55,7 +52,6 @@ LRESULT SimpleIME::ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
     {
         return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
-    if (nullptr == pThis) return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
     switch (uMsg)
     {
         case WM_NCCREATE: {
@@ -77,30 +73,30 @@ LRESULT SimpleIME::ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
             return pThis->OnDestroy();
         }
-        case WM_KEYUP:
-        case WM_KEYDOWN:
-            if (wParam == VK_F2)
-            {
-                pThis->m_show = !pThis->m_show;
-            }
-            ::SendMessageA(pThis->m_hParentWnd, uMsg, wParam, lParam);
-            return S_OK;
         case WM_INPUTLANGCHANGE: {
-            pThis->m_pImeUI->UpdateLanguage((HKL)lParam);
+            pThis->m_pImeUI->UpdateLanguage();
             return S_OK;
+        }
+        case WM_IME_NOTIFY: {
+            logv(debug, "ImeWnd {:#x}", wParam);
+            if (pThis->m_pImeUI->ImeNotify(hWnd, wParam, lParam)) return S_OK;
+            break;
         }
         case WM_IME_STARTCOMPOSITION:
             return pThis->OnStartComposition();
         case WM_IME_ENDCOMPOSITION:
+            logv(debug, "End composition, send test msg");
             return pThis->OnEndComposition();
         case WM_CUSTOM_IME_COMPPOSITION:
         case WM_IME_COMPOSITION:
-            return pThis->OnComposition(hWnd, wParam, lParam);
+            return pThis->OnComposition(hWnd, lParam);
         case WM_CUSTOM_CHAR:
-        case WM_CHAR: {
+        case WM_CHAR:
             // never received WM_CHAR msg becaus wo handled WM_IME_COMPOSITION
             break;
-        }
+        case WM_IME_SETCONTEXT:
+            // lParam &= ~ISC_SHOWUICANDIDATEWINDOW;
+            return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
         default:
             break;
     }
@@ -118,15 +114,17 @@ LRESULT SimpleIME::ImeWnd::OnEndComposition()
     m_pImeUI->EndComposition();
     return 0;
 }
-LRESULT SimpleIME::ImeWnd::OnComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
+
+LRESULT SimpleIME::ImeWnd::OnComposition(HWND hWnd, LPARAM lParam)
 {
-    m_pImeUI->CompositionString(hWnd, lParam);
+    MAKE_CONTEXT(hWnd, m_pImeUI->CompositionString, lParam);
     return 0;
 }
 
 LRESULT SimpleIME::ImeWnd::OnCreate()
 {
-    m_pImeUI = new ImeUI();
+    m_pImeUI = new ImeUI(m_hWnd);
+    m_pImeUI->UpdateLanguage();
     return S_OK;
 }
 
@@ -136,26 +134,62 @@ LRESULT SimpleIME::ImeWnd::OnDestroy()
     return 0;
 }
 
-void SimpleIME::ImeWnd::MyPlatform_SetImeDataFn(ImGuiContext *ctx, ImGuiViewport *viewport, ImGuiPlatformImeData *data)
+void SimpleIME::ImeWnd::Focus() const
 {
-    auto inputPos = data->InputPos;
-    SimpleIME::ImeUI::UpdateCaretPos(inputPos.x, inputPos.y);
-}
-
-void SimpleIME::ImeWnd::Focus()
-{
+    logv(debug, "Focus to ime wnd");
     ::SetFocus(m_hWnd);
 }
 
 void SimpleIME::ImeWnd::RenderImGui()
 {
-    if (m_show)
-    {
-        m_pImeUI->RenderImGui();
-    }
+    m_pImeUI->RenderImGui();
 }
 
-bool SimpleIME::ImeWnd::IsImeEnabled()
+bool SimpleIME::ImeWnd::IsShow() const
 {
-    return m_pImeUI->IsEnabled();
+    auto imeState = m_pImeUI->GetImeState();
+    return imeState.any(IME_IN_CANDCHOOSEN, IME_IN_COMPOSITION);
+}
+
+static bool IsImeKeyCode(std::uint32_t code)
+{
+    bool result = false;
+    // q-p
+    result |= code >= 0x10 && code <= 0x19;
+    // a-l
+    result |= code >= 0x1E && code <= 0x26;
+    // z-m
+    result |= code >= 0x2C && code <= 0x32;
+    return result;
+}
+
+RE::InputEvent **SimpleIME::ImeWnd::FilterInputEvent(RE::InputEvent **events)
+{
+    static RE::InputEvent *dummy[]  = {nullptr};
+
+    auto                   imeState = m_pImeUI->GetImeState();
+    if (imeState.none(IME_OPEN) || imeState.any(IME_IN_ALPHANUMERIC))
+    {
+        return events;
+    }
+
+    auto first = (imeState == IME_OPEN);
+    if (imeState.any(IME_OPEN, IME_IN_CANDCHOOSEN, IME_IN_COMPOSITION))
+    {
+        if (events == nullptr || *events == nullptr)
+        {
+            return events;
+        }
+        auto head         = *events;
+        auto sourceDevice = head->device;
+        bool discard      = sourceDevice == RE::INPUT_DEVICE::kKeyboard;
+        if (first)
+        {
+            auto idEvent = head->AsIDEvent();
+            auto code    = idEvent ? idEvent->GetIDCode() : 0;
+            discard &= IsImeKeyCode(code);
+        }
+        if (discard) return dummy;
+    }
+    return events;
 }

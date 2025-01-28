@@ -48,6 +48,7 @@ target_link_libraries(
 		imgui
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
+        "${WINDOWS_SDK_LIB_PATH}/Comctl32.lib"
 )
 
 
@@ -88,6 +89,20 @@ add_custom_target(copy_data ALL
    COMMAND ${CMAKE_COMMAND} -E copy_directory
    ${CMAKE_SOURCE_DIR}/Data ${CMAKE_BINARY_DIR}/Data
 )
+
+### GlobalHook
+
+add_library(
+    GlobalHook SHARED 
+    GlobalHook.cpp
+)
+
+target_link_libraries(
+	GlobalHook
+	PRIVATE
+		spdlog::spdlog
+)
+target_compile_features(GlobalHook PRIVATE cxx_std_23) # <--- use C++23 standard
 
 function(my_install)
     set(options OPTIONAL FAST)

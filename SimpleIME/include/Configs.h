@@ -9,7 +9,7 @@ namespace SimpleIME {
     struct FontConfig {
         std::string eastAsiaFontFile;
         std::string emojiFontFile;
-        float fontSize;
+        float fontSize = 14.0f;
     };
 }
 

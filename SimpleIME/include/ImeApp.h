@@ -6,10 +6,9 @@
 #ifndef HELLOWORLD_IMEAPP_H
     #define HELLOWORLD_IMEAPP_H
 
-    #include "d3d11.h"
-    #include "windows.h"
     #include "Configs.h"
     #include "ImeWnd.hpp"
+    #include "d3d11.h"
 
 namespace SimpleIME
 {
@@ -21,20 +20,28 @@ namespace SimpleIME
     class ImeApp
     {
     private:
-        static inline State *gState;
+        static inline State      *gState;
         static inline FontConfig *gFontConfig;
-        static inline ImeWnd gImeWnd;
+        static inline ImeWnd     *gImeWnd;
 
     public:
-        static void Init();
+        static void        Init();
         static FontConfig *LoadConfig();
 
+        static void        D3DInit();
+        static void        D3DPresent(std::uint32_t ptr);
+        static void        DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *, RE::InputEvent **);
+
     private:
-        static void InstallHooks();
-        static void D3DInit();
-        static void D3DPresent();
-        static void Render();
-        static void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context);
+        static LRESULT        MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+        static void           Render();
+        static void           InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context);
+        static void           ProcessEvent(RE::InputEvent **);
+        static void           ProcessMouseEvent(RE::ButtonEvent *btnEvent);
+
+        static inline WNDPROC RealWndProc;
+
+    private:
     };
 
 }

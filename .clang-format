@@ -46,4 +46,7 @@ AlignConsecutiveMacros:
   AcrossComments: false
 BinPackArguments: true
 BinPackParameters: true
+BreakBeforeConceptDeclarations: Always
+BreakTemplateDeclarations: true
+SeparateDefinitionBlocks: Always
 IndentCaseLabels: true
