@@ -14,7 +14,7 @@ namespace SimpleIME
 
     ImeUI::ImeUI(HWND hWnd, HWND hWndParent)
     {
-        _tsetlocale(LC_ALL, _T("zh-CN"));
+        _tsetlocale(LC_ALL, _T(""));
         m_pHeap      = HeapCreate(HEAP_GENERATE_EXCEPTIONS, IMEUI_HEAP_INIT_SIZE, IMEUI_HEAP_MAX_SIZE);
         m_CompStr    = new WcharBuf(m_pHeap, 64);
         m_CompResult = new WcharBuf(m_pHeap, 64);

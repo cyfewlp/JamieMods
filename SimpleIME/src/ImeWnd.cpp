@@ -56,13 +56,13 @@ namespace SimpleIME
         if (m_hWnd == nullptr) throw SimpleIMEException("Create ImeWnd failed");
 
         m_hWndParent = a_parent;
-        ::SetLayeredWindowAttributes(m_hWnd, 0x00000000, 100, LWA_COLORKEY);
+        //::SetLayeredWindowAttributes(m_hWnd, 0x00000000, 100, LWA_COLORKEY);
         m_pImeUI->QueryAllInstalledIME();
         //InitImGui(fontConfig);
         logv(info, "ImGui initialized.");
 
-        ::ShowWindow(m_hWnd, SW_SHOWDEFAULT);
-        ::UpdateWindow(m_hWnd);
+        /*::ShowWindow(m_hWnd, SW_SHOWDEFAULT);
+        ::UpdateWindow(m_hWnd);*/
 
         HIMC hIMC;
         MAKE_CONTEXT(m_hWnd, m_pImeUI->UpdateConversionMode);

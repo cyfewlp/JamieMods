@@ -82,7 +82,6 @@ namespace SimpleIME
         hinst = wndClass->hInstance;
         Hooks::InstallWindowsHooks();
         mainThreadId = GetCurrentThreadId();
-        logv(debug, "thread id {}, hinst {}", mainThreadId, (LPVOID)hinst);
         return RealRegisterClassExA(wndClass);
     }
 

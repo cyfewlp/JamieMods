@@ -117,12 +117,6 @@ namespace SimpleIME
             delete gImeWnd;
             return;
         }
-        catch (...)
-        {
-            logv(err, "Fatal error.");
-            delete gImeWnd;
-            return;
-        }
 
         gState->Initialized.store(true);
 
