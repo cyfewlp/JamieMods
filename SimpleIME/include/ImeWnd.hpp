@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Configs.h"
 #include "ImeUI.h"
 #include "imgui.h"
 #include <windows.h>
+
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 
 constexpr auto WM_CUSTOM = 0x7000;
 #define WM_CUSTOM_CHAR             (WM_CUSTOM + 1)
@@ -15,19 +19,14 @@ namespace SimpleIME
 
     class ImeWnd
     {
-    private:
-        HWND m_hWnd;
-        HINSTANCE m_hInst;
-        HWND      m_hParentWnd;
-        ImeUI    *m_pImeUI;
-
     public:
         ImeWnd();
         ~ImeWnd();
-        BOOL             Initialize(HWND a_parent);
+        void             Initialize(HWND a_parent, FontConfig *fontConfig) noexcept(false);
         void             Focus() const;
         void             RenderImGui();
-        bool             IsShow() const;
+        bool             IsImeEnabled() const;
+        void             SendMessage(UINT msg, WPARAM wParam, LPARAM lParam);
         RE::InputEvent **FilterInputEvent(RE::InputEvent **);
 
     private:
@@ -37,5 +36,22 @@ namespace SimpleIME
         LRESULT        OnStartComposition();
         LRESULT        OnEndComposition();
         LRESULT        OnComposition(HWND hWnd, LPARAM lParam);
+        void           InitImGui(FontConfig *fontConfig) noexcept(false);
+        bool           CreateDeviceD3D() noexcept;
+        void           CreateRenderTarget();
+        void           CleanupDeviceD3D();
+        void           CleanupRenderTarget();
+
+    private:
+        HWND                    m_hWnd;
+        HINSTANCE               m_hInst;
+        HWND                    m_hWndParent;
+        ImeUI                  *m_pImeUI;
+        WNDCLASSEXW             wc;
+        ID3D11RenderTargetView *m_mainRenderTargetView = nullptr;
+        IDXGISwapChain         *m_pSwapChain           = nullptr;
+        ID3D11Device           *m_pd3dDevice           = nullptr;
+        ID3D11DeviceContext    *m_pd3dDeviceContext    = nullptr;
+        UINT                    m_ResizeWidth = 0, m_ResizeHeight = 0;
     };
 } // namespace SimpleIME

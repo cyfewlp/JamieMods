@@ -16,15 +16,25 @@ using namespace std::literals;
 
 struct Logger
 {
-    template <typename T> static void log(spdlog::source_loc loc, spdlog::level::level_enum level, const T &value)
+    template <typename T>
+    static void log(spdlog::source_loc loc, spdlog::level::level_enum level, const T &value)
     {
         spdlog::log(loc, level, value);
     }
+
     template <typename... Types>
     static void log(spdlog::source_loc loc, spdlog::level::level_enum level, const char *const message,
                     const Types &...params)
     {
         auto fmt = std::vformat(std::string(message), std::make_format_args(params...));
         spdlog::log(loc, level, fmt.c_str());
+    }
+};
+
+class SimpleIMEException : public std::runtime_error
+{
+public:
+    explicit SimpleIMEException(const std::string &_Message) : runtime_error(_Message)
+    {
     }
 };

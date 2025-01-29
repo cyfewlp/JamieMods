@@ -1,14 +1,8 @@
 #include "ImeApp.h"
 #include "Hooks.hpp"
 #include "SimpleIni.h"
-#include "dxgi.h"
-#include "imgui.h"
-#include "imgui_freetype.h"
-#include "imgui_impl_dx11.h"
-#include "imgui_impl_win32.h"
-#include "thread"
 #include <Device.h>
-#include <dinput.h>
+#include <thread>
 
 namespace SimpleIME
 {
@@ -82,25 +76,53 @@ namespace SimpleIME
             g_keyboard->Initialize(sd.OutputWindow);
             logv(info, "create keyboard device Successful!");
         }
-        catch (int code)
+        catch (SimpleIMEException exce)
         {
-            logv(err, "create keyboard device failed! code: {}", code);
+            logv(err, "create keyboard device failed!: {}", exce.what());
             delete g_keyboard;
             return;
         }
 
-        gImeWnd = new ImeWnd();
-        if (!gImeWnd->Initialize(sd.OutputWindow))
+        /*std::thread imeWndThread(
+            [](HWND hWnd) {
+                try
+                {
+                    gImeWnd = new ImeWnd();
+                    gImeWnd->Initialize(hWnd, gFontConfig);
+                }
+                catch (SimpleIMEException exce)
+                {
+                    logv(err, "Thread ImeWnd failed. {}", exce.what());
+                    delete gImeWnd;
+                    return;
+                }
+                catch (...)
+                {
+                    logv(err, "Fatal error.");
+                    delete gImeWnd;
+                    return;
+                }
+            },
+            sd.OutputWindow);
+        imeWndThread.detach();*/
+
+        try
         {
-            logv(err, "Can't initialize ImeWnd.");
+            gImeWnd = new ImeWnd();
+            gImeWnd->Initialize(sd.OutputWindow, gFontConfig);
+        }
+        catch (SimpleIMEException exce)
+        {
+            logv(err, "Thread ImeWnd failed. {}", exce.what());
+            delete gImeWnd;
             return;
         }
-
-        auto device  = render_data.forwarder;
-        auto context = render_data.context;
-        InitImGui(sd.OutputWindow, device, context);
-
-        // gImeWnd->Focus();
+        catch (...)
+        {
+            logv(err, "Fatal error.");
+            delete gImeWnd;
+            return;
+        }
 
         gState->Initialized.store(true);
 
@@ -113,102 +135,32 @@ namespace SimpleIME
         }
     }
 
-    void ImeApp::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
-    {
-        logv(info, "Initializing ImGui...");
-        ImGui::CreateContext();
-
-        if (!ImGui_ImplWin32_Init(hWnd))
-        {
-            logv(err, "ImGui initialization failed (Win32)");
-            return;
-        }
-
-        if (!ImGui_ImplDX11_Init(device, context))
-        {
-            logv(err, "ImGui initialization failed (DX11)");
-            return;
-        }
-
-        RECT     rect = {0, 0, 0, 0};
-        ImGuiIO &io   = ImGui::GetIO();
-        (void)io;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        GetClientRect(hWnd, &rect);
-        io.DisplaySize              = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-        io.MouseDrawCursor          = true;
-        io.ConfigNavMoveSetMousePos = true;
-
-        io.Fonts->AddFontFromFileTTF(gFontConfig->eastAsiaFontFile.c_str(), gFontConfig->fontSize, nullptr,
-                                     io.Fonts->GetGlyphRangesChineseFull());
-
-        // config font
-        static ImFontConfig cfg;
-        cfg.OversampleH = cfg.OversampleV = 1;
-        cfg.MergeMode                     = true;
-        cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-        static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
-        io.Fonts->AddFontFromFileTTF(gFontConfig->emojiFontFile.c_str(), gFontConfig->fontSize, &cfg, icons_ranges);
-        io.Fonts->Build();
-        ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hWnd;
-        ImGuiStyle &style                           = ImGui::GetStyle();
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            style.WindowRounding              = 0.0f;
-            style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-        }
-
-        logv(info, "ImGui initialized!");
-    }
-
     void ImeApp::D3DPresent(std::uint32_t ptr)
     {
         D3DPresentHook(ptr);
-        if (!gState->Initialized.load() /*|| !gImeWnd->IsShow()*/)
+        if (!gState->Initialized.load())
         {
             return;
         }
 
-        if (g_keyboard->Acquire(key_state_buffer, sizeof(key_state_buffer)))
+        g_keyboard->Acquire(key_state_buffer, sizeof(key_state_buffer));
+        if (key_state_buffer[DIK_F5] & 0x80)
         {
-            if (key_state_buffer[DIK_F2] & 0x80)
-            {
-                logv(debug, "dinput keyboard down f2");
-            }
-            if (key_state_buffer[DIK_F5] & 0x80)
-            {
-                logv(debug, "foucs popup window");
-                gImeWnd->Focus();
-            }
+            logv(debug, "foucs popup window");
+            gImeWnd->Focus();
         }
-
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        Render();
-
-        ImGui::Render();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-        // Update and Render additional Platform Windows
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
-    }
-
-    void ImeApp::Render()
-    {
-        gImeWnd->RenderImGui();
     }
 
     void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
     {
         ProcessEvent(a_events);
-        // auto events = gImeWnd->FilterInputEvent(a_events);
+        //auto events = gImeWnd->FilterInputEvent(a_events);
         DispatchInputEventHook(a_dispatcher, a_events);
+    }
+
+    inline bool inRange(int v, int min, int max)
+    {
+        return v >= min && v <= max;
     }
 
     void ImeApp::ProcessEvent(RE::InputEvent **events)
@@ -221,8 +173,19 @@ namespace SimpleIME
             RE::INPUT_DEVICE device = event->GetDevice();
             switch (device)
             {
-                case RE::INPUT_DEVICE::kMouse: {
-                    ProcessMouseEvent(buttonEvent);
+                case RE::INPUT_DEVICE::kKeyboard: {
+                    if (gImeWnd->IsImeEnabled())
+                    {
+                        auto code      = buttonEvent->idCode;
+                        bool alphaCode = inRange(code, DIK_Q, DIK_P);
+                        alphaCode |= inRange(code, DIK_A, DIK_L);
+                        alphaCode |= inRange(code, DIK_Z, DIK_M);
+                        if (alphaCode && buttonEvent->IsPressed())
+                        {
+                            logv(debug, "Focus to ImeWnd");
+                            gImeWnd->Focus();
+                        }
+                    }
                     break;
                 }
             }
@@ -254,6 +217,22 @@ namespace SimpleIME
             case WM_SETFOCUS:
                 // gImeWnd->Focus();
                 return S_OK;
+            case WM_INPUTLANGCHANGE:
+                gImeWnd->SendMessage(msg, wParam, lParam);
+                return S_OK;
+            case WM_IME_NOTIFY: {
+                switch (wParam)
+                {
+                    case IMN_SETOPENSTATUS:
+                    case IMN_SETCONVERSIONMODE:
+                    case IMN_SETSENTENCEMODE:
+                        gImeWnd->SendMessage(msg, wParam, lParam);
+                        return S_OK;
+                }
+            }
+            case WM_CHAR:
+                logv(debug, "MainWndProc {:#x}, {:#x}, {:#x}", msg, wParam, lParam);
+                break;
             default:
                 break;
         }

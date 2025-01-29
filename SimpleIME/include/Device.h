@@ -7,12 +7,6 @@
 
 namespace SimpleIME
 {
-#define ERROR_CODE_DIRECTINPUT8CREATE  0x1
-#define ERROR_CODE_CREATEDEVICE        0x2
-#define ERROR_CODE_SETDATAFORMAT       0x3
-#define ERROR_CODE_SETCOOPERATIVELEVEL 0x4
-#define ERROR_CODE_ACQUIRE             0x5
-
     class KeyboardDevice
     {
 
@@ -32,36 +26,32 @@ namespace SimpleIME
             }
         }
 
-        BOOL Initialize(HWND hWnd) throw(int)
+        BOOL Initialize(HWND hWnd) noexcept(false)
         {
             if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
                                           (void **)&pDirectInput, NULL)))
             {
-                throw ERROR_CODE_DIRECTINPUT8CREATE;
+                throw SimpleIMEException("DirectInput8Create failed");
             }
             if (FAILED(pDirectInput->CreateDevice(GUID_SysKeyboard, &pKeyboardDevice, NULL)))
             {
-                throw ERROR_CODE_CREATEDEVICE;
+                throw SimpleIMEException("CreateDevice failed");
             }
             if (FAILED(pKeyboardDevice->SetDataFormat(&c_dfDIKeyboard)))
             {
-                throw ERROR_CODE_SETDATAFORMAT;
+                throw SimpleIMEException("SetDataFormat failed");
             }
 
             if (FAILED(pKeyboardDevice->SetCooperativeLevel(hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)))
             {
-                throw ERROR_CODE_SETCOOPERATIVELEVEL;
-            }
-            //  acquire the device for use
-            if (FAILED(pKeyboardDevice->Acquire()))
-            {
-                throw ERROR_CODE_ACQUIRE;
+                throw SimpleIMEException("SetCooperativeLevel failed");
             }
             return true;
         }
 
-        BOOL Acquire(__out void *buffer, __in long buffer_size) throw(int)
+        BOOL Acquire(__out void *buffer, __in long buffer_size) noexcept
         {
+            if (FAILED(pKeyboardDevice->Acquire())) return FALSE;
             HRESULT rv;
             while (1)
             {
@@ -70,6 +60,7 @@ namespace SimpleIME
                 if (rv != DIERR_INPUTLOST || rv != DIERR_NOTACQUIRED) return FALSE;
                 if (FAILED(pKeyboardDevice->Acquire())) return FALSE;
             }
+            pKeyboardDevice->Unacquire();
             return TRUE;
         }
 

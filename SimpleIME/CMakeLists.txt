@@ -16,9 +16,13 @@ configure_file(
 )
 
 set(headers
-    include/ImeUI.h
     include/Hooks.hpp
     include/SystemImeLoader.h
+    include/Configs.h
+    include/Device.h
+    include/ImeApp.h
+    include/ImeUI.h
+    include/ImeWnd.hpp
 )
 
 set(sources

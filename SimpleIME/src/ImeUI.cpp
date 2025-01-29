@@ -12,13 +12,14 @@
 namespace SimpleIME
 {
 
-    ImeUI::ImeUI(HWND hWnd)
+    ImeUI::ImeUI(HWND hWnd, HWND hWndParent)
     {
         _tsetlocale(LC_ALL, _T("zh-CN"));
         m_pHeap      = HeapCreate(HEAP_GENERATE_EXCEPTIONS, IMEUI_HEAP_INIT_SIZE, IMEUI_HEAP_MAX_SIZE);
         m_CompStr    = new WcharBuf(m_pHeap, 64);
         m_CompResult = new WcharBuf(m_pHeap, 64);
         m_hWnd       = hWnd;
+        m_hWndParent = hWndParent;
 
         WCHAR lang[9];
         GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_SISO639LANGNAME2, lang, 9);
@@ -153,33 +154,46 @@ namespace SimpleIME
 
     void ImeUI::RenderImGui()
     {
-        ImGui::Begin("SimpleIME Debug");
-        for (auto &imeName : imeNames)
-        {
-            int         len = WCharUtils::CharLength(imeName);
-            std::string str(len, 0);
-            WCharUtils::ToString(imeName, &str[0], len);
-            if (ImGui::Button(str.c_str()))
-            {
-                logv(debug, "Switch Ime to: {}", str.c_str());
-                imeLoader.SetIme(imeName.data());
-            }
-        }
-        if (ImGui::Button("Require Foucs"))
-        {
-            ::SetFocus(m_hWnd);
-        }
-        ImGui::End();
-
         static char      buf[64]     = "";
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration;
         windowFlags |= ImGuiWindowFlags_NoResize;
-        windowFlags |= ImGuiWindowFlags_NoTitleBar;
+        windowFlags |= ImGuiWindowFlags_NoBackground;
         windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
         // if (m_imeState.none(IME_IN_COMPOSITION, IME_IN_CANDCHOOSEN)) return;
+        ImGui::SetNextWindowPos({0.0f, 0.0f});
+        // calc window size
+        static int         item_selected_idx = 0;
+        const std::wstring previewImeNameWs  = imeNames[item_selected_idx];
+        int                len;
+        len                  = WCharUtils::CharLength(previewImeNameWs);
+        char *previewImeName = new char[len + 1];
+        previewImeName[len]  = '\0';
+        WCharUtils::ToString(previewImeNameWs, previewImeName, len);
         ImGui::Begin("SimpleIME", (bool *)true, windowFlags);
-
+        if (ImGui::BeginCombo("##IMEComBo", previewImeName))
+        {
+            for (int idx = 0; idx < imeNames.size(); idx++)
+            {
+                bool  isSelected = (item_selected_idx == idx);
+                auto &imeName    = imeNames[idx];
+                len              = WCharUtils::CharLength(imeName);
+                std::string str(len, 0);
+                WCharUtils::ToString(imeName, &str[0], len);
+                if (ImGui::Selectable(str.c_str()))
+                {
+                    item_selected_idx = idx;
+                    logv(debug, "Switch Ime to: {}", str.c_str());
+                    imeLoader.SetIme(imeName.data());
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        delete[] previewImeName;
         ImGui::Button(m_langNameStr.c_str());
         ImGui::SameLine();
         ImGui::BeginGroup();
@@ -196,6 +210,14 @@ namespace SimpleIME
         }
         ImGui::EndGroup();
         ImGui::End();
+        static ImVec2 lastWindowSize{0.0f, 0.0f};
+        auto          size = ImGui::GetWindowSize();
+        if (abs(size.x - lastWindowSize.x) > 0.0001f || abs(size.y - lastWindowSize.y) > 0.0001f)
+        {
+            ::SetWindowPos(m_hWnd, 0, 0, 0, size.x, size.y, SWP_NOACTIVATE | SWP_FRAMECHANGED);
+            lastWindowSize.x = size.x;
+            lastWindowSize.y = size.y;
+        }
     }
 
     static const ImU32 HIGHLIGHT_TEXT_COLOR{IM_COL32(93, 199, 255, 255)};

@@ -86,7 +86,7 @@ namespace SimpleIME
         };
 
     public:
-        ImeUI(HWND hWnd);
+        ImeUI(HWND hWnd, HWND hWndParent);
         ~ImeUI();
 
         void StartComposition();
@@ -97,6 +97,7 @@ namespace SimpleIME
         void                                           RenderImGui();
         void                                           UpdateLanguage();
         void                                           SetOpenStatus(HIMC);
+        void                                           UpdateConversionMode(HIMC);
         bool                                           ImeNotify(HWND, WPARAM, LPARAM);
         [[nodiscard]] bool                             IsEnabled() const;
         [[nodiscard]] SKSE::stl::enumeration<ImeState> GetImeState() const;
@@ -106,7 +107,6 @@ namespace SimpleIME
         static bool GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf);
         void        SendResultString();
         void        SendResultStringToSkyrim();
-        void        UpdateConversionMode(HIMC);
         void        RenderCompWindow(WcharBuf *compStrBuf);
         void        OpenCandidate(HIMC, LPARAM);
         void        ChangeCandidate(HIMC, LPARAM);
@@ -129,6 +129,7 @@ namespace SimpleIME
         std::vector<std::wstring>        imeNames;
         SystemImeLoader                  imeLoader{};
         HWND                             m_hWnd;
+        HWND                             m_hWndParent;
     };
 }
 
