@@ -9,20 +9,19 @@
     #include "Configs.h"
     #include "ImeWnd.hpp"
     #include "d3d11.h"
+    #include <Device.h>
 
 namespace SimpleIME
 {
+
     struct State
     {
-        std::atomic<bool> Initialized = false;
+        std::atomic<bool> Initialized   = false;
+        std::atomic<bool> keyboardState = false;
     };
 
     class ImeApp
     {
-    private:
-        static inline State      *gState;
-        static inline FontConfig *gFontConfig;
-        static inline ImeWnd     *gImeWnd;
 
     public:
         static void        Init();
@@ -31,15 +30,22 @@ namespace SimpleIME
         static void        D3DInit();
         static void        D3DPresent(std::uint32_t ptr);
         static void        DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *, RE::InputEvent **);
+        static bool        CheckAppState();
+        static bool        CreateKeyboard(bool recreate = false);
 
     private:
         static LRESULT        MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-        static void           Render();
-        static void           InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context);
         static void           ProcessEvent(RE::InputEvent **);
         static void           ProcessMouseEvent(RE::ButtonEvent *btnEvent);
 
         static inline WNDPROC RealWndProc;
+
+    private:
+        static inline KeyboardDevice *g_pKeyboard = nullptr;
+        static inline State          *gState;
+        static inline FontConfig     *gFontConfig;
+        static inline HWND            g_hWnd;
+        static inline ImeWnd         *gImeWnd;
 
     private:
     };

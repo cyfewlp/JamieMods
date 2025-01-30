@@ -1,16 +1,14 @@
 #include "ImeApp.h"
 #include "Hooks.hpp"
 #include "SimpleIni.h"
-#include <Device.h>
 #include <thread>
 
 namespace SimpleIME
 {
     using namespace Hooks;
-    auto *g_keyboard = new KeyboardDevice();
-    char  key_state_buffer[256];
+    char key_state_buffer[256];
 
-    void  ImeApp::Init()
+    void ImeApp::Init()
     {
         gFontConfig = LoadConfig();
         gState      = new State();
@@ -71,54 +69,30 @@ namespace SimpleIME
             return;
         }
 
-        try
-        {
-            g_keyboard->Initialize(sd.OutputWindow);
-            logv(info, "create keyboard device Successful!");
-        }
-        catch (SimpleIMEException exce)
-        {
-            logv(err, "create keyboard device failed!: {}", exce.what());
-            delete g_keyboard;
-            return;
-        }
-
-        /*std::thread imeWndThread(
-            [](HWND hWnd) {
-                try
-                {
-                    gImeWnd = new ImeWnd();
-                    gImeWnd->Initialize(hWnd, gFontConfig);
-                }
-                catch (SimpleIMEException exce)
-                {
-                    logv(err, "Thread ImeWnd failed. {}", exce.what());
-                    delete gImeWnd;
-                    return;
-                }
-                catch (...)
-                {
-                    logv(err, "Fatal error.");
-                    delete gImeWnd;
-                    return;
-                }
-            },
-            sd.OutputWindow);
-        imeWndThread.detach();*/
+        g_hWnd = sd.OutputWindow;
+        gState->keyboardState.store(false);
 
         try
         {
             gImeWnd = new ImeWnd();
-            gImeWnd->Initialize(sd.OutputWindow, gFontConfig);
+            gImeWnd->Initialize(g_hWnd);
+            gImeWnd->Focus();
         }
         catch (SimpleIMEException exce)
         {
             logv(err, "Thread ImeWnd failed. {}", exce.what());
             delete gImeWnd;
+            gImeWnd = nullptr;
             return;
         }
 
+        auto device  = render_data.forwarder;
+        auto context = render_data.context;
+        gImeWnd->InitImGui(device, context, gFontConfig);
+
         gState->Initialized.store(true);
+
+        SKSE::GetTaskInterface()->AddUITask([]() { gImeWnd->SetImeOpenStatus(false); });
 
         logv(debug, "Hooking Skyrim WndProc...");
         RealWndProc = reinterpret_cast<WNDPROC>(
@@ -137,24 +111,66 @@ namespace SimpleIME
             return;
         }
 
-        g_keyboard->Acquire(key_state_buffer, sizeof(key_state_buffer));
-        if (key_state_buffer[DIK_F5] & 0x80)
+        if (g_pKeyboard && gState->keyboardState)
         {
-            logv(debug, "foucs popup window");
-            gImeWnd->Focus();
+            g_pKeyboard->GetState(key_state_buffer, sizeof(key_state_buffer));
+            if (key_state_buffer[DIK_F5] & 0x80)
+            {
+                logv(debug, "foucs popup window");
+                gImeWnd->Focus();
+            }
         }
+        gImeWnd->RenderImGui();
     }
 
     void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
     {
+        static RE::InputEvent *dummy[] = {nullptr};
+
         ProcessEvent(a_events);
-        //auto events = gImeWnd->FilterInputEvent(a_events);
-        DispatchInputEventHook(a_dispatcher, a_events);
+        auto discard = gImeWnd->IsDiscardGameInputEvents(a_events);
+        if (discard) // Disable Game Input
+        {
+            DispatchInputEventHook(a_dispatcher, dummy);
+        }
+        else
+        {
+            DispatchInputEventHook(a_dispatcher, a_events);
+        }
     }
 
-    inline bool inRange(int v, int min, int max)
+    bool ImeApp::CheckAppState()
     {
-        return v >= min && v <= max;
+        return gState->keyboardState.load();
+    }
+
+    // if sppecify recreate param, current g_pKeyboard will be delete
+    // This is a insurance if we lost keyboard control
+    bool ImeApp::CreateKeyboard(bool recreate)
+    {
+        if (recreate)
+        {
+            delete g_pKeyboard;
+            g_pKeyboard = nullptr;
+            gState->keyboardState.store(false);
+        }
+
+        try
+        {
+            g_pKeyboard = new KeyboardDevice(g_hWnd);
+            g_pKeyboard->Initialize();
+            logv(info, "create keyboard device Successful!");
+            gState->keyboardState.store(true);
+            return true;
+        }
+        catch (SimpleIMEException exception)
+        {
+            logv(err, "create keyboard device failed!: {}", exception.what());
+            delete g_pKeyboard;
+            g_pKeyboard = nullptr;
+            gState->keyboardState.store(false);
+        }
+        return false;
     }
 
     void ImeApp::ProcessEvent(RE::InputEvent **events)
@@ -167,19 +183,8 @@ namespace SimpleIME
             RE::INPUT_DEVICE device = event->GetDevice();
             switch (device)
             {
-                case RE::INPUT_DEVICE::kKeyboard: {
-                    if (gImeWnd->IsImeEnabled())
-                    {
-                        auto code      = buttonEvent->idCode;
-                        bool alphaCode = inRange(code, DIK_Q, DIK_P);
-                        alphaCode |= inRange(code, DIK_A, DIK_L);
-                        alphaCode |= inRange(code, DIK_Z, DIK_M);
-                        if (alphaCode && buttonEvent->IsPressed())
-                        {
-                            logv(debug, "Focus to ImeWnd");
-                            gImeWnd->Focus();
-                        }
-                    }
+                case RE::INPUT_DEVICE::kMouse: {
+                    ProcessMouseEvent(buttonEvent);
                     break;
                 }
             }
@@ -209,24 +214,8 @@ namespace SimpleIME
         switch (msg)
         {
             case WM_SETFOCUS:
-                // gImeWnd->Focus();
+                gImeWnd->Focus();
                 return S_OK;
-            case WM_INPUTLANGCHANGE:
-                gImeWnd->SendMessage(msg, wParam, lParam);
-                return S_OK;
-            case WM_IME_NOTIFY: {
-                switch (wParam)
-                {
-                    case IMN_SETOPENSTATUS:
-                    case IMN_SETCONVERSIONMODE:
-                    case IMN_SETSENTENCEMODE:
-                        gImeWnd->SendMessage(msg, wParam, lParam);
-                        return S_OK;
-                }
-            }
-            case WM_CHAR:
-                logv(debug, "MainWndProc {:#x}, {:#x}, {:#x}", msg, wParam, lParam);
-                break;
             default:
                 break;
         }

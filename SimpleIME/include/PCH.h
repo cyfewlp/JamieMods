@@ -31,10 +31,14 @@ struct Logger
     }
 };
 
+static constexpr int DIRECTINPUT_ACQUIRE_FAILED = 0x1;
+
 class SimpleIMEException : public std::runtime_error
 {
 public:
-    explicit SimpleIMEException(const std::string &_Message) : runtime_error(_Message)
+    int code;
+
+    explicit SimpleIMEException(const std::string &_Message, int a_code = 0) : code(a_code), runtime_error(_Message)
     {
     }
 };

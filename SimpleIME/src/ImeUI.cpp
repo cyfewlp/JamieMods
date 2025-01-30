@@ -5,21 +5,31 @@
 #include "ImeUI.h"
 #include "WCharUtils.h"
 #include "imgui.h"
+#include <ImeApp.h>
 #include <locale.h>
-#include <stdio.h>
 #include <tchar.h>
 
 namespace SimpleIME
 {
+    static void HelpMarker(const char *desc)
+    {
+        ImGui::Text("\xe2\x9d\x94"); // white ?
+        if (ImGui::BeginItemTooltip())
+        {
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextUnformatted(desc);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+    }
 
-    ImeUI::ImeUI(HWND hWnd, HWND hWndParent)
+    ImeUI::ImeUI(HWND hWnd)
     {
         _tsetlocale(LC_ALL, _T(""));
         m_pHeap      = HeapCreate(HEAP_GENERATE_EXCEPTIONS, IMEUI_HEAP_INIT_SIZE, IMEUI_HEAP_MAX_SIZE);
         m_CompStr    = new WcharBuf(m_pHeap, 64);
         m_CompResult = new WcharBuf(m_pHeap, 64);
         m_hWnd       = hWnd;
-        m_hWndParent = hWndParent;
 
         WCHAR lang[9];
         GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_SISO639LANGNAME2, lang, 9);
@@ -71,22 +81,9 @@ namespace SimpleIME
 
     void ImeUI::QueryAllInstalledIME()
     {
-        imeNames.clear();
+        m_imeProfiles.clear();
         _tsetlocale(LC_ALL, _T(""));
-        auto num  = GetKeyboardLayoutList(0, nullptr);
-        HKL *list = new HKL[num];
-        GetKeyboardLayoutList(num, list);
-        for (auto i = 0; i < num; i++)
-        {
-            auto hkl    = list[i];
-            auto device = HIWORD(hkl);
-            if ((device & 0xF000) != 0xF000)
-            {
-                auto layoutId = LOWORD(hkl);
-                imeLoader.LoadIme(layoutId, imeNames);
-            }
-        }
-        delete[] list;
+        imeLoader.LoadIme(m_imeProfiles);
     }
 
     void ImeUI::SendResultString()
@@ -152,51 +149,32 @@ namespace SimpleIME
         return false;
     }
 
-    void ImeUI::RenderImGui()
+    static bool toolWindow = true;
+
+    void        ImeUI::RenderImGui()
     {
-        static char      buf[64]     = "";
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration;
-        windowFlags |= ImGuiWindowFlags_NoResize;
+        RenderToolWindow();
+
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
+        windowFlags |= ImGuiWindowFlags_NoDecoration;
         windowFlags |= ImGuiWindowFlags_NoBackground;
         windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-        // if (m_imeState.none(IME_IN_COMPOSITION, IME_IN_CANDCHOOSEN)) return;
-        ImGui::SetNextWindowPos({0.0f, 0.0f});
-        // calc window size
-        static int         item_selected_idx = 0;
-        const std::wstring previewImeNameWs  = imeNames[item_selected_idx];
-        int                len;
-        len                  = WCharUtils::CharLength(previewImeNameWs);
-        char *previewImeName = new char[len + 1];
-        previewImeName[len]  = '\0';
-        WCharUtils::ToString(previewImeNameWs, previewImeName, len);
-        ImGui::Begin("SimpleIME", (bool *)true, windowFlags);
-        if (ImGui::BeginCombo("##IMEComBo", previewImeName))
+        if (m_imeState.none(IME_IN_CANDCHOOSEN, IME_IN_COMPOSITION))
         {
-            for (int idx = 0; idx < imeNames.size(); idx++)
-            {
-                bool  isSelected = (item_selected_idx == idx);
-                auto &imeName    = imeNames[idx];
-                len              = WCharUtils::CharLength(imeName);
-                std::string str(len, 0);
-                WCharUtils::ToString(imeName, &str[0], len);
-                if (ImGui::Selectable(str.c_str()))
-                {
-                    item_selected_idx = idx;
-                    logv(debug, "Switch Ime to: {}", str.c_str());
-                    imeLoader.SetIme(imeName.data());
-                }
-                if (isSelected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
+            return;
         }
-        delete[] previewImeName;
-        ImGui::Button(m_langNameStr.c_str());
-        ImGui::SameLine();
+
+        ImGui::Begin("SimpleIME", (bool *)false, windowFlags);
         ImGui::BeginGroup();
+        ImGui::Button(m_langNameStr.c_str());
+        if (ImGui::Button("(?)"))
+        {
+            toolWindow = !toolWindow;
+        }
+        ImGui::EndGroup();
+
+        ImGui::SameLine();
         RenderCompWindow(m_CompStr);
 
         ImVec2 max = ImGui::GetItemRectMax();
@@ -208,16 +186,67 @@ namespace SimpleIME
             ImVec2 pos{min.x, max.y + 5};
             RenderCandWindow(pos);
         }
-        ImGui::EndGroup();
         ImGui::End();
-        static ImVec2 lastWindowSize{0.0f, 0.0f};
-        auto          size = ImGui::GetWindowSize();
-        if (abs(size.x - lastWindowSize.x) > 0.0001f || abs(size.y - lastWindowSize.y) > 0.0001f)
+    }
+
+    void ImeUI::RenderToolWindow()
+    {
+        if (!toolWindow) return;
+
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
+        ImGui::Begin("ToolWindow##SimpleIME", &toolWindow, windowFlags);
+        static int  item_selected_idx = 0;
+        auto       &profile           = m_imeProfiles[item_selected_idx];
+        const char *previewImeName    = profile.desc.c_str();
+        if (ImGui::BeginCombo("Installed IME", previewImeName))
         {
-            ::SetWindowPos(m_hWnd, 0, 0, 0, size.x, size.y, SWP_NOACTIVATE | SWP_FRAMECHANGED);
-            lastWindowSize.x = size.x;
-            lastWindowSize.y = size.y;
+            for (int idx = 0; idx < m_imeProfiles.size(); idx++)
+            {
+                auto p          = m_imeProfiles[idx];
+                bool isSelected = (item_selected_idx == idx);
+                auto label      = fmt::format("{}##{}", p.desc, idx);
+                if (ImGui::Selectable(label.c_str()))
+                {
+                    item_selected_idx = idx;
+                    imeLoader.ActiveProfile(p);
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
         }
+
+        static ImVec4 red(0.9f, 0.0f, 0.5f, 1.0f);
+        static ImVec4 green(0.0f, 1.0f, 0.0f, 1.0f);
+        HelpMarker(R"(By default, keyboard in exclusive access by Skyrim. 
+So all IME & almostly keyboard message is disabled. SimpleIME must be override the behaviour: 
+Create a new device and set to no-exclusive access.)");
+        ImGui::SameLine();
+        ImGui::Text("Keyboard device: ");
+        ImGui::SameLine();
+        if (!ImeApp::CheckAppState())
+        {
+            ImGui::TextColored(red, "No(IME Inactive)");
+            if (ImGui::Button("Try create"))
+            {
+                ImeApp::CreateKeyboard();
+            }
+            ImGui::SetItemTooltip("Create a no-exclusive keyboard");
+            ImGui::SameLine();
+        }
+        else
+        {
+            ImGui::TextColored(green, "Ok(IME Actived)");
+        }
+        if (ImGui::Button("Recreate Keyboard"))
+        {
+            ImeApp::CreateKeyboard(true);
+        }
+        ImGui::SetItemTooltip(
+            "Delete current keyboard device and create a new. Be used to when IME can't recive input.");
+        ImGui::End();
     }
 
     static const ImU32 HIGHLIGHT_TEXT_COLOR{IM_COL32(93, 199, 255, 255)};
@@ -239,7 +268,6 @@ namespace SimpleIME
 
     void ImeUI::RenderCandWindow(ImVec2 &wndPos) const
     {
-
         ImVec2           childSize(0.0f, fontSize * 2);
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoInputs;
         windowFlags |= ImGuiWindowFlags_NoScrollbar;
@@ -290,6 +318,7 @@ namespace SimpleIME
         if (::GetLocaleInfoA(keyboard_lcid, (LOCALE_RETURN_NUMBER | LOCALE_IDEFAULTANSICODEPAGE),
                              (LPSTR)&keyboardCodePage, sizeof(keyboardCodePage)) == 0)
             keyboardCodePage = CP_ACP; // Fallback to default ANSI code page when fails.
+        imeLoader.LoadActiveIme();
     }
 
     bool ImeUI::ImeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam)

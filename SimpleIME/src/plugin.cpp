@@ -33,10 +33,8 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse)
     logv(info, "{} {} is loading...", plugin->GetName(), version.string());
 
     SKSE::Init(skse);
-
     SimpleIME::ImeApp::Init();
 
     logv(info, "{} has finished loading.", plugin->GetName());
-
     return true;
 }
