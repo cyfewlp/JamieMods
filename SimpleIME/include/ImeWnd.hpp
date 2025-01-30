@@ -41,7 +41,6 @@ namespace SimpleIME
         LRESULT        OnComposition(HWND hWnd, LPARAM lParam);
 
     private:
-        HINSTANCE   m_hInst;
         HWND        m_hWndParent;
         ImeUI      *m_pImeUI;
         WNDCLASSEXW wc;

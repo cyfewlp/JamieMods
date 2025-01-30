@@ -17,7 +17,7 @@ configure_file(
 
 set(headers
     include/Hooks.hpp
-    include/SystemImeLoader.h
+    include/LangProfileUtil.h
     include/Configs.h
     include/Device.h
     include/ImeApp.h
@@ -31,7 +31,7 @@ set(sources
     src/ImeUI.cpp
     src/ImeWnd.cpp
     src/Hooks.cpp
-    src/SystemImeLoader.cpp
+    src/LangProfileUtil.cpp
 )
 
 source_group(

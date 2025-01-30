@@ -14,15 +14,22 @@ namespace SimpleIME
 
     ImeWnd::ImeWnd()
     {
-        m_hInst      = nullptr;
         m_hWndParent = nullptr;
         m_hWnd       = nullptr;
         m_pImeUI     = nullptr;
+        wc           = {};
+        ZeroMemory(&wc, sizeof(wc));
+        wc.cbSize        = sizeof(wc);
+        wc.style         = CS_PARENTDC;
+        wc.cbClsExtra    = 0;
+        wc.lpfnWndProc   = ImeWnd::WndProc;
+        wc.cbWndExtra    = 0;
+        wc.lpszClassName = g_tMainClassName;
     }
 
     ImeWnd::~ImeWnd()
     {
-        logv(info, "Release ImeWNd");
+        delete m_pImeUI;
         if (m_hWnd)
         {
             ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
@@ -32,17 +39,7 @@ namespace SimpleIME
 
     void ImeWnd::Initialize(HWND a_parent) noexcept(false)
     {
-        ZeroMemory(&wc, sizeof(wc));
-
-        m_hInst          = GetModuleHandle(nullptr);
-        wc.cbSize        = sizeof(wc);
-        wc.style         = CS_PARENTDC;
-        wc.cbClsExtra    = 0;
-        wc.lpfnWndProc   = ImeWnd::WndProc;
-        wc.cbClsExtra    = 0;
-        wc.cbWndExtra    = 0;
-        wc.hInstance     = m_hInst;
-        wc.lpszClassName = g_tMainClassName;
+        wc.hInstance = GetModuleHandle(nullptr);
         if (!::RegisterClassExW(&wc)) throw SimpleIMEException("Can't register class");
         DWORD dwExStyle = 0;
         DWORD dwStyle   = WS_CHILD;
@@ -54,6 +51,7 @@ namespace SimpleIME
         if (m_hWnd == nullptr) throw SimpleIMEException("Create ImeWnd failed");
         m_pImeUI->QueryAllInstalledIME();
         m_pImeUI->UpdateLanguage();
+        m_pImeUI->UpdateActiveLangProfile();
     }
 
     LRESULT ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -70,7 +68,6 @@ namespace SimpleIME
                 pThis     = (ImeWnd *)(lpCs->lpCreateParams);
                 SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pThis);
                 // set the window handle
-                pThis->m_hInst      = lpCs->hInstance;
                 pThis->m_hWnd       = hWnd;
                 pThis->m_hWndParent = lpCs->hwndParent;
                 break;
@@ -90,7 +87,6 @@ namespace SimpleIME
                 return S_OK;
             }
             case WM_IME_NOTIFY: {
-                logv(debug, "ImeWnd {:#x}", wParam);
                 if (pThis->m_pImeUI->ImeNotify(hWnd, wParam, lParam)) return S_OK;
                 break;
             }

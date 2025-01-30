@@ -10,9 +10,9 @@ namespace SimpleIME
 
     void ImeApp::Init()
     {
-        gFontConfig = LoadConfig();
-        gState      = new State();
-        gState->Initialized.store(false);
+        g_pFontConfig.reset(LoadConfig());
+        g_pState.reset(new State());
+        g_pState->Initialized.store(false);
         Hooks::InstallCreateWindowHook();
     }
 
@@ -43,7 +43,7 @@ namespace SimpleIME
     void                                          ImeApp::D3DInit()
     {
         D3DInitHook();
-        if (gState->Initialized.load()) return;
+        if (g_pState->Initialized.load()) return;
 
         auto render_manager = RE::BSGraphics::Renderer::GetSingleton();
         if (!render_manager)
@@ -70,29 +70,30 @@ namespace SimpleIME
         }
 
         g_hWnd = sd.OutputWindow;
-        gState->keyboardState.store(false);
+        g_pKeyboard.reset();
+        g_pState->keyboardState.store(false);
 
         try
         {
-            gImeWnd = new ImeWnd();
-            gImeWnd->Initialize(g_hWnd);
-            gImeWnd->Focus();
+            g_pImeWnd.reset(new ImeWnd());
+            g_pImeWnd->Initialize(g_hWnd);
+            g_pImeWnd->Focus();
         }
         catch (SimpleIMEException exce)
         {
             logv(err, "Thread ImeWnd failed. {}", exce.what());
-            delete gImeWnd;
-            gImeWnd = nullptr;
+            g_pImeWnd.reset();
+            g_pImeWnd = nullptr;
             return;
         }
 
         auto device  = render_data.forwarder;
         auto context = render_data.context;
-        gImeWnd->InitImGui(device, context, gFontConfig);
+        g_pImeWnd->InitImGui(device, context, g_pFontConfig.get());
 
-        gState->Initialized.store(true);
+        g_pState->Initialized.store(true);
 
-        SKSE::GetTaskInterface()->AddUITask([]() { gImeWnd->SetImeOpenStatus(false); });
+        SKSE::GetTaskInterface()->AddUITask([]() { g_pImeWnd->SetImeOpenStatus(false); });
 
         logv(debug, "Hooking Skyrim WndProc...");
         RealWndProc = reinterpret_cast<WNDPROC>(
@@ -106,21 +107,21 @@ namespace SimpleIME
     void ImeApp::D3DPresent(std::uint32_t ptr)
     {
         D3DPresentHook(ptr);
-        if (!gState->Initialized.load())
+        if (!g_pState->Initialized.load())
         {
             return;
         }
 
-        if (g_pKeyboard && gState->keyboardState)
+        if (g_pKeyboard && g_pState->keyboardState)
         {
             g_pKeyboard->GetState(key_state_buffer, sizeof(key_state_buffer));
             if (key_state_buffer[DIK_F5] & 0x80)
             {
                 logv(debug, "foucs popup window");
-                gImeWnd->Focus();
+                g_pImeWnd->Focus();
             }
         }
-        gImeWnd->RenderImGui();
+        g_pImeWnd->RenderImGui();
     }
 
     void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
@@ -128,7 +129,7 @@ namespace SimpleIME
         static RE::InputEvent *dummy[] = {nullptr};
 
         ProcessEvent(a_events);
-        auto discard = gImeWnd->IsDiscardGameInputEvents(a_events);
+        auto discard = g_pImeWnd->IsDiscardGameInputEvents(a_events);
         if (discard) // Disable Game Input
         {
             DispatchInputEventHook(a_dispatcher, dummy);
@@ -141,7 +142,7 @@ namespace SimpleIME
 
     bool ImeApp::CheckAppState()
     {
-        return gState->keyboardState.load();
+        return g_pState->keyboardState.load();
     }
 
     // if sppecify recreate param, current g_pKeyboard will be delete
@@ -150,25 +151,27 @@ namespace SimpleIME
     {
         if (recreate)
         {
-            delete g_pKeyboard;
-            g_pKeyboard = nullptr;
-            gState->keyboardState.store(false);
+            g_pKeyboard.release();
+            g_pState->keyboardState.store(false);
+        }
+        else if (g_pKeyboard)
+        {
+            return true;
         }
 
         try
         {
-            g_pKeyboard = new KeyboardDevice(g_hWnd);
+            g_pKeyboard.reset(new KeyboardDevice(g_hWnd));
             g_pKeyboard->Initialize();
             logv(info, "create keyboard device Successful!");
-            gState->keyboardState.store(true);
+            g_pState->keyboardState.store(true);
             return true;
         }
         catch (SimpleIMEException exception)
         {
             logv(err, "create keyboard device failed!: {}", exception.what());
-            delete g_pKeyboard;
-            g_pKeyboard = nullptr;
-            gState->keyboardState.store(false);
+            g_pKeyboard.release();
+            g_pState->keyboardState.store(false);
         }
         return false;
     }
@@ -214,7 +217,7 @@ namespace SimpleIME
         switch (msg)
         {
             case WM_SETFOCUS:
-                gImeWnd->Focus();
+                g_pImeWnd->Focus();
                 return S_OK;
             default:
                 break;

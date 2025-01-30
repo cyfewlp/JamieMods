@@ -9,9 +9,13 @@
 #include <locale.h>
 #include <tchar.h>
 
+#define LAST_SIZE(vector) vector.size() - 1
+
 namespace SimpleIME
 {
-    static void HelpMarker(const char *desc)
+    static size_t langProfileSelected = 0;
+
+    static void   HelpMarker(const char *desc)
     {
         ImGui::Text("\xe2\x9d\x94"); // white ?
         if (ImGui::BeginItemTooltip())
@@ -40,6 +44,9 @@ namespace SimpleIME
     {
         HeapDestroy(m_pHeap);
         m_pHeap = nullptr;
+        delete m_CompStr;
+        delete m_CompResult;
+        delete[] &m_imeCandidates;
     }
 
     void ImeUI::StartComposition()
@@ -83,7 +90,15 @@ namespace SimpleIME
     {
         m_imeProfiles.clear();
         _tsetlocale(LC_ALL, _T(""));
-        imeLoader.LoadIme(m_imeProfiles);
+        langProfileUtil.LoadIme(m_imeProfiles);
+
+        LangProfile engProfile = {};
+        ZeroMemory(&engProfile, sizeof(engProfile));
+        engProfile.clsid       = CLSID_NULL;
+        engProfile.langid      = 0x409; // english keyboard
+        engProfile.guidProfile = GUID_NULL;
+        engProfile.desc        = std::string("ENG");
+        m_imeProfiles.push_back(engProfile);
     }
 
     void ImeUI::SendResultString()
@@ -195,20 +210,19 @@ namespace SimpleIME
 
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
         ImGui::Begin("ToolWindow##SimpleIME", &toolWindow, windowFlags);
-        static int  item_selected_idx = 0;
-        auto       &profile           = m_imeProfiles[item_selected_idx];
-        const char *previewImeName    = profile.desc.c_str();
+        auto       &profile        = m_imeProfiles[langProfileSelected];
+        const char *previewImeName = profile.desc.c_str();
         if (ImGui::BeginCombo("Installed IME", previewImeName))
         {
             for (int idx = 0; idx < m_imeProfiles.size(); idx++)
             {
                 auto p          = m_imeProfiles[idx];
-                bool isSelected = (item_selected_idx == idx);
+                bool isSelected = (langProfileSelected == idx);
                 auto label      = fmt::format("{}##{}", p.desc, idx);
                 if (ImGui::Selectable(label.c_str()))
                 {
-                    item_selected_idx = idx;
-                    imeLoader.ActiveProfile(p);
+                    langProfileSelected = idx;
+                    langProfileUtil.ActiveProfile(p);
                 }
                 if (isSelected)
                 {
@@ -318,7 +332,23 @@ Create a new device and set to no-exclusive access.)");
         if (::GetLocaleInfoA(keyboard_lcid, (LOCALE_RETURN_NUMBER | LOCALE_IDEFAULTANSICODEPAGE),
                              (LPSTR)&keyboardCodePage, sizeof(keyboardCodePage)) == 0)
             keyboardCodePage = CP_ACP; // Fallback to default ANSI code page when fails.
-        imeLoader.LoadActiveIme();
+    }
+
+    void ImeUI::UpdateActiveLangProfile()
+    {
+        GUID activeGuid = {};
+        if (langProfileUtil.LoadActiveIme(activeGuid))
+        {
+            for (size_t idx = 0; idx < m_imeProfiles.size(); idx++)
+            {
+                if (activeGuid == m_imeProfiles[idx].guidProfile)
+                {
+                    logv(debug, "Active profile: {}", idx);
+                    langProfileSelected = idx;
+                    return;
+                }
+            }
+        }
     }
 
     bool ImeUI::ImeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam)
@@ -342,7 +372,7 @@ Create a new device and set to no-exclusive access.)");
                 MAKE_CONTEXT(hwnd, UpdateConversionMode);
                 break;
             case IMN_SETOPENSTATUS:
-                MAKE_CONTEXT(hwnd, SetOpenStatus);
+                MAKE_CONTEXT(hwnd, OnSetOpenStatus);
                 break;
         }
         return false;
@@ -366,7 +396,7 @@ Create a new device and set to no-exclusive access.)");
         }
     }
 
-    void ImeUI::SetOpenStatus(HIMC hIMC)
+    void ImeUI::OnSetOpenStatus(HIMC hIMC)
     {
         if (ImmGetOpenStatus(hIMC))
         {
@@ -389,7 +419,9 @@ Create a new device and set to no-exclusive access.)");
         else
         {
             m_imeState.reset(IME_OPEN);
+            langProfileSelected = LAST_SIZE(m_imeProfiles);
         }
+        UpdateActiveLangProfile();
     }
 
     // when ImeUi enabled, the Game Input will be block and composition string will be sent
@@ -411,7 +443,7 @@ Create a new device and set to no-exclusive access.)");
         int             width      = 0;
         bufLen                     = ImmGetCandidateListW(hIMC, 0, nullptr, 0);
         logv(debug, "Candidate index 0 buf len {}", bufLen);
-        for (DWORD index = 0; index < MAX_CAND_LIST; ++index)
+        for (uint8_t index = 0; index < MAX_CAND_LIST; ++index)
         {
             if (!(candListFlag & (1 << index))) continue;
             if (!(bufLen = ImmGetCandidateListW(hIMC, index, nullptr, 0))) break;
@@ -444,7 +476,7 @@ Create a new device and set to no-exclusive access.)");
 
     void ImeUI::CloseCandidate(LPARAM candListFlag)
     {
-        for (int index = 0; index < MAX_CAND_LIST; ++index)
+        for (uint8_t index = 0; index < MAX_CAND_LIST; ++index)
         {
             if (candListFlag & (1 << index))
             {
@@ -506,7 +538,7 @@ Create a new device and set to no-exclusive access.)");
             dwEndIndex = lpCandList->dwCount;
         }
         candidate->candList.clear();
-        size_t maxWidth = 0;
+        DWORD dwLineWidth = 0;
         for (; dwStartIndex < dwEndIndex; dwStartIndex++)
         {
             lpwStr = (LPWCH)((LPSTR)lpCandList + lpCandList->dwOffset[dwStartIndex]);
@@ -514,10 +546,10 @@ Create a new device and set to no-exclusive access.)");
 
             auto         stdStr = WCharUtils::ToString(ws);
             size_t       width  = (ws.size() + 1) * fontSize + 10;
-            maxWidth += width;
+            dwLineWidth += width;
             candidate->candList.push_back(stdStr);
         }
-        candidate->dwWidth      = maxWidth;
+        candidate->dwWidth      = dwLineWidth;
         candidate->dwSelecttion = lpCandList->dwSelection % candidate->dwNumPerPage;
     }
 

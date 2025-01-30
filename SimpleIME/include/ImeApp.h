@@ -41,11 +41,11 @@ namespace SimpleIME
         static inline WNDPROC RealWndProc;
 
     private:
-        static inline KeyboardDevice *g_pKeyboard = nullptr;
-        static inline State          *gState;
-        static inline FontConfig     *gFontConfig;
-        static inline HWND            g_hWnd;
-        static inline ImeWnd         *gImeWnd;
+        static inline auto g_pKeyboard   = std::make_unique<KeyboardDevice>(nullptr);
+        static inline auto g_pState      = std::make_unique<State>();
+        static inline auto g_pFontConfig = std::make_unique<FontConfig>();
+        static inline auto g_pImeWnd     = std::make_unique<ImeWnd>();
+        static inline HWND g_hWnd        = nullptr;
 
     private:
     };
