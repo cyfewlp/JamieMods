@@ -61,6 +61,7 @@ namespace SimpleIME
         IME_IN_CANDCHOOSEN  = 0x2,
         IME_IN_ALPHANUMERIC = 0x4,
         IME_OPEN            = 0x8,
+        IME_UI_FOCUSED      = 0x10,
         IME_ALL             = 0xFFFF
     };
 
@@ -92,7 +93,8 @@ namespace SimpleIME
         void CompositionString(HIMC hIMC, LPARAM lParam);
         void QueryAllInstalledIME();
         // Render To ImGui
-        void                                           RenderImGui();
+        void                                           RenderIme();
+        void                                           ShowToolWindow();
         void                                           UpdateLanguage();
         void                                           UpdateActiveLangProfile();
         void                                           OnSetOpenStatus(HIMC);
@@ -128,6 +130,7 @@ namespace SimpleIME
         ImeCandidate                    *m_imeCandidates[MAX_CAND_LIST]{nullptr};
         std::vector<LangProfile>         m_imeProfiles;
         LangProfileUtil                  langProfileUtil{};
+        bool                             m_showToolWindow = false;
         HWND                             m_hWnd;
     };
 }

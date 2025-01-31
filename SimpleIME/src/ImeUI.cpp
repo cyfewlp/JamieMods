@@ -46,7 +46,14 @@ namespace SimpleIME
         m_pHeap = nullptr;
         delete m_CompStr;
         delete m_CompResult;
-        delete[] &m_imeCandidates;
+        for (int i = 0; i < MAX_CAND_LIST; ++i)
+        {
+            if (m_imeCandidates[i] != nullptr)
+            {
+                delete m_imeCandidates[i];
+                m_imeCandidates[i] = nullptr;
+            }
+        }
     }
 
     void ImeUI::StartComposition()
@@ -164,12 +171,9 @@ namespace SimpleIME
         return false;
     }
 
-    static bool toolWindow = true;
-
-    void        ImeUI::RenderImGui()
+    void ImeUI::RenderIme()
     {
         RenderToolWindow();
-
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
         windowFlags |= ImGuiWindowFlags_NoDecoration;
         windowFlags |= ImGuiWindowFlags_NoBackground;
@@ -181,13 +185,7 @@ namespace SimpleIME
         }
 
         ImGui::Begin("SimpleIME", (bool *)false, windowFlags);
-        ImGui::BeginGroup();
         ImGui::Button(m_langNameStr.c_str());
-        if (ImGui::Button("(?)"))
-        {
-            toolWindow = !toolWindow;
-        }
-        ImGui::EndGroup();
 
         ImGui::SameLine();
         RenderCompWindow(m_CompStr);
@@ -204,15 +202,32 @@ namespace SimpleIME
         ImGui::End();
     }
 
+    void ImeUI::ShowToolWindow()
+    {
+        m_showToolWindow = !m_showToolWindow;
+        auto &io         = ImGui::GetIO();
+        if (!m_showToolWindow)
+        {
+            io.MouseDrawCursor          = false;
+            io.ConfigNavMoveSetMousePos = false;
+            m_imeState.reset(IME_UI_FOCUSED);
+            return;
+        }
+        io.MouseDrawCursor          = true;
+        io.ConfigNavMoveSetMousePos = true;
+        m_imeState.set(IME_UI_FOCUSED);
+    }
+
     void ImeUI::RenderToolWindow()
     {
-        if (!toolWindow) return;
+        if (!m_showToolWindow) return;
 
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
-        ImGui::Begin("ToolWindow##SimpleIME", &toolWindow, windowFlags);
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+        windowFlags |= ImGuiWindowFlags_NoCollapse;
+        ImGui::Begin("ToolWindow##SimpleIME", &m_showToolWindow, windowFlags);
         auto       &profile        = m_imeProfiles[langProfileSelected];
         const char *previewImeName = profile.desc.c_str();
-        if (ImGui::BeginCombo("Installed IME", previewImeName))
+        if (ImGui::BeginCombo("###InstalledIME", previewImeName))
         {
             for (int idx = 0; idx < m_imeProfiles.size(); idx++)
             {
@@ -231,35 +246,16 @@ namespace SimpleIME
             }
             ImGui::EndCombo();
         }
+        ImGui::SameLine();
 
-        static ImVec4 red(0.9f, 0.0f, 0.5f, 1.0f);
-        static ImVec4 green(0.0f, 1.0f, 0.0f, 1.0f);
         HelpMarker(R"(By default, keyboard in exclusive access by Skyrim. 
-So all IME & almostly keyboard message is disabled. SimpleIME must be override the behaviour: 
-Create a new device and set to no-exclusive access.)");
+So all IME & almostly keyboard message is disabled.)");
         ImGui::SameLine();
-        ImGui::Text("Keyboard device: ");
-        ImGui::SameLine();
-        if (!ImeApp::CheckAppState())
+        if (ImGui::Button("Reset Keyboard"))
         {
-            ImGui::TextColored(red, "No(IME Inactive)");
-            if (ImGui::Button("Try create"))
-            {
-                ImeApp::CreateKeyboard();
-            }
-            ImGui::SetItemTooltip("Create a no-exclusive keyboard");
-            ImGui::SameLine();
+            ImeApp::ResetExclusiveMode();
         }
-        else
-        {
-            ImGui::TextColored(green, "Ok(IME Actived)");
-        }
-        if (ImGui::Button("Recreate Keyboard"))
-        {
-            ImeApp::CreateKeyboard(true);
-        }
-        ImGui::SetItemTooltip(
-            "Delete current keyboard device and create a new. Be used to when IME can't recive input.");
+        ImGui::SetItemTooltip("If IME can't recive inputs, please try reset to fix it(non-exclusive access).");
         ImGui::End();
     }
 

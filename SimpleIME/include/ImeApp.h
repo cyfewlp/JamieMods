@@ -17,7 +17,6 @@ namespace SimpleIME
     struct State
     {
         std::atomic<bool> Initialized   = false;
-        std::atomic<bool> keyboardState = false;
     };
 
     class ImeApp
@@ -31,7 +30,7 @@ namespace SimpleIME
         static void        D3DPresent(std::uint32_t ptr);
         static void        DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *, RE::InputEvent **);
         static bool        CheckAppState();
-        static bool        CreateKeyboard(bool recreate = false);
+        static bool        ResetExclusiveMode();
 
     private:
         static LRESULT        MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

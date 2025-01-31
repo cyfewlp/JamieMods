@@ -26,7 +26,8 @@ namespace SimpleIME
         void Initialize(HWND a_parent) noexcept(false);
         void InitImGui(ID3D11Device *, ID3D11DeviceContext *, FontConfig *fontConfig) const noexcept(false);
         void Focus() const;
-        void RenderImGui();
+        void RenderIme();
+        void ShowToolWindow();
         void SetImeOpenStatus(bool open);
         bool IsImeEnabled() const;
         void SendMessage(UINT msg, WPARAM wParam, LPARAM lParam);
@@ -43,6 +44,7 @@ namespace SimpleIME
     private:
         HWND        m_hWndParent;
         ImeUI      *m_pImeUI;
+        bool        m_showToolWindow;
         WNDCLASSEXW wc;
     };
 } // namespace SimpleIME

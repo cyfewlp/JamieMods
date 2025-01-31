@@ -11,8 +11,17 @@ namespace SimpleIME
     {
 
     public:
-        KeyboardDevice(HWND hWnd) : m_hWnd(hWnd)
+        KeyboardDevice(HWND hWnd) noexcept(false) : m_hWnd(hWnd)
         {
+            if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
+                                          (void **)&m_pDirectInput, NULL)))
+            {
+                throw SimpleIMEException("DirectInput8Create failed");
+            }
+            if (FAILED(m_pDirectInput->CreateDevice(GUID_SysKeyboard, &m_pKeyboardDevice, NULL)))
+            {
+                throw SimpleIMEException("CreateDevice failed");
+            }
         }
 
         ~KeyboardDevice()
@@ -31,25 +40,17 @@ namespace SimpleIME
             }
         }
 
-        BOOL Initialize() noexcept(false)
+        BOOL SetNonExclusive() noexcept(false)
         {
-            HRESULT hr;
-            if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
-                                          (void **)&m_pDirectInput, NULL)))
+            m_pKeyboardDevice->Unacquire();
+            DWORD dwFlags = DISCL_FOREGROUND | DISCL_NONEXCLUSIVE;
+            if (FAILED(m_pKeyboardDevice->SetCooperativeLevel(m_hWnd, dwFlags)))
             {
-                throw SimpleIMEException("DirectInput8Create failed");
-            }
-            if (FAILED(m_pDirectInput->CreateDevice(GUID_SysKeyboard, &m_pKeyboardDevice, NULL)))
-            {
-                throw SimpleIMEException("CreateDevice failed");
+                throw SimpleIMEException("SetCooperativeLevel failed");
             }
             if (FAILED(m_pKeyboardDevice->SetDataFormat(&c_dfDIKeyboard)))
             {
                 throw SimpleIMEException("SetDataFormat failed");
-            }
-            if (FAILED(hr = m_pKeyboardDevice->SetCooperativeLevel(m_hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)))
-            {
-                throw SimpleIMEException("SetCooperativeLevel failed");
             }
             if (FAILED(m_pKeyboardDevice->Acquire()))
             {

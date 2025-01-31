@@ -14,10 +14,11 @@ namespace SimpleIME
 
     ImeWnd::ImeWnd()
     {
-        m_hWndParent = nullptr;
-        m_hWnd       = nullptr;
-        m_pImeUI     = nullptr;
-        wc           = {};
+        m_hWndParent     = nullptr;
+        m_hWnd           = nullptr;
+        m_pImeUI         = nullptr;
+        m_showToolWindow = false;
+        wc               = {};
         ZeroMemory(&wc, sizeof(wc));
         wc.cbSize        = sizeof(wc);
         wc.style         = CS_PARENTDC;
@@ -139,9 +140,7 @@ namespace SimpleIME
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         ImGui::StyleColorsDark();
         GetClientRect(m_hWndParent, &rect);
-        io.DisplaySize              = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-        io.MouseDrawCursor          = true;
-        io.ConfigNavMoveSetMousePos = true;
+        io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
 
         io.Fonts->AddFontFromFileTTF(fontConfig->eastAsiaFontFile.c_str(), fontConfig->fontSize, nullptr,
                                      io.Fonts->GetGlyphRangesChineseFull());
@@ -199,13 +198,13 @@ namespace SimpleIME
         ::SetFocus(m_hWnd);
     }
 
-    void ImeWnd::RenderImGui()
+    void ImeWnd::RenderIme()
     {
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        m_pImeUI->RenderImGui();
+        m_pImeUI->RenderIme();
 
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -216,6 +215,11 @@ namespace SimpleIME
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
         }
+    }
+
+    void ImeWnd::ShowToolWindow()
+    {
+        m_pImeUI->ShowToolWindow();
     }
 
     void ImeWnd::SetImeOpenStatus(bool open)
@@ -251,9 +255,10 @@ namespace SimpleIME
         return result;
     }
 
-    bool ImeWnd::IsDiscardGameInputEvents(RE::InputEvent **events)
+    bool ImeWnd::IsDiscardGameInputEvents(__in RE::InputEvent **events)
     {
         auto imeState = m_pImeUI->GetImeState();
+        if (imeState.all(IME_UI_FOCUSED)) return true;
         if (imeState.none(IME_OPEN) || imeState.any(IME_IN_ALPHANUMERIC))
         {
             return false;

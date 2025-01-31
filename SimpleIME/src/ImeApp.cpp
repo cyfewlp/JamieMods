@@ -31,7 +31,8 @@ namespace SimpleIME
         fontConfig->eastAsiaFontFile = ini.GetValue("General", "EastAsia_Font_File", R"(C:\Windows\Fonts\simsun.ttc)");
         fontConfig->emojiFontFile    = ini.GetValue("General", "Emoji_Font_File", R"(C:\Windows\Fonts\seguiemj.ttf)");
         fontConfig->fontSize         = (float)(ini.GetDoubleValue("General", "Font_Size", 16.0));
-        ImeUI::fontSize              = fontConfig->fontSize;
+        fontConfig->toolWindowShortcutKey = (uint32_t)(ini.GetLongValue("General", "Tool_Window_Shortcut_Key", DIK_F2));
+        ImeUI::fontSize                   = fontConfig->fontSize;
         return fontConfig;
     }
 
@@ -70,8 +71,7 @@ namespace SimpleIME
         }
 
         g_hWnd = sd.OutputWindow;
-        g_pKeyboard.reset();
-        g_pState->keyboardState.store(false);
+        g_pKeyboard.reset(new KeyboardDevice(g_hWnd));
 
         try
         {
@@ -112,22 +112,27 @@ namespace SimpleIME
             return;
         }
 
-        if (g_pKeyboard && g_pState->keyboardState)
+        if (g_pKeyboard && g_pKeyboard->GetState(key_state_buffer, sizeof(key_state_buffer)))
         {
-            g_pKeyboard->GetState(key_state_buffer, sizeof(key_state_buffer));
-            if (key_state_buffer[DIK_F5] & 0x80)
+            /*if (key_state_buffer[DIK_F2] & 0x80)
             {
-                logv(debug, "foucs popup window");
-                g_pImeWnd->Focus();
-            }
+                g_pImeWnd->ShowToolWindow();
+            }*/
         }
-        g_pImeWnd->RenderImGui();
+        g_pImeWnd->RenderIme();
     }
 
-    void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
-    {
-        static RE::InputEvent *dummy[] = {nullptr};
+    // we need set our keyboard to non-exclusive after game default.
+    static bool firstEvent = true;
 
+    void        ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
+    {
+        if (firstEvent)
+        {
+            g_pKeyboard->SetNonExclusive();
+            firstEvent = false;
+        }
+        static RE::InputEvent *dummy[] = {nullptr};
         ProcessEvent(a_events);
         auto discard = g_pImeWnd->IsDiscardGameInputEvents(a_events);
         if (discard) // Disable Game Input
@@ -140,38 +145,20 @@ namespace SimpleIME
         }
     }
 
-    bool ImeApp::CheckAppState()
-    {
-        return g_pState->keyboardState.load();
-    }
-
     // if sppecify recreate param, current g_pKeyboard will be delete
     // This is a insurance if we lost keyboard control
-    bool ImeApp::CreateKeyboard(bool recreate)
+    bool ImeApp::ResetExclusiveMode()
     {
-        if (recreate)
-        {
-            g_pKeyboard.release();
-            g_pState->keyboardState.store(false);
-        }
-        else if (g_pKeyboard)
-        {
-            return true;
-        }
-
         try
         {
-            g_pKeyboard.reset(new KeyboardDevice(g_hWnd));
-            g_pKeyboard->Initialize();
-            logv(info, "create keyboard device Successful!");
-            g_pState->keyboardState.store(true);
+            g_pKeyboard->SetNonExclusive();
+            logv(info, "Keyboard device now is non-exclusive.");
             return true;
         }
         catch (SimpleIMEException exception)
         {
-            logv(err, "create keyboard device failed!: {}", exception.what());
+            logv(err, "Change keyboard cooperative level failed: {}", exception.what());
             g_pKeyboard.release();
-            g_pState->keyboardState.store(false);
         }
         return false;
     }
@@ -180,13 +167,24 @@ namespace SimpleIME
     {
         for (auto event = *events; event; event = event->next)
         {
-            const auto buttonEvent = event->AsButtonEvent();
-            if (!buttonEvent) continue;
-
-            RE::INPUT_DEVICE device = event->GetDevice();
-            switch (device)
+            auto eventType = event->GetEventType();
+            switch (eventType)
             {
-                case RE::INPUT_DEVICE::kMouse: {
+                case RE::INPUT_EVENT_TYPE::kButton: {
+                    const auto buttonEvent = event->AsButtonEvent();
+                    if (!buttonEvent) continue;
+
+                    if (event->GetDevice() == RE::INPUT_DEVICE::kKeyboard)
+                    {
+                        if (buttonEvent->GetIDCode() == g_pFontConfig->toolWindowShortcutKey &&
+                            buttonEvent->IsDown())
+                        {
+                            logv(debug, "show widnow pressed");
+                            g_pImeWnd->ShowToolWindow();
+                        }
+                    }
+
+                    if (event->GetDevice() != RE::INPUT_DEVICE::kMouse) continue;
                     ProcessMouseEvent(buttonEvent);
                     break;
                 }
