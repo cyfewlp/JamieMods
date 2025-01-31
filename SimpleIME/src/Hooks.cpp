@@ -65,8 +65,6 @@ namespace SimpleIME
                     }
                     logv(debug, "Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
                 }
-                /*logv(debug, "MSG Hook: Wnd-{} {:#x}, {:#x}, {:#x}", (LPVOID)msg->hwnd, msg->message, msg->wParam,
-                     msg->lParam);*/
                 break;
             default:
                 break;

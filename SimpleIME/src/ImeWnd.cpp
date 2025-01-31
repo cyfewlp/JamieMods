@@ -83,7 +83,6 @@ namespace SimpleIME
                 return pThis->OnDestroy();
             }
             case WM_INPUTLANGCHANGE: {
-                logv(debug, "WM_INPUTLANGCHANGE hkl: {}", lParam);
                 pThis->m_pImeUI->UpdateLanguage();
                 return S_OK;
             }
@@ -97,7 +96,6 @@ namespace SimpleIME
             case WM_IME_STARTCOMPOSITION:
                 return pThis->OnStartComposition();
             case WM_IME_ENDCOMPOSITION:
-                logv(debug, "End composition, send test msg");
                 return pThis->OnEndComposition();
             case WM_CUSTOM_IME_COMPPOSITION:
             case WM_IME_COMPOSITION:

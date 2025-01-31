@@ -3,7 +3,7 @@
 //
 #include "ImeApp.h"
 
-static void InitializeLogging()
+static void InitializeLogging(bool debug)
 {
     auto path = SKSE::log::log_directory();
     if (!path)
@@ -17,8 +17,11 @@ static void InitializeLogging()
 
     auto                            sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
     log                                  = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
-    log->set_level(spdlog::level::trace);
-    log->flush_on(spdlog::level::trace);
+    if (debug)
+    {
+        log->set_level(spdlog::level::debug);
+    }
+    log->flush_on(spdlog::level::info);
 
     spdlog::set_default_logger(std::move(log));
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%!:%#] %v");
@@ -26,7 +29,8 @@ static void InitializeLogging()
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse)
 {
-    InitializeLogging();
+    auto *pConfig = SimpleIME::ImeApp::LoadConfig();
+    InitializeLogging(pConfig->debug);
 
     auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     auto  version = plugin->GetVersion();

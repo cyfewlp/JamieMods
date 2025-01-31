@@ -26,7 +26,6 @@ namespace SimpleIME
 
         ~KeyboardDevice()
         {
-            logv(debug, "Releasing KeyboardDevice...");
             if (m_pDirectInput)
             {
                 if (m_pKeyboardDevice)
@@ -54,15 +53,15 @@ namespace SimpleIME
             }
             if (FAILED(m_pKeyboardDevice->Acquire()))
             {
-                throw SimpleIMEException("Acquire device failed", DIRECTINPUT_ACQUIRE_FAILED);
+                throw SimpleIMEException("Acquire device failed");
             }
-            initialized.store(true);
+            acquired.store(true);
             return true;
         }
 
         BOOL GetState(__out void *buffer, __in long buffer_size) noexcept
         {
-            if (!initialized) return false;
+            if (!acquired.load()) return false;
             HRESULT rv;
             while (1)
             {
@@ -79,7 +78,7 @@ namespace SimpleIME
 
         BOOL TryAcquire()
         {
-            if (initialized.load())
+            if (acquired.load())
             {
                 logv(debug, "Try Acquire");
                 return SUCCEEDED(m_pKeyboardDevice->Acquire());
@@ -92,10 +91,11 @@ namespace SimpleIME
             m_pKeyboardDevice->Unacquire();
         }
 
+        std::atomic<bool> acquired = false;
+
     private:
         HWND                 m_hWnd            = nullptr;
         LPDIRECTINPUT8       m_pDirectInput    = nullptr;
         LPDIRECTINPUTDEVICE8 m_pKeyboardDevice = nullptr;
-        std::atomic<bool>    initialized       = false;
     };
 }

@@ -1,6 +1,6 @@
 project(
     SimpleIME
-    VERSION 0.0.1 
+    VERSION 0.0.2 
     DESCRIPTION "Simple IME support for Skyrim"
     LANGUAGES CXX
 )
@@ -79,6 +79,49 @@ target_link_libraries(
 		imgui
         ${DETOURS_LIBRARY}
 )
+
+## Install config
+
+set(CPACK_GENERATOR "7Z")
+set(CPACK_PACKAGE_NAME "SimpleIME")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_BUILD_TYPE}")
+include(CPack)
+
+install(TARGETS ${PROJECT_NAME} 
+	RUNTIME DESTINATION SKSE/Plugins 
+	COMPONENT dll
+)
+install(FILES 
+	${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SimpleIME.ini 
+	DESTINATION SKSE/Plugins
+	COMPONENT configuration
+)
+install(FILES 
+	${CMAKE_CURRENT_SOURCE_DIR}/README.md
+	DESTINATION .
+	COMPONENT doc
+)
+cpack_add_component(dll)
+cpack_add_component(configuration)
+cpack_add_component(doc)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BUILD_NAME "Debug")
+else()
+    set(BUILD_NAME "Release")
+endif()
+
+file(GLOB_RECURSE OUTPUT_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.dll")
+file(GLOB_RECURSE OUTPUT_PDBS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pdb")
+#file(GLOB_RECURSE OUTPUT_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pex")
+
+set_property(TARGET ${PROJECT_NAME}
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_DLLS}")
+set_property(TARGET ${PROJECT_NAME}
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_PDBS}")
+#set_property(TARGET ${PROJECT_NAME}
+#        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_SCRIPTS}")
 
 if(DEFINED OUTPUT_FOLDER)
 	# If you specify an <OUTPUT_FOLDER> (including via environment variables)

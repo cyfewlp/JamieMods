@@ -79,7 +79,7 @@ namespace SimpleIME
             if (spdlog::should_log(spdlog::level::trace))
             {
                 auto str = WCharUtils::ToString(m_CompStr->szStr);
-                logv(trace, "IME Composition String: {}", str.c_str());
+                logv(debug, "IME Composition String: {}", str.c_str());
             }
         }
         if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, m_CompResult))
@@ -88,13 +88,14 @@ namespace SimpleIME
             if (spdlog::should_log(spdlog::level::trace))
             {
                 auto str = WCharUtils::ToString(m_CompResult->szStr);
-                logv(trace, "IME Composition Result String: {}", str.c_str());
+                logv(debug, "IME Composition Result String: {}", str.c_str());
             }
         }
     }
 
     void ImeUI::QueryAllInstalledIME()
     {
+        logv(info, "Query os installed IME...");
         m_imeProfiles.clear();
         _tsetlocale(LC_ALL, _T(""));
         langProfileUtil.LoadIme(m_imeProfiles);
@@ -176,7 +177,6 @@ namespace SimpleIME
         RenderToolWindow();
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
         windowFlags |= ImGuiWindowFlags_NoDecoration;
-        windowFlags |= ImGuiWindowFlags_NoBackground;
         windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
         if (m_imeState.none(IME_IN_CANDCHOOSEN, IME_IN_COMPOSITION))
@@ -251,11 +251,27 @@ namespace SimpleIME
         HelpMarker(R"(By default, keyboard in exclusive access by Skyrim. 
 So all IME & almostly keyboard message is disabled.)");
         ImGui::SameLine();
+        ImGui::BeginGroup();
+        ImGui::Text("Keyboard: ");
+        ImGui::SameLine();
+
+        static ImVec4 red{0.9f, 0.0f, 0.5f, 1.0f};
+        static ImVec4 green{0.0f, 1.0f, 0.0f, 1.0f};
+        if (!ImeApp::CheckAppState())
+        {
+            ImGui::TextColored(red, "No");
+        }
+        else
+        {
+            ImGui::TextColored(green, "Ok");
+        }
+        ImGui::SameLine();
         if (ImGui::Button("Reset Keyboard"))
         {
             ImeApp::ResetExclusiveMode();
         }
-        ImGui::SetItemTooltip("If IME can't recive inputs, please try reset to fix it(non-exclusive access).");
+        ImGui::EndGroup();
+        ImGui::SetItemTooltip("Try reset to non-exclusive keyboard.");
         ImGui::End();
     }
 
@@ -339,7 +355,8 @@ So all IME & almostly keyboard message is disabled.)");
             {
                 if (activeGuid == m_imeProfiles[idx].guidProfile)
                 {
-                    logv(debug, "Active profile: {}", idx);
+                    auto str = m_imeProfiles[idx].desc;
+                    logv(debug, "Active language profile: {}", str.c_str());
                     langProfileSelected = idx;
                     return;
                 }

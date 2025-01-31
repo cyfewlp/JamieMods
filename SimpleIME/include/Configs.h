@@ -13,6 +13,7 @@ namespace SimpleIME
         std::string emojiFontFile;
         float       fontSize              = 14.0f;
         uint32_t    toolWindowShortcutKey = 0x3C; // DIK_F2;
+        bool        debug                 = false;
     };
 }
 

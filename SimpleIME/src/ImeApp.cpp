@@ -10,7 +10,6 @@ namespace SimpleIME
 
     void ImeApp::Init()
     {
-        g_pFontConfig.reset(LoadConfig());
         g_pState.reset(new State());
         g_pState->Initialized.store(false);
         Hooks::InstallCreateWindowHook();
@@ -32,7 +31,9 @@ namespace SimpleIME
         fontConfig->emojiFontFile    = ini.GetValue("General", "Emoji_Font_File", R"(C:\Windows\Fonts\seguiemj.ttf)");
         fontConfig->fontSize         = (float)(ini.GetDoubleValue("General", "Font_Size", 16.0));
         fontConfig->toolWindowShortcutKey = (uint32_t)(ini.GetLongValue("General", "Tool_Window_Shortcut_Key", DIK_F2));
+        fontConfig->debug                 = ini.GetBoolValue("General", "debug", false);
         ImeUI::fontSize                   = fontConfig->fontSize;
+        g_pFontConfig.reset(fontConfig);
         return fontConfig;
     }
 
@@ -129,7 +130,7 @@ namespace SimpleIME
     {
         if (firstEvent)
         {
-            g_pKeyboard->SetNonExclusive();
+            ImeApp::ResetExclusiveMode();
             firstEvent = false;
         }
         static RE::InputEvent *dummy[] = {nullptr};
@@ -143,6 +144,11 @@ namespace SimpleIME
         {
             DispatchInputEventHook(a_dispatcher, a_events);
         }
+    }
+
+    bool ImeApp::CheckAppState()
+    {
+        return g_pKeyboard->acquired.load();
     }
 
     // if sppecify recreate param, current g_pKeyboard will be delete
@@ -176,8 +182,7 @@ namespace SimpleIME
 
                     if (event->GetDevice() == RE::INPUT_DEVICE::kKeyboard)
                     {
-                        if (buttonEvent->GetIDCode() == g_pFontConfig->toolWindowShortcutKey &&
-                            buttonEvent->IsDown())
+                        if (buttonEvent->GetIDCode() == g_pFontConfig->toolWindowShortcutKey && buttonEvent->IsDown())
                         {
                             logv(debug, "show widnow pressed");
                             g_pImeWnd->ShowToolWindow();
