@@ -2,23 +2,21 @@
 // Created by jamie on 25-1-21.
 //
 #pragma once
-#ifndef HELLOWORLD_IMEUI_H
-    #define HELLOWORLD_IMEUI_H
 
-    #include "SystemImeLoader.h"
-    #include "imgui.h"
-    #include "windows.h"
-    #include <vector>
+#include "LangProfileUtil.h"
+#include "imgui.h"
+#include "windows.h"
+#include <vector>
 
-    #define MAKE_CONTEXT(hWnd, fn, ...)                                                                                \
+#define MAKE_CONTEXT(hWnd, fn, ...)                                                                                    \
+    {                                                                                                                  \
+        HIMC hIMC;                                                                                                     \
+        if ((hIMC = ImmGetContext(hWnd)))                                                                              \
         {                                                                                                              \
-            HIMC hIMC;                                                                                                 \
-            if ((hIMC = ImmGetContext(hWnd)))                                                                          \
-            {                                                                                                          \
-                fn(hIMC __VA_OPT__(, ) __VA_ARGS__);                                                                   \
-            }                                                                                                          \
-            ImmReleaseContext(hWnd, hIMC);                                                                             \
-        }
+            fn(hIMC __VA_OPT__(, ) __VA_ARGS__);                                                                       \
+        }                                                                                                              \
+        ImmReleaseContext(hWnd, hIMC);                                                                                 \
+    }
 
 constexpr auto IMEUI_HEAP_INIT_SIZE      = 512;
 constexpr auto IMEUI_HEAP_MAX_SIZE       = 2048;
@@ -63,6 +61,7 @@ namespace SimpleIME
         IME_IN_CANDCHOOSEN  = 0x2,
         IME_IN_ALPHANUMERIC = 0x4,
         IME_OPEN            = 0x8,
+        IME_UI_FOCUSED      = 0x10,
         IME_ALL             = 0xFFFF
     };
 
@@ -94,9 +93,12 @@ namespace SimpleIME
         void CompositionString(HIMC hIMC, LPARAM lParam);
         void QueryAllInstalledIME();
         // Render To ImGui
-        void                                           RenderImGui();
+        void                                           RenderIme();
+        void                                           ShowToolWindow();
         void                                           UpdateLanguage();
-        void                                           SetOpenStatus(HIMC);
+        void                                           UpdateActiveLangProfile();
+        void                                           OnSetOpenStatus(HIMC);
+        void                                           UpdateConversionMode(HIMC);
         bool                                           ImeNotify(HWND, WPARAM, LPARAM);
         [[nodiscard]] bool                             IsEnabled() const;
         [[nodiscard]] SKSE::stl::enumeration<ImeState> GetImeState() const;
@@ -106,7 +108,7 @@ namespace SimpleIME
         static bool GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf);
         void        SendResultString();
         void        SendResultStringToSkyrim();
-        void        UpdateConversionMode(HIMC);
+        void        RenderToolWindow();
         void        RenderCompWindow(WcharBuf *compStrBuf);
         void        OpenCandidate(HIMC, LPARAM);
         void        ChangeCandidate(HIMC, LPARAM);
@@ -126,10 +128,9 @@ namespace SimpleIME
         SKSE::stl::enumeration<ImeState> m_imeState;
         bool                             m_enableCandWindow;
         ImeCandidate                    *m_imeCandidates[MAX_CAND_LIST]{nullptr};
-        std::vector<std::wstring>        imeNames;
-        SystemImeLoader                  imeLoader{};
+        std::vector<LangProfile>         m_imeProfiles;
+        LangProfileUtil                  langProfileUtil{};
+        bool                             m_showToolWindow = false;
         HWND                             m_hWnd;
     };
 }
-
-#endif // HELLOWORLD_IMEUI_H

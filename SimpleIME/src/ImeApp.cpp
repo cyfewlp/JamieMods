@@ -1,26 +1,17 @@
 #include "ImeApp.h"
 #include "Hooks.hpp"
 #include "SimpleIni.h"
-#include "dxgi.h"
-#include "imgui.h"
-#include "imgui_freetype.h"
-#include "imgui_impl_dx11.h"
-#include "imgui_impl_win32.h"
-#include "thread"
-#include <Device.h>
-#include <dinput.h>
+#include <thread>
 
 namespace SimpleIME
 {
     using namespace Hooks;
-    auto *g_keyboard = new KeyboardDevice();
-    char  key_state_buffer[256];
+    char key_state_buffer[256];
 
-    void  ImeApp::Init()
+    void ImeApp::Init()
     {
-        gFontConfig = LoadConfig();
-        gState      = new State();
-        gState->Initialized.store(false);
+        g_pState.reset(new State());
+        g_pState->Initialized.store(false);
         Hooks::InstallCreateWindowHook();
     }
 
@@ -39,7 +30,10 @@ namespace SimpleIME
         fontConfig->eastAsiaFontFile = ini.GetValue("General", "EastAsia_Font_File", R"(C:\Windows\Fonts\simsun.ttc)");
         fontConfig->emojiFontFile    = ini.GetValue("General", "Emoji_Font_File", R"(C:\Windows\Fonts\seguiemj.ttf)");
         fontConfig->fontSize         = (float)(ini.GetDoubleValue("General", "Font_Size", 16.0));
-        ImeUI::fontSize              = fontConfig->fontSize;
+        fontConfig->toolWindowShortcutKey = (uint32_t)(ini.GetLongValue("General", "Tool_Window_Shortcut_Key", DIK_F2));
+        fontConfig->debug                 = ini.GetBoolValue("General", "debug", false);
+        ImeUI::fontSize                   = fontConfig->fontSize;
+        g_pFontConfig.reset(fontConfig);
         return fontConfig;
     }
 
@@ -51,7 +45,7 @@ namespace SimpleIME
     void                                          ImeApp::D3DInit()
     {
         D3DInitHook();
-        if (gState->Initialized.load()) return;
+        if (g_pState->Initialized.load()) return;
 
         auto render_manager = RE::BSGraphics::Renderer::GetSingleton();
         if (!render_manager)
@@ -77,31 +71,30 @@ namespace SimpleIME
             return;
         }
 
-        try
-        {
-            g_keyboard->Initialize(sd.OutputWindow);
-            logv(info, "create keyboard device Successful!");
-        }
-        catch (int code)
-        {
-            logv(err, "create keyboard device failed! code: {}", code);
-            delete g_keyboard;
-            return;
-        }
+        g_hWnd = sd.OutputWindow;
+        g_pKeyboard.reset(new KeyboardDevice(g_hWnd));
 
         try
         {
-            gImeWnd = new ImeWnd();
-            gImeWnd->Initialize(sd.OutputWindow);
+            g_pImeWnd.reset(new ImeWnd());
+            g_pImeWnd->Initialize(g_hWnd);
+            g_pImeWnd->Focus();
         }
-        catch (std::runtime_error err)
+        catch (SimpleIMEException exce)
         {
-            logv(err, "Can't initialize ImeWnd.");
-            delete gImeWnd;
+            logv(err, "Thread ImeWnd failed. {}", exce.what());
+            g_pImeWnd.reset();
+            g_pImeWnd = nullptr;
             return;
         }
 
-        gState->Initialized.store(true);
+        auto device  = render_data.forwarder;
+        auto context = render_data.context;
+        g_pImeWnd->InitImGui(device, context, g_pFontConfig.get());
+
+        g_pState->Initialized.store(true);
+
+        SKSE::GetTaskInterface()->AddUITask([]() { g_pImeWnd->SetImeOpenStatus(false); });
 
         logv(debug, "Hooking Skyrim WndProc...");
         RealWndProc = reinterpret_cast<WNDPROC>(
@@ -112,110 +105,92 @@ namespace SimpleIME
         }
     }
 
-    void ImeApp::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
-    {
-        logv(info, "Initializing ImGui...");
-        ImGui::CreateContext();
-
-        if (!ImGui_ImplWin32_Init(hWnd))
-        {
-            logv(err, "ImGui initialization failed (Win32)");
-            return;
-        }
-
-        if (!ImGui_ImplDX11_Init(device, context))
-        {
-            logv(err, "ImGui initialization failed (DX11)");
-            return;
-        }
-
-        RECT     rect = {0, 0, 0, 0};
-        ImGuiIO &io   = ImGui::GetIO();
-        (void)io;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        GetClientRect(hWnd, &rect);
-        io.DisplaySize              = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-        io.MouseDrawCursor          = true;
-        io.ConfigNavMoveSetMousePos = true;
-
-        io.Fonts->AddFontFromFileTTF(gFontConfig->eastAsiaFontFile.c_str(), gFontConfig->fontSize, nullptr,
-                                     io.Fonts->GetGlyphRangesChineseFull());
-
-        // config font
-        static ImFontConfig cfg;
-        cfg.OversampleH = cfg.OversampleV = 1;
-        cfg.MergeMode                     = true;
-        cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-        static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
-        io.Fonts->AddFontFromFileTTF(gFontConfig->emojiFontFile.c_str(), gFontConfig->fontSize, &cfg, icons_ranges);
-        io.Fonts->Build();
-        ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hWnd;
-        ImGuiStyle &style                           = ImGui::GetStyle();
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            style.WindowRounding              = 0.0f;
-            style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-        }
-
-        logv(info, "ImGui initialized!");
-    }
-
     void ImeApp::D3DPresent(std::uint32_t ptr)
     {
         D3DPresentHook(ptr);
-        if (!gState->Initialized.load() /*|| !gImeWnd->IsShow()*/)
+        if (!g_pState->Initialized.load())
         {
             return;
         }
 
-        g_keyboard->Acquire(key_state_buffer, sizeof(key_state_buffer));
-        if (key_state_buffer[DIK_F5] & 0x80)
+        if (g_pKeyboard && g_pKeyboard->GetState(key_state_buffer, sizeof(key_state_buffer)))
         {
-            logv(debug, "foucs popup window");
-            gImeWnd->Focus();
+            /*if (key_state_buffer[DIK_F2] & 0x80)
+            {
+                g_pImeWnd->ShowToolWindow();
+            }*/
         }
-
-        // ImGui_ImplDX11_NewFrame();
-        // ImGui_ImplWin32_NewFrame();
-        // ImGui::NewFrame();
-
-        // Render();
-
-        // ImGui::Render();
-        // ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-        //// Update and Render additional Platform Windows
-        // if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        //{
-        //     ImGui::UpdatePlatformWindows();
-        //     ImGui::RenderPlatformWindowsDefault();
-        // }
+        g_pImeWnd->RenderIme();
     }
 
-    void ImeApp::Render()
-    {
-        gImeWnd->RenderImGui();
-    }
+    // we need set our keyboard to non-exclusive after game default.
+    static bool firstEvent = true;
 
-    void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
+    void        ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
     {
+        if (firstEvent)
+        {
+            ImeApp::ResetExclusiveMode();
+            firstEvent = false;
+        }
+        static RE::InputEvent *dummy[] = {nullptr};
         ProcessEvent(a_events);
-        // auto events = gImeWnd->FilterInputEvent(a_events);
-        DispatchInputEventHook(a_dispatcher, a_events);
+        auto discard = g_pImeWnd->IsDiscardGameInputEvents(a_events);
+        if (discard) // Disable Game Input
+        {
+            DispatchInputEventHook(a_dispatcher, dummy);
+        }
+        else
+        {
+            DispatchInputEventHook(a_dispatcher, a_events);
+        }
+    }
+
+    bool ImeApp::CheckAppState()
+    {
+        return g_pKeyboard->acquired.load();
+    }
+
+    // if sppecify recreate param, current g_pKeyboard will be delete
+    // This is a insurance if we lost keyboard control
+    bool ImeApp::ResetExclusiveMode()
+    {
+        try
+        {
+            g_pKeyboard->SetNonExclusive();
+            logv(info, "Keyboard device now is non-exclusive.");
+            return true;
+        }
+        catch (SimpleIMEException exception)
+        {
+            logv(err, "Change keyboard cooperative level failed: {}", exception.what());
+            g_pKeyboard.release();
+        }
+        return false;
     }
 
     void ImeApp::ProcessEvent(RE::InputEvent **events)
     {
         for (auto event = *events; event; event = event->next)
         {
-            const auto buttonEvent = event->AsButtonEvent();
-            if (!buttonEvent) continue;
-
-            RE::INPUT_DEVICE device = event->GetDevice();
-            switch (device)
+            auto eventType = event->GetEventType();
+            switch (eventType)
             {
-                case RE::INPUT_DEVICE::kMouse: {
-                    // ProcessMouseEvent(buttonEvent);
+                case RE::INPUT_EVENT_TYPE::kButton: {
+                    const auto buttonEvent = event->AsButtonEvent();
+                    if (!buttonEvent) continue;
+
+                    if (event->GetDevice() == RE::INPUT_DEVICE::kKeyboard)
+                    {
+                        if (buttonEvent->GetIDCode() == g_pFontConfig->toolWindowShortcutKey && buttonEvent->IsDown())
+                        {
+                            logv(debug, "show widnow pressed");
+                            g_pImeWnd->ShowToolWindow();
+                        }
+                    }
+
+                    if (event->GetDevice() != RE::INPUT_DEVICE::kMouse) continue;
+                    ProcessMouseEvent(buttonEvent);
                     break;
                 }
             }
@@ -245,7 +220,7 @@ namespace SimpleIME
         switch (msg)
         {
             case WM_SETFOCUS:
-                // gImeWnd->Focus();
+                g_pImeWnd->Focus();
                 return S_OK;
             default:
                 break;

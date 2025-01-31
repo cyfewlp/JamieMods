@@ -17,62 +17,91 @@ namespace SimpleIME
     {
 
     public:
-        ~KeyboardDevice()
+        KeyboardDevice(HWND hWnd) noexcept(false) : m_hWnd(hWnd)
         {
-            if (pDirectInput)
+            if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
+                                          (void **)&m_pDirectInput, NULL)))
             {
-                if (pKeyboardDevice)
-                {
-                    pKeyboardDevice->Unacquire();
-                    pKeyboardDevice->Release();
-                    pKeyboardDevice = NULL;
-                }
-                pDirectInput->Release();
-                pDirectInput = NULL;
+                throw SimpleIMEException("DirectInput8Create failed");
+            }
+            if (FAILED(m_pDirectInput->CreateDevice(GUID_SysKeyboard, &m_pKeyboardDevice, NULL)))
+            {
+                throw SimpleIMEException("CreateDevice failed");
             }
         }
 
-        BOOL Initialize(HWND hWnd) throw(int)
+        ~KeyboardDevice()
         {
-            if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
-                                          (void **)&pDirectInput, NULL)))
+            if (m_pDirectInput)
             {
-                throw ERROR_CODE_DIRECTINPUT8CREATE;
+                if (m_pKeyboardDevice)
+                {
+                    m_pKeyboardDevice->Unacquire();
+                    m_pKeyboardDevice->Release();
+                    m_pKeyboardDevice = NULL;
+                }
+                m_pDirectInput->Release();
+                m_pDirectInput = NULL;
             }
-            if (FAILED(pDirectInput->CreateDevice(GUID_SysKeyboard, &pKeyboardDevice, NULL)))
-            {
-                throw ERROR_CODE_CREATEDEVICE;
-            }
-            if (FAILED(pKeyboardDevice->SetDataFormat(&c_dfDIKeyboard)))
-            {
-                throw ERROR_CODE_SETDATAFORMAT;
-            }
+        }
 
-            if (FAILED(pKeyboardDevice->SetCooperativeLevel(hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)))
+        BOOL SetNonExclusive() noexcept(false)
+        {
+            m_pKeyboardDevice->Unacquire();
+            DWORD dwFlags = DISCL_FOREGROUND | DISCL_NONEXCLUSIVE;
+            if (FAILED(m_pKeyboardDevice->SetCooperativeLevel(m_hWnd, dwFlags)))
             {
-                throw ERROR_CODE_SETCOOPERATIVELEVEL;
+                throw SimpleIMEException("SetCooperativeLevel failed");
             }
+            if (FAILED(m_pKeyboardDevice->SetDataFormat(&c_dfDIKeyboard)))
+            {
+                throw SimpleIMEException("SetDataFormat failed");
+            }
+            if (FAILED(m_pKeyboardDevice->Acquire()))
+            {
+                throw SimpleIMEException("Acquire device failed");
+            }
+            acquired.store(true);
             return true;
         }
 
-        BOOL Acquire(__out void *buffer, __in long buffer_size) throw(int)
+        BOOL GetState(__out void *buffer, __in long buffer_size) noexcept
         {
-            if (FAILED(pKeyboardDevice->Acquire())) return FALSE;
+            if (!acquired.load()) return false;
             HRESULT rv;
             while (1)
             {
-                pKeyboardDevice->Poll();
-                if (SUCCEEDED(rv = pKeyboardDevice->GetDeviceState(buffer_size, buffer))) break;
-                if (rv != DIERR_INPUTLOST || rv != DIERR_NOTACQUIRED) return FALSE;
-                if (FAILED(pKeyboardDevice->Acquire())) return FALSE;
+                m_pKeyboardDevice->Poll();
+                if (SUCCEEDED(rv = m_pKeyboardDevice->GetDeviceState(buffer_size, buffer))) break;
+                if (rv == DIERR_INPUTLOST || rv == DIERR_NOTACQUIRED)
+                {
+                    return SUCCEEDED(m_pKeyboardDevice->Acquire());
+                }
+                return FALSE;
             }
-            pKeyboardDevice->Unacquire();
             return TRUE;
         }
 
+        BOOL TryAcquire()
+        {
+            if (acquired.load())
+            {
+                logv(debug, "Try Acquire");
+                return SUCCEEDED(m_pKeyboardDevice->Acquire());
+            }
+            return false;
+        }
+
+        void Unacquire()
+        {
+            m_pKeyboardDevice->Unacquire();
+        }
+
+        std::atomic<bool> acquired = false;
+
     private:
-        // 创建DirectInput对象
-        LPDIRECTINPUT8       pDirectInput;
-        LPDIRECTINPUTDEVICE8 pKeyboardDevice = nullptr;
+        HWND                 m_hWnd            = nullptr;
+        LPDIRECTINPUT8       m_pDirectInput    = nullptr;
+        LPDIRECTINPUTDEVICE8 m_pKeyboardDevice = nullptr;
     };
 }

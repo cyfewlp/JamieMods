@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Configs.h"
 #include "ImeUI.h"
 #include "imgui.h"
 #include <windows.h>
+
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 
 constexpr auto WM_CUSTOM = 0x7000;
 #define WM_CUSTOM_CHAR             (WM_CUSTOM + 1)
@@ -15,20 +19,19 @@ namespace SimpleIME
 
     class ImeWnd
     {
-    private:
-        HWND m_hWnd;
-        HINSTANCE m_hInst;
-        HWND      m_hParentWnd;
-        ImeUI    *m_pImeUI;
-
     public:
+        HWND m_hWnd;
         ImeWnd();
         ~ImeWnd();
-        BOOL             Initialize(HWND a_parent) noexcept(false);
-        void             Focus() const;
-        void             RenderImGui();
-        bool             IsShow() const;
-        RE::InputEvent **FilterInputEvent(RE::InputEvent **);
+        void Initialize(HWND a_parent) noexcept(false);
+        void InitImGui(ID3D11Device *, ID3D11DeviceContext *, FontConfig *fontConfig) const noexcept(false);
+        void Focus() const;
+        void RenderIme();
+        void ShowToolWindow();
+        void SetImeOpenStatus(bool open);
+        bool IsImeEnabled() const;
+        void SendMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+        bool IsDiscardGameInputEvents(__in RE::InputEvent **);
 
     private:
         static LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -37,5 +40,11 @@ namespace SimpleIME
         LRESULT        OnStartComposition();
         LRESULT        OnEndComposition();
         LRESULT        OnComposition(HWND hWnd, LPARAM lParam);
+
+    private:
+        HWND        m_hWndParent;
+        ImeUI      *m_pImeUI;
+        bool        m_showToolWindow;
+        WNDCLASSEXW wc;
     };
 } // namespace SimpleIME

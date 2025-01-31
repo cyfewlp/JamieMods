@@ -5,16 +5,31 @@
 #include "ImeUI.h"
 #include "WCharUtils.h"
 #include "imgui.h"
+#include <ImeApp.h>
 #include <locale.h>
-#include <stdio.h>
 #include <tchar.h>
+
+#define LAST_SIZE(vector) vector.size() - 1
 
 namespace SimpleIME
 {
+    static size_t langProfileSelected = 0;
+
+    static void   HelpMarker(const char *desc)
+    {
+        ImGui::Text("\xe2\x9d\x94"); // white ?
+        if (ImGui::BeginItemTooltip())
+        {
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextUnformatted(desc);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+    }
 
     ImeUI::ImeUI(HWND hWnd)
     {
-        _tsetlocale(LC_ALL, _T("zh-CN"));
+        _tsetlocale(LC_ALL, _T(""));
         m_pHeap      = HeapCreate(HEAP_GENERATE_EXCEPTIONS, IMEUI_HEAP_INIT_SIZE, IMEUI_HEAP_MAX_SIZE);
         m_CompStr    = new WcharBuf(m_pHeap, 64);
         m_CompResult = new WcharBuf(m_pHeap, 64);
@@ -29,6 +44,16 @@ namespace SimpleIME
     {
         HeapDestroy(m_pHeap);
         m_pHeap = nullptr;
+        delete m_CompStr;
+        delete m_CompResult;
+        for (int i = 0; i < MAX_CAND_LIST; ++i)
+        {
+            if (m_imeCandidates[i] != nullptr)
+            {
+                delete m_imeCandidates[i];
+                m_imeCandidates[i] = nullptr;
+            }
+        }
     }
 
     void ImeUI::StartComposition()
@@ -54,7 +79,7 @@ namespace SimpleIME
             if (spdlog::should_log(spdlog::level::trace))
             {
                 auto str = WCharUtils::ToString(m_CompStr->szStr);
-                logv(trace, "IME Composition String: {}", str.c_str());
+                logv(debug, "IME Composition String: {}", str.c_str());
             }
         }
         if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, m_CompResult))
@@ -63,29 +88,25 @@ namespace SimpleIME
             if (spdlog::should_log(spdlog::level::trace))
             {
                 auto str = WCharUtils::ToString(m_CompResult->szStr);
-                logv(trace, "IME Composition Result String: {}", str.c_str());
+                logv(debug, "IME Composition Result String: {}", str.c_str());
             }
         }
     }
 
     void ImeUI::QueryAllInstalledIME()
     {
-        imeNames.clear();
+        logv(info, "Query os installed IME...");
+        m_imeProfiles.clear();
         _tsetlocale(LC_ALL, _T(""));
-        auto num  = GetKeyboardLayoutList(0, nullptr);
-        HKL *list = new HKL[num];
-        GetKeyboardLayoutList(num, list);
-        for (auto i = 0; i < num; i++)
-        {
-            auto hkl    = list[i];
-            auto device = HIWORD(hkl);
-            if ((device & 0xF000) != 0xF000)
-            {
-                auto layoutId = LOWORD(hkl);
-                imeLoader.LoadIme(layoutId, imeNames);
-            }
-        }
-        delete[] list;
+        langProfileUtil.LoadIme(m_imeProfiles);
+
+        LangProfile engProfile = {};
+        ZeroMemory(&engProfile, sizeof(engProfile));
+        engProfile.clsid       = CLSID_NULL;
+        engProfile.langid      = 0x409; // english keyboard
+        engProfile.guidProfile = GUID_NULL;
+        engProfile.desc        = std::string("ENG");
+        m_imeProfiles.push_back(engProfile);
     }
 
     void ImeUI::SendResultString()
@@ -151,38 +172,22 @@ namespace SimpleIME
         return false;
     }
 
-    void ImeUI::RenderImGui()
+    void ImeUI::RenderIme()
     {
-        ImGui::Begin("SimpleIME Debug");
-        for (auto &imeName : imeNames)
-        {
-            int         len = WCharUtils::CharLength(imeName);
-            std::string str(len, 0);
-            WCharUtils::ToString(imeName, &str[0], len);
-            if (ImGui::Button(str.c_str()))
-            {
-                logv(debug, "Switch Ime to: {}", str.c_str());
-                imeLoader.SetIme(imeName.data());
-            }
-        }
-        if (ImGui::Button("Require Foucs"))
-        {
-            ::SetFocus(m_hWnd);
-        }
-        ImGui::End();
-
-        static char      buf[64]     = "";
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
-        windowFlags |= ImGuiWindowFlags_NoResize;
-        windowFlags |= ImGuiWindowFlags_NoTitleBar;
+        RenderToolWindow();
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
+        windowFlags |= ImGuiWindowFlags_NoDecoration;
         windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-        // if (m_imeState.none(IME_IN_COMPOSITION, IME_IN_CANDCHOOSEN)) return;
-        ImGui::Begin("SimpleIME", (bool *)true, windowFlags);
+        if (m_imeState.none(IME_IN_CANDCHOOSEN, IME_IN_COMPOSITION))
+        {
+            return;
+        }
 
+        ImGui::Begin("SimpleIME", (bool *)false, windowFlags);
         ImGui::Button(m_langNameStr.c_str());
+
         ImGui::SameLine();
-        ImGui::BeginGroup();
         RenderCompWindow(m_CompStr);
 
         ImVec2 max = ImGui::GetItemRectMax();
@@ -194,7 +199,79 @@ namespace SimpleIME
             ImVec2 pos{min.x, max.y + 5};
             RenderCandWindow(pos);
         }
+        ImGui::End();
+    }
+
+    void ImeUI::ShowToolWindow()
+    {
+        m_showToolWindow = !m_showToolWindow;
+        auto &io         = ImGui::GetIO();
+        if (!m_showToolWindow)
+        {
+            io.MouseDrawCursor          = false;
+            io.ConfigNavMoveSetMousePos = false;
+            m_imeState.reset(IME_UI_FOCUSED);
+            return;
+        }
+        io.MouseDrawCursor          = true;
+        io.ConfigNavMoveSetMousePos = true;
+        m_imeState.set(IME_UI_FOCUSED);
+    }
+
+    void ImeUI::RenderToolWindow()
+    {
+        if (!m_showToolWindow) return;
+
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+        windowFlags |= ImGuiWindowFlags_NoCollapse;
+        ImGui::Begin("ToolWindow##SimpleIME", &m_showToolWindow, windowFlags);
+        auto       &profile        = m_imeProfiles[langProfileSelected];
+        const char *previewImeName = profile.desc.c_str();
+        if (ImGui::BeginCombo("###InstalledIME", previewImeName))
+        {
+            for (int idx = 0; idx < m_imeProfiles.size(); idx++)
+            {
+                auto p          = m_imeProfiles[idx];
+                bool isSelected = (langProfileSelected == idx);
+                auto label      = fmt::format("{}##{}", p.desc, idx);
+                if (ImGui::Selectable(label.c_str()))
+                {
+                    langProfileSelected = idx;
+                    langProfileUtil.ActiveProfile(p);
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+
+        HelpMarker(R"(By default, keyboard in exclusive access by Skyrim. 
+So all IME & almostly keyboard message is disabled.)");
+        ImGui::SameLine();
+        ImGui::BeginGroup();
+        ImGui::Text("Keyboard: ");
+        ImGui::SameLine();
+
+        static ImVec4 red{0.9f, 0.0f, 0.5f, 1.0f};
+        static ImVec4 green{0.0f, 1.0f, 0.0f, 1.0f};
+        if (!ImeApp::CheckAppState())
+        {
+            ImGui::TextColored(red, "No");
+        }
+        else
+        {
+            ImGui::TextColored(green, "Ok");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Keyboard"))
+        {
+            ImeApp::ResetExclusiveMode();
+        }
         ImGui::EndGroup();
+        ImGui::SetItemTooltip("Try reset to non-exclusive keyboard.");
         ImGui::End();
     }
 
@@ -217,7 +294,6 @@ namespace SimpleIME
 
     void ImeUI::RenderCandWindow(ImVec2 &wndPos) const
     {
-
         ImVec2           childSize(0.0f, fontSize * 2);
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoInputs;
         windowFlags |= ImGuiWindowFlags_NoScrollbar;
@@ -270,6 +346,24 @@ namespace SimpleIME
             keyboardCodePage = CP_ACP; // Fallback to default ANSI code page when fails.
     }
 
+    void ImeUI::UpdateActiveLangProfile()
+    {
+        GUID activeGuid = {};
+        if (langProfileUtil.LoadActiveIme(activeGuid))
+        {
+            for (size_t idx = 0; idx < m_imeProfiles.size(); idx++)
+            {
+                if (activeGuid == m_imeProfiles[idx].guidProfile)
+                {
+                    auto str = m_imeProfiles[idx].desc;
+                    logv(debug, "Active language profile: {}", str.c_str());
+                    langProfileSelected = idx;
+                    return;
+                }
+            }
+        }
+    }
+
     bool ImeUI::ImeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam)
     {
         logv(debug, "ImeNotify {:#x}", wParam);
@@ -291,7 +385,7 @@ namespace SimpleIME
                 MAKE_CONTEXT(hwnd, UpdateConversionMode);
                 break;
             case IMN_SETOPENSTATUS:
-                MAKE_CONTEXT(hwnd, SetOpenStatus);
+                MAKE_CONTEXT(hwnd, OnSetOpenStatus);
                 break;
         }
         return false;
@@ -315,7 +409,7 @@ namespace SimpleIME
         }
     }
 
-    void ImeUI::SetOpenStatus(HIMC hIMC)
+    void ImeUI::OnSetOpenStatus(HIMC hIMC)
     {
         if (ImmGetOpenStatus(hIMC))
         {
@@ -338,7 +432,9 @@ namespace SimpleIME
         else
         {
             m_imeState.reset(IME_OPEN);
+            langProfileSelected = LAST_SIZE(m_imeProfiles);
         }
+        UpdateActiveLangProfile();
     }
 
     // when ImeUi enabled, the Game Input will be block and composition string will be sent
@@ -360,7 +456,7 @@ namespace SimpleIME
         int             width      = 0;
         bufLen                     = ImmGetCandidateListW(hIMC, 0, nullptr, 0);
         logv(debug, "Candidate index 0 buf len {}", bufLen);
-        for (DWORD index = 0; index < MAX_CAND_LIST; ++index)
+        for (uint8_t index = 0; index < MAX_CAND_LIST; ++index)
         {
             if (!(candListFlag & (1 << index))) continue;
             if (!(bufLen = ImmGetCandidateListW(hIMC, index, nullptr, 0))) break;
@@ -393,7 +489,7 @@ namespace SimpleIME
 
     void ImeUI::CloseCandidate(LPARAM candListFlag)
     {
-        for (int index = 0; index < MAX_CAND_LIST; ++index)
+        for (uint8_t index = 0; index < MAX_CAND_LIST; ++index)
         {
             if (candListFlag & (1 << index))
             {
@@ -455,7 +551,7 @@ namespace SimpleIME
             dwEndIndex = lpCandList->dwCount;
         }
         candidate->candList.clear();
-        size_t maxWidth = 0;
+        DWORD dwLineWidth = 0;
         for (; dwStartIndex < dwEndIndex; dwStartIndex++)
         {
             lpwStr = (LPWCH)((LPSTR)lpCandList + lpCandList->dwOffset[dwStartIndex]);
@@ -463,10 +559,10 @@ namespace SimpleIME
 
             auto         stdStr = WCharUtils::ToString(ws);
             size_t       width  = (ws.size() + 1) * fontSize + 10;
-            maxWidth += width;
+            dwLineWidth += width;
             candidate->candList.push_back(stdStr);
         }
-        candidate->dwWidth      = maxWidth;
+        candidate->dwWidth      = dwLineWidth;
         candidate->dwSelecttion = lpCandList->dwSelection % candidate->dwNumPerPage;
     }
 

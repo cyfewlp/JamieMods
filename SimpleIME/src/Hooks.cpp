@@ -67,8 +67,6 @@ namespace SimpleIME
                 }
                 break;
             default:
-                logv(debug, "MSG Hook: Wnd-{} {:#x}, {:#x}, {:#x}", (LPVOID)msg->hwnd, msg->message, msg->wParam,
-                     msg->lParam);
                 break;
         }
         return CallNextHookEx(hookData.hhook, code, wParam, lParam);
@@ -82,7 +80,6 @@ namespace SimpleIME
         hinst = wndClass->hInstance;
         Hooks::InstallWindowsHooks();
         mainThreadId = GetCurrentThreadId();
-        logv(debug, "thread id {}, hinst {}", mainThreadId, (LPVOID)hinst);
         return RealRegisterClassExA(wndClass);
     }
 
