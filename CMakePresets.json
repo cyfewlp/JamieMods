@@ -1,38 +1,30 @@
 {
   "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
   "configurePresets": [
-    {
-      "name": "base",
-      "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "installDir": "${sourceDir}/install/${presetName}",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-      "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "cl.exe",
-        "CMAKE_CXX_FLAGS": "/permissive- /Zc:preprocessor /EHsc /MP /W4 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -DUNICODE -D_UNICODE",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
-        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
     {
       "name": "common",
       "hidden": true,
       "binaryDir": "${sourceDir}/build/${presetName}",
       "installDir": "${sourceDir}/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_CXX_FLAGS": "$env{PROJECT_PLATFORM_FLAGS} $env{PROJECT_TEXT_FLAGS} $env{PROJECT_COMPILER_FLAGS} $penv{CXX_FLAGS}"
+      }
+    },
+    {
+      "name": "x64",
+      "hidden": true,
       "architecture": {
         "value": "x64",
         "strategy": "external"
       },
-      "cacheVariables": {
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      "environment": {
+        "PROJECT_ARCHITECTURE": "x64"
       }
     },
     {
@@ -51,20 +43,40 @@
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
         "USE_VCPKG": "ON",
-        "VCPKG_HOST_TRIPLET": "$env{PROJECT_ARCHITECTURE}-windows-static-md",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake",
-        "VCPKG_TARGET_TRIPLET": "$env{PROJECT_ARCHITECTURE}-windows-static-md"
+        "VCPKG_HOST_TRIPLET": "$env{PROJECT_ARCHITECTURE}-$env{PROJECT_PLATFORM}-static-md",
+        "VCPKG_TARGET_TRIPLET": "$env{PROJECT_ARCHITECTURE}-$env{PROJECT_PLATFORM}-static-md",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
       }
     },
     {
       "name": "compiler-cl",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "cl.exe",
-        "CMAKE_CXX_FLAGS": "/permissive- /Zc:preprocessor /EHsc /MP /W4 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -DUNICODE -D_UNICODE"
+        "CMAKE_C_COMPILER": "cl.exe"
       },
       "environment": {
-        "PROJECT_ARCHITECTURE": "x64"
+        "PROJECT_ARCHITECTURE": "x64",
+        "PROJECT_COMPILER_FLAGS": "/permissive- /Zc:preprocessor /EHsc /MP /W4 /WX /external:anglebrackets /external:W0"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-clangcl-x64",
+          "enableMicrosoftCodeAnalysis": true,
+          "enableClangTidyCodeAnalysis": true
+        }
+      }
+    },
+    {
+      "name": "compiler-clang",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "environment": {
+        "PROJECT_COMPILER": "clang",
+        "PROJECT_COMPILER_FLAGS": "-Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_lib_char8_t -D__cpp_consteval -D__cpp_lib_format"
       }
     },
     {
@@ -77,84 +89,99 @@
       "environment": {
         "CC": "clang-cl",
         "CXX": "clang-cl",
-        "PROJECT_COMPILER": "clang",
-        "PROJECT_ARCHITECTURE": "x64",
-        "PROJECT_TEXT_FLAGS": "-DUNICODE -D_UNICODE",
-        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 /WX -Wno-overloaded-virtual"
+        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 -Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_lib_char8_t -D__cpp_lib_format"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-clangcl-x64",
+          "enableMicrosoftCodeAnalysis": true,
+          "enableClangTidyCodeAnalysis": true
+        }
+      }
+    },
+    {
+      "name": "win32",
+      "hidden": true,
+      "environment": {
+        "PROJECT_PLATFORM_FLAGS": "-DWIN32_LEAN_AND_MEAN -DNOMINMAX",
+        "PROJECT_PLATFORM": "windows"
+      }
+    },
+    {
+      "name": "win32-unicode",
+      "hidden": true,
+      "inherits": "win32",
+      "environment": {
+        "PROJECT_TEXT_FLAGS": "-DUNICODE -D_UNICODE"
       }
     },
     {
       "name": "builttype-debug",
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "builttype-release",
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "debug",
-      "inherits": [
-        "base"
-      ],
-      "displayName": "Debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "release",
-      "inherits": [
-        "base"
-      ],
-      "displayName": "Release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "debug-clang-cl-vcpkg",
+      "name": "debug-cl-vs-vcpkg",
       "inherits": [
         "common",
-        "generator-ninja",
-        "builttype-debug",
-        "compiler-clang-cl",
-        "packaging-vcpkg"
-      ],
-      "binaryDir": "${sourceDir}/build/${presetName}"
-    },
-    {
-      "name": "debug-cl-vcpkg",
-      "inherits": [
-        "common",
+        "x64",
+        "win32-unicode",
         "packaging-vcpkg",
         "generator-vs-2022",
         "builttype-debug",
         "compiler-cl"
-      ],
-      "binaryDir": "${sourceDir}/build/${presetName}"
+      ]
     },
     {
-      "name": "release-cl-vcpkg",
+      "name": "debug-cl-ninjia-vcpkg",
+      "inherits": [
+        "common",
+        "x64",
+        "win32-unicode",
+        "packaging-vcpkg",
+        "generator-ninja",
+        "builttype-debug",
+        "compiler-cl"
+      ]
+    },
+    {
+      "name": "debug-clangcl-ninjia-vcpkg",
+      "inherits": [
+        "common",
+        "x64",
+        "win32-unicode",
+        "generator-ninja",
+        "builttype-debug",
+        "packaging-vcpkg",
+        "compiler-clang-cl"
+      ]
+    },
+    {
+      "name": "release-cl-vs-vcpkg",
       "inherits": [
         "common",
         "packaging-vcpkg",
         "generator-vs-2022",
         "builttype-release",
         "compiler-cl"
-      ],
-      "binaryDir": "${sourceDir}/build/${presetName}"
+      ]
     }
   ],
   "buildPresets": [
     {
-      "name": "debug-clang-cl-vcpkg",
-      "description": "",
-      "displayName": "",
-      "configurePreset": "debug-clang-cl-vcpkg"
+      "name": "build-debug-clangcl-ninjia-vcpkg",
+      "description": "build debug with clang-cl",
+      "displayName": "Debug (clang-cl ninjia vcpkg)",
+      "configurePreset": "debug-clangcl-ninjia-vcpkg"
     }
   ]
 }

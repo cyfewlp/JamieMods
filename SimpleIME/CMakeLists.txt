@@ -5,15 +5,17 @@ project(
     LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-
 configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
         @ONLY
 )
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+#set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*;--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
+#message(STATUS "CMAKE_CXX_CLANG_TIDY: ${CMAKE_CXX_CLANG_TIDY}")
 
 set(headers
     include/Hooks.hpp

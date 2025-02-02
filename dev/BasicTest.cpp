@@ -1,17 +1,4 @@
-﻿#include <conio.h>
-#include <cstddef>
-#include <cstdio>
-#include <functional>
-#include <iostream>
-#include <locale.h>
-#include <msctf.h>
-#include <oleauto.h>
-#include <stdexcept>
-#include <stdio.h>
-#include <string>
-#include <tchar.h>
-#include <thread>
-#include <vector>
+﻿#include <iostream>
 #include <windows.h>
 using namespace std;
 

@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # [BEGIN set_project_name]
 # Set your project name. This will be the name of your SKSE .dll file.
+project(JamieMods)
 
 set(UTILS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
 

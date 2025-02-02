@@ -11,6 +11,7 @@
 # Possible C++ build output directories and files
 out
 build
+install
 cmake-build*
 *.dll
 *.pdb

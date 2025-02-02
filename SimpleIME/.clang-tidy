@@ -1,0 +1,18 @@
+﻿Checks: '*,-llvmlibc-*,-fuchsia-*'
+HeaderFileExtensions:
+  - ''
+  - h
+  - hh
+  - hpp
+  - hxx
+ImplementationFileExtensions:
+  - c
+  - cc
+  - cpp
+  - cxx
+HeaderFilterRegex: .*
+ExcludeHeaderFilterRegex: .*imgui.*|.*REL\/Relocation.*
+CheckOptions:
+  llvmlibc-restrict-system-libc-headers.Includes: '-*'
+FormatStyle: file
+User: jamie
