@@ -12,7 +12,7 @@
 #include "imm.h"
 #include <algorithm>
 #include <clocale>
-#include <stdint.h>
+#include <cstdint>
 #include <tchar.h>
 
 #define LAST_SIZE(vector) (vector.size() - 1)
@@ -25,25 +25,12 @@ namespace LIBC_NAMESPACE_DECL
         static size_t   langProfileSelected = 0;
         constexpr ULONG ONE                 = 1;
 
-        static void     HelpMarker(const char *desc)
-        {
-            ImGui::Text("\xe2\x9d\x94"); // white ?
-            if (ImGui::BeginItemTooltip())
-            {
-                ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0F);
-                ImGui::TextUnformatted(desc);
-                ImGui::PopTextWrapPos();
-                ImGui::EndTooltip();
-            }
-        }
-
         ImeUI::ImeUI()
             : m_pHeap(HeapCreate(HEAP_GENERATE_EXCEPTIONS, IMEUI_HEAP_INIT_SIZE, IMEUI_HEAP_MAX_SIZE)),
               m_pCompStr(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)),
               m_pCompResult(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE))
         {
             _tsetlocale(LC_ALL, _T(""));
-            m_imeCandidates.fill(nullptr);
         }
 
         ImeUI::~ImeUI()
@@ -52,15 +39,6 @@ namespace LIBC_NAMESPACE_DECL
             m_pHeap = nullptr;
             delete m_pCompStr;
             delete m_pCompResult;
-#pragma unroll
-            for (auto &m_imeCandidate : m_imeCandidates)
-            {
-                if (m_imeCandidate != nullptr)
-                {
-                    delete m_imeCandidate;
-                    m_imeCandidate = nullptr;
-                }
-            }
         }
 
         void ImeUI::StartComposition()
@@ -208,8 +186,7 @@ namespace LIBC_NAMESPACE_DECL
             // render ime status window: language,
             if (m_imeState.any(ImeState::IN_CANDCHOOSEN))
             {
-                ImVec2 pos{CandWindowProp::OFFSET_X, ImGui::GetTextLineHeight() + CandWindowProp::OFFSET_Y};
-                RenderCandWindows(pos);
+                RenderCandWindows();
             }
             ImGui::End();
         }
@@ -220,11 +197,16 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_pinToolWindow                = false;
                 ImGui::GetIO().MouseDrawCursor = true;
+                ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
             }
             else
             {
                 m_showToolWindow               = !m_showToolWindow;
                 ImGui::GetIO().MouseDrawCursor = m_showToolWindow;
+                if (m_showToolWindow)
+                {
+                    ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
+                }
             }
         }
 
@@ -258,7 +240,7 @@ namespace LIBC_NAMESPACE_DECL
                     if (ImGui::Selectable(label.c_str()))
                     {
                         langProfileSelected = idx;
-                        __llvm_libc_SKSE_Plugin::SimpleIME::LangProfileUtil::ActivateProfile(langProfile);
+                        LangProfileUtil::ActivateProfile(langProfile);
                     }
                     if (isSelected)
                     {
@@ -298,7 +280,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::SetItemTooltip("Try reset to non-exclusive keyboard.");
             if (!m_pinToolWindow && !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
             {
-                m_showToolWindow = false;
+                ShowToolWindow();
             }
             ImGui::End();
         }
@@ -320,10 +302,10 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PopStyleColor(1);
         }
 
-        void ImeUI::RenderCandWindows(ImVec2 &wndPos) const
+        void ImeUI::RenderCandWindows() const
         {
             DWORD index = 0;
-            for (auto *imeCandidate : m_imeCandidates)
+            for (auto &imeCandidate : m_imeCandidates)
             {
                 index++;
                 if (imeCandidate == nullptr)
@@ -370,7 +352,7 @@ namespace LIBC_NAMESPACE_DECL
         void ImeUI::UpdateActiveLangProfile()
         {
             GUID activeGuid = {};
-            if (__llvm_libc_SKSE_Plugin::SimpleIME::LangProfileUtil::LoadActiveIme(activeGuid))
+            if (LangProfileUtil::LoadActiveIme(activeGuid))
             {
                 for (size_t idx = 0; idx < m_imeProfiles.size(); idx++)
                 {
@@ -432,6 +414,8 @@ namespace LIBC_NAMESPACE_DECL
                     }
                     return true;
                 }
+                default:
+                    break;
             }
             return false;
         }
@@ -500,15 +484,14 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if ((candListFlag & (ONE << index)) != 0U)
                 {
-                    auto *imeCandiDate = m_imeCandidates.at(index);
+                    auto &imeCandiDate = m_imeCandidates.at(index);
                     if (imeCandiDate == nullptr)
                     {
                         continue;
                     }
 
                     log_debug("Close candidate window #{}", index);
-                    delete imeCandiDate;
-                    m_imeCandidates.at(index) = nullptr;
+                    imeCandiDate.reset();
                 }
             }
         }
@@ -545,22 +528,21 @@ namespace LIBC_NAMESPACE_DECL
                 log_warn("Global alloc {} failed.", bufLen);
                 return;
             }
-            auto *currentCandidate = m_imeCandidates.at(dwIndex);
+            auto &currentCandidate = m_imeCandidates.at(dwIndex);
             if (currentCandidate == nullptr)
             {
-                currentCandidate            = new ImeCandidateList();
-                m_imeCandidates.at(dwIndex) = currentCandidate;
+                currentCandidate = std::make_unique<ImeCandidateList>();
             }
             LPCANDIDATELIST lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
             if (lpCandList == nullptr)
             {
                 log_error("Candidate window #{} alloc memory failed.", dwIndex);
                 GlobalFree(hGlobal);
-                delete currentCandidate;
+                currentCandidate.reset();
                 return;
             }
             ImmGetCandidateListW(hIMC, dwIndex, lpCandList, bufLen);
-            currentCandidate->Flush(lpCandList, ImGui::GetFontSize());
+            currentCandidate->Flush(lpCandList);
             log_debug("Candidate window #{}, count: {}", dwIndex, lpCandList->dwCount);
             GlobalUnlock(hGlobal);
             GlobalFree(hGlobal);
@@ -606,15 +588,14 @@ namespace LIBC_NAMESPACE_DECL
             return dwSize == 0;
         }
 
-        void ImeCandidateList::Flush(LPCANDIDATELIST lpCandList, float fontSize)
+        void ImeCandidateList::Flush(LPCANDIDATELIST lpCandList)
         {
             setPageSize(lpCandList->dwPageSize);
             DWORD dwStartIndex = lpCandList->dwPageStart;
             DWORD dwEndIndex   = dwStartIndex + dwPageSize;
             dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
             candList.clear();
-            float lineWidthA  = 0;
-            auto  pCandidates = reinterpret_cast<std::uintptr_t>(lpCandList);
+            auto pCandidates = reinterpret_cast<std::uintptr_t>(lpCandList);
             for (; dwStartIndex < dwEndIndex; dwStartIndex++)
             {
                 auto        address         = pCandidates + lpCandList->dwOffset[dwStartIndex];
@@ -622,11 +603,9 @@ namespace LIBC_NAMESPACE_DECL
                 auto        AnsiSizeInBytes = WCharUtils::CharLength(candidate.data());
                 std::string ansiStr(AnsiSizeInBytes, 0);
                 WCharUtils::ToString(candidate.data(), ansiStr.data(), AnsiSizeInBytes);
-                lineWidthA += (static_cast<float>(candidate.size() + 2) * fontSize) + CandWindowProp::WORD_PADDING;
                 candList.push_back(ansiStr);
             }
-            lineWidth    = lineWidthA;
             dwSelecttion = lpCandList->dwSelection % dwPageSize;
         }
-    }
+    } // namespace  SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

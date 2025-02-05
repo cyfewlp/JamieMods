@@ -1,4 +1,13 @@
 * 0.0.3
     - disable ImGui Win32 backend update mouse pos
     - [x]auto hide tool window when lost focus
+        - [x] when window focused/Activate/restore mark `ShouldResetKeyboard` as ture
+    - [x] try fix log source location
+        - https://github.com/gabime/spdlog/issues/1959
+    - [x] imgui cursor dead
+    - [] check memory overflow;
     - []remove/hide reset keyboard state button(need auto reset keyboard state)
+        - [x]fix: when tool window is pined, any mouse click(out of window?) will
+         make tool window immediate lost foucs after next unpin
+    - []try convert candidate imm api to tsf candidate api
+        ? windows-classic-samples tsfapp candidate api not work.

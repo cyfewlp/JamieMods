@@ -23,12 +23,6 @@
 
 #define SAFE_CALL(call, error)                                                                                         \
     if (FAILED(hresult = (call))) throw std::runtime_error(error);
-#define SAFE_RELEASE_PTR(resource)                                                                                     \
-    if ((resource) != nullptr)                                                                                         \
-    {                                                                                                                  \
-        (resource)->Release();                                                                                         \
-        (resource) = nullptr;                                                                                          \
-    }
 #define CO_CREATE(Type, var, IID)                                                                                      \
     CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID, (VOID **)&(var))
 

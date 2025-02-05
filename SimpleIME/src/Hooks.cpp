@@ -39,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return CallNextHookEx(hookData.hhook, code, wParam, lParam);
             }
-            MSG       *msg      = (MSG *)(lParam);
+            MSG       *msg      = reinterpret_cast<MSG *>(lParam);
             UINT const original = msg->message;
             switch (msg->message)
             {

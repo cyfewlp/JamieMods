@@ -53,15 +53,10 @@ namespace LIBC_NAMESPACE_DECL
 
         struct CandWindowProp
         {
-            static constexpr std::uint8_t MAX_COUNT            = 32;
-            static constexpr std::uint8_t DEFAULT_PAGE_SIZE    = 5;
-            static constexpr std::uint8_t OFFSET_X             = 2;
-            static constexpr std::uint8_t OFFSET_Y             = 5;
-            static constexpr float        PADDING              = 10.0F;
-            static constexpr float        WORD_PADDING         = 5.0F;
+            static constexpr std::uint8_t MAX_COUNT         = 32;
+            static constexpr std::uint8_t DEFAULT_PAGE_SIZE = 5;
+            static constexpr float        PADDING           = 10.0F;
         };
-
-        constexpr auto CAND_DEFAULT_NUM_PER_PAGE = 5;
 
         // language id for english keyboard
         constexpr auto LANGID_ENG         = 0x409;
@@ -100,11 +95,6 @@ namespace LIBC_NAMESPACE_DECL
                 return dwSelecttion;
             }
 
-            [[nodiscard]] constexpr auto getLineWidth() const -> float
-            {
-                return lineWidth;
-            }
-
             [[nodiscard]] constexpr auto getCandList() const -> std::vector<std::string>
             {
                 return candList;
@@ -112,10 +102,9 @@ namespace LIBC_NAMESPACE_DECL
 
             // use provided lpCandList flush candidate cache
             // @fontSize be used calculate singlie line width
-            void Flush(LPCANDIDATELIST lpCandList, float fontSize);
+            void Flush(LPCANDIDATELIST lpCandList);
 
         private:
-            float                    lineWidth{0.0F};
             DWORD                    dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
             DWORD                    dwSelecttion{0};
             std::vector<std::string> candList;
@@ -166,9 +155,9 @@ namespace LIBC_NAMESPACE_DECL
             void               ShowToolWindow();
             void               UpdateLanguage();
             void               UpdateActiveLangProfile();
-            void               OnSetOpenStatus(HIMC /*hIMC*/);
-            void               UpdateConversionMode(HIMC /*hIMC*/);
-            auto               ImeNotify(HWND /*hwnd*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool;
+            void               OnSetOpenStatus(HIMC hIMC);
+            void               UpdateConversionMode(HIMC hIMC);
+            auto               ImeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam) -> bool;
             [[nodiscard]] auto IsEnabled() const -> bool;
             [[nodiscard]] auto GetImeState() const -> Enumeration<ImeState>;
 
@@ -179,14 +168,14 @@ namespace LIBC_NAMESPACE_DECL
             void        SendResultStringToSkyrim();
             void        RenderToolWindow();
             static void RenderCompWindow(WcharBuf *compStrBuf);
-            void        OpenCandidate(HIMC /*hIMC*/, LPARAM /*candListFlag*/);
-            void        ChangeCandidate(HIMC /*hIMC*/, LPARAM /*candListFlag*/);
-            void        ChangeCandidateAt(HIMC /*hIMC*/ hIMC, DWORD dwIndex);
-            void        CloseCandidate(LPARAM /*candListFlag*/);
-            void        RenderCandWindows(ImVec2 &wndPos) const;
+            void        OpenCandidate(HIMC hIMC, LPARAM candListFlag);
+            void        ChangeCandidate(HIMC hIMC, LPARAM candListFlag);
+            void        ChangeCandidateAt(HIMC hIMC, DWORD dwIndex);
+            void        CloseCandidate(LPARAM candListFlag);
+            void        RenderCandWindows() const;
 
-            static constexpr auto                                 TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
-            std::array<ImeCandidateList *, CandWindowProp::MAX_COUNT> m_imeCandidates;
+            static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
+            std::array<std::unique_ptr<ImeCandidateList>, CandWindowProp::MAX_COUNT> m_imeCandidates{};
             //
             HANDLE                   m_pHeap;
             WcharBuf                *m_pCompStr;

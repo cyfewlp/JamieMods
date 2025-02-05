@@ -16,60 +16,70 @@
 #define LIBC_NAMESPACE      __llvm_libc_SKSE_Plugin
 #define LIBC_NAMESPACE_DECL [[gnu::visibility("hidden")]] LIBC_NAMESPACE
 
-struct Logger
-{
-    template <typename T>
-    static void log(spdlog::source_loc loc, spdlog::level::level_enum level, const T &value)
-    {
-        spdlog::log(loc, level, value);
-    }
-
-    template <typename... Types>
-    static void log(spdlog::source_loc loc, spdlog::level::level_enum level, const char *const message,
-                    const Types &...params)
-    {
-        auto fmt = std::vformat(std::string(message), std::make_format_args(params...));
-        spdlog::log(loc, level, fmt.c_str());
-    }
-};
-
 namespace LIBC_NAMESPACE_DECL
 {
+    class format_string_loc
+    {
+    public:
+        template <class... Args>
+        constexpr format_string_loc(const char                *a_fmt,
+                                    const std::source_location location = std::source_location::current()) noexcept
+            : value{a_fmt}, loc(spdlog::source_loc{location.file_name(), static_cast<std::int32_t>(location.line()),
+                                                   location.function_name()})
+        {
+        }
+
+        [[nodiscard]] constexpr auto GetValue() const noexcept -> const std::string_view &
+        {
+            return value;
+        }
+
+        [[nodiscard]] constexpr auto GetLoc() const noexcept -> const spdlog::source_loc &
+        {
+            return loc;
+        }
+
+        //    private:
+        std::string_view   value;
+        spdlog::source_loc loc;
+    };
+
     template <typename enum_t, typename... Args>
-    static constexpr auto logd(enum_t level, Args... args)
+    static constexpr auto logd(enum_t level, const format_string_loc &fsl, Args &&...args)
         requires(std::same_as<enum_t, spdlog::level::level_enum>)
     {
-        Logger::log(spdlog::source_loc(__FILE__, __LINE__, __FUNCTION__), level, args...);
+        auto fmt = std::vformat(fsl.GetValue(), std::make_format_args(args...));
+        spdlog::log(fsl.GetLoc(), level, fmt.c_str());
     }
 
     template <typename... Args>
-    static constexpr auto log_error(Args... args)
+    static constexpr auto log_error(const format_string_loc fsl, Args &&...args)
     {
-        logd(spdlog::level::err, args...);
+        logd(spdlog::level::err, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_warn(Args... args)
+    static constexpr auto log_warn(const format_string_loc fsl, Args &&...args)
     {
-        logd(spdlog::level::warn, args...);
+        logd(spdlog::level::warn, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_info(Args... args)
+    static constexpr auto log_info(const format_string_loc fsl, Args &&...args)
     {
-        logd(spdlog::level::info, args...);
+        logd(spdlog::level::info, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_debug(Args... args)
+    static constexpr auto log_debug(const format_string_loc fsl, Args &&...args)
     {
-        logd(spdlog::level::debug, args...);
+        logd(spdlog::level::debug, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_trace(Args... args)
+    static constexpr auto log_trace(const format_string_loc fsl, Args &&...args)
     {
-        logd(spdlog::level::trace, args...);
+        logd(spdlog::level::trace, fsl, std::forward<Args>(args)...);
     }
 
     namespace SimpleIME
@@ -86,10 +96,10 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr char  DEFAULT_TOOL_WINDOW_SHORTCUT_KEY = DIK_F2;
 
         private:
-            float            fontSize              = DEFAULT_FONT_SIZE;
-            uint32_t         toolWindowShortcutKey = DEFAULT_TOOL_WINDOW_SHORTCUT_KEY; // 0x3C
-            int              logLevel;
-            int              flushLevel;
+            float       fontSize              = DEFAULT_FONT_SIZE;
+            uint32_t    toolWindowShortcutKey = DEFAULT_TOOL_WINDOW_SHORTCUT_KEY; // 0x3C
+            int         logLevel;
+            int         flushLevel;
             std::string eastAsiaFontFile;
             std::string emojiFontFile;
 

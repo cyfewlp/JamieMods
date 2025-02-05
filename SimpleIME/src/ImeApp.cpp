@@ -25,8 +25,8 @@ namespace LIBC_NAMESPACE_DECL
          */
         void ImeApp::Init()
         {
-            firstEvent = true;
-            g_pState   = std::make_unique<State>();
+            shouldResetKeyboard = true;
+            g_pState            = std::make_unique<State>();
             g_pState->Initialized.store(false);
             Hooks::InstallRegisterClassHook();
         }
@@ -134,10 +134,12 @@ namespace LIBC_NAMESPACE_DECL
         // we need set our keyboard to non-exclusive after game default.
         void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
-            if (firstEvent)
+            if (shouldResetKeyboard)
             {
-                ImeApp::ResetExclusiveMode();
-                firstEvent = false;
+                if (ImeApp::ResetExclusiveMode())
+                {
+                    shouldResetKeyboard = false;
+                }
             }
             static RE::InputEvent *dummy[] = {nullptr};
             ProcessEvent(a_events);
@@ -205,7 +207,6 @@ namespace LIBC_NAMESPACE_DECL
                             if (pButtonEvent->GetIDCode() == g_pFontConfig->GetToolWindowShortcutKey() &&
                                 pButtonEvent->IsDown())
                             {
-                                log_debug("show window pressed");
                                 g_pImeWnd->ShowToolWindow();
                             }
                             break;
@@ -248,19 +249,17 @@ namespace LIBC_NAMESPACE_DECL
                 case WM_ACTIVATE:
                     if (wParam != WA_INACTIVE)
                     {
-                        ImeApp::ResetExclusiveMode();
-                        log_debug("MainWndProc Active");
+                        shouldResetKeyboard = true;
                     }
                     break;
                 case WM_SYSCOMMAND:
-                    if(GET_SC_WPARAM(wParam) == SC_RESTORE) {
-                        ImeApp::ResetExclusiveMode();
-                        log_debug("MainWndProc WM_SYSCOMMAND- RESTORE");
+                    if (GET_SC_WPARAM(wParam) == SC_RESTORE)
+                    {
+                        shouldResetKeyboard = true;
                     }
                     break;
                 case WM_SETFOCUS:
-                    log_debug("MainWndProc WM_SETFOCUS");
-                    ImeApp::ResetExclusiveMode();
+                    shouldResetKeyboard = true;
                     g_pImeWnd->Focus();
                     return S_OK;
                 default:

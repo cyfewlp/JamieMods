@@ -46,7 +46,7 @@ namespace LIBC_NAMESPACE_DECL
             static inline auto    g_pFontConfig = std::make_unique<FontConfig>();
             static inline auto    g_pImeWnd     = std::make_unique<ImeWnd>();
             static inline HWND    g_hWnd        = nullptr;
-            static inline bool    firstEvent;
+            static inline bool    shouldResetKeyboard;
         };
 
     }
