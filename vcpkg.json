@@ -5,6 +5,7 @@
     "detours",
     "simpleini",
     "spdlog",
+    "ms-gsl",
     "freetype"
   ]
 }

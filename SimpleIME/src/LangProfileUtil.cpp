@@ -3,24 +3,37 @@
 //
 
 #include "LangProfileUtil.h"
+#include "Configs.h"
 #include "WCharUtils.h"
-#include <atlbase.h>
-#include <tchar.h>
-#include <wincodec.h>
+#include "spdlog/common.h"
+#include <atlcomcli.h>
+#include <combaseapi.h>
+#include <cstddef>
+#include <intsafe.h>
+#include <minwindef.h>
+#include <msctf.h>
+#include <objbase.h>
+#include <oleauto.h>
+#include <sal.h>
+#include <specstrings_strict.h>
+#include <stdexcept>
+#include <winnt.h>
+#include <wtypes.h>
+#include <wtypesbase.h>
 
 #define SAFE_CALL(call, error)                                                                                         \
-    if (FAILED(hresult = call)) throw std::runtime_error(error);
+    if (FAILED(hresult = (call))) throw std::runtime_error(error);
 #define SAFE_RELEASE_PTR(resource)                                                                                     \
-    if (resource != nullptr)                                                                                           \
+    if ((resource) != nullptr)                                                                                         \
     {                                                                                                                  \
-        resource->Release();                                                                                           \
-        resource = nullptr;                                                                                            \
+        (resource)->Release();                                                                                         \
+        (resource) = nullptr;                                                                                          \
     }
 #define CO_CREATE(Type, var, IID)                                                                                      \
-    CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID, (VOID **)&var)
+    CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID, (VOID **)&(var))
 
 #define CO_CREATE(Type, var)                                                                                           \
-    CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID_##Type, (VOID **)&var)
+    CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID_##Type, (VOID **)&(var))
 
 using namespace LIBC_NAMESPACE::SimpleIME;
 
@@ -61,7 +74,7 @@ void LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexc
         while (lpEnum->Next(1, &profile, &fetched) == S_OK)
         {
             BOOL bEnabled = FALSE;
-            BSTR bstrDesc = NULL;
+            BSTR bstrDesc = nullptr;
             hresult =
                 lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled);
 
@@ -77,7 +90,7 @@ void LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexc
                     langProfile.guidProfile = profile.guidProfile;
                     langProfile.desc        = WCharUtils::ToString(bstrDesc);
                     langProfiles.push_back(langProfile);
-                    logv(info, "Load installed ime: {}", langProfile.desc.c_str());
+                    log_info("Load installed ime: {}", langProfile.desc.c_str());
                     SysFreeString(bstrDesc);
                 }
             }
@@ -85,7 +98,7 @@ void LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexc
     }
     catch (std::runtime_error error)
     {
-        logv(err, "LoadIme failed: {}", error.what());
+        log_error("LoadIme failed: {}", error.what());
     }
 }
 
@@ -107,11 +120,11 @@ void LangProfileUtil::ActivateProfile(_In_ LangProfile &profile) noexcept
     }
     catch (std::runtime_error &error)
     {
-        logv(err, "Activate lang profile {} failed: {}", profile.desc.c_str(), error.what());
+        log_error("Activate lang profile {} failed: {}", profile.desc.c_str(), error.what());
     }
 }
 
-bool LangProfileUtil::LoadActiveIme(__in GUID &a_guidProfile) noexcept
+auto LangProfileUtil::LoadActiveIme(__in GUID &a_guidProfile) noexcept -> bool
 {
     HRESULT                              hresult = TRUE;
     CComPtr<ITfInputProcessorProfileMgr> lpMgr;
@@ -129,7 +142,7 @@ bool LangProfileUtil::LoadActiveIme(__in GUID &a_guidProfile) noexcept
     }
     catch (std::runtime_error error)
     {
-        logv(err, "load active ime failed: {}", error.what());
+        log_error("load active ime failed: {}", error.what());
     }
     return false;
 }

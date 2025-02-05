@@ -1,11 +1,18 @@
+#ifndef HOOKS_HPP
+#define HOOKS_HPP
+
 #pragma once
 
 #include "Configs.h"
+#include <REL/Relocation.h>
 #include <cstdint>
 #include <windows.h>
 
-#define NUMHOOKS     1
-#define GET_MSG_PROC 0
+enum : std::uint8_t
+{
+    GET_MSG_PROC = 0,
+    NUMHOOKS
+};
 
 #define MAKE_HOOK(name, id, offset, Func)                                                                              \
     struct name                                                                                                        \
@@ -18,33 +25,89 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace SimpleIME
     {
-        static inline HINSTANCE hinst;
-        static inline DWORD     mainThreadId;
-
-        static std::uintptr_t   GetAddress(REL::RelocationID relocationId, REL::VariantOffset offset)
-        {
-            return REL::Relocation<std::uintptr_t>(relocationId, offset).address();
-        }
-
         namespace Hooks
         {
-            MAKE_HOOK(D3DInit, REL::RelocationID(75595, 77226), REL::VariantOffset(0x9, 0x275, 0x00), void());
-            MAKE_HOOK(D3DPresent, REL::RelocationID(75461, 77246), REL::VariantOffset(0x9, 0x9, 0x00),
-                      void(std::uint32_t));
-            MAKE_HOOK(DispatchInputEvent, REL::RelocationID(67315, 68617), /**/
-                      REL::VariantOffset(0x7B, 0x7B, 0x00),                /**/
-                      void(RE::BSTEventSource<RE::InputEvent *> *, RE::InputEvent **));
+            template <typename func_t>
+            struct HookData
+            {
+            };
+
+            template <typename return_t, typename... Args>
+            struct HookData<return_t(Args...)>
+            {
+                using func_type = return_t(Args...);
+
+                HookData(REL::RelocationID a_id, REL::VariantOffset a_offset, return_t (*funcPtr)(Args...))
+                {
+                    address = REL::Relocation<std::uint32_t>(a_id, a_offset).address();
+                    trampoline.create(14);
+
+                    auto ptr     = trampoline.write_call<5>(address, reinterpret_cast<void *>(funcPtr));
+                    originalFunc = REL::Relocation<func_type>(ptr);
+                }
+
+                auto constexpr GetAddress() const -> std::uintptr_t
+                {
+                    return address;
+                }
+
+                auto operator()(Args... args) const noexcept
+                {
+                    originalFunc(args...);
+                }
+
+            private:
+                SKSE::Trampoline                   trampoline{"CallHook"};
+                std::uintptr_t                     address;
+                REL::Relocation<return_t(Args...)> originalFunc;
+            };
+
+            struct D3DInitHookData : HookData<void()>
+            {
+                D3DInitHookData(func_type *ptr)
+                    : HookData(REL::RelocationID(75595, 77226), REL::VariantOffset(0x9, 0x275, 0x00), ptr)
+                {
+                }
+            };
+
+            struct D3DPresentHookData : HookData<void(std::uint32_t)>
+            {
+                D3DPresentHookData(func_type *ptr)
+                    : HookData(REL::RelocationID(75461, 77246), REL::VariantOffset(0x9, 0x9, 0x00), ptr)
+                {
+                }
+            };
+
+            struct DispatchInputEventHookData
+                : HookData<void(RE::BSTEventSource<RE::InputEvent *> *, RE::InputEvent **)>
+            {
+                DispatchInputEventHookData(func_type *ptr)
+                    : HookData(REL::RelocationID(67315, 68617), REL::VariantOffset(0x7B, 0x7B, 0x00), ptr)
+                {
+                }
+            };
+
+            template <typename func_t>
+            static auto MakeHook(HookData<func_t> &a_hookData, func_t *funcPtr) -> REL::Relocation<func_t>
+            {
+                SKSE::Trampoline trampoline{"CallHook"};
+                trampoline.create(14);
+
+                auto ptr = trampoline.write_call<5>(a_hookData.GetAddress(), reinterpret_cast<void *>(funcPtr));
+                a_hookData.SetOriginalFunc(ptr);
+                return REL::Relocation<func_t>(ptr);
+            }
 
             // Windows Hook
-            typedef struct _MYHOOKDATA
+            using MYHOOKDATA = struct _MYHOOKDATA
             {
                 int      nType;
                 HOOKPROC hkprc;
                 HHOOK    hhook;
-            } MYHOOKDATA;
+            };
 
             LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
-            void             InstallCreateWindowHook();
+            void             InstallRegisterClassHook();
             void             InstallWindowsHooks();
 
             template <typename T>
@@ -56,23 +119,24 @@ namespace LIBC_NAMESPACE_DECL
             class CallHook<R(Args...)>
             {
             public:
-                CallHook(std::uintptr_t a_address, R (*funcPtr)(Args...))
+                CallHook(REL::RelocationID a_id, REL::VariantOffset offset, R (*funcPtr)(Args...))
+                {
+                    address = REL::Relocation<std::uintptr_t>(a_id, offset).address();
+
+                    trampoline.create(14);
+                    auto ptr     = trampoline.write_call<5>(address, reinterpret_cast<void *>(funcPtr));
+                    originalFunc = ptr;
+                }
+
+                CallHook(std::uintptr_t a_address, R (*funcPtr)(Args...)) : address(a_address)
                 {
                     trampoline.create(14);
-                    address      = a_address;
+
                     auto ptr     = trampoline.write_call<5>(a_address, reinterpret_cast<void *>(funcPtr));
                     originalFunc = ptr;
                 }
 
-                ~CallHook()
-                {
-                    uintptr_t base = REL::Module::get().base();
-                    logv(debug,
-                         "Detaching call hook from address 0x{:#x} (offset from image base of 0x{:#x} by 0x{:#x}...",
-                         address, base, address - base);
-                }
-
-                R operator()(Args... args) const noexcept
+                auto operator()(Args... args) const noexcept -> R
                 {
                     if constexpr (std::is_void_v<R>)
                     {
@@ -90,5 +154,7 @@ namespace LIBC_NAMESPACE_DECL
                 std::uintptr_t              address;
             };
         };
-    }
-} // namespace SimpleIME
+    } // namespace SimpleIME
+} // namespace LIBC_NAMESPACE_DECL
+
+#endif

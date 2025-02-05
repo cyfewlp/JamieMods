@@ -3,6 +3,13 @@
 //
 #include "Configs.h"
 #include "ImeApp.h"
+#include "spdlog/common.h"
+#include <SKSE/API.h>
+#include <SKSE/Impl/PCH.h>
+#include <SKSE/Interfaces.h>
+#include <SKSE/Logger.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
 
 static void InitializeLogging(LIBC_NAMESPACE::SimpleIME::FontConfig *config)
 {
@@ -17,7 +24,8 @@ static void InitializeLogging(LIBC_NAMESPACE::SimpleIME::FontConfig *config)
     std::shared_ptr<spdlog::logger> log;
 
     auto                            sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-    log                                  = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
+
+    log                                  = std::make_shared<spdlog::logger>(std::string("global log"), std::move(sink));
     log->set_level(config->GetLogLevel());
     log->flush_on(config->GetFlushLevel());
 
@@ -32,11 +40,11 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse)
 
     auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     auto  version = plugin->GetVersion();
-    logv(info, "{} {} is loading...", plugin->GetName(), version.string());
+    LIBC_NAMESPACE::log_info("{} {} is loading...", plugin->GetName(), version.string());
 
     SKSE::Init(skse);
     LIBC_NAMESPACE::SimpleIME::ImeApp::Init();
 
-    logv(info, "{} has finished loading.", plugin->GetName());
+    LIBC_NAMESPACE::log_info("{} has finished loading.", plugin->GetName());
     return true;
 }

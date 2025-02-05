@@ -18,16 +18,14 @@ namespace LIBC_NAMESPACE_DECL
             return strTo;
         }
 
-        static int CharLength(const std::wstring &wstr, UINT codePage = CP_UTF8)
+        static constexpr int CharLength(const LPCWCH lpcWch, UINT codePage = CP_UTF8)
         {
-            return ::WideCharToMultiByte(codePage, 0, wstr.data(), static_cast<int>(wstr.size()), nullptr, 0, nullptr,
-                                         nullptr);
+            return ::WideCharToMultiByte(codePage, 0, lpcWch, -1, nullptr, 0, nullptr, nullptr);
         }
 
-        static void ToString(const std::wstring &wstr, LPSTR lpStr, int length, UINT codePage = CP_UTF8)
+        static constexpr void ToString(const LPCWCH lpcwch, __out LPSTR lpStr, int length, UINT codePage = CP_UTF8)
         {
-            ::WideCharToMultiByte(codePage, 0, wstr.data(), static_cast<int>(wstr.size()), lpStr, length, nullptr,
-                                  nullptr);
+            ::WideCharToMultiByte(codePage, 0, lpcwch, -1, lpStr, length, nullptr, nullptr);
         }
     };
 }

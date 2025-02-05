@@ -1,3 +1,6 @@
+#ifndef IMEWND_HPP
+#define IMEWND_HPP
+
 #pragma once
 
 #include "Configs.h"
@@ -22,31 +25,38 @@ namespace LIBC_NAMESPACE_DECL
         class ImeWnd
         {
         public:
-            HWND m_hWnd;
             ImeWnd();
             ~ImeWnd();
+
+            ImeWnd(ImeWnd &&a_imeWnd)                          = delete;
+            ImeWnd(const ImeWnd &a_imeWnd)                     = delete;
+
+            auto operator=(ImeWnd &&a_imeWnd) -> ImeWnd &      = delete;
+            auto operator=(const ImeWnd &a_imeWnd) -> ImeWnd & = delete;
+
             void Initialize(HWND a_parent) noexcept(false);
             void InitImGui(ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/, FontConfig *fontConfig) const
                 noexcept(false);
-            void Focus() const;
-            void RenderIme();
-            void ShowToolWindow();
-            void SetImeOpenStatus(bool open) const;
-            bool IsImeEnabled() const;
-            void SendMessage(UINT msg, WPARAM wParam, LPARAM lParam);
-            bool IsDiscardGameInputEvents(__in RE::InputEvent ** /*events*/);
+            void               Focus() const;
+            void               RenderIme();
+            void               ShowToolWindow();
+            void               SetImeOpenStatus(bool open) const;
+            auto               IsDiscardGameInputEvents(__in RE::InputEvent               **/*events*/) -> bool;
 
         private:
-            static LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-            LRESULT        OnCreate();
-            static LRESULT OnDestroy();
-            LRESULT        OnStartComposition();
-            LRESULT        OnEndComposition();
-            LRESULT        OnComposition(HWND hWnd, LPARAM lParam);
+            static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
+            auto        OnCreate() -> LRESULT;
+            static auto OnDestroy() -> LRESULT;
+            auto        OnStartComposition() -> LRESULT;
+            auto        OnEndComposition() -> LRESULT;
+            auto        OnComposition(HWND hWnd, LPARAM lParam) -> LRESULT;
 
+            HWND        m_hWnd;
             HWND        m_hWndParent;
             ImeUI      *m_pImeUI;
-            WNDCLASSEXW wc;
+            WNDCLASSEXW wc{};
         };
     } // namespace SimpleIME
-}
+} // namespace LIBC_NAMESPACE_DECL
+
+#endif

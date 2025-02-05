@@ -1,6 +1,6 @@
-﻿//
-// Created by jamie on 2025/1/28.
-//
+#ifndef LANGPROFILEUTIL_H
+#define LANGPROFILEUTIL_H
+
 #pragma once
 
 #include "Configs.h"
@@ -18,7 +18,7 @@ namespace LIBC_NAMESPACE_DECL
             LANGID      langid;
             GUID        guidProfile;
             std::string desc;
-        };
+        } __attribute__((packed)) __attribute__((aligned(128)));
 
         class LangProfileUtil
         {
@@ -27,10 +27,11 @@ namespace LIBC_NAMESPACE_DECL
             ~LangProfileUtil();
             static void LoadIme(__in std::vector<LangProfile> &langProfiles) noexcept;
             static void ActivateProfile(_In_ LangProfile &profile) noexcept;
-            static bool LoadActiveIme(__in GUID &a_guidProfile) noexcept;
+            static auto LoadActiveIme(__in GUID &a_guidProfile) noexcept -> bool;
 
         private:
             bool initialized = false;
         };
     }
 }
+#endif

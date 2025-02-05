@@ -1,44 +1,47 @@
 #include "ImeApp.h"
 #include "Configs.h"
+#include "Device.h"
 #include "Hooks.hpp"
+#include "ImeWnd.hpp"
+#include "gsl/gsl"
+#include "imgui.h"
+#include <RE/B/BSWin32MouseDevice.h>
+#include <RE/I/InputDevices.h>
 #include <SimpleIni.h>
-#include <array>
+#include <basetsd.h>
+#include <cstdint>
 #include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    const std::array<char, 256> g_KeyStateBuffer{};
-
     namespace SimpleIME
     {
-        using namespace Hooks;
-
-        static const CallHook<D3DInit::FuncType>            D3DInitHook(D3DInit::Address, ImeApp::D3DInit);
-        static const CallHook<D3DPresent::FuncType>         D3DPresentHook(D3DPresent::Address, ImeApp::D3DPresent);
-        static const CallHook<DispatchInputEvent::FuncType> DispatchInputEventHook(DispatchInputEvent::Address,
-                                                                                   ImeApp::DispatchEvent);
+        static const auto D3DInitHook            = Hooks::D3DInitHookData(ImeApp::D3DInit);
+        static const auto D3DPresentHook         = Hooks::D3DPresentHookData(ImeApp::D3DPresent);
+        static const auto DispatchInputEventHook = Hooks::DispatchInputEventHookData(ImeApp::DispatchEvent);
 
         /**
          * Init ImeApp
          */
         void ImeApp::Init()
         {
-            g_pState = std::make_unique<State>();
+            firstEvent = true;
+            g_pState   = std::make_unique<State>();
             g_pState->Initialized.store(false);
-            Hooks::InstallCreateWindowHook();
+            Hooks::InstallRegisterClassHook();
         }
 
-        FontConfig *ImeApp::LoadConfig()
+        auto ImeApp::LoadConfig() -> FontConfig *
         {
             CSimpleIniA ini;
 
             ini.SetUnicode();
-            SI_Error error = ini.LoadFile(R"(Data\SKSE\Plugins\SimpleIME.ini)");
+            SI_Error const error = ini.LoadFile(R"(Data\SKSE\Plugins\SimpleIME.ini)");
             if (error < 0)
             {
                 SKSE::stl::report_and_fail("Loading config failed.");
             }
-            g_pFontConfig.reset(new FontConfig());
+            g_pFontConfig = std::make_unique<FontConfig>();
             g_pFontConfig->of(ini);
             return g_pFontConfig.get();
         }
@@ -54,28 +57,29 @@ namespace LIBC_NAMESPACE_DECL
             auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
             if (render_manager == nullptr)
             {
-                logv(err, "Cannot find render manager. Initialization failed!");
+                log_error("Cannot find render manager. Initialization failed!");
+                ;
                 return;
             }
 
             auto render_data = render_manager->data;
-            logv(debug, "Getting SwapChain...");
+            log_debug("Getting SwapChain...");
             auto *pSwapChain = render_data.renderWindows->swapChain;
             if (pSwapChain == nullptr)
             {
-                logv(err, "Cannot find SwapChain. Initialization failed!");
+                log_error("Cannot find SwapChain. Initialization failed!");
                 return;
             }
 
-            logv(debug, "Getting SwapChain desc...");
-            DXGI_SWAP_CHAIN_DESC swapChainDesc{};
-            if (pSwapChain->GetDesc(std::addressof(swapChainDesc)) < 0)
+            log_debug("Getting SwapChain desc...");
+            auto swapChainDesc = gsl::not_null(new DXGI_SWAP_CHAIN_DESC());
+            if (pSwapChain->GetDesc(swapChainDesc) < 0)
             {
-                logv(err, "IDXGISwapChain::GetDesc failed.");
+                log_error("IDXGISwapChain::GetDesc failed.");
                 return;
             }
 
-            g_hWnd      = swapChainDesc.OutputWindow;
+            g_hWnd      = swapChainDesc->OutputWindow;
             g_pKeyboard = std::make_unique<KeyboardDevice>(g_hWnd);
 
             try
@@ -86,7 +90,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             catch (SimpleIMEException &e)
             {
-                logv(err, "Thread ImeWnd failed. {}", e.what());
+                log_error("Thread ImeWnd failed. {}", e.what());
                 g_pImeWnd.reset();
                 g_pImeWnd = nullptr;
                 return;
@@ -100,12 +104,12 @@ namespace LIBC_NAMESPACE_DECL
 
             SKSE::GetTaskInterface()->AddUITask([]() { g_pImeWnd->SetImeOpenStatus(false); });
 
-            logv(debug, "Hooking Skyrim WndProc...");
-            RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(swapChainDesc.OutputWindow, GWLP_WNDPROC,
+            log_debug("Hooking Skyrim WndProc...");
+            RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(swapChainDesc->OutputWindow, GWLP_WNDPROC,
                                                                       reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
             if (RealWndProc == nullptr)
             {
-                logv(err, "Hook WndProc failed!");
+                log_error("Hook WndProc failed!");
             }
         }
 
@@ -117,7 +121,7 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            if (g_pKeyboard && g_pKeyboard->GetState((LPVOID)g_KeyStateBuffer.data(), (DWORD)g_KeyStateBuffer.size()))
+            if (g_pKeyboard->GetState())
             {
                 /*if (key_state_buffer[DIK_F2] & 0x80)
                 {
@@ -128,9 +132,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         // we need set our keyboard to non-exclusive after game default.
-        static bool firstEvent = true;
-
-        void        ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
+        void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
             if (firstEvent)
             {
@@ -150,84 +152,96 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        bool ImeApp::CheckAppState()
+        auto ImeApp::CheckAppState() -> bool
         {
-            return g_pKeyboard->acquired.load();
+            return g_pKeyboard->IsAcquired();
         }
 
-        // if specify recreate param, current g_pKeyboard will be delete
-        // This is a insurance if we lost keyboard control
-        bool ImeApp::ResetExclusiveMode()
+        // reset keyboard CooperativeLevel to non-exclusive
+        auto ImeApp::ResetExclusiveMode() noexcept -> bool
         {
             try
             {
-                g_pKeyboard->SetNonExclusive();
-                logv(info, "Keyboard device now is non-exclusive.");
+                g_pKeyboard->Acquire();
+                log_info("Keyboard device now is non-exclusive.");
                 return true;
             }
-            catch (SimpleIMEException &exception)
+            catch (std::runtime_error &error)
             {
-                logv(err, "Change keyboard cooperative level failed: {}", exception.what());
+                log_error("Change keyboard cooperative level failed: {}", error.what());
             }
             return false;
         }
 
         void ImeApp::ProcessEvent(RE::InputEvent **events)
         {
-            for (auto *event = *events; event != nullptr; event = event->next)
+            if (events == nullptr)
             {
-                auto eventType = event->GetEventType();
-                switch (eventType)
-                {
-                    case RE::INPUT_EVENT_TYPE::kButton: {
-                        auto *const buttonEvent = event->AsButtonEvent();
-                        if (buttonEvent == nullptr)
-                        {
-                            continue;
-                        }
+                return;
+            }
+            auto *head = *events;
+            if (head == nullptr)
+            {
+                return;
+            }
 
-                        if (event->GetDevice() == RE::INPUT_DEVICE::kKeyboard)
-                        {
-                            if (buttonEvent->GetIDCode() == g_pFontConfig->GetToolWindowShortcutKey() &&
-                                buttonEvent->IsDown())
+            switch (head->GetEventType())
+            {
+                case RE::INPUT_EVENT_TYPE::kMouseMove: {
+                    auto *cursor = RE::MenuCursor::GetSingleton();
+                    ImGui::GetIO().AddMousePosEvent(cursor->cursorPosX, cursor->cursorPosY);
+                    break;
+                }
+                case RE::INPUT_EVENT_TYPE::kButton: {
+                    auto *const pButtonEvent = head->AsButtonEvent();
+                    if (pButtonEvent == nullptr)
+                    {
+                        return;
+                    }
+
+                    switch (head->GetDevice())
+                    {
+                        case RE::INPUT_DEVICE::kKeyboard: {
+                            if (pButtonEvent->GetIDCode() == g_pFontConfig->GetToolWindowShortcutKey() &&
+                                pButtonEvent->IsDown())
                             {
-                                logv(debug, "show window pressed");
+                                log_debug("show window pressed");
                                 g_pImeWnd->ShowToolWindow();
                             }
+                            break;
                         }
-
-                        if (event->GetDevice() != RE::INPUT_DEVICE::kMouse)
-                        {
-                            continue;
-                        }
-                        ProcessMouseEvent(buttonEvent);
-                        break;
+                        case RE::INPUT_DEVICE ::kMouse:
+                            ProcessMouseEvent(pButtonEvent);
+                            break;
+                        default:
+                            break;
                     }
-                    default:
-                        break;
+                    break;
                 }
+                default:
+                    break;
             }
         }
 
         void ImeApp::ProcessMouseEvent(RE::ButtonEvent *btnEvent)
         {
-            auto &io    = ImGui::GetIO();
-            auto  value = btnEvent->Value();
+            auto &imGuiIo = ImGui::GetIO();
+            auto  value   = btnEvent->Value();
             switch (auto mouseKey = btnEvent->GetIDCode())
             {
                 case RE::BSWin32MouseDevice::Key::kWheelUp:
-                    io.AddMouseWheelEvent(0, value);
+                    imGuiIo.AddMouseWheelEvent(0, value);
                     break;
                 case RE::BSWin32MouseDevice::Key::kWheelDown:
-                    io.AddMouseWheelEvent(0, value * -1);
+                    imGuiIo.AddMouseWheelEvent(0, value * -1);
                     break;
                 default:
-                    io.AddMouseButtonEvent((int)mouseKey, btnEvent->IsPressed());
+                    imGuiIo.AddMouseButtonEvent(static_cast<int>(mouseKey), btnEvent->IsPressed());
                     break;
             }
         }
 
-        LRESULT ImeApp::MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+        auto ImeApp::MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT
         {
             switch (msg)
             {
@@ -235,89 +249,24 @@ namespace LIBC_NAMESPACE_DECL
                     if (wParam != WA_INACTIVE)
                     {
                         ImeApp::ResetExclusiveMode();
-                        logv(debug, "MainWndProc Actived");
-                    }
-                    else
-                    {
-                        logv(debug, "MainWndProc Inactived");
+                        log_debug("MainWndProc Active");
                     }
                     break;
                 case WM_SYSCOMMAND:
-                    switch (wParam & 0xFFF0)
-                    {
-                        case SC_TASKLIST:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- TASKLIST");
-                            break;
-                        case SC_MOVE:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- MOVE");
-                            break;
-                        case SC_NEXTWINDOW:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- NEXTWINDOW");
-                            break;
-                        case SC_PREVWINDOW:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- PREVWINDOW");
-                            break;
-                        case SC_SIZE:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- SIZE");
-                            break;
-                        case SC_CLOSE:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- CLOSE");
-                            break;
-                        case SC_RESTORE:
-                            ImeApp::ResetExclusiveMode();
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- RESTORE");
-                            break;
-                        case SC_CONTEXTHELP:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- CONTEXTHELP");
-                            break;
-                        case SC_DEFAULT:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- DEFAULT");
-                            break;
-                        case SC_HOTKEY:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- HOTKEY");
-                            break;
-                        case SC_HSCROLL:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- HSCROLL");
-                            break;
-                        case SC_KEYMENU:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- KEYMENU");
-                            break;
-                        case SC_MAXIMIZE:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- MAXIMIZE");
-                            break;
-                        case SC_MINIMIZE:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- MINIMIZE");
-                            break;
-                        case SC_SCREENSAVE:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- SCREENSAVE");
-                            break;
-                        case SC_MOUSEMENU:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- MOUSEMENU");
-                            break;
-                        case SC_MONITORPOWER:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- MONITORPOWER");
-                            break;
-                        case SC_VSCROLL:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- VSCROLL");
-                            break;
-                        default:
-                            logv(debug, "MainWndProc WM_SYSCOMMAND- {:#x}", wParam);
-                            break;
+                    if(GET_SC_WPARAM(wParam) == SC_RESTORE) {
+                        ImeApp::ResetExclusiveMode();
+                        log_debug("MainWndProc WM_SYSCOMMAND- RESTORE");
                     }
                     break;
-                case WM_KILLFOCUS:
-                    logv(debug, "MainWndProc WM_KILLFOCUS");
-                    break;
                 case WM_SETFOCUS:
-                    logv(debug, "MainWndProc WM_SETFOCUS");
+                    log_debug("MainWndProc WM_SETFOCUS");
                     ImeApp::ResetExclusiveMode();
                     g_pImeWnd->Focus();
                     return S_OK;
                 default:
                     break;
             }
-
             return RealWndProc(hWnd, msg, wParam, lParam);
         }
-    }
-}
+    } // namespace SimpleIME
+} // namespace LIBC_NAMESPACE_DECL

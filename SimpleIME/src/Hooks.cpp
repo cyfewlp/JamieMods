@@ -1,7 +1,10 @@
 #include "Hooks.hpp"
+#include "Configs.h"
 #include "ImeWnd.hpp"
-#include "WCharUtils.h"
 #include "detours/detours.h"
+#include <errhandlingapi.h>
+#include <minwindef.h>
+#include <processthreadsapi.h>
 #include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -16,13 +19,13 @@ namespace LIBC_NAMESPACE_DECL
             myHookData[GET_MSG_PROC].nType = WH_GETMESSAGE;
             myHookData[GET_MSG_PROC].hkprc = MyGetMsgProc;
 
-            for (auto hookData : myHookData)
+            for (auto &hookData : myHookData)
             {
-                logv(debug, "Hooking Skyrim {}...", hookData.nType);
+                log_debug("Hooking Skyrim {}...", hookData.nType);
                 HHOOK hhk = SetWindowsHookExW(WH_GETMESSAGE, MyGetMsgProc, nullptr, GetCurrentThreadId());
                 if (hhk == nullptr)
                 {
-                    logv(err, "Hook {} failed! error code: {}", hookData.nType, GetLastError());
+                    log_error("Hook {} failed! error code: {}", hookData.nType, GetLastError());
                     return;
                 }
                 hookData.hhook = hhk;
@@ -36,8 +39,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return CallNextHookEx(hookData.hhook, code, wParam, lParam);
             }
-            MSG *msg      = (MSG *)(lParam);
-            UINT original = msg->message;
+            MSG       *msg      = (MSG *)(lParam);
+            UINT const original = msg->message;
             switch (msg->message)
             {
                 case WM_IME_STARTCOMPOSITION:
@@ -60,7 +63,7 @@ namespace LIBC_NAMESPACE_DECL
                                 msg->message = WM_CUSTOM_CHAR;
                                 break;
                         }
-                        logv(debug, "Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
+                        log_debug("Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
                     }
                     break;
                 default:
@@ -69,18 +72,16 @@ namespace LIBC_NAMESPACE_DECL
             return CallNextHookEx(hookData.hhook, code, wParam, lParam);
         }
 
-        typedef ATOM(WINAPI *FuncRegisterClass)(CONST WNDCLASSA *);
-        static inline FuncRegisterClass RealRegisterClassExA = NULL;
+        using FuncRegisterClass                              = ATOM (*)(const WNDCLASSA *);
+        static inline FuncRegisterClass RealRegisterClassExA = nullptr;
 
         static ATOM __stdcall MyRegisterClassExA(const WNDCLASSA *wndClass)
         {
-            hinst = wndClass->hInstance;
             Hooks::InstallWindowsHooks();
-            mainThreadId = GetCurrentThreadId();
             return RealRegisterClassExA(wndClass);
         }
 
-        void Hooks::InstallCreateWindowHook()
+        void Hooks::InstallRegisterClassHook()
         {
             LPCSTR pszModule   = "User32.dll";
             LPCSTR pszFunction = "RegisterClassA";
@@ -89,14 +90,14 @@ namespace LIBC_NAMESPACE_DECL
             DetourUpdateThread(GetCurrentThread());
             RealRegisterClassExA = reinterpret_cast<FuncRegisterClass>(pVoid);
             DetourAttach(&(PVOID &)RealRegisterClassExA, reinterpret_cast<void *>(MyRegisterClassExA));
-            LONG error = DetourTransactionCommit();
+            LONG const error = DetourTransactionCommit();
             if (error == NO_ERROR)
             {
-                logv(debug, "{}: Detoured {}.", pszModule, pszFunction);
+                log_debug("{}: Detoured {}.", pszModule, pszFunction);
             }
             else
             {
-                logv(err, "{}: Error Detouring {}.", pszModule, pszFunction);
+                log_error("{}: Error Detouring {}.", pszModule, pszFunction);
             }
         }
     }

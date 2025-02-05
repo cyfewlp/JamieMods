@@ -1,40 +1,67 @@
-//
-// Created by jamie on 25-1-21.
-//
+#ifndef IMEUI_H
+#define IMEUI_H
+
 #pragma once
 
 #include "Configs.h"
 #include "LangProfileUtil.h"
-#include "windows.h"
-#include <imgui.h>
+#include "enumeration.h"
+#include "imgui.h"
+#include <RE/G/GFxEvent.h>
+#include <array>
+#include <cstdint>
 #include <vector>
+#include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
+    class ImmContextGuard
+    {
+    public:
+        explicit ImmContextGuard(HWND hWnd) : hWnd_(hWnd), hIMC_(ImmGetContext(hWnd_))
+        {
+            if (hIMC_ == nullptr)
+            {
+                log_error("Failed to get IME context!");
+            }
+        }
 
-#define MAKE_CONTEXT(hWnd, fn, ...)                                                                                    \
-    {                                                                                                                  \
-        HIMC hIMC;                                                                                                     \
-        if ((hIMC = ImmGetContext(hWnd)))                                                                              \
-        {                                                                                                              \
-            fn(hIMC __VA_OPT__(, ) __VA_ARGS__);                                                                       \
-        }                                                                                                              \
-        ImmReleaseContext(hWnd, hIMC);                                                                                 \
-    }
+        ~ImmContextGuard()
+        {
+            if (hIMC_ != nullptr)
+            {
+                ImmReleaseContext(hWnd_, hIMC_);
+            }
+        }
+
+        [[nodiscard]] auto get() const -> HIMC
+        {
+            return hIMC_;
+        }
+
+    private:
+        HWND hWnd_;
+        HIMC hIMC_{nullptr};
+    };
 
     namespace SimpleIME
     {
 
-        constexpr auto IMEUI_HEAP_INIT_SIZE      = 512;
-        constexpr auto IMEUI_HEAP_MAX_SIZE       = 2048;
-        constexpr auto WCHAR_BUF_INIT_SIZE       = 64;
+        constexpr auto IMEUI_HEAP_INIT_SIZE = 512;
+        constexpr auto IMEUI_HEAP_MAX_SIZE  = 2048;
+        constexpr auto WCHAR_BUF_INIT_SIZE  = 64;
 
-        constexpr auto CAND_MAX_WINDOW_COUNT     = 32;
+        struct CandWindowProp
+        {
+            static constexpr std::uint8_t MAX_COUNT            = 32;
+            static constexpr std::uint8_t DEFAULT_PAGE_SIZE    = 5;
+            static constexpr std::uint8_t OFFSET_X             = 2;
+            static constexpr std::uint8_t OFFSET_Y             = 5;
+            static constexpr float        PADDING              = 10.0F;
+            static constexpr float        WORD_PADDING         = 5.0F;
+        };
+
         constexpr auto CAND_DEFAULT_NUM_PER_PAGE = 5;
-        constexpr auto CAND_WINDOW_OFFSET_X      = 2;
-        constexpr auto CAND_WINDOW_OFFSET_Y      = 5;
-        constexpr auto CAND_WINDOW_PADDING       = 10.0F;
-        constexpr auto CAND_PADDING              = 5.0F;
 
         // language id for english keyboard
         constexpr auto LANGID_ENG         = 0x409;
@@ -58,28 +85,49 @@ namespace LIBC_NAMESPACE_DECL
 
         static_assert(sizeof(GFxCharEvent) == 0x0C);
 
-        struct ImeCandidate
+        struct ImeCandidateList
         {
-            float                    lineWidth;
-            DWORD                    dwNumPerPage;
-            DWORD                    dwSelecttion;
-            std::vector<std::string> candList;
+        public:
+            ImeCandidateList() = default;
 
-            ImeCandidate()
+            void setPageSize(DWORD a_dwPageSize)
             {
-                lineWidth    = 0.0F;
-                dwSelecttion = dwNumPerPage = 0;
+                dwPageSize = (a_dwPageSize == 0U) ? CandWindowProp::DEFAULT_PAGE_SIZE : a_dwPageSize;
             }
-        };
 
-        enum ImeState
+            [[nodiscard]] constexpr auto getDwSelecttion() const -> DWORD
+            {
+                return dwSelecttion;
+            }
+
+            [[nodiscard]] constexpr auto getLineWidth() const -> float
+            {
+                return lineWidth;
+            }
+
+            [[nodiscard]] constexpr auto getCandList() const -> std::vector<std::string>
+            {
+                return candList;
+            }
+
+            // use provided lpCandList flush candidate cache
+            // @fontSize be used calculate singlie line width
+            void Flush(LPCANDIDATELIST lpCandList, float fontSize);
+
+        private:
+            float                    lineWidth{0.0F};
+            DWORD                    dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
+            DWORD                    dwSelecttion{0};
+            std::vector<std::string> candList;
+        } __attribute__((packed)) __attribute__((aligned(64)));
+
+        enum class ImeState : std::uint16_t
         {
-            IME_IN_COMPOSITION  = 0x1,
-            IME_IN_CANDCHOOSEN  = 0x2,
-            IME_IN_ALPHANUMERIC = 0x4,
-            IME_OPEN            = 0x8,
-            IME_UI_FOCUSED      = 0x10,
-            IME_ALL             = 0xFFFF
+            IN_COMPOSITION  = 0x1,
+            IN_CANDCHOOSEN  = 0x2,
+            IN_ALPHANUMERIC = 0x4,
+            OPEN            = 0x8,
+            IME_ALL         = 0xFFFF
         };
 
         class ImeUI
@@ -95,14 +143,19 @@ namespace LIBC_NAMESPACE_DECL
 
                 WcharBuf(HANDLE heap, DWORD initSize);
                 ~WcharBuf();
-                bool               TryReAlloc(DWORD bufLen);
+                auto               TryReAlloc(DWORD bufLen) -> bool;
                 void               Clear();
-                [[nodiscard]] bool IsEmpty() const;
+                [[nodiscard]] auto IsEmpty() const -> bool;
             };
 
         public:
             ImeUI();
             ~ImeUI();
+
+            ImeUI(ImeUI &&a_ImeUI)                          = delete;
+            ImeUI(const ImeUI &a_ImeUI)                     = delete;
+            auto operator=(ImeUI &&a_ImeUI) -> ImeUI &      = delete;
+            auto operator=(const ImeUI &a_ImeUI) -> ImeUI & = delete;
 
             void StartComposition();
             void EndComposition();
@@ -115,33 +168,37 @@ namespace LIBC_NAMESPACE_DECL
             void               UpdateActiveLangProfile();
             void               OnSetOpenStatus(HIMC /*hIMC*/);
             void               UpdateConversionMode(HIMC /*hIMC*/);
-            bool               ImeNotify(HWND /*hwnd*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
-            [[nodiscard]] bool IsEnabled() const;
-            [[nodiscard]] SKSE::stl::enumeration<ImeState> GetImeState() const;
+            auto               ImeNotify(HWND /*hwnd*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool;
+            [[nodiscard]] auto IsEnabled() const -> bool;
+            [[nodiscard]] auto GetImeState() const -> Enumeration<ImeState>;
 
         private:
             // return true if got str from IMM, otherwise false;
-            static bool GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf);
+            static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf) -> bool;
             void        SendResultString();
             void        SendResultStringToSkyrim();
             void        RenderToolWindow();
             static void RenderCompWindow(WcharBuf *compStrBuf);
             void        OpenCandidate(HIMC /*hIMC*/, LPARAM /*candListFlag*/);
             void        ChangeCandidate(HIMC /*hIMC*/, LPARAM /*candListFlag*/);
+            void        ChangeCandidateAt(HIMC /*hIMC*/ hIMC, DWORD dwIndex);
             void        CloseCandidate(LPARAM /*candListFlag*/);
-            void        RenderCandWindow(ImVec2 &wndPos) const;
-            void        UpdateImeCandidate(ImeCandidate        */*candidate*/, LPCANDIDATELIST /*lpCandList*/) const;
+            void        RenderCandWindows(ImVec2 &wndPos) const;
 
-            HANDLE      m_pHeap;
-            WcharBuf   *m_compStr;
-            WcharBuf   *m_compResult;
-            UINT32      keyboardCodePage{CP_ACP};
-            SKSE::stl::enumeration<ImeState> m_imeState;
-            ImeCandidate                    *m_imeCandidates[CAND_MAX_WINDOW_COUNT]{nullptr};
-            std::vector<LangProfile>         m_imeProfiles;
-            LangProfileUtil                  langProfileUtil;
-            bool                             m_showToolWindow = false;
-            float                            m_fontSize;
+            static constexpr auto                                 TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
+            std::array<ImeCandidateList *, CandWindowProp::MAX_COUNT> m_imeCandidates;
+            //
+            HANDLE                   m_pHeap;
+            WcharBuf                *m_pCompStr;
+            WcharBuf                *m_pCompResult;
+            UINT32                   keyboardCodePage{CP_ACP};
+
+            Enumeration<ImeState>    m_imeState;
+            std::vector<LangProfile> m_imeProfiles;
+            LangProfileUtil          m_langProfileUtil;
+            bool                     m_showToolWindow = false;
+            bool                     m_pinToolWindow  = false;
         };
-    }
-}
+    } // namespace SimpleIME
+} // namespace LIBC_NAMESPACE_DECL
+#endif

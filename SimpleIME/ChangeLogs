@@ -1,0 +1,4 @@
+* 0.0.3
+    - disable ImGui Win32 backend update mouse pos
+    - [x]auto hide tool window when lost focus
+    - []remove/hide reset keyboard state button(need auto reset keyboard state)

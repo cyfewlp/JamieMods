@@ -1,3 +1,6 @@
+#ifndef IMEAPP_H
+#define IMEAPP_H
+
 //
 // Created by jamie on 25-1-22.
 //
@@ -7,6 +10,8 @@
 #include "ImeWnd.hpp"
 #include "d3d11.h"
 #include <Device.h>
+#include <RE/B/BSTEvent.h>
+#include <RE/I/InputEvent.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -21,17 +26,17 @@ namespace LIBC_NAMESPACE_DECL
         {
 
         public:
-            static void        Init();
-            static FontConfig *LoadConfig();
+            static void Init();
+            static auto LoadConfig() -> FontConfig *;
 
-            static void        D3DInit();
-            static void        D3DPresent(std::uint32_t ptr);
+            static void D3DInit();
+            static void D3DPresent(std::uint32_t ptr);
             static void DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
-            static bool CheckAppState();
-            static bool ResetExclusiveMode();
+            static auto CheckAppState() -> bool;
+            static auto ResetExclusiveMode() noexcept -> bool;
 
         private:
-            static LRESULT        MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+            static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static void           ProcessEvent(RE::InputEvent **a_events);
             static void           ProcessMouseEvent(RE::ButtonEvent *btnEvent);
 
@@ -41,7 +46,10 @@ namespace LIBC_NAMESPACE_DECL
             static inline auto    g_pFontConfig = std::make_unique<FontConfig>();
             static inline auto    g_pImeWnd     = std::make_unique<ImeWnd>();
             static inline HWND    g_hWnd        = nullptr;
+            static inline bool    firstEvent;
         };
 
     }
 }
+
+#endif

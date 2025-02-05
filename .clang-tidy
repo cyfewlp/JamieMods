@@ -1,4 +1,4 @@
-﻿Checks: '*,-llvmlibc-*,-fuchsia-*'
+﻿Checks: '*,-llvmlibc-*,-fuchsia-*,-misc-include-cleaner,-hicpp-signed-bitwise'
 HeaderFileExtensions:
   - ''
   - h
@@ -11,7 +11,7 @@ ImplementationFileExtensions:
   - cpp
   - cxx
 HeaderFilterRegex: .*
-ExcludeHeaderFilterRegex: .*imgui.*|.*REL\/Relocation.*
+ExcludeHeaderFilterRegex: .*imgui.*|.*RE.*
 CheckOptions:
   llvmlibc-restrict-system-libc-headers.Includes: '-*'
 FormatStyle: file

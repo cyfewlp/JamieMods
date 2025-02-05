@@ -235,10 +235,18 @@ int main(int, char **)
         if (show_another_window)
         {
             ImGui::Begin("Another Window",
-                         &show_another_window); // Pass a pointer to our bool variable (the window will have a closing
+                         &show_another_window, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize); // Pass a pointer to our bool variable (the window will have a closing
                                                 // button that will clear the bool when clicked)
             ImGui::Text("Hello from another window!");
-            ImGui::Button("Disable IME");
+            ImGui::Value("WantCaotureMouse", io.WantCaptureMouse);
+            ImGui::Value("Focused", ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows));
+            if (ImGui::BeginCombo("###InstalledIME", "AA"))
+            {
+                ImGui::Selectable("AA");
+                ImGui::Selectable("BB");
+                ImGui::Selectable("CC");
+                ImGui::EndCombo();
+            }
             if (ImGui::Button("Close Me")) show_another_window = false;
 
             ImGui::End();
