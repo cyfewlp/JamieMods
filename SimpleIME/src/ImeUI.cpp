@@ -69,11 +69,11 @@ namespace LIBC_NAMESPACE_DECL
             }
             if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, m_pCompResult))
             {
-                SendResultString();
+                SendResultStringToSkyrim();
                 if (spdlog::should_log(spdlog::level::trace))
                 {
                     auto str = WCharUtils::ToString(m_pCompResult->szStr);
-                    log_debug("IME Composition Result String: {}", str.c_str());
+                    log_trace("IME Composition Result String: {}", str.c_str());
                 }
             }
         }
@@ -92,16 +92,6 @@ namespace LIBC_NAMESPACE_DECL
             engProfile.guidProfile = GUID_NULL;
             engProfile.desc        = std::string("ENG");
             m_imeProfiles.push_back(engProfile);
-        }
-
-        void ImeUI::SendResultString()
-        {
-            auto &io = ImGui::GetIO();
-            for (size_t i = 0; i < m_pCompResult->dwSize; i++)
-            {
-                io.AddInputCharacterUTF16(m_pCompResult->szStr[i]);
-            }
-            SendResultStringToSkyrim();
         }
 
         void ImeUI::SendResultStringToSkyrim()
@@ -193,6 +183,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::ShowToolWindow()
         {
+            toolWindowFlags &= ~ImGuiWindowFlags_NoInputs;
             if (m_pinToolWindow)
             {
                 m_pinToolWindow                = false;
@@ -212,20 +203,17 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::RenderToolWindow()
         {
-            static ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
             if (!m_showToolWindow)
             {
-                windowFlags &= ~ImGuiWindowFlags_NoInputs;
                 return;
             }
 
-            windowFlags |= ImGuiWindowFlags_NoDecoration;
-            ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, windowFlags);
+            ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, toolWindowFlags);
             auto       &profile        = m_imeProfiles[langProfileSelected];
             const char *previewImeName = profile.desc.c_str();
             if (ImGui::Button("\xf0\x9f\x93\x8c"))
             {
-                windowFlags |= ImGuiWindowFlags_NoInputs;
+                toolWindowFlags |= ImGuiWindowFlags_NoInputs;
                 m_pinToolWindow                = true;
                 ImGui::GetIO().MouseDrawCursor = false;
             }
@@ -255,29 +243,6 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::Text("ENG");
                 ImGui::SameLine();
             }
-
-            ImGui::SameLine();
-            ImGui::BeginGroup();
-            ImGui::Text("Keyboard: ");
-            ImGui::SameLine();
-
-            static ImVec4 const red{0.9F, 0.0F, 0.5F, 1.0F};
-            static ImVec4 const green{0.0F, 1.0F, 0.0F, 1.0F};
-            if (!ImeApp::CheckAppState())
-            {
-                ImGui::TextColored(red, "No");
-            }
-            else
-            {
-                ImGui::TextColored(green, "Ok");
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Reset Keyboard"))
-            {
-                ImeApp::ResetExclusiveMode();
-            }
-            ImGui::EndGroup();
-            ImGui::SetItemTooltip("Try reset to non-exclusive keyboard.");
             if (!m_pinToolWindow && !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
             {
                 ShowToolWindow();

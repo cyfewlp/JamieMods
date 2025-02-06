@@ -6,6 +6,7 @@
 #include <minwindef.h>
 #include <processthreadsapi.h>
 #include <windows.h>
+#include "FakeDirectInputDevice.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -72,13 +73,24 @@ namespace LIBC_NAMESPACE_DECL
             return CallNextHookEx(hookData.hhook, code, wParam, lParam);
         }
 
-        using FuncRegisterClass                              = ATOM (*)(const WNDCLASSA *);
-        static inline FuncRegisterClass RealRegisterClassExA = nullptr;
-
-        static ATOM __stdcall MyRegisterClassExA(const WNDCLASSA *wndClass)
+        void Hooks::InstallDirectInPutHook()
         {
-            Hooks::InstallWindowsHooks();
-            return RealRegisterClassExA(wndClass);
+            LPCSTR pszModule   = "dinput8.dll";
+            LPCSTR pszFunction = "DirectInput8Create";
+            PVOID  pVoid       = DetourFindFunction(pszModule, pszFunction);
+            DetourTransactionBegin();
+            DetourUpdateThread(GetCurrentThread());
+            RealDirectInput8Create = reinterpret_cast<FuncDirectInput8Create>(pVoid);
+            DetourAttach(&(PVOID &)RealDirectInput8Create, reinterpret_cast<void *>(MyDirectInput8Create));
+            LONG const error = DetourTransactionCommit();
+            if (error == NO_ERROR)
+            {
+                log_debug("{}: Detoured {}.", pszModule, pszFunction);
+            }
+            else
+            {
+                log_error("{}: Error Detouring {}.", pszModule, pszFunction);
+            }
         }
 
         void Hooks::InstallRegisterClassHook()
@@ -99,6 +111,24 @@ namespace LIBC_NAMESPACE_DECL
             {
                 log_error("{}: Error Detouring {}.", pszModule, pszFunction);
             }
+        }
+
+        auto Hooks::MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM
+        {
+            Hooks::InstallWindowsHooks();
+            return RealRegisterClassExA(wndClass);
+        }
+
+        auto Hooks::MyDirectInput8Create(HINSTANCE hinst, DWORD dwVersion, const IID &riidltf, LPVOID *ppvOut,
+                                         LPUNKNOWN punkOuter) -> HRESULT
+        {
+            IDirectInput8A	* dinput;
+            HRESULT           hresult = RealDirectInput8Create(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
+            if(hresult != DI_OK) return hresult;
+
+            *((IDirectInput8A**)ppvOut) = new FakeDirectInput(dinput);
+            log_debug("detour to FakeDirectInput...");
+            return DI_OK;
         }
     }
 }

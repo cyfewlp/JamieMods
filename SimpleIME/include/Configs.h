@@ -44,7 +44,7 @@ namespace LIBC_NAMESPACE_DECL
     };
 
     template <typename enum_t, typename... Args>
-    static constexpr auto logd(enum_t level, const format_string_loc &fsl, Args &&...args)
+    static constexpr auto logd(enum_t level, const format_string_loc &fsl, Args &&...args) noexcept
         requires(std::same_as<enum_t, spdlog::level::level_enum>)
     {
         auto fmt = std::vformat(fsl.GetValue(), std::make_format_args(args...));
@@ -52,36 +52,36 @@ namespace LIBC_NAMESPACE_DECL
     }
 
     template <typename... Args>
-    static constexpr auto log_error(const format_string_loc fsl, Args &&...args)
+    static constexpr auto log_error(const format_string_loc fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::err, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_warn(const format_string_loc fsl, Args &&...args)
+    static constexpr auto log_warn(const format_string_loc fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::warn, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_info(const format_string_loc fsl, Args &&...args)
+    static constexpr auto log_info(const format_string_loc fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::info, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_debug(const format_string_loc fsl, Args &&...args)
+    static constexpr auto log_debug(const format_string_loc fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::debug, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static constexpr auto log_trace(const format_string_loc fsl, Args &&...args)
+    static constexpr auto log_trace(const format_string_loc fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::trace, fsl, std::forward<Args>(args)...);
     }
 
-    static constexpr auto throw_fail(HRESULT hresult, const char *msg)
+    static constexpr auto throw_fail(HRESULT hresult, const char *msg) noexcept(false)
     {
         if (FAILED(hresult))
         {

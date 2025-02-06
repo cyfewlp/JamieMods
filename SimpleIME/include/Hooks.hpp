@@ -87,16 +87,10 @@ namespace LIBC_NAMESPACE_DECL
                 }
             };
 
-            template <typename func_t>
-            static auto MakeHook(HookData<func_t> &a_hookData, func_t *funcPtr) -> REL::Relocation<func_t>
-            {
-                SKSE::Trampoline trampoline{"CallHook"};
-                trampoline.create(14);
-
-                auto ptr = trampoline.write_call<5>(a_hookData.GetAddress(), reinterpret_cast<void *>(funcPtr));
-                a_hookData.SetOriginalFunc(ptr);
-                return REL::Relocation<func_t>(ptr);
-            }
+            using FuncRegisterClass      = ATOM (*)(const WNDCLASSA *);
+            using FuncDirectInput8Create = HRESULT WINAPI (*)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
+            static inline FuncRegisterClass        RealRegisterClassExA   = nullptr;
+            static inline FuncDirectInput8Create   RealDirectInput8Create = nullptr;
 
             // Windows Hook
             using MYHOOKDATA = struct _MYHOOKDATA
@@ -108,51 +102,13 @@ namespace LIBC_NAMESPACE_DECL
 
             LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
             void             InstallRegisterClassHook();
+            void             InstallDirectInPutHook();
             void             InstallWindowsHooks();
 
-            template <typename T>
-            class CallHook
-            {
-            };
+            auto WINAPI      MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM;
+            auto WINAPI      MyDirectInput8Create(HINSTANCE hinst, DWORD dwVersion, REFIID riidltf, LPVOID *ppvOut,
+                                                  LPUNKNOWN punkOuter) -> HRESULT;
 
-            template <typename R, typename... Args>
-            class CallHook<R(Args...)>
-            {
-            public:
-                CallHook(REL::RelocationID a_id, REL::VariantOffset offset, R (*funcPtr)(Args...))
-                {
-                    address = REL::Relocation<std::uintptr_t>(a_id, offset).address();
-
-                    trampoline.create(14);
-                    auto ptr     = trampoline.write_call<5>(address, reinterpret_cast<void *>(funcPtr));
-                    originalFunc = ptr;
-                }
-
-                CallHook(std::uintptr_t a_address, R (*funcPtr)(Args...)) : address(a_address)
-                {
-                    trampoline.create(14);
-
-                    auto ptr     = trampoline.write_call<5>(a_address, reinterpret_cast<void *>(funcPtr));
-                    originalFunc = ptr;
-                }
-
-                auto operator()(Args... args) const noexcept -> R
-                {
-                    if constexpr (std::is_void_v<R>)
-                    {
-                        originalFunc(args...);
-                    }
-                    else
-                    {
-                        return originalFunc(args...);
-                    }
-                }
-
-            private:
-                SKSE::Trampoline            trampoline{"CallHook"};
-                REL::Relocation<R(Args...)> originalFunc;
-                std::uintptr_t              address;
-            };
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

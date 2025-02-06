@@ -20,10 +20,10 @@ set(headers
         include/Hooks.hpp
         include/LangProfileUtil.h
         include/Configs.h
-        include/Device.h
         include/ImeApp.h
         include/ImeUI.h
         include/ImeWnd.hpp
+        include/FakeDirectInputDevice.h
 )
 
 set(sources

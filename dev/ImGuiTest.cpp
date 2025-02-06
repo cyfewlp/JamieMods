@@ -8,19 +8,23 @@
 
 #include "imgui.h"
 #include "AddressLibTool.hpp"
-#include "ImeUI.hpp"
 #include "Status.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "spdlog/spdlog.h"
 #include "utils.hpp"
+#include <array>
 #include <d3d11.h>
+#include <dinput.h>
 #include <format>
 #include <iostream>
 #include <vector>
-#include <windows.h>
 #include <windowsx.h>
+#include <msctf.h>
+
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "dinput8.lib")
 
 // Data
 static ID3D11Device           *g_pd3dDevice        = nullptr;
@@ -32,10 +36,12 @@ static ID3D11RenderTargetView *g_mainRenderTargetView = nullptr;
 static bool                    candChosen             = false;
 static bool                    imeEnabled             = false;
 // compsition varibles
-static ImVec2       inputPos       = {};
-static ImVec2       compWindowSize = {};
-static std::wstring compStr;
-static bool         showCompWindow = false;
+static ImVec2               inputPos       = {};
+static ImVec2               compWindowSize = {};
+static std::wstring         compStr;
+static bool                 showCompWindow    = false;
+static LPDIRECTINPUT8       g_pDirectInput    = nullptr;
+static LPDIRECTINPUTDEVICE8 g_pKeyboardDevice = nullptr;
 
 // Forward declarations of helper functions
 bool           CreateDeviceD3D(HWND hWnd);
@@ -49,9 +55,14 @@ void           UpdateKeyboardCodePage();
 static void    MyPlatform_SetImeDataFn_DefaultImpl(ImGuiContext *, ImGuiViewport *viewport, ImGuiPlatformImeData *data);
 static void    RenderImeState();
 void           OnStatusbarSize(HWND hWnd, UINT state, int cx, int cy);
+void           DisableIME();
 
-static HINSTANCE winst;
-static HWND      parentWnd;
+std::array<char, 256> keyboardState{0};
+
+auto                  GetState() noexcept -> bool;
+
+static HINSTANCE      winst;
+static HWND           parentWnd;
 
 // Main code
 int main(int, char **)
@@ -154,7 +165,9 @@ int main(int, char **)
     ImGui::GetPlatformIO().Platform_SetImeDataFn = MyPlatform_SetImeDataFn_DefaultImpl;
 
     // Main loop
+    DisableIME();
     bool done = false;
+    std::unordered_map<BYTE, bool> keyStateMap;
     while (!done)
     {
         // Poll and handle messages (inputs, window resize, etc.)
@@ -167,6 +180,36 @@ int main(int, char **)
             if (msg.message == WM_QUIT) done = true;
         }
         if (done) break;
+
+        static std::wstring compString;
+        if (GetState() && (keyboardState[DIK_A] & 0x80) > 0 && !keyStateMap[DIK_A])
+        {
+            keyStateMap[DIK_A] = true;
+            HIMC hIMC = ImmGetContext(hwnd);
+            if (hIMC != nullptr) {
+//                if (compString.empty()) {
+//                    compString.append(L"a");
+//                } else {
+//                    compString.append(L"'a");
+//                }
+                compString.append(L"a");
+                ImmSetCompositionStringW(hIMC, SCS_SETSTR, (LPVOID)(compString.data()), compString.size() * 2, nullptr, 0);
+                ImmReleaseContext(hwnd, hIMC);
+            }
+        } else {
+            keyStateMap[DIK_A] = false;
+        }
+
+        {
+            HIMC hIMC = ImmGetContext(hwnd);
+            if (hIMC != nullptr) {
+                DWORD bufLen = ImmGetCandidateListW(hIMC, 0, nullptr, 0);
+                if (bufLen > 0) {
+                    spdlog::info("candidate list len: {}", bufLen);
+                }
+                ImmReleaseContext(hwnd, hIMC);
+            }
+        }
 
         // Handle window being minimized or screen locked
         if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED)
@@ -234,9 +277,11 @@ int main(int, char **)
         // 3. Show another simple window.
         if (show_another_window)
         {
-            ImGui::Begin("Another Window",
-                         &show_another_window, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize); // Pass a pointer to our bool variable (the window will have a closing
-                                                // button that will clear the bool when clicked)
+            ImGui::Begin(
+                "Another Window", &show_another_window,
+                ImGuiWindowFlags_NoDecoration |
+                    ImGuiWindowFlags_AlwaysAutoResize); // Pass a pointer to our bool variable (the window will have a
+                                                        // closing button that will clear the bool when clicked)
             ImGui::Text("Hello from another window!");
             ImGui::Value("WantCaotureMouse", io.WantCaptureMouse);
             ImGui::Value("Focused", ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows));
@@ -246,6 +291,9 @@ int main(int, char **)
                 ImGui::Selectable("BB");
                 ImGui::Selectable("CC");
                 ImGui::EndCombo();
+            }
+            if (ImGui::Button("next ime")) {
+                ActivateKeyboardLayout((HKL)HKL_NEXT, KLF_SETFORPROCESS);
             }
             if (ImGui::Button("Close Me")) show_another_window = false;
 
@@ -557,11 +605,14 @@ void OnPaint(HWND hwnd)
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam) != 0)
+    {
+        return true;
+    }
     switch (msg)
     {
         case WM_CREATE:
-            if (CreateStatus(hWnd, winst))
+            if (CreateStatus(hWnd, winst) != 0)
             {
                 SetStatusItems(hWnd);
                 return S_OK;
@@ -581,9 +632,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 LOG(err, "unknown char");
             }
 
-            char mbstr[3]{'\0'};
-            BYTE hiByte = HIBYTE(wParam);
-            BYTE loByte = LOBYTE(wParam);
+            char       mbstr[3]{'\0'};
+            BYTE const hiByte = HIBYTE(wParam);
+            BYTE const loByte = LOBYTE(wParam);
             if (hiByte == 0)
             {
                 mbstr[0] = loByte;
@@ -610,20 +661,22 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
         case WM_IME_NOTIFY: {
-            ImeNotify(hWnd, wParam, lParam);
+            //            ImeNotify(hWnd, wParam, lParam);
             return S_OK;
         }
 
             HANDLE_MSG(hWnd, WM_SIZE, OnStatusbarSize);
             HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
         case WM_SYSCOMMAND: {
-            if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+            if ((wParam & 0xfff0) == SC_KEYMENU)
+            { // Disable ALT application menu
                 return 0;
+            }
             break;
         }
         case WM_IME_SETCONTEXT:
             // lParam &= ~ISC_SHOWUICANDIDATEWINDOW;
-            return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
+            return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, 0);
         case WM_DESTROY:
             ::PostQuitMessage(0);
             return 0;
@@ -682,4 +735,62 @@ LRESULT WINAPI ChildWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+}
+
+void DisableIME()
+{
+    if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
+                                  reinterpret_cast<void **>(&g_pDirectInput), nullptr)))
+    {
+        throw std::runtime_error("DirectInput8Create failed");
+    }
+    if (FAILED(g_pDirectInput->CreateDevice(GUID_SysKeyboard, &g_pKeyboardDevice, nullptr)))
+    {
+        throw std::runtime_error("CreateDevice failed");
+    }
+    HRESULT hresuslt = TRUE;
+    g_pKeyboardDevice->Unacquire();
+    if (FAILED(g_pKeyboardDevice->SetDataFormat(&c_dfDIKeyboard)))
+    {
+        throw std::runtime_error("SetDataFormat failed");
+    }
+    const DWORD dwFlags = DISCL_FOREGROUND | DISCL_EXCLUSIVE;
+    hresuslt            = g_pKeyboardDevice->SetCooperativeLevel(parentWnd, dwFlags);
+    if (FAILED(hresuslt))
+    {
+        switch (hresuslt)
+        {
+            case DIERR_INVALIDPARAM:
+                spdlog::error("error DIERR_INVALIDPARAM");
+                break;
+            case DIERR_NOTINITIALIZED:
+                spdlog::error("error DIERR_NOTINITIALIZED");
+                break;
+            case E_HANDLE:
+                spdlog::error("error DIERR_NOTINITIALIZED");
+                break;
+            default:
+                spdlog::error("unknown error, {:#x}", static_cast<int64_t>(hresuslt));
+                break;
+        }
+        throw std::runtime_error("SetCooperativeLevel failed");
+    }
+    if (FAILED(g_pKeyboardDevice->Acquire()))
+    {
+        throw std::runtime_error("Acquire device failed");
+    }
+}
+
+auto GetState() noexcept -> bool
+{
+    HRESULT hresult = TRUE;
+    g_pKeyboardDevice->Poll();
+    hresult = g_pKeyboardDevice->GetDeviceState(sizeof(keyboardState), reinterpret_cast<LPVOID>(keyboardState.data()));
+    if (hresult == DIERR_INPUTLOST || hresult == DIERR_NOTACQUIRED)
+    {
+        g_pKeyboardDevice->Acquire();
+        hresult =
+            g_pKeyboardDevice->GetDeviceState(sizeof(keyboardState), reinterpret_cast<LPVOID>(keyboardState.data()));
+    }
+    return SUCCEEDED(hresult);
 }

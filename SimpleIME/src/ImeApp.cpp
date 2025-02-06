@@ -1,6 +1,6 @@
+
 #include "ImeApp.h"
 #include "Configs.h"
-#include "Device.h"
 #include "Hooks.hpp"
 #include "ImeWnd.hpp"
 #include "gsl/gsl"
@@ -25,10 +25,10 @@ namespace LIBC_NAMESPACE_DECL
          */
         void ImeApp::Init()
         {
-            shouldResetKeyboard = true;
             g_pState            = std::make_unique<State>();
             g_pState->Initialized.store(false);
             Hooks::InstallRegisterClassHook();
+            Hooks::InstallDirectInPutHook();
         }
 
         auto ImeApp::LoadConfig() -> FontConfig *
@@ -58,7 +58,6 @@ namespace LIBC_NAMESPACE_DECL
             if (render_manager == nullptr)
             {
                 log_error("Cannot find render manager. Initialization failed!");
-                ;
                 return;
             }
 
@@ -79,8 +78,7 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            g_hWnd      = swapChainDesc->OutputWindow;
-            g_pKeyboard = std::make_unique<KeyboardDevice>(g_hWnd);
+            g_hWnd = swapChainDesc->OutputWindow;
 
             try
             {
@@ -121,26 +119,12 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            if (g_pKeyboard->GetState())
-            {
-                /*if (key_state_buffer[DIK_F2] & 0x80)
-                {
-                    g_pImeWnd->ShowToolWindow();
-                }*/
-            }
             g_pImeWnd->RenderIme();
         }
 
         // we need set our keyboard to non-exclusive after game default.
         void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
-            if (shouldResetKeyboard)
-            {
-                if (ImeApp::ResetExclusiveMode())
-                {
-                    shouldResetKeyboard = false;
-                }
-            }
             static RE::InputEvent *dummy[] = {nullptr};
             ProcessEvent(a_events);
             auto discard = g_pImeWnd->IsDiscardGameInputEvents(a_events);
@@ -152,27 +136,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 DispatchInputEventHook(a_dispatcher, a_events);
             }
-        }
-
-        auto ImeApp::CheckAppState() -> bool
-        {
-            return g_pKeyboard->IsAcquired();
-        }
-
-        // reset keyboard CooperativeLevel to non-exclusive
-        auto ImeApp::ResetExclusiveMode() noexcept -> bool
-        {
-            try
-            {
-                g_pKeyboard->Acquire();
-                log_info("Keyboard device now is non-exclusive.");
-                return true;
-            }
-            catch (std::runtime_error &error)
-            {
-                log_error("Change keyboard cooperative level failed: {}", error.what());
-            }
-            return false;
         }
 
         void ImeApp::ProcessEvent(RE::InputEvent **events)
@@ -246,20 +209,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             switch (msg)
             {
-                case WM_ACTIVATE:
-                    if (wParam != WA_INACTIVE)
-                    {
-                        shouldResetKeyboard = true;
-                    }
-                    break;
-                case WM_SYSCOMMAND:
-                    if (GET_SC_WPARAM(wParam) == SC_RESTORE)
-                    {
-                        shouldResetKeyboard = true;
-                    }
-                    break;
                 case WM_SETFOCUS:
-                    shouldResetKeyboard = true;
                     g_pImeWnd->Focus();
                     return S_OK;
                 default:

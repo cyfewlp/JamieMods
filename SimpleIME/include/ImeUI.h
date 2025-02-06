@@ -164,7 +164,6 @@ namespace LIBC_NAMESPACE_DECL
         private:
             // return true if got str from IMM, otherwise false;
             static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf) -> bool;
-            void        SendResultString();
             void        SendResultStringToSkyrim();
             void        RenderToolWindow();
             static void RenderCompWindow(WcharBuf *compStrBuf);
@@ -186,7 +185,8 @@ namespace LIBC_NAMESPACE_DECL
             std::vector<LangProfile> m_imeProfiles;
             LangProfileUtil          m_langProfileUtil;
             bool                     m_showToolWindow = false;
-            bool                     m_pinToolWindow  = false;
+            int  toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
+            bool m_pinToolWindow = false;
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
