@@ -138,7 +138,7 @@ namespace LIBC_NAMESPACE_DECL
             };
 
         public:
-            ImeUI();
+            ImeUI(AppConfig *appConfig);
             ~ImeUI();
 
             ImeUI(ImeUI &&a_ImeUI)                          = delete;
@@ -166,7 +166,7 @@ namespace LIBC_NAMESPACE_DECL
             static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf) -> bool;
             void        SendResultStringToSkyrim();
             void        RenderToolWindow();
-            static void RenderCompWindow(WcharBuf *compStrBuf);
+            void        RenderCompWindow(WcharBuf *compStrBuf);
             void        OpenCandidate(HIMC hIMC, LPARAM candListFlag);
             void        ChangeCandidate(HIMC hIMC, LPARAM candListFlag);
             void        ChangeCandidateAt(HIMC hIMC, DWORD dwIndex);
@@ -176,11 +176,13 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
             std::array<std::unique_ptr<ImeCandidateList>, CandWindowProp::MAX_COUNT> m_imeCandidates{};
             //
-            HANDLE                   m_pHeap;
-            WcharBuf                *m_pCompStr;
-            WcharBuf                *m_pCompResult;
-            UINT32                   keyboardCodePage{CP_ACP};
+            HANDLE     m_pHeap;
+            WcharBuf  *m_pCompStr;
+            WcharBuf  *m_pCompResult;
+            UINT32     keyboardCodePage{CP_ACP};
+            AppConfig *m_pAppConfig;
 
+            //
             Enumeration<ImeState>    m_imeState;
             std::vector<LangProfile> m_imeProfiles;
             LangProfileUtil          m_langProfileUtil;

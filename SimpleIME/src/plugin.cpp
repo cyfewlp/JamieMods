@@ -10,7 +10,7 @@
 #include <SKSE/Logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-static void InitializeLogging(LIBC_NAMESPACE::SimpleIME::FontConfig *config)
+static void InitializeLogging(LIBC_NAMESPACE::SimpleIME::AppConfig *config)
 {
     auto path = SKSE::log::log_directory();
     if (!path)

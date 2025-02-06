@@ -19,9 +19,9 @@
 #include <dinput.h>
 #include <format>
 #include <iostream>
+#include <msctf.h>
 #include <vector>
 #include <windowsx.h>
-#include <msctf.h>
 
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dinput8.lib")
@@ -166,7 +166,7 @@ int main(int, char **)
 
     // Main loop
     DisableIME();
-    bool done = false;
+    bool                           done = false;
     std::unordered_map<BYTE, bool> keyStateMap;
     while (!done)
     {
@@ -185,26 +185,32 @@ int main(int, char **)
         if (GetState() && (keyboardState[DIK_A] & 0x80) > 0 && !keyStateMap[DIK_A])
         {
             keyStateMap[DIK_A] = true;
-            HIMC hIMC = ImmGetContext(hwnd);
-            if (hIMC != nullptr) {
-//                if (compString.empty()) {
-//                    compString.append(L"a");
-//                } else {
-//                    compString.append(L"'a");
-//                }
+            HIMC hIMC          = ImmGetContext(hwnd);
+            if (hIMC != nullptr)
+            {
+                //                if (compString.empty()) {
+                //                    compString.append(L"a");
+                //                } else {
+                //                    compString.append(L"'a");
+                //                }
                 compString.append(L"a");
-                ImmSetCompositionStringW(hIMC, SCS_SETSTR, (LPVOID)(compString.data()), compString.size() * 2, nullptr, 0);
+                ImmSetCompositionStringW(hIMC, SCS_SETSTR, (LPVOID)(compString.data()), compString.size() * 2, nullptr,
+                                         0);
                 ImmReleaseContext(hwnd, hIMC);
             }
-        } else {
+        }
+        else
+        {
             keyStateMap[DIK_A] = false;
         }
 
         {
             HIMC hIMC = ImmGetContext(hwnd);
-            if (hIMC != nullptr) {
+            if (hIMC != nullptr)
+            {
                 DWORD bufLen = ImmGetCandidateListW(hIMC, 0, nullptr, 0);
-                if (bufLen > 0) {
+                if (bufLen > 0)
+                {
                     spdlog::info("candidate list len: {}", bufLen);
                 }
                 ImmReleaseContext(hwnd, hIMC);
@@ -281,7 +287,10 @@ int main(int, char **)
                 "Another Window", &show_another_window,
                 ImGuiWindowFlags_NoDecoration |
                     ImGuiWindowFlags_AlwaysAutoResize); // Pass a pointer to our bool variable (the window will have a
-                                                        // closing button that will clear the bool when clicked)
+
+            ImGui::PushStyleColor(ImGuiCol_Text, 0xffCCCCCC);
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, 0xff444444);
+            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, 0xff444444);
             ImGui::Text("Hello from another window!");
             ImGui::Value("WantCaotureMouse", io.WantCaptureMouse);
             ImGui::Value("Focused", ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows));
@@ -292,11 +301,13 @@ int main(int, char **)
                 ImGui::Selectable("CC");
                 ImGui::EndCombo();
             }
-            if (ImGui::Button("next ime")) {
+            if (ImGui::Button("next ime"))
+            {
                 ActivateKeyboardLayout((HKL)HKL_NEXT, KLF_SETFORPROCESS);
             }
             if (ImGui::Button("Close Me")) show_another_window = false;
 
+            ImGui::PopStyleColor(3);
             ImGui::End();
         }
 

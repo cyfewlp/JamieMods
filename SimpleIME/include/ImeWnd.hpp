@@ -34,8 +34,8 @@ namespace LIBC_NAMESPACE_DECL
             auto operator=(ImeWnd &&a_imeWnd) -> ImeWnd &      = delete;
             auto operator=(const ImeWnd &a_imeWnd) -> ImeWnd & = delete;
 
-            void Initialize(HWND a_parent) noexcept(false);
-            void InitImGui(ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/, FontConfig *fontConfig) const
+            void Initialize(HWND a_parent, AppConfig*pAppConfig) noexcept(false);
+            void InitImGui(ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/, AppConfig *pAppConfig) const
                 noexcept(false);
             void               Focus() const;
             void               RenderIme();

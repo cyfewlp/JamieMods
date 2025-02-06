@@ -32,6 +32,7 @@ set(sources
         src/ImeUI.cpp
         src/ImeWnd.cpp
         src/Hooks.cpp
+        src/AppConfig.cpp
         src/LangProfileUtil.cpp
 )
 

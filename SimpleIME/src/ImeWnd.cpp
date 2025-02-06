@@ -40,7 +40,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeWnd::Initialize(HWND a_parent) noexcept(false)
+        void ImeWnd::Initialize(HWND a_parent, AppConfig *pAppConfig) noexcept(false)
         {
             wc.hInstance = GetModuleHandle(nullptr);
             if (::RegisterClassExW(&wc) == 0U)
@@ -58,6 +58,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 throw SimpleIMEException("Create ImeWnd failed");
             }
+            m_pImeUI = new ImeUI(pAppConfig);
             m_pImeUI->QueryAllInstalledIME();
             m_pImeUI->UpdateLanguage();
             m_pImeUI->UpdateActiveLangProfile();
@@ -122,7 +123,7 @@ namespace LIBC_NAMESPACE_DECL
             return ::DefWindowProcW(hWnd, uMsg, wParam, lParam);
         }
 
-        void ImeWnd::InitImGui(ID3D11Device *device, ID3D11DeviceContext *context, FontConfig *fontConfig) const
+        void ImeWnd::InitImGui(ID3D11Device *device, ID3D11DeviceContext *context, AppConfig *pAppConfig) const
             noexcept(false)
         {
             log_info("Initializing ImGui...");
@@ -149,7 +150,7 @@ namespace LIBC_NAMESPACE_DECL
             io.DisplaySize =
                 ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-            io.Fonts->AddFontFromFileTTF(fontConfig->GetEastAsiaFontFile().data(), fontConfig->GetFontSize(), nullptr,
+            io.Fonts->AddFontFromFileTTF(pAppConfig->GetEastAsiaFontFile().data(), pAppConfig->GetFontSize(), nullptr,
                                          io.Fonts->GetGlyphRangesChineseFull());
 
             // config font
@@ -158,7 +159,7 @@ namespace LIBC_NAMESPACE_DECL
             cfg.MergeMode                     = true;
             cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
             static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
-            io.Fonts->AddFontFromFileTTF(fontConfig->GetEmojiFontFile().data(), fontConfig->GetFontSize(), &cfg,
+            io.Fonts->AddFontFromFileTTF(pAppConfig->GetEmojiFontFile().data(), pAppConfig->GetFontSize(), &cfg,
                                          icons_ranges);
             io.Fonts->Build();
             ImGuiStyle &style = ImGui::GetStyle();
@@ -196,7 +197,6 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::OnCreate() -> LRESULT
         {
-            m_pImeUI = new ImeUI();
             return S_OK;
         }
 

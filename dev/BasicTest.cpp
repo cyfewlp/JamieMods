@@ -1,44 +1,25 @@
-﻿#include <iostream>
-#include <windows.h>
-using namespace std;
+﻿#include <cstdint>
+#include <iostream>
+#include <string>
 
-typedef VOID (*pfnUnhookKbdHook)();
-typedef BOOL (*pfnSetKbdHook)();
+uint32_t HexStringToUInt32(const std::string &hexStr)
+{
+    try
+    {
+        size_t start = (hexStr.find("0x") == 0 || hexStr.find("0X") == 0) ? 2 : 0;
+        return static_cast<uint32_t>(std::stoul(hexStr.substr(start), nullptr, 16));
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << " for input: " << hexStr << std::endl;
+    }
+    return 0;
+}
 
 int main()
 {
-    HMODULE          hMod = NULL;
-    MSG              msg;
-    pfnUnhookKbdHook pfnUnhook = NULL;
-    pfnSetKbdHook    pfnHook   = NULL;
-
-    hMod                       = LoadLibrary(L"GlobalHook.dll");
-    if (NULL == hMod)
-    {
-        return (-1);
-    }
-    pfnHook = (pfnSetKbdHook)GetProcAddress(hMod, "SetKbdHook");
-    if (NULL == pfnHook)
-    {
-        return (-1);
-    }
-    pfnHook();
-
-    // 消息循环是必须的
-    while (GetMessage(&msg, NULL, 0, 0) != 0)
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    pfnUnhook = (pfnUnhookKbdHook)GetProcAddress(hMod, "UnhookKbdHook");
-    if (NULL == pfnUnhook)
-    {
-        return (-1);
-    }
-    pfnUnhook();
-
-    system("pause");
-
-    return (0);
+    std::string hexStr = "0xFFFFFFFF"; // 16 进制字符串
+    uint32_t    value  = HexStringToUInt32(hexStr);
+    std::cout << "Hex: " << hexStr << " -> UInt32: " << value << std::endl;
+    return 0;
 }

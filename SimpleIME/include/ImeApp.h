@@ -26,7 +26,7 @@ namespace LIBC_NAMESPACE_DECL
 
         public:
             static void Init();
-            static auto LoadConfig() -> FontConfig *;
+            static auto LoadConfig() -> AppConfig *;
 
             static void D3DInit();
             static void D3DPresent(std::uint32_t ptr);
@@ -39,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
 
             static inline WNDPROC RealWndProc;
             static inline auto    g_pState      = std::make_unique<State>();
-            static inline auto    g_pFontConfig = std::make_unique<FontConfig>();
+            static inline auto    g_pFontConfig = std::make_unique<AppConfig>();
             static inline auto    g_pImeWnd     = std::make_unique<ImeWnd>();
             static inline HWND    g_hWnd        = nullptr;
         };

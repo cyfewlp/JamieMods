@@ -25,13 +25,13 @@ namespace LIBC_NAMESPACE_DECL
          */
         void ImeApp::Init()
         {
-            g_pState            = std::make_unique<State>();
+            g_pState = std::make_unique<State>();
             g_pState->Initialized.store(false);
             Hooks::InstallRegisterClassHook();
             Hooks::InstallDirectInPutHook();
         }
 
-        auto ImeApp::LoadConfig() -> FontConfig *
+        auto ImeApp::LoadConfig() -> AppConfig *
         {
             CSimpleIniA ini;
 
@@ -41,7 +41,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 SKSE::stl::report_and_fail("Loading config failed.");
             }
-            g_pFontConfig = std::make_unique<FontConfig>();
+            g_pFontConfig = std::make_unique<AppConfig>();
             g_pFontConfig->of(ini);
             return g_pFontConfig.get();
         }
@@ -83,7 +83,7 @@ namespace LIBC_NAMESPACE_DECL
             try
             {
                 g_pImeWnd = std::make_unique<ImeWnd>();
-                g_pImeWnd->Initialize(g_hWnd);
+                g_pImeWnd->Initialize(g_hWnd, g_pFontConfig.get());
                 g_pImeWnd->Focus();
             }
             catch (SimpleIMEException &e)

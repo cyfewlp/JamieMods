@@ -9,6 +9,7 @@
     - [x]remove/hide reset keyboard state button(need auto reset keyboard state)
         - [x]fix: when tool window is pined, any mouse click(out of window?) will
          make tool window immediate lost foucs after next unpin
+    - [x] Add ui color config;
     - [] check memory overflow;
     - []try convert candidate imm api to tsf candidate api
         ? windows-classic-samples tsfapp candidate api not work.

@@ -91,7 +91,7 @@ namespace LIBC_NAMESPACE_DECL
 
     namespace SimpleIME
     {
-        class FontConfig
+        class AppConfig
         {
             // default value
         public:
@@ -101,6 +101,12 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto  DEFAULT_FONT_FILE                = std::span(R"(C:\Windows\Fonts\simsun.ttc)");
             static constexpr auto  DEFAULT_EMOJI_FONT_FILE          = std::span(R"(C:\Windows\Fonts\seguiemj.ttf)");
             static constexpr char  DEFAULT_TOOL_WINDOW_SHORTCUT_KEY = DIK_F2;
+            static constexpr auto  DEFAULT_TEXT_COL                 = std::span("0xFFCCCCCC");
+            static constexpr auto  DEFAULT_HIGHLIGHT_TEXT_COL       = std::span("0xFFFFD700");
+            static constexpr auto  DEFAULT_WINDOW_BORDER_COL        = std::span("0xFF3A3A3A");
+            static constexpr auto  DEFAULT_WINDOW_BG_COL            = std::span("0x801E1E1E");
+            static constexpr auto  DEFAULT_BUTTON_COL            = std::span("0xFF444444");
+            static constexpr auto  DEFAULT_BUTTON_HOVERED_COL            = std::span("0xFF666666");
 
         private:
             float       fontSize              = DEFAULT_FONT_SIZE;
@@ -109,6 +115,12 @@ namespace LIBC_NAMESPACE_DECL
             int         flushLevel;
             std::string eastAsiaFontFile;
             std::string emojiFontFile;
+            // ABGR
+            std::uint32_t textColor;
+            std::uint32_t highlightTextColor;
+            std::uint32_t windowBorderColor;
+            std::uint32_t windowBgColor;
+            std::uint32_t btnColor;
 
         public:
             [[nodiscard]] auto GetFontSize() const noexcept -> float
@@ -141,28 +153,36 @@ namespace LIBC_NAMESPACE_DECL
                 return toolWindowShortcutKey;
             }
 
-            static auto parseLogLevel(int32_t intLevel) -> spdlog::level::level_enum
+            [[nodiscard]] auto GetTextColor() const noexcept -> std::uint32_t
             {
-                if (intLevel < 0 || intLevel >= static_cast<int>(spdlog::level::n_levels))
-                {
-                    log_error("Invalid spdlog level {}, downgrade to default: info", intLevel);
-                    return spdlog::level::info;
-                }
-                return static_cast<spdlog::level::level_enum>(intLevel);
+                return textColor;
             }
 
-            void of(CSimpleIniA &ini)
+            [[nodiscard]] auto GetHightlightTextColor() const noexcept -> std::uint32_t
             {
-                eastAsiaFontFile = ini.GetValue("General", "EastAsia_Font_File", DEFAULT_FONT_FILE.data());
-                emojiFontFile    = ini.GetValue("General", "Emoji_Font_File", DEFAULT_EMOJI_FONT_FILE.data());
-                fontSize         = static_cast<float>(ini.GetDoubleValue("General", "Font_Size", DEFAULT_FONT_SIZE));
-                toolWindowShortcutKey =
-                    ini.GetLongValue("General", "Tool_Window_Shortcut_Key", DEFAULT_TOOL_WINDOW_SHORTCUT_KEY);
-                auto alogLevel   = ini.GetLongValue("General", "Log_Level", DEFAULT_LOG_LEVEL);
-                auto aflushLevel = ini.GetLongValue("General", "Flush_Level", DEFAULT_FLUSH_LEVEL);
-                logLevel         = parseLogLevel(alogLevel);
-                flushLevel       = parseLogLevel(aflushLevel);
+                return highlightTextColor;
             }
+
+            [[nodiscard]] auto GetWindowBordrColor() const noexcept -> std::uint32_t
+            {
+                return windowBorderColor;
+            }
+
+            [[nodiscard]] auto GetWindowBgColor() const noexcept -> std::uint32_t
+            {
+                return windowBgColor;
+            }
+
+            [[nodiscard]] auto GetBtnColor() const noexcept -> std::uint32_t
+            {
+                return btnColor;
+            }
+
+            void of(CSimpleIniA &ini);
+
+        private:
+            static auto parseLogLevel(int32_t intLevel) -> spdlog::level::level_enum;
+            uint32_t HexStringToUInt32(const std::string &hexStr, uint32_t aDefault = 0);
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
