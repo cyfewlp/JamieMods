@@ -21,17 +21,7 @@
 #include <wtypes.h>
 #include <wtypesbase.h>
 
-#define SAFE_CALL(call, error)                                                                                         \
-    if (FAILED(hresult = (call))) throw std::runtime_error(error);
-#define CO_CREATE(Type, var, IID)                                                                                      \
-    CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID, (VOID **)&(var))
-
-#define CO_CREATE(Type, var)                                                                                           \
-    CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER, IID_##Type, (VOID **)&(var))
-
-using namespace LIBC_NAMESPACE::SimpleIME;
-
-LangProfileUtil::LangProfileUtil()
+LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LangProfileUtil()
 {
     if (FAILED(CoInitialize(nullptr)))
     {
@@ -41,7 +31,7 @@ LangProfileUtil::LangProfileUtil()
     initialized = true;
 }
 
-LangProfileUtil::~LangProfileUtil()
+LIBC_NAMESPACE::SimpleIME::LangProfileUtil::~LangProfileUtil()
 {
     if (initialized)
     {
@@ -49,19 +39,24 @@ LangProfileUtil::~LangProfileUtil()
     }
 }
 
-void LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexcept
+void LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexcept
 {
     HRESULT hresult = TRUE;
     try
     {
         CComPtr<ITfInputProcessorProfileMgr> lpProfileMgr;
-        SAFE_CALL(CO_CREATE(ITfInputProcessorProfileMgr, lpProfileMgr), "TSF: Create profile manager failed.");
+        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
+                                   IID_ITfInputProcessorProfileMgr, (VOID **)&(lpProfileMgr));
+        throw_fail(hresult, "TSF: Create profile manager failed.");
 
         CComPtr<ITfInputProcessorProfiles> lpProfiles;
-        SAFE_CALL(CO_CREATE(ITfInputProcessorProfiles, lpProfiles), "TSF: Create profile failed.");
+        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
+                                   IID_ITfInputProcessorProfiles, (VOID **)&(lpProfiles));
+        throw_fail(hresult, "TSF: Create profile failed.");
 
         CComPtr<IEnumTfInputProcessorProfiles> lpEnum;
-        SAFE_CALL(lpProfileMgr->EnumProfiles(0, &lpEnum), "Can't enum language profiles");
+        hresult = lpProfileMgr->EnumProfiles(0, &lpEnum);
+        throw_fail(hresult, "Can't enum language profiles");
 
         TF_INPUTPROCESSORPROFILE profile = {};
         ULONG                    fetched = 0;
@@ -90,27 +85,26 @@ void LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexc
             }
         }
     }
-    catch (std::runtime_error error)
+    catch (std::runtime_error &error)
     {
         log_error("LoadIme failed: {}", error.what());
     }
 }
 
-void LangProfileUtil::ActivateProfile(_In_ LangProfile &profile) noexcept
+void LIBC_NAMESPACE::SimpleIME::LangProfileUtil::ActivateProfile(_In_ LangProfile &profile) noexcept
 {
-    CComPtr<ITfInputProcessorProfileMgr> lpProfileMgr;
-    HRESULT                              hresult = TRUE;
+    HRESULT hresult = TRUE;
     try
     {
-        SAFE_CALL(CO_CREATE(ITfInputProcessorProfileMgr, lpProfileMgr), "TSF: Create profile failed.");
+        CComPtr<ITfInputProcessorProfileMgr> lpProfileMgr;
+        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
+                                   IID_ITfInputProcessorProfileMgr, (VOID **)&(lpProfileMgr));
+        throw_fail(hresult, "TSF: Create profile failed.");
 
         hresult = lpProfileMgr->ActivateProfile(TF_PROFILETYPE_INPUTPROCESSOR, profile.langid, profile.clsid,
                                                 profile.guidProfile, NULL,
                                                 TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE);
-        if (FAILED(hresult))
-        {
-            throw std::runtime_error("Active profile failed.");
-        }
+        throw_fail(hresult, "Active profile failed.");
     }
     catch (std::runtime_error &error)
     {
@@ -118,13 +112,15 @@ void LangProfileUtil::ActivateProfile(_In_ LangProfile &profile) noexcept
     }
 }
 
-auto LangProfileUtil::LoadActiveIme(__in GUID &a_guidProfile) noexcept -> bool
+auto LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LoadActiveIme(__in GUID &a_guidProfile) noexcept -> bool
 {
     HRESULT                              hresult = TRUE;
     CComPtr<ITfInputProcessorProfileMgr> lpMgr;
     try
     {
-        SAFE_CALL(CO_CREATE(ITfInputProcessorProfileMgr, lpMgr), "create profile manager failed.");
+        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
+                                   IID_ITfInputProcessorProfileMgr, (VOID **)&(lpMgr));
+        throw_fail(hresult, "create profile manager failed.");
 
         TF_INPUTPROCESSORPROFILE profile;
         hresult = lpMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile);

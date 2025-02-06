@@ -18,10 +18,9 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    class format_string_loc
+    struct format_string_loc
     {
     public:
-        template <class... Args>
         constexpr format_string_loc(const char                *a_fmt,
                                     const std::source_location location = std::source_location::current()) noexcept
             : value{a_fmt}, loc(spdlog::source_loc{location.file_name(), static_cast<std::int32_t>(location.line()),
@@ -39,7 +38,7 @@ namespace LIBC_NAMESPACE_DECL
             return loc;
         }
 
-        //    private:
+    private:
         std::string_view   value;
         spdlog::source_loc loc;
     };
@@ -80,6 +79,14 @@ namespace LIBC_NAMESPACE_DECL
     static constexpr auto log_trace(const format_string_loc fsl, Args &&...args)
     {
         logd(spdlog::level::trace, fsl, std::forward<Args>(args)...);
+    }
+
+    static constexpr auto throw_fail(HRESULT hresult, const char *msg)
+    {
+        if (FAILED(hresult))
+        {
+            throw std::runtime_error(msg);
+        }
     }
 
     namespace SimpleIME

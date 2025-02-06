@@ -9,7 +9,6 @@
 #include <SKSE/Interfaces.h>
 #include <SKSE/Logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/msvc_sink.h>
 
 static void InitializeLogging(LIBC_NAMESPACE::SimpleIME::FontConfig *config)
 {
@@ -30,7 +29,7 @@ static void InitializeLogging(LIBC_NAMESPACE::SimpleIME::FontConfig *config)
     log->flush_on(config->GetFlushLevel());
 
     spdlog::set_default_logger(std::move(log));
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%!:%#] %v");
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%#] %v");
 }
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse)
@@ -38,7 +37,7 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse)
     auto *pConfig = LIBC_NAMESPACE::SimpleIME::ImeApp::LoadConfig();
     InitializeLogging(pConfig);
 
-    auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
+    const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     auto  version = plugin->GetVersion();
     LIBC_NAMESPACE::log_info("{} {} is loading...", plugin->GetName(), version.string());
 
