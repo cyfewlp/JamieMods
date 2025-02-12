@@ -281,7 +281,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeWnd::ShowToolWindow()
+        void ImeWnd::ShowToolWindow() const
         {
             m_pImeUI->ShowToolWindow();
         }

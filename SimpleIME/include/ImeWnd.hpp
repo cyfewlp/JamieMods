@@ -48,7 +48,7 @@ namespace LIBC_NAMESPACE_DECL
                 noexcept(false);
             void Focus() const;
             void RenderIme();
-            void ShowToolWindow();
+            void ShowToolWindow() const;
             void SetImeOpenStatus(bool open) const;
             auto IsDiscardGameInputEvents(__in RE::InputEvent ** /*events*/) -> bool;
 

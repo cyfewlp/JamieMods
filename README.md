@@ -1,11 +1,9 @@
-# SKSE "Hello, world!"
+# Jamie Mods
 
-Very simple C++ SKSE plugin for Skyrim!
+This repository is my mods collection
 
 ---
 
-- [SKSE "Hello, world!"](#skse-hello-world)
-- [What does it do?](#what-does-it-do)
 - [CommonLibSSE NG](#commonlibsse-ng)
 - [Requirements](#requirements)
   - [Opening the project](#opening-the-project)
@@ -13,12 +11,6 @@ Very simple C++ SKSE plugin for Skyrim!
   - [Finding Your "`mods`" Folder](#finding-your-mods-folder)
 - [Setup your own repository](#setup-your-own-repository)
 - [Sharing is Caring](#sharing-is-caring)
-
-# What does it do?
-
-After running Skyrim, once at the Main Menu, press the `~` key to open the game console.
-
-You will see that we printed `"Hello, world!"` to the console at the Main Menu 🐉
 
 # CommonLibSSE NG
 
@@ -29,6 +21,11 @@ Because this uses [CommonLibSSE NG](https://github.com/CharmedBaryon/CommonLibSS
 # Requirements
 
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) (_the free Community edition_)
+- [LLVM](https://github.com/llvm/llvm-project)
+    - clang-format
+    - clang-tidy
+    - clang-cl(the compiler)
+- [CMake](https://cmake.org/)
 - [`vcpkg`](https://github.com/microsoft/vcpkg)
   - 1. Clone the repository using git OR [download it as a .zip](https://github.com/microsoft/vcpkg/archive/refs/heads/master.zip)
   - 2. Go into the `vcpkg` folder and double-click on `bootstrap-vcpkg.bat`
@@ -46,6 +43,15 @@ Once you have Visual Studio 2022 installed, you can open this folder in basicall
 You may need to click `OK` on a few windows, but the project should automatically run CMake!
 
 It will _automatically_ download [CommonLibSSE NG](https://github.com/CharmedBaryon/CommonLibSSE-NG) and everything you need to get started making your new plugin!
+
+# Build
+
+```shell
+cmake --preset debug-clangcl-ninjia-vcpkg
+cmake --build build\debug-clangcl-ninjia-vcpkg --target SimpleIME
+cd build\debug-clangcl-ninjia-vcpkg
+cpack
+```
 
 # Project setup
 
