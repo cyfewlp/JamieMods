@@ -1,19 +1,37 @@
 
 #include "ImeApp.h"
-#include "Configs.h"
+#include "AppConfig.h"
 #include "Hooks.hpp"
 #include "ImeWnd.hpp"
 #include "gsl/gsl"
 #include "imgui.h"
-#include <RE/B/BSWin32MouseDevice.h>
-#include <RE/I/InputDevices.h>
-#include <SimpleIni.h>
 #include <basetsd.h>
 #include <cstdint>
+#include <future>
 #include <memory>
+#include <thread>
 
 namespace LIBC_NAMESPACE_DECL
 {
+
+    bool PluginInit()
+    {
+        InitializeMessaging();
+        SimpleIME::ImeApp::Init();
+        return true;
+    }
+
+    void InitializeMessaging()
+    {
+        // Delay call focus to avoid other crash when not create ImGui context not yet.
+        SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
+            if (a_msg->type == SKSE::MessagingInterface::kPostPostLoad)
+            {
+                SimpleIME::ImeApp::GetImeWnd()->Focus();
+            }
+        });
+    }
+
     namespace SimpleIME
     {
         static const auto D3DInitHook            = Hooks::D3DInitHookData(ImeApp::D3DInit);
@@ -31,19 +49,10 @@ namespace LIBC_NAMESPACE_DECL
             Hooks::InstallDirectInPutHook();
         }
 
-        auto ImeApp::LoadConfig() -> AppConfig *
+        static void FatalError(const char *msg)
         {
-            CSimpleIniA ini;
-
-            ini.SetUnicode();
-            SI_Error const error = ini.LoadFile(R"(Data\SKSE\Plugins\SimpleIME.ini)");
-            if (error < 0)
-            {
-                SKSE::stl::report_and_fail("Loading config failed.");
-            }
-            g_pFontConfig = std::make_unique<AppConfig>();
-            g_pFontConfig->of(ini);
-            return g_pFontConfig.get();
+            log_error("Can't Initialize ImeWnd because {}", msg);
+            SKSE::stl::report_and_error("SimpleIME initialize failed!");
         }
 
         void ImeApp::D3DInit()
@@ -57,8 +66,7 @@ namespace LIBC_NAMESPACE_DECL
             auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
             if (render_manager == nullptr)
             {
-                log_error("Cannot find render manager. Initialization failed!");
-                return;
+                FatalError("Cannot find render manager. Initialization failed!");
             }
 
             auto render_data = render_manager->data;
@@ -66,37 +74,53 @@ namespace LIBC_NAMESPACE_DECL
             auto *pSwapChain = render_data.renderWindows->swapChain;
             if (pSwapChain == nullptr)
             {
-                log_error("Cannot find SwapChain. Initialization failed!");
-                return;
+                FatalError("Cannot find SwapChain. Initialization failed!");
             }
 
             log_debug("Getting SwapChain desc...");
             auto swapChainDesc = gsl::not_null(new DXGI_SWAP_CHAIN_DESC());
             if (pSwapChain->GetDesc(swapChainDesc) < 0)
             {
-                log_error("IDXGISwapChain::GetDesc failed.");
-                return;
+                FatalError("IDXGISwapChain::GetDesc failed.");
             }
-
             g_hWnd = swapChainDesc->OutputWindow;
 
+            std::promise<bool> ensureInitialized;
+            std::future<bool>  initialized = ensureInitialized.get_future();
+            // run ImeWnd in a standalone thread
+            g_pImeWnd = std::make_unique<ImeWnd>();
+            std::thread childWndThread([&ensureInitialized]() {
+                try
+                {
+                    g_pImeWnd->Initialize();
+                    ensureInitialized.set_value(true);
+                    g_pImeWnd->Start(g_hWnd);
+                }
+                catch (...)
+                {
+                    try
+                    {
+                        ensureInitialized.set_exception(std::current_exception());
+                    }
+                    catch (...)
+                    { // set_exception() may throw too
+                    }
+                }
+            });
             try
             {
-                g_pImeWnd = std::make_unique<ImeWnd>();
-                g_pImeWnd->Initialize(g_hWnd, g_pFontConfig.get());
-                g_pImeWnd->Focus();
+                initialized.get();
+                childWndThread.detach();
+                auto *device  = render_data.forwarder;
+                auto *context = render_data.context;
+                g_pImeWnd->InitImGui(g_hWnd, device, context);
             }
-            catch (SimpleIMEException &e)
+            catch (const std::exception &e)
             {
-                log_error("Thread ImeWnd failed. {}", e.what());
                 g_pImeWnd.reset();
                 g_pImeWnd = nullptr;
-                return;
+                FatalError(e.what());
             }
-
-            auto *device  = render_data.forwarder;
-            auto *context = render_data.context;
-            g_pImeWnd->InitImGui(device, context, g_pFontConfig.get());
 
             g_pState->Initialized.store(true);
 
@@ -107,7 +131,7 @@ namespace LIBC_NAMESPACE_DECL
                                                                       reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
             if (RealWndProc == nullptr)
             {
-                log_error("Hook WndProc failed!");
+                FatalError("Hook WndProc failed!");
             }
         }
 
@@ -127,8 +151,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             static RE::InputEvent *dummy[] = {nullptr};
             ProcessEvent(a_events);
-            auto discard = g_pImeWnd->IsDiscardGameInputEvents(a_events);
-            if (discard) // Disable Game Input
+            if (g_pImeWnd->IsDiscardGameInputEvents(a_events)) // Disable Game Input
             {
                 DispatchInputEventHook(a_dispatcher, dummy);
             }
@@ -136,6 +159,11 @@ namespace LIBC_NAMESPACE_DECL
             {
                 DispatchInputEventHook(a_dispatcher, a_events);
             }
+        }
+
+        auto ImeApp::GetImeWnd() -> ImeWnd *
+        {
+            return g_pImeWnd.get();
         }
 
         void ImeApp::ProcessEvent(RE::InputEvent **events)
@@ -167,7 +195,7 @@ namespace LIBC_NAMESPACE_DECL
                     switch (head->GetDevice())
                     {
                         case RE::INPUT_DEVICE::kKeyboard: {
-                            if (pButtonEvent->GetIDCode() == g_pFontConfig->GetToolWindowShortcutKey() &&
+                            if (pButtonEvent->GetIDCode() == AppConfig::Load()->GetToolWindowShortcutKey() &&
                                 pButtonEvent->IsDown())
                             {
                                 g_pImeWnd->ShowToolWindow();

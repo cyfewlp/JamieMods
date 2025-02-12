@@ -13,3 +13,11 @@
     - [] check memory overflow;
     - []try convert candidate imm api to tsf candidate api
         ? windows-classic-samples tsfapp candidate api not work.
+* 0.0.4 
+    - [x] open janpaniese ime & close game will crash
+    - [x] Modex crash with ImGuiIO::ClearInputKeys
+        - [x] Delay SetFoucs call to avoid some mod call ImGui when their ImGui context not created yet.Modex
+    - ~~[] Photo Crash with SimplIME~~
+    - [] activate ime function must be call in message loop thread.
+    - [] launch ImeWnd,ImeUi in standalone thread to and use ourself message loop
+         avoid other plugin init COM with COINIT_MULTITHREADED(crash logger)

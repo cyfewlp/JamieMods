@@ -1,61 +1,67 @@
-﻿//
-// Created by jamie on 2025/1/28.
-//
-
-#include "LangProfileUtil.h"
+﻿#include "LangProfileUtil.h"
 #include "Configs.h"
+#include "TsfSupport.h"
 #include "WCharUtils.h"
-#include "spdlog/common.h"
 #include <atlcomcli.h>
-#include <combaseapi.h>
 #include <cstddef>
-#include <intsafe.h>
-#include <minwindef.h>
+#include <future>
 #include <msctf.h>
-#include <objbase.h>
-#include <oleauto.h>
-#include <sal.h>
-#include <specstrings_strict.h>
 #include <stdexcept>
-#include <winnt.h>
-#include <wtypes.h>
-#include <wtypesbase.h>
+#include <unordered_map>
 
-LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LangProfileUtil()
+#define PLUGIN_NAMESPACE LIBC_NAMESPACE::SimpleIME
+
+PLUGIN_NAMESPACE::LangProfileUtil::~LangProfileUtil()
 {
-    if (FAILED(CoInitialize(nullptr)))
+    if (lpThreadMgr_ != nullptr)
     {
-        throw std::runtime_error("Initlalize COM failed.");
-    }
-
-    initialized = true;
-}
-
-LIBC_NAMESPACE::SimpleIME::LangProfileUtil::~LangProfileUtil()
-{
-    if (initialized)
-    {
-        CoUninitialize();
+        CComPtr<ITfSource> lpSource;
+        if (SUCCEEDED(lpThreadMgr_.QueryInterface(&lpSource)))
+        {
+            lpSource->UnadviseSink(textCookie_);
+        }
     }
 }
 
-void LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LoadIme(__in std::vector<LangProfile> &langProfiles) noexcept
+bool PLUGIN_NAMESPACE::LangProfileUtil::Initialize(TsfSupport &tsfSupport)
+{
+    try
+    {
+        const auto &lpThreadMgr = tsfSupport.GetThreadMgr();
+        HRESULT     hresult     = lpThreadMgr.QueryInterface(&lpThreadMgr_);
+        throw_fail(hresult, "Failed query interface ITfThreadMgr on thread mgr.");
+
+        CComPtr<ITfSource> lpSource;
+        hresult = lpThreadMgr.QueryInterface(&lpSource);
+        throw_fail(hresult, "Failed query interface ITfSource on thread mgr.");
+
+        hresult = lpSource->AdviseSink(IID_ITfInputProcessorProfileActivationSink, this, &textCookie_);
+        throw_fail(hresult, "Can't Advise IID_ITfInputProcessorProfileActivationSink.");
+
+        hresult = lpProfileMgr_.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
+        throw_fail(hresult, "TSF: Create profiles manager failed");
+        initialized_ = true;
+        return true;
+    }
+    catch (std::runtime_error &error)
+    {
+        log_error("Can't initialize LangProfileUtil: {}", error.what());
+    }
+    return false;
+}
+
+bool PLUGIN_NAMESPACE::LangProfileUtil::LoadAllLangProfiles() noexcept
 {
     HRESULT hresult = TRUE;
     try
     {
-        CComPtr<ITfInputProcessorProfileMgr> lpProfileMgr;
-        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
-                                   IID_ITfInputProcessorProfileMgr, (VOID **)&(lpProfileMgr));
-        throw_fail(hresult, "TSF: Create profile manager failed.");
-
+        _tsetlocale(LC_ALL, _T(""));
         CComPtr<ITfInputProcessorProfiles> lpProfiles;
-        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
-                                   IID_ITfInputProcessorProfiles, (VOID **)&(lpProfiles));
+        hresult = lpProfiles.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
         throw_fail(hresult, "TSF: Create profile failed.");
 
         CComPtr<IEnumTfInputProcessorProfiles> lpEnum;
-        hresult = lpProfileMgr->EnumProfiles(0, &lpEnum);
+        hresult = lpProfileMgr_->EnumProfiles(0, &lpEnum);
         throw_fail(hresult, "Can't enum language profiles");
 
         TF_INPUTPROCESSORPROFILE profile = {};
@@ -73,66 +79,116 @@ void LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LoadIme(__in std::vector<LangPr
                                                                     &bstrDesc);
                 if (SUCCEEDED(hresult))
                 {
-                    LangProfile langProfile = {};
-                    langProfile.clsid       = profile.clsid;
-                    langProfile.langid      = profile.langid;
-                    langProfile.guidProfile = profile.guidProfile;
-                    langProfile.desc        = WCharUtils::ToString(bstrDesc);
-                    langProfiles.push_back(langProfile);
+                    LangProfile langProfile             = {};
+                    langProfile.clsid                   = profile.clsid;
+                    langProfile.langid                  = profile.langid;
+                    langProfile.guidProfile             = profile.guidProfile;
+                    langProfile.desc                    = WCharUtils::ToString(bstrDesc);
+                    m_langProfiles[profile.guidProfile] = langProfile;
                     log_info("Load installed ime: {}", langProfile.desc.c_str());
                     SysFreeString(bstrDesc);
                 }
             }
         }
+        LangProfile engProfile = {};
+        ZeroMemory(&engProfile, sizeof(engProfile));
+        engProfile.clsid          = CLSID_NULL;
+        engProfile.langid         = LANGID_ENG; // english keyboard
+        engProfile.guidProfile    = GUID_NULL;
+        engProfile.desc           = std::string("ENG");
+        m_langProfiles[GUID_NULL] = engProfile;
     }
     catch (std::runtime_error &error)
     {
         log_error("LoadIme failed: {}", error.what());
     }
+    return SUCCEEDED(hresult);
 }
 
-void LIBC_NAMESPACE::SimpleIME::LangProfileUtil::ActivateProfile(_In_ LangProfile &profile) noexcept
+bool PLUGIN_NAMESPACE::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) noexcept
 {
-    HRESULT hresult = TRUE;
-    try
+    auto expected = m_langProfiles.find(*guidProfile);
+    if (expected == m_langProfiles.end())
     {
-        CComPtr<ITfInputProcessorProfileMgr> lpProfileMgr;
-        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
-                                   IID_ITfInputProcessorProfileMgr, (VOID **)&(lpProfileMgr));
-        throw_fail(hresult, "TSF: Create profile failed.");
-
-        hresult = lpProfileMgr->ActivateProfile(TF_PROFILETYPE_INPUTPROCESSOR, profile.langid, profile.clsid,
-                                                profile.guidProfile, NULL,
-                                                TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE);
-        throw_fail(hresult, "Active profile failed.");
+        return false;
     }
-    catch (std::runtime_error &error)
+    auto    profile = expected->second;
+    HRESULT hresult = lpProfileMgr_->ActivateProfile(TF_PROFILETYPE_INPUTPROCESSOR, profile.langid, profile.clsid,
+                                                     profile.guidProfile, nullptr,
+                                                     TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE);
+    if (FAILED(hresult))
     {
-        log_error("Activate lang profile {} failed: {}", profile.desc.c_str(), error.what());
+        log_error("Active profile {} failed: {}", profile.desc, ToErrorMessage(hresult));
     }
+    m_activatedProfile = profile.guidProfile;
+    return SUCCEEDED(hresult);
 }
 
-auto LIBC_NAMESPACE::SimpleIME::LangProfileUtil::LoadActiveIme(__in GUID &a_guidProfile) noexcept -> bool
+auto PLUGIN_NAMESPACE::LangProfileUtil::LoadActiveIme() noexcept -> bool
 {
-    HRESULT                              hresult = TRUE;
-    CComPtr<ITfInputProcessorProfileMgr> lpMgr;
-    try
+    TF_INPUTPROCESSORPROFILE profile;
+    HRESULT                  hresult = lpProfileMgr_->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile);
+    if (SUCCEEDED(hresult))
     {
-        hresult = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
-                                   IID_ITfInputProcessorProfileMgr, (VOID **)&(lpMgr));
-        throw_fail(hresult, "create profile manager failed.");
+        m_activatedProfile = profile.guidProfile;
+        return true;
+    }
 
-        TF_INPUTPROCESSORPROFILE profile;
-        hresult = lpMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile);
-        if (SUCCEEDED(hresult))
-        {
-            a_guidProfile = profile.guidProfile;
-            return true;
-        }
-    }
-    catch (std::runtime_error error)
-    {
-        log_error("load active ime failed: {}", error.what());
-    }
+    log_error("load active ime failed: {}", ToErrorMessage(hresult));
     return false;
+}
+
+auto PLUGIN_NAMESPACE::LangProfileUtil::GetActivatedLangProfile() -> GUID &
+{
+    return m_activatedProfile;
+}
+
+auto PLUGIN_NAMESPACE::LangProfileUtil::GetLangProfiles() -> std::unordered_map<GUID, LangProfile>
+{
+    return m_langProfiles;
+}
+
+HRESULT PLUGIN_NAMESPACE::LangProfileUtil::QueryInterface(const IID &riid, void **ppvObject)
+{
+    *ppvObject = nullptr;
+
+    if (IsEqualIID(riid, IID_IUnknown) || IsEqualIID(riid, IID_ITfInputProcessorProfileActivationSink))
+    {
+        *ppvObject = static_cast<ITfInputProcessorProfileActivationSink *>(this);
+    }
+
+    if (*ppvObject)
+    {
+        AddRef();
+        return S_OK;
+    }
+
+    return E_NOINTERFACE;
+}
+
+ULONG PLUGIN_NAMESPACE::LangProfileUtil::AddRef()
+{
+    return ++refCount_;
+}
+
+ULONG PLUGIN_NAMESPACE::LangProfileUtil::Release()
+{
+    --refCount_;
+    if (refCount_ == 0)
+    {
+        delete this;
+        return 0;
+    }
+    return refCount_;
+}
+
+HRESULT PLUGIN_NAMESPACE::LangProfileUtil::OnActivated(DWORD dwProfileType, LANGID langid, const IID &clsid,
+                                                       const GUID &catid, const GUID &guidProfile, HKL hkl,
+                                                       DWORD dwFlags)
+{
+    if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
+    {
+        m_activatedProfile = guidProfile;
+    }
+    return S_OK;
 }

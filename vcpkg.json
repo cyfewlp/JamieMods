@@ -4,6 +4,7 @@
     "commonlibsse-ng",
     "detours",
     "simpleini",
+    "yaml-cpp",
     "spdlog",
     "ms-gsl",
     "freetype"

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string.h>
 #include <stringapiset.h>
 
 namespace LIBC_NAMESPACE_DECL

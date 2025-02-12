@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include "AppConfig.h"
 #include "Configs.h"
 #include "LangProfileUtil.h"
+#include "TsfSupport.h"
 #include "enumeration.h"
 #include "imgui.h"
 #include <RE/G/GFxEvent.h>
@@ -47,9 +49,10 @@ namespace LIBC_NAMESPACE_DECL
     namespace SimpleIME
     {
 
-        constexpr auto IMEUI_HEAP_INIT_SIZE = 512;
-        constexpr auto IMEUI_HEAP_MAX_SIZE  = 2048;
-        constexpr auto WCHAR_BUF_INIT_SIZE  = 64;
+        constexpr auto IME_UI_HEAP_INIT_SIZE   = 512;
+        constexpr auto IME_UI_HEAP_MAX_SIZE    = 2048;
+        constexpr auto WCHAR_BUF_INIT_SIZE     = 64;
+        constexpr auto MAX_ERROR_MESSAGE_COUNT = 10;
 
         struct CandWindowProp
         {
@@ -59,7 +62,6 @@ namespace LIBC_NAMESPACE_DECL
         };
 
         // language id for english keyboard
-        constexpr auto LANGID_ENG         = 0x409;
         constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `
         constexpr auto ASCII_MIDDLE_DOT   = 0xB7; // ·
 
@@ -121,7 +123,6 @@ namespace LIBC_NAMESPACE_DECL
 
         class ImeUI
         {
-        private:
             class WcharBuf
             {
             public:
@@ -138,7 +139,7 @@ namespace LIBC_NAMESPACE_DECL
             };
 
         public:
-            ImeUI(AppConfig *appConfig);
+            explicit ImeUI(const AppUiConfig& uiConfig);
             ~ImeUI();
 
             ImeUI(ImeUI &&a_ImeUI)                          = delete;
@@ -146,47 +147,59 @@ namespace LIBC_NAMESPACE_DECL
             auto operator=(ImeUI &&a_ImeUI) -> ImeUI &      = delete;
             auto operator=(const ImeUI &a_ImeUI) -> ImeUI & = delete;
 
+            bool Initialize(TsfSupport &tsfSupport);
+            void SetHWND(const HWND hWnd);
+
             void StartComposition();
             void EndComposition();
-            void CompositionString(HIMC hIMC, LPARAM compFlag);
-            void QueryAllInstalledIME();
+            void CompositionString(HIMC hIMC, LPARAM compFlag) const;
+            void UpdateLanguage();
+            void OnSetOpenStatus(HIMC hIMC);
+            void UpdateConversionMode(HIMC hIMC);
+            auto ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
+            void ActivateProfile(const GUID *guidProfile);
+
+            auto IsEnabled() const -> bool;
             // Render To ImGui
-            void               RenderIme();
-            void               ShowToolWindow();
-            void               UpdateLanguage();
-            void               UpdateActiveLangProfile();
-            void               OnSetOpenStatus(HIMC hIMC);
-            void               UpdateConversionMode(HIMC hIMC);
-            auto               ImeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam) -> bool;
-            [[nodiscard]] auto IsEnabled() const -> bool;
+            void RenderIme();
+            void ShowToolWindow();
+
+            template <typename... Args>
+            void PushErrorMessage(std::format_string<Args...> fmt, Args &&...args);
+
+            //
             [[nodiscard]] auto GetImeState() const -> Enumeration<ImeState>;
 
         private:
             // return true if got str from IMM, otherwise false;
             static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf) -> bool;
-            void        SendResultStringToSkyrim();
+
+            void        SendResultStringToSkyrim() const;
             void        RenderToolWindow();
-            void        RenderCompWindow(WcharBuf *compStrBuf);
+            void        RenderCompWindow(const WcharBuf *compStrBuf) const;
             void        OpenCandidate(HIMC hIMC, LPARAM candListFlag);
             void        ChangeCandidate(HIMC hIMC, LPARAM candListFlag);
             void        ChangeCandidateAt(HIMC hIMC, DWORD dwIndex);
             void        CloseCandidate(LPARAM candListFlag);
-            void        RenderCandWindows() const;
+            void        RenderCandidateWindows() const;
 
             static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
             std::array<std::unique_ptr<ImeCandidateList>, CandWindowProp::MAX_COUNT> m_imeCandidates{};
             //
-            HANDLE     m_pHeap;
-            WcharBuf  *m_pCompStr;
-            WcharBuf  *m_pCompResult;
-            UINT32     keyboardCodePage{CP_ACP};
-            AppConfig *m_pAppConfig;
+            HANDLE m_pHeap;
+            /**
+             * ImeWnd works hWnd.
+             */
+            HWND                     m_hWndIme;
+            WcharBuf                *m_pCompStr;
+            WcharBuf                *m_pCompResult;
+            UINT32                   keyboardCodePage{CP_ACP};
+            AppUiConfig              m_pUiConfig;
 
-            //
             Enumeration<ImeState>    m_imeState;
-            std::vector<LangProfile> m_imeProfiles;
             LangProfileUtil          m_langProfileUtil;
             bool                     m_showToolWindow = false;
+            std::vector<std::string> m_errorMessages;
             int  toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
             bool m_pinToolWindow = false;
         };

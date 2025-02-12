@@ -1,6 +1,6 @@
 project(
         SimpleIME
-        VERSION 0.0.2
+        VERSION 0.0.4
         DESCRIPTION "Simple IME support for Skyrim"
         LANGUAGES CXX
 )
@@ -19,11 +19,13 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(headers
         include/Hooks.hpp
         include/LangProfileUtil.h
+        include/AppConfig.h
         include/Configs.h
         include/ImeApp.h
         include/ImeUI.h
         include/ImeWnd.hpp
         include/FakeDirectInputDevice.h
+        src/tsf/TsfSupport.h
 )
 
 set(sources
@@ -34,6 +36,7 @@ set(sources
         src/Hooks.cpp
         src/AppConfig.cpp
         src/LangProfileUtil.cpp
+        src/tsf/TsfSupport.cpp
 )
 
 source_group(
@@ -49,11 +52,11 @@ endif ()
 
 ## Plugin settings
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(CommonLibSSE CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
     ${sources}
@@ -71,7 +74,8 @@ target_include_directories(
         ${DETOURS_INCLUDE_DIRS}
         ${UTILS_INCLUDE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${SIMPLEINI_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tsf
+        #${SIMPLEINI_INCLUDE_DIRS}
 )
 
 # linkage
@@ -82,6 +86,7 @@ target_link_libraries(
         imgui
         ${DETOURS_LIBRARY}
         Microsoft.GSL::GSL
+        yaml-cpp::yaml-cpp
 )
 
 ## Install config
@@ -97,7 +102,7 @@ install(TARGETS ${PROJECT_NAME}
         COMPONENT dll
 )
 install(FILES
-        ${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SimpleIME.ini
+        ${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SimpleIME.yml
         DESTINATION SKSE/Plugins
         COMPONENT configuration
 )
@@ -141,7 +146,7 @@ if (DEFINED OUTPUT_FOLDER)
             POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.yml" "${DLL_FOLDER}/${PROJECT_NAME}.yml"
             VERBATIM
     )
 

@@ -4,8 +4,8 @@
 
 #include "ImeUI.h"
 #include "Configs.h"
-#include "ImeApp.h"
 #include "LangProfileUtil.h"
+#include "TsfSupport.h"
 #include "WCharUtils.h"
 #include "ime_cmodes.h"
 #include "imgui.h"
@@ -15,20 +15,18 @@
 #include <cstdint>
 #include <tchar.h>
 
-#define LAST_SIZE(vector) (vector.size() - 1)
+#define LAST_SIZE(vector) ((vector.size()) - 1)
 
 namespace LIBC_NAMESPACE_DECL
 {
     namespace SimpleIME
     {
+        constexpr ULONG ONE = 1;
 
-        static size_t   langProfileSelected = 0;
-        constexpr ULONG ONE                 = 1;
-
-        ImeUI::ImeUI(AppConfig *appConfig)
-            : m_pHeap(HeapCreate(HEAP_GENERATE_EXCEPTIONS, IMEUI_HEAP_INIT_SIZE, IMEUI_HEAP_MAX_SIZE)),
-              m_pCompStr(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)),
-              m_pCompResult(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)), m_pAppConfig(appConfig)
+        ImeUI::ImeUI(const AppUiConfig &uiConfig)
+            : m_pHeap(HeapCreate(HEAP_GENERATE_EXCEPTIONS, IME_UI_HEAP_INIT_SIZE, IME_UI_HEAP_MAX_SIZE)),
+              m_hWndIme(nullptr), m_pCompStr(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)),
+              m_pCompResult(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)), m_pUiConfig(uiConfig), m_langProfileUtil()
         {
             _tsetlocale(LC_ALL, _T(""));
         }
@@ -39,6 +37,20 @@ namespace LIBC_NAMESPACE_DECL
             m_pHeap = nullptr;
             delete m_pCompStr;
             delete m_pCompResult;
+        }
+
+        bool ImeUI::Initialize(TsfSupport &tsfSupport)
+        {
+            if (!m_langProfileUtil.Initialize(tsfSupport)) return false;
+            if (!m_langProfileUtil.LoadAllLangProfiles()) return false;
+            UpdateLanguage();
+            if (!m_langProfileUtil.LoadActiveIme()) return false;
+            return true;
+        }
+
+        void ImeUI::SetHWND(const HWND hWnd)
+        {
+            m_hWndIme = hWnd;
         }
 
         void ImeUI::StartComposition()
@@ -57,7 +69,7 @@ namespace LIBC_NAMESPACE_DECL
             m_imeState.reset(ImeState::IN_COMPOSITION);
         }
 
-        void ImeUI::CompositionString(HIMC hIMC, LPARAM compFlag)
+        void ImeUI::CompositionString(HIMC hIMC, LPARAM compFlag) const
         {
             if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, m_pCompStr))
             {
@@ -78,23 +90,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeUI::QueryAllInstalledIME()
-        {
-            log_info("Query os installed IME...");
-            m_imeProfiles.clear();
-            _tsetlocale(LC_ALL, _T(""));
-            LangProfileUtil::LoadIme(m_imeProfiles);
-
-            LangProfile engProfile = {};
-            ZeroMemory(&engProfile, sizeof(engProfile));
-            engProfile.clsid       = CLSID_NULL;
-            engProfile.langid      = LANGID_ENG; // english keyboard
-            engProfile.guidProfile = GUID_NULL;
-            engProfile.desc        = std::string("ENG");
-            m_imeProfiles.push_back(engProfile);
-        }
-
-        void ImeUI::SendResultStringToSkyrim()
+        void ImeUI::SendResultStringToSkyrim() const
         {
             if (!IsEnabled())
             {
@@ -102,10 +98,21 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             log_debug("Ready result string to Skyrim...");
-            auto       *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
-            auto       *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
+            auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
+            auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
+            if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
+            {
+                log_warn("Can't send string to Skyrim may game already close?");
+                return;
+            }
+
             const auto *pFactory =
                 pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
+            if (pFactory == nullptr)
+            {
+                log_warn("Can't send string to Skyrim may game already close?");
+                return;
+            }
 
             // Start send message
             RE::BSFixedString menuName = pInterfaceStrings->topMenu;
@@ -158,6 +165,7 @@ namespace LIBC_NAMESPACE_DECL
         void ImeUI::RenderIme()
         {
             RenderToolWindow();
+
             ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
@@ -167,9 +175,9 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pAppConfig->GetWindowBgColor());
-            ImGui::PushStyleColor(ImGuiCol_Border, m_pAppConfig->GetWindowBordrColor());
-            ImGui::PushStyleColor(ImGuiCol_Text, m_pAppConfig->GetTextColor());
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pUiConfig.WindowBgColor());
+            ImGui::PushStyleColor(ImGuiCol_Border, m_pUiConfig.WindowBorderColor());
+            ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.TextColor());
             ImGui::Begin("SimpleIME", (bool *)nullptr, windowFlags);
 
             ImGui::SameLine();
@@ -179,7 +187,7 @@ namespace LIBC_NAMESPACE_DECL
             // render ime status window: language,
             if (m_imeState.any(ImeState::IN_CANDCHOOSEN))
             {
-                RenderCandWindows();
+                RenderCandidateWindows();
             }
             ImGui::End();
             ImGui::PopStyleColor(3);
@@ -212,10 +220,10 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pAppConfig->GetWindowBgColor());
-            ImGui::PushStyleColor(ImGuiCol_Border, m_pAppConfig->GetWindowBordrColor());
-            ImGui::PushStyleColor(ImGuiCol_Text, m_pAppConfig->GetTextColor());
-            auto btnCol     = m_pAppConfig->GetBtnColor();
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pUiConfig.WindowBgColor());
+            ImGui::PushStyleColor(ImGuiCol_Border, m_pUiConfig.WindowBorderColor());
+            ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.TextColor());
+            auto btnCol     = m_pUiConfig.BtnColor();
             btnCol          = (btnCol & 0x00FFFFFF) | 0x9A000000;
             auto hoveredCol = (btnCol & 0x00FFFFFF) | 0x66000000;
             auto activeCol  = (btnCol & 0x00FFFFFF) | 0xAA000000;
@@ -230,31 +238,53 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PushStyleColor(ImGuiCol_FrameBgActive, activeCol);
 
             ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, toolWindowFlags);
-            auto       &profile        = m_imeProfiles[langProfileSelected];
-            const char *previewImeName = profile.desc.c_str();
+
+            if (!m_errorMessages.empty())
+            {
+                for (const auto &errorMessage : m_errorMessages)
+                {
+                    static ImVec4 redColor = {1.0f, 0.0f, 0.0f, 1.0f};
+                    ImGui::TextColored(redColor, "%s", errorMessage.c_str());
+                }
+            }
+
+            if (!m_pinToolWindow)
+            {
+                ImGui::Text("Drag");
+                ImGui::SameLine();
+            }
             if (ImGui::Button("\xf0\x9f\x93\x8c"))
             {
                 toolWindowFlags |= ImGuiWindowFlags_NoInputs;
                 m_pinToolWindow                = true;
                 ImGui::GetIO().MouseDrawCursor = false;
             }
+
+            auto        activatedGuid     = m_langProfileUtil.GetActivatedLangProfile();
+            auto        installedProfiles = m_langProfileUtil.GetLangProfiles();
+            auto       &profile           = installedProfiles[activatedGuid];
+            const char *previewImeName    = profile.desc.c_str();
             ImGui::SameLine();
             if (ImGui::BeginCombo("###InstalledIME", previewImeName))
             {
-                for (size_t idx = 0; idx < m_imeProfiles.size(); idx++)
+                uint32_t idx = 0;
+                for (const std::pair<GUID, LangProfile> pair : installedProfiles)
                 {
-                    auto       langProfile = m_imeProfiles[idx];
-                    bool const isSelected  = (langProfileSelected == idx);
-                    auto       label       = fmt::format("{}##{}", langProfile.desc, idx);
+                    auto       langProfile = pair.second;
+                    bool const isSelected  = (langProfile.guidProfile == activatedGuid);
+                    auto       label       = std::format("{}##{}", langProfile.desc, idx);
                     if (ImGui::Selectable(label.c_str()))
                     {
-                        langProfileSelected = idx;
-                        LangProfileUtil::ActivateProfile(langProfile);
+                        // SendMessageW()  // wait handle message
+                        // PostMessageW(); // not wait
+                        SendMessageW(m_hWndIme, CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
+                        activatedGuid = m_langProfileUtil.GetActivatedLangProfile();
                     }
                     if (isSelected)
                     {
                         ImGui::SetItemDefaultFocus();
                     }
+                    idx++;
                 }
                 ImGui::EndCombo();
             }
@@ -272,9 +302,9 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PopStyleColor(12);
         }
 
-        void ImeUI::RenderCompWindow(WcharBuf *compStrBuf)
+        void ImeUI::RenderCompWindow(const WcharBuf *compStrBuf) const
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, m_pAppConfig->GetHightlightTextColor());
+            ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
             if (compStrBuf->IsEmpty())
             {
                 ImGui::Dummy({10, ImGui::GetTextLineHeight()});
@@ -287,7 +317,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PopStyleColor(1);
         }
 
-        void ImeUI::RenderCandWindows() const
+        void ImeUI::RenderCandidateWindows() const
         {
             DWORD index = 0;
             for (auto &imeCandidate : m_imeCandidates)
@@ -304,7 +334,7 @@ namespace LIBC_NAMESPACE_DECL
                     std::string const fmt = std::format("{} {}", index + 1, item);
                     if (index == imeCandidate->getDwSelecttion())
                     {
-                        ImGui::PushStyleColor(ImGuiCol_Text, m_pAppConfig->GetHightlightTextColor());
+                        ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
                     }
                     ImGui::Text("%s", fmt.c_str());
                     if (index == imeCandidate->getDwSelecttion())
@@ -319,7 +349,6 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::UpdateLanguage()
         {
-            log_info("Update Input Language...");
             HKL          keyboard_layout = ::GetKeyboardLayout(0);
             LANGID const langId          = LOWORD(HandleToUlong(keyboard_layout));
             WCHAR        localeName[LOCALE_NAME_MAX_LENGTH];
@@ -334,33 +363,15 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeUI::UpdateActiveLangProfile()
+        auto ImeUI::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
         {
-            GUID activeGuid = {};
-            if (LangProfileUtil::LoadActiveIme(activeGuid))
-            {
-                for (size_t idx = 0; idx < m_imeProfiles.size(); idx++)
-                {
-                    if (activeGuid == m_imeProfiles[idx].guidProfile)
-                    {
-                        auto str = m_imeProfiles[idx].desc;
-                        log_debug("Active language profile: {}", str.c_str());
-                        langProfileSelected = idx;
-                        return;
-                    }
-                }
-            }
-        }
-
-        auto ImeUI::ImeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam) -> bool
-        {
-            log_debug("ImeNotify {:#x}", wParam);
+            log_trace("ImeNotify {:#x}", wParam);
             switch (wParam)
             {
                 case IMN_SETCANDIDATEPOS:
                 case IMN_OPENCANDIDATE: {
                     m_imeState.set(ImeState::IN_CANDCHOOSEN);
-                    auto const context = ImmContextGuard(hwnd);
+                    auto const context = ImmContextGuard(hWnd);
                     if (context.get())
                     {
                         OpenCandidate(context.get(), lParam);
@@ -373,29 +384,29 @@ namespace LIBC_NAMESPACE_DECL
                     return true;
                 }
                 case IMN_CHANGECANDIDATE: {
-                    HIMC hIMC = ImmGetContext(hwnd);
+                    HIMC hIMC = ImmGetContext(hWnd);
                     if (hIMC != nullptr)
                     {
                         ChangeCandidate(hIMC, lParam);
-                        ImmReleaseContext(hwnd, hIMC);
+                        ImmReleaseContext(hWnd, hIMC);
                     }
                     return true;
                 }
                 case IMN_SETCONVERSIONMODE: {
-                    HIMC hIMC = ImmGetContext(hwnd);
+                    HIMC hIMC = ImmGetContext(hWnd);
                     if (hIMC != nullptr)
                     {
                         UpdateConversionMode(hIMC);
-                        ImmReleaseContext(hwnd, hIMC);
+                        ImmReleaseContext(hWnd, hIMC);
                     }
                     return true;
                 }
                 case IMN_SETOPENSTATUS: {
-                    HIMC hIMC = ImmGetContext(hwnd);
+                    HIMC hIMC = ImmGetContext(hWnd);
                     if (hIMC != nullptr)
                     {
                         OnSetOpenStatus(hIMC);
-                        ImmReleaseContext(hwnd, hIMC);
+                        ImmReleaseContext(hWnd, hIMC);
                     }
                     return true;
                 }
@@ -403,6 +414,22 @@ namespace LIBC_NAMESPACE_DECL
                     break;
             }
             return false;
+        }
+
+        void ImeUI::ActivateProfile(const GUID *guidProfile)
+        {
+            m_langProfileUtil.ActivateProfile(guidProfile);
+        }
+
+        template <typename... Args>
+        void ImeUI::PushErrorMessage(std::format_string<Args...> fmt, Args &&...args)
+        {
+            if (m_errorMessages.size() >= MAX_ERROR_MESSAGE_COUNT)
+            {
+                auto deleteCount = m_errorMessages.size() - MAX_ERROR_MESSAGE_COUNT + 1;
+                m_errorMessages.erase(m_errorMessages.begin(), m_errorMessages.begin() + deleteCount);
+            }
+            m_errorMessages.push_back(std::format(fmt, std::forward<Args>(args)...));
         }
 
         void ImeUI::UpdateConversionMode(HIMC hIMC)
@@ -434,9 +461,7 @@ namespace LIBC_NAMESPACE_DECL
             else
             {
                 m_imeState.reset(ImeState::OPEN);
-                langProfileSelected = LAST_SIZE(m_imeProfiles);
             }
-            UpdateActiveLangProfile();
         }
 
         // when ImeUi enabled, the Game Input will be block and composition string will be sent
@@ -453,7 +478,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::OpenCandidate(HIMC hIMC, LPARAM candListFlag)
         {
-            for (size_t index = 0; index < CandWindowProp::MAX_COUNT; ++index)
+            for (DWORD index = 0; index < CandWindowProp::MAX_COUNT; ++index)
             {
                 if ((candListFlag & (ONE << index)) == 0U)
                 {

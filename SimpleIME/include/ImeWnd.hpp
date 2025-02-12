@@ -3,18 +3,15 @@
 
 #pragma once
 
+#include "AppConfig.h"
 #include "Configs.h"
 #include "ImeUI.h"
+#include "TsfSupport.h"
 #include <d3d11.h>
 #include <windows.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
-
-constexpr auto WM_CUSTOM = 0x7000;
-#define WM_CUSTOM_CHAR             (WM_CUSTOM + 1)
-#define WM_CUSTOM_IME_CHAR         (WM_CUSTOM_CHAR + 1)
-#define WM_CUSTOM_IME_COMPPOSITION (WM_CUSTOM_IME_CHAR + 1)
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -34,23 +31,37 @@ namespace LIBC_NAMESPACE_DECL
             auto operator=(ImeWnd &&a_imeWnd) -> ImeWnd &      = delete;
             auto operator=(const ImeWnd &a_imeWnd) -> ImeWnd & = delete;
 
-            void Initialize(HWND a_parent, AppConfig*pAppConfig) noexcept(false);
-            void InitImGui(ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/, AppConfig *pAppConfig) const
+            void Initialize() noexcept(false);
+            /**
+             * Work on standalone thread and run own message loop.
+             * Mainly for avoid other plugins that init COM
+             * with COINIT_MULTITHREADED(crash logger) to effect our tsf code.
+             *
+             * @param hWndParent Main window(game window)
+             */
+            void Start(HWND hWndParent);
+            /**
+             * initialize ImGui. Work on UI thread.
+             * @param pAppConfig main config file
+             */
+            void InitImGui(HWND hWnd, ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/) const
                 noexcept(false);
-            void               Focus() const;
-            void               RenderIme();
-            void               ShowToolWindow();
-            void               SetImeOpenStatus(bool open) const;
-            auto               IsDiscardGameInputEvents(__in RE::InputEvent               **/*events*/) -> bool;
+            void Focus() const;
+            void RenderIme();
+            void ShowToolWindow();
+            void SetImeOpenStatus(bool open) const;
+            auto IsDiscardGameInputEvents(__in RE::InputEvent ** /*events*/) -> bool;
 
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-            auto        OnCreate() -> LRESULT;
+            static auto GetThis(HWND hWnd) -> ImeWnd *;
+            auto        OnCreate() const -> LRESULT;
             static auto OnDestroy() -> LRESULT;
-            auto        OnStartComposition() -> LRESULT;
-            auto        OnEndComposition() -> LRESULT;
-            auto        OnComposition(HWND hWnd, LPARAM lParam) -> LRESULT;
+            auto        OnStartComposition() const -> LRESULT;
+            auto        OnEndComposition() const -> LRESULT;
+            auto        OnComposition(HWND hWnd, LPARAM lParam) const -> LRESULT;
 
+            TsfSupport  m_tsfSupport;
             HWND        m_hWnd;
             HWND        m_hWndParent;
             ImeUI      *m_pImeUI;

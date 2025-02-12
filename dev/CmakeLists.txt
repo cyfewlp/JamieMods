@@ -5,6 +5,7 @@ set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(Freetype CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 
 ### BasicTest
 
@@ -16,6 +17,7 @@ target_link_libraries(
 	BasicTest
 	PRIVATE
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
+        yaml-cpp::yaml-cpp
 )
 
 

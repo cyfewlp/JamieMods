@@ -55,13 +55,13 @@ namespace LIBC_NAMESPACE_DECL
                         switch (msg->message)
                         {
                             case WM_IME_COMPOSITION:
-                                msg->message = WM_CUSTOM_IME_COMPPOSITION;
+                                msg->message = CM_IME_COMPOSITION;
                                 break;
                             case WM_IME_CHAR:
-                                msg->message = WM_CUSTOM_IME_CHAR;
+                                msg->message = CM_IME_CHAR;
                                 break;
                             case WM_CHAR:
-                                msg->message = WM_CUSTOM_CHAR;
+                                msg->message = CM_CHAR;
                                 break;
                         }
                         log_debug("Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);

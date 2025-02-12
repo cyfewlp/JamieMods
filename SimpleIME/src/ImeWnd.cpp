@@ -1,7 +1,6 @@
 #include "ImeWnd.hpp"
-#include "Configs.h"
+#include "AppConfig.h"
 #include "ImeUI.h"
-#include "spdlog/common.h"
 #include <basetsd.h>
 #include <cstddef>
 #include <cstdint>
@@ -25,7 +24,7 @@ namespace LIBC_NAMESPACE_DECL
             wc.cbSize        = sizeof(wc);
             wc.style         = CS_PARENTDC;
             wc.cbClsExtra    = 0;
-            wc.lpfnWndProc   = ImeWnd::WndProc;
+            wc.lpfnWndProc   = WndProc;
             wc.cbWndExtra    = 0;
             wc.lpszClassName = g_tMainClassName;
         }
@@ -40,49 +39,75 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeWnd::Initialize(HWND a_parent, AppConfig *pAppConfig) noexcept(false)
+        void ImeWnd::Initialize() noexcept(false)
         {
             wc.hInstance = GetModuleHandle(nullptr);
             if (::RegisterClassExW(&wc) == 0U)
             {
                 throw SimpleIMEException("Can't register class");
             }
-            DWORD const dwExStyle = 0;
-            DWORD const dwStyle   = WS_CHILD;
-            m_hWnd                = ::CreateWindowExW(dwExStyle, g_tMainClassName, L"Hide", //
-                                                      dwStyle, 0, 0, 0, 0,                  // width, height
-                                                      a_parent,                             // a_parent,
-                                                      nullptr, wc.hInstance, (LPVOID)this);
+            auto *pAppConfig = AppConfig::Load();
+            m_pImeUI         = new ImeUI(pAppConfig->GetAppUiConfig());
+            if (!m_tsfSupport.InitializeTsf())
+            {
+                throw SimpleIMEException("Can't initialize TsfSupport");
+            }
+            if (!m_pImeUI->Initialize(m_tsfSupport))
+            {
+                throw SimpleIMEException("Can't initialize ImeUI");
+            }
+        }
+
+        void ImeWnd::Start(HWND hWndParent)
+        {
+            log_info("Start ImeWnd Thread...");
+            DWORD dwExStyle = 0;
+            DWORD dwStyle   = WS_CHILD;
+            m_hWnd          = ::CreateWindowExW(dwExStyle, g_tMainClassName, L"Hide", //
+                                                dwStyle, 0, 0, 0, 0,                  // width, height
+                                                hWndParent,                           // a_parent,
+                                                nullptr, wc.hInstance, (LPVOID)this);
             //
             if (m_hWnd == nullptr)
             {
                 throw SimpleIMEException("Create ImeWnd failed");
             }
-            m_pImeUI = new ImeUI(pAppConfig);
-            m_pImeUI->QueryAllInstalledIME();
-            m_pImeUI->UpdateLanguage();
-            m_pImeUI->UpdateActiveLangProfile();
+
+            // start message loop
+            MSG  msg = {nullptr};
+            BOOL bRet;
+            while ((bRet = GetMessage(&msg, nullptr, 0, 0)) != 0)
+            {
+                if (bRet == -1)
+                {
+                    break;
+                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+                if (msg.message == WM_QUIT)
+                {
+                    break;
+                }
+            }
+            log_info("Exit ImeWnd Thread...");
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
         {
-            auto *pThis = (ImeWnd *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-            if ((nullptr == pThis) && (uMsg != WM_NCCREATE))
-            {
-                return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
-            }
             switch (uMsg)
             {
                 case WM_NCCREATE: {
-                    auto *lpCs = (LPCREATESTRUCT)lParam;
-                    pThis      = static_cast<ImeWnd *>(lpCs->lpCreateParams);
-                    SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pThis);
+                    auto *lpCs  = reinterpret_cast<LPCREATESTRUCT>(lParam);
+                    auto *pThis = static_cast<ImeWnd *>(lpCs->lpCreateParams);
+                    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
                     // set the window handle
                     pThis->m_hWnd       = hWnd;
                     pThis->m_hWndParent = lpCs->hwndParent;
                     break;
                 }
                 case WM_CREATE: {
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
                     HIMC hIMC = ImmCreateContext();
                     ImmAssociateContextEx(hWnd, hIMC, IACE_IGNORENOCONTEXT);
                     return pThis->OnCreate();
@@ -92,30 +117,49 @@ namespace LIBC_NAMESPACE_DECL
                     return OnDestroy();
                 }
                 case WM_INPUTLANGCHANGE: {
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
                     pThis->m_pImeUI->UpdateLanguage();
                     return S_OK;
                 }
                 case WM_IME_NOTIFY: {
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
                     if (pThis->m_pImeUI->ImeNotify(hWnd, wParam, lParam))
                     {
                         return S_OK;
                     }
                     break;
                 }
-                case WM_IME_STARTCOMPOSITION:
+                case WM_IME_STARTCOMPOSITION: {
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
                     return pThis->OnStartComposition();
-                case WM_IME_ENDCOMPOSITION:
+                }
+                case WM_IME_ENDCOMPOSITION: {
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
                     return pThis->OnEndComposition();
-                case WM_CUSTOM_IME_COMPPOSITION:
-                case WM_IME_COMPOSITION:
+                }
+                case CM_IME_COMPOSITION:
+                case WM_IME_COMPOSITION: {
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
                     return pThis->OnComposition(hWnd, lParam);
-                case WM_CUSTOM_CHAR:
+                }
+                case CM_CHAR:
                 case WM_CHAR: {
                     // never received WM_CHAR msg because wo handled WM_IME_COMPOSITION
                     break;
                 }
                 case WM_IME_SETCONTEXT:
                     return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
+                case CM_ACTIVATE_PROFILE: {
+                    const auto pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
+                    pThis->m_pImeUI->ActivateProfile(reinterpret_cast<GUID *>(lParam));
+                    return S_OK;
+                }
                 default:
                     ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
                     break;
@@ -123,14 +167,20 @@ namespace LIBC_NAMESPACE_DECL
             return ::DefWindowProcW(hWnd, uMsg, wParam, lParam);
         }
 
-        void ImeWnd::InitImGui(ID3D11Device *device, ID3D11DeviceContext *context, AppConfig *pAppConfig) const
-            noexcept(false)
+        auto ImeWnd::GetThis(const HWND hWnd) -> ImeWnd *
+        {
+            auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            if (ptr == 0) return nullptr;
+            return reinterpret_cast<ImeWnd *>(ptr);
+        }
+
+        void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
         {
             log_info("Initializing ImGui...");
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
 
-            if (!ImGui_ImplWin32_Init(m_hWndParent))
+            if (!ImGui_ImplWin32_Init(hWnd)) // avoid use member m_hWndParent: async with ImeWnd thread
             {
                 throw SimpleIMEException("ImGui initialization failed (Win32)");
             }
@@ -150,7 +200,8 @@ namespace LIBC_NAMESPACE_DECL
             io.DisplaySize =
                 ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-            io.Fonts->AddFontFromFileTTF(pAppConfig->GetEastAsiaFontFile().data(), pAppConfig->GetFontSize(), nullptr,
+            const auto &uiConfig = AppConfig::Load()->GetAppUiConfig();
+            io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), uiConfig.FontSize(), nullptr,
                                          io.Fonts->GetGlyphRangesChineseFull());
 
             // config font
@@ -159,8 +210,7 @@ namespace LIBC_NAMESPACE_DECL
             cfg.MergeMode                     = true;
             cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
             static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
-            io.Fonts->AddFontFromFileTTF(pAppConfig->GetEmojiFontFile().data(), pAppConfig->GetFontSize(), &cfg,
-                                         icons_ranges);
+            io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), uiConfig.FontSize(), &cfg, icons_ranges);
             io.Fonts->Build();
             ImGuiStyle &style = ImGui::GetStyle();
             if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -172,19 +222,19 @@ namespace LIBC_NAMESPACE_DECL
             log_info("ImGui initialized!");
         }
 
-        auto ImeWnd::OnStartComposition() -> LRESULT
+        auto ImeWnd::OnStartComposition() const -> LRESULT
         {
             m_pImeUI->StartComposition();
             return 0;
         }
 
-        auto ImeWnd::OnEndComposition() -> LRESULT
+        auto ImeWnd::OnEndComposition() const -> LRESULT
         {
             m_pImeUI->EndComposition();
             return 0;
         }
 
-        auto ImeWnd::OnComposition(HWND hWnd, LPARAM lParam) -> LRESULT
+        auto ImeWnd::OnComposition(HWND hWnd, LPARAM lParam) const -> LRESULT
         {
             HIMC hIMC = ImmGetContext(hWnd);
             if (hIMC != nullptr)
@@ -195,8 +245,9 @@ namespace LIBC_NAMESPACE_DECL
             return 0;
         }
 
-        auto ImeWnd::OnCreate() -> LRESULT
+        auto ImeWnd::OnCreate() const -> LRESULT
         {
+            m_pImeUI->SetHWND(m_hWnd);
             return S_OK;
         }
 
@@ -237,15 +288,14 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::SetImeOpenStatus(bool open) const
         {
-            HIMC hIMC = nullptr;
-            if ((hIMC = ImmGetContext(m_hWnd)) != nullptr)
+            if (HIMC hImc; (hImc = ImmGetContext(m_hWnd)) != nullptr)
             {
-                ImmSetOpenStatus(hIMC, static_cast<BOOL>(open));
-                ImmReleaseContext(m_hWnd, hIMC);
+                ImmSetOpenStatus(hImc, static_cast<BOOL>(open));
+                ImmReleaseContext(m_hWnd, hImc);
             }
         }
 
-        static auto IsImeKeyCode(std::uint32_t code) -> bool
+        static auto IsImeKeyCode(const std::uint32_t code) -> bool
         {
             bool result = false;
             result |= code >= DIK_Q && code <= DIK_P;
