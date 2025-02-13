@@ -1,7 +1,7 @@
 EastAsia_Font_File: C:\Windows\Fonts\simsun.ttc
 Emoji_Font_File: C:\Windows\Fonts\seguiemj.ttf
 ## TRACE 0 DEBUG 1 #INFO 2 WARN 3 ERROR 4 CRITICAL 5 OFF 6
-Log_Level:  1
+Log_Level:  2
 ## TRACE 0 DEBUG 1 #INFO 2 WARN 3 ERROR 4 CRITICAL 5 OFF 6
 Flush_Level:  0
 UI:

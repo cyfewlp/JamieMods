@@ -74,6 +74,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // start message loop
+            Focus();
             MSG  msg = {nullptr};
             BOOL bRet;
             while ((bRet = GetMessage(&msg, nullptr, 0, 0)) != 0)
@@ -259,6 +260,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::Focus() const
         {
+            log_debug("focus to ime wnd");
             ::SetFocus(m_hWnd);
         }
 

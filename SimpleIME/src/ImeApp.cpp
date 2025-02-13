@@ -25,9 +25,9 @@ namespace LIBC_NAMESPACE_DECL
     {
         // Delay call focus to avoid other crash when not create ImGui context not yet.
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
-            if (a_msg->type == SKSE::MessagingInterface::kPostPostLoad)
+            if (a_msg->type == SKSE::MessagingInterface::kDataLoaded)
             {
-                SimpleIME::ImeApp::GetImeWnd()->Focus();
+                // SimpleIME::ImeApp::GetImeWnd()->Focus();
             }
         });
     }
