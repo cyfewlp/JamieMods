@@ -1,7 +1,7 @@
 //
 // Created by jamie on 2025/2/7.
 //
-#include "AppConfig.h"
+#include "configs/AppConfig.h"
 #include <SimpleIni.h>
 #include <memory>
 #include <yaml-cpp/yaml.h>

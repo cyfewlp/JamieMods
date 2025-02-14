@@ -1,8 +1,8 @@
 //
 // Created by jamie on 25-1-22.
 //
-#include "AppConfig.h"
-#include "Configs.h"
+#include "configs/AppConfig.h"
+#include "configs/Configs.h"
 #include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
 

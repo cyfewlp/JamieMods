@@ -17,7 +17,7 @@ namespace LIBC_NAMESPACE_DECL
             return strTo;
         }
 
-        static constexpr int CharLength(const LPCWCH lpcWch, UINT codePage = CP_UTF8)
+        static constexpr int RequiredByteLength(const LPCWCH lpcWch, UINT codePage = CP_UTF8)
         {
             return ::WideCharToMultiByte(codePage, 0, lpcWch, -1, nullptr, 0, nullptr, nullptr);
         }

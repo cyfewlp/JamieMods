@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Configs.h"
+#include "configs/Configs.h"
 #include <REL/Relocation.h>
 #include <cstdint>
 #include <windows.h>

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Configs.h"
+#include "configs/Configs.h"
 
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dinput8.lib")

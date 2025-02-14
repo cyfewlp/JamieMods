@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "AppConfig.h"
-#include "Configs.h"
+#include "configs/AppConfig.h"
+#include "configs/Configs.h"
 #include "ImeUI.h"
 #include "TsfSupport.h"
 #include <d3d11.h>

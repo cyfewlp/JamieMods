@@ -3,10 +3,10 @@
 //
 
 #include "ImeUI.h"
-#include "Configs.h"
 #include "LangProfileUtil.h"
 #include "TsfSupport.h"
 #include "WCharUtils.h"
+#include "configs/Configs.h"
 #include "ime_cmodes.h"
 #include "imgui.h"
 #include "imm.h"
@@ -14,8 +14,6 @@
 #include <clocale>
 #include <cstdint>
 #include <tchar.h>
-
-#define LAST_SIZE(vector) ((vector.size()) - 1)
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -75,8 +73,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (spdlog::should_log(spdlog::level::trace))
                 {
-                    auto str = WCharUtils::ToString(m_pCompStr->szStr);
-                    log_debug("IME Composition String: {}", str.c_str());
+                    const auto str = WCharUtils::ToString(m_pCompStr->Data());
+                    log_trace("IME Composition String: {}", str.c_str());
                 }
             }
             if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, m_pCompResult))
@@ -84,7 +82,7 @@ namespace LIBC_NAMESPACE_DECL
                 SendResultStringToSkyrim();
                 if (spdlog::should_log(spdlog::level::trace))
                 {
-                    auto str = WCharUtils::ToString(m_pCompResult->szStr);
+                    const auto str = WCharUtils::ToString(m_pCompResult->Data());
                     log_trace("IME Composition Result String: {}", str.c_str());
                 }
             }
@@ -115,10 +113,12 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // Start send message
-            RE::BSFixedString menuName = pInterfaceStrings->topMenu;
-            for (size_t i = 0; i < m_pCompResult->dwSize; i++)
+            RE::BSFixedString menuName   = pInterfaceStrings->topMenu;
+            auto              stringSize = m_pCompResult->Size();
+            const auto       *pwChar     = m_pCompResult->Data();
+            for (size_t i = 0; i < stringSize; i++)
             {
-                uint32_t const code = m_pCompResult->szStr[i];
+                uint32_t const code = pwChar[i];
                 if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
                 {
                     continue;
@@ -141,16 +141,14 @@ namespace LIBC_NAMESPACE_DECL
         {
             if ((compFlag & flagToCheck) != 0)
             {
-                LONG bufLen = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), (void *)nullptr,
-                                                       static_cast<DWORD>(0));
+                LONG bufLen = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
                 if (bufLen > 0)
                 {
                     if (pWcharBuf->TryReAlloc(bufLen + 2))
                     {
-                        ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf->szStr, bufLen);
-                        DWORD const size       = bufLen / sizeof(WCHAR);
-                        pWcharBuf->szStr[size] = '\0';
-                        pWcharBuf->dwSize      = size;
+                        ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf->Data(), bufLen);
+                        DWORD const size = bufLen / sizeof(WCHAR);
+                        pWcharBuf->SetSize(size);
                         return true;
                     }
                 }
@@ -195,7 +193,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::ShowToolWindow()
         {
-            toolWindowFlags &= ~ImGuiWindowFlags_NoInputs;
+            m_toolWindowFlags &= ~ImGuiWindowFlags_NoInputs;
             if (m_pinToolWindow)
             {
                 m_pinToolWindow                = false;
@@ -237,7 +235,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, hoveredCol);
             ImGui::PushStyleColor(ImGuiCol_FrameBgActive, activeCol);
 
-            ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, toolWindowFlags);
+            ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, m_toolWindowFlags);
 
             if (!m_errorMessages.empty())
             {
@@ -255,7 +253,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             if (ImGui::Button("\xf0\x9f\x93\x8c"))
             {
-                toolWindowFlags |= ImGuiWindowFlags_NoInputs;
+                m_toolWindowFlags |= ImGuiWindowFlags_NoInputs;
                 m_pinToolWindow                = true;
                 ImGui::GetIO().MouseDrawCursor = false;
             }
@@ -311,7 +309,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                auto str = WCharUtils::ToString(compStrBuf->szStr);
+                auto str = WCharUtils::ToString(compStrBuf->Data());
                 ImGui::Text("%s", str.c_str());
             }
             ImGui::PopStyleColor(1);
@@ -327,17 +325,17 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     continue;
                 }
-                auto candList = imeCandidate->getCandList();
+                auto candList = imeCandidate->CandidateList();
                 index         = 0;
                 for (const auto &item : candList)
                 {
                     std::string const fmt = std::format("{} {}", index + 1, item);
-                    if (index == imeCandidate->getDwSelecttion())
+                    if (index == imeCandidate->Selection())
                     {
                         ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
                     }
                     ImGui::Text("%s", fmt.c_str());
-                    if (index == imeCandidate->getDwSelecttion())
+                    if (index == imeCandidate->Selection())
                     {
                         ImGui::PopStyleColor();
                     }
@@ -357,15 +355,15 @@ namespace LIBC_NAMESPACE_DECL
             // Retrieve keyboard code page, required for handling of non-Unicode Windows.
             LCID const keyboard_lcid = MAKELCID(HIWORD(keyboard_layout), SORT_DEFAULT);
             if (::GetLocaleInfoA(keyboard_lcid, (LOCALE_RETURN_NUMBER | LOCALE_IDEFAULTANSICODEPAGE),
-                                 reinterpret_cast<LPSTR>(&keyboardCodePage), sizeof(keyboardCodePage)) == 0)
+                                 reinterpret_cast<LPSTR>(&m_keyboardCodePage), sizeof(m_keyboardCodePage)) == 0)
             {
-                keyboardCodePage = CP_ACP; // Fallback to default ANSI code page when fails.
+                m_keyboardCodePage = CP_ACP; // Fallback to default ANSI code page when fails.
             }
         }
 
         auto ImeUI::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
         {
-            log_trace("ImeNotify {:#x}", wParam);
+            log_trace("ImeNotify {:#x}, {:#x}", wParam, lParam);
             switch (wParam)
             {
                 case IMN_SETCANDIDATEPOS:
@@ -558,64 +556,24 @@ namespace LIBC_NAMESPACE_DECL
             GlobalFree(hGlobal);
         }
 
-        ImeUI::WcharBuf::WcharBuf(HANDLE heap, DWORD initSize)
-            : szStr((LPWSTR)HeapAlloc(heap, HEAP_GENERATE_EXCEPTIONS, initSize)), dwCapacity(initSize), dwSize(0),
-              m_heap(heap)
-        {
-
-            szStr[0] = '\0'; // should pass because HeapAlloc use HEAP_GENERATE_EXCEPTIONS
-        }
-
-        ImeUI::WcharBuf::~WcharBuf()
-        {
-            // HeapFree(m_heap, 0, szStr;
-        }
-
-        auto ImeUI::WcharBuf::TryReAlloc(DWORD bufLen) -> bool
-        {
-            if (bufLen > dwCapacity)
-            {
-                LPVOID hMem = static_cast<LPWSTR>(HeapReAlloc(m_heap, 0, szStr, bufLen));
-                if (hMem == nullptr)
-                {
-                    log_error("Try re-alloc to {} failed", bufLen);
-                    return false;
-                }
-                dwCapacity = bufLen;
-                szStr      = static_cast<LPWSTR>(hMem);
-            }
-            return true;
-        }
-
-        void ImeUI::WcharBuf::Clear()
-        {
-            szStr[0] = '\0';
-            dwSize   = 0;
-        }
-
-        auto ImeUI::WcharBuf::IsEmpty() const -> bool
-        {
-            return dwSize == 0;
-        }
-
         void ImeCandidateList::Flush(LPCANDIDATELIST lpCandList)
         {
-            setPageSize(lpCandList->dwPageSize);
+            SetPageSize(lpCandList->dwPageSize);
             DWORD dwStartIndex = lpCandList->dwPageStart;
-            DWORD dwEndIndex   = dwStartIndex + dwPageSize;
+            DWORD dwEndIndex   = dwStartIndex + m_dwPageSize;
             dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
-            candList.clear();
-            auto pCandidates = reinterpret_cast<std::uintptr_t>(lpCandList);
+            m_candidateList.clear();
+            auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);
             for (; dwStartIndex < dwEndIndex; dwStartIndex++)
             {
-                auto        address         = pCandidates + lpCandList->dwOffset[dwStartIndex];
-                auto        candidate       = std::wstring_view(reinterpret_cast<WCHAR *>(address));
-                auto        AnsiSizeInBytes = WCharUtils::CharLength(candidate.data());
-                std::string ansiStr(AnsiSizeInBytes, 0);
-                WCharUtils::ToString(candidate.data(), ansiStr.data(), AnsiSizeInBytes);
-                candList.push_back(ansiStr);
+                auto        pcCandidate  = lpCandListByte + lpCandList->dwOffset[dwStartIndex];
+                auto       *pwcCandidate = reinterpret_cast<LPWCH>(pcCandidate);
+                auto        sizeInBytes  = WCharUtils::RequiredByteLength(pwcCandidate);
+                std::string ansiStr(sizeInBytes, 0);
+                WCharUtils::ToString(pwcCandidate, ansiStr.data(), sizeInBytes);
+                m_candidateList.push_back(ansiStr);
             }
-            dwSelecttion = lpCandList->dwSelection % dwPageSize;
+            m_dwSelection = lpCandList->dwSelection % m_dwPageSize;
         }
     } // namespace  SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

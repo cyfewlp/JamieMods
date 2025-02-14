@@ -34,11 +34,15 @@ find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 add_executable(
   ${TEST_PROJ_NAME}
   src/AppConfig.cpp
-  include/AppConfig.h
+  src/WcharBuf.cpp
   "test/AppConfigTest.cpp"
+  "test/WcharBufTest.cpp"
 )
+#target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
+
 target_link_libraries(
   ${TEST_PROJ_NAME}
+  PRIVATE
   GTest::gtest_main
   spdlog::spdlog
 )
@@ -63,33 +67,36 @@ add_custom_command(
 # Plugin Config
 
 set(headers
-        include/Hooks.hpp
-        include/LangProfileUtil.h
-        include/AppConfig.h
-        include/Configs.h
-        include/ImeApp.h
-        include/ImeUI.h
-        include/ImeWnd.hpp
-        include/FakeDirectInputDevice.h
-        include/configs/converter.h
-        src/tsf/TsfSupport.h
+    include/Hooks.hpp
+    include/LangProfileUtil.h
+    include/configs/AppConfig.h
+    include/configs/Configs.h
+    include/configs/converter.h
+    include/ImeApp.h
+    include/ImeUI.h
+    include/ImeWnd.hpp
+    include/FakeDirectInputDevice.h
+    include/WcharBuf.h
+    src/tsf/TsfSupport.h
 )
 
 set(sources
-        src/plugin.cpp
-        src/ImeApp.cpp
-        src/ImeUI.cpp
-        src/ImeWnd.cpp
-        src/Hooks.cpp
-        src/AppConfig.cpp
-        src/LangProfileUtil.cpp
-        src/tsf/TsfSupport.cpp
+    src/plugin.cpp
+    src/ImeApp.cpp
+    src/ImeUI.cpp
+    src/ImeWnd.cpp
+    src/Hooks.cpp
+    src/AppConfig.cpp
+    src/LangProfileUtil.cpp
+    src/WcharBuf.cpp
+    src/tsf/TsfSupport.cpp
 )
 
 source_group(
-        TREE ${CMAKE_CURRENT_SOURCE_DIR}
-        FILES
-        ${sources} ${headers})
+    TREE ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES
+    ${sources} ${headers}
+)
 
 ## Set Output folder
 

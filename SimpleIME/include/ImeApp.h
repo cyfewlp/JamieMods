@@ -6,7 +6,7 @@
 //
 #pragma once
 
-#include "Configs.h"
+#include "configs/Configs.h"
 #include "ImeWnd.hpp"
 #include "d3d11.h"
 #include <RE/B/BSTEvent.h>

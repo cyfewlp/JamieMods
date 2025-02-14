@@ -2,7 +2,7 @@
 #define TSF_SUPPORT_H
 #pragma once
 
-#include "Configs.h"
+#include "configs/Configs.h"
 #include <atlcomcli.h>
 #include <msctf.h>
 

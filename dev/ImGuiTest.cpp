@@ -165,7 +165,7 @@ int main(int, char **)
     ImGui::GetPlatformIO().Platform_SetImeDataFn = MyPlatform_SetImeDataFn_DefaultImpl;
 
     // Main loop
-    DisableIME();
+    //DisableIME();
     bool                           done = false;
     std::unordered_map<BYTE, bool> keyStateMap;
     while (!done)

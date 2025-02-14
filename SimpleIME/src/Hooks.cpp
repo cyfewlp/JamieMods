@@ -1,5 +1,5 @@
 #include "Hooks.hpp"
-#include "Configs.h"
+#include "configs/Configs.h"
 #include "ImeWnd.hpp"
 #include "detours/detours.h"
 #include <errhandlingapi.h>

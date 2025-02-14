@@ -170,12 +170,14 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             spdlog::info("WM_CHAR: {:#x}", wParam);
             break;
         case WM_IME_NOTIFY: {
+            spdlog::info("WM_IME_NOTIFY: {:#x}", wParam);
             switch (wParam)
             {
                 case IMN_OPENCANDIDATE:
                 case IMN_CHANGECANDIDATE:
                 case IMN_SETCANDIDATEPOS:
                 case IMN_CLOSECANDIDATE:
+                case 0xF:
                     HIMC hIMC;
                     hIMC         = ImmGetContext(hWnd);
                     DWORD bufLen = ImmGetCandidateListA(hIMC, 0, nullptr, 0);
@@ -186,7 +188,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             return S_OK;
         }
         case WM_IME_SETCONTEXT:
-            DisableIME();
             return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
         default:
             break;

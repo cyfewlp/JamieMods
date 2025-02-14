@@ -1,8 +1,8 @@
 
 #include "ImeApp.h"
-#include "AppConfig.h"
 #include "Hooks.hpp"
 #include "ImeWnd.hpp"
+#include "configs/AppConfig.h"
 #include "gsl/gsl"
 #include "imgui.h"
 #include <basetsd.h>

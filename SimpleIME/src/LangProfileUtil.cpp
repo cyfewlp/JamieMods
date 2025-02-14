@@ -1,9 +1,8 @@
 ﻿#include "LangProfileUtil.h"
-#include "Configs.h"
 #include "TsfSupport.h"
 #include "WCharUtils.h"
+#include "configs/Configs.h"
 #include <atlcomcli.h>
-#include <cstddef>
 #include <future>
 #include <msctf.h>
 #include <stdexcept>
@@ -182,9 +181,12 @@ ULONG PLUGIN_NAMESPACE::LangProfileUtil::Release()
     return refCount_;
 }
 
-HRESULT PLUGIN_NAMESPACE::LangProfileUtil::OnActivated(DWORD dwProfileType, LANGID langid, const IID &clsid,
-                                                       const GUID &catid, const GUID &guidProfile, HKL hkl,
-                                                       DWORD dwFlags)
+HRESULT PLUGIN_NAMESPACE::LangProfileUtil::OnActivated([[maybe_unused]] DWORD       dwProfileType,
+                                                       [[maybe_unused]] LANGID      langid,
+                                                       [[maybe_unused]] const IID  &clsid,
+                                                       [[maybe_unused]] const GUID &catid,
+                                                       [[maybe_unused]] const GUID &guidProfile,
+                                                       [[maybe_unused]] HKL hkl, DWORD dwFlags)
 {
     if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
     {

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Configs.h"
+#include "configs/Configs.h"
 #include "TsfSupport.h"
 #include <msctf.h>
 #include <unordered_map>

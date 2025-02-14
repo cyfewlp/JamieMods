@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Configs.h>
+#include <configs/Configs.h>
 #include <concepts>
 
 namespace LIBC_NAMESPACE_DECL

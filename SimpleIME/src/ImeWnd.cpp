@@ -1,6 +1,6 @@
 #include "ImeWnd.hpp"
-#include "AppConfig.h"
 #include "ImeUI.h"
+#include "configs/AppConfig.h"
 #include <basetsd.h>
 #include <cstddef>
 #include <cstdint>

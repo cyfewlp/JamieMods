@@ -3,11 +3,12 @@
 
 #pragma once
 
-#include "AppConfig.h"
-#include "Configs.h"
 #include "LangProfileUtil.h"
 #include "TsfSupport.h"
+#include "configs/AppConfig.h"
+#include "configs/Configs.h"
 #include "enumeration.h"
+#include "WcharBuf.h"
 #include "imgui.h"
 #include <RE/G/GFxEvent.h>
 #include <array>
@@ -87,19 +88,19 @@ namespace LIBC_NAMESPACE_DECL
         public:
             ImeCandidateList() = default;
 
-            void setPageSize(DWORD a_dwPageSize)
+            void SetPageSize(const DWORD dwPageSize)
             {
-                dwPageSize = (a_dwPageSize == 0U) ? CandWindowProp::DEFAULT_PAGE_SIZE : a_dwPageSize;
+                m_dwPageSize = (dwPageSize == 0U) ? CandWindowProp::DEFAULT_PAGE_SIZE : dwPageSize;
             }
 
-            [[nodiscard]] constexpr auto getDwSelecttion() const -> DWORD
+            [[nodiscard]] constexpr auto Selection() const -> DWORD
             {
-                return dwSelecttion;
+                return m_dwSelection;
             }
 
-            [[nodiscard]] constexpr auto getCandList() const -> std::vector<std::string>
+            [[nodiscard]] constexpr auto CandidateList() const -> std::vector<std::string>
             {
-                return candList;
+                return m_candidateList;
             }
 
             // use provided lpCandList flush candidate cache
@@ -107,9 +108,9 @@ namespace LIBC_NAMESPACE_DECL
             void Flush(LPCANDIDATELIST lpCandList);
 
         private:
-            DWORD                    dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
-            DWORD                    dwSelecttion{0};
-            std::vector<std::string> candList;
+            DWORD                    m_dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
+            DWORD                    m_dwSelection{0};
+            std::vector<std::string> m_candidateList;
         } __attribute__((packed)) __attribute__((aligned(64)));
 
         enum class ImeState : std::uint16_t
@@ -123,43 +124,27 @@ namespace LIBC_NAMESPACE_DECL
 
         class ImeUI
         {
-            class WcharBuf
-            {
-            public:
-                LPWSTR szStr;
-                DWORD  dwCapacity;
-                DWORD  dwSize;
-                HANDLE m_heap;
-
-                WcharBuf(HANDLE heap, DWORD initSize);
-                ~WcharBuf();
-                auto               TryReAlloc(DWORD bufLen) -> bool;
-                void               Clear();
-                [[nodiscard]] auto IsEmpty() const -> bool;
-            };
-
         public:
-            explicit ImeUI(const AppUiConfig& uiConfig);
+            explicit ImeUI(const AppUiConfig &uiConfig);
             ~ImeUI();
+            ImeUI(const ImeUI &other)                = delete;
+            ImeUI(ImeUI &&other) noexcept            = delete;
+            ImeUI &operator=(const ImeUI &other)     = delete;
+            ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
-            ImeUI(ImeUI &&a_ImeUI)                          = delete;
-            ImeUI(const ImeUI &a_ImeUI)                     = delete;
-            auto operator=(ImeUI &&a_ImeUI) -> ImeUI &      = delete;
-            auto operator=(const ImeUI &a_ImeUI) -> ImeUI & = delete;
+            bool   Initialize(TsfSupport &tsfSupport);
+            void   SetHWND(const HWND hWnd);
 
-            bool Initialize(TsfSupport &tsfSupport);
-            void SetHWND(const HWND hWnd);
+            void   StartComposition();
+            void   EndComposition();
+            void   CompositionString(HIMC hIMC, LPARAM compFlag) const;
+            void   UpdateLanguage();
+            void   OnSetOpenStatus(HIMC hIMC);
+            void   UpdateConversionMode(HIMC hIMC);
+            auto   ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
+            void   ActivateProfile(const GUID *guidProfile);
 
-            void StartComposition();
-            void EndComposition();
-            void CompositionString(HIMC hIMC, LPARAM compFlag) const;
-            void UpdateLanguage();
-            void OnSetOpenStatus(HIMC hIMC);
-            void UpdateConversionMode(HIMC hIMC);
-            auto ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
-            void ActivateProfile(const GUID *guidProfile);
-
-            auto IsEnabled() const -> bool;
+            auto   IsEnabled() const -> bool;
             // Render To ImGui
             void RenderIme();
             void ShowToolWindow();
@@ -193,15 +178,15 @@ namespace LIBC_NAMESPACE_DECL
             HWND                     m_hWndIme;
             WcharBuf                *m_pCompStr;
             WcharBuf                *m_pCompResult;
-            UINT32                   keyboardCodePage{CP_ACP};
+            UINT32                   m_keyboardCodePage{CP_ACP};
             AppUiConfig              m_pUiConfig;
 
             Enumeration<ImeState>    m_imeState;
             LangProfileUtil          m_langProfileUtil;
             bool                     m_showToolWindow = false;
             std::vector<std::string> m_errorMessages;
-            int  toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
-            bool m_pinToolWindow = false;
+            int  m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
+            bool m_pinToolWindow   = false;
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

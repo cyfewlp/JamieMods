@@ -1,5 +1,5 @@
-#include "AppConfig.h"
-#include "Configs.h"
+#include "configs/AppConfig.h"
+#include "configs/Configs.h"
 #include "configs/converter.h"
 
 #include <SimpleIni.h>
