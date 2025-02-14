@@ -2,38 +2,9 @@
 // Created by jamie on 2025/2/7.
 //
 #include "AppConfig.h"
+#include <SimpleIni.h>
 #include <memory>
 #include <yaml-cpp/yaml.h>
-
-constexpr std::string PLUGIN_NAMESPACE::ConvertCamelCaseToUnderscore(const std::string &input)
-{
-    if (input.empty())
-    {
-        return {};
-    }
-
-    std::string output;
-    output.reserve(input.size() * 2);
-
-    char first = input[0];
-    if (!std::isupper(static_cast<unsigned char>(first)))
-    {
-        first = static_cast<char>(std::toupper(static_cast<unsigned char>(first)));
-    }
-    output.push_back(first);
-
-    for (size_t i = 1; i < input.size(); ++i)
-    {
-        char c = input[i];
-        if (std::isupper(static_cast<unsigned char>(c)))
-        {
-            output.push_back('_');
-        }
-        output.push_back(c);
-    }
-
-    return output;
-}
 
 namespace PLUGIN_NAMESPACE
 {
@@ -47,82 +18,43 @@ namespace PLUGIN_NAMESPACE
             property.SetValue(node[property.ConfigName()].template as<Type>());
         }
     }
-
-    template <typename Type>
-    constexpr Property<Type>::Property(Type value, const std::string &varName)
-        : value_(std::move(value)), varName_(varName)
-    {
-        configName_ = ConvertCamelCaseToUnderscore(varName);
-    }
 }
 
-PLUGIN_NAMESPACE::AppConfig *PLUGIN_NAMESPACE::AppConfig::Load()
+void PLUGIN_NAMESPACE::AppConfig::LoadIni(const char *configFilePath)
 {
     if (appConfig_ == nullptr)
     {
         appConfig_ = std::make_unique<AppConfig>();
-        LoadConfig();
+        LoadIniConfig(configFilePath);
     }
+}
+
+PLUGIN_NAMESPACE::AppConfig *PLUGIN_NAMESPACE::AppConfig::GetConfig()
+{
     return appConfig_.get();
 }
 
-void PLUGIN_NAMESPACE::AppConfig::LoadConfig()
+void PLUGIN_NAMESPACE::AppConfig::LoadIniConfig(const char *configFilePath)
 {
-    try
+    CSimpleIniA ini;
+    if (const SI_Error error = ini.LoadFile(configFilePath); error != SI_OK)
     {
-        YAML::Node config = YAML::LoadFile(R"(Data\SKSE\Plugins\SimpleIME.yml)");
-        DoLoadConfig(config);
-    }
-    catch (YAML::Exception &exception)
-    {
-        const auto errorMsg = std::format("Load config failed: {}", exception.what());
-        SKSE::stl::report_and_fail(errorMsg);
-    }
-}
-
-void PLUGIN_NAMESPACE::AppConfig::DoLoadConfig(YAML::Node &config) noexcept(false)
-{
-    GetValue(config, appConfig_->logLevel_);
-    GetValue(config, appConfig_->flushLevel_);
-    GetValue(config, appConfig_->toolWindowShortcutKey);
-
-    AppUiConfig appUiConfig  = {};
-    appConfig_->appUiConfig_ = appUiConfig;
-    const auto &uiNode       = config["UI"];
-    if (!uiNode)
-    {
+        log_error("Load config file failed. May config file {} missing", configFilePath);
         return;
     }
-    GetValue(uiNode, appUiConfig.eastAsiaFontFile_);
-    GetValue(uiNode, appUiConfig.emojiFontFile_);
-    GetValue(uiNode, appUiConfig.textColor_);
-    GetValue(uiNode, appUiConfig.highlightTextColor_);
-    GetValue(uiNode, appUiConfig.windowBorderColor_);
-    GetValue(uiNode, appUiConfig.windowBgColor_);
-    GetValue(uiNode, appUiConfig.btnColor_);
-    GetValue(uiNode, appUiConfig.fontSize_);
-}
+    GetSimpleIniValue(ini, "General", appConfig_->logLevel_);
+    GetSimpleIniValue(ini, "General", appConfig_->flushLevel_);
+    GetSimpleIniValue(ini, "General", appConfig_->toolWindowShortcutKey_);
 
-uint32_t LIBC_NAMESPACE::SimpleIME::AppConfig::HexStringToUInt32(const std::string &hexStr, uint32_t aDefault)
-{
-    try
-    {
-        size_t start = (hexStr.find("0x") == 0 || hexStr.find("0X") == 0) ? 2 : 0;
-        return static_cast<uint32_t>(std::stoul(hexStr.substr(start), nullptr, 16));
-    }
-    catch (const std::exception &e)
-    {
-        log_error("Error: {},not a hex string: {}", e.what(), hexStr.c_str());
-    }
-    return aDefault;
-}
-
-auto LIBC_NAMESPACE::SimpleIME::AppConfig::parseLogLevel(int32_t intLevel) -> spdlog::level::level_enum
-{
-    if (intLevel < 0 || intLevel >= static_cast<int>(spdlog::level::n_levels))
-    {
-        log_error("Invalid spdlog level {}, downgrade to default: info", intLevel);
-        return spdlog::level::info;
-    }
-    return static_cast<spdlog::level::level_enum>(intLevel);
+    // load ui configs
+    AppUiConfig appUiConfig = {};
+    GetSimpleIniValue(ini, "UI", appUiConfig.textColor_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.highlightTextColor_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.windowBgColor_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.windowBorderColor_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.btnColor_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
+    GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
+    appConfig_->appUiConfig_ = appUiConfig;
 }

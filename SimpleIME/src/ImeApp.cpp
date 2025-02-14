@@ -195,7 +195,7 @@ namespace LIBC_NAMESPACE_DECL
                     switch (head->GetDevice())
                     {
                         case RE::INPUT_DEVICE::kKeyboard: {
-                            if (pButtonEvent->GetIDCode() == AppConfig::Load()->GetToolWindowShortcutKey() &&
+                            if (pButtonEvent->GetIDCode() == AppConfig::GetConfig()->GetToolWindowShortcutKey() &&
                                 pButtonEvent->IsDown())
                             {
                                 g_pImeWnd->ShowToolWindow();

@@ -17,7 +17,7 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace SimpleIME
     {
-        ImeWnd::ImeWnd() : m_hWnd(nullptr), m_hWndParent(nullptr), m_pImeUI(nullptr)
+        ImeWnd::ImeWnd() : m_tsfSupport(), m_hWnd(nullptr), m_hWndParent(nullptr), m_pImeUI(nullptr)
         {
             wc = {};
             ZeroMemory(&wc, sizeof(wc));
@@ -46,7 +46,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 throw SimpleIMEException("Can't register class");
             }
-            auto *pAppConfig = AppConfig::Load();
+            auto *pAppConfig = AppConfig::GetConfig();
             m_pImeUI         = new ImeUI(pAppConfig->GetAppUiConfig());
             if (!m_tsfSupport.InitializeTsf())
             {
@@ -201,7 +201,7 @@ namespace LIBC_NAMESPACE_DECL
             io.DisplaySize =
                 ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-            const auto &uiConfig = AppConfig::Load()->GetAppUiConfig();
+            const auto &uiConfig = AppConfig::GetConfig()->GetAppUiConfig();
             io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), uiConfig.FontSize(), nullptr,
                                          io.Fonts->GetGlyphRangesChineseFull());
 

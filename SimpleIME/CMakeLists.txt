@@ -15,6 +15,52 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
+set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
+##
+#  Test Config
+
+enable_testing()
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
+add_executable(
+  ${TEST_PROJ_NAME}
+  src/AppConfig.cpp
+  include/AppConfig.h
+  "test/AppConfigTest.cpp"
+)
+target_link_libraries(
+  ${TEST_PROJ_NAME}
+  GTest::gtest_main
+  spdlog::spdlog
+)
+target_include_directories(
+  ${TEST_PROJ_NAME}
+  PRIVATE
+  ${UTILS_INCLUDE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${SIMPLEINI_INCLUDE_DIRS}
+)
+
+include(GoogleTest)
+gtest_discover_tests(${TEST_PROJ_NAME})
+
+add_custom_command(
+    TARGET "${TEST_PROJ_NAME}"
+    PRE_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/test/resources" "$<TARGET_FILE_DIR:${TEST_PROJ_NAME}>/"
+    VERBATIM
+)
+##
+# Plugin Config
 
 set(headers
         include/Hooks.hpp
@@ -25,6 +71,7 @@ set(headers
         include/ImeUI.h
         include/ImeWnd.hpp
         include/FakeDirectInputDevice.h
+        include/configs/converter.h
         src/tsf/TsfSupport.h
 )
 
@@ -56,7 +103,6 @@ find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(CommonLibSSE CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
     ${sources}
@@ -86,13 +132,12 @@ target_link_libraries(
         imgui
         ${DETOURS_LIBRARY}
         Microsoft.GSL::GSL
-        yaml-cpp::yaml-cpp
 )
 
 ## Install config
 
 set(CPACK_GENERATOR "7Z")
-set(CPACK_PACKAGE_NAME "SimpleIME")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_BUILD_TYPE}")
 include(CPack)
@@ -102,7 +147,7 @@ install(TARGETS ${PROJECT_NAME}
         COMPONENT dll
 )
 install(FILES
-        ${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SimpleIME.yml
+        ${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.ini
         DESTINATION SKSE/Plugins
         COMPONENT configuration
 )
@@ -146,7 +191,7 @@ if (DEFINED OUTPUT_FOLDER)
             POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.yml" "${DLL_FOLDER}/${PROJECT_NAME}.yml"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
             VERBATIM
     )
 

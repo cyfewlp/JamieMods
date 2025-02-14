@@ -53,6 +53,13 @@ cd build\debug-clangcl-ninjia-vcpkg
 cpack
 ```
 
+## Test
+
+```shell
+cmake --build build\debug-clangcl-ninjia-vcpkg --target SimpleIMETest
+cd build\debug-clangcl-ninjia-vcpkg\SimpleIME && ctest
+```
+
 # Project setup
 
 By default, when this project compiles it will output a `.dll` for your SKSE plugin into the `build/` folder.

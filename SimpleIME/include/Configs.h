@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <dinput.h>
+#include <source_location>
 #include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 
@@ -29,32 +30,31 @@ namespace LIBC_NAMESPACE_DECL
 
     struct format_string_loc
     {
-    public:
-        constexpr format_string_loc(const char                *a_fmt,
-                                    const std::source_location location = std::source_location::current()) noexcept
-            : value{a_fmt}, loc(spdlog::source_loc{location.file_name(), static_cast<std::int32_t>(location.line()),
-                                                   location.function_name()})
+        constexpr format_string_loc(const char                 *pccFmt,
+                                    const std::source_location &location = std::source_location::current()) noexcept
+            : value_{pccFmt}, loc_(spdlog::source_loc{location.file_name(), static_cast<std::int32_t>(location.line()),
+                                                      location.function_name()})
         {
         }
 
         [[nodiscard]] constexpr auto GetValue() const noexcept -> const std::string_view &
         {
-            return value;
+            return value_;
         }
 
         [[nodiscard]] constexpr auto GetLoc() const noexcept -> const spdlog::source_loc &
         {
-            return loc;
+            return loc_;
         }
 
     private:
-        std::string_view   value;
-        spdlog::source_loc loc;
+        std::string_view   value_;
+        spdlog::source_loc loc_;
     };
 
-    template <typename enum_t, typename... Args>
-    static constexpr auto logd(enum_t level, const format_string_loc &fsl, Args &&...args) noexcept
-        requires(std::same_as<enum_t, spdlog::level::level_enum>)
+    template <typename EnumType, typename... Args>
+    static constexpr auto logd(EnumType level, const format_string_loc &fsl, Args &&...args) noexcept
+        requires(std::same_as<EnumType, spdlog::level::level_enum>)
     {
         auto fmt = std::vformat(fsl.GetValue(), std::make_format_args(args...));
         spdlog::log(fsl.GetLoc(), level, fmt.c_str());
@@ -64,6 +64,12 @@ namespace LIBC_NAMESPACE_DECL
     static constexpr auto log_error(const format_string_loc fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::err, fsl, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    static constexpr auto log_critical(const format_string_loc fsl, Args &&...args) noexcept
+    {
+        logd(spdlog::level::critical, fsl, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -90,10 +96,13 @@ namespace LIBC_NAMESPACE_DECL
         logd(spdlog::level::trace, fsl, std::forward<Args>(args)...);
     }
 
+    void InitializeLogging(spdlog::level::level_enum logLevel, spdlog::level::level_enum flushLevel);
+
     bool PluginInit();
 
     void InitializeMessaging();
 
+    int  ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *);
 
 } // namespace LIBC_NAMESPACE_DECL
 
