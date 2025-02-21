@@ -15,42 +15,49 @@ namespace LIBC_NAMESPACE::Tsf
         m_adviseSinkCache.Clear();
     }
 
-    auto TextStore::Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, TfClientId tfClientId) -> HRESULT
+    auto TextStore::InitSinks() -> HRESULT
     {
-        _ATL_COM_BEGIN
-        log_debug("Initializing TextStore...");
-        HRESULT hresult = lpThreadMgr.QueryInterface(&m_threadMgr);
-        ATLENSURE_SUCCEEDED(hresult);
+        IUnknown            *pUnknownThis = reinterpret_cast<IUnknown *>(this);
+        CComQIPtr<ITfSource> pSource(m_uiElementMgr);
+        HRESULT              hresult = S_OK;
+        if (pSource != nullptr)
+        {
+            hresult = pSource->AdviseSink(IID_ITfUIElementSink, pUnknownThis, &m_uiElementCookie);
+            if (SUCCEEDED(hresult) && m_uiElementCookie != TF_INVALID_COOKIE)
+            {
+                pSource.Release();
+                if (hresult = m_context.QueryInterface(&pSource); SUCCEEDED(hresult))
+                {
+                    return pSource->AdviseSink(IID_ITfTextEditSink, pUnknownThis, &m_textEditCookie);
+                }
+            }
+        }
+        return E_FAIL;
+    }
 
-        hresult = m_threadMgr->CreateDocumentMgr(&m_documentMgr);
-        ATLENSURE_SUCCEEDED(hresult);
+    auto TextStore::Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT
+    {
+        HRESULT __hrAtlComMethod = S_OK;
+        try
+        {
+            log_debug("Initializing TextStore...");
+            ATLENSURE_SUCCEEDED(lpThreadMgr.QueryInterface(&m_threadMgr));
+            ATLENSURE_SUCCEEDED(m_threadMgr->CreateDocumentMgr(&m_documentMgr));
 
-        hresult = m_documentMgr->CreateContext(tfClientId, 0, static_cast<ITextStoreACP *>(this), //
-                                               &m_context, &m_editCookie);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        hresult = m_documentMgr->Push(m_context);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        hresult = m_threadMgr.QueryInterface(&m_uiElementMgr);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        CComPtr<ITfSource> pSource;
-        hresult = m_uiElementMgr.QueryInterface(&pSource);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        hresult = pSource->AdviseSink(IID_ITfUIElementSink, static_cast<ITfUIElementSink *>(this), &m_uiElementCookie);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        pSource.Release();
-        hresult = m_context.QueryInterface(&pSource);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        hresult = pSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink *>(this), &m_textEditCookie);
-        ATLENSURE_SUCCEEDED(hresult);
-
-        return S_OK;
-        _ATL_COM_END
+            __hrAtlComMethod = m_documentMgr->CreateContext(tfClientId, 0, static_cast<ITextStoreACP *>(this), //
+                                                            &m_context, &m_editCookie);
+            ATLENSURE_SUCCEEDED(__hrAtlComMethod);
+            ATLENSURE_SUCCEEDED(m_documentMgr->Push(m_context));
+            ATLENSURE_SUCCEEDED(m_threadMgr.QueryInterface(&m_uiElementMgr));
+            ATLENSURE_SUCCEEDED(InitSinks());
+            return S_OK;
+        }
+        _AFX_COM_END_PART catch (...)
+        {
+            __hrAtlComMethod = E_FAIL;
+        }
+        log_error("Failed initialize TextStore: {}", ToErrorMessage(__hrAtlComMethod));
+        return __hrAtlComMethod;
     }
 
     auto TextStore::SetHWND(HWND hWnd) -> bool
@@ -673,14 +680,14 @@ namespace LIBC_NAMESPACE::Tsf
                 break;
             }
         }
-        m_pInputMethod->SetState(Ime::InputMethod::State::IN_COMPOSITION);
+        m_pTextService->SetState(Ime::ImeState::IN_COMPOSING);
         return S_OK;
     }
 
     auto TextStore::OnUpdateComposition(ITfCompositionView *pComposition, ITfRange *pRangeNew) -> HRESULT
     {
         auto tracer = FuncTracer("TextStore::{}", __func__);
-        m_pInputMethod->SetState(Ime::InputMethod::State::IN_COMPOSITION);
+        m_pTextService->SetState(Ime::ImeState::IN_COMPOSING);
         return S_OK;
     }
 
@@ -696,9 +703,13 @@ namespace LIBC_NAMESPACE::Tsf
                 break;
             }
         }
+        if (m_OnEndCompositionCallback != nullptr)
+        {
+            m_OnEndCompositionCallback(m_pTextEditor->GetText());
+        }
         m_pTextEditor->Select(0, 0);
         m_pTextEditor->ClearText();
-        m_pInputMethod->ClearState(Ime::InputMethod::State::IN_COMPOSITION);
+        m_pTextService->ClearState(Ime::ImeState::IN_COMPOSING);
         return S_OK;
     }
 
@@ -706,7 +717,7 @@ namespace LIBC_NAMESPACE::Tsf
     {
         auto tracer = FuncTracer("TextStore::{}", __func__);
         *pbShow     = TRUE;
-        m_pInputMethod->SetState(Ime::InputMethod::State::IN_CANDCHOOSEN);
+        m_pTextService->SetState(Ime::ImeState::IN_CAND_CHOOSING);
         if (FAILED(GetCandidateInterface(dwUIElementId, &m_currentCandidateUi)))
         {
             m_supportCandidateUi = false;
@@ -742,8 +753,8 @@ namespace LIBC_NAMESPACE::Tsf
     {
         auto tracer = FuncTracer("TextStore::{}", __func__);
         m_currentCandidateUi.Release();
-        m_pInputMethod->CloseCandidateUi();
-        m_pInputMethod->ClearState(Ime::InputMethod::State::IN_CANDCHOOSEN);
+        m_pTextService->GetCandidateUi().Close();
+        m_pTextService->ClearState(Ime::ImeState::IN_CAND_CHOOSING);
         return S_OK;
     }
 
@@ -804,7 +815,7 @@ namespace LIBC_NAMESPACE::Tsf
         DWORD updatedFlags   = 0;
         ATLENSURE_RETURN(SUCCEEDED(m_currentCandidateUi->GetUpdatedFlags(&updatedFlags)));
 
-        auto &candidateUi = m_pInputMethod->GetCandidateUi();
+        auto &candidateUi = m_pTextService->GetCandidateUi();
         if ((updatedFlags & TF_CLUIE_SELECTION) == TF_CLUIE_SELECTION)
         {
             UINT selection = 0;

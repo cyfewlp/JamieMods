@@ -31,7 +31,7 @@ namespace LIBC_NAMESPACE_DECL
         template <class U2>
         constexpr Enumeration &operator=(Enumeration<enum_t, U2> a_rhs) noexcept = delete;
 
-        constexpr bool operator==(enum_type a_value) const noexcept
+        constexpr bool         operator==(enum_type a_value) const noexcept
         {
             return _impl == static_cast<underlying_type>(a_value);
         }

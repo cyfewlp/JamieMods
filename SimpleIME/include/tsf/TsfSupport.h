@@ -63,18 +63,30 @@ namespace LIBC_NAMESPACE_DECL
                 return m_keystrokeMgr;
             }
 
-            [[nodiscard]] constexpr auto GetTfClientId() const -> TfClientId
+            [[nodiscard]] constexpr auto GetTfClientId() const -> const TfClientId &
             {
                 return m_tfClientId;
             }
 
-        private:
-            CComPtr<ITfThreadMgrEx>  m_pThreadMgr;
-            CComPtr<ITfMessagePump>  m_messagePump;
-            CComPtr<ITfKeystrokeMgr> m_keystrokeMgr;
+            static auto GetSingleton(bool uiLessMode = true) -> const TsfSupport *
+            {
+                if (s_instance == nullptr)
+                {
+                    s_instance = new TsfSupport();
+                    s_instance->InitializeTsf(uiLessMode);
+                }
+                return s_instance;
+            }
 
-            TfClientId               m_tfClientId{};
-            bool                     m_initialized = false;
+        private:
+            CComPtr<ITfThreadMgrEx>   m_pThreadMgr;
+            CComPtr<ITfMessagePump>   m_messagePump;
+            CComPtr<ITfKeystrokeMgr>  m_keystrokeMgr;
+
+            TfClientId                m_tfClientId{};
+            bool                      m_initialized = false;
+
+            static inline TsfSupport *s_instance = nullptr;
         };
     }
 }

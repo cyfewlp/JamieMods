@@ -67,8 +67,8 @@ void LIBC_NAMESPACE::Ime::TextEditor::ClearText()
     m_editorText.clear();
 }
 
-auto LIBC_NAMESPACE::Ime::TextEditor::GetText(LPWCH lpWch, const uint32_t bufferSize, const uint32_t offset, const uint32_t cchRequire) const
-    -> void
+auto LIBC_NAMESPACE::Ime::TextEditor::GetText(LPWCH lpWch, const uint32_t bufferSize, const uint32_t offset,
+                                              const uint32_t cchRequire) const -> void
 {
     if (lpWch != nullptr)
     {

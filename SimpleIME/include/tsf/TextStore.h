@@ -2,8 +2,9 @@
 
 #include "common/common.h"
 
-#include "ime/InputMethod.h"
+#include "ime/ITextService.h"
 #include "ime/TextEditor.h"
+#include "tsf/TsfSupport.h"
 
 #include <array>
 #include <atlcomcli.h>
@@ -65,26 +66,26 @@ namespace LIBC_NAMESPACE_DECL
             DWORD firstIndex     = 0;
         };
 
-        class TextStore final : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
+        class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
         {
             static constexpr uint32_t MAX_COMPOSITIONS = 5;
             static constexpr uint32_t EDIT_VIEW_COOKIE = 0;
 
         public:
-            explicit TextStore(Ime::InputMethod *pInputMethod)
-                : m_pInputMethod(pInputMethod), m_pTextEditor(pInputMethod->GetTextEditor())
+            explicit TextStore(Ime::ITextService *pTextService, Ime::TextEditor *pTextEditor)
+                : m_pTextService(pTextService), m_pTextEditor(pTextEditor)
             {
             }
 
             virtual ~TextStore();
-            TextStore(const TextStore &other)                                   = delete;
-            TextStore(TextStore &&other) noexcept                               = delete;
-            auto           operator=(const TextStore &other) -> TextStore &     = delete;
-            auto           operator=(TextStore &&other) noexcept -> TextStore & = delete;
+            TextStore(const TextStore &other)                         = delete;
+            TextStore(TextStore &&other) noexcept                     = delete;
+            auto operator=(const TextStore &other) -> TextStore &     = delete;
+            auto operator=(TextStore &&other) noexcept -> TextStore & = delete;
 
-            auto           Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, TfClientId tfClientId) -> HRESULT;
-            auto           SetHWND(HWND hWnd) -> bool;
-            void           UnInitialize();
+            auto Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT;
+            auto SetHWND(HWND hWnd) -> bool;
+            void UnInitialize();
 
             constexpr auto Focus() -> HRESULT
             {
@@ -106,12 +107,20 @@ namespace LIBC_NAMESPACE_DECL
                 return m_documentMgr;
             }
 
+            auto __stdcall AddRef() -> ULONG override;
+            auto __stdcall Release() -> ULONG override;
+
+            void SetOnEndCompositionCallback(Ime::OnEndCompositionCallback *const callback)
+            {
+                m_OnEndCompositionCallback = callback;
+            }
+
         private:
+            auto InitSinks() -> HRESULT;
+
             // ITextStoreACP functions
             // NOLINTBEGIN(*-use-trailing-return-type)
             STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject) override;
-            auto __stdcall AddRef() -> ULONG override;
-            auto __stdcall Release() -> ULONG override;
             STDMETHODIMP AdviseSink(REFIID riid, IUnknown *punk, DWORD dwMask) override;
             STDMETHODIMP UnadviseSink(IUnknown *punk) override;
             STDMETHODIMP RequestLock(DWORD dwLockFlags, HRESULT *phrSession) override;
@@ -205,35 +214,81 @@ namespace LIBC_NAMESPACE_DECL
             [[nodiscard]] auto IsLocked(DWORD dwLockType) const -> bool;
 
             // lock vars
-            DWORD             m_refCount{0};
-            DWORD             m_dwLockType{0};
-            bool              m_fPendingLockUpgrade{false};
-            bool              m_fLocked{false};
-            bool              m_fLayoutChanged{false};
-            HWND              m_hWnd{nullptr};
-            bool              m_supportCandidateUi = true;
+            DWORD                          m_refCount{0};
+            DWORD                          m_dwLockType{0};
+            bool                           m_fPendingLockUpgrade{false};
+            bool                           m_fLocked{false};
+            bool                           m_fLayoutChanged{false};
+            HWND                           m_hWnd{nullptr};
+            bool                           m_supportCandidateUi       = true;
 
-            Ime::InputMethod *m_pInputMethod;
-            Ime::TextEditor  *m_pTextEditor;
+            Ime::ITextService             *m_pTextService             = nullptr;
+            Ime::TextEditor               *m_pTextEditor              = nullptr;
+            Ime::OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
 
             //
-            AdviseSinkCache                                           m_adviseSinkCache;
+            AdviseSinkCache                                           m_adviseSinkCache{};
             ULONG                                                     m_cCompositions{0};
-            std::array<CComPtr<ITfCompositionView>, MAX_COMPOSITIONS> m_rgCompositions;
+            std::array<CComPtr<ITfCompositionView>, MAX_COMPOSITIONS> m_rgCompositions{};
 
             // TSF com ptr
-            CComPtr<ITextStoreACPServices>             m_textStoreAcpServices;
-            CComPtr<ITfThreadMgr>                      m_threadMgr;
-            CComPtr<ITfDocumentMgr>                    m_documentMgr;
-            CComPtr<ITfDocumentMgr>                    m_pPrevDocMgr;
-            CComPtr<ITfUIElementMgr>                   m_uiElementMgr;
-            CComPtr<ITfContext>                        m_context;
-            CComPtr<ITfCompositionView>                m_currentCompositionView;
-            CComPtr<ITfCandidateListUIElementBehavior> m_currentCandidateUi;
+            CComPtr<ITextStoreACPServices>             m_textStoreAcpServices   = nullptr;
+            CComPtr<ITfThreadMgr>                      m_threadMgr              = nullptr;
+            CComPtr<ITfDocumentMgr>                    m_documentMgr            = nullptr;
+            CComPtr<ITfDocumentMgr>                    m_pPrevDocMgr            = nullptr;
+            CComPtr<ITfUIElementMgr>                   m_uiElementMgr           = nullptr;
+            CComPtr<ITfContext>                        m_context                = nullptr;
+            CComPtr<ITfCompositionView>                m_currentCompositionView = nullptr;
+            CComPtr<ITfCandidateListUIElementBehavior> m_currentCandidateUi     = nullptr;
 
             TfEditCookie                               m_editCookie{0};
             DWORD                                      m_uiElementCookie{0};
             DWORD                                      m_textEditCookie{0};
+        };
+
+        class TextService : public Ime::ITextService
+        {
+        public:
+            auto Initialize() -> HRESULT override
+            {
+                m_pTextStore                 = new TextStore(this, &m_textEditor);
+                const TsfSupport *tsfSupport = TsfSupport::GetSingleton();
+                return m_pTextStore->Initialize(tsfSupport->GetThreadMgr(), tsfSupport->GetTfClientId());
+            }
+
+            void UnInitialize() override
+            {
+                m_pTextStore->UnInitialize();
+            }
+
+            void RegisterCallback(Ime::OnEndCompositionCallback *callback) override
+            {
+                m_pTextStore->SetOnEndCompositionCallback(callback);
+            }
+
+            void OnStart(HWND hWnd) override
+            {
+                m_pTextStore->SetHWND(hWnd);
+                m_pTextStore->Focus();
+            }
+
+            [[nodiscard]] auto GetCandidateUi() -> Ime::CandidateUi & override
+            {
+                return m_candidateUi;
+            }
+
+            [[nodiscard]] auto GetTextEditor() -> Ime::TextEditor & override
+            {
+                return m_textEditor;
+            }
+
+            auto ProcessImeMessage(HWND, UINT, WPARAM, LPARAM) -> bool override;
+
+        private:
+            Ime::CandidateUi             m_candidateUi{};
+            Ime::TextEditor              m_textEditor{};
+            Ime::Imm32::Imm32TextService m_fallbackTextService{};
+            CComPtr<TextStore>           m_pTextStore = nullptr;
         };
     } // namespace Tsf
 } // namespace LIBC_NAMESPACE_DECL

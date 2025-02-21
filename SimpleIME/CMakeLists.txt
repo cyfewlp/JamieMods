@@ -75,10 +75,10 @@ set(headers
     include/ImeWnd.hpp
     include/FakeDirectInputDevice.h
     include/WcharBuf.h
-    include/ime/ImmImeHandler.h
-    include/ime/InputMethod.h
-    include/tsf/TsfSupport.h
     include/ime/TextEditor.h
+    include/ime/ITextService.h
+    include/ime/ITextServiceFactory.h
+    include/tsf/TsfSupport.h
     include/tsf/TextStore.h
     include/tsf/LangProfileUtil.h
 	include/tsf/TsfCompartment.h
@@ -91,14 +91,14 @@ set(sources
     src/ImeWnd.cpp
     src/Hooks.cpp
     src/AppConfig.cpp
-    src/tsf/LangProfileUtil.cpp
     src/WcharBuf.cpp
-    src/ime/ImmImeHandler.cpp
-    src/ime/InputMethod.cpp
-    src/tsf/TsfSupport.cpp
     src/ime/TextEditor.cpp
+    src/ime/Imm32TextService.cpp
+    src/tsf/TsfSupport.cpp
     src/tsf/TextStore.cpp
     src/tsf/TsfCompartment.cpp
+    src/tsf/LangProfileUtil.cpp
+    src/tsf/TextService.cpp
 )
 
 source_group(

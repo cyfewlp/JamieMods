@@ -13,8 +13,22 @@ namespace LIBC_NAMESPACE_DECL
         class TextEditor
         {
         public:
-            auto Select(const long &&acpStart, const long &&acpEnd) -> void;
-            auto Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
+            TextEditor()                                       = default;
+            ~TextEditor()                                      = default;
+            TextEditor(const TextEditor &other)                = delete;
+            TextEditor(TextEditor &&other) noexcept            = delete;
+            TextEditor &operator=(const TextEditor &other)     = delete;
+            TextEditor &operator=(TextEditor &&other) noexcept = delete;
+
+            auto        Select(const long &&acpStart, const long &&acpEnd) -> void;
+            auto        Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
+
+            auto        SelectAll()
+            {
+                m_acpSelection.acpStart = 0;
+                m_acpSelection.acpEnd   = m_editorText.size();
+            }
+
             void GetSelection(LONG *pAcpStart, LONG *pAcpEnd) const;
             auto GetSelection(TS_SELECTION_ACP *pSelectionAcp) const -> void;
             auto InsertText(const wchar_t *pwszText, const uint32_t cch) -> long;

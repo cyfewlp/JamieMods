@@ -2,6 +2,8 @@
 #include "ImeUI.h"
 #include "configs/AppConfig.h"
 
+#include "ime/ITextServiceFactory.h"
+
 #include <basetsd.h>
 #include <cstddef>
 #include <cstdint>
@@ -29,10 +31,6 @@ namespace LIBC_NAMESPACE_DECL
             wc.lpfnWndProc   = WndProc;
             wc.cbWndExtra    = 0;
             wc.lpszClassName = g_tMainClassName;
-
-            m_pInputMethod   = std::make_unique<InputMethod>();
-            m_pTextStore     = std::make_unique<Tsf::TextStore>(m_pInputMethod.get());
-            m_immImeHandler  = std::make_unique<ImmImeHandler>(m_pInputMethod.get());
         }
 
         ImeWnd::~ImeWnd()
@@ -45,6 +43,61 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        void SendStringToSkyrim(const std::wstring &compositionString)
+        {
+            log_debug("Ready result string to Skyrim...");
+            auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
+            auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
+            if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
+            {
+                log_warn("Can't send string to Skyrim may game already close?");
+                return;
+            }
+
+            const auto *pFactory =
+                pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
+            if (pFactory == nullptr)
+            {
+                log_warn("Can't send string to Skyrim may game already close?");
+                return;
+            }
+
+            // Start send message
+            RE::BSFixedString menuName = pInterfaceStrings->topMenu;
+            for (wchar_t wchar : compositionString)
+            {
+                uint32_t const code = wchar;
+                if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
+                {
+                    continue;
+                }
+                auto *pCharEvent            = new GFxCharEvent(code, 0);
+                auto *pScaleFormMessageData = pFactory->Create();
+                if (pScaleFormMessageData == nullptr)
+                {
+                    log_error("Unable create BSTDerivedCreator.");
+                    return;
+                }
+                pScaleFormMessageData->scaleformEvent = pCharEvent;
+                log_debug("send code {:#x} to Skyrim", code);
+                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
+                                                               pScaleFormMessageData);
+            }
+        }
+
+        void ImeWnd::InitializeTextService(const AppConfig *pAppConfig)
+        {
+            m_fEnableTsf               = pAppConfig->EnableTsf();
+            ITextService *pTextService = nullptr;
+            ITextServiceFactory::CreateInstance(m_fEnableTsf, &pTextService);
+            if (FAILED(pTextService->Initialize()))
+            {
+                throw SimpleIMEException("Can't initialize TextService");
+            }
+            m_pTextService.reset(pTextService);
+            m_pTextService->RegisterCallback(SendStringToSkyrim);
+        }
+
         void ImeWnd::Initialize() noexcept(false)
         {
             wc.hInstance = GetModuleHandle(nullptr);
@@ -52,26 +105,18 @@ namespace LIBC_NAMESPACE_DECL
             {
                 throw SimpleIMEException("Can't register class");
             }
-            auto *pAppConfig = AppConfig::GetConfig();
-            m_fEnableTsf     = pAppConfig->EnableTsf();
-            m_pImeUi         = std::make_unique<ImeUI>(pAppConfig->GetAppUiConfig(), m_pInputMethod.get());
 
-            HRESULT hresult  = m_tsfSupport.InitializeTsf(true);
-            if (FAILED(hresult))
-            {
-                throw SimpleIMEException("Can't initialize TsfSupport");
-            }
-            if (FAILED(m_pLangProfileUtil->Initialize(m_tsfSupport.GetThreadMgr())))
+            auto *pAppConfig = AppConfig::GetConfig();
+            InitializeTextService(pAppConfig);
+            m_pImeUi = std::make_unique<ImeUI>(pAppConfig->GetAppUiConfig(), m_pTextService.get());
+            const Tsf::TsfSupport *pTsfSupport = Tsf::TsfSupport::GetSingleton();
+            if (FAILED(m_pLangProfileUtil->Initialize(pTsfSupport->GetThreadMgr())))
             {
                 throw SimpleIMEException("Can't initialize LangProfileUtil");
             }
-            hresult = m_pTextStore->Initialize(m_tsfSupport.GetThreadMgr(), m_tsfSupport.GetTfClientId());
-            if (FAILED(hresult))
-            {
-                throw SimpleIMEException("Can't initialize TextStore");
-            }
-            hresult = m_pTsfCompartment->Initialize(m_tsfSupport.GetThreadMgr(),
-                                                    GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION);
+
+            HRESULT hresult = m_pTsfCompartment->Initialize(pTsfSupport->GetThreadMgr(),
+                                                            GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION);
             if (FAILED(hresult))
             {
                 throw SimpleIMEException("Can't initialize TsfCompartment");
@@ -84,14 +129,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::UnInitialize() const noexcept
         {
-            if (m_pTsfCompartment != nullptr)
-            {
-                m_pTsfCompartment->UnInitialize();
-            }
-            if (m_pTextStore != nullptr)
-            {
-                m_pTextStore->UnInitialize();
-            }
+            m_pTextService->UnInitialize();
             if (m_pTsfCompartment != nullptr)
             {
                 m_pTsfCompartment->UnInitialize();
@@ -115,12 +153,8 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // start message loop
-            if (m_fEnableTsf)
-            {
-                m_pTextStore->SetHWND(m_hWnd);
-                m_pTextStore->Focus();
-            }
             Focus();
+            m_pTextService->OnStart(m_hWnd);
             MSG msg = {};
             ZeroMemory(&msg, sizeof(msg));
             BOOL bRet;
@@ -142,19 +176,27 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
         {
+            const ImeWnd *pThis = GetThis(hWnd);
+            if (pThis != nullptr)
+            {
+                if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
+                {
+                    return S_OK;
+                }
+            }
+
             switch (uMsg)
             {
                 case WM_NCCREATE: {
-                    auto *lpCs  = reinterpret_cast<LPCREATESTRUCT>(lParam);
-                    auto *pThis = static_cast<ImeWnd *>(lpCs->lpCreateParams);
-                    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
+                    auto *lpCs   = reinterpret_cast<LPCREATESTRUCT>(lParam);
+                    auto *pThis1 = static_cast<ImeWnd *>(lpCs->lpCreateParams);
+                    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis1));
                     // set the window handle
-                    pThis->m_hWnd       = hWnd;
-                    pThis->m_hWndParent = lpCs->hwndParent;
+                    pThis1->m_hWnd       = hWnd;
+                    pThis1->m_hWndParent = lpCs->hwndParent;
                     break;
                 }
                 case WM_CREATE: {
-                    const auto *pThis = GetThis(hWnd);
                     if (pThis == nullptr) break;
                     HIMC hIMC = ImmCreateContext();
                     ImmAssociateContextEx(hWnd, hIMC, IACE_IGNORENOCONTEXT);
@@ -162,54 +204,10 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 case WM_DESTROY: {
                     ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
-                    const auto *pThis = GetThis(hWnd);
                     if (pThis == nullptr) break;
                     return pThis->OnDestroy();
                 }
-                case WM_INPUTLANGCHANGE: {
-                    const auto *pThis = GetThis(hWnd);
-                    if (pThis == nullptr) break;
-                    pThis->m_pImeUi->UpdateLanguage();
-                    return S_OK;
-                }
-                case WM_IME_NOTIFY: {
-                    const auto *pThis = GetThis(hWnd);
-                    if (pThis == nullptr) break;
-                    if (pThis->m_fEnableTsf && pThis->m_pTextStore->IsSupportCandidateUi())
-                    {
-                        return S_OK;
-                    }
-                    if (pThis->m_immImeHandler->ImeNotify(hWnd, wParam, lParam))
-                    {
-                        return S_OK;
-                    }
-                    break;
-                }
-                // case WM_IME_STARTCOMPOSITION: {
-                //     const auto *pThis = GetThis(hWnd);
-                //     if (pThis == nullptr) break;
-                //     return pThis->OnStartComposition();
-                // }
-                // case WM_IME_ENDCOMPOSITION: {
-                //     const auto *pThis = GetThis(hWnd);
-                //     if (pThis == nullptr) break;
-                //     return pThis->OnEndComposition();
-                // }
-                // case CM_IME_COMPOSITION:
-                // case WM_IME_COMPOSITION: {
-                //     const auto *pThis = GetThis(hWnd);
-                //     if (pThis == nullptr) break;
-                //     return pThis->OnComposition(hWnd, lParam);
-                // }
-                case CM_CHAR:
-                case WM_CHAR: {
-                    // never received WM_CHAR msg because wo handled WM_IME_COMPOSITION
-                    break;
-                }
-                case WM_IME_SETCONTEXT:
-                    return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
                 case CM_ACTIVATE_PROFILE: {
-                    const auto pThis = GetThis(hWnd);
                     if (pThis == nullptr) break;
                     pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
                     return S_OK;
@@ -276,29 +274,6 @@ namespace LIBC_NAMESPACE_DECL
             log_info("ImGui initialized!");
         }
 
-        auto ImeWnd::OnStartComposition() const -> LRESULT
-        {
-            // m_pImeUi->StartComposition();
-            return 0;
-        }
-
-        auto ImeWnd::OnEndComposition() const -> LRESULT
-        {
-            // m_pImeUi->EndComposition();
-            return 0;
-        }
-
-        auto ImeWnd::OnComposition(HWND hWnd, LPARAM lParam) const -> LRESULT
-        {
-            HIMC hIMC = ImmGetContext(hWnd);
-            if (hIMC != nullptr)
-            {
-                m_pImeUi->CompositionString(hIMC, lParam);
-                ImmReleaseContext(hWnd, hIMC);
-            }
-            return 0;
-        }
-
         auto ImeWnd::OnCreate() const -> LRESULT
         {
             m_pImeUi->SetHWND(m_hWnd);
@@ -358,9 +333,9 @@ namespace LIBC_NAMESPACE_DECL
                 return false;
             }
 
-            auto &imeState  = m_pInputMethod->GetState();
+            auto &imeState  = m_pTextService->GetState();
             auto  isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
-            if (!isImeOpen || imeState.any(InputMethod::State::IN_ALPHANUMERIC))
+            if (!isImeOpen || imeState.any(ImeState::IN_ALPHANUMERIC))
             {
                 return false;
             }
@@ -368,7 +343,7 @@ namespace LIBC_NAMESPACE_DECL
             auto  sourceDevice = head->device;
             if (sourceDevice == RE::INPUT_DEVICE::kKeyboard)
             {
-                if (imeState.any(InputMethod::State::IN_CANDCHOOSEN, InputMethod::State::IN_COMPOSITION))
+                if (imeState.any(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
                 {
                     return true;
                 }

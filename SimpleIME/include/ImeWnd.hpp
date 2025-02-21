@@ -3,13 +3,9 @@
 
 #pragma once
 
-#include "configs/Configs.h"
-
 #include "ImeUI.h"
-#include "ime/InputMethod.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfCompartment.h"
-#include "tsf/TsfSupport.h"
 
 #include <d3d11.h>
 #include <windows.h>
@@ -23,6 +19,27 @@ namespace LIBC_NAMESPACE_DECL
     {
         class ImmImeHandler;
         const static inline wchar_t *g_tMainClassName = L"SimpleIME";
+
+        // language id for english keyboard
+        constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `
+        constexpr auto ASCII_MIDDLE_DOT   = 0xB7; // ·
+
+        class GFxCharEvent : public RE::GFxEvent
+        {
+        public:
+            GFxCharEvent() = default;
+
+            explicit GFxCharEvent(UINT32 a_wcharCode, UINT8 a_keyboardIndex = 0)
+                : GFxEvent(EventType::kCharEvent), wcharCode(a_wcharCode), keyboardIndex(a_keyboardIndex)
+            {
+            }
+
+            // @members
+            std::uint32_t wcharCode{};     // 04
+            std::uint32_t keyboardIndex{}; // 08
+        };
+
+        static_assert(sizeof(GFxCharEvent) == 0x0C);
 
         class ImeWnd
         {
@@ -58,28 +75,22 @@ namespace LIBC_NAMESPACE_DECL
             auto IsDiscardGameInputEvents(__in RE::InputEvent ** /*events*/) const -> bool;
 
         private:
-            static auto                     WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-            static auto                     GetThis(HWND hWnd) -> ImeWnd *;
-            auto                            OnCreate() const -> LRESULT;
-            auto                            OnDestroy() const -> LRESULT;
-            auto                            OnStartComposition() const -> LRESULT;
-            auto                            OnEndComposition() const -> LRESULT;
-            auto                            OnComposition(HWND hWnd, LPARAM lParam) const -> LRESULT;
+            static auto                   WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
+            static auto                   GetThis(HWND hWnd) -> ImeWnd *;
+            auto                          OnCreate() const -> LRESULT;
+            auto                          OnDestroy() const -> LRESULT;
+            void                          InitializeTextService(const AppConfig *pAppConfig);
 
-            Tsf::TsfSupport                 m_tsfSupport;
-            std::unique_ptr<InputMethod>    m_pInputMethod = nullptr;
+            std::unique_ptr<ITextService> m_pTextService = nullptr;
+            CComPtr<Tsf::TsfCompartment>  m_pTsfCompartment{new Tsf::TsfCompartment()};
+            CComPtr<LangProfileUtil>      m_pLangProfileUtil{new LangProfileUtil()};
 
-            std::unique_ptr<Tsf::TextStore> m_pTextStore   = nullptr;
-            CComPtr<Tsf::TsfCompartment>    m_pTsfCompartment{new Tsf::TsfCompartment()};
-            CComPtr<LangProfileUtil>        m_pLangProfileUtil{new LangProfileUtil()};
+            bool                          m_fEnableTsf = false;
 
-            std::unique_ptr<ImmImeHandler>  m_immImeHandler = nullptr;
-            bool                            m_fEnableTsf    = false;
-
-            HWND                            m_hWnd          = nullptr;
-            HWND                            m_hWndParent    = nullptr;
-            std::unique_ptr<ImeUI>          m_pImeUi        = nullptr;
-            WNDCLASSEXW                     wc{};
+            HWND                          m_hWnd       = nullptr;
+            HWND                          m_hWndParent = nullptr;
+            std::unique_ptr<ImeUI>        m_pImeUi     = nullptr;
+            WNDCLASSEXW                   wc{};
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

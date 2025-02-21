@@ -17,22 +17,10 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        ImeUI::ImeUI(const AppUiConfig &uiConfig, InputMethod *pInputMethod) : m_pUiConfig(uiConfig)
+        ImeUI::ImeUI(const AppUiConfig &uiConfig, ITextService *pTextService) : m_pUiConfig(uiConfig)
         {
             _tsetlocale(LC_ALL, _T(""));
-            m_pHeap        = HeapCreate(HEAP_GENERATE_EXCEPTIONS, IME_UI_HEAP_INIT_SIZE, IME_UI_HEAP_MAX_SIZE);
-            m_pCompStr     = new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE);
-            m_pCompResult  = new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE);
-            m_pInputMethod = pInputMethod;
-            m_pTextEditor  = pInputMethod->GetTextEditor();
-        }
-
-        ImeUI::~ImeUI()
-        {
-            HeapDestroy(m_pHeap);
-            m_pHeap = nullptr;
-            delete m_pCompStr;
-            delete m_pCompResult;
+            m_pTextService = pTextService;
         }
 
         bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
@@ -49,101 +37,12 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Failed load active ime");
                 return false;
             }
-            UpdateLanguage();
             return true;
         }
 
         void ImeUI::SetHWND(const HWND hWnd)
         {
             m_hWndIme = hWnd;
-        }
-
-        void ImeUI::CompositionString(HIMC hIMC, LPARAM compFlag) const
-        {
-            if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, m_pCompStr))
-            {
-                if (spdlog::should_log(spdlog::level::trace))
-                {
-                    const auto str = WCharUtils::ToString(m_pCompStr->Data());
-                    log_trace("IME Composition String: {}", str.c_str());
-                }
-            }
-            if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, m_pCompResult))
-            {
-                SendResultStringToSkyrim();
-                if (spdlog::should_log(spdlog::level::trace))
-                {
-                    const auto str = WCharUtils::ToString(m_pCompResult->Data());
-                    log_trace("IME Composition Result String: {}", str.c_str());
-                }
-            }
-        }
-
-        void ImeUI::SendResultStringToSkyrim() const
-        {
-            log_debug("Ready result string to Skyrim...");
-            auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
-            auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
-            if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
-            {
-                log_warn("Can't send string to Skyrim may game already close?");
-                return;
-            }
-
-            const auto *pFactory =
-                pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
-            if (pFactory == nullptr)
-            {
-                log_warn("Can't send string to Skyrim may game already close?");
-                return;
-            }
-
-            // Start send message
-            RE::BSFixedString menuName   = pInterfaceStrings->topMenu;
-            auto              stringSize = m_pCompResult->Size();
-            const auto       *pwChar     = m_pCompResult->Data();
-            for (size_t i = 0; i < stringSize; i++)
-            {
-                uint32_t const code = pwChar[i];
-                if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
-                {
-                    continue;
-                }
-                auto *pCharEvent            = new GFxCharEvent(code, 0);
-                auto *pScaleFormMessageData = pFactory->Create();
-                if (pScaleFormMessageData == nullptr)
-                {
-                    log_error("Unable create BSTDerivedCreator.");
-                    return;
-                }
-                pScaleFormMessageData->scaleformEvent = pCharEvent;
-                log_debug("send code {:#x} to Skyrim", code);
-                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                                                               pScaleFormMessageData);
-            }
-        }
-
-        auto ImeUI::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf) -> bool
-        {
-            if ((compFlag & flagToCheck) != 0)
-            {
-                LONG bufLen = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
-                if (bufLen > 0)
-                {
-                    if (pWcharBuf->TryReAlloc(bufLen + 2))
-                    {
-                        ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf->Data(), bufLen);
-                        DWORD const size = bufLen / sizeof(WCHAR);
-                        pWcharBuf->SetSize(size);
-                        return true;
-                    }
-                }
-            }
-            else
-            {
-                pWcharBuf->Clear();
-            }
-            return false;
         }
 
         void ImeUI::RenderIme()
@@ -154,8 +53,8 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            auto &imeState = m_pInputMethod->GetState();
-            if (imeState.none(InputMethod::State::IN_CANDCHOOSEN, InputMethod::State::IN_COMPOSITION))
+            auto &imeState = m_pTextService->GetState();
+            if (imeState.none(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
             {
                 return;
             }
@@ -170,7 +69,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (imeState.any(InputMethod::State::IN_CANDCHOOSEN))
+            if (imeState.any(ImeState::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -274,7 +173,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::EndCombo();
             }
             ImGui::SameLine();
-            if (m_pInputMethod->GetState().all(InputMethod::State::IN_ALPHANUMERIC))
+            if (m_pTextService->GetState().all(ImeState::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();
@@ -290,7 +189,7 @@ namespace LIBC_NAMESPACE_DECL
         void ImeUI::RenderCompWindow() const
         {
             ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
-            const auto &editorText = m_pTextEditor->GetText();
+            const auto &editorText = m_pTextService->GetTextEditor().GetText();
             const auto  str        = WCharUtils::ToString(editorText.c_str());
             ImGui::Text("%s", str.c_str());
             ImGui::PopStyleColor(1);
@@ -299,7 +198,7 @@ namespace LIBC_NAMESPACE_DECL
         void ImeUI::RenderCandidateWindows() const
         {
             DWORD index = 0;
-            for (const auto &candidateUi = m_pInputMethod->GetCandidateUi();
+            for (const auto &candidateUi = m_pTextService->GetCandidateUi();
                  const auto &item : candidateUi.CandidateList())
             {
                 if (index == candidateUi.Selection())
@@ -313,22 +212,6 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 ImGui::SameLine();
                 index++;
-            }
-        }
-
-        void ImeUI::UpdateLanguage()
-        {
-            HKL          keyboard_layout = ::GetKeyboardLayout(0);
-            LANGID const langId          = LOWORD(HandleToUlong(keyboard_layout));
-            WCHAR        localeName[LOCALE_NAME_MAX_LENGTH];
-            LCIDToLocaleName(MAKELCID(langId, SORT_DEFAULT), localeName, LOCALE_NAME_MAX_LENGTH, 0);
-
-            // Retrieve keyboard code page, required for handling of non-Unicode Windows.
-            LCID const keyboard_lcid = MAKELCID(HIWORD(keyboard_layout), SORT_DEFAULT);
-            if (::GetLocaleInfoA(keyboard_lcid, (LOCALE_RETURN_NUMBER | LOCALE_IDEFAULTANSICODEPAGE),
-                                 reinterpret_cast<LPSTR>(&m_keyboardCodePage), sizeof(m_keyboardCodePage)) == 0)
-            {
-                m_keyboardCodePage = CP_ACP; // Fallback to default ANSI code page when fails.
             }
         }
 
