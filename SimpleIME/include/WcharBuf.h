@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "configs/Configs.h"
-#include <winnt.h>
+#include <Windows.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Ime
     {
         class WcharBuf
         {

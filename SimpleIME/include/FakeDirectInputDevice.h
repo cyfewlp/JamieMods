@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include "configs/Configs.h"
+#include <dinput.h>
 
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dinput8.lib")
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Hooks
     {
         class FakeDirectInputDevice : public IDirectInputDevice8A
         {
@@ -22,6 +22,11 @@ namespace LIBC_NAMESPACE_DECL
             FakeDirectInputDevice(IDirectInputDevice8A *device) : m_realDevice(device)
             {
             }
+
+            FakeDirectInputDevice(const FakeDirectInputDevice &other)                = delete;
+            FakeDirectInputDevice(FakeDirectInputDevice &&other) noexcept            = delete;
+            FakeDirectInputDevice &operator=(const FakeDirectInputDevice &other)     = delete;
+            FakeDirectInputDevice &operator=(FakeDirectInputDevice &&other) noexcept = delete;
 
             virtual ~FakeDirectInputDevice() = default;
 

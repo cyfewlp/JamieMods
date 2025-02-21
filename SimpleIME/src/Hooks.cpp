@@ -1,21 +1,19 @@
 #include "Hooks.hpp"
-#include "configs/Configs.h"
+#include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
+#include "configs/Configs.h"
 #include "detours/detours.h"
 #include <errhandlingapi.h>
-#include <minwindef.h>
 #include <processthreadsapi.h>
 #include <windows.h>
-#include "FakeDirectInputDevice.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Hooks
     {
+        static MYHOOKDATA myHookData[NUMHOOKS];
 
-        static Hooks::MYHOOKDATA myHookData[NUMHOOKS];
-
-        void                     Hooks::InstallWindowsHooks()
+        void              InstallWindowsHooks()
         {
             myHookData[GET_MSG_PROC].nType = WH_GETMESSAGE;
             myHookData[GET_MSG_PROC].hkprc = MyGetMsgProc;
@@ -33,14 +31,14 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        LRESULT CALLBACK Hooks::MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam)
+        LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam)
         {
-            auto hookData = myHookData[GET_MSG_PROC];
+            const auto hookData = myHookData[GET_MSG_PROC];
             if (code < 0)
             {
                 return CallNextHookEx(hookData.hhook, code, wParam, lParam);
             }
-            MSG       *msg      = reinterpret_cast<MSG *>(lParam);
+            const auto msg      = reinterpret_cast<MSG *>(lParam);
             UINT const original = msg->message;
             switch (msg->message)
             {
@@ -63,6 +61,8 @@ namespace LIBC_NAMESPACE_DECL
                             case WM_CHAR:
                                 msg->message = CM_CHAR;
                                 break;
+                            default:
+                                break;
                         }
                         log_debug("Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
                     }
@@ -73,17 +73,17 @@ namespace LIBC_NAMESPACE_DECL
             return CallNextHookEx(hookData.hhook, code, wParam, lParam);
         }
 
-        void Hooks::InstallDirectInPutHook()
+        void InstallDirectInPutHook()
         {
-            LPCSTR pszModule   = "dinput8.dll";
-            LPCSTR pszFunction = "DirectInput8Create";
-            PVOID  pVoid       = DetourFindFunction(pszModule, pszFunction);
+            auto        pszModule   = "dinput8.dll";
+            auto        pszFunction = "DirectInput8Create";
+            const PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
             DetourTransactionBegin();
             DetourUpdateThread(GetCurrentThread());
             RealDirectInput8Create = reinterpret_cast<FuncDirectInput8Create>(pVoid);
-            DetourAttach(&(PVOID &)RealDirectInput8Create, reinterpret_cast<void *>(MyDirectInput8Create));
-            LONG const error = DetourTransactionCommit();
-            if (error == NO_ERROR)
+            DetourAttach(&reinterpret_cast<PVOID &>(RealDirectInput8Create),
+                         reinterpret_cast<void *>(MyDirectInput8Create));
+            if (LONG const error = DetourTransactionCommit(); error == NO_ERROR)
             {
                 log_debug("{}: Detoured {}.", pszModule, pszFunction);
             }
@@ -93,17 +93,17 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void Hooks::InstallRegisterClassHook()
+        void InstallRegisterClassHook()
         {
-            LPCSTR pszModule   = "User32.dll";
-            LPCSTR pszFunction = "RegisterClassA";
-            PVOID  pVoid       = DetourFindFunction(pszModule, pszFunction);
+            auto        pszModule   = "User32.dll";
+            auto        pszFunction = "RegisterClassA";
+            const PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
             DetourTransactionBegin();
             DetourUpdateThread(GetCurrentThread());
             RealRegisterClassExA = reinterpret_cast<FuncRegisterClass>(pVoid);
-            DetourAttach(&(PVOID &)RealRegisterClassExA, reinterpret_cast<void *>(MyRegisterClassExA));
-            LONG const error = DetourTransactionCommit();
-            if (error == NO_ERROR)
+            DetourAttach(&reinterpret_cast<PVOID &>(RealRegisterClassExA),
+                         reinterpret_cast<void *>(MyRegisterClassExA));
+            if (LONG const error = DetourTransactionCommit(); error == NO_ERROR)
             {
                 log_debug("{}: Detoured {}.", pszModule, pszFunction);
             }
@@ -113,20 +113,21 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        auto Hooks::MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM
+        auto MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM
         {
             Hooks::InstallWindowsHooks();
             return RealRegisterClassExA(wndClass);
         }
 
-        auto Hooks::MyDirectInput8Create(HINSTANCE hinst, DWORD dwVersion, const IID &riidltf, LPVOID *ppvOut,
-                                         LPUNKNOWN punkOuter) -> HRESULT
+        auto MyDirectInput8Create(HINSTANCE hinst, DWORD dwVersion, const IID &riidltf, LPVOID *ppvOut,
+                                  LPUNKNOWN punkOuter) -> HRESULT
         {
-            IDirectInput8A	* dinput;
-            HRESULT           hresult = RealDirectInput8Create(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
-            if(hresult != DI_OK) return hresult;
+            IDirectInput8A *dinput;
+            const HRESULT   hresult =
+                RealDirectInput8Create(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
+            if (hresult != DI_OK) return hresult;
 
-            *((IDirectInput8A**)ppvOut) = new FakeDirectInput(dinput);
+            *reinterpret_cast<IDirectInput8A **>(ppvOut) = new FakeDirectInput(dinput);
             log_debug("detour to FakeDirectInput...");
             return DI_OK;
         }

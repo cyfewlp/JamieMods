@@ -31,7 +31,7 @@ namespace
     bool PluginLoad(const SKSE::LoadInterface *skse)
     {
         using namespace LIBC_NAMESPACE;
-        using namespace PLUGIN_NAMESPACE;
+        using namespace LIBC_NAMESPACE::Ime;
         try
         {
             const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();

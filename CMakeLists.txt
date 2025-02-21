@@ -13,8 +13,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set your project name. This will be the name of your SKSE .dll file.
 project(JamieMods)
 
-set(UTILS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
+set(COMMON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+cmake_minimum_required(VERSION 3.21)
+
+find_package(spdlog CONFIG REQUIRED)
+find_package(CommonLibSSE CONFIG REQUIRED)
+
+#target_link_libraries(${PROJECT_NAME} PUBLIC CommonLibSSE::CommonLibSSE)
+
+#add_subdirectory(common)
 add_subdirectory(extern)
 add_subdirectory(dev)
 add_subdirectory(SimpleIME)

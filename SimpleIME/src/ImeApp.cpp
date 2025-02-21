@@ -2,6 +2,7 @@
 #include "ImeApp.h"
 #include "Hooks.hpp"
 #include "ImeWnd.hpp"
+#include "common/hook.h"
 #include "configs/AppConfig.h"
 #include "gsl/gsl"
 #include "imgui.h"
@@ -17,7 +18,7 @@ namespace LIBC_NAMESPACE_DECL
     bool PluginInit()
     {
         InitializeMessaging();
-        SimpleIME::ImeApp::Init();
+        Ime::ImeApp::Init();
         return true;
     }
 
@@ -32,10 +33,10 @@ namespace LIBC_NAMESPACE_DECL
         });
     }
 
-    namespace SimpleIME
+    namespace Ime
     {
-        static const auto D3DInitHook            = Hooks::D3DInitHookData(ImeApp::D3DInit);
-        static const auto D3DPresentHook         = Hooks::D3DPresentHookData(ImeApp::D3DPresent);
+        static const auto D3DInitHook    = Hooks::D3DInitHookData(ImeApp::D3DInit);
+        static const auto D3DPresentHook = Hooks::D3DPresentHookData(ImeApp::D3DPresent);
         static const auto DispatchInputEventHook = Hooks::DispatchInputEventHookData(ImeApp::DispatchEvent);
 
         /**
@@ -49,12 +50,6 @@ namespace LIBC_NAMESPACE_DECL
             Hooks::InstallDirectInPutHook();
         }
 
-        static void FatalError(const char *msg)
-        {
-            log_error("Can't Initialize ImeWnd because {}", msg);
-            SKSE::stl::report_and_error("SimpleIME initialize failed!");
-        }
-
         void ImeApp::D3DInit()
         {
             D3DInitHook();
@@ -66,7 +61,7 @@ namespace LIBC_NAMESPACE_DECL
             auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
             if (render_manager == nullptr)
             {
-                FatalError("Cannot find render manager. Initialization failed!");
+                throw SimpleIMEException("Cannot find render manager. Initialization failed!");
             }
 
             auto render_data = render_manager->data;
@@ -74,14 +69,14 @@ namespace LIBC_NAMESPACE_DECL
             auto *pSwapChain = render_data.renderWindows->swapChain;
             if (pSwapChain == nullptr)
             {
-                FatalError("Cannot find SwapChain. Initialization failed!");
+                throw SimpleIMEException("Cannot find SwapChain. Initialization failed!");
             }
 
             log_debug("Getting SwapChain desc...");
             auto swapChainDesc = gsl::not_null(new DXGI_SWAP_CHAIN_DESC());
             if (pSwapChain->GetDesc(swapChainDesc) < 0)
             {
-                FatalError("IDXGISwapChain::GetDesc failed.");
+                throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
             }
             g_hWnd = swapChainDesc->OutputWindow;
 
@@ -119,19 +114,17 @@ namespace LIBC_NAMESPACE_DECL
             {
                 g_pImeWnd.reset();
                 g_pImeWnd = nullptr;
-                FatalError(e.what());
+                throw SimpleIMEException(e.what());
             }
 
             g_pState->Initialized.store(true);
-
-            SKSE::GetTaskInterface()->AddUITask([]() { g_pImeWnd->SetImeOpenStatus(false); });
 
             log_debug("Hooking Skyrim WndProc...");
             RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(swapChainDesc->OutputWindow, GWLP_WNDPROC,
                                                                       reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
             if (RealWndProc == nullptr)
             {
-                FatalError("Hook WndProc failed!");
+                throw SimpleIMEException("Hook WndProc failed!");
             }
         }
 
@@ -215,7 +208,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeApp::ProcessMouseEvent(RE::ButtonEvent *btnEvent)
+        void ImeApp::ProcessMouseEvent(const RE::ButtonEvent *btnEvent)
         {
             auto &imGuiIo = ImGui::GetIO();
             auto  value   = btnEvent->Value();

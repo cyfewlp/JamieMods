@@ -1,10 +1,12 @@
 #include "ImeWnd.hpp"
 #include "ImeUI.h"
 #include "configs/AppConfig.h"
+
 #include <basetsd.h>
 #include <cstddef>
 #include <cstdint>
 #include <d3d11.h>
+#include <dinput.h>
 #include <imgui.h>
 #include <imgui_freetype.h>
 #include <imgui_impl_dx11.h>
@@ -15,9 +17,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Ime
     {
-        ImeWnd::ImeWnd() : m_tsfSupport(), m_hWnd(nullptr), m_hWndParent(nullptr), m_pImeUI(nullptr)
+        ImeWnd::ImeWnd()
         {
             wc = {};
             ZeroMemory(&wc, sizeof(wc));
@@ -27,34 +29,76 @@ namespace LIBC_NAMESPACE_DECL
             wc.lpfnWndProc   = WndProc;
             wc.cbWndExtra    = 0;
             wc.lpszClassName = g_tMainClassName;
+
+            m_pInputMethod   = std::make_unique<InputMethod>();
+            m_pTextStore     = std::make_unique<Tsf::TextStore>(m_pInputMethod.get());
+            m_immImeHandler  = std::make_unique<ImmImeHandler>(m_pInputMethod.get());
         }
 
         ImeWnd::~ImeWnd()
         {
-            delete m_pImeUI;
+            UnInitialize();
             if (m_hWnd != nullptr)
             {
-                ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
-                ::DestroyWindow(m_hWnd);
+                UnregisterClassW(wc.lpszClassName, wc.hInstance);
+                DestroyWindow(m_hWnd);
             }
         }
 
         void ImeWnd::Initialize() noexcept(false)
         {
             wc.hInstance = GetModuleHandle(nullptr);
-            if (::RegisterClassExW(&wc) == 0U)
+            if (RegisterClassExW(&wc) == 0U)
             {
                 throw SimpleIMEException("Can't register class");
             }
             auto *pAppConfig = AppConfig::GetConfig();
-            m_pImeUI         = new ImeUI(pAppConfig->GetAppUiConfig());
-            if (!m_tsfSupport.InitializeTsf())
+            m_fEnableTsf     = pAppConfig->EnableTsf();
+            m_pImeUi         = std::make_unique<ImeUI>(pAppConfig->GetAppUiConfig(), m_pInputMethod.get());
+
+            HRESULT hresult  = m_tsfSupport.InitializeTsf(true);
+            if (FAILED(hresult))
             {
                 throw SimpleIMEException("Can't initialize TsfSupport");
             }
-            if (!m_pImeUI->Initialize(m_tsfSupport))
+            if (FAILED(m_pLangProfileUtil->Initialize(m_tsfSupport.GetThreadMgr())))
+            {
+                throw SimpleIMEException("Can't initialize LangProfileUtil");
+            }
+            hresult = m_pTextStore->Initialize(m_tsfSupport.GetThreadMgr(), m_tsfSupport.GetTfClientId());
+            if (FAILED(hresult))
+            {
+                throw SimpleIMEException("Can't initialize TextStore");
+            }
+            hresult = m_pTsfCompartment->Initialize(m_tsfSupport.GetThreadMgr(),
+                                                    GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION);
+            if (FAILED(hresult))
+            {
+                throw SimpleIMEException("Can't initialize TsfCompartment");
+            }
+            if (!m_pImeUi->Initialize(m_pLangProfileUtil))
             {
                 throw SimpleIMEException("Can't initialize ImeUI");
+            }
+        }
+
+        void ImeWnd::UnInitialize() const noexcept
+        {
+            if (m_pTsfCompartment != nullptr)
+            {
+                m_pTsfCompartment->UnInitialize();
+            }
+            if (m_pTextStore != nullptr)
+            {
+                m_pTextStore->UnInitialize();
+            }
+            if (m_pTsfCompartment != nullptr)
+            {
+                m_pTsfCompartment->UnInitialize();
+            }
+            if (m_pLangProfileUtil != nullptr)
+            {
+                m_pLangProfileUtil->UnInitialize();
             }
         }
 
@@ -63,19 +107,22 @@ namespace LIBC_NAMESPACE_DECL
             log_info("Start ImeWnd Thread...");
             DWORD dwExStyle = 0;
             DWORD dwStyle   = WS_CHILD;
-            m_hWnd          = ::CreateWindowExW(dwExStyle, g_tMainClassName, L"Hide", //
-                                                dwStyle, 0, 0, 0, 0,                  // width, height
-                                                hWndParent,                           // a_parent,
-                                                nullptr, wc.hInstance, (LPVOID)this);
-            //
+            m_hWnd = ::CreateWindowExW(dwExStyle, g_tMainClassName, L"Hide", dwStyle, 0, 0, 0, 0, hWndParent, nullptr,
+                                       wc.hInstance, (LPVOID)this);
             if (m_hWnd == nullptr)
             {
                 throw SimpleIMEException("Create ImeWnd failed");
             }
 
             // start message loop
+            if (m_fEnableTsf)
+            {
+                m_pTextStore->SetHWND(m_hWnd);
+                m_pTextStore->Focus();
+            }
             Focus();
-            MSG  msg = {nullptr};
+            MSG msg = {};
+            ZeroMemory(&msg, sizeof(msg));
             BOOL bRet;
             while ((bRet = GetMessage(&msg, nullptr, 0, 0)) != 0)
             {
@@ -115,39 +162,45 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 case WM_DESTROY: {
                     ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
-                    return OnDestroy();
+                    const auto *pThis = GetThis(hWnd);
+                    if (pThis == nullptr) break;
+                    return pThis->OnDestroy();
                 }
                 case WM_INPUTLANGCHANGE: {
                     const auto *pThis = GetThis(hWnd);
                     if (pThis == nullptr) break;
-                    pThis->m_pImeUI->UpdateLanguage();
+                    pThis->m_pImeUi->UpdateLanguage();
                     return S_OK;
                 }
                 case WM_IME_NOTIFY: {
                     const auto *pThis = GetThis(hWnd);
                     if (pThis == nullptr) break;
-                    if (pThis->m_pImeUI->ImeNotify(hWnd, wParam, lParam))
+                    if (pThis->m_fEnableTsf && pThis->m_pTextStore->IsSupportCandidateUi())
+                    {
+                        return S_OK;
+                    }
+                    if (pThis->m_immImeHandler->ImeNotify(hWnd, wParam, lParam))
                     {
                         return S_OK;
                     }
                     break;
                 }
-                case WM_IME_STARTCOMPOSITION: {
-                    const auto *pThis = GetThis(hWnd);
-                    if (pThis == nullptr) break;
-                    return pThis->OnStartComposition();
-                }
-                case WM_IME_ENDCOMPOSITION: {
-                    const auto *pThis = GetThis(hWnd);
-                    if (pThis == nullptr) break;
-                    return pThis->OnEndComposition();
-                }
-                case CM_IME_COMPOSITION:
-                case WM_IME_COMPOSITION: {
-                    const auto *pThis = GetThis(hWnd);
-                    if (pThis == nullptr) break;
-                    return pThis->OnComposition(hWnd, lParam);
-                }
+                // case WM_IME_STARTCOMPOSITION: {
+                //     const auto *pThis = GetThis(hWnd);
+                //     if (pThis == nullptr) break;
+                //     return pThis->OnStartComposition();
+                // }
+                // case WM_IME_ENDCOMPOSITION: {
+                //     const auto *pThis = GetThis(hWnd);
+                //     if (pThis == nullptr) break;
+                //     return pThis->OnEndComposition();
+                // }
+                // case CM_IME_COMPOSITION:
+                // case WM_IME_COMPOSITION: {
+                //     const auto *pThis = GetThis(hWnd);
+                //     if (pThis == nullptr) break;
+                //     return pThis->OnComposition(hWnd, lParam);
+                // }
                 case CM_CHAR:
                 case WM_CHAR: {
                     // never received WM_CHAR msg because wo handled WM_IME_COMPOSITION
@@ -158,7 +211,7 @@ namespace LIBC_NAMESPACE_DECL
                 case CM_ACTIVATE_PROFILE: {
                     const auto pThis = GetThis(hWnd);
                     if (pThis == nullptr) break;
-                    pThis->m_pImeUI->ActivateProfile(reinterpret_cast<GUID *>(lParam));
+                    pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
                     return S_OK;
                 }
                 default:
@@ -210,7 +263,7 @@ namespace LIBC_NAMESPACE_DECL
             cfg.OversampleH = cfg.OversampleV = 1;
             cfg.MergeMode                     = true;
             cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-            static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
+            static constexpr ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
             io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), uiConfig.FontSize(), &cfg, icons_ranges);
             io.Fonts->Build();
             ImGuiStyle &style = ImGui::GetStyle();
@@ -225,13 +278,13 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::OnStartComposition() const -> LRESULT
         {
-            m_pImeUI->StartComposition();
+            // m_pImeUi->StartComposition();
             return 0;
         }
 
         auto ImeWnd::OnEndComposition() const -> LRESULT
         {
-            m_pImeUI->EndComposition();
+            // m_pImeUi->EndComposition();
             return 0;
         }
 
@@ -240,7 +293,7 @@ namespace LIBC_NAMESPACE_DECL
             HIMC hIMC = ImmGetContext(hWnd);
             if (hIMC != nullptr)
             {
-                m_pImeUI->CompositionString(hIMC, lParam);
+                m_pImeUi->CompositionString(hIMC, lParam);
                 ImmReleaseContext(hWnd, hIMC);
             }
             return 0;
@@ -248,12 +301,13 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::OnCreate() const -> LRESULT
         {
-            m_pImeUI->SetHWND(m_hWnd);
+            m_pImeUi->SetHWND(m_hWnd);
             return S_OK;
         }
 
-        auto ImeWnd::OnDestroy() -> LRESULT
+        auto ImeWnd::OnDestroy() const -> LRESULT
         {
+            UnInitialize();
             PostQuitMessage(0);
             return S_OK;
         }
@@ -264,13 +318,13 @@ namespace LIBC_NAMESPACE_DECL
             ::SetFocus(m_hWnd);
         }
 
-        void ImeWnd::RenderIme()
+        void ImeWnd::RenderIme() const
         {
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
 
-            m_pImeUI->RenderIme();
+            m_pImeUi->RenderIme();
 
             ImGui::Render();
             ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -285,16 +339,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::ShowToolWindow() const
         {
-            m_pImeUI->ShowToolWindow();
-        }
-
-        void ImeWnd::SetImeOpenStatus(bool open) const
-        {
-            if (HIMC hImc; (hImc = ImmGetContext(m_hWnd)) != nullptr)
-            {
-                ImmSetOpenStatus(hImc, static_cast<BOOL>(open));
-                ImmReleaseContext(m_hWnd, hImc);
-            }
+            m_pImeUi->ShowToolWindow();
         }
 
         static auto IsImeKeyCode(const std::uint32_t code) -> bool
@@ -306,31 +351,31 @@ namespace LIBC_NAMESPACE_DECL
             return result;
         }
 
-        auto ImeWnd::IsDiscardGameInputEvents(__in RE::InputEvent **events) -> bool
+        auto ImeWnd::IsDiscardGameInputEvents(__in RE::InputEvent **events) const -> bool
         {
-            auto imeState = m_pImeUI->GetImeState();
-            if (imeState.none(ImeState::OPEN) || imeState.any(ImeState::IN_ALPHANUMERIC))
+            if (events == nullptr || *events == nullptr)
             {
                 return false;
             }
 
-            auto first = (imeState == ImeState::OPEN);
-            if (imeState.any(ImeState::OPEN, ImeState::IN_CANDCHOOSEN, ImeState::IN_COMPOSITION))
+            auto &imeState  = m_pInputMethod->GetState();
+            auto  isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
+            if (!isImeOpen || imeState.any(InputMethod::State::IN_ALPHANUMERIC))
             {
-                if (events == nullptr || *events == nullptr)
+                return false;
+            }
+            auto *head         = *events;
+            auto  sourceDevice = head->device;
+            if (sourceDevice == RE::INPUT_DEVICE::kKeyboard)
+            {
+                if (imeState.any(InputMethod::State::IN_CANDCHOOSEN, InputMethod::State::IN_COMPOSITION))
                 {
-                    return false;
+                    return true;
                 }
-                auto *head         = *events;
-                auto  sourceDevice = head->device;
-                bool  discard      = (sourceDevice == RE::INPUT_DEVICE::kKeyboard);
-                if (first)
-                {
-                    auto *idEvent = head->AsIDEvent();
-                    auto  code    = (idEvent != nullptr) ? idEvent->GetIDCode() : 0;
-                    discard &= IsImeKeyCode(code);
-                }
-                return discard;
+                // discard the first keyboard event when ime waiting input.
+                auto *idEvent = head->AsIDEvent();
+                auto  code    = idEvent != nullptr ? idEvent->GetIDCode() : 0;
+                return IsImeKeyCode(code);
             }
             return false;
         }

@@ -4,57 +4,51 @@
 #include "configs/AppConfig.h"
 #include <SimpleIni.h>
 #include <memory>
-#include <yaml-cpp/yaml.h>
 
-namespace PLUGIN_NAMESPACE
+namespace LIBC_NAMESPACE_DECL
 {
-    std::unique_ptr<AppConfig> AppConfig::appConfig_ = nullptr;
-
-    template <typename Type>
-    static constexpr void GetValue(const YAML::Node &node, Property<Type> &property)
+    namespace Ime
     {
-        if (node[property.ConfigName()])
+        std::unique_ptr<AppConfig> AppConfig::m_appConfig = nullptr;
+        
+        void AppConfig::LoadIni(const char *configFilePath)
         {
-            property.SetValue(node[property.ConfigName()].template as<Type>());
+            if (m_appConfig == nullptr)
+            {
+                m_appConfig = std::make_unique<AppConfig>();
+                LoadIniConfig(configFilePath);
+            }
+        }
+
+        AppConfig *AppConfig::GetConfig()
+        {
+            return m_appConfig.get();
+        }
+
+        void AppConfig::LoadIniConfig(const char *configFilePath)
+        {
+            CSimpleIniA ini;
+            if (const SI_Error error = ini.LoadFile(configFilePath); error != SI_OK)
+            {
+                log_error("Load config file failed. May config file {} missing", configFilePath);
+                return;
+            }
+            GetSimpleIniValue(ini, "General", m_appConfig->m_logLevel);
+            GetSimpleIniValue(ini, "General", m_appConfig->m_flushLevel);
+            GetSimpleIniValue(ini, "General", m_appConfig->m_toolWindowShortcutKey);
+            GetSimpleIniValue(ini, "General", m_appConfig->enableTsf_);
+
+            // load ui configs
+            AppUiConfig appUiConfig = {};
+            GetSimpleIniValue(ini, "UI", appUiConfig.textColor_);
+            GetSimpleIniValue(ini, "UI", appUiConfig.highlightTextColor_);
+            GetSimpleIniValue(ini, "UI", appUiConfig.m_windowBgColor);
+            GetSimpleIniValue(ini, "UI", appUiConfig.windowBorderColor_);
+            GetSimpleIniValue(ini, "UI", appUiConfig.m_btnColor);
+            GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
+            GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
+            GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
+            m_appConfig->m_appUiConfig = appUiConfig;
         }
     }
-}
-
-void PLUGIN_NAMESPACE::AppConfig::LoadIni(const char *configFilePath)
-{
-    if (appConfig_ == nullptr)
-    {
-        appConfig_ = std::make_unique<AppConfig>();
-        LoadIniConfig(configFilePath);
-    }
-}
-
-PLUGIN_NAMESPACE::AppConfig *PLUGIN_NAMESPACE::AppConfig::GetConfig()
-{
-    return appConfig_.get();
-}
-
-void PLUGIN_NAMESPACE::AppConfig::LoadIniConfig(const char *configFilePath)
-{
-    CSimpleIniA ini;
-    if (const SI_Error error = ini.LoadFile(configFilePath); error != SI_OK)
-    {
-        log_error("Load config file failed. May config file {} missing", configFilePath);
-        return;
-    }
-    GetSimpleIniValue(ini, "General", appConfig_->logLevel_);
-    GetSimpleIniValue(ini, "General", appConfig_->flushLevel_);
-    GetSimpleIniValue(ini, "General", appConfig_->toolWindowShortcutKey_);
-
-    // load ui configs
-    AppUiConfig appUiConfig = {};
-    GetSimpleIniValue(ini, "UI", appUiConfig.textColor_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.highlightTextColor_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.windowBgColor_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.windowBorderColor_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.btnColor_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
-    GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
-    appConfig_->appUiConfig_ = appUiConfig;
 }

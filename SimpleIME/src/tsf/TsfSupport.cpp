@@ -1,49 +1,48 @@
-#include "TsfSupport.h"
-#include "WCharUtils.h"
+#include "tsf/TsfSupport.h"
+#include "common/WCharUtils.h"
 #include <comdef.h>
 
-#define PLUGIN_NAMESPACE LIBC_NAMESPACE::SimpleIME
-
-std::string PLUGIN_NAMESPACE::ToErrorMessage(const HRESULT hresult)
+auto LIBC_NAMESPACE::Tsf::ToErrorMessage(const HRESULT hresult) -> std::string
 {
     const _com_error err(hresult);
     return WCharUtils::ToString(err.ErrorMessage());
 }
 
-constexpr void PLUGIN_NAMESPACE::throw_fail(HRESULT hresult, const char *msg) noexcept(false)
+auto LIBC_NAMESPACE::Tsf::TsfSupport::InitializeTsf(const bool uiLessMode) -> HRESULT
 {
-    if (FAILED(hresult))
+    if (m_initialized)
     {
-        const auto errMsg = std::format("{} because: {}", msg, ToErrorMessage(hresult));
-        throw std::runtime_error(errMsg);
+        return S_OK;
     }
-}
 
-bool PLUGIN_NAMESPACE::TsfSupport::InitializeTsf()
-{
     try
     {
         HRESULT hresult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-        if (FAILED(hresult) && hresult != S_FALSE)
-        {
-            throw_fail(hresult, "Initialize LangProfileUtil failed");
-            return false;
-        }
-        hresult = m_pThreadMgr.CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER);
-        throw_fail(hresult, "Create ThreadMgr failed");
+        ATLENSURE_SUCCEEDED(hresult);
 
-        hresult = m_pThreadMgr->Activate(&m_tfClientId);
-        throw_fail(hresult, "Can't activate TSF for caller thread");
-        return true;
+        hresult = m_pThreadMgr.CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER);
+        ATLENSURE_SUCCEEDED(hresult);
+
+        if (uiLessMode)
+        {
+            hresult = m_pThreadMgr->ActivateEx(&m_tfClientId, TF_TMAE_UIELEMENTENABLEDONLY);
+        }
+        else
+        {
+            hresult = m_pThreadMgr->Activate(&m_tfClientId);
+        }
+        ATLENSURE_SUCCEEDED(hresult);
+        m_initialized = true;
+        return S_OK;
     }
-    catch (std::runtime_error &error)
+    catch (CAtlException &atlException)
     {
-        log_error("Fatal error: Initialize TSF failed: {}", error.what());
+        log_error("Fatal error: Initialize TSF failed: {}", ToErrorMessage(atlException.m_hr));
     }
-    return false;
+    return E_FAIL;
 }
 
-PLUGIN_NAMESPACE::TsfSupport::~TsfSupport()
+LIBC_NAMESPACE::Tsf::TsfSupport::~TsfSupport()
 {
     CoUninitialize();
 }

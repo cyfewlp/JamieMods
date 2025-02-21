@@ -1,8 +1,8 @@
 #include "WcharBuf.h"
 
-namespace PLUGIN_NAMESPACE
+namespace LIBC_NAMESPACE_DECL
 {
-    auto WcharBuf::TryReAlloc(DWORD bufLen) -> bool
+    auto Ime::WcharBuf::TryReAlloc(DWORD bufLen) -> bool
     {
         if (bufLen > m_dwCapacity)
         {

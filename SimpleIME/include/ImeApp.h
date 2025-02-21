@@ -7,14 +7,15 @@
 #pragma once
 
 #include "configs/Configs.h"
+
 #include "ImeWnd.hpp"
-#include "d3d11.h"
+
 #include <RE/B/BSTEvent.h>
 #include <RE/I/InputEvent.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Ime
     {
         struct State
         {
@@ -35,12 +36,12 @@ namespace LIBC_NAMESPACE_DECL
         private:
             static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static void           ProcessEvent(RE::InputEvent **a_events);
-            static void           ProcessMouseEvent(RE::ButtonEvent *btnEvent);
+            static void           ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
 
             static inline WNDPROC RealWndProc;
-            static inline auto    g_pState  = std::make_unique<State>();
-            static inline auto    g_pImeWnd = std::make_unique<ImeWnd>();
-            static inline HWND    g_hWnd    = nullptr;
+            static inline std::unique_ptr<State>  g_pState  = nullptr;
+            static inline std::unique_ptr<ImeWnd> g_pImeWnd = nullptr;
+            static inline HWND                    g_hWnd    = nullptr;
         };
 
     }

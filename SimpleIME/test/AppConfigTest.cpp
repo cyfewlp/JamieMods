@@ -1,12 +1,12 @@
-#include "configs/AppConfig.h"
 #include "configs/Configs.h"
+#include "configs/AppConfig.h"
 #include "configs/converter.h"
 
 #include <SimpleIni.h>
 #include <gtest/gtest.h>
 #include <string>
 
-using namespace LIBC_NAMESPACE::SimpleIME;
+using namespace LIBC_NAMESPACE::Ime;
 
 // Demonstrate some basic assertions.
 TEST(VarNameConvertTest, BasicAssertions)
@@ -88,6 +88,17 @@ colorAbgr = 0xFF00FFFF
         ASSERT_EQ(converter<level_enum>::convert("critical"), 5);
         ASSERT_EQ(converter<level_enum>::convert("off"), 6);
         ASSERT_EQ(converter<level_enum>::convert("invalid_level"), 6);
+    }
+
+    TEST(PropertyTest, ConvertBool)
+    {
+        ASSERT_EQ(converter<bool>::convert("true"), true);
+        ASSERT_EQ(converter<bool>::convert("1"), true);
+        ASSERT_EQ(converter<bool>::convert("-1"), true);
+
+        ASSERT_EQ(converter<bool>::convert("false"), false);
+        ASSERT_EQ(converter<bool>::convert("invalid string"), false);
+        ASSERT_EQ(converter<bool>::convert("0"), false);
     }
 
     TEST(AppConfigTest, IniLoad)

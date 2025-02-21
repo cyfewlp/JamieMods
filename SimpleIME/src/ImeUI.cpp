@@ -3,30 +3,28 @@
 //
 
 #include "ImeUI.h"
-#include "LangProfileUtil.h"
-#include "TsfSupport.h"
-#include "WCharUtils.h"
+#include "common/WCharUtils.h"
 #include "configs/Configs.h"
-#include "ime_cmodes.h"
+#include "tsf/LangProfileUtil.h"
+#include "tsf/TextStore.h"
+
 #include "imgui.h"
-#include "imm.h"
-#include <algorithm>
 #include <clocale>
 #include <cstdint>
 #include <tchar.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Ime
     {
-        constexpr ULONG ONE = 1;
-
-        ImeUI::ImeUI(const AppUiConfig &uiConfig)
-            : m_pHeap(HeapCreate(HEAP_GENERATE_EXCEPTIONS, IME_UI_HEAP_INIT_SIZE, IME_UI_HEAP_MAX_SIZE)),
-              m_hWndIme(nullptr), m_pCompStr(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)),
-              m_pCompResult(new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE)), m_pUiConfig(uiConfig), m_langProfileUtil()
+        ImeUI::ImeUI(const AppUiConfig &uiConfig, InputMethod *pInputMethod) : m_pUiConfig(uiConfig)
         {
             _tsetlocale(LC_ALL, _T(""));
+            m_pHeap        = HeapCreate(HEAP_GENERATE_EXCEPTIONS, IME_UI_HEAP_INIT_SIZE, IME_UI_HEAP_MAX_SIZE);
+            m_pCompStr     = new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE);
+            m_pCompResult  = new WcharBuf(m_pHeap, WCHAR_BUF_INIT_SIZE);
+            m_pInputMethod = pInputMethod;
+            m_pTextEditor  = pInputMethod->GetTextEditor();
         }
 
         ImeUI::~ImeUI()
@@ -37,34 +35,27 @@ namespace LIBC_NAMESPACE_DECL
             delete m_pCompResult;
         }
 
-        bool ImeUI::Initialize(TsfSupport &tsfSupport)
+        bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
         {
-            if (!m_langProfileUtil.Initialize(tsfSupport)) return false;
-            if (!m_langProfileUtil.LoadAllLangProfiles()) return false;
+            log_debug("Initializing ImeUI...");
+            m_langProfileUtil = pLangProfileUtil;
+            if (!m_langProfileUtil->LoadAllLangProfiles())
+            {
+                log_error("Failed load lang profiles");
+                return false;
+            }
+            if (!m_langProfileUtil->LoadActiveIme())
+            {
+                log_error("Failed load active ime");
+                return false;
+            }
             UpdateLanguage();
-            if (!m_langProfileUtil.LoadActiveIme()) return false;
             return true;
         }
 
         void ImeUI::SetHWND(const HWND hWnd)
         {
             m_hWndIme = hWnd;
-        }
-
-        void ImeUI::StartComposition()
-        {
-            log_trace("IME Start Composition");
-            m_pCompStr->Clear();
-            m_pCompResult->Clear();
-            m_imeState.set(ImeState::IN_COMPOSITION);
-        }
-
-        void ImeUI::EndComposition()
-        {
-            log_trace("IME End Composition");
-            m_pCompStr->Clear();
-            m_pCompResult->Clear();
-            m_imeState.reset(ImeState::IN_COMPOSITION);
         }
 
         void ImeUI::CompositionString(HIMC hIMC, LPARAM compFlag) const
@@ -90,11 +81,6 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::SendResultStringToSkyrim() const
         {
-            if (!IsEnabled())
-            {
-                return;
-            }
-
             log_debug("Ready result string to Skyrim...");
             auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
             auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
@@ -124,7 +110,7 @@ namespace LIBC_NAMESPACE_DECL
                     continue;
                 }
                 auto *pCharEvent            = new GFxCharEvent(code, 0);
-                auto *pScaleFormMessageData = (pFactory != nullptr) ? pFactory->Create() : nullptr;
+                auto *pScaleFormMessageData = pFactory->Create();
                 if (pScaleFormMessageData == nullptr)
                 {
                     log_error("Unable create BSTDerivedCreator.");
@@ -168,7 +154,8 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            if (m_imeState.none(ImeState::IN_CANDCHOOSEN, ImeState::IN_COMPOSITION))
+            auto &imeState = m_pInputMethod->GetState();
+            if (imeState.none(InputMethod::State::IN_CANDCHOOSEN, InputMethod::State::IN_COMPOSITION))
             {
                 return;
             }
@@ -176,14 +163,14 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pUiConfig.WindowBgColor());
             ImGui::PushStyleColor(ImGuiCol_Border, m_pUiConfig.WindowBorderColor());
             ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.TextColor());
-            ImGui::Begin("SimpleIME", (bool *)nullptr, windowFlags);
+            ImGui::Begin("SimpleIME", nullptr, windowFlags);
 
             ImGui::SameLine();
-            RenderCompWindow(m_pCompStr);
+            RenderCompWindow();
 
             ImGui::Separator();
             // render ime status window: language,
-            if (m_imeState.any(ImeState::IN_CANDCHOOSEN))
+            if (imeState.any(InputMethod::State::IN_CANDCHOOSEN))
             {
                 RenderCandidateWindows();
             }
@@ -241,7 +228,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 for (const auto &errorMessage : m_errorMessages)
                 {
-                    static ImVec4 redColor = {1.0f, 0.0f, 0.0f, 1.0f};
+                    static constexpr ImVec4 redColor = {1.0f, 0.0f, 0.0f, 1.0f};
                     ImGui::TextColored(redColor, "%s", errorMessage.c_str());
                 }
             }
@@ -258,8 +245,8 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::GetIO().MouseDrawCursor = false;
             }
 
-            auto        activatedGuid     = m_langProfileUtil.GetActivatedLangProfile();
-            auto        installedProfiles = m_langProfileUtil.GetLangProfiles();
+            auto        activatedGuid     = m_langProfileUtil->GetActivatedLangProfile();
+            auto        installedProfiles = m_langProfileUtil->GetLangProfiles();
             auto       &profile           = installedProfiles[activatedGuid];
             const char *previewImeName    = profile.desc.c_str();
             ImGui::SameLine();
@@ -269,14 +256,14 @@ namespace LIBC_NAMESPACE_DECL
                 for (const std::pair<GUID, LangProfile> pair : installedProfiles)
                 {
                     auto       langProfile = pair.second;
-                    bool const isSelected  = (langProfile.guidProfile == activatedGuid);
+                    bool const isSelected  = langProfile.guidProfile == activatedGuid;
                     auto       label       = std::format("{}##{}", langProfile.desc, idx);
                     if (ImGui::Selectable(label.c_str()))
                     {
                         // SendMessageW()  // wait handle message
                         // PostMessageW(); // not wait
                         SendMessageW(m_hWndIme, CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
-                        activatedGuid = m_langProfileUtil.GetActivatedLangProfile();
+                        activatedGuid = m_langProfileUtil->GetActivatedLangProfile();
                     }
                     if (isSelected)
                     {
@@ -287,7 +274,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::EndCombo();
             }
             ImGui::SameLine();
-            if (m_imeState.all(ImeState::IN_ALPHANUMERIC))
+            if (m_pInputMethod->GetState().all(InputMethod::State::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();
@@ -300,48 +287,32 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PopStyleColor(12);
         }
 
-        void ImeUI::RenderCompWindow(const WcharBuf *compStrBuf) const
+        void ImeUI::RenderCompWindow() const
         {
             ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
-            if (compStrBuf->IsEmpty())
-            {
-                ImGui::Dummy({10, ImGui::GetTextLineHeight()});
-            }
-            else
-            {
-                auto str = WCharUtils::ToString(compStrBuf->Data());
-                ImGui::Text("%s", str.c_str());
-            }
+            const auto &editorText = m_pTextEditor->GetText();
+            const auto  str        = WCharUtils::ToString(editorText.c_str());
+            ImGui::Text("%s", str.c_str());
             ImGui::PopStyleColor(1);
         }
 
         void ImeUI::RenderCandidateWindows() const
         {
             DWORD index = 0;
-            for (auto &imeCandidate : m_imeCandidates)
+            for (const auto &candidateUi = m_pInputMethod->GetCandidateUi();
+                 const auto &item : candidateUi.CandidateList())
             {
+                if (index == candidateUi.Selection())
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
+                }
+                ImGui::Text("%s", item.c_str());
+                if (index == candidateUi.Selection())
+                {
+                    ImGui::PopStyleColor();
+                }
+                ImGui::SameLine();
                 index++;
-                if (imeCandidate == nullptr)
-                {
-                    continue;
-                }
-                auto candList = imeCandidate->CandidateList();
-                index         = 0;
-                for (const auto &item : candList)
-                {
-                    std::string const fmt = std::format("{} {}", index + 1, item);
-                    if (index == imeCandidate->Selection())
-                    {
-                        ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
-                    }
-                    ImGui::Text("%s", fmt.c_str());
-                    if (index == imeCandidate->Selection())
-                    {
-                        ImGui::PopStyleColor();
-                    }
-                    ImGui::SameLine();
-                    index++;
-                }
             }
         }
 
@@ -361,64 +332,6 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        auto ImeUI::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
-        {
-            log_trace("ImeNotify {:#x}, {:#x}", wParam, lParam);
-            switch (wParam)
-            {
-                case IMN_SETCANDIDATEPOS:
-                case IMN_OPENCANDIDATE: {
-                    m_imeState.set(ImeState::IN_CANDCHOOSEN);
-                    auto const context = ImmContextGuard(hWnd);
-                    if (context.get())
-                    {
-                        OpenCandidate(context.get(), lParam);
-                    }
-                    return true;
-                }
-                case IMN_CLOSECANDIDATE: {
-                    m_imeState.reset(ImeState::IN_CANDCHOOSEN);
-                    CloseCandidate(lParam);
-                    return true;
-                }
-                case IMN_CHANGECANDIDATE: {
-                    HIMC hIMC = ImmGetContext(hWnd);
-                    if (hIMC != nullptr)
-                    {
-                        ChangeCandidate(hIMC, lParam);
-                        ImmReleaseContext(hWnd, hIMC);
-                    }
-                    return true;
-                }
-                case IMN_SETCONVERSIONMODE: {
-                    HIMC hIMC = ImmGetContext(hWnd);
-                    if (hIMC != nullptr)
-                    {
-                        UpdateConversionMode(hIMC);
-                        ImmReleaseContext(hWnd, hIMC);
-                    }
-                    return true;
-                }
-                case IMN_SETOPENSTATUS: {
-                    HIMC hIMC = ImmGetContext(hWnd);
-                    if (hIMC != nullptr)
-                    {
-                        OnSetOpenStatus(hIMC);
-                        ImmReleaseContext(hWnd, hIMC);
-                    }
-                    return true;
-                }
-                default:
-                    break;
-            }
-            return false;
-        }
-
-        void ImeUI::ActivateProfile(const GUID *guidProfile)
-        {
-            m_langProfileUtil.ActivateProfile(guidProfile);
-        }
-
         template <typename... Args>
         void ImeUI::PushErrorMessage(std::format_string<Args...> fmt, Args &&...args)
         {
@@ -430,150 +343,5 @@ namespace LIBC_NAMESPACE_DECL
             m_errorMessages.push_back(std::format(fmt, std::forward<Args>(args)...));
         }
 
-        void ImeUI::UpdateConversionMode(HIMC hIMC)
-        {
-            DWORD conversion = 0;
-            DWORD sentence   = 0;
-            if (ImmGetConversionStatus(hIMC, &conversion, &sentence) != 0)
-            {
-                switch (conversion & IME_CMODE_LANGUAGE)
-                {
-                    case IME_CMODE_ALPHANUMERIC:
-                        m_imeState.set(ImeState::IN_ALPHANUMERIC);
-                        log_debug("CMODE:ALPHANUMERIC, Disable IME");
-                        break;
-                    default:
-                        m_imeState.reset(ImeState::IN_ALPHANUMERIC);
-                        break;
-                }
-            }
-        }
-
-        void ImeUI::OnSetOpenStatus(HIMC hIMC)
-        {
-            if (ImmGetOpenStatus(hIMC) != 0)
-            {
-                m_imeState.set(ImeState::OPEN);
-                UpdateConversionMode(hIMC);
-            }
-            else
-            {
-                m_imeState.reset(ImeState::OPEN);
-            }
-        }
-
-        // when ImeUi enabled, the Game Input will be block and composition string will be sent
-        // to Game text field;
-        auto ImeUI::IsEnabled() const -> bool
-        {
-            return m_imeState.any(ImeState::IME_ALL);
-        }
-
-        auto ImeUI::GetImeState() const -> Enumeration<ImeState>
-        {
-            return m_imeState;
-        }
-
-        void ImeUI::OpenCandidate(HIMC hIMC, LPARAM candListFlag)
-        {
-            for (DWORD index = 0; index < CandWindowProp::MAX_COUNT; ++index)
-            {
-                if ((candListFlag & (ONE << index)) == 0U)
-                {
-                    continue;
-                }
-                ChangeCandidateAt(hIMC, index);
-            }
-        }
-
-        void ImeUI::CloseCandidate(LPARAM candListFlag)
-        {
-            for (uint8_t index = 0; index < CandWindowProp::MAX_COUNT; ++index)
-            {
-                if ((candListFlag & (ONE << index)) != 0U)
-                {
-                    auto &imeCandiDate = m_imeCandidates.at(index);
-                    if (imeCandiDate == nullptr)
-                    {
-                        continue;
-                    }
-
-                    log_debug("Close candidate window #{}", index);
-                    imeCandiDate.reset();
-                }
-            }
-        }
-
-        void ImeUI::ChangeCandidate(HIMC hIMC, LPARAM candListFlag)
-        {
-            DWORD dwIndex = 0;
-            for (; dwIndex < CandWindowProp::MAX_COUNT; dwIndex++)
-            {
-                if ((candListFlag & (ONE << dwIndex)) != 0U)
-                {
-                    break;
-                }
-            }
-            if (dwIndex == CandWindowProp::MAX_COUNT)
-            {
-                return;
-            }
-
-            ChangeCandidateAt(hIMC, dwIndex);
-        }
-
-        void ImeUI::ChangeCandidateAt(HIMC hIMC, DWORD dwIndex)
-        {
-            log_debug("Update candidate window #{}", dwIndex);
-            DWORD bufLen = ImmGetCandidateListW(hIMC, dwIndex, nullptr, 0);
-            if (bufLen == 0)
-            {
-                return;
-            }
-            HGLOBAL hGlobal = GlobalAlloc(LPTR, bufLen);
-            if (hGlobal == nullptr)
-            {
-                log_warn("Global alloc {} failed.", bufLen);
-                return;
-            }
-            auto &currentCandidate = m_imeCandidates.at(dwIndex);
-            if (currentCandidate == nullptr)
-            {
-                currentCandidate = std::make_unique<ImeCandidateList>();
-            }
-            LPCANDIDATELIST lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
-            if (lpCandList == nullptr)
-            {
-                log_error("Candidate window #{} alloc memory failed.", dwIndex);
-                GlobalFree(hGlobal);
-                currentCandidate.reset();
-                return;
-            }
-            ImmGetCandidateListW(hIMC, dwIndex, lpCandList, bufLen);
-            currentCandidate->Flush(lpCandList);
-            log_debug("Candidate window #{}, count: {}", dwIndex, lpCandList->dwCount);
-            GlobalUnlock(hGlobal);
-            GlobalFree(hGlobal);
-        }
-
-        void ImeCandidateList::Flush(LPCANDIDATELIST lpCandList)
-        {
-            SetPageSize(lpCandList->dwPageSize);
-            DWORD dwStartIndex = lpCandList->dwPageStart;
-            DWORD dwEndIndex   = dwStartIndex + m_dwPageSize;
-            dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
-            m_candidateList.clear();
-            auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);
-            for (; dwStartIndex < dwEndIndex; dwStartIndex++)
-            {
-                auto        pcCandidate  = lpCandListByte + lpCandList->dwOffset[dwStartIndex];
-                auto       *pwcCandidate = reinterpret_cast<LPWCH>(pcCandidate);
-                auto        sizeInBytes  = WCharUtils::RequiredByteLength(pwcCandidate);
-                std::string ansiStr(sizeInBytes, 0);
-                WCharUtils::ToString(pwcCandidate, ansiStr.data(), sizeInBytes);
-                m_candidateList.push_back(ansiStr);
-            }
-            m_dwSelection = lpCandList->dwSelection % m_dwPageSize;
-        }
     } // namespace  SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

@@ -23,8 +23,8 @@ enable_testing()
 
 include(FetchContent)
 FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip
+  googletest DOWNLOAD_EXTRACT_TIMESTAMP
+  URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip 
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -36,7 +36,6 @@ add_executable(
   src/AppConfig.cpp
   src/WcharBuf.cpp
   "test/AppConfigTest.cpp"
-  "test/WcharBufTest.cpp"
 )
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
 
@@ -49,7 +48,7 @@ target_link_libraries(
 target_include_directories(
   ${TEST_PROJ_NAME}
   PRIVATE
-  ${UTILS_INCLUDE_DIR}
+  ${CMAKE_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${SIMPLEINI_INCLUDE_DIRS}
 )
@@ -68,7 +67,6 @@ add_custom_command(
 
 set(headers
     include/Hooks.hpp
-    include/LangProfileUtil.h
     include/configs/AppConfig.h
     include/configs/Configs.h
     include/configs/converter.h
@@ -77,7 +75,13 @@ set(headers
     include/ImeWnd.hpp
     include/FakeDirectInputDevice.h
     include/WcharBuf.h
-    src/tsf/TsfSupport.h
+    include/ime/ImmImeHandler.h
+    include/ime/InputMethod.h
+    include/tsf/TsfSupport.h
+    include/ime/TextEditor.h
+    include/tsf/TextStore.h
+    include/tsf/LangProfileUtil.h
+	include/tsf/TsfCompartment.h
 )
 
 set(sources
@@ -87,9 +91,14 @@ set(sources
     src/ImeWnd.cpp
     src/Hooks.cpp
     src/AppConfig.cpp
-    src/LangProfileUtil.cpp
+    src/tsf/LangProfileUtil.cpp
     src/WcharBuf.cpp
+    src/ime/ImmImeHandler.cpp
+    src/ime/InputMethod.cpp
     src/tsf/TsfSupport.cpp
+    src/ime/TextEditor.cpp
+    src/tsf/TextStore.cpp
+    src/tsf/TsfCompartment.cpp
 )
 
 source_group(
@@ -122,23 +131,22 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE include/PCH.h)
 
 # include directories
 target_include_directories(
-        ${PROJECT_NAME}
-        PRIVATE
-        ${DETOURS_INCLUDE_DIRS}
-        ${UTILS_INCLUDE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/tsf
-        #${SIMPLEINI_INCLUDE_DIRS}
+    ${PROJECT_NAME}
+    PRIVATE
+    ${DETOURS_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    #${SIMPLEINI_INCLUDE_DIRS}
 )
 
 # linkage
 target_link_libraries(
-        ${PROJECT_NAME}
-        PRIVATE
-        spdlog::spdlog
-        imgui
-        ${DETOURS_LIBRARY}
-        Microsoft.GSL::GSL
+    ${PROJECT_NAME}
+    PRIVATE
+    spdlog::spdlog
+    imgui
+    ${DETOURS_LIBRARY}
+    Microsoft.GSL::GSL
 )
 
 ## Install config
@@ -198,7 +206,7 @@ if (DEFINED OUTPUT_FOLDER)
             POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins$<$<CONFIG:DEBUG>:/debug>/${PROJECT_NAME}.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
             VERBATIM
     )
 

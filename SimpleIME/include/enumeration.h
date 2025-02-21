@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <configs/Configs.h>
 #include <concepts>
 
 namespace LIBC_NAMESPACE_DECL
@@ -28,11 +27,11 @@ namespace LIBC_NAMESPACE_DECL
         constexpr Enumeration &operator=(const Enumeration &) noexcept = default;
         constexpr Enumeration &operator=(Enumeration &&) noexcept      = default;
         template <class U2>
-        constexpr Enumeration(Enumeration<enum_t, U2> a_rhs) noexcept = delete;
+        explicit constexpr Enumeration(Enumeration<enum_t, U2> a_rhs) noexcept = delete;
         template <class U2>
         constexpr Enumeration &operator=(Enumeration<enum_t, U2> a_rhs) noexcept = delete;
 
-        constexpr bool operator==(enum_type a_value) noexcept
+        constexpr bool operator==(enum_type a_value) const noexcept
         {
             return _impl == static_cast<underlying_type>(a_value);
         }

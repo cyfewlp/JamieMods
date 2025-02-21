@@ -10,7 +10,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace SimpleIME
+    namespace Ime
     {
         constexpr std::string ConvertCamelCaseToUnderscore(const std::string &input)
         {
@@ -56,30 +56,29 @@ namespace LIBC_NAMESPACE_DECL
         template <typename Type>
         struct Property
         {
-
-            constexpr Property(Type value, const std::string &varName) : value_(std::move(value))
+            constexpr Property(Type value, const std::string &varName) : m_value(std::move(value))
             {
-                configName_ = ConvertCamelCaseToUnderscore(varName);
+                m_configName = ConvertCamelCaseToUnderscore(varName);
             }
 
             [[nodiscard]] constexpr const Type &Value() const
             {
-                return value_;
+                return m_value;
             }
 
             [[nodiscard]] constexpr const char *ConfigName() const
             {
-                return configName_.c_str();
+                return m_configName.c_str();
             }
 
             constexpr void SetValue(const Type &value)
             {
-                value_ = value;
+                m_value = value;
             }
 
         private:
-            Type        value_;
-            std::string configName_;
+            Type        m_value;
+            std::string m_configName;
         };
 
         template <typename Type>
@@ -127,12 +126,12 @@ namespace LIBC_NAMESPACE_DECL
 
             [[nodiscard]] constexpr auto WindowBgColor() const -> const uint32_t &
             {
-                return windowBgColor_.Value();
+                return m_windowBgColor.Value();
             }
 
             [[nodiscard]] constexpr auto BtnColor() const -> const uint32_t &
             {
-                return btnColor_.Value();
+                return m_btnColor.Value();
             }
 
             [[nodiscard]] constexpr auto EastAsiaFontFile() const -> const std::string &
@@ -156,8 +155,8 @@ namespace LIBC_NAMESPACE_DECL
             Property<uint32_t>    PROPERTY_VAR(textColor, 0xFFCCCCCC);
             Property<uint32_t>    PROPERTY_VAR(highlightTextColor, 0xFFCCCCCC);
             Property<uint32_t>    PROPERTY_VAR(windowBorderColor, 0xFF3A3A3A);
-            Property<uint32_t>    windowBgColor_{0x801E1E1E, "windowBackgroundColor"};
-            Property<uint32_t>    btnColor_{0xFF444444, "buttonColor"};
+            Property<uint32_t>    m_windowBgColor{0x801E1E1E, "windowBackgroundColor"};
+            Property<uint32_t>    m_btnColor{0xFF444444, "buttonColor"};
             Property<std::string> PROPERTY_VAR(eastAsiaFontFile, R"(C:\Windows\Fonts\simsun.ttc)");
             Property<std::string> PROPERTY_VAR(emojiFontFile, R"(C:\Windows\Fonts\seguiemj.ttf)");
         };
@@ -168,15 +167,15 @@ namespace LIBC_NAMESPACE_DECL
         public:
             static constexpr auto DEFAULT_LOG_LEVEL                = spdlog::level::info;
             static constexpr auto DEFAULT_FLUSH_LEVEL              = spdlog::level::trace;
-            static constexpr char DEFAULT_TOOL_WINDOW_SHORTCUT_KEY = DIK_F2;
+            static constexpr char DEFAULT_TOOL_WINDOW_SHORTCUT_KEY = 0x3C; // DIK_F2
 
         private:
-            Property<uint32_t>                  toolWindowShortcutKey_{DEFAULT_TOOL_WINDOW_SHORTCUT_KEY,
-                                                      "toolWindowShortcutKey"}; // 0x3C
-            Property<spdlog::level::level_enum> logLevel_{DEFAULT_LOG_LEVEL, "logLevel"};
-            Property<spdlog::level::level_enum> flushLevel_{DEFAULT_FLUSH_LEVEL, "flushLevel"};
-
-            AppUiConfig                         appUiConfig_;
+            Property<uint32_t>                  m_toolWindowShortcutKey{DEFAULT_TOOL_WINDOW_SHORTCUT_KEY,
+                                                       "toolWindowShortcutKey"}; // 0x3C
+            Property<spdlog::level::level_enum> m_logLevel{DEFAULT_LOG_LEVEL, "logLevel"};
+            Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
+            Property<bool>                      PROPERTY_VAR(enableTsf, true);
+            AppUiConfig                         m_appUiConfig;
 
         public:
             AppConfig()                              = default;
@@ -189,22 +188,27 @@ namespace LIBC_NAMESPACE_DECL
             // Getters
             [[nodiscard]] auto GetLogLevel() const noexcept -> const spdlog::level::level_enum &
             {
-                return logLevel_.Value();
+                return m_logLevel.Value();
             }
 
             [[nodiscard]] auto GetFlushLevel() const noexcept -> const spdlog::level::level_enum &
             {
-                return flushLevel_.Value();
+                return m_flushLevel.Value();
             }
 
             [[nodiscard]] auto GetToolWindowShortcutKey() const noexcept -> uint32_t
             {
-                return toolWindowShortcutKey_.Value();
+                return m_toolWindowShortcutKey.Value();
             }
 
             [[nodiscard]] constexpr AppUiConfig &GetAppUiConfig()
             {
-                return appUiConfig_;
+                return m_appUiConfig;
+            }
+
+            [[nodiscard]] auto EnableTsf() const -> bool
+            {
+                return enableTsf_.Value();
             }
 
             /**
@@ -218,7 +222,7 @@ namespace LIBC_NAMESPACE_DECL
         private:
             static void                       LoadIniConfig(const char *configFilePath);
 
-            static std::unique_ptr<AppConfig> appConfig_;
+            static std::unique_ptr<AppConfig> m_appConfig;
         };
 
     } // namespace SimpleIME
