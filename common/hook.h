@@ -2,7 +2,7 @@
 #define COMMON_HOOK_H
 #pragma once
 
-#include "common/common.h"
+#include "common/log.h"
 #include <REL/Relocation.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -52,7 +52,7 @@ namespace LIBC_NAMESPACE_DECL
             explicit D3DInitHookData(func_type *ptr)
                 : HookData(REL::RelocationID(75595, 77226), REL::VariantOffset(0x9, 0x275, 0x00), ptr)
             {
-                LIBC_NAMESPACE::log_debug("D3D init hooked: {}", m_address);
+                log_debug("D3D init hooked: {}", m_address);
             }
         };
 
@@ -61,7 +61,7 @@ namespace LIBC_NAMESPACE_DECL
             explicit D3DPresentHookData(func_type *ptr)
                 : HookData(REL::RelocationID(75461, 77246), REL::VariantOffset(0x9, 0x9, 0x00), ptr)
             {
-                LIBC_NAMESPACE::log_debug("D3D present hooked: {}", m_address);
+                log_debug("D3D present hooked: {}", m_address);
             }
         };
 

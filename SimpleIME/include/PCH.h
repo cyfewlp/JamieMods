@@ -8,6 +8,10 @@
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
+#define LIBC_NAMESPACE __llvm_libc_simpleime
+
+#include "common/config.h" // NOLINT
+
 using namespace std::literals;
 
 static constexpr int DIRECTINPUT_ACQUIRE_FAILED = 0x1;

@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "common/common.h"
-
 #include <cstdint>
 #include <unknwn.h>
 #include <windows.h>

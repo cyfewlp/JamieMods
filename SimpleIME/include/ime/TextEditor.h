@@ -1,6 +1,8 @@
+#ifndef IME_TEXTEDITOR_H
+#define IME_TEXTEDITOR_H
+
 #pragma once
 
-#include "common/common.h"
 #include "ime/ime.h"
 
 #include <TextStor.h>
@@ -17,8 +19,8 @@ namespace LIBC_NAMESPACE_DECL
             ~TextEditor()                                      = default;
             TextEditor(const TextEditor &other)                = delete;
             TextEditor(TextEditor &&other) noexcept            = delete;
-            TextEditor &operator=(const TextEditor &other)     = delete;
-            TextEditor &operator=(TextEditor &&other) noexcept = delete;
+            auto        operator=(const TextEditor &other) -> TextEditor &     = delete;
+            auto        operator=(TextEditor &&other) noexcept -> TextEditor & = delete;
 
             auto        Select(const long &&acpStart, const long &&acpEnd) -> void;
             auto        Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
@@ -31,7 +33,7 @@ namespace LIBC_NAMESPACE_DECL
 
             void GetSelection(LONG *pAcpStart, LONG *pAcpEnd) const;
             auto GetSelection(TS_SELECTION_ACP *pSelectionAcp) const -> void;
-            auto InsertText(const wchar_t *pwszText, const uint32_t cch) -> long;
+            auto InsertText(const wchar_t *pwszText, uint32_t cch) -> long;
             void ClearText();
 
             /**
@@ -45,7 +47,7 @@ namespace LIBC_NAMESPACE_DECL
             /**
              * @return The editor text size in characters
              */
-            constexpr auto GetTextSize() const -> uint32_t
+            [[nodiscard]] constexpr auto GetTextSize() const -> uint32_t
             {
                 return m_editorText.size();
             }
@@ -59,7 +61,7 @@ namespace LIBC_NAMESPACE_DECL
              */
             auto GetText(LPWCH lpWch, uint32_t bufferSize, uint32_t offset, uint32_t cchRequire) const -> void;
 
-            constexpr auto GetText() const -> const std::wstring &
+            [[nodiscard]] constexpr auto GetText() const -> const std::wstring &
             {
                 return m_editorText;
             }
@@ -70,5 +72,6 @@ namespace LIBC_NAMESPACE_DECL
             };
             std::wstring m_editorText;
         };
-    } // namespace Tsg
+    } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL
+#endif

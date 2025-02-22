@@ -34,8 +34,7 @@ find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 add_executable(
   ${TEST_PROJ_NAME}
   src/AppConfig.cpp
-  src/WcharBuf.cpp
-  "test/AppConfigTest.cpp"
+        "test/AppConfigTest.cpp"
 )
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
 
@@ -64,17 +63,15 @@ add_custom_command(
 )
 ##
 # Plugin Config
-
 set(headers
     include/Hooks.hpp
     include/configs/AppConfig.h
-    include/configs/Configs.h
+    include/configs/CustomMessage.h
     include/configs/converter.h
     include/ImeApp.h
     include/ImeUI.h
     include/ImeWnd.hpp
     include/FakeDirectInputDevice.h
-    include/WcharBuf.h
     include/ime/TextEditor.h
     include/ime/ITextService.h
     include/ime/ITextServiceFactory.h
@@ -91,7 +88,6 @@ set(sources
     src/ImeWnd.cpp
     src/Hooks.cpp
     src/AppConfig.cpp
-    src/WcharBuf.cpp
     src/ime/TextEditor.cpp
     src/ime/Imm32TextService.cpp
     src/tsf/TsfSupport.cpp

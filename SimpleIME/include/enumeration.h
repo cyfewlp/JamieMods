@@ -21,23 +21,23 @@ namespace LIBC_NAMESPACE_DECL
         static_assert(std::is_enum_v<enum_type>, "enum_type must be an enum");
         static_assert(std::is_integral_v<underlying_type>, "underlying_type must be an integral");
 
-        constexpr Enumeration() noexcept                               = default;
-        constexpr Enumeration(const Enumeration &) noexcept            = default;
-        constexpr Enumeration(Enumeration &&) noexcept                 = default;
-        constexpr Enumeration &operator=(const Enumeration &) noexcept = default;
-        constexpr Enumeration &operator=(Enumeration &&) noexcept      = default;
+        constexpr Enumeration() noexcept                                        = default;
+        constexpr Enumeration(const Enumeration &) noexcept                     = default;
+        constexpr Enumeration(Enumeration &&) noexcept                          = default;
+        constexpr auto operator=(const Enumeration &) noexcept -> Enumeration & = default;
+        constexpr auto operator=(Enumeration &&) noexcept -> Enumeration &      = default;
         template <class U2>
         explicit constexpr Enumeration(Enumeration<enum_t, U2> a_rhs) noexcept = delete;
         template <class U2>
-        constexpr Enumeration &operator=(Enumeration<enum_t, U2> a_rhs) noexcept = delete;
+        constexpr auto operator=(Enumeration<enum_t, U2> a_rhs) noexcept -> Enumeration & = delete;
 
-        constexpr bool         operator==(enum_type a_value) const noexcept
+        constexpr auto operator==(enum_type a_value) const noexcept -> bool
         {
             return _impl == static_cast<underlying_type>(a_value);
         }
 
         template <class... Args>
-        constexpr Enumeration(Args... a_values) noexcept //
+        constexpr explicit Enumeration(Args... a_values) noexcept //
             requires(std::same_as<Args, enum_type> && ...)
             : _impl((static_cast<underlying_type>(a_values) | ...))
         {
@@ -45,7 +45,7 @@ namespace LIBC_NAMESPACE_DECL
 
         ~Enumeration() noexcept = default;
 
-        constexpr Enumeration &operator=(enum_type a_value) noexcept
+        constexpr auto operator=(enum_type a_value) noexcept -> Enumeration &
         {
             _impl = static_cast<underlying_type>(a_value);
             return *this;
@@ -56,46 +56,44 @@ namespace LIBC_NAMESPACE_DECL
             return _impl != static_cast<underlying_type>(0);
         }
 
-        [[nodiscard]] constexpr enum_type operator*() const noexcept
+        [[nodiscard]] constexpr auto operator*() const noexcept -> enum_type
         {
             return get();
         }
 
-        [[nodiscard]] constexpr enum_type get() const noexcept
+        [[nodiscard]] constexpr auto get() const noexcept -> enum_type
         {
             return static_cast<enum_type>(_impl);
         }
 
-        [[nodiscard]] constexpr underlying_type underlying() const noexcept
+        [[nodiscard]] constexpr auto underlying() const noexcept -> underlying_type
         {
             return _impl;
         }
 
         template <class... Args>
-        constexpr Enumeration &set(Args... a_args) noexcept //
-            requires(std::same_as<Args, enum_type> && ...)
-        {
-            _impl |= (static_cast<underlying_type>(a_args) | ...);
-            return *this;
-        }
+        constexpr auto set(Args... a_args) noexcept -> Enumeration & //
+            requires(std::same_as<Args, enum_type> &&...) {
+                _impl |= (static_cast<underlying_type>(a_args) | ...);
+                return *this;
+            }
 
         template <class... Args>
-        constexpr Enumeration &reset(Args... a_args) noexcept //
-            requires(std::same_as<Args, enum_type> && ...)
-        {
-            _impl &= ~(static_cast<underlying_type>(a_args) | ...);
-            return *this;
-        }
+        constexpr auto reset(Args... a_args) noexcept -> Enumeration & //
+            requires(std::same_as<Args, enum_type> &&...) {
+                _impl &= ~(static_cast<underlying_type>(a_args) | ...);
+                return *this;
+            }
 
         template <class... Args>
-        [[nodiscard]] constexpr bool any(Args... a_args) const noexcept //
+        [[nodiscard]] constexpr auto any(Args... a_args) const noexcept -> bool //
             requires(std::same_as<Args, enum_type> && ...)
         {
             return (_impl & (static_cast<underlying_type>(a_args) | ...)) != static_cast<underlying_type>(0);
         }
 
         template <class... Args>
-        [[nodiscard]] constexpr bool all(Args... a_args) const noexcept //
+        [[nodiscard]] constexpr auto all(Args... a_args) const noexcept -> bool //
             requires(std::same_as<Args, enum_type> && ...)
         {
             return (_impl & (static_cast<underlying_type>(a_args) | ...)) ==
@@ -103,7 +101,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         template <class... Args>
-        [[nodiscard]] constexpr bool none(Args... a_args) const noexcept //
+        [[nodiscard]] constexpr auto none(Args... a_args) const noexcept -> bool //
             requires(std::same_as<Args, enum_type> && ...)
         {
             return (_impl & (static_cast<underlying_type>(a_args) | ...)) == static_cast<underlying_type>(0);
@@ -117,10 +115,10 @@ namespace LIBC_NAMESPACE_DECL
     auto all(enum_t &state, Flags... flags) -> bool
         requires(std::same_as<Flags, enum_t> && ...)
     {
-        Underlying value1 = static_cast<Underlying>(state);
+        auto       value1 = static_cast<Underlying>(state);
         Underlying value2 = (static_cast<Underlying>(flags) | ...);
         (value1 & value2);
         return (value1 & value2) == value2;
     }
 } // namespace LIBC_NAMESPACE_DECL
-#endif // HELLOWORLD_ENUMERATION_H
+#endif // ENUMERATION_H

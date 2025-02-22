@@ -34,8 +34,10 @@
     - [] crash with candidate list
     - [x] WcharBuf optimize
         - [x] Test WcharBuf
-    - [] fix candidate update when ime is Microsoft PinYin
+    - [x] fix candidate update when ime is Microsoft PinYin
         - when choose any candidate:
             - Microsoft Pinyin: OpenCandidate -> CloseCandidate -> UpdateCandidate
             - imeXunFei         OpenCandidate -> OpenCandidate
         - check if IME support TSF, switch to TSF UI to replace candidate list read.
+    - [] Alphanumeric state in tsf;iFly switch to alphanumeric won't trigger compartment hange
+        event(back to Imm32?

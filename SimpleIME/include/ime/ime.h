@@ -1,7 +1,10 @@
+#ifndef IME_IME_H
+#define IME_IME_H
+
 #pragma once
 
-#include "common/common.h"
-
+#include <list>
+#include <string>
 #include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -17,14 +20,14 @@ namespace LIBC_NAMESPACE_DECL
 
         struct CandidateUi
         {
-            CandidateUi()                                        = default;
-            ~CandidateUi()                                       = default;
-            CandidateUi(const CandidateUi &other)                = delete;
-            CandidateUi(CandidateUi &&other) noexcept            = delete;
-            CandidateUi &operator=(const CandidateUi &other)     = delete;
-            CandidateUi &operator=(CandidateUi &&other) noexcept = delete;
+            CandidateUi()                                                 = default;
+            ~CandidateUi()                                                = default;
+            CandidateUi(const CandidateUi &other)                         = delete;
+            CandidateUi(CandidateUi &&other) noexcept                     = delete;
+            auto operator=(const CandidateUi &other) -> CandidateUi &     = delete;
+            auto operator=(CandidateUi &&other) noexcept -> CandidateUi & = delete;
 
-            void         SetPageSize(const DWORD dwPageSize)
+            void SetPageSize(const DWORD dwPageSize)
             {
                 m_dwPageSize = dwPageSize == 0U ? CandWindowProp::DEFAULT_PAGE_SIZE : dwPageSize;
             }
@@ -68,6 +71,7 @@ namespace LIBC_NAMESPACE_DECL
             DWORD                  m_dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
             DWORD                  m_dwSelection{0};
             std::list<std::string> m_candidateList;
-        } ALIGN(64);
-    }
-}
+        } __attribute__((packed)) __attribute__((aligned(64)));
+    } // namespace Ime
+} // namespace LIBC_NAMESPACE_DECL
+#endif

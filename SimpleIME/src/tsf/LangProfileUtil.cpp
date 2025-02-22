@@ -1,8 +1,7 @@
 ﻿#include "tsf/LangProfileUtil.h"
 
 #include "common/WCharUtils.h"
-#include "configs/Configs.h"
-#include "tsf/TsfSupport.h"
+#include "common/log.h"
 
 #include <atlcomcli.h>
 #include <future>
@@ -19,7 +18,7 @@ namespace LIBC_NAMESPACE_DECL
         HRESULT hresult = lpThreadMgr->QueryInterface(IID_PPV_ARGS(&m_lpThreadMgr));
         ATLENSURE_SUCCEEDED(hresult);
 
-        if (CComQIPtr<ITfSource> lpSource(m_lpThreadMgr); lpSource != nullptr)
+        if (CComQIPtr<ITfSource> const lpSource(m_lpThreadMgr); lpSource != nullptr)
         {
             hresult = lpSource->AdviseSink(IID_ITfInputProcessorProfileActivationSink, this, &m_dwCookie);
             ATLENSURE_RETURN(SUCCEEDED(hresult));
@@ -36,7 +35,7 @@ namespace LIBC_NAMESPACE_DECL
     {
         if (m_lpThreadMgr != nullptr)
         {
-            if (CComQIPtr<ITfSource> lpSource(m_lpThreadMgr); lpSource != nullptr)
+            if (CComQIPtr<ITfSource> const lpSource(m_lpThreadMgr); lpSource != nullptr)
             {
                 lpSource->UnadviseSink(m_dwCookie);
             }
@@ -46,7 +45,7 @@ namespace LIBC_NAMESPACE_DECL
         initialized_ = false;
     }
 
-    bool Ime::LangProfileUtil::LoadAllLangProfiles() noexcept
+    auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
     {
         HRESULT hresult = TRUE;
         try
@@ -101,17 +100,17 @@ namespace LIBC_NAMESPACE_DECL
         return SUCCEEDED(hresult);
     }
 
-    bool Ime::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) noexcept
+    auto Ime::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) -> bool
     {
         auto expected = m_langProfiles.find(*guidProfile);
         if (expected == m_langProfiles.end())
         {
             return false;
         }
-        auto    profile = expected->second;
-        HRESULT hresult = m_tfProfileMgr->ActivateProfile(TF_PROFILETYPE_INPUTPROCESSOR, profile.langid, profile.clsid,
-                                                          profile.guidProfile, nullptr,
-                                                          TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE);
+        auto          profile = expected->second;
+        HRESULT const hresult = m_tfProfileMgr->ActivateProfile(
+            TF_PROFILETYPE_INPUTPROCESSOR, profile.langid, profile.clsid, profile.guidProfile, nullptr,
+            TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE);
         if (FAILED(hresult))
         {
             log_error("Active profile {} failed: {}", profile.desc, Tsf::ToErrorMessage(hresult));
@@ -143,7 +142,7 @@ namespace LIBC_NAMESPACE_DECL
         return m_langProfiles;
     }
 
-    HRESULT Ime::LangProfileUtil::QueryInterface(const IID &riid, void **ppvObject)
+    auto Ime::LangProfileUtil::QueryInterface(const IID &riid, void **ppvObject) -> HRESULT
     {
         *ppvObject = nullptr;
 
@@ -152,7 +151,7 @@ namespace LIBC_NAMESPACE_DECL
             *ppvObject = static_cast<ITfInputProcessorProfileActivationSink *>(this);
         }
 
-        if (*ppvObject)
+        if (*ppvObject != nullptr)
         {
             AddRef();
             return S_OK;
@@ -161,12 +160,12 @@ namespace LIBC_NAMESPACE_DECL
         return E_NOINTERFACE;
     }
 
-    ULONG Ime::LangProfileUtil::AddRef()
+    auto Ime::LangProfileUtil::AddRef() -> ULONG
     {
         return ++refCount_;
     }
 
-    ULONG Ime::LangProfileUtil::Release()
+    auto Ime::LangProfileUtil::Release() -> ULONG
     {
         --refCount_;
         if (refCount_ == 0)
@@ -177,9 +176,9 @@ namespace LIBC_NAMESPACE_DECL
         return refCount_;
     }
 
-    HRESULT Ime::LangProfileUtil::OnActivated(
-        [[maybe_unused]] DWORD dwProfileType, [[maybe_unused]] LANGID langid, [[maybe_unused]] const IID &clsid,
-        [[maybe_unused]] const GUID &catid, const GUID &guidProfile, [[maybe_unused]] HKL hkl, DWORD dwFlags)
+    auto Ime::LangProfileUtil::OnActivated([[maybe_unused]] DWORD dwProfileType, [[maybe_unused]] LANGID langid,
+                                           [[maybe_unused]] const IID &clsid, [[maybe_unused]] const GUID &catid,
+                                           const GUID &guidProfile, [[maybe_unused]] HKL hkl, DWORD dwFlags) -> HRESULT
     {
         if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
         {
@@ -191,4 +190,4 @@ namespace LIBC_NAMESPACE_DECL
         }
         return S_OK;
     }
-}
+} // namespace LIBC_NAMESPACE_DECL

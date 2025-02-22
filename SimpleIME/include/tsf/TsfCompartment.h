@@ -1,9 +1,10 @@
-#pragma once
+#ifndef TSF_TSFCOMPARTMENT_H
+    #define TSF_TSFCOMPARTMENT_H
 
-#include "common/common.h"
+    #pragma once
 
-#include <atlcomcli.h>
-#include <msctf.h>
+    #include <atlcomcli.h>
+    #include <msctf.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -12,27 +13,29 @@ namespace LIBC_NAMESPACE_DECL
         class TsfCompartment : public ITfCompartmentEventSink
         {
         public:
-            TsfCompartment() = default;
-            virtual ~TsfCompartment() = default;
-            TsfCompartment(const TsfCompartment &other)                = delete;
-            TsfCompartment(TsfCompartment &&other) noexcept            = delete;
-            TsfCompartment &operator=(const TsfCompartment &other)     = delete;
-            TsfCompartment &operator=(TsfCompartment &&other) noexcept = delete;
+            TsfCompartment()                                                    = default;
+            virtual ~TsfCompartment()                                           = default;
+            TsfCompartment(const TsfCompartment &other)                         = delete;
+            TsfCompartment(TsfCompartment &&other) noexcept                     = delete;
+            auto operator=(const TsfCompartment &other) -> TsfCompartment &     = delete;
+            auto operator=(TsfCompartment &&other) noexcept -> TsfCompartment & = delete;
 
-            auto    Initialize(ITfThreadMgr *pThreadMgr, const GUID &guidCompartment) -> HRESULT;
-            HRESULT UnInitialize();
+            auto Initialize(ITfThreadMgr *pThreadMgr, const GUID &guidCompartment) -> HRESULT;
+            auto UnInitialize() -> HRESULT;
 
-            auto    AddRef() -> ULONG override;
-            auto    Release() -> ULONG override;
+            auto AddRef() -> ULONG override;
+            auto Release() -> ULONG override;
 
         private:
-            HRESULT                 QueryInterface(const IID &riid, void **ppvObject) override;
-            HRESULT                 OnChange(const GUID &rguid) override;
+            auto                    QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
+            auto                    OnChange(const GUID &rguid) -> HRESULT override;
 
             CComPtr<ITfCompartment> m_tfCompartment;
             DWORD                   m_dwCookie = TF_INVALID_COOKIE;
             DWORD                   m_refCount = 0;
-            GUID                    m_guidCompartment;
+            GUID                    m_guidCompartment{};
         };
-    }
+    } // namespace Tsf
 }
+#endif
+// namespace LIBC_NAMESPACE_DECL

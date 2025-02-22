@@ -6,8 +6,6 @@
 //
 #pragma once
 
-#include "configs/Configs.h"
-
 #include "ImeWnd.hpp"
 
 #include <RE/B/BSTEvent.h>

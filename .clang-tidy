@@ -1,4 +1,4 @@
-﻿Checks: '*,-llvmlibc-*,-fuchsia-*,-misc-include-cleaner,-hicpp-signed-bitwise,-cppcoreguidelines-pro-type-vararg'
+﻿Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,readability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
 HeaderFileExtensions:
   - ''
   - h
@@ -10,7 +10,7 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-HeaderFilterRegex: .*
+HeaderFilterRegex: .*LangProfileUtil.*
 ExcludeHeaderFilterRegex: .*imgui.*|.*RE.*
 CheckOptions:
   llvmlibc-restrict-system-libc-headers.Includes: '-*'

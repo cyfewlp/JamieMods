@@ -1,7 +1,8 @@
 #include "ImeWnd.hpp"
 #include "ImeUI.h"
+#include "common/log.h"
 #include "configs/AppConfig.h"
-
+#include "configs/CustomMessage.h"
 #include "ime/ITextServiceFactory.h"
 
 #include <basetsd.h>
@@ -221,7 +222,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::GetThis(const HWND hWnd) -> ImeWnd *
         {
-            auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
             if (ptr == 0) return nullptr;
             return reinterpret_cast<ImeWnd *>(ptr);
         }

@@ -2,12 +2,13 @@
 // Created by jamie on 2025/2/21.
 //
 
-#include "configs/Configs.h"
+#include "common/log.h"
+#include "configs/CustomMessage.h"
 #include "ime/ITextService.h"
 
-#include "common/WCharUtils.h"
-
 #include <imm.h>
+
+#include "common/WCharUtils.h"
 
 namespace LIBC_NAMESPACE_DECL
 {

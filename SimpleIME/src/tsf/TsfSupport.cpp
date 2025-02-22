@@ -1,5 +1,6 @@
 #include "tsf/TsfSupport.h"
 #include "common/WCharUtils.h"
+#include "common/log.h"
 #include <comdef.h>
 
 auto LIBC_NAMESPACE::Tsf::ToErrorMessage(const HRESULT hresult) -> std::string

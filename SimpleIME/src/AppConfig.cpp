@@ -2,6 +2,7 @@
 // Created by jamie on 2025/2/7.
 //
 #include "configs/AppConfig.h"
+#include "common/log.h"
 #include <SimpleIni.h>
 #include <memory>
 
@@ -10,8 +11,8 @@ namespace LIBC_NAMESPACE_DECL
     namespace Ime
     {
         std::unique_ptr<AppConfig> AppConfig::m_appConfig = nullptr;
-        
-        void AppConfig::LoadIni(const char *configFilePath)
+
+        void                       AppConfig::LoadIni(const char *configFilePath)
         {
             if (m_appConfig == nullptr)
             {

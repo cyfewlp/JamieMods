@@ -1,10 +1,10 @@
-#include "configs/Configs.h"
 #include "configs/AppConfig.h"
 #include "configs/converter.h"
 
 #include <SimpleIni.h>
 #include <gtest/gtest.h>
 #include <string>
+#include <spdlog/spdlog.h>
 
 using namespace LIBC_NAMESPACE::Ime;
 

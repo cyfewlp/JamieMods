@@ -18,7 +18,7 @@ namespace LIBC_NAMESPACE_DECL
     namespace Ime
     {
         class ImmImeHandler;
-        const static inline wchar_t *g_tMainClassName = L"SimpleIME";
+        static inline auto g_tMainClassName = L"SimpleIME";
 
         // language id for english keyboard
         constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `

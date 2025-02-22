@@ -1,8 +1,6 @@
-#ifndef TSF_SUPPORT_H
-#define TSF_SUPPORT_H
+#ifndef TSF_TSFSUPPORT_H
+#define TSF_TSFSUPPORT_H
 #pragma once
-
-#include "common/common.h"
 
 #include <atlcomcli.h>
 #include <msctf.h>
@@ -11,7 +9,7 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Tsf
     {
-        std::string    ToErrorMessage(HRESULT hresult);
+        auto           ToErrorMessage(HRESULT hresult) -> std::string;
 
         constexpr void throw_fail(const HRESULT hresult, const char *msg) noexcept(false)
         {
@@ -32,13 +30,13 @@ namespace LIBC_NAMESPACE_DECL
              * @return true if initialize success, otherwise false. App should interrupt the any following TSF call if
              * init failed.
              */
-            HRESULT InitializeTsf(bool uiLessMode);
+            auto InitializeTsf(bool uiLessMode) -> HRESULT;
             TsfSupport() = default;
             ~TsfSupport();
             TsfSupport(const TsfSupport &other)                                 = delete;
             TsfSupport(TsfSupport &&other) noexcept                             = delete;
-            TsfSupport                  &operator=(const TsfSupport &other)     = delete;
-            TsfSupport                  &operator=(TsfSupport &&other) noexcept = delete;
+            auto                         operator=(const TsfSupport &other) -> TsfSupport &     = delete;
+            auto                         operator=(TsfSupport &&other) noexcept -> TsfSupport & = delete;
 
             [[nodiscard]] constexpr auto GetThreadMgr() const -> const CComPtr<ITfThreadMgrEx> &
             {
@@ -88,7 +86,7 @@ namespace LIBC_NAMESPACE_DECL
 
             static inline TsfSupport *s_instance = nullptr;
         };
-    }
-}
+    } // namespace Tsf
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif

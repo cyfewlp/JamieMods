@@ -1,11 +1,12 @@
-#ifndef CONFIGS_H
-#define CONFIGS_H
+#ifndef CONFIGS_CONFIGS_H
+#define CONFIGS_CONFIGS_H
 
 #pragma once
 
-#include "common/common.h"
-
-#define WM_CUSTOM 0x7000
+enum
+{
+    WM_CUSTOM = 0x7000
+};
 
 namespace LIBC_NAMESPACE_DECL
 {

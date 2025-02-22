@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common/common.h"
-
 #include "ITextService.h"
 #include "tsf/TextStore.h"
 

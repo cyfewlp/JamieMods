@@ -2,14 +2,12 @@
 // Created by jamie on 2025/2/21.
 //
 
-#ifndef ITEXTSERVICE_H
-#define ITEXTSERVICE_H
+#ifndef IME_ITEXTSERVICE_H
+#define IME_ITEXTSERVICE_H
 
 #include "TextEditor.h"
-#include "common/common.h"
 
 #include "enumeration.h"
-#include "ime.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -34,8 +32,8 @@ namespace LIBC_NAMESPACE_DECL
             virtual ~ITextService()                                = default;
             ITextService(const ITextService &other)                = delete;
             ITextService(ITextService &&other) noexcept            = delete;
-            ITextService &operator=(const ITextService &other)     = delete;
-            ITextService &operator=(ITextService &&other) noexcept = delete;
+            auto          operator=(const ITextService &other) -> ITextService &     = delete;
+            auto          operator=(ITextService &&other) noexcept -> ITextService & = delete;
 
             virtual auto  Initialize() -> HRESULT
             {
@@ -60,7 +58,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // members
-            auto GetState() const -> const Enumeration<ImeState> &
+            [[nodiscard]] auto GetState() const -> const Enumeration<ImeState> &
             {
                 return m_state;
             }
@@ -86,11 +84,11 @@ namespace LIBC_NAMESPACE_DECL
             {
             public:
                 Imm32TextService()                                             = default;
-                ~Imm32TextService()                                            = default;
+                ~Imm32TextService() override                                            = default;
                 Imm32TextService(const Imm32TextService &other)                = delete;
                 Imm32TextService(Imm32TextService &&other) noexcept            = delete;
-                Imm32TextService &operator=(const Imm32TextService &other)     = delete;
-                Imm32TextService &operator=(Imm32TextService &&other) noexcept = delete;
+                auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
+                auto operator=(Imm32TextService &&other) noexcept -> Imm32TextService & = delete;
 
                 /**
                  * return true means message hav processed.
@@ -122,11 +120,11 @@ namespace LIBC_NAMESPACE_DECL
                 void        OnSetOpenStatus(HIMC hIMC);
                 void        UpdateConversionMode(HIMC hIMC);
 
-                CandidateUi m_candidateUi{};
-                TextEditor  m_textEditor{};
+                CandidateUi m_candidateUi;
+                TextEditor  m_textEditor;
             };
-        }
-    }
-}
+        } // namespace Imm32
+    } // namespace Ime
+} // namespace LIBC_NAMESPACE_DECL
 
-#endif // ITEXTSERVICE_H
+#endif // IME_ITEXTSERVICE_H

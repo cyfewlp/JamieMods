@@ -1,6 +1,7 @@
-#pragma once
+#ifndef TSF_TEXTSTORE_H
+#define TSF_TEXTSTORE_H
 
-#include "common/common.h"
+#pragma once
 
 #include "ime/ITextService.h"
 #include "ime/TextEditor.h"
@@ -57,14 +58,14 @@ namespace LIBC_NAMESPACE_DECL
                 pTextStoreAcpSink.Release();
                 dwMask = 0;
             }
-        };
+        } __attribute__((packed)) __attribute__((aligned(32)));
 
         struct CandidateInfo
         {
             UINT  candidateCount = 0;
             UINT  pageSize       = 0;
             DWORD firstIndex     = 0;
-        };
+        } __attribute__((aligned(16)));
 
         class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
         {
@@ -87,15 +88,7 @@ namespace LIBC_NAMESPACE_DECL
             auto SetHWND(HWND hWnd) -> bool;
             void UnInitialize();
 
-            constexpr auto Focus() -> HRESULT
-            {
-                if (m_threadMgr == nullptr || m_hWnd == nullptr || m_documentMgr == nullptr)
-                {
-                    log_debug("Can't associate focus. Please first Initialize & set hwnd");
-                    return E_FAIL;
-                }
-                return m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
-            }
+            auto Focus() -> HRESULT;
 
             [[nodiscard]] constexpr auto IsSupportCandidateUi() const -> bool
             {
@@ -282,13 +275,14 @@ namespace LIBC_NAMESPACE_DECL
                 return m_textEditor;
             }
 
-            auto ProcessImeMessage(HWND, UINT, WPARAM, LPARAM) -> bool override;
+            auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
         private:
-            Ime::CandidateUi             m_candidateUi{};
-            Ime::TextEditor              m_textEditor{};
-            Ime::Imm32::Imm32TextService m_fallbackTextService{};
+            Ime::CandidateUi             m_candidateUi;
+            Ime::TextEditor              m_textEditor;
+            Ime::Imm32::Imm32TextService m_fallbackTextService;
             CComPtr<TextStore>           m_pTextStore = nullptr;
         };
     } // namespace Tsf
 } // namespace LIBC_NAMESPACE_DECL
+#endif

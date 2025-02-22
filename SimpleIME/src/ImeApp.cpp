@@ -2,7 +2,9 @@
 #include "ImeApp.h"
 #include "Hooks.hpp"
 #include "ImeWnd.hpp"
+#include "common/common.h"
 #include "common/hook.h"
+#include "common/log.h"
 #include "configs/AppConfig.h"
 #include "gsl/gsl"
 #include "imgui.h"
@@ -35,8 +37,8 @@ namespace LIBC_NAMESPACE_DECL
 
     namespace Ime
     {
-        static const auto D3DInitHook    = Hooks::D3DInitHookData(ImeApp::D3DInit);
-        static const auto D3DPresentHook = Hooks::D3DPresentHookData(ImeApp::D3DPresent);
+        static const auto D3DInitHook            = Hooks::D3DInitHookData(ImeApp::D3DInit);
+        static const auto D3DPresentHook         = Hooks::D3DPresentHookData(ImeApp::D3DPresent);
         static const auto DispatchInputEventHook = Hooks::DispatchInputEventHookData(ImeApp::DispatchEvent);
 
         /**

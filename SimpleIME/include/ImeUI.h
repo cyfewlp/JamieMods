@@ -9,7 +9,6 @@
 
 #include "imgui.h"
 
-#include <cstdint>
 #include <vector>
 #include <windows.h>
 

@@ -4,7 +4,8 @@
 
 #include "ImeUI.h"
 #include "common/WCharUtils.h"
-#include "configs/Configs.h"
+#include "common/log.h"
+#include "configs/CustomMessage.h"
 #include "tsf/LangProfileUtil.h"
 #include "tsf/TextStore.h"
 
@@ -127,7 +128,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 for (const auto &errorMessage : m_errorMessages)
                 {
-                    static constexpr ImVec4 redColor = {1.0f, 0.0f, 0.0f, 1.0f};
+                    static constexpr ImVec4 redColor = {1.0F, 0.0F, 0.0F, 1.0F};
                     ImGui::TextColored(redColor, "%s", errorMessage.c_str());
                 }
             }
@@ -190,7 +191,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
             const auto &editorText = m_pTextService->GetTextEditor().GetText();
-            const auto  str        = WCharUtils::ToString(editorText.c_str());
+            const auto  str        = WCharUtils::ToString(editorText);
             ImGui::Text("%s", str.c_str());
             ImGui::PopStyleColor(1);
         }
@@ -203,12 +204,11 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (index == candidateUi.Selection())
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
+                    ImGui::TextColored(ImColor(m_pUiConfig.HighlightTextColor()), "%s", item.c_str());
                 }
-                ImGui::Text("%s", item.c_str());
-                if (index == candidateUi.Selection())
+                else
                 {
-                    ImGui::PopStyleColor();
+                    ImGui::Text("%s", item.c_str());
                 }
                 ImGui::SameLine();
                 index++;

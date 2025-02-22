@@ -1,7 +1,8 @@
 #include "Hooks.hpp"
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
-#include "configs/Configs.h"
+#include "common/log.h"
+#include "configs/CustomMessage.h"
 #include "detours/detours.h"
 #include <errhandlingapi.h>
 #include <processthreadsapi.h>
@@ -21,7 +22,7 @@ namespace LIBC_NAMESPACE_DECL
             for (auto &hookData : myHookData)
             {
                 log_debug("Hooking Skyrim {}...", hookData.nType);
-                HHOOK hhk = SetWindowsHookExW(WH_GETMESSAGE, MyGetMsgProc, nullptr, GetCurrentThreadId());
+                const HHOOK hhk = SetWindowsHookExW(WH_GETMESSAGE, MyGetMsgProc, nullptr, GetCurrentThreadId());
                 if (hhk == nullptr)
                 {
                     log_error("Hook {} failed! error code: {}", hookData.nType, GetLastError());

@@ -1,10 +1,10 @@
-
 #ifndef APP_CONFIG_H
 #define APP_CONFIG_H
 
 #pragma once
 
-#include "Configs.h"
+#include "common/config.h"
+
 #include "configs/converter.h"
 #include <SimpleIni.h>
 
@@ -12,7 +12,7 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        constexpr std::string ConvertCamelCaseToUnderscore(const std::string &input)
+        constexpr auto ConvertCamelCaseToUnderscore(const std::string &input) -> std::string
         {
             if (input.empty())
             {
@@ -23,7 +23,7 @@ namespace LIBC_NAMESPACE_DECL
             output.reserve(input.size() * 2);
 
             char first = input[0];
-            if (!std::isupper(static_cast<unsigned char>(first)))
+            if (std::isupper(static_cast<unsigned char>(first)) == 0)
             {
                 first = static_cast<char>(std::toupper(static_cast<unsigned char>(first)));
             }
@@ -78,7 +78,7 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             Type        m_value;
-            std::string m_configName;
+            std::string m_configName{};
         };
 
         template <typename Type>

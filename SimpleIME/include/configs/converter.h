@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include "Configs.h"
 #include <cstdlib>
+#include <spdlog/common.h>
+#include <string>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -18,7 +19,7 @@ namespace LIBC_NAMESPACE_DECL
         template <>
         struct converter<float>
         {
-            static constexpr float convert(const char *value, float aDefault = 0.0F)
+            static constexpr auto convert(const char *value, float aDefault = 0.0F) -> float
             {
                 if (value == nullptr)
                 {
@@ -51,9 +52,8 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     return false;
                 }
-                std::string_view strView(value);
-                char            *pEnd{};
-                int              result = std::strtol(value, &pEnd, 10);
+                char *pEnd{};
+                int   result = std::strtol(value, &pEnd, 10);
                 if (*pEnd != 0)
                 {
                     return aDefault;
@@ -127,9 +127,9 @@ namespace LIBC_NAMESPACE_DECL
         };
 
         template <>
-        struct converter<uint32_t>
+        struct converter<std::uint32_t>
         {
-            static constexpr uint32_t convert(const char *value, uint32_t aDefault = 0)
+            static constexpr std::uint32_t convert(const char *value, std::uint32_t aDefault = 0)
             {
                 uint32_t result = aDefault;
                 if (value == nullptr)
