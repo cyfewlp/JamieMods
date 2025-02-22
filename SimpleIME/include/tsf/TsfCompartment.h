@@ -10,6 +10,8 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Tsf
     {
+        using CompartmentChangeCallback = std::function<HRESULT(const GUID *, ULONG)>;
+
         class TsfCompartment : public ITfCompartmentEventSink
         {
         public:
@@ -20,20 +22,22 @@ namespace LIBC_NAMESPACE_DECL
             auto operator=(const TsfCompartment &other) -> TsfCompartment &     = delete;
             auto operator=(TsfCompartment &&other) noexcept -> TsfCompartment & = delete;
 
-            auto Initialize(ITfThreadMgr *pThreadMgr, const GUID &guidCompartment) -> HRESULT;
+            auto Initialize(ITfThreadMgr *pThreadMgr, const GUID &guidCompartment,
+                            CompartmentChangeCallback callback = nullptr) -> HRESULT;
             auto UnInitialize() -> HRESULT;
 
             auto AddRef() -> ULONG override;
             auto Release() -> ULONG override;
 
         private:
-            auto                    QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
-            auto                    OnChange(const GUID &rguid) -> HRESULT override;
+            auto                      QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
+            auto                      OnChange(const GUID &rguid) -> HRESULT override;
 
-            CComPtr<ITfCompartment> m_tfCompartment;
-            DWORD                   m_dwCookie = TF_INVALID_COOKIE;
-            DWORD                   m_refCount = 0;
-            GUID                    m_guidCompartment{};
+            CComPtr<ITfCompartment>   m_tfCompartment;
+            DWORD                     m_dwCookie = TF_INVALID_COOKIE;
+            DWORD                     m_refCount = 0;
+            GUID                      m_guidCompartment{};
+            CompartmentChangeCallback m_callback = nullptr;
         };
     } // namespace Tsf
 }

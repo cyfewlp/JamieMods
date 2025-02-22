@@ -41,3 +41,4 @@
         - check if IME support TSF, switch to TSF UI to replace candidate list read.
     - [] Alphanumeric state in tsf;iFly switch to alphanumeric won't trigger compartment hange
         event(back to Imm32?
+    - [] render sentence?(may GoogleJapanese need)

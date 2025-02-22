@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include "TsfCompartment.h"
 #include "ime/ITextService.h"
 #include "ime/TextEditor.h"
-#include "tsf/TsfSupport.h"
 
 #include <array>
 #include <atlcomcli.h>
@@ -242,16 +242,18 @@ namespace LIBC_NAMESPACE_DECL
         class TextService : public Ime::ITextService
         {
         public:
-            auto Initialize() -> HRESULT override
-            {
-                m_pTextStore                 = new TextStore(this, &m_textEditor);
-                const TsfSupport *tsfSupport = TsfSupport::GetSingleton();
-                return m_pTextStore->Initialize(tsfSupport->GetThreadMgr(), tsfSupport->GetTfClientId());
-            }
+            auto Initialize() -> HRESULT override;
 
             void UnInitialize() override
             {
-                m_pTextStore->UnInitialize();
+                if (m_pCompartment != nullptr)
+                {
+                    m_pCompartment->UnInitialize();
+                }
+                if (m_pTextStore != nullptr)
+                {
+                    m_pTextStore->UnInitialize();
+                }
             }
 
             void RegisterCallback(Ime::OnEndCompositionCallback *callback) override
@@ -281,6 +283,7 @@ namespace LIBC_NAMESPACE_DECL
             Ime::CandidateUi             m_candidateUi;
             Ime::TextEditor              m_textEditor;
             Ime::Imm32::Imm32TextService m_fallbackTextService;
+            CComPtr<TsfCompartment>      m_pCompartment;
             CComPtr<TextStore>           m_pTextStore = nullptr;
         };
     } // namespace Tsf

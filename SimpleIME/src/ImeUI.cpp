@@ -198,20 +198,25 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::RenderCandidateWindows() const
         {
-            DWORD index = 0;
-            for (const auto &candidateUi = m_pTextService->GetCandidateUi();
-                 const auto &item : candidateUi.CandidateList())
+            const auto &candidateUi = m_pTextService->GetCandidateUi();
+
+            // concurrent safe
+            if (const std::list copied(candidateUi.CandidateList()); copied.size() > 0)
             {
-                if (index == candidateUi.Selection())
+                DWORD index = 0;
+                for (const auto &candidate : copied)
                 {
-                    ImGui::TextColored(ImColor(m_pUiConfig.HighlightTextColor()), "%s", item.c_str());
+                    if (index == candidateUi.Selection())
+                    {
+                        ImGui::TextColored(ImColor(m_pUiConfig.HighlightTextColor()), "%s", candidate.c_str());
+                    }
+                    else
+                    {
+                        ImGui::Text("%s", candidate.c_str());
+                    }
+                    ImGui::SameLine();
+                    index++;
                 }
-                else
-                {
-                    ImGui::Text("%s", item.c_str());
-                }
-                ImGui::SameLine();
-                index++;
             }
         }
 

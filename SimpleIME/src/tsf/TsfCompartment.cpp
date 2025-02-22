@@ -4,15 +4,17 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    auto Tsf::TsfCompartment::Initialize(ITfThreadMgr *pThreadMgr, REFGUID guidCompartment) -> HRESULT
+    auto Tsf::TsfCompartment::Initialize(ITfThreadMgr *pThreadMgr, REFGUID guidCompartment,
+                                         const CompartmentChangeCallback callback) -> HRESULT
     {
         if (IsEqualGUID(m_guidCompartment, GUID_NULL) == 0)
         {
-            log_warn("TsfCompatment already initialized.");
+            log_warn("TsfCompartment already initialized.");
             return S_FALSE;
         }
         HRESULT hresult   = E_FAIL;
         m_guidCompartment = guidCompartment;
+        m_callback        = callback;
         if (const CComQIPtr<ITfCompartmentMgr> tfCompartmentMgr(pThreadMgr); tfCompartmentMgr != nullptr)
         {
             hresult = tfCompartmentMgr->GetCompartment(guidCompartment, &m_tfCompartment);
@@ -91,8 +93,8 @@ namespace LIBC_NAMESPACE_DECL
             hresult = m_tfCompartment->GetValue(&variant);
             if (variant.vt == VT_I4)
             {
-                ULONG value = variant.ulVal;
-                log_debug("TsfCompartment::OnChange() called with value {}", value);
+                const ULONG value = variant.ulVal;
+                return m_callback(&rguid, value);
             }
         }
         return hresult;

@@ -82,7 +82,6 @@ namespace LIBC_NAMESPACE_DECL
             void                          InitializeTextService(const AppConfig *pAppConfig);
 
             std::unique_ptr<ITextService> m_pTextService = nullptr;
-            CComPtr<Tsf::TsfCompartment>  m_pTsfCompartment{new Tsf::TsfCompartment()};
             CComPtr<LangProfileUtil>      m_pLangProfileUtil{new LangProfileUtil()};
 
             bool                          m_fEnableTsf = false;

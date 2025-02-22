@@ -115,13 +115,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 throw SimpleIMEException("Can't initialize LangProfileUtil");
             }
-
-            HRESULT hresult = m_pTsfCompartment->Initialize(pTsfSupport->GetThreadMgr(),
-                                                            GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION);
-            if (FAILED(hresult))
-            {
-                throw SimpleIMEException("Can't initialize TsfCompartment");
-            }
             if (!m_pImeUi->Initialize(m_pLangProfileUtil))
             {
                 throw SimpleIMEException("Can't initialize ImeUI");
@@ -131,10 +124,6 @@ namespace LIBC_NAMESPACE_DECL
         void ImeWnd::UnInitialize() const noexcept
         {
             m_pTextService->UnInitialize();
-            if (m_pTsfCompartment != nullptr)
-            {
-                m_pTsfCompartment->UnInitialize();
-            }
             if (m_pLangProfileUtil != nullptr)
             {
                 m_pLangProfileUtil->UnInitialize();
