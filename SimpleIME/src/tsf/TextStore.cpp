@@ -398,7 +398,7 @@ namespace LIBC_NAMESPACE_DECL
             if (cchPlainReq > 0)
             {
                 cchToCopy = std::min(cchToCopy, cchPlainReq);
-                m_pTextEditor->GetText(pchPlain, cchPlainReq, acpStart, cchToCopy);
+                m_pTextEditor->UnsafeGetText(pchPlain, cchPlainReq, acpStart, cchToCopy);
             }
 
             if (pcchPlainRet != nullptr)
@@ -788,6 +788,12 @@ namespace LIBC_NAMESPACE_DECL
             CComPtr<ITfUIElement> tfUiElement;
             const HRESULT         hresult = m_uiElementMgr->GetUIElement(dwUIElementId, &tfUiElement);
             ATLENSURE_SUCCEEDED(hresult);
+
+            CComQIPtr<ITfReadingInformationUIElement> pReadingUi(tfUiElement);
+            if (pReadingUi != nullptr)
+            {
+
+            }
             return tfUiElement.QueryInterface(pInterface);
         }
 

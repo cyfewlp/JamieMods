@@ -15,18 +15,19 @@ namespace LIBC_NAMESPACE_DECL
         class TextEditor
         {
         public:
-            TextEditor()                                       = default;
-            ~TextEditor()                                      = default;
-            TextEditor(const TextEditor &other)                = delete;
-            TextEditor(TextEditor &&other) noexcept            = delete;
-            auto        operator=(const TextEditor &other) -> TextEditor &     = delete;
-            auto        operator=(TextEditor &&other) noexcept -> TextEditor & = delete;
+            TextEditor()                                                = default;
+            ~TextEditor()                                               = default;
+            TextEditor(const TextEditor &other)                         = delete;
+            TextEditor(TextEditor &&other) noexcept                     = delete;
+            auto operator=(const TextEditor &other) -> TextEditor &     = delete;
+            auto operator=(TextEditor &&other) noexcept -> TextEditor & = delete;
 
-            auto        Select(const long &&acpStart, const long &&acpEnd) -> void;
-            auto        Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
+            auto Select(const long &&acpStart, const long &&acpEnd) -> void;
+            auto Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
 
-            auto        SelectAll()
+            auto SelectAll()
             {
+                std::shared_lock lock(m_mutex);
                 m_acpSelection.acpStart = 0;
                 m_acpSelection.acpEnd   = m_editorText.size();
             }
@@ -41,6 +42,7 @@ namespace LIBC_NAMESPACE_DECL
              */
             constexpr auto GetTextSize(__out long &charSize) const -> void
             {
+                std::shared_lock lock(m_mutex);
                 charSize = m_editorText.size();
             }
 
@@ -49,6 +51,7 @@ namespace LIBC_NAMESPACE_DECL
              */
             [[nodiscard]] constexpr auto GetTextSize() const -> uint32_t
             {
+                std::shared_lock lock(m_mutex);
                 return m_editorText.size();
             }
 
@@ -59,10 +62,11 @@ namespace LIBC_NAMESPACE_DECL
              * @param offset the offset that want copied first char
              * @param cchRequire require copied text size in chars
              */
-            auto GetText(LPWCH lpWch, uint32_t bufferSize, uint32_t offset, uint32_t cchRequire) const -> void;
+            auto UnsafeGetText(LPWCH lpWch, uint32_t bufferSize, uint32_t offset, uint32_t cchRequire) const -> void;
 
-            [[nodiscard]] constexpr auto GetText() const -> const std::wstring &
+            [[nodiscard]] constexpr auto GetText() const -> std::wstring
             {
+                std::shared_lock lock(m_mutex);
                 return m_editorText;
             }
 
@@ -70,7 +74,8 @@ namespace LIBC_NAMESPACE_DECL
             TS_SELECTION_ACP m_acpSelection{
                 .acpStart = 0, .acpEnd = 0, .style = {.ase = TS_AE_END, .fInterimChar = FALSE}
             };
-            std::wstring m_editorText;
+            std::shared_mutex m_mutex;
+            std::wstring      m_editorText;
         };
     } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL

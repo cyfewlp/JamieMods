@@ -45,7 +45,7 @@ namespace LIBC_NAMESPACE_DECL
                     {
                         m_candidateUi.Close();
                         auto &candidateUi = m_fallbackTextService.GetCandidateUi();
-                        if (const auto &candidateList = candidateUi.CandidateList(); candidateList.size() > 0)
+                        if (const auto &candidateList = candidateUi.UnsafeCandidateList(); candidateList.size() > 0)
                         {
                             for (const auto &candidate : candidateList)
                             {

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <list>
+#include <shared_mutex>
 #include <string>
 #include <windows.h>
 
@@ -47,13 +48,20 @@ namespace LIBC_NAMESPACE_DECL
                 return m_dwSelection;
             }
 
-            [[nodiscard]] constexpr auto CandidateList() const -> const std::list<std::string> &
+            [[nodiscard]] constexpr auto UnsafeCandidateList() const -> const std::list<std::string> &
             {
+                return m_candidateList;
+            }
+
+            [[nodiscard]] constexpr auto CandidateList() const -> std::list<std::string>
+            {
+                std::shared_lock lock(m_mutex);
                 return m_candidateList;
             }
 
             auto PushBack(const std::string &candidate) -> void
             {
+                std::unique_lock lock(m_mutex);
                 m_candidateList.push_back(candidate);
             }
 
@@ -62,15 +70,17 @@ namespace LIBC_NAMESPACE_DECL
              */
             void Close()
             {
+                std::unique_lock lock(m_mutex);
                 m_dwSelection = 0;
                 m_candidateList.clear();
                 m_dwPageSize = CandWindowProp::DEFAULT_PAGE_SIZE;
             }
 
         private:
-            DWORD                  m_dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
-            DWORD                  m_dwSelection{0};
-            std::list<std::string> m_candidateList;
+            DWORD                     m_dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
+            DWORD                     m_dwSelection{0};
+            std::list<std::string>    m_candidateList;
+            mutable std::shared_mutex m_mutex;
         } __attribute__((packed)) __attribute__((aligned(64)));
     } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL

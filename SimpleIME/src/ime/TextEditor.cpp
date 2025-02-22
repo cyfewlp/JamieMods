@@ -52,6 +52,7 @@ namespace LIBC_NAMESPACE_DECL
 
     auto Ime::TextEditor::InsertText(const wchar_t *pwszText, const uint32_t cch) -> long
     {
+        std::unique_lock lock(m_mutex);
         if (m_acpSelection.acpStart >= static_cast<LONG>(m_editorText.size()))
         {
             m_editorText.append(pwszText, cch);
@@ -67,10 +68,11 @@ namespace LIBC_NAMESPACE_DECL
 
     void Ime::TextEditor::ClearText()
     {
+        std::unique_lock lock(m_mutex);
         m_editorText.clear();
     }
 
-    auto Ime::TextEditor::GetText(LPWCH lpWch, const uint32_t bufferSize, const uint32_t offset,
+    auto Ime::TextEditor::UnsafeGetText(LPWCH lpWch, const uint32_t bufferSize, const uint32_t offset,
                                   const uint32_t cchRequire) const -> void
     {
         if (lpWch != nullptr)

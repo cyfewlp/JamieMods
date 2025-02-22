@@ -199,12 +199,10 @@ namespace LIBC_NAMESPACE_DECL
         void ImeUI::RenderCandidateWindows() const
         {
             const auto &candidateUi = m_pTextService->GetCandidateUi();
-
-            // concurrent safe
-            if (const std::list copied(candidateUi.CandidateList()); copied.size() > 0)
+            if (const auto candidateList = candidateUi.CandidateList(); candidateList.size() > 0)
             {
                 DWORD index = 0;
-                for (const auto &candidate : copied)
+                for (const auto &candidate : candidateList)
                 {
                     if (index == candidateUi.Selection())
                     {
