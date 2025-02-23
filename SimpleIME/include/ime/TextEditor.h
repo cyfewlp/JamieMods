@@ -74,8 +74,8 @@ namespace LIBC_NAMESPACE_DECL
             TS_SELECTION_ACP m_acpSelection{
                 .acpStart = 0, .acpEnd = 0, .style = {.ase = TS_AE_END, .fInterimChar = FALSE}
             };
-            std::shared_mutex m_mutex;
-            std::wstring      m_editorText;
+            mutable std::shared_mutex m_mutex;
+            std::wstring              m_editorText;
         };
     } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL

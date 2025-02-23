@@ -79,7 +79,7 @@ namespace LIBC_NAMESPACE_DECL
             static auto                   GetThis(HWND hWnd) -> ImeWnd *;
             auto                          OnCreate() const -> LRESULT;
             auto                          OnDestroy() const -> LRESULT;
-            void                          InitializeTextService(const AppConfig *pAppConfig);
+            void                          InitializeTextService(const AppConfig &pAppConfig);
 
             std::unique_ptr<ITextService> m_pTextService = nullptr;
             CComPtr<LangProfileUtil>      m_pLangProfileUtil{new LangProfileUtil()};

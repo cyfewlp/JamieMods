@@ -11,8 +11,8 @@ namespace LIBC_NAMESPACE_DECL
 
         HRESULT TextService::Initialize()
         {
-            m_pTextStore                 = new TextStore(this, &m_textEditor);
-            const TsfSupport *tsfSupport = TsfSupport::GetSingleton();
+            m_pTextStore           = new TextStore(this, &m_textEditor);
+            auto const &tsfSupport = TsfSupport::GetSingleton();
             // callback
             auto callback = [this](const GUID * /*guid*/, const ULONG ulong) {
                 if ((ulong & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
@@ -26,11 +26,11 @@ namespace LIBC_NAMESPACE_DECL
                 return S_OK;
             };
             m_pCompartment  = new TsfCompartment();
-            HRESULT hresult = m_pCompartment->Initialize(tsfSupport->GetThreadMgr(),
+            HRESULT hresult = m_pCompartment->Initialize(tsfSupport.GetThreadMgr(),
                                                          GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, callback);
             if (SUCCEEDED(hresult))
             {
-                hresult = m_pTextStore->Initialize(tsfSupport->GetThreadMgr(), tsfSupport->GetTfClientId());
+                hresult = m_pTextStore->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId());
             }
             return hresult;
         }

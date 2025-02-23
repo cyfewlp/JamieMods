@@ -3,6 +3,7 @@
 #include "common/log.h"
 #include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
+#include "context.h"
 #include "ime/ITextServiceFactory.h"
 
 #include <basetsd.h>
@@ -86,9 +87,9 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeWnd::InitializeTextService(const AppConfig *pAppConfig)
+        void ImeWnd::InitializeTextService(const AppConfig &pAppConfig)
         {
-            m_fEnableTsf               = pAppConfig->EnableTsf();
+            m_fEnableTsf               = pAppConfig.EnableTsf();
             ITextService *pTextService = nullptr;
             ITextServiceFactory::CreateInstance(m_fEnableTsf, &pTextService);
             if (FAILED(pTextService->Initialize()))
@@ -107,11 +108,12 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("Can't register class");
             }
 
-            auto *pAppConfig = AppConfig::GetConfig();
-            InitializeTextService(pAppConfig);
-            m_pImeUi = std::make_unique<ImeUI>(pAppConfig->GetAppUiConfig(), m_pTextService.get());
-            const Tsf::TsfSupport *pTsfSupport = Tsf::TsfSupport::GetSingleton();
-            if (FAILED(m_pLangProfileUtil->Initialize(pTsfSupport->GetThreadMgr())))
+            const auto &appConfig = AppConfig::GetConfig();
+            InitializeTextService(appConfig);
+            m_pImeUi               = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), m_pTextService.get());
+
+            auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
+            if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
             {
                 throw SimpleIMEException("Can't initialize LangProfileUtil");
             }
@@ -147,19 +149,40 @@ namespace LIBC_NAMESPACE_DECL
             m_pTextService->OnStart(m_hWnd);
             MSG msg = {};
             ZeroMemory(&msg, sizeof(msg));
-            BOOL bRet;
-            while ((bRet = GetMessage(&msg, nullptr, 0, 0)) != 0)
+            auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
+            auto const  pMessagePump  = tsfSupport.GetMessagePump();
+            auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
+            while (TRUE)
             {
-                if (bRet == -1)
+                BOOL fEaten;
+                int  fResult;
+                if (pMessagePump->GetMessage(&msg, nullptr, 0, 0, &fResult) != S_OK)
                 {
-                    break;
+                    fResult = -1;
                 }
+                else if (msg.message == WM_KEYDOWN)
+                {
+                    // does an ime want it?
+                    if (pKeystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
+                        pKeystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
+                    {
+                        continue;
+                    }
+                }
+                else if (msg.message == WM_KEYUP)
+                {
+                    // does an ime want it?
+                    if (pKeystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
+                        pKeystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
+                    {
+                        continue;
+                    }
+                }
+
+                if (fResult <= 0) break;
+
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
-                if (msg.message == WM_QUIT)
-                {
-                    break;
-                }
             }
             log_info("Exit ImeWnd Thread...");
         }
@@ -216,6 +239,26 @@ namespace LIBC_NAMESPACE_DECL
             return reinterpret_cast<ImeWnd *>(ptr);
         }
 
+        void ThemeConfig(const AppUiConfig &uiConfig)
+        {
+            auto   &style                   = ImGui::GetStyle();
+            ImVec4 *colors                  = style.Colors;
+
+            colors[ImGuiCol_WindowBg]       = ImColor(uiConfig.WindowBgColor());
+            colors[ImGuiCol_Border]         = ImColor(uiConfig.WindowBorderColor());
+            colors[ImGuiCol_Text]           = ImColor(uiConfig.TextColor());
+            const auto btnCol               = uiConfig.BtnColor() & 0x00FFFFFF | 0x9A000000;
+            colors[ImGuiCol_Button]         = ImColor(btnCol);
+            colors[ImGuiCol_ButtonHovered]  = ImColor(btnCol & 0x00FFFFFF | 0x66000000);
+            colors[ImGuiCol_ButtonActive]   = ImColor(btnCol & 0x00FFFFFF | 0xAA000000);
+            colors[ImGuiCol_Header]         = colors[ImGuiCol_Button];
+            colors[ImGuiCol_HeaderHovered]  = colors[ImGuiCol_ButtonHovered];
+            colors[ImGuiCol_HeaderActive]   = colors[ImGuiCol_ButtonActive];
+            colors[ImGuiCol_FrameBg]        = colors[ImGuiCol_Button];
+            colors[ImGuiCol_FrameBgHovered] = colors[ImGuiCol_ButtonHovered];
+            colors[ImGuiCol_FrameBgActive]  = colors[ImGuiCol_ButtonActive];
+        }
+
         void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
         {
             log_info("Initializing ImGui...");
@@ -238,11 +281,12 @@ namespace LIBC_NAMESPACE_DECL
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigNavMoveSetMousePos = false;
             ImGui::StyleColorsDark();
+            ThemeConfig(AppConfig::GetConfig().GetAppUiConfig());
             GetClientRect(m_hWndParent, &rect);
             io.DisplaySize =
                 ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-            const auto &uiConfig = AppConfig::GetConfig()->GetAppUiConfig();
+            const auto &uiConfig = AppConfig::GetConfig().GetAppUiConfig();
             io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), uiConfig.FontSize(), nullptr,
                                          io.Fonts->GetGlyphRangesChineseFull());
 
@@ -319,6 +363,11 @@ namespace LIBC_NAMESPACE_DECL
         auto ImeWnd::IsDiscardGameInputEvents(__in RE::InputEvent **events) const -> bool
         {
             if (events == nullptr || *events == nullptr)
+            {
+                return false;
+            }
+            // may need more test
+            if (Context::GetInstance()->IsGameLoading())
             {
                 return false;
             }

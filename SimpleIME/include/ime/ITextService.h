@@ -28,14 +28,14 @@ namespace LIBC_NAMESPACE_DECL
         class ITextService
         {
         public:
-            ITextService()                                         = default;
-            virtual ~ITextService()                                = default;
-            ITextService(const ITextService &other)                = delete;
-            ITextService(ITextService &&other) noexcept            = delete;
-            auto          operator=(const ITextService &other) -> ITextService &     = delete;
-            auto          operator=(ITextService &&other) noexcept -> ITextService & = delete;
+            ITextService()                                                          = default;
+            virtual ~ITextService()                                                 = default;
+            ITextService(const ITextService &other)                                 = delete;
+            ITextService(ITextService &&other) noexcept                             = delete;
+            auto         operator=(const ITextService &other) -> ITextService &     = delete;
+            auto         operator=(ITextService &&other) noexcept -> ITextService & = delete;
 
-            virtual auto  Initialize() -> HRESULT
+            virtual auto Initialize() -> HRESULT
             {
                 return S_OK;
             }
@@ -83,10 +83,10 @@ namespace LIBC_NAMESPACE_DECL
             class Imm32TextService final : public ITextService
             {
             public:
-                Imm32TextService()                                             = default;
+                Imm32TextService()                                                      = default;
                 ~Imm32TextService() override                                            = default;
-                Imm32TextService(const Imm32TextService &other)                = delete;
-                Imm32TextService(Imm32TextService &&other) noexcept            = delete;
+                Imm32TextService(const Imm32TextService &other)                         = delete;
+                Imm32TextService(Imm32TextService &&other) noexcept                     = delete;
                 auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
                 auto operator=(Imm32TextService &&other) noexcept -> Imm32TextService & = delete;
 

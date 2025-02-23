@@ -788,12 +788,6 @@ namespace LIBC_NAMESPACE_DECL
             CComPtr<ITfUIElement> tfUiElement;
             const HRESULT         hresult = m_uiElementMgr->GetUIElement(dwUIElementId, &tfUiElement);
             ATLENSURE_SUCCEEDED(hresult);
-
-            CComQIPtr<ITfReadingInformationUIElement> pReadingUi(tfUiElement);
-            if (pReadingUi != nullptr)
-            {
-
-            }
             return tfUiElement.QueryInterface(pInterface);
         }
 
@@ -845,27 +839,17 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::DoUpdateUIElement() -> HRESULT
         {
             m_supportCandidateUi = true;
-            DWORD updatedFlags   = 0;
-            ATLENSURE_RETURN(SUCCEEDED(m_currentCandidateUi->GetUpdatedFlags(&updatedFlags)));
 
-            auto &candidateUi = m_pTextService->GetCandidateUi();
-            if ((updatedFlags & TF_CLUIE_SELECTION) == TF_CLUIE_SELECTION)
+            auto &candidateUi    = m_pTextService->GetCandidateUi();
+            candidateUi.Close();
+            if (CandidateInfo info{}; SUCCEEDED(GetCandInfo(m_currentCandidateUi, info)))
             {
                 UINT selection = 0;
+                candidateUi.SetPageSize(info.pageSize);
                 if (SUCCEEDED(m_currentCandidateUi->GetSelection(&selection)))
                 {
                     candidateUi.SetSelection(selection);
                 }
-            }
-
-            if (updatedFlags == 0 || updatedFlags == TF_CLUIE_SELECTION)
-            {
-                return S_OK;
-            }
-
-            candidateUi.Close();
-            if (CandidateInfo info{}; SUCCEEDED(GetCandInfo(m_currentCandidateUi, info)))
-            {
                 for (UINT index = info.firstIndex, j = 0; index < info.candidateCount && j < info.pageSize;
                      ++j, ++index)
                 {

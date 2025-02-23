@@ -21,8 +21,8 @@ namespace LIBC_NAMESPACE_DECL
         class ImeUI
         {
         public:
-            explicit ImeUI(const AppUiConfig &uiConfig, ITextService *pTextService);
-            ~ImeUI()                                 = default;
+            explicit ImeUI(AppUiConfig const &uiConfig, ITextService *pTextService);
+            ~ImeUI();
             ImeUI(const ImeUI &other)                = delete;
             ImeUI(ImeUI &&other) noexcept            = delete;
             ImeUI &operator=(const ImeUI &other)     = delete;

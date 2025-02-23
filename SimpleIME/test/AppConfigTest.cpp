@@ -3,8 +3,8 @@
 
 #include <SimpleIni.h>
 #include <gtest/gtest.h>
-#include <string>
 #include <spdlog/spdlog.h>
+#include <string>
 
 using namespace LIBC_NAMESPACE::Ime;
 
@@ -106,15 +106,14 @@ colorAbgr = 0xFF00FFFF
         AppConfig defaultConfig;
         ASSERT_NO_THROW(AppConfig::LoadIni("SimpleIME.ini"));
 
-        AppConfig *loadedConfig = AppConfig::GetConfig();
-        ASSERT_NE(loadedConfig, nullptr);
-        ASSERT_NE(defaultConfig.GetLogLevel(), loadedConfig->GetLogLevel());
-        ASSERT_NE(defaultConfig.GetFlushLevel(), loadedConfig->GetFlushLevel());
+        const AppConfig &loadedConfig = AppConfig::GetConfig();
+        ASSERT_NE(defaultConfig.GetLogLevel(), loadedConfig.GetLogLevel());
+        ASSERT_NE(defaultConfig.GetFlushLevel(), loadedConfig.GetFlushLevel());
 
-        ASSERT_EQ(loadedConfig->GetLogLevel(), spdlog::level::warn);
-        ASSERT_EQ(loadedConfig->GetFlushLevel(), spdlog::level::warn);
+        ASSERT_EQ(loadedConfig.GetLogLevel(), spdlog::level::warn);
+        ASSERT_EQ(loadedConfig.GetFlushLevel(), spdlog::level::warn);
 
-        const auto &uiConfig        = loadedConfig->GetAppUiConfig();
+        const auto &uiConfig        = loadedConfig.GetAppUiConfig();
         const auto &defaultUiConfig = defaultConfig.GetAppUiConfig();
 
         ASSERT_NE(uiConfig.TextColor(), defaultUiConfig.TextColor());

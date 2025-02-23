@@ -53,18 +53,18 @@ namespace LIBC_NAMESPACE_DECL
             _tsetlocale(LC_ALL, _T(""));
             CComPtr<ITfInputProcessorProfiles> lpProfiles;
             hresult = lpProfiles.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
-            Tsf::throw_fail(hresult, "TSF: Create profile failed.");
+            Tsf::throw_fail(hresult, "Failed create ITfInputProcessorProfiles");
 
             CComPtr<IEnumTfInputProcessorProfiles> lpEnum;
             hresult = m_tfProfileMgr->EnumProfiles(0, &lpEnum);
-            Tsf::throw_fail(hresult, "Can't enum language profiles");
+            Tsf::throw_fail(hresult, "Failed enum language profiles");
 
             TF_INPUTPROCESSORPROFILE profile = {};
             ULONG                    fetched = 0;
             while (lpEnum->Next(1, &profile, &fetched) == S_OK)
             {
-                BOOL bEnabled = FALSE;
-                BSTR bstrDesc = nullptr;
+                BOOL     bEnabled = FALSE;
+                CComBSTR bstrDesc = nullptr;
                 hresult =
                     lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled);
 
@@ -78,10 +78,9 @@ namespace LIBC_NAMESPACE_DECL
                         langProfile.clsid                   = profile.clsid;
                         langProfile.langid                  = profile.langid;
                         langProfile.guidProfile             = profile.guidProfile;
-                        langProfile.desc                    = WCharUtils::ToString(bstrDesc);
+                        langProfile.desc                    = WCharUtils::ToString(bstrDesc, bstrDesc.Length());
                         m_langProfiles[profile.guidProfile] = langProfile;
                         log_info("Load installed ime: {}", langProfile.desc.c_str());
-                        SysFreeString(bstrDesc);
                     }
                 }
             }

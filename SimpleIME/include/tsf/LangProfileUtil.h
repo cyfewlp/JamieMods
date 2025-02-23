@@ -37,7 +37,7 @@ namespace LIBC_NAMESPACE_DECL
             LANGID      langid{};
             GUID        guidProfile{};
             std::string desc{};
-        } ALIGN(128);
+        } __attribute__((packed)) __attribute__((aligned(128)));
 
         class LangProfileUtil : public ITfInputProcessorProfileActivationSink
         {

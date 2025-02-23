@@ -33,8 +33,8 @@ namespace LIBC_NAMESPACE_DECL
             auto InitializeTsf(bool uiLessMode) -> HRESULT;
             TsfSupport() = default;
             ~TsfSupport();
-            TsfSupport(const TsfSupport &other)                                 = delete;
-            TsfSupport(TsfSupport &&other) noexcept                             = delete;
+            TsfSupport(const TsfSupport &other)                                                 = delete;
+            TsfSupport(TsfSupport &&other) noexcept                                             = delete;
             auto                         operator=(const TsfSupport &other) -> TsfSupport &     = delete;
             auto                         operator=(TsfSupport &&other) noexcept -> TsfSupport & = delete;
 
@@ -43,21 +43,13 @@ namespace LIBC_NAMESPACE_DECL
                 return m_pThreadMgr;
             }
 
-            [[nodiscard]] constexpr auto GetMessagePump() -> const CComPtr<ITfMessagePump> &
+            [[nodiscard]] constexpr auto GetMessagePump() const -> CComPtr<ITfMessagePump>
             {
-                if (m_messagePump == nullptr && m_pThreadMgr != nullptr)
-                {
-                    ATLENSURE_SUCCEEDED(m_pThreadMgr.QueryInterface(&m_messagePump));
-                }
                 return m_messagePump;
             }
 
-            [[nodiscard]] constexpr auto GetKeystrokeMgr() -> const CComPtr<ITfKeystrokeMgr> &
+            [[nodiscard]] constexpr auto GetKeystrokeMgr() const -> CComPtr<ITfKeystrokeMgr>
             {
-                if (m_keystrokeMgr == nullptr && m_pThreadMgr != nullptr)
-                {
-                    ATLENSURE_SUCCEEDED(m_pThreadMgr.QueryInterface(&m_keystrokeMgr));
-                }
                 return m_keystrokeMgr;
             }
 
@@ -66,25 +58,24 @@ namespace LIBC_NAMESPACE_DECL
                 return m_tfClientId;
             }
 
-            static auto GetSingleton(bool uiLessMode = true) -> const TsfSupport *
+            static auto GetSingleton(bool uiLessMode = true) -> TsfSupport const &
             {
-                if (s_instance == nullptr)
+                if (!s_instance.m_initialized)
                 {
-                    s_instance = new TsfSupport();
-                    s_instance->InitializeTsf(uiLessMode);
+                    s_instance.InitializeTsf(uiLessMode);
                 }
                 return s_instance;
             }
 
         private:
-            CComPtr<ITfThreadMgrEx>   m_pThreadMgr;
-            CComPtr<ITfMessagePump>   m_messagePump;
-            CComPtr<ITfKeystrokeMgr>  m_keystrokeMgr;
+            CComPtr<ITfThreadMgrEx>  m_pThreadMgr;
+            CComPtr<ITfMessagePump>  m_messagePump;
+            CComPtr<ITfKeystrokeMgr> m_keystrokeMgr;
 
-            TfClientId                m_tfClientId{};
-            bool                      m_initialized = false;
+            TfClientId               m_tfClientId{};
+            bool                     m_initialized = false;
 
-            static inline TsfSupport *s_instance = nullptr;
+            static TsfSupport        s_instance;
         };
     } // namespace Tsf
 } // namespace LIBC_NAMESPACE_DECL

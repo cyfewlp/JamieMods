@@ -1,6 +1,6 @@
 project(
         SimpleIME
-        VERSION 0.0.4
+        VERSION 0.0.5
         DESCRIPTION "Simple IME support for Skyrim"
         LANGUAGES CXX
 )
@@ -21,6 +21,9 @@ set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
 
 enable_testing()
 
+option(INSTALL_GMOCK "Install Googletest's GMock?" OFF)
+option(INSTALL_GTEST "Install Googletest's GTest?" OFF)
+
 include(FetchContent)
 FetchContent_Declare(
   googletest DOWNLOAD_EXTRACT_TIMESTAMP
@@ -32,9 +35,10 @@ FetchContent_MakeAvailable(googletest)
 
 find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 add_executable(
-  ${TEST_PROJ_NAME}
-  src/AppConfig.cpp
-        "test/AppConfigTest.cpp"
+    ${TEST_PROJ_NAME}
+    src/AppConfig.cpp
+    test/AppConfigTest.cpp
+    test/WCharUtilsTest.cpp
 )
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
 
@@ -64,6 +68,7 @@ add_custom_command(
 ##
 # Plugin Config
 set(headers
+    include/context.h
     include/Hooks.hpp
     include/configs/AppConfig.h
     include/configs/CustomMessage.h
@@ -82,6 +87,7 @@ set(headers
 )
 
 set(sources
+    src/context.cpp
     src/plugin.cpp
     src/ImeApp.cpp
     src/ImeUI.cpp
@@ -146,7 +152,6 @@ target_link_libraries(
 )
 
 ## Install config
-
 set(CPACK_GENERATOR "7Z")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})

@@ -176,6 +176,7 @@ namespace LIBC_NAMESPACE_DECL
             Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
             Property<bool>                      PROPERTY_VAR(enableTsf, true);
             AppUiConfig                         m_appUiConfig;
+            static AppConfig                    g_appConfig;
 
         public:
             AppConfig()                              = default;
@@ -201,7 +202,7 @@ namespace LIBC_NAMESPACE_DECL
                 return m_toolWindowShortcutKey.Value();
             }
 
-            [[nodiscard]] constexpr AppUiConfig &GetAppUiConfig()
+            [[nodiscard]] constexpr auto GetAppUiConfig() const noexcept -> const AppUiConfig &
             {
                 return m_appUiConfig;
             }
@@ -215,14 +216,12 @@ namespace LIBC_NAMESPACE_DECL
              * load a ini config file from special path to AppConfig
              * @param configFilePath ini config file relative path
              */
-            static void       LoadIni(const char *configFilePath);
+            static void LoadIni(const char *configFilePath);
 
-            static AppConfig *GetConfig();
+            static auto GetConfig() -> const AppConfig &;
 
         private:
-            static void                       LoadIniConfig(const char *configFilePath);
-
-            static std::unique_ptr<AppConfig> m_appConfig;
+            static void LoadIniConfig(const char *configFilePath, AppConfig &destAppConfig);
         };
 
     } // namespace SimpleIME

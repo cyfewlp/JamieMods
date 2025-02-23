@@ -5,7 +5,8 @@
 
 #include "common/config.h"
 
-#include <stringapiset.h>
+#include <windows.h>
+#include <string>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -19,6 +20,14 @@ namespace LIBC_NAMESPACE_DECL
             std::string strTo(size_needed, 0);
             WideCharToMultiByte(codePage, 0, wstr.data(), static_cast<int>(wstr.size()), strTo.data(), size_needed,
                                 nullptr, nullptr);
+            return strTo;
+        }
+
+        static auto ToString(const wchar_t *pwsz, const int charSize, const UINT codePage = CP_UTF8) -> std::string
+        {
+            int const   size_needed = WideCharToMultiByte(codePage, 0, pwsz, charSize, nullptr, 0, nullptr, nullptr);
+            std::string strTo(size_needed, 0);
+            WideCharToMultiByte(codePage, 0, pwsz, charSize, strTo.data(), size_needed, nullptr, nullptr);
             return strTo;
         }
 

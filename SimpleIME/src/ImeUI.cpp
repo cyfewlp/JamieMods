@@ -18,16 +18,25 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        ImeUI::ImeUI(const AppUiConfig &uiConfig, ITextService *pTextService) : m_pUiConfig(uiConfig)
+        ImeUI::ImeUI(AppUiConfig const &uiConfig, ITextService *pTextService) : m_pUiConfig(uiConfig)
         {
             _tsetlocale(LC_ALL, _T(""));
             m_pTextService = pTextService;
+        }
+
+        ImeUI::~ImeUI()
+        {
+            if (m_pTextService != nullptr)
+            {
+                m_langProfileUtil->Release();
+            }
         }
 
         bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
         {
             log_debug("Initializing ImeUI...");
             m_langProfileUtil = pLangProfileUtil;
+            m_langProfileUtil->AddRef();
             if (!m_langProfileUtil->LoadAllLangProfiles())
             {
                 log_error("Failed load lang profiles");
@@ -60,9 +69,6 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pUiConfig.WindowBgColor());
-            ImGui::PushStyleColor(ImGuiCol_Border, m_pUiConfig.WindowBorderColor());
-            ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.TextColor());
             ImGui::Begin("SimpleIME", nullptr, windowFlags);
 
             ImGui::SameLine();
@@ -75,7 +81,6 @@ namespace LIBC_NAMESPACE_DECL
                 RenderCandidateWindows();
             }
             ImGui::End();
-            ImGui::PopStyleColor(3);
         }
 
         void ImeUI::ShowToolWindow()
@@ -104,23 +109,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, m_pUiConfig.WindowBgColor());
-            ImGui::PushStyleColor(ImGuiCol_Border, m_pUiConfig.WindowBorderColor());
-            ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.TextColor());
-            auto btnCol     = m_pUiConfig.BtnColor();
-            btnCol          = (btnCol & 0x00FFFFFF) | 0x9A000000;
-            auto hoveredCol = (btnCol & 0x00FFFFFF) | 0x66000000;
-            auto activeCol  = (btnCol & 0x00FFFFFF) | 0xAA000000;
-            ImGui::PushStyleColor(ImGuiCol_Button, btnCol);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredCol);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeCol);
-            ImGui::PushStyleColor(ImGuiCol_Header, btnCol);
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, hoveredCol);
-            ImGui::PushStyleColor(ImGuiCol_HeaderActive, activeCol);
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, btnCol);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, hoveredCol);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, activeCol);
 
             ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, m_toolWindowFlags);
 
@@ -184,7 +172,6 @@ namespace LIBC_NAMESPACE_DECL
                 ShowToolWindow();
             }
             ImGui::End();
-            ImGui::PopStyleColor(12);
         }
 
         void ImeUI::RenderCompWindow() const

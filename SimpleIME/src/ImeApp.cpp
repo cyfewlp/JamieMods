@@ -6,6 +6,7 @@
 #include "common/hook.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
+#include "context.h"
 #include "gsl/gsl"
 #include "imgui.h"
 #include <basetsd.h>
@@ -26,11 +27,14 @@ namespace LIBC_NAMESPACE_DECL
 
     void InitializeMessaging()
     {
-        // Delay call focus to avoid other crash when not create ImGui context not yet.
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
-            if (a_msg->type == SKSE::MessagingInterface::kDataLoaded)
+            if (a_msg->type == SKSE::MessagingInterface::kPreLoadGame)
             {
-                // SimpleIME::ImeApp::GetImeWnd()->Focus();
+                Ime::Context::GetInstance()->SetIsGameLoading(true);
+            }
+            else if (a_msg->type == SKSE::MessagingInterface::kPostLoadGame)
+            {
+                Ime::Context::GetInstance()->SetIsGameLoading(false);
             }
         });
     }
@@ -190,7 +194,7 @@ namespace LIBC_NAMESPACE_DECL
                     switch (head->GetDevice())
                     {
                         case RE::INPUT_DEVICE::kKeyboard: {
-                            if (pButtonEvent->GetIDCode() == AppConfig::GetConfig()->GetToolWindowShortcutKey() &&
+                            if (pButtonEvent->GetIDCode() == AppConfig::GetConfig().GetToolWindowShortcutKey() &&
                                 pButtonEvent->IsDown())
                             {
                                 g_pImeWnd->ShowToolWindow();

@@ -3,10 +3,11 @@
 //
 #include "common/common.h"
 #include "common/log.h"
-
 #include "configs/AppConfig.h"
+
 #include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <stacktrace>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -29,6 +30,14 @@ namespace LIBC_NAMESPACE_DECL
         spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%#] %v");
     }
 
+    void LogStacktrace()
+    {
+        for (const auto &stacktraceEntry : std::stacktrace::current())
+        {
+            log_error("  at: {}", to_string(stacktraceEntry));
+        }
+    }
+
     bool PluginLoad(const SKSE::LoadInterface *skse)
     {
         try
@@ -36,9 +45,9 @@ namespace LIBC_NAMESPACE_DECL
             const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
             auto        configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
             Ime::AppConfig::LoadIni(configFilePath.c_str());
-            const auto *pConfig = Ime::AppConfig::GetConfig();
 
-            InitializeLogging(pConfig->GetLogLevel(), pConfig->GetFlushLevel());
+            const auto &pConfig = Ime::AppConfig::GetConfig();
+            InitializeLogging(pConfig.GetLogLevel(), pConfig.GetFlushLevel());
 
             Init(skse);
 
@@ -53,10 +62,12 @@ namespace LIBC_NAMESPACE_DECL
         catch (std::exception &exception)
         {
             log_error("Fatal error, SimpleIME init fail: {}", exception.what());
+            LogStacktrace();
         }
         catch (...)
         {
             log_error("Fatal error. occur unknown exception.");
+            LogStacktrace();
         }
         return false;
     }
@@ -64,6 +75,7 @@ namespace LIBC_NAMESPACE_DECL
     int ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *)
     {
         log_critical("System exception (code {}) raised during plugin initialization.", code);
+        LogStacktrace();
         return EXCEPTION_CONTINUE_SEARCH;
     }
 }

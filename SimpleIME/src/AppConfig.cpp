@@ -2,7 +2,9 @@
 // Created by jamie on 2025/2/7.
 //
 #include "configs/AppConfig.h"
+
 #include "common/log.h"
+#include "context.h"
 #include <SimpleIni.h>
 #include <memory>
 
@@ -10,23 +12,26 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        std::unique_ptr<AppConfig> AppConfig::m_appConfig = nullptr;
+        AppConfig AppConfig::g_appConfig{};
 
-        void                       AppConfig::LoadIni(const char *configFilePath)
+        void      AppConfig::LoadIni(const char *configFilePath)
         {
-            if (m_appConfig == nullptr)
+            if (configFilePath == nullptr)
             {
-                m_appConfig = std::make_unique<AppConfig>();
-                LoadIniConfig(configFilePath);
+                log_error("LoadIni: parameter configFilePath is nullptr");
+            }
+            else
+            {
+                LoadIniConfig(configFilePath, g_appConfig);
             }
         }
 
-        AppConfig *AppConfig::GetConfig()
+        auto AppConfig::GetConfig() -> const AppConfig &
         {
-            return m_appConfig.get();
+            return g_appConfig;
         }
 
-        void AppConfig::LoadIniConfig(const char *configFilePath)
+        void AppConfig::LoadIniConfig(const char *configFilePath, AppConfig &destAppConfig)
         {
             CSimpleIniA ini;
             if (const SI_Error error = ini.LoadFile(configFilePath); error != SI_OK)
@@ -34,13 +39,13 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Load config file failed. May config file {} missing", configFilePath);
                 return;
             }
-            GetSimpleIniValue(ini, "General", m_appConfig->m_logLevel);
-            GetSimpleIniValue(ini, "General", m_appConfig->m_flushLevel);
-            GetSimpleIniValue(ini, "General", m_appConfig->m_toolWindowShortcutKey);
-            GetSimpleIniValue(ini, "General", m_appConfig->enableTsf_);
+            GetSimpleIniValue(ini, "General", destAppConfig.m_logLevel);
+            GetSimpleIniValue(ini, "General", destAppConfig.m_flushLevel);
+            GetSimpleIniValue(ini, "General", destAppConfig.m_toolWindowShortcutKey);
+            GetSimpleIniValue(ini, "General", destAppConfig.enableTsf_);
 
             // load ui configs
-            AppUiConfig appUiConfig = {};
+            auto &appUiConfig = destAppConfig.m_appUiConfig;
             GetSimpleIniValue(ini, "UI", appUiConfig.textColor_);
             GetSimpleIniValue(ini, "UI", appUiConfig.highlightTextColor_);
             GetSimpleIniValue(ini, "UI", appUiConfig.m_windowBgColor);
@@ -49,7 +54,6 @@ namespace LIBC_NAMESPACE_DECL
             GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
             GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
             GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
-            m_appConfig->m_appUiConfig = appUiConfig;
         }
     }
 }
