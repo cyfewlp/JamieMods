@@ -23,8 +23,9 @@ namespace LIBC_NAMESPACE_DECL
             auto operator=(TsfCompartment &&other) noexcept -> TsfCompartment & = delete;
 
             auto Initialize(ITfThreadMgr *pThreadMgr, const GUID &guidCompartment,
-                            CompartmentChangeCallback callback = nullptr) -> HRESULT;
+                            const CompartmentChangeCallback &callback = nullptr) -> HRESULT;
             auto UnInitialize() -> HRESULT;
+            auto GetValue(__out ULONG &pValue) const -> HRESULT;
 
             auto AddRef() -> ULONG override;
             auto Release() -> ULONG override;

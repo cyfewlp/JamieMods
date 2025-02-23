@@ -1,36 +1,33 @@
-﻿#include <cstdint>
+﻿#include "yaml-cpp/yaml.h"
 #include <iostream>
-#include <string>
-#include "yaml-cpp/yaml.h"
+#include <optional>
 
-uint32_t HexStringToUInt32(const std::string &hexStr)
+#include <stacktrace>
+#include <spdlog/spdlog.h>
+
+void funA()
 {
-    try
-    {
-        size_t start = (hexStr.find("0x") == 0 || hexStr.find("0X") == 0) ? 2 : 0;
-        return static_cast<uint32_t>(std::stoul(hexStr.substr(start), nullptr, 16));
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error: " << e.what() << " for input: " << hexStr << std::endl;
-    }
-    return 0;
+    throw std::runtime_error("funA");
 }
+
+void funB()
+{
+    spdlog::info("start funB");
+    funA();
+}
+
 
 int main()
 {
-    YAML::Node config = YAML::LoadFile("yaml-aoo.yaml");
-
-    if (config["first"])
+    try
     {
-        std::cout << "First key: " << config["first"].as<std::string>() << "\n";
-    }
-    if (config["unsignedTest"])
+        funB();
+    } catch (const std::exception &e)
     {
-        std::cout << "unsignedTest: " << config["unsignedTest"].as<std::uint32_t>() << "\n";
-    }
-    if (config["UI"])
-    {
-        std::cout << "unsignedTest: " << config["UI"]["k1"].as<std::string>() << "\n";
+        spdlog::error("Error {}", e.what());
+        for (const auto & entry : std::stacktrace::current())
+        {
+            spdlog::error("   at:{}",  to_string(entry));
+        }
     }
 }

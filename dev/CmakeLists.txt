@@ -17,8 +17,10 @@ target_link_libraries(
 	BasicTest
 	PRIVATE
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
+		spdlog::spdlog
         yaml-cpp::yaml-cpp
 )
+target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 
 
 ### DevTest
@@ -69,11 +71,13 @@ target_include_directories(
 target_link_libraries(
 	Win32Test
 	PRIVATE
+		common
 		spdlog::spdlog
 		imgui
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 )
+target_compile_features(Win32Test PRIVATE cxx_std_23) # <--- use C++23 standard
 
 ### TsfApp
 add_executable(

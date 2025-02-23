@@ -17,7 +17,6 @@
 #include <array>
 #include <d3d11.h>
 #include <dinput.h>
-#include <format>
 #include <iostream>
 #include <msctf.h>
 #include <vector>
@@ -34,7 +33,6 @@ static bool                    g_SwapChainOccluded = false;
 static UINT                    g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView *g_mainRenderTargetView = nullptr;
 static bool                    candChosen             = false;
-static bool                    imeEnabled             = false;
 // compsition varibles
 static ImVec2               inputPos       = {};
 static ImVec2               compWindowSize = {};
@@ -55,7 +53,7 @@ void           UpdateKeyboardCodePage();
 static void    MyPlatform_SetImeDataFn_DefaultImpl(ImGuiContext *, ImGuiViewport *viewport, ImGuiPlatformImeData *data);
 static void    RenderImeState();
 void           OnStatusbarSize(HWND hWnd, UINT state, int cx, int cy);
-void           DisableIME();
+void           ConfigStyle();
 
 std::array<char, 256> keyboardState{0};
 
@@ -114,6 +112,7 @@ int main(int, char **)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
+    ConfigStyle();
     // ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
@@ -165,7 +164,7 @@ int main(int, char **)
     ImGui::GetPlatformIO().Platform_SetImeDataFn = MyPlatform_SetImeDataFn_DefaultImpl;
 
     // Main loop
-    //DisableIME();
+    // DisableIME();
     bool                           done = false;
     std::unordered_map<BYTE, bool> keyStateMap;
     while (!done)
@@ -180,42 +179,6 @@ int main(int, char **)
             if (msg.message == WM_QUIT) done = true;
         }
         if (done) break;
-
-        static std::wstring compString;
-        if (GetState() && (keyboardState[DIK_A] & 0x80) > 0 && !keyStateMap[DIK_A])
-        {
-            keyStateMap[DIK_A] = true;
-            HIMC hIMC          = ImmGetContext(hwnd);
-            if (hIMC != nullptr)
-            {
-                //                if (compString.empty()) {
-                //                    compString.append(L"a");
-                //                } else {
-                //                    compString.append(L"'a");
-                //                }
-                compString.append(L"a");
-                ImmSetCompositionStringW(hIMC, SCS_SETSTR, (LPVOID)(compString.data()), compString.size() * 2, nullptr,
-                                         0);
-                ImmReleaseContext(hwnd, hIMC);
-            }
-        }
-        else
-        {
-            keyStateMap[DIK_A] = false;
-        }
-
-        {
-            HIMC hIMC = ImmGetContext(hwnd);
-            if (hIMC != nullptr)
-            {
-                DWORD bufLen = ImmGetCandidateListW(hIMC, 0, nullptr, 0);
-                if (bufLen > 0)
-                {
-                    spdlog::info("candidate list len: {}", bufLen);
-                }
-                ImmReleaseContext(hwnd, hIMC);
-            }
-        }
 
         // Handle window being minimized or screen locked
         if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED)
@@ -748,50 +711,6 @@ LRESULT WINAPI ChildWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
-void DisableIME()
-{
-    if (FAILED(DirectInput8Create(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
-                                  reinterpret_cast<void **>(&g_pDirectInput), nullptr)))
-    {
-        throw std::runtime_error("DirectInput8Create failed");
-    }
-    if (FAILED(g_pDirectInput->CreateDevice(GUID_SysKeyboard, &g_pKeyboardDevice, nullptr)))
-    {
-        throw std::runtime_error("CreateDevice failed");
-    }
-    HRESULT hresuslt = TRUE;
-    g_pKeyboardDevice->Unacquire();
-    if (FAILED(g_pKeyboardDevice->SetDataFormat(&c_dfDIKeyboard)))
-    {
-        throw std::runtime_error("SetDataFormat failed");
-    }
-    const DWORD dwFlags = DISCL_FOREGROUND | DISCL_EXCLUSIVE;
-    hresuslt            = g_pKeyboardDevice->SetCooperativeLevel(parentWnd, dwFlags);
-    if (FAILED(hresuslt))
-    {
-        switch (hresuslt)
-        {
-            case DIERR_INVALIDPARAM:
-                spdlog::error("error DIERR_INVALIDPARAM");
-                break;
-            case DIERR_NOTINITIALIZED:
-                spdlog::error("error DIERR_NOTINITIALIZED");
-                break;
-            case E_HANDLE:
-                spdlog::error("error DIERR_NOTINITIALIZED");
-                break;
-            default:
-                spdlog::error("unknown error, {:#x}", static_cast<int64_t>(hresuslt));
-                break;
-        }
-        throw std::runtime_error("SetCooperativeLevel failed");
-    }
-    if (FAILED(g_pKeyboardDevice->Acquire()))
-    {
-        throw std::runtime_error("Acquire device failed");
-    }
-}
-
 auto GetState() noexcept -> bool
 {
     HRESULT hresult = TRUE;
@@ -804,4 +723,25 @@ auto GetState() noexcept -> bool
             g_pKeyboardDevice->GetDeviceState(sizeof(keyboardState), reinterpret_cast<LPVOID>(keyboardState.data()));
     }
     return SUCCEEDED(hresult);
+}
+
+#define RGB(hex) ImColor((hex & 0xff0000) >> 16, (hex & 0xff00) >> 8, (hex & 0xff))
+
+void ConfigStyle()
+{
+    auto   &style                   = ImGui::GetStyle();
+    ImVec4 *colors                  = style.Colors;
+
+    colors[ImGuiCol_WindowBg]       = RGB(0x2E3440);
+    colors[ImGuiCol_Border]         = RGB(0x434C5E);
+    colors[ImGuiCol_Text]           = RGB(0xE2E8F0);
+    colors[ImGuiCol_Button]         = RGB(0x4C566A);
+    colors[ImGuiCol_ButtonHovered]  = RGB(0x5E81AC);
+    colors[ImGuiCol_ButtonActive]   = RGB(0x88C0D0);
+    colors[ImGuiCol_Header]         = colors[ImGuiCol_Button];
+    colors[ImGuiCol_HeaderHovered]  = colors[ImGuiCol_ButtonHovered];
+    colors[ImGuiCol_HeaderActive]   = colors[ImGuiCol_ButtonActive];
+    colors[ImGuiCol_FrameBg]        = colors[ImGuiCol_Button];
+    colors[ImGuiCol_FrameBgHovered] = colors[ImGuiCol_ButtonHovered];
+    colors[ImGuiCol_FrameBgActive]  = colors[ImGuiCol_ButtonActive];
 }

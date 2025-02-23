@@ -265,6 +265,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_pTextStore->SetHWND(hWnd);
                 m_pTextStore->Focus();
+                ITextService::OnStart(hWnd);
             }
 
             [[nodiscard]] auto GetCandidateUi() -> Ime::CandidateUi & override

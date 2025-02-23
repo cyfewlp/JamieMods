@@ -146,6 +146,7 @@ namespace LIBC_NAMESPACE_DECL
 
             // start message loop
             Focus();
+            m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
             m_pTextService->OnStart(m_hWnd);
             MSG msg = {};
             ZeroMemory(&msg, sizeof(msg));
@@ -327,10 +328,30 @@ namespace LIBC_NAMESPACE_DECL
             ::SetFocus(m_hWnd);
         }
 
+        /**
+         * If Game cursor no showing/update, update ImGui cursor from system cursor pos
+         */
+        void NewFrame()
+        {
+            if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+            {
+                if (!ui->IsShowingMenus() || !ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
+                {
+                    POINT cursorPos;
+                    auto &io = ImGui::GetIO();
+                    if (GetCursorPos(&cursorPos))
+                    {
+                        io.AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
+                    }
+                }
+            }
+        }
+
         void ImeWnd::RenderIme() const
         {
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
+            NewFrame();
             ImGui::NewFrame();
 
             m_pImeUi->RenderIme();
