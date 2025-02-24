@@ -1,4 +1,4 @@
-* 0.0.3
+== 0.0.3
     - [x] disable ImGui Win32 backend update mouse pos
     - [x] auto hide tool window when lost focus
         ** [x] when window focused/Activate/restore mark `ShouldResetKeyboard` as ture
@@ -12,7 +12,8 @@
     - [x] Add ui color config;
     - [ ] check memory overflow;
     - [x] try convert candidate imm api to tsf candidate api
-* 0.0.4 
+
+== 0.0.4
     - [x] open janpaniese ime & close game will crash
         ** Check `RE::InterfaceStrings`, `RE::MessageDataFactoryManager` is nullptr
     - [x] Modex crash with ImGuiIO::ClearInputKeys
@@ -20,13 +21,13 @@
     - [x] activate ime function must be call in message loop thread.
     - [x] launch ImeWnd,ImeUi in standalone thread to and use ourself message loop
          avoid other plugin init COM with `COINIT_MULTITHREADED`(crash logger)
-* 0.0.5
+
+== 0.0.5
     - [x] try use macro define AppConfig property;
     - [x] re-organize config header
     - [x] optimize Property class;
         ** [x] back to SimpleINI? test is support read config like 0xFF00FF00 style
     - [x] enable test & integration googletest
-    - [ ] FMOD
     - [x] check SEH expression can be capture crash exception?
         - can only capture this plugin crash error
     - [x] crash with candidate list
@@ -35,11 +36,15 @@
     - [x] fix candidate update when ime is Microsoft PinYin
         ** [x] check if IME support TSF, switch to TSF UI to replace candidate list read.
     - [x] switch TSF/Imm32 by config;
-    - [ ] Alphanumeric state in tsf;iFly switch to alphanumeric won't trigger compartment change
-        event([.line-through]#back to Imm32?#);
     - [.line-through]#[ ] render sentence?(may GoogleJapanese need)# not sentence
-    - [ ] check memory overflow;
     - [x] fix selection
     - [x] crashed when comp & candidate ui not close to load game; Disable event discard in loading game.
     - [x] update cursor pos when game cursor hide;
     - [x] disable IME when launch game(avoid loss input on some input method)
+
+== 0.0.6
+
+* [ ] Dynamic enable/disable IME
+** [ ] Disable when no any menu open;
+** [ ] Enable when menu open that contain some textfield;
+** [ ] Default Theme optimize?
