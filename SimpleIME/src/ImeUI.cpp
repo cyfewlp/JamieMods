@@ -63,8 +63,8 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            auto &imeState = m_pTextService->GetState();
-            if (imeState.none(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+            if (m_pTextService->HasState(ImeState::IME_DISABLED) ||
+                m_pTextService->HasNoStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
             {
                 return;
             }
@@ -76,7 +76,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (imeState.any(ImeState::IN_CAND_CHOOSING))
+            if (m_pTextService->HasState(ImeState::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -162,7 +162,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::EndCombo();
             }
             ImGui::SameLine();
-            if (m_pTextService->GetState().all(ImeState::IN_ALPHANUMERIC))
+            if (m_pTextService->HasState(ImeState::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();

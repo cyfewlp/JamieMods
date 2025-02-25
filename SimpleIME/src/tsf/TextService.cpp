@@ -1,6 +1,7 @@
 //
 // Created by jamie on 2025/2/22.
 //
+#include "common/log.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfSupport.h"
 
@@ -8,7 +9,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Tsf
     {
-
         HRESULT TextService::Initialize()
         {
             m_pTextStore           = new TextStore(this, &m_textEditor);
@@ -33,6 +33,22 @@ namespace LIBC_NAMESPACE_DECL
                 hresult = m_pTextStore->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId());
             }
             return hresult;
+        }
+
+        void TextService::Enable(const bool enable)
+        {
+            if (enable)
+            {
+                m_pTextStore->Focus();
+            }
+            else
+            {
+                if (FAILED(m_pTextStore->ClearFocus()))
+                {
+                    log_warn("Unexpected error, failed clear focus");
+                }
+            }
+            ITextService::Enable(enable);
         }
 
         auto TextService::ProcessImeMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> bool

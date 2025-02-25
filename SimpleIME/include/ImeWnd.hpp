@@ -69,14 +69,18 @@ namespace LIBC_NAMESPACE_DECL
              */
             void InitImGui(HWND hWnd, ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/) const
                 noexcept(false);
-            void Focus() const;
-            void RenderIme() const;
-            void ShowToolWindow() const;
-            auto IsDiscardGameInputEvents(__in RE::InputEvent ** /*events*/) const -> bool;
+            void        Focus() const;
+            static void NewFrame();
+            void        RenderIme() const;
+            void        ShowToolWindow() const;
+            auto        IsDiscardGameInputEvents(__in RE::InputEvent        **/*events*/) const -> bool;
 
         private:
             static auto                   WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static auto                   GetThis(HWND hWnd) -> ImeWnd *;
+            static void                   SendStringToSkyrim(const std::wstring &compositionString);
+
+            void                          OnStart() const;
             auto                          OnCreate() const -> LRESULT;
             auto                          OnDestroy() const -> LRESULT;
             void                          InitializeTextService(const AppConfig &pAppConfig);

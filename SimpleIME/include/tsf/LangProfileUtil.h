@@ -42,19 +42,20 @@ namespace LIBC_NAMESPACE_DECL
         class LangProfileUtil : public ITfInputProcessorProfileActivationSink
         {
         public:
-            LangProfileUtil()                                                                             = default;
-            virtual ~LangProfileUtil()                                                                    = default;
-            LangProfileUtil(const LangProfileUtil &other)                                                 = delete;
-            LangProfileUtil(LangProfileUtil &&other) noexcept                                             = delete;
-            auto                         operator=(const LangProfileUtil &other) -> LangProfileUtil &     = delete;
-            auto                         operator=(LangProfileUtil &&other) noexcept -> LangProfileUtil & = delete;
+            LangProfileUtil()                                                     = default;
+            virtual ~LangProfileUtil()                                            = default;
+            LangProfileUtil(const LangProfileUtil &other)                         = delete;
+            LangProfileUtil(LangProfileUtil &&other) noexcept                     = delete;
+            auto operator=(const LangProfileUtil &other) -> LangProfileUtil &     = delete;
+            auto operator=(LangProfileUtil &&other) noexcept -> LangProfileUtil & = delete;
 
-            auto                         Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT;
-            auto                         UnInitialize() -> void;
+            auto Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT;
+            auto UnInitialize() -> void;
 
-            auto                         LoadAllLangProfiles() -> bool;
-            auto                         LoadActiveIme() noexcept -> bool;
-            auto                         ActivateProfile(_In_ const GUID *guidProfile) -> bool;
+            auto LoadAllLangProfiles() -> bool;
+            auto LoadActiveIme() noexcept -> bool;
+            auto ActivateProfile(_In_ const GUID *guidProfile) -> bool;
+
             auto                         GetActivatedLangProfile() -> GUID &;
             auto                         AddRef() -> ULONG override;
             auto                         Release() -> ULONG override;
@@ -79,7 +80,7 @@ namespace LIBC_NAMESPACE_DECL
             CComPtr<ITfThreadMgr>                 m_lpThreadMgr  = nullptr;
             DWORD                                 m_dwCookie{};
             std::unordered_map<GUID, LangProfile> m_langProfiles;
-            GUID                                  m_activatedProfile = GUID_NULL;
+            GUID                                  m_activatedProfile     = GUID_NULL;
         };
     } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL

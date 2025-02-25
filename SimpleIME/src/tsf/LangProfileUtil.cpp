@@ -101,6 +101,14 @@ namespace LIBC_NAMESPACE_DECL
 
     auto Ime::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) -> bool
     {
+        if (guidProfile == nullptr)
+        {
+            return E_INVALIDARG;
+        }
+        if (IsEqualGUID(*guidProfile, m_activatedProfile))
+        {
+            return S_OK;
+        }
         auto expected = m_langProfiles.find(*guidProfile);
         if (expected == m_langProfiles.end())
         {
@@ -114,7 +122,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             log_error("Active profile {} failed: {}", profile.desc, Tsf::ToErrorMessage(hresult));
         }
-        m_activatedProfile = profile.guidProfile;
         return SUCCEEDED(hresult);
     }
 
@@ -181,11 +188,7 @@ namespace LIBC_NAMESPACE_DECL
     {
         if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
         {
-            m_activatedProfile = guidProfile;
-        }
-        else
-        {
-            m_activatedProfile = GUID_NULL;
+            m_activatedProfile     = guidProfile;
         }
         return S_OK;
     }

@@ -22,10 +22,9 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto                *pUnknownThis = reinterpret_cast<IUnknown *>(this);
             CComQIPtr<ITfSource> pSource(m_uiElementMgr);
-            HRESULT              hresult = S_OK;
             if (pSource != nullptr)
             {
-                hresult = pSource->AdviseSink(IID_ITfUIElementSink, pUnknownThis, &m_uiElementCookie);
+                HRESULT hresult = pSource->AdviseSink(IID_ITfUIElementSink, pUnknownThis, &m_uiElementCookie);
                 if (SUCCEEDED(hresult) && m_uiElementCookie != TF_INVALID_COOKIE)
                 {
                     pSource.Release();
@@ -40,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextStore::Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT
         {
-            HRESULT __hrAtlComMethod = S_OK;
+            HRESULT __hrAtlComMethod;
             try
             {
                 log_debug("Initializing TextStore...");
@@ -109,7 +108,14 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("Can't associate focus. Please first Initialize & set hwnd");
                 return E_FAIL;
             }
+            m_pPrevDocMgr.Release();
             return m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
+        }
+
+        auto TextStore::ClearFocus() const -> HRESULT
+        {
+            CComPtr<ITfDocumentMgr> tempDocMgr;
+            return m_threadMgr->AssociateFocus(m_hWnd, m_emptyDocMgr, &tempDocMgr);
         }
 
         auto TextStore::QueryInterface(REFIID riid, void **ppvObject) -> HRESULT

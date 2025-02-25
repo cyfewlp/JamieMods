@@ -15,6 +15,7 @@ namespace LIBC_NAMESPACE_DECL
         CM_CHAR = WM_CUSTOM + 1,
         CM_IME_CHAR,
         CM_IME_COMPOSITION,
+        CM_IME_ENABLE,
         CM_ACTIVATE_PROFILE // notify active profile, guid passed in LPARAM
     };
 } // namespace LIBC_NAMESPACE_DECL

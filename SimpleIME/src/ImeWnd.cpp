@@ -23,6 +23,31 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
+
+        class MenuOpenCloseEventSink final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+        {
+            HWND m_hWnd;
+
+        public:
+            explicit MenuOpenCloseEventSink(const HWND hWnd) : m_hWnd(hWnd)
+            {
+            }
+
+            RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent               *a_event,
+                                                  RE::BSTEventSource<RE::MenuOpenCloseEvent> *a_eventSource) override
+            {
+                if (const auto *ui = RE::UI::GetSingleton(); ui != nullptr && a_event != nullptr)
+                {
+                    if (a_event->menuName == RE::CursorMenu::MENU_NAME)
+                    {
+                        // sync message
+                        ::SendMessageW(m_hWnd, CM_IME_ENABLE, a_event->opening ? TRUE : FALSE, 0);
+                    }
+                }
+                return RE::BSEventNotifyControl::kContinue;
+            }
+        };
+
         ImeWnd::ImeWnd()
         {
             wc = {};
@@ -42,48 +67,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 UnregisterClassW(wc.lpszClassName, wc.hInstance);
                 DestroyWindow(m_hWnd);
-            }
-        }
-
-        void SendStringToSkyrim(const std::wstring &compositionString)
-        {
-            log_debug("Ready result string to Skyrim...");
-            auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
-            auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
-            if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
-            {
-                log_warn("Can't send string to Skyrim may game already close?");
-                return;
-            }
-
-            const auto *pFactory =
-                pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
-            if (pFactory == nullptr)
-            {
-                log_warn("Can't send string to Skyrim may game already close?");
-                return;
-            }
-
-            // Start send message
-            RE::BSFixedString menuName = pInterfaceStrings->topMenu;
-            for (wchar_t wchar : compositionString)
-            {
-                uint32_t const code = wchar;
-                if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
-                {
-                    continue;
-                }
-                auto *pCharEvent            = new GFxCharEvent(code, 0);
-                auto *pScaleFormMessageData = pFactory->Create();
-                if (pScaleFormMessageData == nullptr)
-                {
-                    log_error("Unable create BSTDerivedCreator.");
-                    return;
-                }
-                pScaleFormMessageData->scaleformEvent = pCharEvent;
-                log_debug("send code {:#x} to Skyrim", code);
-                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                                                               pScaleFormMessageData);
             }
         }
 
@@ -143,11 +126,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 throw SimpleIMEException("Create ImeWnd failed");
             }
+            OnStart();
 
-            // start message loop
-            Focus();
-            m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
-            m_pTextService->OnStart(m_hWnd);
             MSG msg = {};
             ZeroMemory(&msg, sizeof(msg));
             auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
@@ -188,6 +168,21 @@ namespace LIBC_NAMESPACE_DECL
             log_info("Exit ImeWnd Thread...");
         }
 
+        void ImeWnd::OnStart() const
+        {
+            if (!AppConfig::GetConfig().AlwaysActiveIme())
+            {
+                if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+                {
+                    ui->AddEventSink(new MenuOpenCloseEventSink(m_hWnd));
+                }
+            }
+
+            Focus();
+            // m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
+            m_pTextService->OnStart(m_hWnd);
+        }
+
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
         {
             const ImeWnd *pThis = GetThis(hWnd);
@@ -221,6 +216,11 @@ namespace LIBC_NAMESPACE_DECL
                     if (pThis == nullptr) break;
                     return pThis->OnDestroy();
                 }
+                case CM_IME_ENABLE: {
+                    if (pThis == nullptr) break;
+                    pThis->m_pTextService->Enable(wParam != FALSE);
+                    return S_OK;
+                }
                 case CM_ACTIVATE_PROFILE: {
                     if (pThis == nullptr) break;
                     pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
@@ -240,7 +240,7 @@ namespace LIBC_NAMESPACE_DECL
             return reinterpret_cast<ImeWnd *>(ptr);
         }
 
-        void ThemeConfig(const AppUiConfig &uiConfig)
+        static void ThemeConfig(const AppUiConfig &uiConfig)
         {
             auto   &style                   = ImGui::GetStyle();
             ImVec4 *colors                  = style.Colors;
@@ -331,7 +331,7 @@ namespace LIBC_NAMESPACE_DECL
         /**
          * If Game cursor no showing/update, update ImGui cursor from system cursor pos
          */
-        void NewFrame()
+        void ImeWnd::NewFrame()
         {
             if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
             {
@@ -388,14 +388,13 @@ namespace LIBC_NAMESPACE_DECL
                 return false;
             }
             // may need more test
-            if (Context::GetInstance()->IsGameLoading())
+            if (m_pTextService->HasState(ImeState::IME_DISABLED) || Context::GetInstance()->IsGameLoading())
             {
                 return false;
             }
 
-            auto &imeState  = m_pTextService->GetState();
-            auto  isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
-            if (!isImeOpen || imeState.any(ImeState::IN_ALPHANUMERIC))
+            auto isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
+            if (!isImeOpen || m_pTextService->HasState(ImeState::IN_ALPHANUMERIC))
             {
                 return false;
             }
@@ -403,7 +402,7 @@ namespace LIBC_NAMESPACE_DECL
             auto  sourceDevice = head->device;
             if (sourceDevice == RE::INPUT_DEVICE::kKeyboard)
             {
-                if (imeState.any(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+                if (m_pTextService->HasAnyStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
                 {
                     return true;
                 }
@@ -413,6 +412,48 @@ namespace LIBC_NAMESPACE_DECL
                 return IsImeKeyCode(code);
             }
             return false;
+        }
+
+        void ImeWnd::SendStringToSkyrim(const std::wstring &compositionString)
+        {
+            log_debug("Ready result string to Skyrim...");
+            auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
+            auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
+            if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
+            {
+                log_warn("Can't send string to Skyrim may game already close?");
+                return;
+            }
+
+            const auto *pFactory =
+                pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
+            if (pFactory == nullptr)
+            {
+                log_warn("Can't send string to Skyrim may game already close?");
+                return;
+            }
+
+            // Start send message
+            RE::BSFixedString const menuName = pInterfaceStrings->topMenu;
+            for (wchar_t const wchar : compositionString)
+            {
+                uint32_t const code = wchar;
+                if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
+                {
+                    continue;
+                }
+                auto *pCharEvent            = new GFxCharEvent(code, 0);
+                auto *pScaleFormMessageData = pFactory->Create();
+                if (pScaleFormMessageData == nullptr)
+                {
+                    log_error("Unable create BSTDerivedCreator.");
+                    return;
+                }
+                pScaleFormMessageData->scaleformEvent = pCharEvent;
+                log_debug("send code {:#x} to Skyrim", code);
+                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
+                                                               pScaleFormMessageData);
+            }
         }
     }
 }
