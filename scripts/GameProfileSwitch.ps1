@@ -5,7 +5,7 @@
 #>
 param (
     # height of largest column without top bar
-    [string]$profile = "debug",
+    [string]$skseProfile = "debug",
     [string]$SkseProfileDir = "$env:SkseProfileDir",
     [string]$SkyrimPath = "$env:Skyrim64Path"
 )
@@ -13,7 +13,7 @@ param (
 ## validate params
 
 if (($null -eq $SkseProfileDir ) -or -not (Test-Path -Path $SkseProfileDir)){
-    Write-Error "Invalid param SkseProfileDir, is empty or not a valid path"
+    Write-Error "Invalid param SkseProfileDir $SkseProfileDir, is empty or not a valid path"
     exit
 }
 
@@ -66,10 +66,10 @@ function Switch-Profile {
 
     ## validate expected profile files
     $expectedHash.GetEnumerator() | ForEach-Object{
-        $profile = $_.key
+        $skseProfile = $_.key
         foreach ($fileToCopy in $_.value) {
-            if (-not (Test-Path -Path "$SkseProfileDir\$profile\$fileToCopy")) {
-                Write-Error "Profile [$profile] missing file $SkseProfileDir\$profile\$fileToCopy" -Category InvalidArgument
+            if (-not (Test-Path -Path "$SkseProfileDir\$skseProfile\$fileToCopy")) {
+                Write-Error "Profile [$skseProfile] missing file $SkseProfileDir\$skseProfile\$fileToCopy" -Category InvalidArgument
                 exit
             }
         }
@@ -79,30 +79,30 @@ function Switch-Profile {
     $currentProfile=$currentProfile -split "\n"
     Write-Host "============================"
     Write-Host "Current profile config: $currentProfile"
-    foreach ($profile in $currentProfile){
-        if ($profileConfig.$profile -eq $null) {
-            Write-Error -Message "Invalid profile in config file: $profile"
-            $profile -eq "enb"
+    foreach ($skseProfile in $currentProfile){
+        if ($null -eq $profileConfig.$skseProfile) {
+            Write-Error -Message "Invalid profile in config file: $skseProfile"
+            $skseProfile -eq "enb"
             exit
         }
-        if ($expectedHash.$profile -eq $null) {
-            # remove the profile files
-            Write-Host "Profile [$profile] files will be remove because not speciafied in params"
-            foreach ($fileToRemove in $profileConfig.$profile) {
-                Write-Host "Remove profile [$profile] file $SkyrimPath\$fileToRemove"
+        if ($null -eq $expectedHash.$skseProfile) {
+            # remove the skseProfile files
+            Write-Host "Profile [$skseProfile] files will be remove because not speciafied in params"
+            foreach ($fileToRemove in $profileConfig.$skseProfile) {
+                Write-Host "Remove profile [$skseProfile] file $SkyrimPath\$fileToRemove"
                 Remove-Item -Path "$SkyrimPath\$fileToRemove"
             }
         } else {
-            $expectedHash.remove($profile)
+            $expectedHash.remove($skseProfile)
         }
     }
     $expectedHash.GetEnumerator() | ForEach-Object{
         $message = 'profile {0} is {1}' -f $_.key, $_.value
         Write-Output $message
-        $profile = $_.key
+        $skseProfile = $_.key
         foreach ($fileToCopy in $_.value) {
-            Write-Host "Copy profile [$profile] file $fileToCopy to $SkyrimSEPath\$fileToCopy"
-            Copy-Item -Path "$SkseProfileDir\$profile\$fileToCopy" -Destination "$SkyrimSEPath\$fileToCopy" -Force
+            Write-Host "Copy profile [$skseProfile] file $fileToCopy to $SkyrimSEPath\$fileToCopy"
+            Copy-Item -Path "$SkseProfileDir\$skseProfile\$fileToCopy" -Destination "$SkyrimSEPath\$fileToCopy" -Force
         }
     }
 
@@ -193,4 +193,4 @@ function CopyReleaseFile {
 #    exit
 #}
 
-Switch-Profile -ProfileName "$profile" -SkyrimSEPath "$SkyrimPath"
+Switch-Profile -ProfileName "$skseProfile" -SkyrimSEPath "$SkyrimPath"

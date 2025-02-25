@@ -90,6 +90,8 @@ namespace LIBC_NAMESPACE_DECL
 
             auto Focus() -> HRESULT;
 
+            auto ClearFocus() const -> HRESULT;
+
             [[nodiscard]] constexpr auto IsSupportCandidateUi() const -> bool
             {
                 return m_supportCandidateUi;
@@ -228,6 +230,7 @@ namespace LIBC_NAMESPACE_DECL
             CComPtr<ITextStoreACPServices>             m_textStoreAcpServices   = nullptr;
             CComPtr<ITfThreadMgr>                      m_threadMgr              = nullptr;
             CComPtr<ITfDocumentMgr>                    m_documentMgr            = nullptr;
+            CComPtr<ITfDocumentMgr>                    m_emptyDocMgr            = nullptr;
             CComPtr<ITfDocumentMgr>                    m_pPrevDocMgr            = nullptr;
             CComPtr<ITfUIElementMgr>                   m_uiElementMgr           = nullptr;
             CComPtr<ITfContext>                        m_context                = nullptr;
@@ -260,6 +263,9 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_pTextStore->SetOnEndCompositionCallback(callback);
             }
+
+            // associate focus to null DocumentMgr when disabled.
+            void Enable(bool enable = true) override;
 
             void OnStart(HWND hWnd) override
             {

@@ -34,6 +34,11 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool
         {
+            if (!isEnabled)
+            {
+                return false;
+            }
+
             switch (message)
             {
                 case WM_IME_STARTCOMPOSITION: {

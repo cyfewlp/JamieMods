@@ -18,8 +18,9 @@ namespace LIBC_NAMESPACE_DECL
             NONE             = 0,
             IN_COMPOSING     = 0x1,
             IN_CAND_CHOOSING = 0x2,
-            IN_ALPHANUMERIC  = 0x4,
+            IN_ALPHANUMERIC  = 0x4,  // if set, not discard game event.
             IME_OPEN         = 0x8,
+            IME_DISABLED     = 0x10, // if set, ignore any TextService change
             ALL              = 0xFFFF
         };
 
@@ -44,6 +45,19 @@ namespace LIBC_NAMESPACE_DECL
             {
             }
 
+            // Enable of disable TextService;derived class must call parent Enable fun.
+            virtual void Enable([[maybe_unused]] const bool enable = true)
+            {
+                if (enable)
+                {
+                    ClearState(ImeState::IME_DISABLED);
+                }
+                else
+                {
+                    SetState(ImeState::IME_DISABLED);
+                }
+            }
+
             virtual void OnStart([[maybe_unused]] HWND hWnd)
             {
             }
@@ -57,10 +71,21 @@ namespace LIBC_NAMESPACE_DECL
                 m_OnEndCompositionCallback = callback;
             }
 
-            // members
-            [[nodiscard]] auto GetState() const -> const Enumeration<ImeState> &
+            auto HasState(const ImeState &&state) const -> bool
             {
-                return m_state;
+                return m_state.all(state);
+            }
+
+            template <typename... Args>
+            auto HasAnyStates(Args &&...state) const -> bool
+            {
+                return m_state.any(std::forward<Args>(state)...);
+            }
+
+            template <typename... Args>
+            auto HasNoStates(Args &&...state) const -> bool
+            {
+                return m_state.none(std::forward<Args>(state)...);
             }
 
             auto SetState(const ImeState &&state) -> void
@@ -89,6 +114,13 @@ namespace LIBC_NAMESPACE_DECL
                 Imm32TextService(Imm32TextService &&other) noexcept                     = delete;
                 auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
                 auto operator=(Imm32TextService &&other) noexcept -> Imm32TextService & = delete;
+
+                // silent ignore any IME message when disabled.
+                void Enable(const bool enable) override
+                {
+                    isEnabled = enable;
+                    ITextService::Enable(enable);
+                }
 
                 /**
                  * return true means message hav processed.
@@ -122,6 +154,7 @@ namespace LIBC_NAMESPACE_DECL
 
                 CandidateUi m_candidateUi;
                 TextEditor  m_textEditor;
+                bool        isEnabled = true;
             };
         } // namespace Imm32
     } // namespace Ime

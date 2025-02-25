@@ -45,6 +45,9 @@
 == 0.0.6
 
 * [ ] Dynamic enable/disable IME
-** [ ] Disable when no any menu open;
+** [x] Disable when no any menu open;
+** [x] Enable when cursor visable(All text field show show cursor);
 ** [ ] Enable when menu open that contain some textfield;
 ** [ ] Default Theme optimize?
+* [ ] Render current IME state: Is disable;
+* [ ] GameProfileSwitch script optimize;
