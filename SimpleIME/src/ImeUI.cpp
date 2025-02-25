@@ -121,11 +121,15 @@ namespace LIBC_NAMESPACE_DECL
                 }
             }
 
-            if (!m_pinToolWindow)
+            if (m_pTextService->HasState(ImeState::IME_DISABLED))
             {
-                ImGui::Text("Drag");
-                ImGui::SameLine();
+                ImGui::Text("Disabled %s", "\xe2\x9d\x8c"); // red   ❌
             }
+            else
+            {
+                ImGui::Text("Enabled %s", "\xe2\x9c\x85"); // green ✅
+            }
+            ImGui::SameLine();
             if (ImGui::Button("\xf0\x9f\x93\x8c"))
             {
                 m_toolWindowFlags |= ImGuiWindowFlags_NoInputs;
