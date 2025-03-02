@@ -1,14 +1,14 @@
 
 #include "ImeApp.h"
-#include "Hooks.hpp"
 #include "ImeWnd.hpp"
-#include "ScaleformHook.h"
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
 #include "context.h"
 #include "gsl/gsl"
+#include "hooks/Hooks.hpp"
+#include "hooks/ScaleformHook.h"
 #include "imgui.h"
 
 #include <basetsd.h>

@@ -2,7 +2,7 @@
 // Created by jamie on 2025/3/2.
 //
 
-#include "ScaleformHook.h"
+#include "hooks/ScaleformHook.h"
 
 #include "common/log.h"
 #include "configs/AppConfig.h"

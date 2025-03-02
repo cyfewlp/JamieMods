@@ -2,12 +2,12 @@
 
 #include "FakeDirectInputDevice.h"
 #include "ImeUI.h"
-#include "ScaleformHook.h"
 #include "Utils.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
 #include "context.h"
+#include "hooks/ScaleformHook.h"
 #include "ime/ITextServiceFactory.h"
 
 #include <basetsd.h>

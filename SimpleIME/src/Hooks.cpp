@@ -1,4 +1,4 @@
-#include "Hooks.hpp"
+#include "hooks/Hooks.hpp"
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
 #include "common/log.h"

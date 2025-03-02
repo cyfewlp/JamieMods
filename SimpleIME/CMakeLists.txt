@@ -69,7 +69,6 @@ add_custom_command(
 # Plugin Config
 set(headers
     include/context.h
-    include/Hooks.hpp
     include/configs/AppConfig.h
     include/configs/CustomMessage.h
     include/configs/converter.h
@@ -78,7 +77,8 @@ set(headers
     include/ImeWnd.hpp
     include/FakeDirectInputDevice.h
     include/Utils.h
-    include/ScaleformHook.h
+    include/hooks/Hooks.hpp
+    include/hooks/ScaleformHook.h
     include/ime/TextEditor.h
     include/ime/ITextService.h
     include/ime/ITextServiceFactory.h
