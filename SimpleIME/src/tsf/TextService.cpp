@@ -35,17 +35,41 @@ namespace LIBC_NAMESPACE_DECL
             return hresult;
         }
 
+        void TextService::UpdateConversionMode()
+        {
+            ULONG convertionMode = 0;
+            if (SUCCEEDED(m_pCompartment->GetValue(convertionMode)))
+            {
+                if ((convertionMode & 3) == TF_CONVERSIONMODE_ALPHANUMERIC)
+                {
+                    SetState(Ime::ImeState::IN_ALPHANUMERIC);
+                }
+                else
+                {
+                    ClearState(Ime::ImeState::IN_ALPHANUMERIC);
+                }
+            }
+        }
+
         void TextService::Enable(const bool enable)
         {
             if (enable)
             {
-                m_pTextStore->Focus();
+                if (HasState(Ime::ImeState::IME_DISABLED))
+                {
+                    UpdateConversionMode();
+                    m_pTextStore->Focus();
+                }
             }
             else
             {
-                if (FAILED(m_pTextStore->ClearFocus()))
+                if (HasNoStates(Ime::ImeState::IME_DISABLED))
                 {
-                    log_warn("Unexpected error, failed clear focus");
+                    HRESULT hr = m_pTextStore->ClearFocus();
+                    if (FAILED(hr))
+                    {
+                        log_warn("Unexpected error, failed clear focus");
+                    }
                 }
             }
             ITextService::Enable(enable);
@@ -53,27 +77,31 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextService::ProcessImeMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> bool
         {
-            if (uMsg == WM_IME_NOTIFY)
+            switch (uMsg)
             {
-                if (!m_pTextStore->IsSupportCandidateUi())
-                {
-                    if (m_fallbackTextService.ProcessImeMessage(hWnd, uMsg, wParam, lParam))
+                case WM_IME_NOTIFY:
+                    if (!m_pTextStore->IsSupportCandidateUi())
                     {
-                        m_candidateUi.Close();
-                        auto &candidateUi = m_fallbackTextService.GetCandidateUi();
-                        if (const auto &candidateList = candidateUi.UnsafeCandidateList(); candidateList.size() > 0)
+                        if (m_fallbackTextService.ProcessImeMessage(hWnd, uMsg, wParam, lParam))
                         {
-                            for (const auto &candidate : candidateList)
+                            m_candidateUi.Close();
+                            auto &candidateUi = m_fallbackTextService.GetCandidateUi();
+                            if (const auto &candidateList = candidateUi.UnsafeCandidateList(); candidateList.size() > 0)
                             {
-                                m_candidateUi.PushBack(candidate);
+                                for (const auto &candidate : candidateList)
+                                {
+                                    m_candidateUi.PushBack(candidate);
+                                }
+                                candidateUi.Close();
+                                m_candidateUi.SetSelection(candidateUi.Selection());
+                                m_candidateUi.SetPageSize(candidateUi.PageSize());
+                                return true;
                             }
-                            candidateUi.Close();
-                            m_candidateUi.SetSelection(candidateUi.Selection());
-                            m_candidateUi.SetPageSize(candidateUi.PageSize());
-                            return true;
                         }
                     }
-                }
+                    break;
+                default:
+                    break;
             }
             return false;
         }

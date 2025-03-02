@@ -30,14 +30,6 @@ namespace LIBC_NAMESPACE_DECL
         spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%#] %v");
     }
 
-    void LogStacktrace()
-    {
-        for (const auto &stacktraceEntry : std::stacktrace::current())
-        {
-            log_error("  at: {}", to_string(stacktraceEntry));
-        }
-    }
-
     bool PluginLoad(const SKSE::LoadInterface *skse)
     {
         try

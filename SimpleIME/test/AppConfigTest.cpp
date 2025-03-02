@@ -3,6 +3,7 @@
 
 #include <SimpleIni.h>
 #include <gtest/gtest.h>
+#include <ranges>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -28,13 +29,18 @@ TEST(PropertyTest, ConfigName)
 
 TEST(SimpleIniTest, GetValue)
 {
-    CSimpleIniA ini;
+    CSimpleIniA ini(false, false, true);
 
     ini.LoadData(R"(
 [General]
 Color_Abgr1 = 0xFF00FFFF
 Color_Abgr2 = 100
 Color_Abgr3 = 1212121212121212
+Array_Test = <<<ENDTAG
+line1
+line2
+line3
+ENDTAG
 1)");
     Property hexProperty1{0xFFFFFFFF, "colorAbgr1"};
     GetSimpleIniValue<uint32_t>(ini, "General", hexProperty1);
@@ -47,6 +53,9 @@ Color_Abgr3 = 1212121212121212
     Property hexProperty3{0xFFFFFFFF, "colorAbgr3"};
     GetSimpleIniValue<uint32_t>(ini, "General", hexProperty3);
     ASSERT_EQ(hexProperty3.Value(), UINT_MAX);
+
+    auto multiLineValue = ini.GetValue("General", "Array_Test", "names");
+    std::cout << multiLineValue << std::endl;
 }
 
 namespace PLUGIN_NAMESPACE
@@ -101,6 +110,14 @@ colorAbgr = 0xFF00FFFF
         ASSERT_EQ(converter<bool>::convert("0"), false);
     }
 
+    TEST(PropertyTest, ConvertMultiLineTOVector)
+    {
+        auto result = converter<std::unordered_set<std::string>>::convert("value1\nvalue2", {});
+        ASSERT_EQ(result.size(), 2);
+        ASSERT_TRUE(result.contains("value1"));
+        ASSERT_TRUE(result.contains("value2"));
+    }
+
     TEST(AppConfigTest, IniLoad)
     {
         AppConfig defaultConfig;
@@ -136,5 +153,10 @@ colorAbgr = 0xFF00FFFF
 
         ASSERT_STRNE(uiConfig.EmojiFontFile().c_str(), defaultUiConfig.EmojiFontFile().c_str());
         ASSERT_STREQ(uiConfig.EmojiFontFile().c_str(), R"(C:\path\to\emoji-font)");
+
+        ASSERT_EQ(loadedConfig.GetToolWindowShortcutKey(), 0x1111);
+        ASSERT_EQ(loadedConfig.AlwaysActiveIme(), true);
+        ASSERT_EQ(loadedConfig.EnableUnicodePaste(), false);
+        ASSERT_EQ(loadedConfig.EnableTsf(), false);
     }
 }

@@ -4,9 +4,7 @@
 #include "configs/AppConfig.h"
 
 #include "common/log.h"
-#include "context.h"
 #include <SimpleIni.h>
-#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -14,7 +12,7 @@ namespace LIBC_NAMESPACE_DECL
     {
         AppConfig AppConfig::g_appConfig{};
 
-        void      AppConfig::LoadIni(const char *configFilePath)
+        void AppConfig::LoadIni(const char *configFilePath)
         {
             if (configFilePath == nullptr)
             {
@@ -33,7 +31,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void AppConfig::LoadIniConfig(const char *configFilePath, AppConfig &destAppConfig)
         {
-            CSimpleIniA ini;
+            CSimpleIniA ini(false, false, true);
             if (const SI_Error error = ini.LoadFile(configFilePath); error != SI_OK)
             {
                 log_error("Load config file failed. May config file {} missing", configFilePath);
@@ -44,6 +42,7 @@ namespace LIBC_NAMESPACE_DECL
             GetSimpleIniValue(ini, "General", destAppConfig.m_toolWindowShortcutKey);
             GetSimpleIniValue(ini, "General", destAppConfig.enableTsf_);
             GetSimpleIniValue(ini, "General", destAppConfig.alwaysActiveIme_);
+            GetSimpleIniValue(ini, "General", destAppConfig.enableUnicodePaste_);
 
             // load ui configs
             auto &appUiConfig = destAppConfig.m_appUiConfig;

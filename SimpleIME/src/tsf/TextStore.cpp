@@ -108,14 +108,16 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("Can't associate focus. Please first Initialize & set hwnd");
                 return E_FAIL;
             }
+            log_trace("Associate Focus");
             m_pPrevDocMgr.Release();
             return m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
         }
 
         auto TextStore::ClearFocus() const -> HRESULT
         {
+            log_trace("Clear Focus");
             CComPtr<ITfDocumentMgr> tempDocMgr;
-            return m_threadMgr->AssociateFocus(m_hWnd, m_emptyDocMgr, &tempDocMgr);
+            return m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
         }
 
         auto TextStore::QueryInterface(REFIID riid, void **ppvObject) -> HRESULT
@@ -169,7 +171,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextStore::AdviseSink(REFIID riid, IUnknown *pUnknown, DWORD dwMask) -> HRESULT
         {
-            auto              tracer = FuncTracer("TextStore::{}", __func__);
+            auto tracer = FuncTracer("TextStore::{}", __func__);
 
             CComPtr<IUnknown> punkID;
 
@@ -206,7 +208,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextStore::UnadviseSink(IUnknown *pUnknown) -> HRESULT
         {
-            auto                    tracer = FuncTracer("TextStore::{}", __func__);
+            auto tracer = FuncTracer("TextStore::{}", __func__);
 
             CComPtr<IUnknown>       punkID;
             CComPtr<IUnknown> const pUnknown1(pUnknown);

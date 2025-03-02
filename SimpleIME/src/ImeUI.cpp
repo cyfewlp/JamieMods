@@ -3,6 +3,8 @@
 //
 
 #include "ImeUI.h"
+
+#include "ImeWnd.hpp"
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
@@ -18,10 +20,14 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        ImeUI::ImeUI(AppUiConfig const &uiConfig, ITextService *pTextService) : m_pUiConfig(uiConfig)
+
+        static constexpr ImVec4 RED_COLOR = {1.0F, 0.0F, 0.0F, 1.0F};
+
+        ImeUI::ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService) : m_pUiConfig(uiConfig)
         {
             _tsetlocale(LC_ALL, _T(""));
             m_pTextService = pTextService;
+            m_pImeWnd      = pImeWnd;
         }
 
         ImeUI::~ImeUI()
@@ -50,15 +56,8 @@ namespace LIBC_NAMESPACE_DECL
             return true;
         }
 
-        void ImeUI::SetHWND(const HWND hWnd)
+        void ImeUI::RenderIme() const
         {
-            m_hWndIme = hWnd;
-        }
-
-        void ImeUI::RenderIme()
-        {
-            RenderToolWindow();
-
             ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
@@ -69,9 +68,14 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
+            if (m_fFollowCursor)
+            {
+                ImGui::SetNextWindowPos(ImGui::GetMousePos(), ImGuiCond_Appearing);
+            }
             ImGui::Begin("SimpleIME", nullptr, windowFlags);
 
             ImGui::SameLine();
+            ImGui::BeginGroup();
             RenderCompWindow();
 
             ImGui::Separator();
@@ -80,6 +84,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 RenderCandidateWindows();
             }
+            ImGui::EndGroup();
             ImGui::End();
         }
 
@@ -103,6 +108,8 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        static bool SettingsMode = false;
+
         void ImeUI::RenderToolWindow()
         {
             if (!m_showToolWindow)
@@ -112,30 +119,29 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, m_toolWindowFlags);
 
+            RenderSettings();
+
+            ImGui::Text("Drag");
+            ImGui::SameLine();
+
             if (!m_errorMessages.empty())
             {
                 for (const auto &errorMessage : m_errorMessages)
                 {
-                    static constexpr ImVec4 redColor = {1.0F, 0.0F, 0.0F, 1.0F};
-                    ImGui::TextColored(redColor, "%s", errorMessage.c_str());
+                    ImGui::TextColored(RED_COLOR, "%s", errorMessage.c_str());
                 }
             }
 
-            if (m_pTextService->HasState(ImeState::IME_DISABLED))
-            {
-                ImGui::Text("Disabled %s", "\xe2\x9d\x8c"); // red   ❌
-            }
-            else
-            {
-                ImGui::Text("Enabled %s", "\xe2\x9c\x85"); // green ✅
-            }
-            ImGui::SameLine();
             if (ImGui::Button("\xf0\x9f\x93\x8c"))
             {
                 m_toolWindowFlags |= ImGuiWindowFlags_NoInputs;
                 m_pinToolWindow                = true;
                 ImGui::GetIO().MouseDrawCursor = false;
             }
+            ImGui::SameLine();
+
+            ImGui::Checkbox("Settings", &SettingsMode);
+            ImGui::SameLine();
 
             auto        activatedGuid     = m_langProfileUtil->GetActivatedLangProfile();
             auto        installedProfiles = m_langProfileUtil->GetLangProfiles();
@@ -152,9 +158,7 @@ namespace LIBC_NAMESPACE_DECL
                     auto       label       = std::format("{}##{}", langProfile.desc, idx);
                     if (ImGui::Selectable(label.c_str()))
                     {
-                        // SendMessageW()  // wait handle message
-                        // PostMessageW(); // not wait
-                        SendMessageW(m_hWndIme, CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
+                        m_pImeWnd->SendMessage_(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
                         activatedGuid = m_langProfileUtil->GetActivatedLangProfile();
                     }
                     if (isSelected)
@@ -176,6 +180,80 @@ namespace LIBC_NAMESPACE_DECL
                 ShowToolWindow();
             }
             ImGui::End();
+        }
+
+        void ImeUI::RenderSettings()
+        {
+            static bool EnableMod       = true;
+            static bool CollapseVisible = false;
+            CollapseVisible             = SettingsMode;
+
+            if (SettingsMode)
+            {
+                if (ImGui::CollapsingHeader("Settings##Content", &CollapseVisible))
+                {
+                    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
+                    if (ImGui::BeginTable("SettingsTable", 3))
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        static bool EnableModFail = false;
+                        if (ImGui::Checkbox("Enable Mod", &EnableMod))
+                        {
+                            if (!m_pImeWnd->EnableMod(EnableMod))
+                            {
+                                EnableMod     = false;
+                                EnableModFail = true;
+                                log_debug("Unable to enable mod: {}", GetLastError());
+                            }
+                        }
+                        ImGui::SetItemTooltip("Uncheck will disable all mod feature(Disable keyboard).");
+                        if (EnableModFail)
+                        {
+                            ImGui::TableNextColumn();
+                            ImGui::SameLine();
+                            ImGui::TextColored(ImVec4(1.0f, .0f, .0f, 1.0f), "%s", "Failed to enable mod");
+                            if (ImGui::Button("X"))
+                            {
+                                EnableModFail = false;
+                            }
+                        }
+
+                        ImGui::TableNextColumn();
+                        if (m_pTextService->HasState(ImeState::IME_DISABLED))
+                        {
+                            ImGui::Text("Ime Enabled %s", "\xe2\x9d\x8c"); // red  ❌
+                        }
+                        else
+                        {
+                            ImGui::Text("Ime Enabled %s", "\xe2\x9c\x85"); // green ✅
+                        }
+                        ImGui::TableNextRow();
+
+                        ImGui::TableNextColumn();
+                        bool const focused = m_pImeWnd->IsFocused();
+                        ImGui::Text("Ime Focus: %s", focused ? "\xe2\x9c\x85" : "\xe2\x9d\x8c");
+                        ImGui::SetItemTooltip("Mod must has keyboard focus to work.");
+
+                        ImGui::TableNextColumn();
+                        if (ImGui::Button("Force Focus Ime"))
+                        {
+                            m_pImeWnd->Focus();
+                        }
+
+                        ImGui::TableNextColumn();
+                        ImGui::Checkbox("Ime follow cursor", &m_fFollowCursor);
+                        ImGui::SetItemTooltip("Ime window appear in cursor position.");
+                        ImGui::EndTable();
+                    }
+                    ImGui::PopStyleVar();
+                }
+                SettingsMode = CollapseVisible;
+            }
+            else
+            {
+                ImGui::SameLine();
+            }
         }
 
         void ImeUI::RenderCompWindow() const

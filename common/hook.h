@@ -20,12 +20,25 @@ namespace LIBC_NAMESPACE_DECL
         {
             using func_type = ReturnT(Args...);
 
-            HookData(const REL::RelocationID &a_id, const REL::VariantOffset &a_offset, ReturnT (*funcPtr)(Args...))
+            HookData(const REL::RelocationID &a_id, const REL::VariantOffset &a_offset, ReturnT (*funcPtr)(Args...),
+                     bool write6 = false)
             {
-                m_address = REL::Relocation<std::uint32_t>(a_id, a_offset).address();
-                m_trampoline.create(14);
+                m_address = REL::Relocation<std::uintptr_t>(a_id, a_offset).address();
 
-                auto ptr       = m_trampoline.write_call<5>(m_address, reinterpret_cast<void *>(funcPtr));
+                uintptr_t ptr;
+                if (write6)
+                {
+                    m_trampoline = SKSE::Trampoline("CallHook6");
+                    m_trampoline.create(14);
+                    ptr = m_trampoline.write_call<6>(m_address, reinterpret_cast<void *>(funcPtr));
+                    ptr = *reinterpret_cast<std::uintptr_t *>(ptr);
+                }
+                else
+                {
+                    m_trampoline = SKSE::Trampoline("CallHook5");
+                    m_trampoline.create(14);
+                    ptr = m_trampoline.write_call<5>(m_address, reinterpret_cast<void *>(funcPtr));
+                }
                 m_originalFunc = REL::Relocation<func_type>(ptr);
             }
 
@@ -39,11 +52,16 @@ namespace LIBC_NAMESPACE_DECL
                 m_originalFunc(args...);
             }
 
+            auto Original(Args... args) const noexcept
+            {
+                m_originalFunc(args...);
+            }
+
         protected:
             std::uintptr_t m_address;
 
         private:
-            SKSE::Trampoline                  m_trampoline{"CallHook"};
+            SKSE::Trampoline                  m_trampoline;
             REL::Relocation<ReturnT(Args...)> m_originalFunc;
         };
 
@@ -61,7 +79,7 @@ namespace LIBC_NAMESPACE_DECL
             explicit D3DPresentHookData(func_type *ptr)
                 : HookData(REL::RelocationID(75461, 77246), REL::VariantOffset(0x9, 0x9, 0x00), ptr)
             {
-                log_debug("D3D present hooked: {}", m_address);
+                log_debug("D3D present hooked: {:#x}", m_address);
             }
         };
 
@@ -70,6 +88,7 @@ namespace LIBC_NAMESPACE_DECL
             explicit DispatchInputEventHookData(func_type *ptr)
                 : HookData(REL::RelocationID(67315, 68617), REL::VariantOffset(0x7B, 0x7B, 0x00), ptr)
             {
+                log_debug("DispatchInputEvent hooked: {:#x}", m_address);
             }
         };
     }

@@ -74,7 +74,7 @@ namespace LIBC_NAMESPACE_DECL
             return CallNextHookEx(hookData.hhook, code, wParam, lParam);
         }
 
-        void InstallDirectInPutHook()
+        void InstallDirectInputHook()
         {
             auto        pszModule   = "dinput8.dll";
             auto        pszFunction = "DirectInput8Create";
@@ -116,7 +116,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM
         {
-            Hooks::InstallWindowsHooks();
+            InstallWindowsHooks();
             return RealRegisterClassExA(wndClass);
         }
 

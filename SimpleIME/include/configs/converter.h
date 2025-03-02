@@ -4,8 +4,10 @@
 #pragma once
 
 #include <cstdlib>
+#include <ranges>
 #include <spdlog/common.h>
 #include <string>
+#include <unordered_set>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -160,6 +162,26 @@ namespace LIBC_NAMESPACE_DECL
                 }
 
                 return {value};
+            }
+        };
+
+        template <>
+        struct converter<std::unordered_set<std::string>>
+        {
+            static constexpr std::unordered_set<std::string> convert(const char                            *value,
+                                                                     const std::unordered_set<std::string> &aDefault)
+            {
+                if (value == nullptr)
+                {
+                    return aDefault;
+                }
+                auto                            pattern = std::string_view("\n");
+                std::unordered_set<std::string> result;
+                for (const auto &line : std::views::split(std::string_view(value), pattern))
+                {
+                    result.emplace(std::string(std::string_view(line)));
+                }
+                return result;
             }
         };
     }

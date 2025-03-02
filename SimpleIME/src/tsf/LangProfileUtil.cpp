@@ -25,7 +25,7 @@ namespace LIBC_NAMESPACE_DECL
 
             hresult = m_tfProfileMgr.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
             ATLENSURE_RETURN(SUCCEEDED(hresult));
-            initialized_ = true;
+            m_initialized = true;
             return S_OK;
         }
         _ATL_COM_END
@@ -42,7 +42,7 @@ namespace LIBC_NAMESPACE_DECL
             m_tfProfileMgr.Release();
             m_lpThreadMgr.Release();
         }
-        initialized_ = false;
+        m_initialized = false;
     }
 
     auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
@@ -168,18 +168,18 @@ namespace LIBC_NAMESPACE_DECL
 
     auto Ime::LangProfileUtil::AddRef() -> ULONG
     {
-        return ++refCount_;
+        return ++m_refCount;
     }
 
     auto Ime::LangProfileUtil::Release() -> ULONG
     {
-        --refCount_;
-        if (refCount_ == 0)
+        --m_refCount;
+        if (m_refCount == 0)
         {
             delete this;
             return 0;
         }
-        return refCount_;
+        return m_refCount;
     }
 
     auto Ime::LangProfileUtil::OnActivated([[maybe_unused]] DWORD dwProfileType, [[maybe_unused]] LANGID langid,

@@ -28,11 +28,11 @@ namespace LIBC_NAMESPACE_DECL
             int      nType;
             HOOKPROC hkprc;
             HHOOK    hhook;
-        } __attribute__((packed));
+        } ATTR_PACKED;
 
         LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
         void             InstallRegisterClassHook();
-        void             InstallDirectInPutHook();
+        void             InstallDirectInputHook();
         void             InstallWindowsHooks();
 
         auto WINAPI      MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM;

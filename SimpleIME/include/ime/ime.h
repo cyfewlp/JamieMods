@@ -81,7 +81,8 @@ namespace LIBC_NAMESPACE_DECL
             DWORD                     m_dwSelection{0};
             std::list<std::string>    m_candidateList;
             mutable std::shared_mutex m_mutex;
-        } __attribute__((packed)) __attribute__((aligned(64)));
+        } PACKED_ALIGN(64);
+
     } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL
 #endif

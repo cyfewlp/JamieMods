@@ -26,7 +26,7 @@ option(INSTALL_GTEST "Install Googletest's GTest?" OFF)
 
 include(FetchContent)
 FetchContent_Declare(
-  googletest DOWNLOAD_EXTRACT_TIMESTAMP
+  googletest 
   URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip 
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -77,6 +77,8 @@ set(headers
     include/ImeUI.h
     include/ImeWnd.hpp
     include/FakeDirectInputDevice.h
+    include/Utils.h
+    include/ScaleformHook.h
     include/ime/TextEditor.h
     include/ime/ITextService.h
     include/ime/ITextServiceFactory.h
@@ -94,6 +96,7 @@ set(sources
     src/ImeWnd.cpp
     src/Hooks.cpp
     src/AppConfig.cpp
+    src/ScaleformHook.cpp
     src/ime/TextEditor.cpp
     src/ime/Imm32TextService.cpp
     src/tsf/TsfSupport.cpp

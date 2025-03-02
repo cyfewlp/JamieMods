@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include "context.h"
+
+#include <comdef.h>
 #include <dinput.h>
 
 #pragma comment(lib, "dxguid.lib")
@@ -18,9 +21,12 @@ namespace LIBC_NAMESPACE_DECL
     {
         class FakeDirectInputDevice : public IDirectInputDevice8A
         {
+            static inline FakeDirectInputDevice *g_pFakeDirectInputDevice = nullptr;
+
         public:
-            FakeDirectInputDevice(IDirectInputDevice8A *device) : m_realDevice(device)
+            explicit FakeDirectInputDevice(IDirectInputDevice8A *device) : m_realDevice(device)
             {
+                g_pFakeDirectInputDevice = this;
             }
 
             FakeDirectInputDevice(const FakeDirectInputDevice &other)                = delete;
@@ -28,7 +34,12 @@ namespace LIBC_NAMESPACE_DECL
             FakeDirectInputDevice &operator=(const FakeDirectInputDevice &other)     = delete;
             FakeDirectInputDevice &operator=(FakeDirectInputDevice &&other) noexcept = delete;
 
-            virtual ~FakeDirectInputDevice() = default;
+            virtual ~FakeDirectInputDevice()                                         = default;
+
+            static auto GetInstance() -> FakeDirectInputDevice *
+            {
+                return g_pFakeDirectInputDevice;
+            }
 
             /*** IUnknown methods ***/
             STDMETHOD(QueryInterface)(THIS_ REFIID riid, LPVOID *ppvObj)
@@ -103,11 +114,48 @@ namespace LIBC_NAMESPACE_DECL
                 return m_realDevice->SetEventNotification(hEvent);
             }
 
+        private:
+            DWORD m_realCooperativeLevelFlags = 0;
+            DWORD m_cooperativeLevelFlags     = 0;
+            HWND  m_hWndCooperative           = nullptr;
+
+        public:
             STDMETHOD(SetCooperativeLevel)(THIS_ HWND hwnd, DWORD dwFlags)
             {
+                m_realCooperativeLevelFlags = dwFlags;
                 dwFlags &= ~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
                 dwFlags |= DISCL_NONEXCLUSIVE;
+                m_cooperativeLevelFlags = dwFlags;
+                m_hWndCooperative       = hwnd;
                 return m_realDevice->SetCooperativeLevel(hwnd, dwFlags);
+            }
+
+            auto TryRestoreCooperativeLevel(HWND hWnd) -> HRESULT
+            {
+                HRESULT hr = E_FAIL;
+                if (hWnd != nullptr && m_hWndCooperative == hWnd)
+                {
+                    if (hr = Unacquire(); SUCCEEDED(hr))
+                    {
+                        hr = m_realDevice->SetCooperativeLevel(hWnd, m_realCooperativeLevelFlags);
+                    }
+                    Acquire();
+                }
+                return hr;
+            }
+
+            auto TrySetCooperativeLevel(HWND hWnd) -> HRESULT
+            {
+                HRESULT hr = E_FAIL;
+                if (hWnd != nullptr && m_hWndCooperative == hWnd)
+                {
+                    if (hr = Unacquire(); SUCCEEDED(hr))
+                    {
+                        hr = m_realDevice->SetCooperativeLevel(hWnd, m_cooperativeLevelFlags);
+                    }
+                    Acquire();
+                }
+                return hr;
             }
 
             STDMETHOD(GetObjectInfo)(THIS_ LPDIDEVICEOBJECTINSTANCEA pdidoi, DWORD dwObj, DWORD dwHow)

@@ -176,6 +176,7 @@ namespace LIBC_NAMESPACE_DECL
             Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
             Property<bool>                      PROPERTY_VAR(enableTsf, true);
             Property<bool>                      PROPERTY_VAR(alwaysActiveIme, false);
+            Property<bool>                      PROPERTY_VAR(enableUnicodePaste, true);
             AppUiConfig                         m_appUiConfig;
             static AppConfig                    g_appConfig;
 
@@ -216,6 +217,11 @@ namespace LIBC_NAMESPACE_DECL
             [[nodiscard]] auto AlwaysActiveIme() const -> bool
             {
                 return alwaysActiveIme_.Value();
+            }
+
+            [[nodiscard]] auto EnableUnicodePaste() const -> bool
+            {
+                return enableUnicodePaste_.Value();
             }
 
             /**
