@@ -23,7 +23,7 @@ namespace LIBC_NAMESPACE_DECL
 
         static constexpr ImVec4 RED_COLOR = {1.0F, 0.0F, 0.0F, 1.0F};
 
-        ImeUI::ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService) : m_pUiConfig(uiConfig)
+        ImeUI::ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService) : m_uiConfig(uiConfig)
         {
             _tsetlocale(LC_ALL, _T(""));
             m_pTextService = pTextService;
@@ -56,6 +56,31 @@ namespace LIBC_NAMESPACE_DECL
             return true;
         }
 
+        void ImeUI::SetTheme()
+        {
+            ImGui::StyleColorsDark();
+            if (m_uiConfig.UseClassicTheme())
+            {
+                return;
+            }
+            auto &style                     = ImGui::GetStyle();
+            auto  colors                    = std::span(style.Colors);
+
+            colors[ImGuiCol_WindowBg]       = ImColor(m_uiConfig.WindowBgColor());
+            colors[ImGuiCol_Border]         = ImColor(m_uiConfig.WindowBorderColor());
+            colors[ImGuiCol_Text]           = ImColor(m_uiConfig.TextColor());
+            colors[ImGuiCol_TextLink]       = ImColor(m_uiConfig.HighlightTextColor());
+            colors[ImGuiCol_Button]         = ImColor(m_uiConfig.BtnColor());
+            colors[ImGuiCol_ButtonHovered]  = ImColor(m_uiConfig.BtnHoveredColor());
+            colors[ImGuiCol_ButtonActive]   = ImColor(m_uiConfig.BtnActiveColor());
+            colors[ImGuiCol_Header]         = colors[ImGuiCol_Button];
+            colors[ImGuiCol_HeaderHovered]  = colors[ImGuiCol_ButtonHovered];
+            colors[ImGuiCol_HeaderActive]   = colors[ImGuiCol_ButtonActive];
+            colors[ImGuiCol_FrameBg]        = colors[ImGuiCol_Button];
+            colors[ImGuiCol_FrameBgHovered] = colors[ImGuiCol_ButtonHovered];
+            colors[ImGuiCol_FrameBgActive]  = colors[ImGuiCol_ButtonActive];
+        }
+
         void ImeUI::RenderIme() const
         {
             ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
@@ -70,7 +95,10 @@ namespace LIBC_NAMESPACE_DECL
 
             if (m_fFollowCursor)
             {
-                ImGui::SetNextWindowPos(ImGui::GetMousePos(), ImGuiCond_Appearing);
+                if (auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
+                {
+                    ImGui::SetNextWindowPos({cursor->cursorPosX, cursor->cursorPosY}, ImGuiCond_Appearing);
+                }
             }
             ImGui::Begin("SimpleIME", nullptr, windowFlags);
 
@@ -91,33 +119,31 @@ namespace LIBC_NAMESPACE_DECL
         void ImeUI::ShowToolWindow()
         {
             m_toolWindowFlags &= ~ImGuiWindowFlags_NoInputs;
-            if (m_pinToolWindow)
+            if (m_fPinToolWindow)
             {
-                m_pinToolWindow                = false;
+                m_fPinToolWindow               = false;
                 ImGui::GetIO().MouseDrawCursor = true;
                 ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
             }
             else
             {
-                m_showToolWindow               = !m_showToolWindow;
-                ImGui::GetIO().MouseDrawCursor = m_showToolWindow;
-                if (m_showToolWindow)
+                m_fShowToolWindow              = !m_fShowToolWindow;
+                ImGui::GetIO().MouseDrawCursor = m_fShowToolWindow;
+                if (m_fShowToolWindow)
                 {
                     ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
                 }
             }
         }
 
-        static bool SettingsMode = false;
-
         void ImeUI::RenderToolWindow()
         {
-            if (!m_showToolWindow)
+            if (!m_fShowToolWindow)
             {
                 return;
             }
 
-            ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_showToolWindow, m_toolWindowFlags);
+            ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, m_toolWindowFlags);
 
             RenderSettings();
 
@@ -135,12 +161,12 @@ namespace LIBC_NAMESPACE_DECL
             if (ImGui::Button("\xf0\x9f\x93\x8c"))
             {
                 m_toolWindowFlags |= ImGuiWindowFlags_NoInputs;
-                m_pinToolWindow                = true;
+                m_fPinToolWindow               = true;
                 ImGui::GetIO().MouseDrawCursor = false;
             }
             ImGui::SameLine();
 
-            ImGui::Checkbox("Settings", &SettingsMode);
+            ImGui::Checkbox("Settings", &m_fShowSettings);
             ImGui::SameLine();
 
             auto        activatedGuid     = m_langProfileUtil->GetActivatedLangProfile();
@@ -175,7 +201,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::Text("ENG");
                 ImGui::SameLine();
             }
-            if (!m_pinToolWindow && !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+            if (!m_fPinToolWindow && !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
             {
                 ShowToolWindow();
             }
@@ -186,11 +212,11 @@ namespace LIBC_NAMESPACE_DECL
         {
             static bool EnableMod       = true;
             static bool CollapseVisible = false;
-            CollapseVisible             = SettingsMode;
+            CollapseVisible             = m_fShowSettings;
 
-            if (SettingsMode)
+            if (m_fShowSettings)
             {
-                if (ImGui::CollapsingHeader("Settings##Content", &CollapseVisible))
+                if (ImGui::CollapsingHeader("Settings##Content", &CollapseVisible, ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
                     if (ImGui::BeginTable("SettingsTable", 3))
@@ -248,7 +274,7 @@ namespace LIBC_NAMESPACE_DECL
                     }
                     ImGui::PopStyleVar();
                 }
-                SettingsMode = CollapseVisible;
+                m_fShowSettings = CollapseVisible;
             }
             else
             {
@@ -258,11 +284,10 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::RenderCompWindow() const
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, m_pUiConfig.HighlightTextColor());
-            const auto &editorText = m_pTextService->GetTextEditor().GetText();
-            const auto  str        = WCharUtils::ToString(editorText);
-            ImGui::Text("%s", str.c_str());
-            ImGui::PopStyleColor(1);
+            ImVec4      highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
+            const auto &editorText    = m_pTextService->GetTextEditor().GetText();
+            const auto  str           = WCharUtils::ToString(editorText);
+            ImGui::TextColored(highLightText, "%s", str.c_str());
         }
 
         void ImeUI::RenderCandidateWindows() const
@@ -275,7 +300,8 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     if (index == candidateUi.Selection())
                     {
-                        ImGui::TextColored(ImColor(m_pUiConfig.HighlightTextColor()), "%s", candidate.c_str());
+                        ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
+                        ImGui::TextColored(highLightText, "%s", candidate.c_str());
                     }
                     else
                     {

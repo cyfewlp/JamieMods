@@ -197,6 +197,7 @@ namespace LIBC_NAMESPACE_DECL
             Focus();
             // m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
             m_pTextService->OnStart(m_hWnd);
+            m_pTextService->SetState(ImeState::IME_DISABLED);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ACCEL accelTable[] = {
@@ -311,26 +312,6 @@ namespace LIBC_NAMESPACE_DECL
             return reinterpret_cast<ImeWnd *>(ptr);
         }
 
-        static void ThemeConfig(const AppUiConfig &uiConfig)
-        {
-            auto &style                     = ImGui::GetStyle();
-            auto  colors                    = std::span(style.Colors);
-
-            colors[ImGuiCol_WindowBg]       = ImColor(uiConfig.WindowBgColor());
-            colors[ImGuiCol_Border]         = ImColor(uiConfig.WindowBorderColor());
-            colors[ImGuiCol_Text]           = ImColor(uiConfig.TextColor());
-            const auto btnCol               = (uiConfig.BtnColor() & 0x00FFFFFF) | 0x9A000000;
-            colors[ImGuiCol_Button]         = ImColor(btnCol);
-            colors[ImGuiCol_ButtonHovered]  = ImColor((btnCol & 0x00FFFFFF) | 0x66000000);
-            colors[ImGuiCol_ButtonActive]   = ImColor((btnCol & 0x00FFFFFF) | 0xAA000000);
-            colors[ImGuiCol_Header]         = colors[ImGuiCol_Button];
-            colors[ImGuiCol_HeaderHovered]  = colors[ImGuiCol_ButtonHovered];
-            colors[ImGuiCol_HeaderActive]   = colors[ImGuiCol_ButtonActive];
-            colors[ImGuiCol_FrameBg]        = colors[ImGuiCol_Button];
-            colors[ImGuiCol_FrameBgHovered] = colors[ImGuiCol_ButtonHovered];
-            colors[ImGuiCol_FrameBgActive]  = colors[ImGuiCol_ButtonActive];
-        }
-
         void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
         {
             log_info("Initializing ImGui...");
@@ -352,8 +333,7 @@ namespace LIBC_NAMESPACE_DECL
             (void)io;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigNavMoveSetMousePos = false;
-            ImGui::StyleColorsDark();
-            ThemeConfig(AppConfig::GetConfig().GetAppUiConfig());
+            m_pImeUi->SetTheme();
             GetClientRect(m_hWndParent, &rect);
             io.DisplaySize =
                 ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));

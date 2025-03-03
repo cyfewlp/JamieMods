@@ -47,10 +47,13 @@ namespace LIBC_NAMESPACE_DECL
             // load ui configs
             auto &appUiConfig = destAppConfig.m_appUiConfig;
             GetSimpleIniValue(ini, "UI", appUiConfig.textColor_);
+            GetSimpleIniValue(ini, "UI", appUiConfig.useClassicTheme_);
             GetSimpleIniValue(ini, "UI", appUiConfig.highlightTextColor_);
             GetSimpleIniValue(ini, "UI", appUiConfig.m_windowBgColor);
             GetSimpleIniValue(ini, "UI", appUiConfig.windowBorderColor_);
             GetSimpleIniValue(ini, "UI", appUiConfig.m_btnColor);
+            GetSimpleIniValue(ini, "UI", appUiConfig.m_btnHoveredColor);
+            GetSimpleIniValue(ini, "UI", appUiConfig.m_btnActiveColor);
             GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
             GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
             GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);

@@ -113,7 +113,7 @@ Solutions:
 * [x] Abort IME composition if comp window(ImGui) lost focus
 ** Focus parent window to abort IME(then automatic focus to ImeWnd)
 * [x] Support make composition and candidate window follow cursor when first appear.
-* [ ] Ctrl-c/v support
+**
 
 == 0.0.8
 
@@ -124,3 +124,8 @@ Solutions:
 * [ ] GameProfileSwitch script optimize;
 * [ ] Manage GFXEvent memory alloc?
 * [ ] scale or change ImGui cursor
+* [ ] `CompassNavigationOverhaul` exception when quit game. Survey is trigger by our mod.
+** May related to AllowTextInput hook. Test SkyrimInputMethod with compass is crash
+* [ ] Ctrl-c/v support
+** In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
+to disable game paste feature

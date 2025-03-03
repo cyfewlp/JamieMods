@@ -58,6 +58,19 @@ ENDTAG
     std::cout << multiLineValue << std::endl;
 }
 
+TEST(SimpleIniTest, SaveIni)
+{
+    CSimpleIniA ini(false, false, true);
+
+    SI_Error error =  ini.LoadFile("SimpleIME.ini");
+    if (error == SI_OK)
+    {
+        ini.SetValue("General", "Tool_Window_Shortcut_Key", "0x2222");
+        error = ini.SaveFile("SimpleIME-temp.ini");
+        ASSERT_EQ(error, SI_OK);
+    }
+}
+
 namespace PLUGIN_NAMESPACE
 {
     TEST(SimpleIniTest, HexString)
@@ -146,7 +159,9 @@ colorAbgr = 0xFF00FFFF
         ASSERT_EQ(uiConfig.WindowBorderColor(), 0xFF0000F2);
 
         ASSERT_NE(uiConfig.BtnColor(), defaultUiConfig.BtnColor());
-        ASSERT_EQ(uiConfig.BtnColor(), 0xFF0000F4);
+        ASSERT_EQ(uiConfig.BtnColor(), 0xBB111111);
+        ASSERT_EQ(uiConfig.BtnHoveredColor(), 0xBB222222);
+        ASSERT_EQ(uiConfig.BtnActiveColor(), 0xBB333333);
 
         ASSERT_STRNE(uiConfig.EastAsiaFontFile().c_str(), defaultUiConfig.EastAsiaFontFile().c_str());
         ASSERT_STREQ(uiConfig.EastAsiaFontFile().c_str(), "C:/path/to/east-asia/font");

@@ -30,6 +30,7 @@ namespace LIBC_NAMESPACE_DECL
             ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
             bool Initialize(LangProfileUtil *pLangProfileUtil);
+            void SetTheme();
             void RenderIme() const;
             void RenderToolWindow();
             void ShowToolWindow();
@@ -44,16 +45,18 @@ namespace LIBC_NAMESPACE_DECL
 
             static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
-            AppUiConfig      m_pUiConfig;
-            LangProfileUtil *m_langProfileUtil        = nullptr;
-            ITextService    *m_pTextService           = nullptr;
-            ImeWnd          *m_pImeWnd                = nullptr;
+            AppUiConfig      m_uiConfig;
+            LangProfileUtil *m_langProfileUtil = nullptr;
+            ITextService    *m_pTextService    = nullptr;
+            ImeWnd          *m_pImeWnd         = nullptr;
 
-            bool                     m_showToolWindow = false;
-            bool                     m_fFollowCursor  = true;
+            bool m_fShowToolWindow             = false;
+            bool m_fFollowCursor               = false;
+            bool m_fShowSettings               = false;
+            bool m_fPinToolWindow              = false;
+
             std::vector<std::string> m_errorMessages;
-            int  m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
-            bool m_pinToolWindow   = false;
+            int m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

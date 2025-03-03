@@ -140,7 +140,9 @@ int main(int, char **)
     // io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != nullptr);
     // io.Fonts->AddFontDefault();
     // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 16.0f, nullptr,
+    ImFont *font1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 13.0f, nullptr,
+                                 io.Fonts->GetGlyphRangesChineseFull());
+    ImFont *font2 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 20.0f, nullptr,
                                  io.Fonts->GetGlyphRangesChineseFull());
 
     static ImFontConfig cfg;
@@ -149,8 +151,9 @@ int main(int, char **)
     cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
     static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
     // io.Fonts->AddFontFromFileTTF(config->emojiFontFile.c_str(), config->fontSize, &imFontConfig, icons_ranges);
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f, &cfg, icons_ranges);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 13.0f, &cfg, icons_ranges);
     io.Fonts->Build();
+
     ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hwnd;
     UpdateKeyboardCodePage();
     //    HWND child = ::CreateWindowW(wchild.lpszClassName, L"SKSE Transmogrify Window", WS_POPUP, 0, 0, 0, 0, hwnd,
@@ -202,6 +205,7 @@ int main(int, char **)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        ImGui::PushFont(font1);
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code
         // to learn more about Dear ImGui!).
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
@@ -252,7 +256,7 @@ int main(int, char **)
                     ImGuiWindowFlags_AlwaysAutoResize); // Pass a pointer to our bool variable (the window will have a
 
             static bool showChild = false;
-            static bool collapse = false;
+            static bool collapse  = false;
 
             if (showChild)
             {
@@ -281,6 +285,7 @@ int main(int, char **)
                         ImGui::TableSetColumnIndex(2);
                         ImGui::Text("Hello 1, 2");
 
+                        ImGui::PushFont(font2);
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
                         ImGui::Text("Hello 2, 0");
@@ -288,6 +293,7 @@ int main(int, char **)
                         ImGui::Text("Hello 2, 1");
                         ImGui::TableSetColumnIndex(2);
                         ImGui::Text("Hello 2, 2");
+                    ImGui::PopFont();
 
                         ImGui::EndTable();
                     }
@@ -300,6 +306,7 @@ int main(int, char **)
 
             ImGui::End();
         }
+        ImGui::PopFont();
 
         ImGui::Render();
         const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w,
