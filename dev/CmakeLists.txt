@@ -71,7 +71,6 @@ target_include_directories(
 target_link_libraries(
 	Win32Test
 	PRIVATE
-		common
 		spdlog::spdlog
 		imgui
         "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"

@@ -21,9 +21,13 @@
 #endif
 
 #ifdef __clang__
-    #define ALIGN(size) __attribute__((packed)) __attribute__((aligned(size)))
+    #define ATTR_PACKED        __attribute__((packed))
+    #define ALIGN(size)        __attribute__((aligned(size)))
+    #define PACKED_ALIGN(size) __attribute__((packed)) __attribute__((aligned(size)))
 #else
+    #define ATTR_PACKED
     #define ALIGN(size)
+    #define PACKED_ALIGN(size)
 #endif
 
-#endif //CONFIG_H
+#endif // CONFIG_H

@@ -46,8 +46,89 @@
 
 * [ ] Dynamic enable/disable IME
 ** [x] Disable when no any menu open;
-** [x] Enable when cursor visable(All text field show show cursor);
-** [ ] Enable when menu open that contain some textfield;
-** [ ] Default Theme optimize?
-* [ ] Render current IME state: Is disable;
+** [ ] Disable by blacklist, we can ensure what menu not support input
+*** bug when: curosor -> menu1(IME enable) -> menu2(IME disable) -> menu2 close -> menu1(error state, IME closed)
+** iterate menu stack to find first context-id is not 19 (commonlib-ng kNone = 18?)
+*** No, SkyrUi support search in inventory menu but context is kNone
+
+[source,c++]
+----
+auto *ui      = RE::UI::GetSingleton();
+using Context = RE::UserEvents::INPUT_CONTEXT_IDS;
+log_debug("menu {}, open {}", a_event->menuName.c_str(), a_event->opening);
+log_debug("stack {}", ui->menuStack.size());
+auto hasInputContext = false;
+for (const auto &menu : ui->menuStack)
+{
+    auto menuName = std::string(typeid(*menu.get()).name());
+    menuName.erase(0, strlen("class "));
+    log_debug(
+        "  menu name {} context {} {:32b}", menuName,
+        static_cast<uint32_t>(menu->inputContext.get()), static_cast<uint32_t>(menu->menuFlags.get()));
+    // SE kNone = 18, AE kNone = 19
+    // TODO can't dynamic activate IME by check inputContext: InventoryMenu(SkyUi) no inpuContext
+    if (menu->inputContext.get() != 19 && !IsMenuDisableIme(menuName))
+    {
+        log_debug("=====Has Input Context");
+        hasInputContext = true;
+        break;
+    }
+}
+----
+
+
+=== Improvement
+
+* [x] Enable when cursor visible(All text field show show cursor);
+
+== 0.0.7
+
+=== Issues
+
+* [ ] `SteamOverlay` can't receive any keyboard input
+
+Reason:
+
+** Mod always forward focus to ImeWnd, `SteamOverlay` work in Skyrim depends on message loop
+
+Solutions:
+
+* [.line-through]#try HWND_MESSAGE#
+* [.line-through]#send all message or only IME & Key message#
+** The context state inconsistency
+* listen SteamOverlay shortcut(need user config himself SteamOverlay shortcut)
+
+* Only forward key up/down & SysKeyUp/Down message
+* new UI checkbox: if checked,
+** disable all mod feature and restore focus to game main window.
+** reset DirectInputDevice keyboard to exclusive mode
+
+* [ ] `TextEntryCount`. Open Map `find location` menu and press `ESC` will to quit will not trigger 
+`AllowTextInput` with false
+
+=== Improvement
+
+* [x] Can disable mod
+* [x] update discard event logic
+** not discard when modifier key down: alt/shift/win/ctrl
+* [x] Enable when menu open that contain some textfield;
+** Hook AllowInputText(logic follow SKSE `Hooks_Scaleform.cpp#SKSEScaleform_AllowTextInput`)
+* [x] Abort IME composition if comp window(ImGui) lost focus
+** Focus parent window to abort IME(then automatic focus to ImeWnd)
+* [x] Support make composition and candidate window follow cursor when first appear.
+**
+
+== 0.0.8
+
+* [ ] Default Theme optimize?
+* [x] Render current IME state: Is disable;
+* [ ] Support config `follow cursor` in `ini` file.
+* [ ] support change and save configs in `ToolWindow`
 * [ ] GameProfileSwitch script optimize;
+* [ ] Manage GFXEvent memory alloc?
+* [ ] scale or change ImGui cursor
+* [ ] `CompassNavigationOverhaul` exception when quit game. Survey is trigger by our mod.
+** May related to AllowTextInput hook. Test SkyrimInputMethod with compass is crash
+* [ ] Ctrl-c/v support
+** In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
+to disable game paste feature

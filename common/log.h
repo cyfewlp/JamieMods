@@ -6,6 +6,7 @@
 #define COMMON_LOG_H
 
 #pragma once
+#include <stacktrace>
 
 #ifdef LIBC_NAMESPACE_DECL
 
@@ -45,8 +46,11 @@ namespace LIBC_NAMESPACE_DECL
     static constexpr auto logd(EnumType level, const format_string_loc &fsl, Args &&...args) noexcept
         requires(std::same_as<EnumType, spdlog::level::level_enum>)
     {
-        auto fmt = std::vformat(fsl.GetValue(), std::make_format_args(args...));
-        spdlog::log(fsl.GetLoc(), level, fmt.c_str());
+        if (spdlog::should_log(level))
+        {
+            auto fmt = std::vformat(fsl.GetValue(), std::make_format_args(args...));
+            spdlog::log(fsl.GetLoc(), level, fmt.c_str());
+        }
     }
 
     template <typename... Args>
@@ -83,6 +87,14 @@ namespace LIBC_NAMESPACE_DECL
     static constexpr auto log_trace(const format_string_loc &&fsl, Args &&...args) noexcept
     {
         logd(spdlog::level::trace, fsl, std::forward<Args>(args)...);
+    }
+
+    inline void LogStacktrace()
+    {
+        for (const auto &stacktraceEntry : std::stacktrace::current())
+        {
+            log_error("  at: {}", to_string(stacktraceEntry));
+        }
     }
 } // namespace LIBC_NAMESPACE_DECL
 

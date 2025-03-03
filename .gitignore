@@ -12,6 +12,7 @@
 out
 build
 install
+enc_temp_folder
 cmake-build*
 *.dll
 *.pdb

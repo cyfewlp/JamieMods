@@ -18,7 +18,7 @@ namespace LIBC_NAMESPACE_DECL
             NONE             = 0,
             IN_COMPOSING     = 0x1,
             IN_CAND_CHOOSING = 0x2,
-            IN_ALPHANUMERIC  = 0x4,  // if set, not discard game event.
+            IN_ALPHANUMERIC  = 0x4, // if set, not discard game event.
             IME_OPEN         = 0x8,
             IME_DISABLED     = 0x10, // if set, ignore any TextService change
             ALL              = 0xFFFF
@@ -29,12 +29,12 @@ namespace LIBC_NAMESPACE_DECL
         class ITextService
         {
         public:
-            ITextService()                                                          = default;
-            virtual ~ITextService()                                                 = default;
-            ITextService(const ITextService &other)                                 = delete;
-            ITextService(ITextService &&other) noexcept                             = delete;
-            auto         operator=(const ITextService &other) -> ITextService &     = delete;
-            auto         operator=(ITextService &&other) noexcept -> ITextService & = delete;
+            ITextService()                                                  = default;
+            virtual ~ITextService()                                         = default;
+            ITextService(const ITextService &other)                         = delete;
+            ITextService(ITextService &&other) noexcept                     = delete;
+            auto operator=(const ITextService &other) -> ITextService &     = delete;
+            auto operator=(ITextService &&other) noexcept -> ITextService & = delete;
 
             virtual auto Initialize() -> HRESULT
             {
@@ -144,13 +144,13 @@ namespace LIBC_NAMESPACE_DECL
                 static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool;
                 auto        ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
 
-                void        OpenCandidate(HIMC hIMC);
-                void        CloseCandidate();
-                void        ChangeCandidate(HIMC hIMC);
-                void        ChangeCandidateAt(HIMC hIMC);
-                void        DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
-                void        OnSetOpenStatus(HIMC hIMC);
-                void        UpdateConversionMode(HIMC hIMC);
+                void OpenCandidate(HIMC hIMC);
+                void CloseCandidate();
+                void ChangeCandidate(HIMC hIMC);
+                void ChangeCandidateAt(HIMC hIMC);
+                void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
+                void OnSetOpenStatus(HIMC hIMC);
+                void UpdateConversionMode(HIMC hIMC);
 
                 CandidateUi m_candidateUi;
                 TextEditor  m_textEditor;

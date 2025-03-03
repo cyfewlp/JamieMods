@@ -11,6 +11,8 @@
 
 #include <atomic>
 #include <memory>
+#include <queue>
+#include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -20,9 +22,11 @@ namespace LIBC_NAMESPACE_DECL
         {
             static std::unique_ptr<Context> g_context;
             std::atomic_bool                m_isGameLoading;
+            std::queue<std::string>         m_message;
+            HWND                            m_hwndIme = nullptr;
 
         public:
-            [[nodiscard]] bool IsGameLoading() const
+            [[nodiscard]] auto IsGameLoading() const -> bool
             {
                 return m_isGameLoading;
             }
@@ -30,6 +34,27 @@ namespace LIBC_NAMESPACE_DECL
             void SetIsGameLoading(const bool isGameLoading)
             {
                 m_isGameLoading.store(isGameLoading);
+            }
+
+            [[nodiscard]] auto Messages() -> std::queue<std::string> &
+            {
+                return m_message;
+            }
+
+            template <typename String>
+            void PushMessage(const String &message)
+            {
+                m_message.push(message);
+            }
+
+            [[nodiscard]] auto HwndIme() const -> HWND
+            {
+                return m_hwndIme;
+            }
+
+            void SetHwndIme(const HWND hwndIme)
+            {
+                m_hwndIme = hwndIme;
             }
 
             static auto GetInstance() noexcept -> Context *;

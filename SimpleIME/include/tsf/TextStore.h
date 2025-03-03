@@ -52,20 +52,20 @@ namespace LIBC_NAMESPACE_DECL
             CComPtr<ITextStoreACPSink> pTextStoreAcpSink = nullptr;
             DWORD                      dwMask            = 0;
 
-            void                       Clear()
+            void Clear()
             {
                 punkId.Release();
                 pTextStoreAcpSink.Release();
                 dwMask = 0;
             }
-        } __attribute__((packed)) __attribute__((aligned(32)));
+        } PACKED_ALIGN(32);
 
         struct CandidateInfo
         {
             UINT  candidateCount = 0;
             UINT  pageSize       = 0;
             DWORD firstIndex     = 0;
-        } __attribute__((aligned(16)));
+        } ALIGN(16);
 
         class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
         {
@@ -209,13 +209,13 @@ namespace LIBC_NAMESPACE_DECL
             [[nodiscard]] auto IsLocked(DWORD dwLockType) const -> bool;
 
             // lock vars
-            DWORD                          m_refCount{0};
-            DWORD                          m_dwLockType{0};
-            bool                           m_fPendingLockUpgrade{false};
-            bool                           m_fLocked{false};
-            bool                           m_fLayoutChanged{false};
-            HWND                           m_hWnd{nullptr};
-            bool                           m_supportCandidateUi       = true;
+            DWORD m_refCount{0};
+            DWORD m_dwLockType{0};
+            bool  m_fPendingLockUpgrade{false};
+            bool  m_fLocked{false};
+            bool  m_fLayoutChanged{false};
+            HWND  m_hWnd{nullptr};
+            bool  m_supportCandidateUi                                = true;
 
             Ime::ITextService             *m_pTextService             = nullptr;
             Ime::TextEditor               *m_pTextEditor              = nullptr;
@@ -237,9 +237,9 @@ namespace LIBC_NAMESPACE_DECL
             CComPtr<ITfCompositionView>                m_currentCompositionView = nullptr;
             CComPtr<ITfCandidateListUIElementBehavior> m_currentCandidateUi     = nullptr;
 
-            TfEditCookie                               m_editCookie{0};
-            DWORD                                      m_uiElementCookie{0};
-            DWORD                                      m_textEditCookie{0};
+            TfEditCookie m_editCookie{0};
+            DWORD        m_uiElementCookie{0};
+            DWORD        m_textEditCookie{0};
         };
 
         class TextService : public Ime::ITextService
@@ -271,6 +271,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_pTextStore->SetHWND(hWnd);
                 m_pTextStore->Focus();
+                UpdateConversionMode();
                 ITextService::OnStart(hWnd);
             }
 
@@ -287,6 +288,8 @@ namespace LIBC_NAMESPACE_DECL
             auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
         private:
+            void UpdateConversionMode();
+
             Ime::CandidateUi             m_candidateUi;
             Ime::TextEditor              m_textEditor;
             Ime::Imm32::Imm32TextService m_fallbackTextService;
