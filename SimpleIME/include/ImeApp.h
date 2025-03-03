@@ -33,6 +33,7 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             static void DoD3DInit();
+            static void InstallHooks();
             static void HookAddMessage(RE::UIMessageQueue *self, RE::BSFixedString &, RE::UI_MESSAGE_TYPE,
                                        RE::IUIMessageData *);
             static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
