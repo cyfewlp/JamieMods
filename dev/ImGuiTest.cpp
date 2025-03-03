@@ -57,10 +57,10 @@ void           ConfigStyle();
 
 std::array<char, 256> keyboardState{0};
 
-auto                  GetState() noexcept -> bool;
+auto GetState() noexcept -> bool;
 
-static HINSTANCE      winst;
-static HWND           parentWnd;
+static HINSTANCE winst;
+static HWND      parentWnd;
 
 // Main code
 int main(int, char **)
@@ -112,7 +112,7 @@ int main(int, char **)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    ConfigStyle();
+    // ConfigStyle();
     // ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
@@ -140,7 +140,9 @@ int main(int, char **)
     // io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != nullptr);
     // io.Fonts->AddFontDefault();
     // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 16.0f, nullptr,
+    ImFont *font1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 13.0f, nullptr,
+                                 io.Fonts->GetGlyphRangesChineseFull());
+    ImFont *font2 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 20.0f, nullptr,
                                  io.Fonts->GetGlyphRangesChineseFull());
 
     static ImFontConfig cfg;
@@ -149,8 +151,9 @@ int main(int, char **)
     cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
     static const ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
     // io.Fonts->AddFontFromFileTTF(config->emojiFontFile.c_str(), config->fontSize, &imFontConfig, icons_ranges);
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f, &cfg, icons_ranges);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 13.0f, &cfg, icons_ranges);
     io.Fonts->Build();
+
     ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hwnd;
     UpdateKeyboardCodePage();
     //    HWND child = ::CreateWindowW(wchild.lpszClassName, L"SKSE Transmogrify Window", WS_POPUP, 0, 0, 0, 0, hwnd,
@@ -202,6 +205,7 @@ int main(int, char **)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        ImGui::PushFont(font1);
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code
         // to learn more about Dear ImGui!).
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
@@ -251,28 +255,58 @@ int main(int, char **)
                 ImGuiWindowFlags_NoDecoration |
                     ImGuiWindowFlags_AlwaysAutoResize); // Pass a pointer to our bool variable (the window will have a
 
-            ImGui::PushStyleColor(ImGuiCol_Text, 0xffCCCCCC);
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, 0xff444444);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, 0xff444444);
-            ImGui::Text("Hello from another window!");
-            ImGui::Value("WantCaotureMouse", io.WantCaptureMouse);
-            ImGui::Value("Focused", ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows));
-            if (ImGui::BeginCombo("###InstalledIME", "AA"))
+            static bool showChild = false;
+            static bool collapse  = false;
+
+            if (showChild)
             {
-                ImGui::Selectable("AA");
-                ImGui::Selectable("BB");
-                ImGui::Selectable("CC");
-                ImGui::EndCombo();
+                if (ImGui::CollapsingHeader("Settings", &showChild))
+                {
+                    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, {0.0f, 10.0f});
+                    if (ImGui::BeginTable("Test Table", 3, ImGuiTableFlags_RowBg))
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Hello 0, 0");
+                        ImGui::SameLine();
+                        ImGui::Text("Hello 0, 0 1");
+                        ImGui::SameLine();
+                        ImGui::Text("Hello 0, 0 2");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("Hello 0, 1");
+                        ImGui::TableSetColumnIndex(2);
+                        ImGui::Text("Hello 0, 2");
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Hello 1, 0");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("Hello 1, 1");
+                        ImGui::TableSetColumnIndex(2);
+                        ImGui::Text("Hello 1, 2");
+
+                        ImGui::PushFont(font2);
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("Hello 2, 0");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("Hello 2, 1");
+                        ImGui::TableSetColumnIndex(2);
+                        ImGui::Text("Hello 2, 2");
+                    ImGui::PopFont();
+
+                        ImGui::EndTable();
+                    }
+                    ImGui::PopStyleVar();
+                }
             }
-            if (ImGui::Button("next ime"))
-            {
-                ActivateKeyboardLayout((HKL)HKL_NEXT, KLF_SETFORPROCESS);
-            }
+            ImGui::Checkbox("Show Child", &showChild);
+            ImGui::SameLine();
             if (ImGui::Button("Close Me")) show_another_window = false;
 
-            ImGui::PopStyleColor(3);
             ImGui::End();
         }
+        ImGui::PopFont();
 
         ImGui::Render();
         const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w,
@@ -479,7 +513,7 @@ void CleanupRenderTarget()
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-void                          GetCandidateList(HIMC hIMC)
+void GetCandidateList(HIMC hIMC)
 {
     // Get the size of the candidate list buffer
     DWORD bufferSize = ImmGetCandidateList(hIMC, 0, NULL, 0);
@@ -512,7 +546,7 @@ void                          GetCandidateList(HIMC hIMC)
     GlobalFree(candList);
 }
 
-static int  keyboardPage = CP_ACP;
+static int keyboardPage = CP_ACP;
 
 static void UpdateKeyboardCodePage()
 {

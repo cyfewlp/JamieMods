@@ -37,7 +37,7 @@ namespace LIBC_NAMESPACE_DECL
             LANGID      langid{};
             GUID        guidProfile{};
             std::string desc{};
-        } __attribute__((packed)) __attribute__((aligned(128)));
+        } PACKED_ALIGN(128);
 
         class LangProfileUtil : public ITfInputProcessorProfileActivationSink
         {
@@ -56,11 +56,11 @@ namespace LIBC_NAMESPACE_DECL
             auto LoadActiveIme() noexcept -> bool;
             auto ActivateProfile(_In_ const GUID *guidProfile) -> bool;
 
-            auto                         GetActivatedLangProfile() -> GUID &;
-            auto                         AddRef() -> ULONG override;
-            auto                         Release() -> ULONG override;
+            auto GetActivatedLangProfile() -> GUID &;
+            auto AddRef() -> ULONG override;
+            auto Release() -> ULONG override;
 
-            [[nodiscard]] auto           GetLangProfiles() -> std::unordered_map<GUID, LangProfile>;
+            [[nodiscard]] auto GetLangProfiles() -> std::unordered_map<GUID, LangProfile>;
 
             [[nodiscard]] constexpr auto IsAnyProfileActivated() const -> bool
             {
@@ -70,17 +70,17 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto LANGID_ENG = 0x409;
 
         private:
-            auto  QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
-            auto  OnActivated(DWORD dwProfileType, LANGID langid, const IID &clsid, const GUID &catid,
-                              const GUID &guidProfile, HKL hkl, DWORD dwFlags) -> HRESULT override;
+            auto QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
+            auto OnActivated(DWORD dwProfileType, LANGID langid, const IID &clsid, const GUID &catid,
+                             const GUID &guidProfile, HKL hkl, DWORD dwFlags) -> HRESULT override;
 
-            bool  initialized_ = false;
-            DWORD refCount_{};
+            bool                                  m_initialized = false;
+            DWORD                                 m_refCount{};
             CComPtr<ITfInputProcessorProfileMgr>  m_tfProfileMgr = nullptr;
             CComPtr<ITfThreadMgr>                 m_lpThreadMgr  = nullptr;
             DWORD                                 m_dwCookie{};
             std::unordered_map<GUID, LangProfile> m_langProfiles;
-            GUID                                  m_activatedProfile     = GUID_NULL;
+            GUID                                  m_activatedProfile = GUID_NULL;
         };
     } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL

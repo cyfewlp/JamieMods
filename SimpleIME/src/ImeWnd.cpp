@@ -1,16 +1,18 @@
 #include "ImeWnd.hpp"
+
+#include "FakeDirectInputDevice.h"
 #include "ImeUI.h"
+#include "Utils.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
-#include "context.h"
+#include "hooks/ScaleformHook.h"
 #include "ime/ITextServiceFactory.h"
 
 #include <basetsd.h>
-#include <cstddef>
 #include <cstdint>
 #include <d3d11.h>
-#include <dinput.h>
+#include <gsl/pointers>
 #include <imgui.h>
 #include <imgui_freetype.h>
 #include <imgui_impl_dx11.h>
@@ -24,24 +26,39 @@ namespace LIBC_NAMESPACE_DECL
     namespace Ime
     {
 
-        class MenuOpenCloseEventSink final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+        class ConsoleMenuListener final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
         {
             HWND m_hWnd;
 
         public:
-            explicit MenuOpenCloseEventSink(const HWND hWnd) : m_hWnd(hWnd)
+            explicit ConsoleMenuListener(const HWND hWnd) : m_hWnd(hWnd)
             {
             }
 
-            RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent               *a_event,
-                                                  RE::BSTEventSource<RE::MenuOpenCloseEvent> *a_eventSource) override
+            RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent *a_event,
+                                                  RE::BSTEventSource<RE::MenuOpenCloseEvent> *) override
             {
-                if (const auto *ui = RE::UI::GetSingleton(); ui != nullptr && a_event != nullptr)
+                if (a_event->menuName == RE::Console::MENU_NAME)
                 {
-                    if (a_event->menuName == RE::CursorMenu::MENU_NAME)
+                    Hooks::ScaleformAllowTextInput::AllowTextInput(a_event->opening);
+                }
+                else
+                {
+                    if (a_event->menuName == RE::CursorMenu::MENU_NAME && !a_event->opening)
                     {
-                        // sync message
-                        ::SendMessageW(m_hWnd, CM_IME_ENABLE, a_event->opening ? TRUE : FALSE, 0);
+                        // stupid fix: MapMenu will not call AllowTextInput(false) when closing
+                        uint8_t textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                        while (textEntryCount > 0)
+                        {
+                            Hooks::ScaleformAllowTextInput::AllowTextInput(false);
+                            textEntryCount--;
+                        }
+                        // check var consistency
+                        textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                        if (textEntryCount != 0)
+                        {
+                            log_warn("Text entry count is incorrect and can't fix it! count: {}", textEntryCount);
+                        }
                     }
                 }
                 return RE::BSEventNotifyControl::kContinue;
@@ -80,7 +97,7 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("Can't initialize TextService");
             }
             m_pTextService.reset(pTextService);
-            m_pTextService->RegisterCallback(SendStringToSkyrim);
+            m_pTextService->RegisterCallback(Utils::SendStringToGame);
         }
 
         void ImeWnd::Initialize() noexcept(false)
@@ -93,7 +110,7 @@ namespace LIBC_NAMESPACE_DECL
 
             const auto &appConfig = AppConfig::GetConfig();
             InitializeTextService(appConfig);
-            m_pImeUi               = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), m_pTextService.get());
+            m_pImeUi               = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), this, m_pTextService.get());
 
             auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
             if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
@@ -108,7 +125,10 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::UnInitialize() const noexcept
         {
-            m_pTextService->UnInitialize();
+            if (m_pTextService != nullptr)
+            {
+                m_pTextService->UnInitialize();
+            }
             if (m_pLangProfileUtil != nullptr)
             {
                 m_pLangProfileUtil->UnInitialize();
@@ -120,8 +140,9 @@ namespace LIBC_NAMESPACE_DECL
             log_info("Start ImeWnd Thread...");
             DWORD dwExStyle = 0;
             DWORD dwStyle   = WS_CHILD;
-            m_hWnd = ::CreateWindowExW(dwExStyle, g_tMainClassName, L"Hide", dwStyle, 0, 0, 0, 0, hWndParent, nullptr,
-                                       wc.hInstance, (LPVOID)this);
+            m_hWnd          = ::CreateWindowExW(dwExStyle, g_tMainClassName, L"Hide", dwStyle, //
+                                                0, 0, 0, 0,                                    //
+                                                hWndParent, nullptr, wc.hInstance, this);
             if (m_hWnd == nullptr)
             {
                 throw SimpleIMEException("Create ImeWnd failed");
@@ -135,59 +156,101 @@ namespace LIBC_NAMESPACE_DECL
             auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
             while (TRUE)
             {
-                BOOL fEaten;
-                int  fResult;
+                BOOL fEaten  = FALSE;
+                int  fResult = 0;
                 if (pMessagePump->GetMessage(&msg, nullptr, 0, 0, &fResult) != S_OK)
                 {
                     fResult = -1;
                 }
-                else if (msg.message == WM_KEYDOWN)
+                else
                 {
-                    // does an ime want it?
-                    if (pKeystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
-                        pKeystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
+                    if (m_pTextService->HasState(ImeState::IME_DISABLED))
                     {
                         continue;
                     }
-                }
-                else if (msg.message == WM_KEYUP)
-                {
-                    // does an ime want it?
-                    if (pKeystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
-                        pKeystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
+                    if (msg.message == WM_KEYDOWN)
                     {
-                        continue;
+                        // does an ime want it?
+                        if (pKeystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
+                            pKeystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
+                        {
+                            continue;
+                        }
+                    }
+                    else if (msg.message == WM_KEYUP)
+                    {
+                        // does an ime want it?
+                        if (pKeystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
+                            pKeystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
+                        {
+                            continue;
+                        }
                     }
                 }
 
                 if (fResult <= 0) break;
 
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                if (!TranslateAccelerator(m_hWnd, m_hAccelTable, &msg))
+                {
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
             }
             log_info("Exit ImeWnd Thread...");
         }
 
-        void ImeWnd::OnStart() const
+        static std::unique_ptr<ConsoleMenuListener> g_pMenuOpenCloseEventSink(nullptr);
+
+        void ImeWnd::OnStart()
         {
             if (!AppConfig::GetConfig().AlwaysActiveIme())
             {
                 if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
                 {
-                    ui->AddEventSink(new MenuOpenCloseEventSink(m_hWnd));
+                    g_pMenuOpenCloseEventSink.reset(new ConsoleMenuListener(m_hWnd));
+                    ui->AddEventSink(g_pMenuOpenCloseEventSink.get());
                 }
             }
 
             Focus();
             // m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
             m_pTextService->OnStart(m_hWnd);
+            m_pTextService->SetState(ImeState::IME_DISABLED);
+            Context::GetInstance()->SetHwndIme(m_hWnd);
+
+            ACCEL accelTable[] = {
+                {FVIRTKEY | FCONTROL, 'C', ID_EDIT_COPY },
+                {FVIRTKEY | FCONTROL, 'V', ID_EDIT_PASTE},
+            };
+            m_hAccelTable = CreateAcceleratorTableW(accelTable, 2);
+        }
+
+        void ImeWnd::ForwardKeyboardAndImeMessage(HWND hWndTarget, UINT uMsg, WPARAM wParam, LPARAM lParam)
+        {
+            bool isForward = false;
+            switch (uMsg)
+            {
+                case WM_KEYDOWN:
+                case WM_KEYUP:
+                case WM_SYSKEYUP:
+                case WM_SYSKEYDOWN:
+                    isForward = true;
+                    break;
+                default:
+                    break;
+            }
+            if (isForward && SendMessageA(hWndTarget, uMsg, wParam, lParam) != S_OK)
+            {
+                log_debug("Failed Forward Message {}", uMsg);
+            }
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
         {
-            const ImeWnd *pThis = GetThis(hWnd);
+            ImeWnd *pThis = GetThis(hWnd);
             if (pThis != nullptr)
             {
+                ForwardKeyboardAndImeMessage(pThis->m_hWndParent, uMsg, wParam, lParam);
                 if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
                 {
                     return S_OK;
@@ -218,13 +281,40 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 case CM_IME_ENABLE: {
                     if (pThis == nullptr) break;
-                    pThis->m_pTextService->Enable(wParam != FALSE);
+                    pThis->EnableIme(wParam != FALSE);
                     return S_OK;
                 }
                 case CM_ACTIVATE_PROFILE: {
                     if (pThis == nullptr) break;
                     pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
                     return S_OK;
+                }
+                case WM_SETFOCUS:
+                    if (pThis == nullptr) break;
+                    pThis->m_fFocused = true;
+                    break;
+                case WM_KILLFOCUS:
+                    if (pThis == nullptr) break;
+                    pThis->m_fFocused = false;
+                    break;
+                case WM_COMMAND: {
+                    if (pThis == nullptr) break;
+                    switch (LOWORD(wParam))
+                    {
+                        case ID_EDIT_PASTE:
+                            // log_trace("Ready paste Text...");
+                            // if (!Utils::PasteText(pThis->m_hWndParent))
+                            // {
+                            //     log_error("Can't paste Text! {}", GetLastError());
+                            // }
+                            break;
+                        case ID_EDIT_COPY:
+                            // PerformCopy();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 }
                 default:
                     ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
@@ -238,26 +328,6 @@ namespace LIBC_NAMESPACE_DECL
             const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
             if (ptr == 0) return nullptr;
             return reinterpret_cast<ImeWnd *>(ptr);
-        }
-
-        static void ThemeConfig(const AppUiConfig &uiConfig)
-        {
-            auto   &style                   = ImGui::GetStyle();
-            ImVec4 *colors                  = style.Colors;
-
-            colors[ImGuiCol_WindowBg]       = ImColor(uiConfig.WindowBgColor());
-            colors[ImGuiCol_Border]         = ImColor(uiConfig.WindowBorderColor());
-            colors[ImGuiCol_Text]           = ImColor(uiConfig.TextColor());
-            const auto btnCol               = uiConfig.BtnColor() & 0x00FFFFFF | 0x9A000000;
-            colors[ImGuiCol_Button]         = ImColor(btnCol);
-            colors[ImGuiCol_ButtonHovered]  = ImColor(btnCol & 0x00FFFFFF | 0x66000000);
-            colors[ImGuiCol_ButtonActive]   = ImColor(btnCol & 0x00FFFFFF | 0xAA000000);
-            colors[ImGuiCol_Header]         = colors[ImGuiCol_Button];
-            colors[ImGuiCol_HeaderHovered]  = colors[ImGuiCol_ButtonHovered];
-            colors[ImGuiCol_HeaderActive]   = colors[ImGuiCol_ButtonActive];
-            colors[ImGuiCol_FrameBg]        = colors[ImGuiCol_Button];
-            colors[ImGuiCol_FrameBgHovered] = colors[ImGuiCol_ButtonHovered];
-            colors[ImGuiCol_FrameBgActive]  = colors[ImGuiCol_ButtonActive];
         }
 
         void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
@@ -281,8 +351,7 @@ namespace LIBC_NAMESPACE_DECL
             (void)io;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigNavMoveSetMousePos = false;
-            ImGui::StyleColorsDark();
-            ThemeConfig(AppConfig::GetConfig().GetAppUiConfig());
+            m_pImeUi->SetTheme();
             GetClientRect(m_hWndParent, &rect);
             io.DisplaySize =
                 ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
@@ -311,7 +380,6 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::OnCreate() const -> LRESULT
         {
-            m_pImeUi->SetHWND(m_hWnd);
             return S_OK;
         }
 
@@ -324,8 +392,61 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::Focus() const
         {
-            log_debug("focus to ime wnd");
-            ::SetFocus(m_hWnd);
+            if (m_pTextService->HasNoStates(ImeState::IME_DISABLED))
+            {
+                log_debug("focus to ime wnd");
+                ::SetFocus(m_hWnd);
+            }
+        }
+
+        auto ImeWnd::IsFocused() const -> bool
+        {
+            return m_fFocused;
+        }
+
+        auto ImeWnd::SendMessage_(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT
+        {
+            return SendMessageW(m_hWnd, uMsg, wparam, lparam);
+        }
+
+        auto ImeWnd::EnableIme(bool enable) const -> void
+        {
+            m_pTextService->Enable(enable);
+            if (enable && !m_fFocused)
+            {
+                Focus();
+            }
+        }
+
+        auto ImeWnd::EnableMod(bool enable) const -> bool
+        {
+            EnableIme(enable);
+
+            auto *fakeKeyboard = Hooks::FakeDirectInputDevice::GetInstance();
+            if (enable)
+            {
+                if (fakeKeyboard != nullptr && SUCCEEDED(fakeKeyboard->TrySetCooperativeLevel(m_hWndParent)))
+                {
+                    return ::SetFocus(m_hWnd) != nullptr;
+                }
+            }
+            else
+            {
+                if (::SetFocus(m_hWndParent) != nullptr && fakeKeyboard != nullptr)
+                {
+                    return SUCCEEDED(fakeKeyboard->TryRestoreCooperativeLevel(m_hWndParent));
+                }
+            }
+
+            return false;
+        }
+
+        void ImeWnd::AbortIme() const
+        {
+            if (m_pTextService->HasAnyStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+            {
+                ::SetFocus(m_hWndParent);
+            }
         }
 
         /**
@@ -335,13 +456,13 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
             {
-                if (!ui->IsShowingMenus() || !ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
+                if (!ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
                 {
                     POINT cursorPos;
-                    auto &io = ImGui::GetIO();
-                    if (GetCursorPos(&cursorPos))
+                    if (GetCursorPos(&cursorPos) != FALSE)
                     {
-                        io.AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
+                        ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x),
+                                                        static_cast<float>(cursorPos.y));
                     }
                 }
             }
@@ -354,6 +475,7 @@ namespace LIBC_NAMESPACE_DECL
             NewFrame();
             ImGui::NewFrame();
 
+            m_pImeUi->RenderToolWindow();
             m_pImeUi->RenderIme();
 
             ImGui::Render();
@@ -372,13 +494,12 @@ namespace LIBC_NAMESPACE_DECL
             m_pImeUi->ShowToolWindow();
         }
 
-        static auto IsImeKeyCode(const std::uint32_t code) -> bool
+        static auto IsModifierKeyDown() -> bool
         {
-            bool result = false;
-            result |= code >= DIK_Q && code <= DIK_P;
-            result |= code >= DIK_A && code <= DIK_L;
-            result |= code >= DIK_Z && code <= DIK_M;
-            return result;
+            auto isKeyDown = [](const uint32_t code) { return (GetKeyState(code) & 0x8000) != 0; };
+            return isKeyDown(VK_CONTROL) || isKeyDown(VK_SHIFT) //
+                   || isKeyDown(VK_MENU) || isKeyDown(VK_LWIN)  //
+                   || isKeyDown(VK_RWIN);
         }
 
         auto ImeWnd::IsDiscardGameInputEvents(__in RE::InputEvent **events) const -> bool
@@ -387,73 +508,52 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return false;
             }
-            // may need more test
-            if (m_pTextService->HasState(ImeState::IME_DISABLED) || Context::GetInstance()->IsGameLoading())
-            {
-                return false;
-            }
-
-            auto isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
-            if (!isImeOpen || m_pTextService->HasState(ImeState::IN_ALPHANUMERIC))
-            {
-                return false;
-            }
             auto *head         = *events;
             auto  sourceDevice = head->device;
-            if (sourceDevice == RE::INPUT_DEVICE::kKeyboard)
+            if (sourceDevice != RE::INPUT_DEVICE::kKeyboard)
             {
-                if (m_pTextService->HasAnyStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+                return false;
+            }
+            if (const auto *buttonEvent = head->AsButtonEvent(); nullptr != buttonEvent)
+            {
+                const auto code = buttonEvent->GetIDCode();
+                if (IsImeDisabledOrGameLoading() || IsModifierKeyDown() || IsImeNotActive())
+                {
+                    return false;
+                }
+                if (IsImeWantCaptureInput() || IsWillTriggerIme(code))
                 {
                     return true;
                 }
-                // discard the first keyboard event when ime waiting input.
-                auto *idEvent = head->AsIDEvent();
-                auto  code    = idEvent != nullptr ? idEvent->GetIDCode() : 0;
-                return IsImeKeyCode(code);
             }
+
             return false;
         }
 
-        void ImeWnd::SendStringToSkyrim(const std::wstring &compositionString)
+        constexpr auto ImeWnd::IsImeDisabledOrGameLoading() const -> bool
         {
-            log_debug("Ready result string to Skyrim...");
-            auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
-            auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
-            if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
-            {
-                log_warn("Can't send string to Skyrim may game already close?");
-                return;
-            }
+            return m_pTextService->HasState(ImeState::IME_DISABLED) || Context::GetInstance()->IsGameLoading();
+        }
 
-            const auto *pFactory =
-                pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
-            if (pFactory == nullptr)
-            {
-                log_warn("Can't send string to Skyrim may game already close?");
-                return;
-            }
+        constexpr auto ImeWnd::IsImeNotActive() const -> bool
+        {
+            auto isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
+            return !isImeOpen || m_pTextService->HasState(ImeState::IN_ALPHANUMERIC);
+        }
 
-            // Start send message
-            RE::BSFixedString const menuName = pInterfaceStrings->topMenu;
-            for (wchar_t const wchar : compositionString)
-            {
-                uint32_t const code = wchar;
-                if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
-                {
-                    continue;
-                }
-                auto *pCharEvent            = new GFxCharEvent(code, 0);
-                auto *pScaleFormMessageData = pFactory->Create();
-                if (pScaleFormMessageData == nullptr)
-                {
-                    log_error("Unable create BSTDerivedCreator.");
-                    return;
-                }
-                pScaleFormMessageData->scaleformEvent = pCharEvent;
-                log_debug("send code {:#x} to Skyrim", code);
-                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                                                               pScaleFormMessageData);
-            }
+        constexpr auto ImeWnd::IsImeWantCaptureInput() const -> bool
+        {
+            return m_pTextService->HasAnyStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING);
+        }
+
+        auto ImeWnd::IsWillTriggerIme(const std::uint32_t code) -> bool
+        {
+            bool result = false;
+            using Key   = RE::BSKeyboardDevice::Keys::Key;
+            result |= code >= Key::kQ && code <= Key::kP;
+            result |= code >= Key::kA && code <= Key::kL;
+            result |= code >= Key::kZ && code <= Key::kM;
+            return result;
         }
     }
 }

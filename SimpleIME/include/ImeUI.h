@@ -10,49 +10,53 @@
 #include "imgui.h"
 
 #include <vector>
-#include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
+        class ImeWnd;
+
         constexpr auto MAX_ERROR_MESSAGE_COUNT = 10;
 
         class ImeUI
         {
         public:
-            explicit ImeUI(AppUiConfig const &uiConfig, ITextService *pTextService);
+            explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService);
             ~ImeUI();
             ImeUI(const ImeUI &other)                = delete;
             ImeUI(ImeUI &&other) noexcept            = delete;
             ImeUI &operator=(const ImeUI &other)     = delete;
             ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
-            bool   Initialize(LangProfileUtil *pLangProfileUtil);
-            void   SetHWND(HWND hWnd);
-            void   RenderIme();
-            void   ShowToolWindow();
+            bool Initialize(LangProfileUtil *pLangProfileUtil);
+            void SetTheme();
+            void RenderIme() const;
+            void RenderToolWindow();
+            void ShowToolWindow();
 
             template <typename... Args>
             void PushErrorMessage(std::format_string<Args...> fmt, Args &&...args);
 
         private:
-            void                     RenderToolWindow();
-            void                     RenderCompWindow() const;
-            void                     RenderCandidateWindows() const;
+            void RenderSettings();
+            void RenderCompWindow() const;
+            void RenderCandidateWindows() const;
 
-            static constexpr auto    TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
+            static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
-            HWND                     m_hWndIme        = nullptr;
-            AppUiConfig              m_pUiConfig;
-            LangProfileUtil         *m_langProfileUtil = nullptr;
+            AppUiConfig      m_uiConfig;
+            LangProfileUtil *m_langProfileUtil = nullptr;
+            ITextService    *m_pTextService    = nullptr;
+            ImeWnd          *m_pImeWnd         = nullptr;
 
-            ITextService            *m_pTextService    = nullptr;
+            bool m_fShowToolWindow             = false;
+            bool m_fFollowCursor               = false;
+            bool m_fShowSettings               = false;
+            bool m_fPinToolWindow              = false;
 
-            bool                     m_showToolWindow  = false;
             std::vector<std::string> m_errorMessages;
-            int  m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
-            bool m_pinToolWindow   = false;
+            int m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

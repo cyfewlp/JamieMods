@@ -32,11 +32,15 @@ namespace LIBC_NAMESPACE_DECL
             static auto GetImeWnd() -> ImeWnd *;
 
         private:
-            static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-            static void           ProcessEvent(RE::InputEvent **a_events);
-            static void           ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
+            static void DoD3DInit();
+            static void HookAddMessage(RE::UIMessageQueue *self, RE::BSFixedString &, RE::UI_MESSAGE_TYPE,
+                                       RE::IUIMessageData *);
+            static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
+            static void ProcessEvent(RE::InputEvent **a_events);
+            static void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent);
+            static void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
 
-            static inline WNDPROC RealWndProc;
+            static inline WNDPROC                 RealWndProc;
             static inline std::unique_ptr<State>  g_pState  = nullptr;
             static inline std::unique_ptr<ImeWnd> g_pImeWnd = nullptr;
             static inline HWND                    g_hWnd    = nullptr;

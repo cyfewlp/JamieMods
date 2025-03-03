@@ -1,6 +1,6 @@
 project(
         SimpleIME
-        VERSION 0.0.6
+        VERSION 0.0.7
         DESCRIPTION "Simple IME support for Skyrim"
         LANGUAGES CXX
 )
@@ -26,7 +26,7 @@ option(INSTALL_GTEST "Install Googletest's GTest?" OFF)
 
 include(FetchContent)
 FetchContent_Declare(
-  googletest DOWNLOAD_EXTRACT_TIMESTAMP
+  googletest 
   URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip 
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -69,7 +69,6 @@ add_custom_command(
 # Plugin Config
 set(headers
     include/context.h
-    include/Hooks.hpp
     include/configs/AppConfig.h
     include/configs/CustomMessage.h
     include/configs/converter.h
@@ -77,6 +76,10 @@ set(headers
     include/ImeUI.h
     include/ImeWnd.hpp
     include/FakeDirectInputDevice.h
+    include/Utils.h
+    include/hooks/Hooks.hpp
+    include/hooks/ScaleformHook.h
+    include/hooks/UiAddMessageHook.h
     include/ime/TextEditor.h
     include/ime/ITextService.h
     include/ime/ITextServiceFactory.h
@@ -92,8 +95,10 @@ set(sources
     src/ImeApp.cpp
     src/ImeUI.cpp
     src/ImeWnd.cpp
-    src/Hooks.cpp
     src/AppConfig.cpp
+    src/hooks/Hooks.cpp
+    src/hooks/ScaleformHook.cpp
+    src/hooks/UiAddMessageHook.cpp
     src/ime/TextEditor.cpp
     src/ime/Imm32TextService.cpp
     src/tsf/TsfSupport.cpp
