@@ -246,19 +246,9 @@ namespace LIBC_NAMESPACE_DECL
 
                     switch (head->GetDevice())
                     {
-                        case RE::INPUT_DEVICE::kKeyboard: {
-                            auto keyCode = pButtonEvent->GetIDCode();
-                            if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && pButtonEvent->IsDown())
-                            {
-                                g_pImeWnd->ShowToolWindow();
-                            }
-                            using Key = RE::BSKeyboardDevice::Keys::Key;
-                            if (keyCode == Key::kTilde)
-                            {
-                                g_pImeWnd->AbortIme();
-                            }
+                        case RE::INPUT_DEVICE::kKeyboard:
+                            ProcessKeyboardEvent(pButtonEvent);
                             break;
-                        }
                         case RE::INPUT_DEVICE ::kMouse:
                             ProcessMouseEvent(pButtonEvent);
                             break;
@@ -269,6 +259,20 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 default:
                     break;
+            }
+        }
+
+        void ImeApp::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent)
+        {
+            auto keyCode = btnEvent->GetIDCode();
+            if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
+            {
+                g_pImeWnd->ShowToolWindow();
+            }
+            using Key = RE::BSKeyboardDevice::Keys::Key;
+            if (keyCode == Key::kTilde)
+            {
+                g_pImeWnd->AbortIme();
             }
         }
 

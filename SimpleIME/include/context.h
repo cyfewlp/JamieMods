@@ -31,6 +31,11 @@ namespace LIBC_NAMESPACE_DECL
                 return m_isGameLoading;
             }
 
+            void SetIsGameLoading(const bool isGameLoading)
+            {
+                m_isGameLoading.store(isGameLoading);
+            }
+
             [[nodiscard]] auto Messages() -> std::queue<std::string> &
             {
                 return m_message;
@@ -40,11 +45,6 @@ namespace LIBC_NAMESPACE_DECL
             void PushMessage(const String &message)
             {
                 m_message.push(message);
-            }
-
-            void SetIsGameLoading(const bool isGameLoading)
-            {
-                m_isGameLoading.store(isGameLoading);
             }
 
             [[nodiscard]] auto HwndIme() const -> HWND

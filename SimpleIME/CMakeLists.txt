@@ -79,6 +79,7 @@ set(headers
     include/Utils.h
     include/hooks/Hooks.hpp
     include/hooks/ScaleformHook.h
+    include/hooks/UiAddMessageHook.h
     include/ime/TextEditor.h
     include/ime/ITextService.h
     include/ime/ITextServiceFactory.h
@@ -94,9 +95,10 @@ set(sources
     src/ImeApp.cpp
     src/ImeUI.cpp
     src/ImeWnd.cpp
-    src/Hooks.cpp
     src/AppConfig.cpp
-    src/ScaleformHook.cpp
+    src/hooks/Hooks.cpp
+    src/hooks/ScaleformHook.cpp
+    src/hooks/UiAddMessageHook.cpp
     src/ime/TextEditor.cpp
     src/ime/Imm32TextService.cpp
     src/tsf/TsfSupport.cpp

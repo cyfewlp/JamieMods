@@ -33,8 +33,11 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             static void DoD3DInit();
+            static void HookAddMessage(RE::UIMessageQueue *self, RE::BSFixedString &, RE::UI_MESSAGE_TYPE,
+                                       RE::IUIMessageData *);
             static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static void ProcessEvent(RE::InputEvent **a_events);
+            static void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent);
             static void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
 
             static inline WNDPROC                 RealWndProc;

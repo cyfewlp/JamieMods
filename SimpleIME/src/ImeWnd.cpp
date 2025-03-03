@@ -283,8 +283,8 @@ namespace LIBC_NAMESPACE_DECL
                     switch (LOWORD(wParam))
                     {
                         case ID_EDIT_PASTE:
-                            log_trace("Ready paste Text...");
-                            // if (!Utils::ConvertClipboardText(pThis->m_hWndParent))
+                            // log_trace("Ready paste Text...");
+                            // if (!Utils::PasteText(pThis->m_hWndParent))
                             // {
                             //     log_error("Can't paste Text! {}", GetLastError());
                             // }
