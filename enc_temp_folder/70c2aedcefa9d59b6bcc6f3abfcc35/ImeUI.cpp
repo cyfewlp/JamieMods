@@ -8,6 +8,7 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
+#include "hooks/ScaleformHook.h"
 #include "tsf/LangProfileUtil.h"
 #include "tsf/TextStore.h"
 
@@ -254,6 +255,8 @@ namespace LIBC_NAMESPACE_DECL
                         {
                             ImGui::Text("Ime Enabled %s", "\xe2\x9c\x85"); // green ✅
                         }
+                        ImGui::SameLine();
+                        ImGui::Value("EntryCount", Hooks::ScaleformAllowTextInput::TextEntryCount());
 
                         ImGui::TableNextRow();
                         ImGui::TableNextColumn();

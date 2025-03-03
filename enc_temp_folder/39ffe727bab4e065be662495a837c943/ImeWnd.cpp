@@ -57,7 +57,7 @@ namespace LIBC_NAMESPACE_DECL
                         textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
                         if (textEntryCount != 0)
                         {
-                            log_warn("Text entry count is incorrect and can't fix it! count: {}", textEntryCount);
+                            log_warn("Text entry count is incorrect and can't fix it! count£º {}", textEntryCount);
                         }
                     }
                 }

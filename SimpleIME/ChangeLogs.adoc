@@ -103,6 +103,9 @@ Solutions:
 ** disable all mod feature and restore focus to game main window.
 ** reset DirectInputDevice keyboard to exclusive mode
 
+* [ ] `TextEntryCount`. Open Map `find location` menu and press `ESC` will to quit will not trigger 
+`AllowTextInput` with false
+
 === Improvement
 
 * [x] Can disable mod

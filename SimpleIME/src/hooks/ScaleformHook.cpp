@@ -14,7 +14,7 @@ namespace LIBC_NAMESPACE_DECL
     namespace Hooks
     {
 
-        void ScaleformAllowTextInput::AllowTextInput(bool allow)
+        auto ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
         {
             auto context = Ime::Context::GetInstance();
             if (allow)
@@ -47,6 +47,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             log_trace("Text entry count: {}", g_textEntryCount);
+            return g_textEntryCount;
         }
 
         void ScaleformAllowTextInput::Call(Params &params)

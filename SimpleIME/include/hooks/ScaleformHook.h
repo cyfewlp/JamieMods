@@ -30,7 +30,12 @@ namespace LIBC_NAMESPACE_DECL
         public:
             void Call(Params &params) override;
 
-            static void AllowTextInput(bool allow);
+            static auto AllowTextInput(bool allow) -> std::uint8_t;
+
+            static constexpr auto TextEntryCount() -> std::uint8_t
+            {
+                return g_textEntryCount;
+            }
         };
 
         class ScaleformHooks
