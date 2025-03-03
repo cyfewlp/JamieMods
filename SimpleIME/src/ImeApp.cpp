@@ -104,6 +104,15 @@ namespace LIBC_NAMESPACE_DECL
                 Context::GetInstance()->PushMessage(message);
             }
             LogStacktrace();
+            log_info("Force close ImeWnd.");
+            if (g_pImeWnd != nullptr)
+            {
+                if (g_pImeWnd->SendMessage_(WM_QUIT, -1, 0) != S_OK)
+                {
+                    log_error("Send WM_QUIT to ImeWnd failed.");
+                }
+                g_pImeWnd = nullptr;
+            }
         }
 
         void ImeApp::DoD3DInit()
@@ -182,9 +191,21 @@ namespace LIBC_NAMESPACE_DECL
             {
                 throw SimpleIMEException("Hook WndProc failed!");
             }
+            InstallHooks();
+        }
+
+        void ImeApp::InstallHooks()
+        {
             D3DPresentHook.reset(new Hooks::D3DPresentHookData(D3DPresent));
             DispatchInputEventHook.reset(new Hooks::DispatchInputEventHookData(DispatchEvent));
-            Hooks::ScaleformHooks::InstallHooks();
+            if (AppConfig::GetConfig().AlwaysActiveIme())
+            {
+                log_info("Ime won't enable dynamic activate because 'Always_Active_Ime' is true");
+            }
+            else
+            {
+                Hooks::ScaleformHooks::InstallHooks();
+            }
         }
 
         void ImeApp::D3DPresent(std::uint32_t ptr)

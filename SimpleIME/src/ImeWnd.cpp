@@ -215,7 +215,7 @@ namespace LIBC_NAMESPACE_DECL
             Focus();
             // m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
             m_pTextService->OnStart(m_hWnd);
-            m_pTextService->SetState(ImeState::IME_DISABLED);
+            // m_pTextService->SetState(ImeState::IME_DISABLED);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ACCEL accelTable[] = {
@@ -406,6 +406,10 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::SendMessage_(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT
         {
+            if (m_hWnd == nullptr)
+            {
+                return 0;
+            }
             return SendMessageW(m_hWnd, uMsg, wparam, lparam);
         }
 
