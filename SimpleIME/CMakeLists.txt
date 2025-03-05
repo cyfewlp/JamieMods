@@ -168,8 +168,8 @@ install(TARGETS ${PROJECT_NAME}
         COMPONENT dll
 )
 install(FILES
-        ${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/${PROJECT_NAME}.ini
-        DESTINATION SKSE/Plugins
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.ini
+        DESTINATION config
         COMPONENT configuration
 )
 install(FILES
@@ -177,9 +177,21 @@ install(FILES
         DESTINATION .
         COMPONENT doc
 )
+install(DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/fomod
+        DESTINATION .
+        COMPONENT fomod
+)
+install(DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/patch
+        DESTINATION .
+        COMPONENT patch
+)
 cpack_add_component(dll)
 cpack_add_component(configuration)
 cpack_add_component(doc)
+cpack_add_component(fomod)
+cpack_add_component(patch)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(BUILD_NAME "Debug")

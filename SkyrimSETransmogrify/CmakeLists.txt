@@ -48,7 +48,6 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     src/SKSEDetours.cpp
     src/Window.cpp
     src/ImeUI.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/utils.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 ) # <--- specifies plugin.cpp
@@ -61,7 +60,6 @@ target_include_directories(
 	PRIVATE
         ${DETOURS_INCLUDE_DIRS}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${CMAKE_CURRENT_SOURCE_DIR}/../utils
 		# ${CMAKE_CURRENT_SOURCE_DIR}/../extern
 )
 

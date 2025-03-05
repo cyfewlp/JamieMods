@@ -13,7 +13,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Hooks
     {
-
         auto ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
         {
             auto context = Ime::Context::GetInstance();
@@ -62,8 +61,8 @@ namespace LIBC_NAMESPACE_DECL
             AllowTextInput(enable);
         }
 
-        void ScaleformHooks::GfxMovieInstallHook(RE::GFxMovieView               *pMovieView,
-                                                 RE::GFxMovieView::ScaleModeType scaleMode)
+        void ScaleformHooks::SetScaleModeTypeHook(RE::GFxMovieView               *pMovieView,
+                                                  RE::GFxMovieView::ScaleModeType scaleMode)
         {
             if (pMovieView == nullptr)
             {
@@ -73,7 +72,7 @@ namespace LIBC_NAMESPACE_DECL
             log_trace("GfxMovieInstallHook: {}",
                       pMovieView->GetMovieDef() ? pMovieView->GetMovieDef()->GetFileURL() : "");
 
-            LoadMovieHook->Original(pMovieView, scaleMode);
+            g_SetScaleModeTypeHook->Original(pMovieView, scaleMode);
 
             RE::GFxValue skse;
             if (!pMovieView->GetVariable(&skse, "_global.skse") || !skse.IsObject())
@@ -90,7 +89,7 @@ namespace LIBC_NAMESPACE_DECL
         void ScaleformHooks::InstallHooks()
         {
             log_debug("Install GfxMovieInstallHook...");
-            LoadMovieHook.reset(new GfxMovieInstallHookData(GfxMovieInstallHook));
+            g_SetScaleModeTypeHook.reset(new Scaleform_SetScaleModeTypeHookData(SetScaleModeTypeHook));
         }
 
     }

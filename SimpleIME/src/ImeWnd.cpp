@@ -38,6 +38,7 @@ namespace LIBC_NAMESPACE_DECL
             RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent *a_event,
                                                   RE::BSTEventSource<RE::MenuOpenCloseEvent> *) override
             {
+                log_trace("Menu {} open {}", a_event->menuName.c_str(), a_event->opening);
                 if (a_event->menuName == RE::Console::MENU_NAME)
                 {
                     Hooks::ScaleformAllowTextInput::AllowTextInput(a_event->opening);
@@ -110,7 +111,7 @@ namespace LIBC_NAMESPACE_DECL
 
             const auto &appConfig = AppConfig::GetConfig();
             InitializeTextService(appConfig);
-            m_pImeUi               = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), this, m_pTextService.get());
+            m_pImeUi = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), this, m_pTextService.get());
 
             auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
             if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))

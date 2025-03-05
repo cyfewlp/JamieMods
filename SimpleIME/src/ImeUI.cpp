@@ -65,8 +65,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-            auto &style                     = ImGui::GetStyle();
-            auto  colors                    = std::span(style.Colors);
+            auto &style  = ImGui::GetStyle();
+            auto  colors = std::span(style.Colors);
 
             colors[ImGuiCol_WindowBg]       = ImColor(m_uiConfig.WindowBgColor());
             colors[ImGuiCol_Border]         = ImColor(m_uiConfig.WindowBorderColor());
