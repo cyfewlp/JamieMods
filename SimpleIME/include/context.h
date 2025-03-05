@@ -23,7 +23,8 @@ namespace LIBC_NAMESPACE_DECL
             static std::unique_ptr<Context> g_context;
             std::atomic_bool                m_isGameLoading;
             std::queue<std::string>         m_message;
-            HWND                            m_hwndIme = nullptr;
+            bool                            m_fKeepImeOpen = false;
+            HWND                            m_hwndIme      = nullptr;
 
         public:
             [[nodiscard]] auto IsGameLoading() const -> bool
@@ -34,6 +35,16 @@ namespace LIBC_NAMESPACE_DECL
             void SetIsGameLoading(const bool isGameLoading)
             {
                 m_isGameLoading.store(isGameLoading);
+            }
+
+            [[nodiscard]] auto KeepImeOpen() const -> bool
+            {
+                return m_fKeepImeOpen;
+            }
+
+            void SetFKeepImeOpen(const bool fKeepImeOpen)
+            {
+                m_fKeepImeOpen = fKeepImeOpen;
             }
 
             [[nodiscard]] auto Messages() -> std::queue<std::string> &

@@ -415,6 +415,11 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::EnableIme(bool enable) const -> void
         {
+            const bool keepImeOpen = Context::GetInstance()->KeepImeOpen();
+            if (!enable && keepImeOpen)
+            {
+                return;
+            }
             m_pTextService->Enable(enable);
             if (enable && !m_fFocused)
             {

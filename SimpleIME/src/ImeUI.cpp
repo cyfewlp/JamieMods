@@ -8,6 +8,8 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
+#include "context.h"
+#include "hooks/ScaleformHook.h"
 #include "tsf/LangProfileUtil.h"
 #include "tsf/TextStore.h"
 
@@ -270,6 +272,25 @@ namespace LIBC_NAMESPACE_DECL
                         ImGui::TableNextColumn();
                         ImGui::Checkbox("Ime follow cursor", &m_fFollowCursor);
                         ImGui::SetItemTooltip("Ime window appear in cursor position.");
+
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        static bool fKeepImeOpen = Context::GetInstance()->KeepImeOpen();
+                        if (ImGui::Checkbox("Keep Ime Open", &fKeepImeOpen))
+                        {
+                            Context::GetInstance()->SetFKeepImeOpen(fKeepImeOpen);
+                            if (fKeepImeOpen)
+                            {
+                                m_pImeWnd->SendMessage_(CM_IME_ENABLE, TRUE, 0);
+                            }
+                            else
+                            {
+                                auto count = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                                m_pImeWnd->SendMessage_(CM_IME_ENABLE, count == 0 ? FALSE : TRUE, 0);
+                            }
+                        }
+                        ImGui::SetItemTooltip("A stupid patch. Use this to fix when Ime disabled in any text entry.");
+
                         ImGui::EndTable();
                     }
                     ImGui::PopStyleVar();
