@@ -4,8 +4,8 @@
 #pragma once
 
 #include "common/config.h"
-
 #include "configs/converter.h"
+
 #include <SimpleIni.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -85,6 +85,9 @@ namespace LIBC_NAMESPACE_DECL
         void GetSimpleIniValue(CSimpleIniA &ini, const char *section, Property<Type> &property)
         {
             auto strV = ini.GetValue(section, property.ConfigName());
+            #ifdef SIMPLE_IME_DEBUG
+            assert(strV != nullptr);
+            #endif
             if (strV != nullptr)
             {
                 auto result = converter<Type>::convert(strV, property.Value());
@@ -108,42 +111,6 @@ namespace LIBC_NAMESPACE_DECL
             AppUiConfig &operator=(const AppUiConfig &&rvalue) = delete;
             ~AppUiConfig()                                     = default;
 
-            //
-            [[nodiscard]] constexpr auto TextColor() const -> const uint32_t &
-            {
-                return textColor_.Value();
-            }
-
-            [[nodiscard]] constexpr auto HighlightTextColor() const -> const uint32_t &
-            {
-                return highlightTextColor_.Value();
-            }
-
-            [[nodiscard]] constexpr auto WindowBorderColor() const -> const uint32_t &
-            {
-                return windowBorderColor_.Value();
-            }
-
-            [[nodiscard]] constexpr auto WindowBgColor() const -> const uint32_t &
-            {
-                return m_windowBgColor.Value();
-            }
-
-            [[nodiscard]] constexpr auto BtnColor() const -> const uint32_t &
-            {
-                return m_btnColor.Value();
-            }
-
-            [[nodiscard]] constexpr auto BtnHoveredColor() const -> const uint32_t &
-            {
-                return m_btnHoveredColor.Value();
-            }
-
-            [[nodiscard]] constexpr auto BtnActiveColor() const -> const uint32_t &
-            {
-                return m_btnActiveColor.Value();
-            }
-
             [[nodiscard]] constexpr auto EastAsiaFontFile() const -> const std::string &
             {
                 return eastAsiaFontFile_.Value();
@@ -164,17 +131,22 @@ namespace LIBC_NAMESPACE_DECL
                 return useClassicTheme_.Value();
             }
 
+            [[nodiscard]] auto ThemeDirectory() const -> const std::string &
+            {
+                return m_themeDirectory.Value();
+            }
+
+            [[nodiscard]] auto DefaultTheme() const -> const std::string &
+            {
+                return m_defaultTheme.Value();
+            }
+
         private:
             friend class AppConfig;
             Property<float>       PROPERTY_VAR(fontSize, 14.0F);
             Property<bool>        PROPERTY_VAR(useClassicTheme, false);
-            Property<uint32_t>    PROPERTY_VAR(textColor, 0xFFCCCCCC);
-            Property<uint32_t>    PROPERTY_VAR(highlightTextColor, 0xFFCCCCCC);
-            Property<uint32_t>    PROPERTY_VAR(windowBorderColor, 0xFF3A3A3A);
-            Property<uint32_t>    m_windowBgColor{0x801E1E1E, "windowBackgroundColor"};
-            Property<uint32_t>    m_btnColor{0xFF444444, "buttonColor"};
-            Property<uint32_t>    m_btnHoveredColor{0x66444444, "buttonHoveredColor"};
-            Property<uint32_t>    m_btnActiveColor{0xAA444444, "buttonActiveColor"};
+            Property<std::string> m_themeDirectory{"Theme", "themesDirectory"};
+            Property<std::string> m_defaultTheme{"darcula", "Default_Theme"};
             Property<std::string> PROPERTY_VAR(eastAsiaFontFile, R"(C:\Windows\Fonts\simsun.ttc)");
             Property<std::string> PROPERTY_VAR(emojiFontFile, R"(C:\Windows\Fonts\seguiemj.ttf)");
         };

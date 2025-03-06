@@ -6,6 +6,7 @@ set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.
 find_package(spdlog CONFIG REQUIRED)
 find_package(Freetype CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
 ### BasicTest
 
@@ -16,9 +17,14 @@ add_executable(BasicTest
 target_link_libraries(
 	BasicTest
 	PRIVATE
+		imgui
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 		spdlog::spdlog
-        yaml-cpp::yaml-cpp
+
+)
+target_include_directories(
+    BasicTest PRIVATE
+    ${SIMPLEINI_INCLUDE_DIRS}
 )
 target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 
@@ -27,9 +33,7 @@ target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 
 add_executable(DevTest 
     "AddressLibTool.cpp"
-    "imeUI.cpp"
     "ImGuiTest.cpp"
-    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/utils.cpp
     #"Win32Test.cpp"
 )
 
@@ -37,7 +41,6 @@ target_include_directories(
     DevTest
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/../utils
 )
 
 target_precompile_headers(
@@ -54,6 +57,7 @@ target_link_libraries(
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
         "${WINDOWS_SDK_LIB_PATH}/Comctl32.lib"
 )
+target_compile_features(DevTest PRIVATE cxx_std_23) # <--- use C++23 standard
 
 
 ### Win32Test
@@ -65,7 +69,6 @@ target_include_directories(
     Win32Test
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/../utils
 )
 
 target_link_libraries(
