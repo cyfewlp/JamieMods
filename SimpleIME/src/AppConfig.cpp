@@ -52,6 +52,7 @@ namespace LIBC_NAMESPACE_DECL
             GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
             GetSimpleIniValue(ini, "UI", appUiConfig.m_themeDirectory);
             GetSimpleIniValue(ini, "UI", appUiConfig.m_defaultTheme);
+            GetSimpleIniValue(ini, "UI", appUiConfig.m_highlightTextColor);
         }
     }
 }

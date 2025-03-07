@@ -109,6 +109,7 @@ namespace LIBC_NAMESPACE_DECL
             static bool LoadStyleFromFile(const Path &path, ImGuiStyle &style);
             static bool LoadColors(CSimpleIniA &ini, ImGuiStyle &style);
             static void LoadColor(CSimpleIniA &ini, const char *key, ImVec4 &color);
+            static void SetupMissingColors(ImGuiStyle &style);
         };
     }
 }

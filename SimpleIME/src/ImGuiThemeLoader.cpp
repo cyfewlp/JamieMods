@@ -6,6 +6,7 @@
 #include "ImGuiThemeLoader.h"
 #include "SimpleIni.h"
 #include "common/log.h"
+#include "configs/AppConfig.h"
 #include "imgui.h"
 
 namespace LIBC_NAMESPACE_DECL
@@ -34,6 +35,7 @@ namespace LIBC_NAMESPACE_DECL
                 return false;
             }
             LoadStyleFromFile(themeCache[themeName], style);
+
             return true;
         }
 
@@ -129,6 +131,7 @@ namespace LIBC_NAMESPACE_DECL
             GetSimpleIniValue(ini, "style", "selectableTextAlign", style.SelectableTextAlign);
 
             LoadColors(ini, style);
+            SetupMissingColors(style);
             return true;
         }
 
@@ -214,6 +217,18 @@ namespace LIBC_NAMESPACE_DECL
                     }
                 }
             }
+        }
+
+        void ImGuiThemeLoader::SetupMissingColors(ImGuiStyle &style)
+        {
+            // config TextLink color RGBA
+            const uint32_t color   = AppConfig::GetConfig().GetAppUiConfig().HighlightTextColor();
+            const auto     imColor = ImColor(static_cast<int>((color & 0xFF000000) >> 24), //
+                                             static_cast<int>((color & 0xFF0000) >> 16),   //
+                                             static_cast<int>((color & 0xFF00) >> 8),      //
+                                             static_cast<int>((color & 0xFF)));
+
+            style.Colors[ImGuiCol_TextLink] = imColor;
         }
 
         auto ImGuiThemeLoader::IndexThemeNames(const Path &themeDir) -> bool

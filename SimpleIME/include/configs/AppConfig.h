@@ -85,9 +85,9 @@ namespace LIBC_NAMESPACE_DECL
         void GetSimpleIniValue(CSimpleIniA &ini, const char *section, Property<Type> &property)
         {
             auto strV = ini.GetValue(section, property.ConfigName());
-            #ifdef SIMPLE_IME_DEBUG
+#ifdef SIMPLE_IME_DEBUG
             assert(strV != nullptr);
-            #endif
+#endif
             if (strV != nullptr)
             {
                 auto result = converter<Type>::convert(strV, property.Value());
@@ -141,12 +141,18 @@ namespace LIBC_NAMESPACE_DECL
                 return m_defaultTheme.Value();
             }
 
+            [[nodiscard]] auto HighlightTextColor() const -> uint32_t
+            {
+                return m_highlightTextColor.Value();
+            }
+
         private:
             friend class AppConfig;
             Property<float>       PROPERTY_VAR(fontSize, 14.0F);
             Property<bool>        PROPERTY_VAR(useClassicTheme, false);
             Property<std::string> m_themeDirectory{"Theme", "themesDirectory"};
-            Property<std::string> m_defaultTheme{"darcula", "Default_Theme"};
+            Property<std::string> m_defaultTheme{"darcula", "defaultTheme"};
+            Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "highlightTextColor"};
             Property<std::string> PROPERTY_VAR(eastAsiaFontFile, R"(C:\Windows\Fonts\simsun.ttc)");
             Property<std::string> PROPERTY_VAR(emojiFontFile, R"(C:\Windows\Fonts\seguiemj.ttf)");
         };
