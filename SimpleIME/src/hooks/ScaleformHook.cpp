@@ -22,7 +22,7 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     if (context->HwndIme() != nullptr)
                     {
-                        ::SendMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0);
+                        ::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0);
                     }
                     else
                     {
@@ -36,7 +36,7 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     if (context->HwndIme() != nullptr)
                     {
-                        ::SendMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0);
+                        ::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0);
                     }
                     else
                     {

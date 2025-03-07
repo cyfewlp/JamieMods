@@ -46,7 +46,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // Enable of disable TextService;derived class must call parent Enable fun.
-            virtual void Enable([[maybe_unused]] const bool enable = true)
+            virtual void Enable([[maybe_unused]] const bool enable)
             {
                 if (enable)
                 {

@@ -229,10 +229,10 @@ namespace LIBC_NAMESPACE_DECL
                 ImeUIWidgets::RenderKeepImeOpenWidget([this](const bool keepImeOpen) {
                     if (keepImeOpen)
                     {
-                        return m_pImeWnd->SendMessage_(CM_IME_ENABLE, TRUE, 0);
+                        return m_pImeWnd->SendMessage(CM_IME_ENABLE, TRUE, 0);
                     }
                     const auto count = Hooks::ScaleformAllowTextInput::TextEntryCount();
-                    return m_pImeWnd->SendMessage_(CM_IME_ENABLE, count == 0 ? FALSE : TRUE, 0);
+                    return m_pImeWnd->SendMessage(CM_IME_ENABLE, count == 0 ? FALSE : TRUE, 0);
                 });
 
                 ImGui::EndTable();

@@ -8,6 +8,7 @@
 #include "tsf/TsfCompartment.h"
 
 #include <d3d11.h>
+#include <future>
 #include <windows.h>
 
 #pragma comment(lib, "d3d11.lib")
@@ -29,8 +30,8 @@ namespace LIBC_NAMESPACE_DECL
             ImeWnd();
             ~ImeWnd();
 
-            ImeWnd(ImeWnd &&a_imeWnd)                          = delete;
-            ImeWnd(const ImeWnd &a_imeWnd)                     = delete;
+            ImeWnd(ImeWnd &&a_imeWnd)      = delete;
+            ImeWnd(const ImeWnd &a_imeWnd) = delete;
 
             auto operator=(ImeWnd &&a_imeWnd) -> ImeWnd &      = delete;
             auto operator=(const ImeWnd &a_imeWnd) -> ImeWnd & = delete;
@@ -38,14 +39,16 @@ namespace LIBC_NAMESPACE_DECL
             void Initialize() noexcept(false);
             void UnInitialize() const noexcept;
 
+            auto IsMessagePass(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
+
             /**
              * Work on standalone thread and run own message loop.
              * Mainly for avoid other plugins that init COM
-             * with COINIT_MULTITHREADED(crash logger) to effect our tsf code.
+             * with COINIT_MULTITHREADED(crash logger) to effect our TSF code.
              *
              * @param hWndParent Main window(game window)
              */
-            void Start(HWND hWndParent);
+            void Start(HWND hWndParent, std::promise<bool> &started);
             /**
              * initialize ImGui. Work on UI thread.
              */
@@ -53,7 +56,7 @@ namespace LIBC_NAMESPACE_DECL
                 noexcept(false);
             void Focus() const;
             auto IsFocused() const -> bool;
-            auto SendMessage_(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
+            auto SendMessage(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
             auto EnableIme(bool enable) const -> void;
             auto EnableMod(bool enable) const -> bool;
 
@@ -68,9 +71,10 @@ namespace LIBC_NAMESPACE_DECL
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static auto GetThis(HWND hWnd) -> ImeWnd *;
-            static void ForwardKeyboardAndImeMessage(HWND hWndTarget, UINT uMsg, WPARAM wParam, LPARAM lParam);
+            static void ForwardKeyboardMessage(HWND hWndTarget, UINT uMsg, WPARAM wParam, LPARAM lParam);
             static void NewFrame();
             static auto IsWillTriggerIme(std::uint32_t code) -> bool;
+            static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) ->LRESULT;
 
             constexpr auto IsImeDisabledOrGameLoading() const -> bool;
             constexpr auto IsImeNotActive() const -> bool;

@@ -84,37 +84,6 @@ namespace LIBC_NAMESPACE_DECL
 
         std::unique_ptr<InitErrorMessageShow> g_pInitErrorMessageShow(nullptr);
 
-        void ImeApp::Start(RE::BSGraphics::RendererData &renderData)
-        {
-            std::promise<bool> ensureInitialized;
-            std::future<bool>  initialized = ensureInitialized.get_future();
-            // run ImeWnd in a standalone thread
-            std::thread childWndThread([&ensureInitialized, this]() {
-                try
-                {
-                    m_imeWnd.Initialize();
-                    ensureInitialized.set_value(true);
-                    m_imeWnd.Start(m_hWnd);
-                }
-                catch (...)
-                {
-                    try
-                    {
-                        ensureInitialized.set_exception(std::current_exception());
-                    }
-                    catch (...)
-                    { // set_exception() may throw too
-                    }
-                }
-            });
-
-            initialized.get();
-            childWndThread.detach();
-            auto *device  = renderData.forwarder;
-            auto *context = renderData.context;
-            m_imeWnd.InitImGui(m_hWnd, device, context);
-        }
-
         void ImeApp::D3DInit()
         {
             if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
@@ -142,7 +111,7 @@ namespace LIBC_NAMESPACE_DECL
             LogStacktrace();
             log_info("Force close ImeWnd.");
 
-            if (GetInstance().m_imeWnd.SendMessage_(WM_QUIT, -1, 0) != S_OK)
+            if (GetInstance().m_imeWnd.SendMessage(WM_QUIT, -1, 0) != S_OK)
             {
                 log_error("Send WM_QUIT to ImeWnd failed.");
             }
@@ -161,6 +130,11 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
+            app.OnD3DInit();
+        }
+
+        void ImeApp::OnD3DInit()
+        {
             auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
             if (render_manager == nullptr)
             {
@@ -182,18 +156,48 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
             }
 
-            app.m_hWnd = swapChainDesc->OutputWindow;
-            app.Start(render_data);
-            app.m_state.Initialized.store(true);
+            m_hWnd = swapChainDesc->OutputWindow;
+            Start(render_data);
+            m_state.Initialized.store(true);
 
             log_debug("Hooking Skyrim WndProc...");
-            RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(swapChainDesc->OutputWindow, GWLP_WNDPROC,
-                                                                      reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
+            RealWndProc = reinterpret_cast<WNDPROC>(
+                SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
             if (RealWndProc == nullptr)
             {
                 throw SimpleIMEException("Hook WndProc failed!");
             }
             InstallHooks();
+        }
+
+        void ImeApp::Start(RE::BSGraphics::RendererData &renderData)
+        {
+            std::promise<bool> ensureInitialized;
+            std::future<bool>  initialized = ensureInitialized.get_future();
+            // run ImeWnd in a standalone thread
+            std::thread childWndThread([&ensureInitialized, this]() {
+                try
+                {
+                    m_imeWnd.Initialize();
+                    m_imeWnd.Start(m_hWnd, ensureInitialized);
+                }
+                catch (...)
+                {
+                    try
+                    {
+                        ensureInitialized.set_exception(std::current_exception());
+                    }
+                    catch (...)
+                    { // set_exception() may throw too
+                    }
+                }
+            });
+
+            initialized.get();
+            childWndThread.detach();
+            auto *device  = renderData.forwarder;
+            auto *context = renderData.context;  
+            m_imeWnd.InitImGui(m_hWnd, device, context);
         }
 
         void ImeApp::InstallHooks()

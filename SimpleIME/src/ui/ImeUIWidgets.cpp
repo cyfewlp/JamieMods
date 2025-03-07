@@ -27,7 +27,7 @@ namespace LIBC_NAMESPACE_DECL
                     auto       label       = std::format("{}##{}", langProfile.desc, idx);
                     if (ImGui::Selectable(label.c_str()))
                     {
-                        pImeWnd->SendMessage_(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
+                        pImeWnd->SendMessage(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
                         activatedGuid = pLangProfileUtil->GetActivatedLangProfile();
                     }
                     if (isSelected)

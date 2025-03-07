@@ -38,6 +38,12 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto ASCII_MIDDLE_DOT   = 0xB7; // ·
 
         public:
+            template <typename Ptr>
+            static auto ToLongPtr(Ptr *ptr) -> LONG_PTR
+            {
+                return reinterpret_cast<LONG_PTR>(ptr);
+            }
+
             static auto PasteText(HWND hWnd) -> bool
             {
                 bool result = false;

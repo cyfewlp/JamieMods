@@ -42,6 +42,7 @@ namespace LIBC_NAMESPACE_DECL
             std::optional<Hooks::D3DPresentHookData>         D3DPresentHook         = std::nullopt;
             std::optional<Hooks::DispatchInputEventHookData> DispatchInputEventHook = std::nullopt;
 
+            void OnD3DInit();
             void Start(RE::BSGraphics::RendererData &renderData);
             void ProcessEvent(RE::InputEvent **a_events);
             void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent);
