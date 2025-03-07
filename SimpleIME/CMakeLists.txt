@@ -207,7 +207,7 @@ if (DEFINED OUTPUT_FOLDER)
             TARGET "${PROJECT_NAME}"
             POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${THEMES_FOLDER}"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/themes/" "${THEMES_FOLDER}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/themes" "${THEMES_FOLDER}"
             VERBATIM
     )
 

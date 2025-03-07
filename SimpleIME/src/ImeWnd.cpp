@@ -47,7 +47,7 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     if (a_event->menuName == RE::CursorMenu::MENU_NAME && !a_event->opening)
                     {
-                        // stupid fix: MapMenu will not call AllowTextInput(false) when closing
+                        // fix: MapMenu will not call AllowTextInput(false) when closing
                         uint8_t textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
                         while (textEntryCount > 0)
                         {
@@ -214,9 +214,8 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             Focus();
-            // m_pLangProfileUtil->ActivateProfile(&GUID_NULL);
             m_pTextService->OnStart(m_hWnd);
-            // m_pTextService->SetState(ImeState::IME_DISABLED);
+            m_pTextService->SetState(ImeState::IME_DISABLED);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ACCEL accelTable[] = {
@@ -414,7 +413,7 @@ namespace LIBC_NAMESPACE_DECL
             return SendMessageW(m_hWnd, uMsg, wparam, lparam);
         }
 
-        auto ImeWnd::EnableIme(bool enable) const -> void
+        auto ImeWnd::EnableIme(const bool enable) const -> void
         {
             const bool keepImeOpen = Context::GetInstance()->KeepImeOpen();
             if (!enable && keepImeOpen)
