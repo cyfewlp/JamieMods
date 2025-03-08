@@ -7,6 +7,7 @@
 #include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
 #include "hooks/ScaleformHook.h"
+#include "hooks/UiHooks.h"
 #include "ime/ITextServiceFactory.h"
 
 #include <basetsd.h>
@@ -85,7 +86,7 @@ namespace LIBC_NAMESPACE_DECL
             if (m_hWnd != nullptr)
             {
                 UnregisterClassW(wc.lpszClassName, wc.hInstance);
-                DestroyWindow(m_hWnd);
+                ::DestroyWindow(m_hWnd);
             }
         }
 
@@ -100,6 +101,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             m_pTextService.reset(pTextService);
             m_pTextService->RegisterCallback(Utils::SendStringToGame);
+            m_pLangProfileUtil = new LangProfileUtil();
         }
 
         void ImeWnd::Initialize() noexcept(false)
@@ -165,7 +167,7 @@ namespace LIBC_NAMESPACE_DECL
             return false;
         }
 
-        void ImeWnd::Start(HWND hWndParent, std::promise<bool> &started)
+        void ImeWnd::Start(HWND hWndParent)
         {
             log_info("Start ImeWnd Thread...");
             DWORD dwExStyle = 0;
@@ -178,7 +180,6 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("Create ImeWnd failed");
             }
             OnStart();
-            started.set_value(true);
 
             MSG msg = {};
             ZeroMemory(&msg, sizeof(msg));
@@ -250,7 +251,7 @@ namespace LIBC_NAMESPACE_DECL
                 default:
                     break;
             }
-            if (isForward && PostMessageA(hWndTarget, uMsg, wParam, lParam) != S_OK)
+            if (isForward && SendMessageA(hWndTarget, uMsg, wParam, lParam) != S_OK)
             {
                 log_trace("Failed Forward Message {}", uMsg);
             }
@@ -520,43 +521,29 @@ namespace LIBC_NAMESPACE_DECL
                    || isKeyDown(VK_RWIN);
         }
 
-        auto ImeWnd::IsDiscardGameInputEvents(__in RE::InputEvent **events) const -> bool
+        auto ImeWnd::ProcessKeyboardEvent(const RE::ButtonEvent *buttonEvent) const -> void
         {
-            if (events == nullptr || *events == nullptr)
+            const auto code = buttonEvent->GetIDCode();
+            if (IsImeDisabledOrGameLoading())
             {
-                return false;
+                Hooks::UiHooks::EnableMessageFilter(false);
             }
-            auto *head         = *events;
-            auto  sourceDevice = head->device;
-            if (sourceDevice != RE::INPUT_DEVICE::kKeyboard)
+            else
             {
-                return false;
-            }
-            if (const auto *buttonEvent = head->AsButtonEvent(); nullptr != buttonEvent)
-            {
-                const auto code = buttonEvent->GetIDCode();
-                if (IsImeDisabledOrGameLoading() || IsModifierKeyDown() || IsImeNotActive())
-                {
-                    return false;
-                }
                 if (IsImeWantCaptureInput() || IsWillTriggerIme(code))
                 {
-                    return true;
+                    Hooks::UiHooks::EnableMessageFilter(true);
+                }
+                else
+                {
+                    Hooks::UiHooks::EnableMessageFilter(false);
                 }
             }
-
-            return false;
         }
 
         constexpr auto ImeWnd::IsImeDisabledOrGameLoading() const -> bool
         {
             return m_pTextService->HasState(ImeState::IME_DISABLED) || Context::GetInstance()->IsGameLoading();
-        }
-
-        constexpr auto ImeWnd::IsImeNotActive() const -> bool
-        {
-            auto isImeOpen = m_pLangProfileUtil->IsAnyProfileActivated();
-            return !isImeOpen || m_pTextService->HasState(ImeState::IN_ALPHANUMERIC);
         }
 
         constexpr auto ImeWnd::IsImeWantCaptureInput() const -> bool

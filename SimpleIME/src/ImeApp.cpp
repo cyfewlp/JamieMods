@@ -9,6 +9,7 @@
 #include "gsl/gsl"
 #include "hooks/Hooks.hpp"
 #include "hooks/ScaleformHook.h"
+#include "hooks/UiHooks.h"
 #include "imgui.h"
 
 #include <basetsd.h>
@@ -179,7 +180,8 @@ namespace LIBC_NAMESPACE_DECL
                 try
                 {
                     m_imeWnd.Initialize();
-                    m_imeWnd.Start(m_hWnd, ensureInitialized);
+                    ensureInitialized.set_value(true);
+                    m_imeWnd.Start(m_hWnd);
                 }
                 catch (...)
                 {
@@ -196,7 +198,7 @@ namespace LIBC_NAMESPACE_DECL
             initialized.get();
             childWndThread.detach();
             auto *device  = renderData.forwarder;
-            auto *context = renderData.context;  
+            auto *context = renderData.context;
             m_imeWnd.InitImGui(m_hWnd, device, context);
         }
 
@@ -206,14 +208,8 @@ namespace LIBC_NAMESPACE_DECL
             app.D3DPresentHook         = Hooks::D3DPresentHookData(D3DPresent);
             app.DispatchInputEventHook = Hooks::DispatchInputEventHookData(DispatchEvent);
 
-            if (AppConfig::GetConfig().AlwaysActiveIme())
-            {
-                log_info("Ime won't enable dynamic activate because 'Always_Active_Ime' is true");
-            }
-            else
-            {
-                Hooks::ScaleformHooks::InstallHooks();
-            }
+            Hooks::ScaleformHooks::InstallHooks();
+            Hooks::UiHooks::InstallHooks();
         }
 
         void ImeApp::D3DPresent(std::uint32_t ptr)
@@ -237,14 +233,7 @@ namespace LIBC_NAMESPACE_DECL
             static RE::InputEvent *dummy[] = {nullptr};
             auto                  &app     = GetInstance();
             app.ProcessEvent(a_events);
-            if (app.m_imeWnd.IsDiscardGameInputEvents(a_events)) // Disable Game Input
-            {
-                app.DispatchInputEventHook->Original(a_dispatcher, dummy);
-            }
-            else
-            {
-                app.DispatchInputEventHook->Original(a_dispatcher, a_events);
-            }
+            app.DispatchInputEventHook->Original(a_dispatcher, a_events);
         }
 
         void ImeApp::ProcessEvent(RE::InputEvent **events)
@@ -303,6 +292,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_imeWnd.AbortIme();
             }
+            m_imeWnd.ProcessKeyboardEvent(btnEvent);
         }
 
         void ImeApp::ProcessMouseEvent(const RE::ButtonEvent *btnEvent)

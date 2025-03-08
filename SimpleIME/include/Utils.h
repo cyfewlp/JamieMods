@@ -8,6 +8,8 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 
+#include "hooks/UiHooks.h"
+
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -122,8 +124,8 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 pScaleFormMessageData->scaleformEvent = pCharEvent;
                 log_debug("send code {:#x} to Skyrim", code);
-                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                                                               pScaleFormMessageData);
+                RE::UIMessageQueue::GetSingleton()->AddMessage(
+                    Hooks::IME_MESSAGE_FAKE_MENU, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData);
                 return true;
             }
         };

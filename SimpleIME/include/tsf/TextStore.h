@@ -215,7 +215,7 @@ namespace LIBC_NAMESPACE_DECL
             bool  m_fLocked{false};
             bool  m_fLayoutChanged{false};
             HWND  m_hWnd{nullptr};
-            bool  m_supportCandidateUi                                = true;
+            bool  m_supportCandidateUi = true;
 
             Ime::ITextService             *m_pTextService             = nullptr;
             Ime::TextEditor               *m_pTextEditor              = nullptr;
@@ -264,7 +264,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // associate focus to null DocumentMgr when disabled.
-            void Enable(bool enable = true) override;
+            void Enable(bool enable) override;
 
             void OnStart(HWND hWnd) override
             {
@@ -289,11 +289,11 @@ namespace LIBC_NAMESPACE_DECL
         private:
             void UpdateConversionMode();
 
-            Ime::CandidateUi             m_candidateUi;
-            Ime::TextEditor              m_textEditor;
-            Ime::Imm32::Imm32TextService m_fallbackTextService;
-            CComPtr<TsfCompartment>      m_pCompartment;
-            CComPtr<TextStore>           m_pTextStore = nullptr;
+            Ime::CandidateUi             m_candidateUi{};
+            Ime::TextEditor              m_textEditor{};
+            Ime::Imm32::Imm32TextService m_fallbackTextService{};
+            CComPtr<TsfCompartment>      m_pCompartment = nullptr;
+            CComPtr<TextStore>           m_pTextStore   = nullptr;
         };
     } // namespace Tsf
 } // namespace LIBC_NAMESPACE_DECL

@@ -8,7 +8,6 @@
 #include "tsf/TsfCompartment.h"
 
 #include <d3d11.h>
-#include <future>
 #include <windows.h>
 
 #pragma comment(lib, "d3d11.lib")
@@ -48,7 +47,7 @@ namespace LIBC_NAMESPACE_DECL
              *
              * @param hWndParent Main window(game window)
              */
-            void Start(HWND hWndParent, std::promise<bool> &started);
+            void Start(HWND hWndParent);
             /**
              * initialize ImGui. Work on UI thread.
              */
@@ -61,23 +60,22 @@ namespace LIBC_NAMESPACE_DECL
             auto EnableMod(bool enable) const -> bool;
 
             /**
-             * Focus to parent window to abort ime
+             * Focus to parent window to abort IME
              */
             void AbortIme() const;
             void RenderIme() const;
             void ShowToolWindow() const;
-            auto IsDiscardGameInputEvents(__in RE::InputEvent ** /*events*/) const -> bool;
+            auto ProcessKeyboardEvent(const RE::ButtonEvent * /*events*/) const -> void;
 
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static auto GetThis(HWND hWnd) -> ImeWnd *;
             static void ForwardKeyboardMessage(HWND hWndTarget, UINT uMsg, WPARAM wParam, LPARAM lParam);
             static void NewFrame();
+            static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
             static auto IsWillTriggerIme(std::uint32_t code) -> bool;
-            static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) ->LRESULT;
 
             constexpr auto IsImeDisabledOrGameLoading() const -> bool;
-            constexpr auto IsImeNotActive() const -> bool;
             constexpr auto IsImeWantCaptureInput() const -> bool;
 
             void OnStart();
@@ -86,7 +84,7 @@ namespace LIBC_NAMESPACE_DECL
             void InitializeTextService(const AppConfig &pAppConfig);
 
             std::unique_ptr<ITextService> m_pTextService = nullptr;
-            CComPtr<LangProfileUtil>      m_pLangProfileUtil{new LangProfileUtil()};
+            CComPtr<LangProfileUtil>      m_pLangProfileUtil{};
             bool                          m_fEnableTsf  = false;
             bool                          m_fFocused    = false;
             HWND                          m_hWnd        = nullptr;
