@@ -4,9 +4,9 @@
 #pragma once
 
 #include "ImeUI.h"
+#include "core/State.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfCompartment.h"
-#include "core/State.h"
 
 #include <d3d11.h>
 #include <windows.h>
@@ -25,7 +25,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             static constexpr WORD ID_EDIT_COPY  = 1;
             static constexpr WORD ID_EDIT_PASTE = 2;
-            using State = Ime::Core::State;
+            using State                         = Ime::Core::State;
+
         public:
             ImeWnd();
             ~ImeWnd();
@@ -52,7 +53,7 @@ namespace LIBC_NAMESPACE_DECL
             /**
              * initialize ImGui. Work on UI thread.
              */
-            void InitImGui(HWND hWnd, ID3D11Device * /*device*/, ID3D11DeviceContext * /*context*/) const
+            void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const
                 noexcept(false);
             void Focus() const;
             auto IsFocused() const -> bool;

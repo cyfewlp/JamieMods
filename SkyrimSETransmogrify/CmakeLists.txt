@@ -27,7 +27,7 @@ endif()
 find_package(spdlog CONFIG REQUIRED)
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
-find_package(CommonLibSSE CONFIG REQUIRED)
+#find_package(CommonLibSSE CONFIG REQUIRED)
 
 
 # [BEGIN Build CommonlibSSE]

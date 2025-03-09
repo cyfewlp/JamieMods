@@ -11,7 +11,7 @@ namespace LIBC_NAMESPACE_DECL
     {
         void WinHooks::InstallHooks()
         {
-            //InstallGetClipboardDataHook("GetClipboardData");
+            // InstallGetClipboardDataHook("GetClipboardData");
             InstallDirectInput8CreateHook("DirectInput8Create");
         }
 
@@ -24,12 +24,32 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        using FuncDirectInput8Create = HRESULT (*)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
+        static inline FuncDirectInput8Create RealDirectInput8Create = nullptr;
+
         void WinHooks::InstallDirectInput8CreateHook(const char *funcName)
         {
             log_debug("Install hook: {} {}", MODULE_DINPUT8_STRING.c_str(), funcName);
-            if (LPVOID address = ::DetourFindFunction(MODULE_DINPUT8_STRING.c_str(), funcName); address != nullptr)
+            /*if (LPVOID address = ::DetourFindFunction(MODULE_DINPUT8_STRING.c_str(), funcName); address != nullptr)
             {
                 DirectInput8Create = DirectInput8CreateHook(ToUintPtr(address), MyDirectInput8CreateHook);
+            }*/
+
+            auto        pszModule   = "dinput8.dll";
+            auto        pszFunction = "DirectInput8Create";
+            const PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
+            DetourTransactionBegin();
+            DetourUpdateThread(GetCurrentThread());
+            RealDirectInput8Create = reinterpret_cast<FuncDirectInput8Create>(pVoid);
+            DetourAttach(&reinterpret_cast<PVOID &>(RealDirectInput8Create),
+                         reinterpret_cast<void *>(MyDirectInput8CreateHook));
+            if (LONG const error = DetourTransactionCommit(); error == NO_ERROR)
+            {
+                log_debug("{}: Detoured {}.", pszModule, pszFunction);
+            }
+            else
+            {
+                log_error("{}: Error Detouring {}.", pszModule, pszFunction);
             }
         }
 
@@ -52,7 +72,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             IDirectInput8A *dinput;
             const HRESULT   hresult =
-                DirectInput8Create->Original(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
+                RealDirectInput8Create(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
             if (hresult != DI_OK) return hresult;
 
             *reinterpret_cast<IDirectInput8A **>(ppvOut) = new FakeDirectInput(dinput);

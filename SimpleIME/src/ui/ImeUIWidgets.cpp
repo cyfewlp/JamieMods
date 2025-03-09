@@ -53,10 +53,11 @@ namespace LIBC_NAMESPACE_DECL
                     log_debug("Unable to enable mod: {}", GetLastError());
                 }
             }
-            ImGui::SetItemTooltip("Uncheck will disable all mod feature(Disable keyboard).");
+            ImGui::SetItemTooltip("Unchecked will disable all mod feature(Disable keyboard).");
             if (EnableModFail)
             {
                 ImGui::TextColored(ImVec4(1.0f, .0f, .0f, 1.0f), "%s", "Failed to enable mod");
+                ImGui::SameLine();
                 if (ImGui::Button("x"))
                 {
                     EnableModFail = false;

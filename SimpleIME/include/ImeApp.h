@@ -44,12 +44,12 @@ namespace LIBC_NAMESPACE_DECL
 
             void OnD3DInit();
             void Start(RE::BSGraphics::RendererData &renderData);
-            void ProcessEvent(RE::InputEvent **a_events);
-            void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent);
+            void ProcessEvent(RE::InputEvent **a_events, bool &discard);
+            void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard);
             void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
 
-            ImeWnd m_imeWnd{};
-            HWND   m_hWnd = nullptr;
+            ImeWnd m_imeWnd;
+            HWND   m_hWnd  = nullptr;
             State  m_state = {};
 
             static void D3DInit();
@@ -57,8 +57,6 @@ namespace LIBC_NAMESPACE_DECL
             static void InstallHooks();
             static void D3DPresent(std::uint32_t ptr);
             static void DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
-            static void HookAddMessage(RE::UIMessageQueue *self, RE::BSFixedString &, RE::UI_MESSAGE_TYPE,
-                                       RE::IUIMessageData *);
             static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static inline WNDPROC RealWndProc;
         };

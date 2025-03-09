@@ -75,8 +75,6 @@ add_custom_command(
 
 file(GLOB_RECURSE headers include/*.h include/*.hpp)
 file(GLOB_RECURSE sources src/*.cpp)
-message("header files: ${headers}")
-message("source files: ${sources}")
 
 source_group(
     TREE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -94,8 +92,10 @@ endif ()
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-find_package(CommonLibSSE CONFIG REQUIRED)
+#find_package(CommonLibSSE CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
+
+include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
@@ -160,11 +160,17 @@ install(DIRECTORY
         DESTINATION .
         COMPONENT patch
 )
+install(DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/themes
+        DESTINATION .
+        COMPONENT themes
+)
 cpack_add_component(dll)
 cpack_add_component(configuration)
 cpack_add_component(doc)
 cpack_add_component(fomod)
 cpack_add_component(patch)
+cpack_add_component(themes)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(BUILD_NAME "Debug")

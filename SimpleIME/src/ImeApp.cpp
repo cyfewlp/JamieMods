@@ -61,7 +61,7 @@ namespace LIBC_NAMESPACE_DECL
         void ImeApp::Initialize()
         {
             m_state.Initialized.store(false);
-            //Hooks::InstallRegisterClassHook();
+            // Hooks::InstallRegisterClassHook();
             Hooks::WinHooks::InstallHooks();
 
             D3DInitHook = Hooks::D3DInitHookData(ImeApp::D3DInit);
@@ -154,13 +154,13 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             log_debug("Getting SwapChain desc...");
-            auto swapChainDesc = gsl::not_null(new DXGI_SWAP_CHAIN_DESC());
-            if (pSwapChain->GetDesc(swapChainDesc) < 0)
+            REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
+            if (pSwapChain->GetDesc(&swapChainDesc) < 0)
             {
                 throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
             }
 
-            m_hWnd = swapChainDesc->OutputWindow;
+            m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
             Start(render_data);
             m_state.Initialized.store(true);
 
@@ -200,8 +200,8 @@ namespace LIBC_NAMESPACE_DECL
 
             initialized.get();
             childWndThread.detach();
-            auto *device  = renderData.forwarder;
-            auto *context = renderData.context;
+            auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+            auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
             m_imeWnd.InitImGui(m_hWnd, device, context);
         }
 
@@ -233,13 +233,24 @@ namespace LIBC_NAMESPACE_DECL
         // we need set our keyboard to non-exclusive after game default.
         void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
-            auto &app = GetInstance();
-            app.ProcessEvent(a_events);
+            static RE::InputEvent *dummy[] = {nullptr};
+
+            auto &app                 = GetInstance();
+            bool  discardCurrentEvent = false;
+            app.ProcessEvent(a_events, discardCurrentEvent);
+            if (discardCurrentEvent)
+            {
+                app.DispatchInputEventHook->Original(a_dispatcher, dummy);
+            }
+            else
+            {
+                app.DispatchInputEventHook->Original(a_dispatcher, a_events);
+            }
             app.DispatchInputEventHook->Original(a_dispatcher, a_events);
             Core::EventHandler::PostHandleKeyboardEvent();
         }
 
-        void ImeApp::ProcessEvent(RE::InputEvent **events)
+        void ImeApp::ProcessEvent(RE::InputEvent **events, bool &discard)
         {
             if (events == nullptr)
             {
@@ -268,7 +279,7 @@ namespace LIBC_NAMESPACE_DECL
                     switch (head->GetDevice())
                     {
                         case RE::INPUT_DEVICE::kKeyboard:
-                            ProcessKeyboardEvent(pButtonEvent);
+                            ProcessKeyboardEvent(pButtonEvent, discard);
                             break;
                         case RE::INPUT_DEVICE ::kMouse:
                             ProcessMouseEvent(pButtonEvent);
@@ -283,7 +294,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeApp::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent)
+        void ImeApp::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard)
         {
             auto keyCode = btnEvent->GetIDCode();
             if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
@@ -296,6 +307,7 @@ namespace LIBC_NAMESPACE_DECL
                 m_imeWnd.AbortIme();
             }
             Core::EventHandler::HandleKeyboardEvent(btnEvent);
+            discard = Core::EventHandler::IsDiscardKeyboardEvent(btnEvent);
         }
 
         void ImeApp::ProcessMouseEvent(const RE::ButtonEvent *btnEvent)

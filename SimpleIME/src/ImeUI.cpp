@@ -200,7 +200,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::SameLine();
                 return;
             }
-            ImGui::Begin("Settings", &isSettingsWindowOpen, ImGuiWindowFlags_None);
+            ImGui::Begin("Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
             ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
             if (ImGui::BeginTable("SettingsTable", 3))
             {

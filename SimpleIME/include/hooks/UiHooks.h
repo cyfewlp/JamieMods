@@ -23,7 +23,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         };
 
-        inline RE::BSFixedString IME_MESSAGE_FAKE_MENU = "ImeMessageFakeMenu";
+        inline const RE::BSFixedString IME_MESSAGE_FAKE_MENU = "ImeMessageFakeMenu";
 
         class UiHooks
         {

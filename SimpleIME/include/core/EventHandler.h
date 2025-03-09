@@ -17,7 +17,11 @@ namespace LIBC_NAMESPACE_DECL
 
         public:
             static auto HandleKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> void;
-
+            /**
+             * Prevent keyboard be send when IME inputing or wait input.
+             * Only detect first event.
+             */
+            static auto IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool;
             static auto PostHandleKeyboardEvent() -> void;
 
         private:

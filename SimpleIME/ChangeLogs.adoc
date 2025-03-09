@@ -120,6 +120,25 @@ Solutions:
 
 == 0.0.8
 
+* [x] Settings window;
+* [x] FMOD
+** check if install RaceSexMenu patch
+* [x] ImGui Theme load from file
+** theme file export from https://github.com/Patitotective/ImThemes[ImThemes]
+** theme no provide text link color, try another way to show selected text(add background?)
+* [ ] scale & add bg from selected candidate
+* [ ] keepimeopen <--- always enable ime
+
+=== fix
+
+* [ ] discard `E` key event when ime in input or wait input
+* [ ] ImGui cursor not update when keep any key pressed
+* [ ] detach, uninstall hooks when destory window
+
+* [ ] Ctrl-c/v support
+** In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
+to disable game paste feature
+* [ ] Support select candidate from UI
 * [ ] Default Theme optimize?
 * [x] Render current IME state: Is disable;
 * [ ] Support config `follow cursor` in `ini` file.
@@ -129,6 +148,3 @@ Solutions:
 * [ ] scale or change ImGui cursor
 * [ ] `CompassNavigationOverhaul` exception when quit game. Survey is trigger by our mod.
 ** May related to AllowTextInput hook. Test SkyrimInputMethod with compass is crash
-* [ ] Ctrl-c/v support
-** In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
-to disable game paste feature

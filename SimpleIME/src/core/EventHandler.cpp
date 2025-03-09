@@ -6,6 +6,8 @@
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
 
+#include <dinput.h>
+
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime::Core
@@ -13,7 +15,6 @@ namespace LIBC_NAMESPACE_DECL
 
         constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
         {
-
             return State::GetInstance()->HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
                    State::GetInstance()->NotHas(State::LANG_PROFILE_ACTIVATED);
         }
@@ -56,6 +57,16 @@ namespace LIBC_NAMESPACE_DECL
                     Hooks::UiHooks::EnableMessageFilter(false);
                 }
             }
+        }
+
+        auto EventHandler::IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool
+        {
+            bool discard = false;
+            if (buttonEvent->GetIDCode() == DIK_E)
+            {
+                discard = true;
+            }
+            return discard;
         }
 
         auto EventHandler::PostHandleKeyboardEvent() -> void

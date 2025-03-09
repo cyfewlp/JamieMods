@@ -63,7 +63,7 @@ namespace LIBC_NAMESPACE_DECL
             bool m_fPinToolWindow  = false;
 
             std::vector<std::string> m_errorMessages;
-            int m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
+            int m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

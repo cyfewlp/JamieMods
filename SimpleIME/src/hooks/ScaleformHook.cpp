@@ -13,16 +13,60 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Hooks
     {
-        auto ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
+        auto ControlMap::SKSE_AllowTextInput(bool allow) -> uint8_t
         {
-            auto context = Ime::Context::GetInstance();
             if (allow)
             {
-                if (g_textEntryCount != 0xFF && g_textEntryCount++ == 0)
+                if (allowTextInput == MAX_TEXT_ENTRY_COUNT)
+                {
+                    log_warn("InputManager::AllowTextInput: counter overflow");
+                }
+                else
+                {
+                    allowTextInput++;
+                }
+            }
+            else
+            {
+                if (allowTextInput == 0)
+                {
+                    log_warn("InputManager::AllowTextInput: counter underflow");
+                }
+                else
+                {
+                    allowTextInput--;
+                }
+            }
+
+            if (auto *consoleLog = RE::ConsoleLog::GetSingleton(); //
+                consoleLog != nullptr && RE::ConsoleLog::IsConsoleMode())
+            {
+                consoleLog->Print("%s text input, count = %d", allow ? "allowed" : "disallowed", allowTextInput);
+            }
+
+            return allowTextInput;
+        }
+
+        ControlMap *ControlMap::GetSingleton()
+        {
+            const REL::Relocation<ControlMap **> singleton{RE::Offset::ControlMap::Singleton};
+            return *singleton;
+        }
+
+        auto ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
+        {
+            ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
+            auto *context = Ime::Context::GetInstance();
+            if (allow)
+            {
+                if (g_textEntryCount != MAX_TEXT_ENTRY_COUNT && g_textEntryCount++ == 0)
                 {
                     if (context->HwndIme() != nullptr)
                     {
-                        ::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0);
+                        if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0) != TRUE)
+                        {
+                            log_error("Send notify message fail {}", GetLastError());
+                        }
                     }
                     else
                     {
@@ -36,7 +80,10 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     if (context->HwndIme() != nullptr)
                     {
-                        ::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0);
+                        if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0) != TRUE)
+                        {
+                            log_error("Send notify message fail {}", GetLastError());
+                        }
                     }
                     else
                     {
@@ -64,6 +111,8 @@ namespace LIBC_NAMESPACE_DECL
         void ScaleformHooks::SetScaleModeTypeHook(RE::GFxMovieView               *pMovieView,
                                                   RE::GFxMovieView::ScaleModeType scaleMode)
         {
+            g_SetScaleModeTypeHook->Original(pMovieView, scaleMode);
+
             if (pMovieView == nullptr)
             {
                 return;
@@ -72,8 +121,6 @@ namespace LIBC_NAMESPACE_DECL
             log_trace("GfxMovieInstallHook: {}",
                       pMovieView->GetMovieDef() ? pMovieView->GetMovieDef()->GetFileURL() : "");
 
-            g_SetScaleModeTypeHook->Original(pMovieView, scaleMode);
-
             RE::GFxValue skse;
             if (!pMovieView->GetVariable(&skse, "_global.skse") || !skse.IsObject())
             {
@@ -81,7 +128,7 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
             RE::GFxValue fn_AllowTextInput;
-            static auto  AllowTextInput = new ScaleformAllowTextInput();
+            static auto *AllowTextInput = new ScaleformAllowTextInput();
             pMovieView->CreateFunction(&fn_AllowTextInput, AllowTextInput);
             skse.SetMember("AllowTextInput", fn_AllowTextInput);
         }
@@ -89,7 +136,7 @@ namespace LIBC_NAMESPACE_DECL
         void ScaleformHooks::InstallHooks()
         {
             log_debug("Install GfxMovieInstallHook...");
-            g_SetScaleModeTypeHook.reset(new Scaleform_SetScaleModeTypeHookData(SetScaleModeTypeHook));
+            g_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
         }
 
     }

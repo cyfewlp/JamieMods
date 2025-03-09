@@ -6,6 +6,8 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "imgui.h"
 // #include "AddressLibTool.hpp"
 #include "SimpleIni.h"
@@ -237,8 +239,8 @@ int main(int, char **)
 
     ImFont *font1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 13.0f, nullptr,
                                                  io.Fonts->GetGlyphRangesChineseFull());
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 20.0f, nullptr,
-                                 io.Fonts->GetGlyphRangesChineseFull());
+    ImFont *font2 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 16.0f, nullptr,
+                                                 io.Fonts->GetGlyphRangesChineseFull());
 
     static ImFontConfig cfg;
     cfg.OversampleH = cfg.OversampleV = 1;
@@ -308,6 +310,31 @@ int main(int, char **)
             ImGui::InputText("UTF-8 input", buf, IM_ARRAYSIZE(buf));
             ImGui::End();
         }
+
+        ImGui::Begin("Candidate");
+        auto &style = ImGui::GetStyle();
+        auto color = style.Colors[ImGuiCol_FrameBgActive];
+
+        ImDrawList * drawList = ImGui::GetWindowDrawList();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {10.0f, 10.0f});
+        ImGui::Text("1. ni");
+        ImGui::SameLine();
+
+        ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+        cursorPos.x -=  style.ItemSpacing.x / 2;
+        cursorPos.y -=  style.ItemSpacing.y / 2;
+        auto width = ImGui::CalcTextSize("2. wo").x;
+        drawList->AddRectFilled(cursorPos,
+            cursorPos + ImVec2(width + style.ItemSpacing.x, ImGui::GetTextLineHeight() + style.ItemSpacing.y),
+            ImColor(color));
+        ImGui::Text("2. wo");
+        ImGui::SameLine();
+
+        ImGui::Text("3. ta");
+        ImGui::SameLine();
+        ImGui::PopStyleVar();
+        ImGui::End();
 
         RenderToolWindow();
 

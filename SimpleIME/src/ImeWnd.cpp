@@ -461,7 +461,7 @@ namespace LIBC_NAMESPACE_DECL
                 }
             }
 
-            log_error("Can't enable/disable mod");
+            log_error("Can't enable/disable mod {}", GetLastError());
             return false;
         }
 

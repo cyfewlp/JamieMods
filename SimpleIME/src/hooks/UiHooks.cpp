@@ -23,13 +23,6 @@ namespace LIBC_NAMESPACE_DECL
         void UiHooks::AddMessageHook(RE::UIMessageQueue *self, RE::BSFixedString &menuName,
                                      RE::UI_MESSAGE_TYPE messageType, RE::IUIMessageData *pMessageData)
         {
-            if (!g_fEnableMessageFilter || RE::InterfaceStrings::GetSingleton() == nullptr)
-            {
-                UiAddMessage->Original(self, menuName, messageType, pMessageData);
-                return;
-            }
-            static RE::BSFixedString &topMenu = RE::InterfaceStrings::GetSingleton()->topMenu;
-
             if (messageType == RE::UI_MESSAGE_TYPE::kScaleformEvent)
             {
                 auto *scaleformData = reinterpret_cast<RE::BSUIScaleformData *>(pMessageData);
@@ -42,6 +35,13 @@ namespace LIBC_NAMESPACE_DECL
                         Ime::GFxCharEvent *gfxCharEvent = reinterpret_cast<Ime::GFxCharEvent *>(event);
                         log_trace("menu {} Char message: {}", menuName.c_str(), gfxCharEvent->wcharCode);
                     }
+
+                    if (!g_fEnableMessageFilter || RE::InterfaceStrings::GetSingleton() == nullptr)
+                    {
+                        UiAddMessage->Original(self, menuName, messageType, pMessageData);
+                        return;
+                    }
+                    static RE::BSFixedString &topMenu = RE::InterfaceStrings::GetSingleton()->topMenu;
                     // is IME open and not IME sent message?
                     if (menuName == IME_MESSAGE_FAKE_MENU)
                     {
