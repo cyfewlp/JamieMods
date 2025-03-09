@@ -42,7 +42,7 @@ namespace LIBC_NAMESPACE_DECL
             GetSimpleIniValue(ini, "General", destAppConfig.m_toolWindowShortcutKey);
             GetSimpleIniValue(ini, "General", destAppConfig.enableTsf_);
             GetSimpleIniValue(ini, "General", destAppConfig.alwaysActiveIme_);
-            // GetSimpleIniValue(ini, "General", destAppConfig.enableUnicodePaste_);
+            //GetSimpleIniValue(ini, "General", destAppConfig.enableUnicodePaste_);
 
             // load ui configs
             auto &appUiConfig = destAppConfig.m_appUiConfig;

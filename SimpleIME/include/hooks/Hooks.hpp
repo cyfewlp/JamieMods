@@ -57,6 +57,18 @@ namespace LIBC_NAMESPACE_DECL
                 }
             }
 
+            explicit FunctionHook(std::uintptr_t address, Return (*funcPtr)(Args...))
+            {
+                m_address         = address;
+                m_originalFuncPtr = reinterpret_cast<void *>(m_address);
+                m_hook            = reinterpret_cast<void *>(funcPtr);
+
+                if (DetourUtil::DetourAttach(&m_originalFuncPtr, m_hook))
+                {
+                    detoured = true;
+                }
+            }
+
             ~FunctionHook()
             {
                 if (detoured)
@@ -96,9 +108,7 @@ namespace LIBC_NAMESPACE_DECL
         };
 
         using FuncRegisterClass      = ATOM (*)(const WNDCLASSA *);
-        using FuncDirectInput8Create = HRESULT (*)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
         static inline FuncRegisterClass      RealRegisterClassExA   = nullptr;
-        static inline FuncDirectInput8Create RealDirectInput8Create = nullptr;
 
         // Windows Hook
         using MYHOOKDATA = struct _MYHOOKDATA
@@ -110,12 +120,9 @@ namespace LIBC_NAMESPACE_DECL
 
         LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
         void             InstallRegisterClassHook();
-        void             InstallDirectInputHook();
         void             InstallWindowsHooks();
 
         auto WINAPI MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM;
-        auto WINAPI MyDirectInput8Create(HINSTANCE hinst, DWORD dwVersion, REFIID riidltf, LPVOID *ppvOut,
-                                         LPUNKNOWN punkOuter) -> HRESULT;
 
     }; // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

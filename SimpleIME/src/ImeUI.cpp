@@ -96,8 +96,9 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            if (m_pTextService->HasState(ImeState::IME_DISABLED) ||
-                m_pTextService->HasNoStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+            ;
+            if (State::GetInstance()->Has(State::IME_DISABLED) ||
+                State::GetInstance()->NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 return;
             }
@@ -117,7 +118,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (m_pTextService->HasState(ImeState::IN_CAND_CHOOSING))
+            if (State::GetInstance()->Has(State::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -181,7 +182,7 @@ namespace LIBC_NAMESPACE_DECL
             ImeUIWidgets::RenderInputMethodChooseWidget(m_langProfileUtil, m_pImeWnd);
 
             ImGui::SameLine();
-            if (m_pTextService->HasState(ImeState::IN_ALPHANUMERIC))
+            if (State::GetInstance()->Has(State::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();
@@ -208,7 +209,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImeUIWidgets::RenderEnableModWidget([this](bool enable) { return m_pImeWnd->EnableMod(enable); });
 
                 ImGui::TableNextColumn();
-                ImeUIWidgets::RenderImeStateWidget(m_pTextService->HasState(ImeState::IME_DISABLED));
+                ImeUIWidgets::RenderImeStateWidget(State::GetInstance()->Has(State::IME_DISABLED));
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
@@ -234,7 +235,6 @@ namespace LIBC_NAMESPACE_DECL
                     const auto count = Hooks::ScaleformAllowTextInput::TextEntryCount();
                     return m_pImeWnd->SendMessage(CM_IME_ENABLE, count == 0 ? FALSE : TRUE, 0);
                 });
-
                 ImGui::EndTable();
             }
             ImGui::PopStyleVar();

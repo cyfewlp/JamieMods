@@ -6,6 +6,7 @@
 #include "ImeUI.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfCompartment.h"
+#include "core/State.h"
 
 #include <d3d11.h>
 #include <windows.h>
@@ -24,7 +25,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             static constexpr WORD ID_EDIT_COPY  = 1;
             static constexpr WORD ID_EDIT_PASTE = 2;
-
+            using State = Ime::Core::State;
         public:
             ImeWnd();
             ~ImeWnd();
@@ -65,7 +66,6 @@ namespace LIBC_NAMESPACE_DECL
             void AbortIme() const;
             void RenderIme() const;
             void ShowToolWindow() const;
-            auto ProcessKeyboardEvent(const RE::ButtonEvent * /*events*/) const -> void;
 
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -73,10 +73,6 @@ namespace LIBC_NAMESPACE_DECL
             static void ForwardKeyboardMessage(HWND hWndTarget, UINT uMsg, WPARAM wParam, LPARAM lParam);
             static void NewFrame();
             static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
-            static auto IsWillTriggerIme(std::uint32_t code) -> bool;
-
-            constexpr auto IsImeDisabledOrGameLoading() const -> bool;
-            constexpr auto IsImeWantCaptureInput() const -> bool;
 
             void OnStart();
             auto OnCreate() const -> LRESULT;

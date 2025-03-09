@@ -141,7 +141,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::IsMessagePass(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
         {
-            if (m_pTextService->HasState(ImeState::IME_DISABLED))
+            if (State::GetInstance()->Has(State::IME_DISABLED))
             {
                 return true;
             }
@@ -227,7 +227,7 @@ namespace LIBC_NAMESPACE_DECL
 
             Focus();
             m_pTextService->OnStart(m_hWnd);
-            m_pTextService->SetState(ImeState::IME_DISABLED);
+            State::GetInstance()->Set(State::IME_DISABLED);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ACCEL accelTable[] = {
@@ -302,22 +302,27 @@ namespace LIBC_NAMESPACE_DECL
                     pThis->m_fFocused = false;
                     break;
                 case WM_COMMAND: {
-                    if (pThis == nullptr) break;
-                    switch (LOWORD(wParam))
-                    {
-                        case ID_EDIT_PASTE:
-                            // log_trace("Ready paste Text...");
-                            // if (!Utils::PasteText(pThis->m_hWndParent))
-                            // {
-                            //     log_error("Can't paste Text! {}", GetLastError());
-                            // }
-                            break;
-                        case ID_EDIT_COPY:
-                            // PerformCopy();
-                            break;
-                        default:
-                            break;
-                    }
+                    //if (pThis == nullptr) break;
+                    //if (!AppConfig::GetConfig().EnableUnicodePaste())
+                    //{
+                    //    break;
+                    //}
+                    //switch (LOWORD(wParam))
+                    //{
+                    //    case ID_EDIT_PASTE: {
+                    //        log_trace("Ready paste Text...");
+                    //        if (!Utils::PasteText(pThis->m_hWndParent))
+                    //        {
+                    //            log_error("Can't paste Text! {}", GetLastError());
+                    //        }
+                    //        break;
+                    //    }
+                    //    case ID_EDIT_COPY:
+                    //        // PerformCopy();
+                    //        break;
+                    //    default:
+                    //        break;
+                    //}
                     break;
                 }
                 default:
@@ -395,7 +400,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::Focus() const
         {
-            if (m_pTextService->HasNoStates(ImeState::IME_DISABLED))
+            if (State::GetInstance()->NotHas(State::IME_DISABLED))
             {
                 log_debug("focus to IME wnd");
                 ::SetFocus(m_hWnd);
@@ -462,7 +467,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::AbortIme() const
         {
-            if (m_pTextService->HasAnyStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+            if (State::GetInstance()->HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 ::SetFocus(m_hWndParent);
             }
@@ -511,54 +516,6 @@ namespace LIBC_NAMESPACE_DECL
         void ImeWnd::ShowToolWindow() const
         {
             m_pImeUi->ShowToolWindow();
-        }
-
-        static auto IsModifierKeyDown() -> bool
-        {
-            auto isKeyDown = [](const uint32_t code) { return (GetKeyState(code) & 0x8000) != 0; };
-            return isKeyDown(VK_CONTROL) || isKeyDown(VK_SHIFT) //
-                   || isKeyDown(VK_MENU) || isKeyDown(VK_LWIN)  //
-                   || isKeyDown(VK_RWIN);
-        }
-
-        auto ImeWnd::ProcessKeyboardEvent(const RE::ButtonEvent *buttonEvent) const -> void
-        {
-            const auto code = buttonEvent->GetIDCode();
-            if (IsImeDisabledOrGameLoading())
-            {
-                Hooks::UiHooks::EnableMessageFilter(false);
-            }
-            else
-            {
-                if (IsImeWantCaptureInput() || IsWillTriggerIme(code))
-                {
-                    Hooks::UiHooks::EnableMessageFilter(true);
-                }
-                else
-                {
-                    Hooks::UiHooks::EnableMessageFilter(false);
-                }
-            }
-        }
-
-        constexpr auto ImeWnd::IsImeDisabledOrGameLoading() const -> bool
-        {
-            return m_pTextService->HasState(ImeState::IME_DISABLED) || Context::GetInstance()->IsGameLoading();
-        }
-
-        constexpr auto ImeWnd::IsImeWantCaptureInput() const -> bool
-        {
-            return m_pTextService->HasAnyStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING);
-        }
-
-        auto ImeWnd::IsWillTriggerIme(const std::uint32_t code) -> bool
-        {
-            bool result = false;
-            using Key   = RE::BSKeyboardDevice::Keys::Key;
-            result |= code >= Key::kQ && code <= Key::kP;
-            result |= code >= Key::kA && code <= Key::kL;
-            result |= code >= Key::kZ && code <= Key::kM;
-            return result;
         }
 
         auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT

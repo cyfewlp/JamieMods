@@ -6,10 +6,12 @@
 #include "common/log.h"
 #include "configs/AppConfig.h"
 #include "context.h"
+#include "core/EventHandler.h"
 #include "gsl/gsl"
 #include "hooks/Hooks.hpp"
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
+#include "hooks/WinHooks.h"
 #include "imgui.h"
 
 #include <basetsd.h>
@@ -30,14 +32,15 @@ namespace LIBC_NAMESPACE_DECL
 
     void InitializeMessaging()
     {
+        using State = Ime::Core::State;
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
             if (a_msg->type == SKSE::MessagingInterface::kPreLoadGame)
             {
-                Ime::Context::GetInstance()->SetIsGameLoading(true);
+                State::GetInstance()->Set(State::GAME_LOADING);
             }
             else if (a_msg->type == SKSE::MessagingInterface::kPostLoadGame)
             {
-                Ime::Context::GetInstance()->SetIsGameLoading(false);
+                State::GetInstance()->Clear(State::GAME_LOADING);
             }
         });
     }
@@ -58,8 +61,8 @@ namespace LIBC_NAMESPACE_DECL
         void ImeApp::Initialize()
         {
             m_state.Initialized.store(false);
-            Hooks::InstallRegisterClassHook();
-            Hooks::InstallDirectInputHook();
+            //Hooks::InstallRegisterClassHook();
+            Hooks::WinHooks::InstallHooks();
 
             D3DInitHook = Hooks::D3DInitHookData(ImeApp::D3DInit);
         }
@@ -230,10 +233,10 @@ namespace LIBC_NAMESPACE_DECL
         // we need set our keyboard to non-exclusive after game default.
         void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
-            static RE::InputEvent *dummy[] = {nullptr};
-            auto                  &app     = GetInstance();
+            auto &app = GetInstance();
             app.ProcessEvent(a_events);
             app.DispatchInputEventHook->Original(a_dispatcher, a_events);
+            Core::EventHandler::PostHandleKeyboardEvent();
         }
 
         void ImeApp::ProcessEvent(RE::InputEvent **events)
@@ -292,7 +295,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_imeWnd.AbortIme();
             }
-            m_imeWnd.ProcessKeyboardEvent(btnEvent);
+            Core::EventHandler::HandleKeyboardEvent(btnEvent);
         }
 
         void ImeApp::ProcessMouseEvent(const RE::ButtonEvent *btnEvent)

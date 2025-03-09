@@ -29,7 +29,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             static inline std::unique_ptr<UiAddMessageHookData> UiAddMessage           = nullptr;
             static inline bool                                  g_fEnableMessageFilter = false;
-            ;
 
         public:
             static void InstallHooks();
@@ -37,6 +36,11 @@ namespace LIBC_NAMESPACE_DECL
             static void EnableMessageFilter(bool enable)
             {
                 g_fEnableMessageFilter = enable;
+            }
+
+            static auto IsEnableMessageFilter() -> bool
+            {
+                return g_fEnableMessageFilter;
             }
 
         private:

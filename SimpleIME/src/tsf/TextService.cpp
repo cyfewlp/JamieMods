@@ -2,6 +2,7 @@
 // Created by jamie on 2025/2/22.
 //
 #include "common/log.h"
+#include "core/State.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfSupport.h"
 
@@ -15,14 +16,7 @@ namespace LIBC_NAMESPACE_DECL
             auto const &tsfSupport = TsfSupport::GetSingleton();
             // callback
             auto callback = [this](const GUID * /*guid*/, const ULONG ulong) {
-                if ((ulong & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
-                {
-                    SetState(Ime::ImeState::IN_ALPHANUMERIC);
-                }
-                else
-                {
-                    ClearState(Ime::ImeState::IN_ALPHANUMERIC);
-                }
+                DoUpdateConversionMode(ulong);
                 return S_OK;
             };
             m_pCompartment  = new TsfCompartment();
@@ -40,14 +34,19 @@ namespace LIBC_NAMESPACE_DECL
             ULONG convertionMode = 0;
             if (SUCCEEDED(m_pCompartment->GetValue(convertionMode)))
             {
-                if ((convertionMode & 3) == TF_CONVERSIONMODE_ALPHANUMERIC)
-                {
-                    SetState(Ime::ImeState::IN_ALPHANUMERIC);
-                }
-                else
-                {
-                    ClearState(Ime::ImeState::IN_ALPHANUMERIC);
-                }
+                DoUpdateConversionMode(convertionMode);
+            }
+        }
+
+        void TextService::DoUpdateConversionMode(const ULONG convertionMode)
+        {
+            if ((convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
+            {
+                State::GetInstance()->Set(State::IN_ALPHANUMERIC);
+            }
+            else
+            {
+                State::GetInstance()->Clear(State::IN_ALPHANUMERIC);
             }
         }
 
@@ -55,7 +54,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (enable)
             {
-                if (HasState(Ime::ImeState::IME_DISABLED))
+                if (State::GetInstance()->Has(State::IME_DISABLED))
                 {
                     UpdateConversionMode();
                     m_pTextStore->Focus();
@@ -63,10 +62,9 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                if (HasNoStates(Ime::ImeState::IME_DISABLED))
+                if (State::GetInstance()->NotHas(State::IME_DISABLED))
                 {
-                    HRESULT hr = m_pTextStore->ClearFocus();
-                    if (FAILED(hr))
+                    if (FAILED(m_pTextStore->ClearFocus()))
                     {
                         log_warn("Unexpected error, failed clear focus");
                     }

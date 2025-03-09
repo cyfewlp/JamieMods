@@ -5,6 +5,7 @@
 
 #include "ImGuiThemeLoader.h"
 #include "configs/AppConfig.h"
+#include "core/State.h"
 #include "ime/ITextService.h"
 #include "tsf/LangProfileUtil.h"
 
@@ -22,6 +23,8 @@ namespace LIBC_NAMESPACE_DECL
 
         class ImeUI
         {
+            using State = Ime::Core::State;
+
         public:
             explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService);
             ~ImeUI();

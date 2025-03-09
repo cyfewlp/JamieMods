@@ -12,9 +12,119 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Hooks
     {
+        auto DetourUtil::DetourAttach(PVOID *original, PVOID hook) -> bool
+        {
+            LONG error = NO_ERROR;
+            __try
+            {
+                if (error = DetourTransactionBegin(); error != NO_ERROR)
+                {
+                    __leave;
+                }
+
+                if (error = DetourUpdateThread(GetCurrentThread()); error != NO_ERROR)
+                {
+                    __leave;
+                }
+
+                if (error = ::DetourAttach(original, hook); error != NO_ERROR)
+                {
+                    __leave;
+                }
+
+                error = DetourTransactionCommit();
+                return error == NO_ERROR;
+            }
+            __finally
+            {
+                std::string_view errorMsg;
+                if (error != NO_ERROR)
+                {
+                    DetourTransactionAbort();
+                    switch (error)
+                    {
+                        case ERROR_INVALID_OPERATION:
+                            errorMsg = "No pending or Already exists transaction.";
+                            break;
+                        case ERROR_INVALID_HANDLE:
+                            errorMsg = "The ppPointer parameter is NULL or points to a NULL pointer.";
+                            break;
+                        case ERROR_INVALID_BLOCK:
+                            errorMsg = "The function referenced is too small to be detoured.";
+                            break;
+                        case ERROR_NOT_ENOUGH_MEMORY:
+                            errorMsg = "Not enough memory exists to complete the operation.";
+                            break;
+                        case ERROR_INVALID_DATA:
+                            errorMsg = "Target function was changed by third party between steps of the transaction.";
+                            break;
+                        default:
+                            errorMsg = "unexpected error when detour.";
+                            break;
+                    }
+                    log_error("Failed detour: {}", errorMsg);
+                }
+            }
+        }
+
+        auto DetourUtil::DetourDetach(void **original, void *hook) -> bool
+        {
+            LONG error = NO_ERROR;
+            __try
+            {
+                if (error = DetourTransactionBegin(); error != NO_ERROR)
+                {
+                    __leave;
+                }
+
+                if (error = DetourUpdateThread(GetCurrentThread()); error != NO_ERROR)
+                {
+                    __leave;
+                }
+
+                if (error = ::DetourDetach(original, hook); error != NO_ERROR)
+                {
+                    __leave;
+                }
+
+                error = DetourTransactionCommit();
+                return error == NO_ERROR;
+            }
+            __finally
+            {
+                std::string_view errorMsg;
+                if (error != NO_ERROR)
+                {
+                    DetourTransactionAbort();
+                    switch (error)
+                    {
+                        case ERROR_INVALID_OPERATION:
+                            errorMsg = "No pending or Already exists transaction.";
+                            break;
+                        case ERROR_INVALID_HANDLE:
+                            errorMsg = "The ppPointer parameter is NULL or points to a NULL pointer.";
+                            break;
+                        case ERROR_INVALID_BLOCK:
+                            errorMsg = "The function referenced is too small to be detoured.";
+                            break;
+                        case ERROR_NOT_ENOUGH_MEMORY:
+                            errorMsg = "Not enough memory exists to complete the operation.";
+                            break;
+                        case ERROR_INVALID_DATA:
+                            errorMsg = "Target function was changed by third party between steps of the transaction.";
+                            break;
+                        default:
+                            errorMsg = "unexpected error when detour.";
+                            break;
+                    }
+                    log_error("Failed detour: {}", errorMsg);
+                }
+            }
+        }
+
         static MYHOOKDATA myHookData[NUMHOOKS];
 
-        void              InstallWindowsHooks()
+        void InstallWindowsHooks()
         {
             myHookData[GET_MSG_PROC].nType = WH_GETMESSAGE;
             myHookData[GET_MSG_PROC].hkprc = MyGetMsgProc;
@@ -74,26 +184,6 @@ namespace LIBC_NAMESPACE_DECL
             return CallNextHookEx(hookData.hhook, code, wParam, lParam);
         }
 
-        void InstallDirectInputHook()
-        {
-            auto        pszModule   = "dinput8.dll";
-            auto        pszFunction = "DirectInput8Create";
-            const PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
-            RealDirectInput8Create = reinterpret_cast<FuncDirectInput8Create>(pVoid);
-            DetourAttach(&reinterpret_cast<PVOID &>(RealDirectInput8Create),
-                         reinterpret_cast<void *>(MyDirectInput8Create));
-            if (LONG const error = DetourTransactionCommit(); error == NO_ERROR)
-            {
-                log_debug("{}: Detoured {}.", pszModule, pszFunction);
-            }
-            else
-            {
-                log_error("{}: Error Detouring {}.", pszModule, pszFunction);
-            }
-        }
-
         void InstallRegisterClassHook()
         {
             auto        pszModule   = "User32.dll";
@@ -120,17 +210,5 @@ namespace LIBC_NAMESPACE_DECL
             return RealRegisterClassExA(wndClass);
         }
 
-        auto MyDirectInput8Create(HINSTANCE hinst, DWORD dwVersion, const IID &riidltf, LPVOID *ppvOut,
-                                  LPUNKNOWN punkOuter) -> HRESULT
-        {
-            IDirectInput8A *dinput;
-            const HRESULT   hresult =
-                RealDirectInput8Create(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
-            if (hresult != DI_OK) return hresult;
-
-            *reinterpret_cast<IDirectInput8A **>(ppvOut) = new FakeDirectInput(dinput);
-            log_debug("detour to FakeDirectInput...");
-            return DI_OK;
-        }
     }
 }

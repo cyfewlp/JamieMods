@@ -14,116 +14,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Hooks
     {
-        auto DetourUtil::DetourAttach(PVOID *original, PVOID hook) -> bool
-        {
-            LONG error = NO_ERROR;
-            __try
-            {
-                if (error = DetourTransactionBegin(); error != NO_ERROR)
-                {
-                    __leave;
-                }
-
-                if (error = DetourUpdateThread(GetCurrentThread()); error != NO_ERROR)
-                {
-                    __leave;
-                }
-
-                if (error = ::DetourAttach(original, hook); error != NO_ERROR)
-                {
-                    __leave;
-                }
-
-                error = DetourTransactionCommit();
-                return error == NO_ERROR;
-            }
-            __finally
-            {
-                std::string_view errorMsg;
-                if (error != NO_ERROR)
-                {
-                    DetourTransactionAbort();
-                    switch (error)
-                    {
-                        case ERROR_INVALID_OPERATION:
-                            errorMsg = "No pending or Already exists transaction.";
-                            break;
-                        case ERROR_INVALID_HANDLE:
-                            errorMsg = "The ppPointer parameter is NULL or points to a NULL pointer.";
-                            break;
-                        case ERROR_INVALID_BLOCK:
-                            errorMsg = "The function referenced is too small to be detoured.";
-                            break;
-                        case ERROR_NOT_ENOUGH_MEMORY:
-                            errorMsg = "Not enough memory exists to complete the operation.";
-                            break;
-                        case ERROR_INVALID_DATA:
-                            errorMsg = "Target function was changed by third party between steps of the transaction.";
-                            break;
-                        default:
-                            errorMsg = "unexpected error when detour.";
-                            break;
-                    }
-                    log_error("Failed detour: {}", errorMsg);
-                }
-            }
-        }
-
-        auto DetourUtil::DetourDetach(void **original, void *hook) -> bool
-        {
-            LONG error = NO_ERROR;
-            __try
-            {
-                if (error = DetourTransactionBegin(); error != NO_ERROR)
-                {
-                    __leave;
-                }
-
-                if (error = DetourUpdateThread(GetCurrentThread()); error != NO_ERROR)
-                {
-                    __leave;
-                }
-
-                if (error = ::DetourDetach(original, hook); error != NO_ERROR)
-                {
-                    __leave;
-                }
-
-                error = DetourTransactionCommit();
-                return error == NO_ERROR;
-            }
-            __finally
-            {
-                std::string_view errorMsg;
-                if (error != NO_ERROR)
-                {
-                    DetourTransactionAbort();
-                    switch (error)
-                    {
-                        case ERROR_INVALID_OPERATION:
-                            errorMsg = "No pending or Already exists transaction.";
-                            break;
-                        case ERROR_INVALID_HANDLE:
-                            errorMsg = "The ppPointer parameter is NULL or points to a NULL pointer.";
-                            break;
-                        case ERROR_INVALID_BLOCK:
-                            errorMsg = "The function referenced is too small to be detoured.";
-                            break;
-                        case ERROR_NOT_ENOUGH_MEMORY:
-                            errorMsg = "Not enough memory exists to complete the operation.";
-                            break;
-                        case ERROR_INVALID_DATA:
-                            errorMsg = "Target function was changed by third party between steps of the transaction.";
-                            break;
-                        default:
-                            errorMsg = "unexpected error when detour.";
-                            break;
-                    }
-                    log_error("Failed detour: {}", errorMsg);
-                }
-            }
-        }
-
         void UiHooks::InstallHooks()
         {
             log_info("Install ui hooks...");
@@ -147,6 +37,11 @@ namespace LIBC_NAMESPACE_DECL
                 auto *event = scaleformData->scaleformEvent;
                 if (event->type == RE::GFxEvent::EventType::kCharEvent)
                 {
+                    if (spdlog::should_log(spdlog::level::trace))
+                    {
+                        Ime::GFxCharEvent *gfxCharEvent = reinterpret_cast<Ime::GFxCharEvent *>(event);
+                        log_trace("menu {} Char message: {}", menuName.c_str(), gfxCharEvent->wcharCode);
+                    }
                     // is IME open and not IME sent message?
                     if (menuName == IME_MESSAGE_FAKE_MENU)
                     {
@@ -154,11 +49,6 @@ namespace LIBC_NAMESPACE_DECL
                     }
                     else
                     {
-                        if (spdlog::should_log(spdlog::level::trace))
-                        {
-                            Ime::GFxCharEvent *gfxCharEvent = reinterpret_cast<Ime::GFxCharEvent *>(event);
-                            log_trace("Discard char message: {}", gfxCharEvent->wcharCode);
-                        }
                         if (auto *memoryManager = RE::MemoryManager::GetSingleton(); memoryManager != nullptr)
                         {
                             memoryManager->Deallocate(pMessageData, false);

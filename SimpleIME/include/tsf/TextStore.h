@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TsfCompartment.h"
+#include "core/State.h"
 #include "ime/ITextService.h"
 #include "ime/TextEditor.h"
 
@@ -71,6 +72,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             static constexpr uint32_t MAX_COMPOSITIONS = 5;
             static constexpr uint32_t EDIT_VIEW_COOKIE = 0;
+            using State                                = Ime::Core::State;
 
         public:
             explicit TextStore(Ime::ITextService *pTextService, Ime::TextEditor *pTextEditor)
@@ -243,6 +245,8 @@ namespace LIBC_NAMESPACE_DECL
 
         class TextService : public Ime::ITextService
         {
+            using State = Ime::Core::State;
+
         public:
             auto Initialize() -> HRESULT override;
 
@@ -287,7 +291,8 @@ namespace LIBC_NAMESPACE_DECL
             auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
         private:
-            void UpdateConversionMode();
+            void        UpdateConversionMode();
+            static void DoUpdateConversionMode(const ULONG convertionMode);
 
             Ime::CandidateUi             m_candidateUi{};
             Ime::TextEditor              m_textEditor{};

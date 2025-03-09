@@ -98,10 +98,9 @@ namespace LIBC_NAMESPACE_DECL
                 }
 
                 // Start send message
-                RE::BSFixedString const menuName = pInterfaceStrings->topMenu;
                 for (uint32_t const code : sourceString)
                 {
-                    if (!Send(menuName, pFactory, code))
+                    if (!Send(pFactory, code))
                     {
                         return;
                     }
@@ -109,7 +108,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
         private:
-            static auto Send(const RE::BSFixedString &menuName, auto *pFactory, const uint32_t code) -> bool
+            static auto Send(auto *pFactory, const uint32_t code) -> bool
             {
                 if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
                 {
