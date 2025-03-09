@@ -64,7 +64,10 @@ namespace LIBC_NAMESPACE_DECL
         public:
             void Call(Params &params) override;
 
+            // call SKSE_AllowTextInput to allow and return its result
             static auto AllowTextInput(bool allow) -> std::uint8_t;
+            // use our text-entry-count
+            static void OnTextEntryCountChanged();
 
             static constexpr auto TextEntryCount() -> std::uint8_t
             {
@@ -79,6 +82,8 @@ namespace LIBC_NAMESPACE_DECL
 
         public:
             static void InstallHooks();
+
+            static void UninstallHooks();
         };
     }
 }

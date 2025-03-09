@@ -62,7 +62,7 @@ namespace LIBC_NAMESPACE_DECL
                             errorMsg = "unexpected error when detour.";
                             break;
                     }
-                    log_error("Failed detour: {}", errorMsg);
+                    log_error("Failed detour: {}", errorMsg.data());
                 }
             }
         }
@@ -117,7 +117,7 @@ namespace LIBC_NAMESPACE_DECL
                             errorMsg = "unexpected error when detour.";
                             break;
                     }
-                    log_error("Failed detour: {}", errorMsg);
+                    log_error("Failed detour: {}", errorMsg.data());
                 }
             }
         }

@@ -151,26 +151,16 @@ install(FILES
         COMPONENT doc
 )
 install(DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/fomod
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/patch
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes
         DESTINATION .
-        COMPONENT fomod
-)
-install(DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/patch
-        DESTINATION .
-        COMPONENT patch
-)
-install(DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/themes
-        DESTINATION .
-        COMPONENT themes
+        COMPONENT Distribution
 )
 cpack_add_component(dll)
 cpack_add_component(configuration)
 cpack_add_component(doc)
-cpack_add_component(fomod)
-cpack_add_component(patch)
-cpack_add_component(themes)
+cpack_add_component(Distribution)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(BUILD_NAME "Debug")
@@ -213,7 +203,7 @@ if (DEFINED OUTPUT_FOLDER)
             TARGET "${PROJECT_NAME}"
             POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${THEMES_FOLDER}"
-            COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/themes" "${THEMES_FOLDER}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes" "${THEMES_FOLDER}"
             VERBATIM
     )
 

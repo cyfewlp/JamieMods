@@ -64,7 +64,18 @@ namespace LIBC_NAMESPACE_DECL
             // Hooks::InstallRegisterClassHook();
             Hooks::WinHooks::InstallHooks();
 
-            D3DInitHook = Hooks::D3DInitHookData(ImeApp::D3DInit);
+            D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(ImeApp::D3DInit);
+        }
+
+        void ImeApp::Uninitialize()
+        {
+            if (m_state.Initialized)
+            {
+                Hooks::WinHooks::UninstallHooks();
+                D3DInitHook.release();
+                UninstallHooks();
+            }
+            m_state.Initialized.store(false);
         }
 
         class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
@@ -124,10 +135,6 @@ namespace LIBC_NAMESPACE_DECL
         void ImeApp::DoD3DInit()
         {
             auto &app = GetInstance();
-            if (!app.D3DInitHook.has_value())
-            {
-                return;
-            }
             app.D3DInitHook->Original();
             if (app.m_state.Initialized.load())
             {
@@ -207,21 +214,25 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeApp::InstallHooks()
         {
-            auto &app                  = GetInstance();
-            app.D3DPresentHook         = Hooks::D3DPresentHookData(D3DPresent);
-            app.DispatchInputEventHook = Hooks::DispatchInputEventHookData(DispatchEvent);
+            D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
+            DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
 
             Hooks::ScaleformHooks::InstallHooks();
             Hooks::UiHooks::InstallHooks();
         }
 
+        void ImeApp::UninstallHooks()
+        {
+            D3DPresentHook         = nullptr;
+            DispatchInputEventHook = nullptr;
+
+            Hooks::ScaleformHooks::UninstallHooks();
+            Hooks::UiHooks::UninstallHooks();
+        }
+
         void ImeApp::D3DPresent(std::uint32_t ptr)
         {
             auto &app = GetInstance();
-            if (!app.D3DPresentHook.has_value())
-            {
-                return;
-            }
             app.D3DPresentHook->Original(ptr);
             if (!app.m_state.Initialized.load())
             {
@@ -246,7 +257,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 app.DispatchInputEventHook->Original(a_dispatcher, a_events);
             }
-            app.DispatchInputEventHook->Original(a_dispatcher, a_events);
             Core::EventHandler::PostHandleKeyboardEvent();
         }
 
@@ -264,11 +274,6 @@ namespace LIBC_NAMESPACE_DECL
 
             switch (head->GetEventType())
             {
-                case RE::INPUT_EVENT_TYPE::kMouseMove: {
-                    auto *cursor = RE::MenuCursor::GetSingleton();
-                    ImGui::GetIO().AddMousePosEvent(cursor->cursorPosX, cursor->cursorPosY);
-                    break;
-                }
                 case RE::INPUT_EVENT_TYPE::kButton: {
                     auto *const pButtonEvent = head->AsButtonEvent();
                     if (pButtonEvent == nullptr)
@@ -362,6 +367,10 @@ namespace LIBC_NAMESPACE_DECL
                     return S_OK;
                 case WM_IME_SETCONTEXT:
                     return ::DefWindowProc(hWnd, uMsg, wParam, 0);
+                case WM_NCDESTROY: {
+                    app.Uninitialize();
+                    break;
+                }
                 default:
                     break;
             }

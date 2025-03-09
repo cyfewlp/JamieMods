@@ -10,7 +10,7 @@ namespace LIBC_NAMESPACE_DECL
         class GetClipboardHook : public FunctionHook<HANDLE(UINT)>
         {
         public:
-            explicit GetClipboardHook(std::uintptr_t address, func_type *ptr) : FunctionHook(address, ptr)
+            explicit GetClipboardHook(void *realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
             {
                 log_debug("{} hooked at {:#x}", __func__, m_address);
             }
@@ -19,7 +19,7 @@ namespace LIBC_NAMESPACE_DECL
         class DirectInput8CreateHook : public FunctionHook<HRESULT(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN)>
         {
         public:
-            explicit DirectInput8CreateHook(std::uintptr_t address, func_type *ptr) : FunctionHook(address, ptr)
+            explicit DirectInput8CreateHook(void *&realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
             {
                 log_debug("{} hooked at {:#x}", __func__, m_address);
             }
@@ -27,8 +27,8 @@ namespace LIBC_NAMESPACE_DECL
 
         class WinHooks
         {
-            static inline std::optional<GetClipboardHook>       GetClipboard       = std::nullopt;
-            static inline std::optional<DirectInput8CreateHook> DirectInput8Create = std::nullopt;
+            static inline std::unique_ptr<GetClipboardHook>       GetClipboard       = nullptr;
+            static inline std::unique_ptr<DirectInput8CreateHook> DirectInput8Create = nullptr;
 
             static inline bool        g_fDisableGetClipboardData = false;
             static inline std::string MODULE_USER32_STRING       = "User32.dll";
@@ -36,6 +36,8 @@ namespace LIBC_NAMESPACE_DECL
 
         public:
             static void InstallHooks();
+
+            static void UninstallHooks();
 
             static void DisableGetClipboardData(bool disable)
             {

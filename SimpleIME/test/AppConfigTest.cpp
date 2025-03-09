@@ -170,7 +170,6 @@ colorAbgr = 0xFF00FFFF
         ASSERT_STREQ(uiConfig.EmojiFontFile().c_str(), R"(C:\path\to\emoji-font)");
 
         ASSERT_EQ(loadedConfig.GetToolWindowShortcutKey(), 0x1111);
-        ASSERT_EQ(loadedConfig.AlwaysActiveIme(), true);
         ASSERT_EQ(loadedConfig.EnableUnicodePaste(), false);
         ASSERT_EQ(loadedConfig.EnableTsf(), false);
     }

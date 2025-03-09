@@ -15,12 +15,19 @@ namespace LIBC_NAMESPACE_DECL
             InstallDirectInput8CreateHook("DirectInput8Create");
         }
 
+        void WinHooks::UninstallHooks()
+        {
+            DirectInput8Create = nullptr;
+            GetClipboard       = nullptr;
+        }
+
         void WinHooks::InstallGetClipboardDataHook(const char *funcName)
         {
             log_debug("Install hook: {} {}", MODULE_USER32_STRING.c_str(), funcName);
-            if (LPVOID address = ::DetourFindFunction(MODULE_USER32_STRING.c_str(), funcName); address != nullptr)
+            if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_USER32_STRING.c_str(), funcName);
+                realFuncPtr != nullptr)
             {
-                GetClipboard = GetClipboardHook(ToUintPtr(address), MyGetClipboardHook);
+                GetClipboard = std::make_unique<GetClipboardHook>(realFuncPtr, MyGetClipboardHook);
             }
         }
 
@@ -30,26 +37,10 @@ namespace LIBC_NAMESPACE_DECL
         void WinHooks::InstallDirectInput8CreateHook(const char *funcName)
         {
             log_debug("Install hook: {} {}", MODULE_DINPUT8_STRING.c_str(), funcName);
-            /*if (LPVOID address = ::DetourFindFunction(MODULE_DINPUT8_STRING.c_str(), funcName); address != nullptr)
+            if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_DINPUT8_STRING.c_str(), funcName);
+                realFuncPtr != nullptr)
             {
-                DirectInput8Create = DirectInput8CreateHook(ToUintPtr(address), MyDirectInput8CreateHook);
-            }*/
-
-            auto        pszModule   = "dinput8.dll";
-            auto        pszFunction = "DirectInput8Create";
-            const PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
-            RealDirectInput8Create = reinterpret_cast<FuncDirectInput8Create>(pVoid);
-            DetourAttach(&reinterpret_cast<PVOID &>(RealDirectInput8Create),
-                         reinterpret_cast<void *>(MyDirectInput8CreateHook));
-            if (LONG const error = DetourTransactionCommit(); error == NO_ERROR)
-            {
-                log_debug("{}: Detoured {}.", pszModule, pszFunction);
-            }
-            else
-            {
-                log_error("{}: Error Detouring {}.", pszModule, pszFunction);
+                DirectInput8Create = std::make_unique<DirectInput8CreateHook>(realFuncPtr, MyDirectInput8CreateHook);
             }
         }
 
@@ -72,8 +63,11 @@ namespace LIBC_NAMESPACE_DECL
         {
             IDirectInput8A *dinput;
             const HRESULT   hresult =
-                RealDirectInput8Create(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
-            if (hresult != DI_OK) return hresult;
+                DirectInput8Create->Original(hinst, dwVersion, riidltf, reinterpret_cast<void **>(&dinput), punkOuter);
+            if (hresult != DI_OK)
+            {
+                return hresult;
+            }
 
             *reinterpret_cast<IDirectInput8A **>(ppvOut) = new FakeDirectInput(dinput);
             return DI_OK;

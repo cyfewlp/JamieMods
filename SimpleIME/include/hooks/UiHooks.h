@@ -33,6 +33,8 @@ namespace LIBC_NAMESPACE_DECL
         public:
             static void InstallHooks();
 
+            static void UninstallHooks();
+
             static void EnableMessageFilter(bool enable)
             {
                 g_fEnableMessageFilter = enable;

@@ -57,13 +57,13 @@ namespace LIBC_NAMESPACE_DECL
                 }
             }
 
-            explicit FunctionHook(std::uintptr_t address, Return (*funcPtr)(Args...))
+            explicit FunctionHook(void *&realFuncPtr, Return (*funcPtr)(Args...))
             {
-                m_address         = address;
-                m_originalFuncPtr = reinterpret_cast<void *>(m_address);
+                m_address         = reinterpret_cast<std::uintptr_t>(realFuncPtr);
+                m_originalFuncPtr = realFuncPtr;
                 m_hook            = reinterpret_cast<void *>(funcPtr);
 
-                if (DetourUtil::DetourAttach(&m_originalFuncPtr, m_hook))
+                if (DetourUtil::DetourAttach(&reinterpret_cast<PVOID &>(m_originalFuncPtr), m_hook))
                 {
                     detoured = true;
                 }
@@ -73,7 +73,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (detoured)
                 {
-                    DetourUtil::DetourDetach(&m_originalFuncPtr, m_hook);
+                    DetourUtil::DetourDetach(&reinterpret_cast<PVOID &>(m_originalFuncPtr), m_hook);
                 }
             }
 
@@ -107,8 +107,8 @@ namespace LIBC_NAMESPACE_DECL
             }
         };
 
-        using FuncRegisterClass      = ATOM (*)(const WNDCLASSA *);
-        static inline FuncRegisterClass      RealRegisterClassExA   = nullptr;
+        using FuncRegisterClass                              = ATOM (*)(const WNDCLASSA *);
+        static inline FuncRegisterClass RealRegisterClassExA = nullptr;
 
         // Windows Hook
         using MYHOOKDATA = struct _MYHOOKDATA

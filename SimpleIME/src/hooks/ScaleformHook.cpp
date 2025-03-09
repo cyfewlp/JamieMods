@@ -56,44 +56,46 @@ namespace LIBC_NAMESPACE_DECL
         auto ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
         {
             ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
-            auto *context = Ime::Context::GetInstance();
-            if (allow)
-            {
-                if (g_textEntryCount != MAX_TEXT_ENTRY_COUNT && g_textEntryCount++ == 0)
-                {
-                    if (context->HwndIme() != nullptr)
-                    {
-                        if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0) != TRUE)
-                        {
-                            log_error("Send notify message fail {}", GetLastError());
-                        }
-                    }
-                    else
-                    {
-                        log_warn("ImeWnd is not Start yet!");
-                    }
-                }
-            }
-            else
-            {
-                if (g_textEntryCount != 0 && --g_textEntryCount == 0)
-                {
-                    if (context->HwndIme() != nullptr)
-                    {
-                        if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0) != TRUE)
-                        {
-                            log_error("Send notify message fail {}", GetLastError());
-                        }
-                    }
-                    else
-                    {
-                        log_warn("ImeWnd is not Start yet!");
-                    }
-                }
-            }
-
+            OnTextEntryCountChanged();
             log_trace("Text entry count: {}", g_textEntryCount);
             return g_textEntryCount;
+        }
+
+        void ScaleformAllowTextInput::OnTextEntryCountChanged()
+        {
+            auto newValue = ControlMap::GetSingleton()->allowTextInput;
+            auto oldValue = g_textEntryCount;
+
+            auto *context = Ime::Context::GetInstance();
+            if (oldValue == 0 && newValue > 0)
+            {
+                if (context->HwndIme() != nullptr)
+                {
+                    if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0) != TRUE)
+                    {
+                        log_error("Send notify message fail {}", GetLastError());
+                    }
+                }
+                else
+                {
+                    log_warn("ImeWnd is not Start yet!");
+                }
+            }
+            else if (oldValue > 0 && newValue == 0)
+            {
+                if (context->HwndIme() != nullptr)
+                {
+                    if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0) != TRUE)
+                    {
+                        log_error("Send notify message fail {}", GetLastError());
+                    }
+                }
+                else
+                {
+                    log_warn("ImeWnd is not Start yet!");
+                }
+            }
+            g_textEntryCount = newValue;
         }
 
         void ScaleformAllowTextInput::Call(Params &params)
@@ -137,6 +139,11 @@ namespace LIBC_NAMESPACE_DECL
         {
             log_debug("Install GfxMovieInstallHook...");
             g_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
+        }
+
+        void ScaleformHooks::UninstallHooks()
+        {
+            g_SetScaleModeTypeHook = nullptr;
         }
 
     }

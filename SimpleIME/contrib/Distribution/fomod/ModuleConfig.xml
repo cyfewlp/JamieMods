@@ -16,8 +16,8 @@
             <plugin name="RaceMenu AE patch">
               <description>
                 If you want use IME in RaceMenu and you use the mod RaceMenu Anniversary Edition, you should install this patch.
-                
-See https://www.nexusmods.com/skyrimspecialedition/mods/19080?tab=files
+
+                See https://www.nexusmods.com/skyrimspecialedition/mods/19080?tab=files
               </description>
               <conditionFlags>
                 <flag name="patch_race_menu_ae">On</flag>
@@ -28,15 +28,33 @@ See https://www.nexusmods.com/skyrimspecialedition/mods/19080?tab=files
             </plugin>
             <plugin name="Default RaceMenu patch">
               <description>
-                If you want use IME in RaceMenu, you should install this patch. 
-                
-The game default RaceMenu.
+                If you want use IME in RaceMenu, you should install this patch.
+
+                The game default RaceMenu.
               </description>
               <conditionFlags>
                 <flag name="patch_default_race_menu">On</flag>
               </conditionFlags>
               <typeDescriptor>
                 <type name="Optional"/>
+              </typeDescriptor>
+            </plugin>
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+    <installStep name="Theme Config">
+      <optionalFileGroups order="Explicit">
+        <group name="Theme Config" type="SelectExactlyOne">
+          <plugins order="Explicit">
+            <plugin name="Okay, got it!">
+              <description>
+                Mod uses ImThemes as theme configuration. Check it out: https://github.com/Patitotective/ImThemes.
+Check the mod page to learn how to add yourself themes.
+              </description>
+              <image path="fomod/ImThemes.png"/>
+              <typeDescriptor>
+                <type name="Required"/>
               </typeDescriptor>
             </plugin>
           </plugins>

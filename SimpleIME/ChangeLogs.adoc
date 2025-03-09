@@ -116,7 +116,6 @@ Solutions:
 * [x] Abort IME composition if comp window(ImGui) lost focus
 ** Focus parent window to abort IME(then automatic focus to ImeWnd)
 * [x] Support make composition and candidate window follow cursor when first appear.
-**
 
 == 0.0.8
 
@@ -126,21 +125,39 @@ Solutions:
 * [x] ImGui Theme load from file
 ** theme file export from https://github.com/Patitotective/ImThemes[ImThemes]
 ** theme no provide text link color, try another way to show selected text(add background?)
+* [x] keepimeopen <--- always enable ime
+** Depreated config `Always_Enable_Ime`;
 * [ ] scale & add bg from selected candidate
-* [ ] keepimeopen <--- always enable ime
 
 === fix
 
-* [ ] discard `E` key event when ime in input or wait input
-* [ ] ImGui cursor not update when keep any key pressed
-* [ ] detach, uninstall hooks when destory window
+* [x] discard `E` key event when ime in input or wait input
+* [x] ImGui cursor not update when keep any key pressed
+** Always update ImGui cursor pos in `ImeWnd#NewFrame`
+* [x] detach, uninstall hooks when destory window
+* [x] TextEntry can't input english
+** Our override SKSE `AllowTextInput` gfx function. And SKSE modify member `allowTextInput` 
+in `RE::ControlMap` offset 128. We need sync it.
+** Can we trampline SKSE `AllowTextInput` gfx function?
 
+== To-Do
+
+=== Code improve
+
+* [ ] ImeManager
+** for enable/disable mod, enable/disbale IME
+* [ ] AppConfig
+** section;
+** add new key by register;
+** universal config name style
+
+=== Feature improve
+
+* [ ] Support select candidate by mouse click
+* [ ] Mod Error hint
 * [ ] Ctrl-c/v support
 ** In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
 to disable game paste feature
-* [ ] Support select candidate from UI
-* [ ] Default Theme optimize?
-* [x] Render current IME state: Is disable;
 * [ ] Support config `follow cursor` in `ini` file.
 * [ ] support change and save configs in `ToolWindow`
 * [ ] GameProfileSwitch script optimize;

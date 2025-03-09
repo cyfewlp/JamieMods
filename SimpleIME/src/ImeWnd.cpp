@@ -30,20 +30,15 @@ namespace LIBC_NAMESPACE_DECL
 
         class ConsoleMenuListener final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
         {
-            HWND m_hWnd;
 
         public:
-            explicit ConsoleMenuListener(const HWND hWnd) : m_hWnd(hWnd)
-            {
-            }
-
             RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent *a_event,
                                                   RE::BSTEventSource<RE::MenuOpenCloseEvent> *) override
             {
                 log_trace("Menu {} open {}", a_event->menuName.c_str(), a_event->opening);
                 if (a_event->menuName == RE::Console::MENU_NAME)
                 {
-                    Hooks::ScaleformAllowTextInput::AllowTextInput(a_event->opening);
+                    Hooks::ScaleformAllowTextInput::OnTextEntryCountChanged();
                 }
                 else
                 {
@@ -216,13 +211,10 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::OnStart()
         {
-            if (!AppConfig::GetConfig().AlwaysActiveIme())
+            if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
             {
-                if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
-                {
-                    g_pMenuOpenCloseEventSink = std::make_unique<ConsoleMenuListener>(m_hWnd);
-                    ui->AddEventSink(g_pMenuOpenCloseEventSink.get());
-                }
+                g_pMenuOpenCloseEventSink = std::make_unique<ConsoleMenuListener>();
+                ui->AddEventSink(g_pMenuOpenCloseEventSink.get());
             }
 
             Focus();
@@ -262,7 +254,7 @@ namespace LIBC_NAMESPACE_DECL
             ImeWnd *pThis = GetThis(hWnd);
             if (pThis != nullptr)
             {
-                ForwardKeyboardMessage(pThis->m_hWndParent, uMsg, wParam, lParam);
+                //ForwardKeyboardMessage(pThis->m_hWndParent, uMsg, wParam, lParam);
                 if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
                 {
                     return S_OK;
@@ -302,27 +294,27 @@ namespace LIBC_NAMESPACE_DECL
                     pThis->m_fFocused = false;
                     break;
                 case WM_COMMAND: {
-                    //if (pThis == nullptr) break;
-                    //if (!AppConfig::GetConfig().EnableUnicodePaste())
+                    // if (pThis == nullptr) break;
+                    // if (!AppConfig::GetConfig().EnableUnicodePaste())
                     //{
-                    //    break;
-                    //}
-                    //switch (LOWORD(wParam))
+                    //     break;
+                    // }
+                    // switch (LOWORD(wParam))
                     //{
-                    //    case ID_EDIT_PASTE: {
-                    //        log_trace("Ready paste Text...");
-                    //        if (!Utils::PasteText(pThis->m_hWndParent))
-                    //        {
-                    //            log_error("Can't paste Text! {}", GetLastError());
-                    //        }
-                    //        break;
-                    //    }
-                    //    case ID_EDIT_COPY:
-                    //        // PerformCopy();
-                    //        break;
-                    //    default:
-                    //        break;
-                    //}
+                    //     case ID_EDIT_PASTE: {
+                    //         log_trace("Ready paste Text...");
+                    //         if (!Utils::PasteText(pThis->m_hWndParent))
+                    //         {
+                    //             log_error("Can't paste Text! {}", GetLastError());
+                    //         }
+                    //         break;
+                    //     }
+                    //     case ID_EDIT_COPY:
+                    //         // PerformCopy();
+                    //         break;
+                    //     default:
+                    //         break;
+                    // }
                     break;
                 }
                 default:
@@ -480,14 +472,10 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
             {
-                if (!ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
+                POINT cursorPos;
+                if (GetCursorPos(&cursorPos) != FALSE)
                 {
-                    POINT cursorPos;
-                    if (GetCursorPos(&cursorPos) != FALSE)
-                    {
-                        ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x),
-                                                        static_cast<float>(cursorPos.y));
-                    }
+                    ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
                 }
             }
         }

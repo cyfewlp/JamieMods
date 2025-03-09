@@ -36,17 +36,20 @@ namespace LIBC_NAMESPACE_DECL
             static auto GetInstance() -> ImeApp &;
 
             void Initialize();
+            void Uninitialize();
 
         private:
-            std::optional<Hooks::D3DInitHookData>            D3DInitHook            = std::nullopt;
-            std::optional<Hooks::D3DPresentHookData>         D3DPresentHook         = std::nullopt;
-            std::optional<Hooks::DispatchInputEventHookData> DispatchInputEventHook = std::nullopt;
+            std::unique_ptr<Hooks::D3DInitHookData>            D3DInitHook            = nullptr;
+            std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
+            std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
 
             void OnD3DInit();
             void Start(RE::BSGraphics::RendererData &renderData);
             void ProcessEvent(RE::InputEvent **a_events, bool &discard);
             void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard);
             void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
+            void InstallHooks();
+            void UninstallHooks();
 
             ImeWnd m_imeWnd;
             HWND   m_hWnd  = nullptr;
@@ -54,7 +57,6 @@ namespace LIBC_NAMESPACE_DECL
 
             static void D3DInit();
             static void DoD3DInit();
-            static void InstallHooks();
             static void D3DPresent(std::uint32_t ptr);
             static void DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
             static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
