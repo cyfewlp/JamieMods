@@ -1,3 +1,6 @@
+= Changles
+:toc: left
+
 == 0.0.3
     - [x] disable ImGui Win32 backend update mouse pos
     - [x] auto hide tool window when lost focus
@@ -110,53 +113,54 @@ Solutions:
 
 * [x] Can disable mod
 * [x] update discard event logic
-** not discard when modifier key down: alt/shift/win/ctrl
+    . not discard when modifier key down: alt/shift/win/ctrl
 * [x] Enable when menu open that contain some textfield;
-** Hook AllowInputText(logic follow SKSE `Hooks_Scaleform.cpp#SKSEScaleform_AllowTextInput`)
+    . Hook AllowInputText(logic follow SKSE `Hooks_Scaleform.cpp#SKSEScaleform_AllowTextInput`)
 * [x] Abort IME composition if comp window(ImGui) lost focus
-** Focus parent window to abort IME(then automatic focus to ImeWnd)
+    . Focus parent window to abort IME(then automatic focus to ImeWnd)
 * [x] Support make composition and candidate window follow cursor when first appear.
 
 == 0.0.8
 
 * [x] Settings window;
 * [x] FMOD
-** check if install RaceSexMenu patch
+    . check if install RaceSexMenu patch
 * [x] ImGui Theme load from file
-** theme file export from https://github.com/Patitotective/ImThemes[ImThemes]
-** theme no provide text link color, try another way to show selected text(add background?)
+    . theme file export from https://github.com/Patitotective/ImThemes[ImThemes]
+    . theme no provide text link color, try another way to show selected text(add background?)
 * [x] keepimeopen <--- always enable ime
-** Depreated config `Always_Enable_Ime`;
+    . Depreated config `Always_Enable_Ime`;
 * [ ] scale & add bg from selected candidate
 
 === fix
 
 * [x] discard `E` key event when ime in input or wait input
 * [x] ImGui cursor not update when keep any key pressed
-** Always update ImGui cursor pos in `ImeWnd#NewFrame`
+. Always update ImGui cursor pos in `ImeWnd#NewFrame`
 * [x] detach, uninstall hooks when destory window
 * [x] TextEntry can't input english
-** Our override SKSE `AllowTextInput` gfx function. And SKSE modify member `allowTextInput` 
+    . Our override SKSE `AllowTextInput` gfx function. And SKSE modify member `allowTextInput` 
 in `RE::ControlMap` offset 128. We need sync it.
-** Can we trampline SKSE `AllowTextInput` gfx function?
+    . Can we trampline SKSE `AllowTextInput` gfx function?
 
 == To-Do
 
 === Code improve
 
 * [ ] ImeManager
-** for enable/disable mod, enable/disbale IME
+. for enable/disable mod, enable/disbale IME
+
 * [ ] AppConfig
-** section;
-** add new key by register;
-** universal config name style
+    - [ ] section;
+    - [x] add new key by register;
+    - universal config name style
 
 === Feature improve
 
 * [ ] Support select candidate by mouse click
 * [ ] Mod Error hint
 * [ ] Ctrl-c/v support
-** In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
+    . In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
 to disable game paste feature
 * [ ] Support config `follow cursor` in `ini` file.
 * [ ] support change and save configs in `ToolWindow`
@@ -164,4 +168,4 @@ to disable game paste feature
 * [ ] Manage GFXEvent memory alloc?
 * [ ] scale or change ImGui cursor
 * [ ] `CompassNavigationOverhaul` exception when quit game. Survey is trigger by our mod.
-** May related to AllowTextInput hook. Test SkyrimInputMethod with compass is crash
+    . May related to AllowTextInput hook. Test SkyrimInputMethod with compass is crash

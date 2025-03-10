@@ -62,7 +62,7 @@ namespace LIBC_NAMESPACE_DECL
         auto EventHandler::IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool
         {
             bool discard = false;
-            if (buttonEvent->GetIDCode() == DIK_E)
+            if (Hooks::UiHooks::IsEnableMessageFilter() && buttonEvent->GetIDCode() == DIK_E)
             {
                 discard = true;
             }

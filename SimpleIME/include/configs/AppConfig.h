@@ -4,6 +4,7 @@
 #pragma once
 
 #include "common/config.h"
+#include "common/log.h"
 #include "configs/converter.h"
 
 #include <SimpleIni.h>
@@ -56,7 +57,7 @@ namespace LIBC_NAMESPACE_DECL
         template <typename Type>
         struct Property
         {
-            constexpr Property(Type value, const std::string &varName) : m_value(std::move(value))
+            explicit constexpr Property(Type value, const std::string &varName) : m_value(std::move(value))
             {
                 m_configName = ConvertCamelCaseToUnderscore(varName);
             }
@@ -81,30 +82,60 @@ namespace LIBC_NAMESPACE_DECL
             std::string m_configName{};
         };
 
-        template <typename Type>
-        void GetSimpleIniValue(CSimpleIniA &ini, const char *section, Property<Type> &property)
+        class IniSection
         {
-            auto strV = ini.GetValue(section, property.ConfigName());
-#ifdef SIMPLE_IME_DEBUG
-            assert(strV != nullptr);
-#endif
-            if (strV != nullptr)
+        public:
+            explicit IniSection(const char *sectionName) : m_sectionName(sectionName)
             {
-                auto result = converter<Type>::convert(strV, property.Value());
-                property.SetValue(result);
             }
-        }
 
-#define PROPERTY_VAR(varName, value)                                                                                   \
-    varName##_                                                                                                         \
-    {                                                                                                                  \
-        value, #varName                                                                                                \
-    }
+            template <typename T>
+            void Register(Property<T> &prop)
+            {
+                m_binders.emplace_back([&prop, this](const CSimpleIniA &ini) {
+                    const char *val = ini.GetValue(m_sectionName.c_str(), prop.ConfigName());
+                    if (val != nullptr)
+                    {
+                        prop.SetValue(converter<T>::convert(val, prop.Value()));
+                    }
+#ifdef SIMPLE_IME_DEBUG
+                    else
+                    {
+                        throw std::runtime_error(std::format("Can't load config: {}", prop.ConfigName()));
+                    }
+#endif
+                });
+            }
+
+            void Load(const CSimpleIniA &ini)
+            {
+                for (auto &binder : m_binders)
+                {
+                    binder(ini);
+                }
+            }
+
+        private:
+            std::vector<std::function<void(const CSimpleIniA &)>> m_binders;
+            std::string                                           m_sectionName;
+        };
 
         class AppUiConfig
         {
+            IniSection uiSelection{"UI"};
+
         public:
-            AppUiConfig()                                      = default;
+            AppUiConfig()
+            {
+                uiSelection.Register(m_fontSize);
+                uiSelection.Register(m_useClassicTheme);
+                uiSelection.Register(m_themeDirectory);
+                uiSelection.Register(m_defaultTheme);
+                uiSelection.Register(m_highlightTextColor);
+                uiSelection.Register(m_eastAsiaFontFile);
+                uiSelection.Register(m_emojiFontFile);
+            }
+
             AppUiConfig(const AppUiConfig &other)              = default;
             AppUiConfig(const AppUiConfig &&rvalue)            = delete;
             AppUiConfig &operator=(const AppUiConfig &other)   = default;
@@ -113,22 +144,22 @@ namespace LIBC_NAMESPACE_DECL
 
             [[nodiscard]] constexpr auto EastAsiaFontFile() const -> const std::string &
             {
-                return eastAsiaFontFile_.Value();
+                return m_eastAsiaFontFile.Value();
             }
 
             [[nodiscard]] constexpr auto EmojiFontFile() const -> const std::string &
             {
-                return emojiFontFile_.Value();
+                return m_emojiFontFile.Value();
             }
 
             [[nodiscard]] constexpr const float &FontSize() const
             {
-                return fontSize_.Value();
+                return m_fontSize.Value();
             }
 
             [[nodiscard]] auto UseClassicTheme() const -> bool
             {
-                return useClassicTheme_.Value();
+                return m_useClassicTheme.Value();
             }
 
             [[nodiscard]] auto ThemeDirectory() const -> const std::string &
@@ -147,36 +178,50 @@ namespace LIBC_NAMESPACE_DECL
             }
 
         private:
+            void Load(const CSimpleIniA &ini)
+            {
+                uiSelection.Load(ini);
+            }
+
             friend class AppConfig;
-            Property<float>       PROPERTY_VAR(fontSize, 14.0F);
-            Property<bool>        PROPERTY_VAR(useClassicTheme, false);
+            Property<float>       m_fontSize{14.0F, "fontSize"};
+            Property<bool>        m_useClassicTheme{false, "useClassicTheme"};
             Property<std::string> m_themeDirectory{"Theme", "themesDirectory"};
             Property<std::string> m_defaultTheme{"darcula", "defaultTheme"};
             Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "highlightTextColor"};
-            Property<std::string> PROPERTY_VAR(eastAsiaFontFile, R"(C:\Windows\Fonts\simsun.ttc)");
-            Property<std::string> PROPERTY_VAR(emojiFontFile, R"(C:\Windows\Fonts\seguiemj.ttf)");
+            Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "eastAsiaFontFile"};
+            Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "emojiFontFile"};
         };
 
         class AppConfig
         {
             // default value
+            IniSection generalSelection{"General"};
+
         public:
-            static constexpr auto DEFAULT_LOG_LEVEL                = spdlog::level::info;
-            static constexpr auto DEFAULT_FLUSH_LEVEL              = spdlog::level::trace;
-            static constexpr char DEFAULT_TOOL_WINDOW_SHORTCUT_KEY = 0x3C; // DIK_F2
+            static constexpr auto DEFAULT_LOG_LEVEL   = spdlog::level::info;
+            static constexpr auto DEFAULT_FLUSH_LEVEL = spdlog::level::trace;
+            static constexpr char ENUM_DIK_F2         = 0x3C; // DIK_F2
 
         private:
-            Property<uint32_t>                  m_toolWindowShortcutKey{DEFAULT_TOOL_WINDOW_SHORTCUT_KEY,
-                                                       "toolWindowShortcutKey"}; // 0x3C
+            Property<uint32_t>                  m_toolWindowShortcutKey{ENUM_DIK_F2, "toolWindowShortcutKey"};
             Property<spdlog::level::level_enum> m_logLevel{DEFAULT_LOG_LEVEL, "logLevel"};
             Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
-            Property<bool>                      PROPERTY_VAR(enableTsf, true);
-            Property<bool>                      PROPERTY_VAR(enableUnicodePaste, false);
+            Property<bool>                      m_enableTsf{true, "enableTsf"};
+            Property<bool>                      m_enableUnicodePaste{false, "enableUnicodePaste"};
             AppUiConfig                         m_appUiConfig;
             static AppConfig                    g_appConfig;
 
         public:
-            AppConfig()                              = default;
+            AppConfig()
+            {
+                generalSelection.Register(m_toolWindowShortcutKey);
+                generalSelection.Register(m_logLevel);
+                generalSelection.Register(m_flushLevel);
+                generalSelection.Register(m_enableTsf);
+                // generalSelection.Register(m_enableUnicodePaste);
+            }
+
             ~AppConfig()                             = default;
             AppConfig(const AppConfig &)             = delete;
             AppConfig &operator=(const AppConfig &)  = delete;
@@ -206,12 +251,12 @@ namespace LIBC_NAMESPACE_DECL
 
             [[nodiscard]] auto EnableTsf() const -> bool
             {
-                return enableTsf_.Value();
+                return m_enableTsf.Value();
             }
 
             [[nodiscard]] auto EnableUnicodePaste() const -> bool
             {
-                return enableUnicodePaste_.Value();
+                return m_enableUnicodePaste.Value();
             }
 
             /**
@@ -224,6 +269,11 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             static void LoadIniConfig(const char *configFilePath, AppConfig &destAppConfig);
+
+            void Load(const CSimpleIniA &ini)
+            {
+                generalSelection.Load(ini);
+            }
         };
 
     } // namespace SimpleIME

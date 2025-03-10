@@ -254,7 +254,7 @@ namespace LIBC_NAMESPACE_DECL
             ImeWnd *pThis = GetThis(hWnd);
             if (pThis != nullptr)
             {
-                //ForwardKeyboardMessage(pThis->m_hWndParent, uMsg, wParam, lParam);
+                ForwardKeyboardMessage(pThis->m_hWndParent, uMsg, wParam, lParam);
                 if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
                 {
                     return S_OK;
@@ -473,7 +473,12 @@ namespace LIBC_NAMESPACE_DECL
             if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
             {
                 POINT cursorPos;
-                if (GetCursorPos(&cursorPos) != FALSE)
+                if (ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
+                {
+                    auto *meunCursor = RE::MenuCursor::GetSingleton();
+                    ImGui::GetIO().AddMousePosEvent(meunCursor->cursorPosX, meunCursor->cursorPosY);
+                }
+                else if (GetCursorPos(&cursorPos) != FALSE)
                 {
                     ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
                 }

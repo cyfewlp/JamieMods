@@ -37,22 +37,8 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Load config file failed. May config file {} missing", configFilePath);
                 return;
             }
-            GetSimpleIniValue(ini, "General", destAppConfig.m_logLevel);
-            GetSimpleIniValue(ini, "General", destAppConfig.m_flushLevel);
-            GetSimpleIniValue(ini, "General", destAppConfig.m_toolWindowShortcutKey);
-            GetSimpleIniValue(ini, "General", destAppConfig.enableTsf_);
-            GetSimpleIniValue(ini, "General", destAppConfig.alwaysActiveIme_);
-            //GetSimpleIniValue(ini, "General", destAppConfig.enableUnicodePaste_);
-
-            // load ui configs
-            auto &appUiConfig = destAppConfig.m_appUiConfig;
-            GetSimpleIniValue(ini, "UI", appUiConfig.useClassicTheme_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_themeDirectory);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_defaultTheme);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_highlightTextColor);
+            destAppConfig.Load(ini);
+            destAppConfig.m_appUiConfig.Load(ini);
         }
     }
 }

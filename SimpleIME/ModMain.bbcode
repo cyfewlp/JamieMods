@@ -1,0 +1,100 @@
+﻿[size=4][b]What?[/b][/size]
+
+A SKSE plugin that enables IME (Input Method Editor) support for SkyrimSE/AE, primarily aimed at Chinese players. This is achieved using ImGui, Win32, and IMM/TSF.
+The mod essentially unlocks the OS IME, receiving and forwarding IME events and messages to the game. Consequently, it should also support other languages (such as Japanese, Korean, etc.). However, I'm uncertain if IME works with the same logic across different languages, so the composition and candidate windows for other languages may not function correctly.
+
+SKSE 插件, 使 SkyrimSE/A E支持输入法(IME), 主要针对中国用户, 使用 ImGui + Win32 + IMM/TSF 实现。实际上mod只是解锁了系统的 IME, 并将其事件, 消息转发到游戏中, 因此, 应该支持韩语, 日语等输入法, 但是我 并不清楚其他语言的输入法如何工作, 因此其他语言的 composition 和 candidate 窗口可能不会正常工作.
+
+[img]https://i.imgur.com/FUJqlft.png[/img]
+
+[size=4][b]Features[/b][/size]
+
+[list=1]
+[*][size=3]Unlock Systeme IME & Windows key;[/size]
+[*][size=3]Render IME composition & candidate window by ImGui;[/size]
+[*][size=3]ToolWindow(default F2 key) support sync and switch IME; Note: ToolWindow can pined in game, you can move it to right-bottom and pin it, just like os language bar;if you decrase Game Resolution, tool window may be can't found, To reset it position, you can go forward to Game install directory and delete file imgui.ini or the [i][Window][ToolWindow##SimpleIME] configuration section;[/i][/size]
+[/list]
+
+[size=4][b]Why?[/b]
+[/size]
+IME for the SkyrimSE game is unnecessary. But, if you installed SkyUI or other mods based on SkyUi/UIExtension, there may be a need to support Unicode characters. In one word, by the time you can: Search armor/spell/item/NPC with Unicode character in SkyUI(or other mods based on it).
+
+基础游戏并不需要输入法, 但是如果安装了 SKyUI 或者其他任何基于游戏UI 的 mod, 可能会需要用来进行搜索。
+简单来说：
+使用此mod可以使得在 SkyUI以及任何基于游戏UI的mod支持unicode 字符输入。
+
+[size=3][b]Theme Config[/b][/size]
+
+ Mod use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] as theme provider. By default, mod add "classic", "darcula“, ”modern", "light", and "Visual Studio" themes.
+If you want to add other themes:
+[list=1]
+[*]Use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] and export you interested theme with TOML format, copy it;
+[*]Add new ini file in mod directory: "interface/SimpleIME_Themes/" and name it by "\w+_theme.ini" pattern, e.g. "darcula_theme.ini"
+[*]Paste your export theme content and add "[style]" as first line;
+[*]The default theme file can be used as a reference.
+[/list]
+
+[size=4] [b]Usage[/b] [/size]
+
+[list=1]
+[*]Use your os shortcut(in my case win + space) keys or the tool window (default key `F2`) to switch different IMEs.
+[*]You must install your language font.
+[*]check your input method's usage you using 
+[/list]
+
+[list=1]
+[*]使用系统快捷键(win + 空格)或者ToolWindow (默认为 F2) 切换输入法切换不同的输入法
+[*]显而易见的, 必须安装具有中文支持的mod。
+[*]用法与系统的输入法相关
+[/list]
+
+[size=4] [b]How to implement?[/b] [/size]
+
+[list=1]
+[*]By default, game will lock the player keyboard input event. All other window can't receive any keyboard input event;
+[*]Game window is a ANSI window. For some unicode character may can't receive(like emoji);
+[*]In fact, you can Imagine this mod is a invisible input control and always capture keyboard focus.
+[/list]
+[list=1]
+[*]默认情况下, 游戏会锁定键盘, 导致其他所有程序都无法读取键盘输入(也包括IME);
+[*]游戏窗口是 ANSI 窗口, 无法接受部分 unicode 字符(emoji)
+[*]实际上, mod 可以被认为是一个[i]不可见[/i]的, 永远捕获键盘输入的[b]输入框[/b]
+[/list]
+
+[size=4][b]Compatibility/Supports[/b][/size]
+
+[list=1]
+[*]Should no compatibility issue. only hooks some functions that usually also hooked by other UI mod.
+[*]May incompatibility with: sse-gui , must load after sse-gui;
+[*]Supports SkyUi & all other mods based on it(like mod `WhereAreYou`) ;
+[*]Not support other custom UI mod(dmenu, Modex). Because these mod has their self render & message handle logic, only if another mod support and load unicode font and handle `WM_CHAR` message.
+[/list]
+[list=1]
+[*]应该不存在兼容性问题。仅挂接一些通常也由其他 UI 模组挂接的函数。
+[*]可能与 sse-gui不兼容
+[*]支持 SkyUI 和所有其他基于它的模组（如 `WhereAreYou` 模组）;
+[*]不支持其他自定义 UI 模组(dmenu、Modex)。因为这些模块有自己的
+[*]渲染和消息处理逻辑, 只有当另一个模块支持并加载 unicode 字体并处理 `WM_CHAR` 消息时才支持。
+[/list]
+[size=4] [b]Known Issue[/b] [/size]
+
+[list=1]
+[*][size=2]iFly can't listen english mode switch: iFly not send conversion mode message[/size]
+[*][size=2]CompassNavigationOverhaul exception when quit game. Is causeed by our mod?[/size]
+[*][size=2]must disable mod(config in tool window) to support use IME in [b]SteamOverlay[/b][/size]
+[/list]
+
+[size=4] [b]Source Code[/b] [/size]
+
+[url=https://github.com/cyfewlp/JamieMods]Github[/url]
+
+
+[size=4] [b]Other[/b] [/size]
+
+I'm a C++ & mod newcomer. So this mod may have some I not found bugs. If you meet a bug, report it, I will fix it quick soon.
+
+By the way, the mod supports emoji input. However, the game font renderer is implemented by Scaleform GFX. In my Google results, 
+GFX SDK does not support emoji font. I found a GTA modder article about this: [url=https://cookbook.fivem.net/2019/06/09/our-work-on-supporting-emoji-in-scaleform-gfx/]Our work on supporting emoji in Scaleform GFx[/url]
+But, it's too complex......🥲
+
+我是 C++ 和 mod 新手。因此这个 mod 可能有一些我没发现的错误。如果您发现错误, 请报告, 我会尽快修复。

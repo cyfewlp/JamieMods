@@ -27,37 +27,6 @@ TEST(PropertyTest, ConfigName)
     ASSERT_EQ(fontSize_.Value(), 14.0F);
 }
 
-TEST(SimpleIniTest, GetValue)
-{
-    CSimpleIniA ini(false, false, true);
-
-    ini.LoadData(R"(
-[General]
-Color_Abgr1 = 0xFF00FFFF
-Color_Abgr2 = 100
-Color_Abgr3 = 1212121212121212
-Array_Test = <<<ENDTAG
-line1
-line2
-line3
-ENDTAG
-1)");
-    Property hexProperty1{0xFFFFFFFF, "colorAbgr1"};
-    GetSimpleIniValue<uint32_t>(ini, "General", hexProperty1);
-    ASSERT_EQ(hexProperty1.Value(), 0xFF00FFFF);
-
-    Property hexProperty2{0xFFFFFFFF, "colorAbgr2"};
-    GetSimpleIniValue<uint32_t>(ini, "General", hexProperty2);
-    ASSERT_EQ(hexProperty2.Value(), 100);
-
-    Property hexProperty3{0xFFFFFFFF, "colorAbgr3"};
-    GetSimpleIniValue<uint32_t>(ini, "General", hexProperty3);
-    ASSERT_EQ(hexProperty3.Value(), UINT_MAX);
-
-    auto multiLineValue = ini.GetValue("General", "Array_Test", "names");
-    std::cout << multiLineValue << std::endl;
-}
-
 TEST(SimpleIniTest, SaveIni)
 {
     CSimpleIniA ini(false, false, true);
@@ -146,22 +115,8 @@ colorAbgr = 0xFF00FFFF
         const auto &uiConfig        = loadedConfig.GetAppUiConfig();
         const auto &defaultUiConfig = defaultConfig.GetAppUiConfig();
 
-        ASSERT_NE(uiConfig.TextColor(), defaultUiConfig.TextColor());
-        ASSERT_EQ(uiConfig.TextColor(), 0xFF0000F0);
-
         ASSERT_NE(uiConfig.HighlightTextColor(), defaultUiConfig.HighlightTextColor());
         ASSERT_EQ(uiConfig.HighlightTextColor(), 0xFF0000F1);
-
-        ASSERT_NE(uiConfig.WindowBgColor(), defaultUiConfig.WindowBgColor());
-        ASSERT_EQ(uiConfig.WindowBgColor(), 0xFF0000F3);
-
-        ASSERT_NE(uiConfig.WindowBorderColor(), defaultUiConfig.WindowBorderColor());
-        ASSERT_EQ(uiConfig.WindowBorderColor(), 0xFF0000F2);
-
-        ASSERT_NE(uiConfig.BtnColor(), defaultUiConfig.BtnColor());
-        ASSERT_EQ(uiConfig.BtnColor(), 0xBB111111);
-        ASSERT_EQ(uiConfig.BtnHoveredColor(), 0xBB222222);
-        ASSERT_EQ(uiConfig.BtnActiveColor(), 0xBB333333);
 
         ASSERT_STRNE(uiConfig.EastAsiaFontFile().c_str(), defaultUiConfig.EastAsiaFontFile().c_str());
         ASSERT_STREQ(uiConfig.EastAsiaFontFile().c_str(), "C:/path/to/east-asia/font");
@@ -172,5 +127,9 @@ colorAbgr = 0xFF00FFFF
         ASSERT_EQ(loadedConfig.GetToolWindowShortcutKey(), 0x1111);
         ASSERT_EQ(loadedConfig.EnableUnicodePaste(), false);
         ASSERT_EQ(loadedConfig.EnableTsf(), false);
+        ASSERT_EQ(uiConfig.FontSize(), 160.0F);
+        ASSERT_EQ(uiConfig.UseClassicTheme(), true);
+        ASSERT_EQ(uiConfig.ThemeDirectory(), R"(a/b/c)");
+        ASSERT_EQ(uiConfig.DefaultTheme(), R"(12345)");
     }
 }

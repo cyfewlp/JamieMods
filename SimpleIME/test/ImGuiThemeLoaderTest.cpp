@@ -37,8 +37,8 @@ imgui_dir2 = "Right"
         spdlog::set_level(spdlog::level::trace);
         ImGuiThemeLoader      loader;
         std::vector<std::string> themes;
-        loader.GetAllThemeNames(R"(D:\repo\JamieMods\SimpleIME\contrib\themes)", themes);
-        ASSERT_EQ(themes.size(), 3);
+        loader.GetAllThemeNames(R"(D:\repo\JamieMods\SimpleIME\contrib\Distribution\themes)", themes);
+        ASSERT_EQ(themes.size(), 5);
 
         ImGuiStyle style{};
         ASSERT_EQ(loader.LoadTheme("visual_studio", style), true);
