@@ -6,6 +6,7 @@
 #define IME_ITEXTSERVICE_H
 
 #include "TextEditor.h"
+#include "core/State.h"
 
 #include "enumeration.h"
 
@@ -13,21 +14,12 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        enum class ImeState : std::uint16_t
-        {
-            NONE             = 0,
-            IN_COMPOSING     = 0x1,
-            IN_CAND_CHOOSING = 0x2,
-            IN_ALPHANUMERIC  = 0x4, // if set, not discard game event.
-            IME_OPEN         = 0x8,
-            IME_DISABLED     = 0x10, // if set, ignore any TextService change
-            ALL              = 0xFFFF
-        };
-
         using OnEndCompositionCallback = void(const std::wstring &compositionString);
 
         class ITextService
         {
+            using State = Ime::Core::State;
+
         public:
             ITextService()                                                  = default;
             virtual ~ITextService()                                         = default;
@@ -46,15 +38,15 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             // Enable of disable TextService;derived class must call parent Enable fun.
-            virtual void Enable([[maybe_unused]] const bool enable = true)
+            virtual void Enable([[maybe_unused]] const bool enable)
             {
                 if (enable)
                 {
-                    ClearState(ImeState::IME_DISABLED);
+                    State::GetInstance()->Clear(State::IME_DISABLED);
                 }
                 else
                 {
-                    SetState(ImeState::IME_DISABLED);
+                    State::GetInstance()->Set(State::IME_DISABLED);
                 }
             }
 
@@ -71,35 +63,7 @@ namespace LIBC_NAMESPACE_DECL
                 m_OnEndCompositionCallback = callback;
             }
 
-            auto HasState(const ImeState &&state) const -> bool
-            {
-                return m_state.all(state);
-            }
-
-            template <typename... Args>
-            auto HasAnyStates(Args &&...state) const -> bool
-            {
-                return m_state.any(std::forward<Args>(state)...);
-            }
-
-            template <typename... Args>
-            auto HasNoStates(Args &&...state) const -> bool
-            {
-                return m_state.none(std::forward<Args>(state)...);
-            }
-
-            auto SetState(const ImeState &&state) -> void
-            {
-                m_state.set(state);
-            }
-
-            auto ClearState(const ImeState &&state) -> void
-            {
-                m_state.reset(state);
-            }
-
         protected:
-            Enumeration<ImeState>     m_state;
             OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
         };
 
@@ -107,6 +71,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             class Imm32TextService final : public ITextService
             {
+                using State = Ime::Core::State;
+
             public:
                 Imm32TextService()                                                      = default;
                 ~Imm32TextService() override                                            = default;
@@ -138,7 +104,8 @@ namespace LIBC_NAMESPACE_DECL
                 }
 
             private:
-                auto        OnStartComposition() -> HRESULT;
+                static auto OnStartComposition() -> HRESULT;
+                static void UpdateConversionMode(HIMC hIMC);
                 auto        OnEndComposition() -> HRESULT;
                 auto        OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT;
                 static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool;
@@ -150,7 +117,6 @@ namespace LIBC_NAMESPACE_DECL
                 void ChangeCandidateAt(HIMC hIMC);
                 void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
                 void OnSetOpenStatus(HIMC hIMC);
-                void UpdateConversionMode(HIMC hIMC);
 
                 CandidateUi m_candidateUi;
                 TextEditor  m_textEditor;

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ImeWnd.hpp"
+#include "common/hook.h"
 
 #include <RE/B/BSTEvent.h>
 #include <RE/I/InputEvent.h>
@@ -22,29 +23,44 @@ namespace LIBC_NAMESPACE_DECL
 
         class ImeApp
         {
+            static ImeApp instance;
 
         public:
-            static void Init();
+            ImeApp()                              = default;
+            ~ImeApp()                             = default;
+            ImeApp(const ImeApp &other)           = delete;
+            ImeApp(ImeApp &&other)                = delete;
+            ImeApp operator=(const ImeApp &other) = delete;
+            ImeApp operator=(ImeApp &&other)      = delete;
 
-            static void D3DInit();
-            static void D3DPresent(std::uint32_t ptr);
-            static void DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
-            static auto GetImeWnd() -> ImeWnd *;
+            static auto GetInstance() -> ImeApp &;
+
+            void Initialize();
+            void Uninitialize();
 
         private:
-            static void DoD3DInit();
-            static void InstallHooks();
-            static void HookAddMessage(RE::UIMessageQueue *self, RE::BSFixedString &, RE::UI_MESSAGE_TYPE,
-                                       RE::IUIMessageData *);
-            static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-            static void ProcessEvent(RE::InputEvent **a_events);
-            static void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent);
-            static void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
+            std::unique_ptr<Hooks::D3DInitHookData>            D3DInitHook            = nullptr;
+            std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
+            std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
 
-            static inline WNDPROC                 RealWndProc;
-            static inline std::unique_ptr<State>  g_pState  = nullptr;
-            static inline std::unique_ptr<ImeWnd> g_pImeWnd = nullptr;
-            static inline HWND                    g_hWnd    = nullptr;
+            void OnD3DInit();
+            void Start(RE::BSGraphics::RendererData &renderData);
+            void ProcessEvent(RE::InputEvent **a_events, bool &discard);
+            void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard);
+            void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
+            void InstallHooks();
+            void UninstallHooks();
+
+            ImeWnd m_imeWnd;
+            HWND   m_hWnd  = nullptr;
+            State  m_state = {};
+
+            static void D3DInit();
+            static void DoD3DInit();
+            static void D3DPresent(std::uint32_t ptr);
+            static void DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
+            static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
+            static inline WNDPROC RealWndProc;
         };
 
     }

@@ -8,6 +8,8 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 
+#include "hooks/UiHooks.h"
+
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -38,6 +40,12 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto ASCII_MIDDLE_DOT   = 0xB7; // ·
 
         public:
+            template <typename Ptr>
+            static auto ToLongPtr(Ptr *ptr) -> LONG_PTR
+            {
+                return reinterpret_cast<LONG_PTR>(ptr);
+            }
+
             static auto PasteText(HWND hWnd) -> bool
             {
                 bool result = false;
@@ -90,10 +98,9 @@ namespace LIBC_NAMESPACE_DECL
                 }
 
                 // Start send message
-                RE::BSFixedString const menuName = pInterfaceStrings->topMenu;
                 for (uint32_t const code : sourceString)
                 {
-                    if (!Send(menuName, pFactory, code))
+                    if (!Send(pFactory, code))
                     {
                         return;
                     }
@@ -101,7 +108,7 @@ namespace LIBC_NAMESPACE_DECL
             }
 
         private:
-            static auto Send(const RE::BSFixedString &menuName, auto *pFactory, const uint32_t code) -> bool
+            static auto Send(auto *pFactory, const uint32_t code) -> bool
             {
                 if (code == ASCII_GRAVE_ACCENT || code == ASCII_MIDDLE_DOT)
                 {
@@ -116,8 +123,8 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 pScaleFormMessageData->scaleformEvent = pCharEvent;
                 log_debug("send code {:#x} to Skyrim", code);
-                RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                                                               pScaleFormMessageData);
+                RE::UIMessageQueue::GetSingleton()->AddMessage(
+                    Hooks::IME_MESSAGE_FAKE_MENU, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData);
                 return true;
             }
         };

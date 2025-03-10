@@ -34,7 +34,7 @@ AlignArrayOfStructures: Left
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AlignConsecutiveAssignments:
   Enabled: true
-  AcrossEmptyLines: true
+  AcrossEmptyLines: false
   AcrossComments: false
 AlignConsecutiveDeclarations:
   Enabled: true

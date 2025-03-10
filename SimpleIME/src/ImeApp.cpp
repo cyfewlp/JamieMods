@@ -6,9 +6,12 @@
 #include "common/log.h"
 #include "configs/AppConfig.h"
 #include "context.h"
+#include "core/EventHandler.h"
 #include "gsl/gsl"
 #include "hooks/Hooks.hpp"
 #include "hooks/ScaleformHook.h"
+#include "hooks/UiHooks.h"
+#include "hooks/WinHooks.h"
 #include "imgui.h"
 
 #include <basetsd.h>
@@ -23,39 +26,56 @@ namespace LIBC_NAMESPACE_DECL
     bool PluginInit()
     {
         InitializeMessaging();
-        Ime::ImeApp::Init();
+        Ime::ImeApp::GetInstance().Initialize();
         return true;
     }
 
     void InitializeMessaging()
     {
+        using State = Ime::Core::State;
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
             if (a_msg->type == SKSE::MessagingInterface::kPreLoadGame)
             {
-                Ime::Context::GetInstance()->SetIsGameLoading(true);
+                State::GetInstance()->Set(State::GAME_LOADING);
             }
             else if (a_msg->type == SKSE::MessagingInterface::kPostLoadGame)
             {
-                Ime::Context::GetInstance()->SetIsGameLoading(false);
+                State::GetInstance()->Clear(State::GAME_LOADING);
             }
         });
     }
 
     namespace Ime
     {
-        static const auto                                         D3DInitHook = Hooks::D3DInitHookData(ImeApp::D3DInit);
-        static std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
-        static std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
+
+        ImeApp ImeApp::instance{};
+
+        auto ImeApp::GetInstance() -> ImeApp &
+        {
+            return instance;
+        }
 
         /**
          * Init ImeApp
          */
-        void ImeApp::Init()
+        void ImeApp::Initialize()
         {
-            g_pState = std::make_unique<State>();
-            g_pState->Initialized.store(false);
-            Hooks::InstallRegisterClassHook();
-            Hooks::InstallDirectInputHook();
+            m_state.Initialized.store(false);
+            // Hooks::InstallRegisterClassHook();
+            Hooks::WinHooks::InstallHooks();
+
+            D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(ImeApp::D3DInit);
+        }
+
+        void ImeApp::Uninitialize()
+        {
+            if (m_state.Initialized)
+            {
+                Hooks::WinHooks::UninstallHooks();
+                D3DInitHook.release();
+                UninstallHooks();
+            }
+            m_state.Initialized.store(false);
         }
 
         class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
@@ -105,31 +125,34 @@ namespace LIBC_NAMESPACE_DECL
             }
             LogStacktrace();
             log_info("Force close ImeWnd.");
-            if (g_pImeWnd != nullptr)
+
+            if (GetInstance().m_imeWnd.SendMessage(WM_QUIT, -1, 0) != S_OK)
             {
-                if (g_pImeWnd->SendMessage_(WM_QUIT, -1, 0) != S_OK)
-                {
-                    log_error("Send WM_QUIT to ImeWnd failed.");
-                }
-                g_pImeWnd = nullptr;
+                log_error("Send WM_QUIT to ImeWnd failed.");
             }
         }
 
         void ImeApp::DoD3DInit()
         {
-            D3DInitHook();
-            if (g_pState->Initialized.load())
+            auto &app = GetInstance();
+            app.D3DInitHook->Original();
+            if (app.m_state.Initialized.load())
             {
                 return;
             }
 
+            app.OnD3DInit();
+        }
+
+        void ImeApp::OnD3DInit()
+        {
             auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
             if (render_manager == nullptr)
             {
                 throw SimpleIMEException("Cannot find render manager. Initialization failed!");
             }
 
-            auto render_data = render_manager->data;
+            auto &render_data = render_manager->data;
             log_debug("Getting SwapChain...");
             auto *pSwapChain = render_data.renderWindows->swapChain;
             if (pSwapChain == nullptr)
@@ -138,23 +161,37 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             log_debug("Getting SwapChain desc...");
-            auto swapChainDesc = gsl::not_null(new DXGI_SWAP_CHAIN_DESC());
-            if (pSwapChain->GetDesc(swapChainDesc) < 0)
+            REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
+            if (pSwapChain->GetDesc(&swapChainDesc) < 0)
             {
                 throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
             }
-            g_hWnd = swapChainDesc->OutputWindow;
 
+            m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
+            Start(render_data);
+            m_state.Initialized.store(true);
+
+            log_debug("Hooking Skyrim WndProc...");
+            RealWndProc = reinterpret_cast<WNDPROC>(
+                SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
+            if (RealWndProc == nullptr)
+            {
+                throw SimpleIMEException("Hook WndProc failed!");
+            }
+            InstallHooks();
+        }
+
+        void ImeApp::Start(RE::BSGraphics::RendererData &renderData)
+        {
             std::promise<bool> ensureInitialized;
             std::future<bool>  initialized = ensureInitialized.get_future();
             // run ImeWnd in a standalone thread
-            g_pImeWnd = std::make_unique<ImeWnd>();
-            std::thread childWndThread([&ensureInitialized]() {
+            std::thread childWndThread([&ensureInitialized, this]() {
                 try
                 {
-                    g_pImeWnd->Initialize();
+                    m_imeWnd.Initialize();
                     ensureInitialized.set_value(true);
-                    g_pImeWnd->Start(g_hWnd);
+                    m_imeWnd.Start(m_hWnd);
                 }
                 catch (...)
                 {
@@ -167,79 +204,63 @@ namespace LIBC_NAMESPACE_DECL
                     }
                 }
             });
-            try
-            {
-                initialized.get();
-                childWndThread.detach();
-                auto *device  = render_data.forwarder;
-                auto *context = render_data.context;
-                g_pImeWnd->InitImGui(g_hWnd, device, context);
-            }
-            catch (const std::exception &e)
-            {
-                g_pImeWnd.reset();
-                g_pImeWnd = nullptr;
-                throw;
-            }
 
-            g_pState->Initialized.store(true);
-
-            log_debug("Hooking Skyrim WndProc...");
-            RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(swapChainDesc->OutputWindow, GWLP_WNDPROC,
-                                                                      reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc)));
-            if (RealWndProc == nullptr)
-            {
-                throw SimpleIMEException("Hook WndProc failed!");
-            }
-            InstallHooks();
+            initialized.get();
+            childWndThread.detach();
+            auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+            auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
+            m_imeWnd.InitImGui(m_hWnd, device, context);
         }
 
         void ImeApp::InstallHooks()
         {
-            D3DPresentHook.reset(new Hooks::D3DPresentHookData(D3DPresent));
-            DispatchInputEventHook.reset(new Hooks::DispatchInputEventHookData(DispatchEvent));
-            if (AppConfig::GetConfig().AlwaysActiveIme())
-            {
-                log_info("Ime won't enable dynamic activate because 'Always_Active_Ime' is true");
-            }
-            else
-            {
-                Hooks::ScaleformHooks::InstallHooks();
-            }
+            D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
+            DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
+
+            Hooks::ScaleformHooks::InstallHooks();
+            Hooks::UiHooks::InstallHooks();
+        }
+
+        void ImeApp::UninstallHooks()
+        {
+            D3DPresentHook         = nullptr;
+            DispatchInputEventHook = nullptr;
+
+            Hooks::ScaleformHooks::UninstallHooks();
+            Hooks::UiHooks::UninstallHooks();
         }
 
         void ImeApp::D3DPresent(std::uint32_t ptr)
         {
-            D3DPresentHook->Original(ptr);
-            if (!g_pState->Initialized.load())
+            auto &app = GetInstance();
+            app.D3DPresentHook->Original(ptr);
+            if (!app.m_state.Initialized.load())
             {
                 return;
             }
-
-            g_pImeWnd->RenderIme();
+            app.m_imeWnd.RenderIme();
         }
 
         // we need set our keyboard to non-exclusive after game default.
         void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
             static RE::InputEvent *dummy[] = {nullptr};
-            ProcessEvent(a_events);
-            if (g_pImeWnd->IsDiscardGameInputEvents(a_events)) // Disable Game Input
+
+            auto &app                 = GetInstance();
+            bool  discardCurrentEvent = false;
+            app.ProcessEvent(a_events, discardCurrentEvent);
+            if (discardCurrentEvent)
             {
-                DispatchInputEventHook->Original(a_dispatcher, dummy);
+                app.DispatchInputEventHook->Original(a_dispatcher, dummy);
             }
             else
             {
-                DispatchInputEventHook->Original(a_dispatcher, a_events);
+                app.DispatchInputEventHook->Original(a_dispatcher, a_events);
             }
+            Core::EventHandler::PostHandleKeyboardEvent();
         }
 
-        auto ImeApp::GetImeWnd() -> ImeWnd *
-        {
-            return g_pImeWnd.get();
-        }
-
-        void ImeApp::ProcessEvent(RE::InputEvent **events)
+        void ImeApp::ProcessEvent(RE::InputEvent **events, bool &discard)
         {
             if (events == nullptr)
             {
@@ -253,11 +274,6 @@ namespace LIBC_NAMESPACE_DECL
 
             switch (head->GetEventType())
             {
-                case RE::INPUT_EVENT_TYPE::kMouseMove: {
-                    auto *cursor = RE::MenuCursor::GetSingleton();
-                    ImGui::GetIO().AddMousePosEvent(cursor->cursorPosX, cursor->cursorPosY);
-                    break;
-                }
                 case RE::INPUT_EVENT_TYPE::kButton: {
                     auto *const pButtonEvent = head->AsButtonEvent();
                     if (pButtonEvent == nullptr)
@@ -268,7 +284,7 @@ namespace LIBC_NAMESPACE_DECL
                     switch (head->GetDevice())
                     {
                         case RE::INPUT_DEVICE::kKeyboard:
-                            ProcessKeyboardEvent(pButtonEvent);
+                            ProcessKeyboardEvent(pButtonEvent, discard);
                             break;
                         case RE::INPUT_DEVICE ::kMouse:
                             ProcessMouseEvent(pButtonEvent);
@@ -283,18 +299,20 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeApp::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent)
+        void ImeApp::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard)
         {
             auto keyCode = btnEvent->GetIDCode();
             if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
             {
-                g_pImeWnd->ShowToolWindow();
+                m_imeWnd.ShowToolWindow();
             }
             using Key = RE::BSKeyboardDevice::Keys::Key;
             if (keyCode == Key::kTilde)
             {
-                g_pImeWnd->AbortIme();
+                m_imeWnd.AbortIme();
             }
+            Core::EventHandler::HandleKeyboardEvent(btnEvent);
+            discard = Core::EventHandler::IsDiscardKeyboardEvent(btnEvent);
         }
 
         void ImeApp::ProcessMouseEvent(const RE::ButtonEvent *btnEvent)
@@ -305,7 +323,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (btnEvent->GetIDCode() < BSWin32MouseDevice::Keys::kWheelUp)
                 {
-                    g_pImeWnd->AbortIme();
+                    m_imeWnd.AbortIme();
                 }
             }
             else
@@ -328,26 +346,31 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
         {
+            auto &app = GetInstance();
             switch (uMsg)
             {
                 case WM_ACTIVATE:
                     if (LOWORD(wParam) != WA_INACTIVE)
                     {
-                        g_pImeWnd->Focus();
+                        app.m_imeWnd.Focus();
                     }
                     break;
                 case WM_SYSCOMMAND: {
                     if ((wParam & 0xFFF0) == SC_RESTORE)
                     {
-                        g_pImeWnd->Focus();
+                        app.m_imeWnd.Focus();
                     }
                     break;
                 }
                 case WM_SETFOCUS:
-                    g_pImeWnd->Focus();
+                    app.m_imeWnd.Focus();
                     return S_OK;
                 case WM_IME_SETCONTEXT:
                     return ::DefWindowProc(hWnd, uMsg, wParam, 0);
+                case WM_NCDESTROY: {
+                    app.Uninitialize();
+                    break;
+                }
                 default:
                     break;
             }

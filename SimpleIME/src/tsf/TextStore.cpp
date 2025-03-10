@@ -124,7 +124,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto tracer = FuncTracer("TextStore::{}", __func__);
 
-            *ppvObject  = nullptr;
+            *ppvObject = nullptr;
 
             // IUnknown
             if (IsEqualIID(riid, IID_IUnknown) || IsEqualIID(riid, IID_ITextStoreACP))
@@ -441,7 +441,7 @@ namespace LIBC_NAMESPACE_DECL
             tsa.style.ase          = TS_AE_END; // not support control selection direction
             tsa.style.fInterimChar = FALSE;
 
-            HRESULT hresult        = SetSelection(1, &tsa);
+            HRESULT hresult = SetSelection(1, &tsa);
 
             if (SUCCEEDED(hresult))
             {
@@ -710,14 +710,14 @@ namespace LIBC_NAMESPACE_DECL
                     break;
                 }
             }
-            m_pTextService->SetState(Ime::ImeState::IN_COMPOSING);
+            State::GetInstance()->Set(State::IN_COMPOSING);
             return S_OK;
         }
 
         auto TextStore::OnUpdateComposition(ITfCompositionView * /*pComposition*/, ITfRange * /*pRangeNew*/) -> HRESULT
         {
             auto tracer = FuncTracer("TextStore::{}", __func__);
-            m_pTextService->SetState(Ime::ImeState::IN_COMPOSING);
+            State::GetInstance()->Set(State::IN_COMPOSING);
             return S_OK;
         }
 
@@ -741,7 +741,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             m_pTextEditor->Select(0, 0);
             m_pTextEditor->ClearText();
-            m_pTextService->ClearState(Ime::ImeState::IN_COMPOSING);
+            State::GetInstance()->Clear(State::IN_COMPOSING);
             return S_OK;
         }
 
@@ -749,7 +749,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto tracer = FuncTracer("TextStore::{}", __func__);
             *pbShow     = TRUE;
-            m_pTextService->SetState(Ime::ImeState::IN_CAND_CHOOSING);
+            State::GetInstance()->Set(State::IN_CAND_CHOOSING);
             if (FAILED(GetCandidateInterface(dwUIElementId, &m_currentCandidateUi)))
             {
                 m_supportCandidateUi = false;
@@ -786,7 +786,7 @@ namespace LIBC_NAMESPACE_DECL
             auto tracer = FuncTracer("TextStore::{}", __func__);
             m_currentCandidateUi.Release();
             m_pTextService->GetCandidateUi().Close();
-            m_pTextService->ClearState(Ime::ImeState::IN_CAND_CHOOSING);
+            State::GetInstance()->Clear(State::IN_CAND_CHOOSING);
             return S_OK;
         }
 
@@ -848,7 +848,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             m_supportCandidateUi = true;
 
-            auto &candidateUi    = m_pTextService->GetCandidateUi();
+            auto &candidateUi = m_pTextService->GetCandidateUi();
             candidateUi.Close();
             if (CandidateInfo info{}; SUCCEEDED(GetCandInfo(m_currentCandidateUi, info)))
             {
@@ -896,8 +896,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             HRESULT hresult = S_OK;
 
-            m_fLocked       = FALSE;
-            m_dwLockType    = 0;
+            m_fLocked    = FALSE;
+            m_dwLockType = 0;
 
             // if there is a pending lock upgrade, grant it
             if (m_fPendingLockUpgrade)

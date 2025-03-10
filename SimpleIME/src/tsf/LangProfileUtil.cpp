@@ -2,6 +2,7 @@
 
 #include "common/WCharUtils.h"
 #include "common/log.h"
+#include "core/State.h"
 
 #include <atlcomcli.h>
 #include <future>
@@ -131,10 +132,11 @@ namespace LIBC_NAMESPACE_DECL
         if (SUCCEEDED(m_tfProfileMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile)))
         {
             m_activatedProfile = profile.guidProfile;
+            UpdateLangProfileState();
             return true;
         }
 
-        log_error("Load active ime failed.");
+        log_error("Load active IME failed.");
         return false;
     }
 
@@ -188,8 +190,21 @@ namespace LIBC_NAMESPACE_DECL
     {
         if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
         {
-            m_activatedProfile     = guidProfile;
+            m_activatedProfile = guidProfile;
+            UpdateLangProfileState();
         }
         return S_OK;
+    }
+
+    void Ime::LangProfileUtil::UpdateLangProfileState() const
+    {
+        if (m_activatedProfile == GUID_NULL)
+        {
+            State::GetInstance()->Clear(State::LANG_PROFILE_ACTIVATED);
+        }
+        else
+        {
+            State::GetInstance()->Set(State::LANG_PROFILE_ACTIVATED);
+        }
     }
 } // namespace LIBC_NAMESPACE_DECL

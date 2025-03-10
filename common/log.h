@@ -11,6 +11,7 @@
 #ifdef LIBC_NAMESPACE_DECL
 
     #include <cstdint>
+    #include <format>
     #include <source_location>
     #include <spdlog/common.h>
     #include <spdlog/spdlog.h>

@@ -21,19 +21,19 @@ namespace LIBC_NAMESPACE_DECL
         class Context
         {
             static std::unique_ptr<Context> g_context;
-            std::atomic_bool                m_isGameLoading;
             std::queue<std::string>         m_message;
-            HWND                            m_hwndIme = nullptr;
+            bool                            m_fKeepImeOpen = false;
+            HWND                            m_hwndIme      = nullptr;
 
         public:
-            [[nodiscard]] auto IsGameLoading() const -> bool
+            [[nodiscard]] auto KeepImeOpen() const -> bool
             {
-                return m_isGameLoading;
+                return m_fKeepImeOpen;
             }
 
-            void SetIsGameLoading(const bool isGameLoading)
+            void SetFKeepImeOpen(const bool fKeepImeOpen)
             {
-                m_isGameLoading.store(isGameLoading);
+                m_fKeepImeOpen = fKeepImeOpen;
             }
 
             [[nodiscard]] auto Messages() -> std::queue<std::string> &

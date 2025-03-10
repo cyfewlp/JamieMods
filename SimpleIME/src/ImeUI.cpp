@@ -2,16 +2,22 @@
 // Created by jamie on 25-1-21.
 //
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "ImeUI.h"
 
+#include "ImGuiThemeLoader.h"
 #include "ImeWnd.hpp"
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
+#include "context.h"
+#include "hooks/ScaleformHook.h"
+#include "imgui.h"
 #include "tsf/LangProfileUtil.h"
 #include "tsf/TextStore.h"
+#include "ui/ImeUIWidgets.h"
 
-#include "imgui.h"
 #include <clocale>
 #include <cstdint>
 #include <tchar.h>
@@ -58,27 +64,30 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::SetTheme()
         {
-            ImGui::StyleColorsDark();
             if (m_uiConfig.UseClassicTheme())
             {
+                ImGui::StyleColorsDark();
                 return;
             }
-            auto &style                     = ImGui::GetStyle();
-            auto  colors                    = std::span(style.Colors);
 
-            colors[ImGuiCol_WindowBg]       = ImColor(m_uiConfig.WindowBgColor());
-            colors[ImGuiCol_Border]         = ImColor(m_uiConfig.WindowBorderColor());
-            colors[ImGuiCol_Text]           = ImColor(m_uiConfig.TextColor());
-            colors[ImGuiCol_TextLink]       = ImColor(m_uiConfig.HighlightTextColor());
-            colors[ImGuiCol_Button]         = ImColor(m_uiConfig.BtnColor());
-            colors[ImGuiCol_ButtonHovered]  = ImColor(m_uiConfig.BtnHoveredColor());
-            colors[ImGuiCol_ButtonActive]   = ImColor(m_uiConfig.BtnActiveColor());
-            colors[ImGuiCol_Header]         = colors[ImGuiCol_Button];
-            colors[ImGuiCol_HeaderHovered]  = colors[ImGuiCol_ButtonHovered];
-            colors[ImGuiCol_HeaderActive]   = colors[ImGuiCol_ButtonActive];
-            colors[ImGuiCol_FrameBg]        = colors[ImGuiCol_Button];
-            colors[ImGuiCol_FrameBgHovered] = colors[ImGuiCol_ButtonHovered];
-            colors[ImGuiCol_FrameBgActive]  = colors[ImGuiCol_ButtonActive];
+            if (!m_uiThemeLoader.GetAllThemeNames(m_uiConfig.ThemeDirectory(), m_themeNames))
+            {
+                log_warn("Failed get theme names, fallback to ImGui default theme.");
+                ImGui::StyleColorsDark();
+                return;
+            }
+
+            auto      &defaultTheme = m_uiConfig.DefaultTheme();
+            const auto findIt       = std::ranges::find(m_themeNames, defaultTheme);
+            if (findIt == m_themeNames.end())
+            {
+                log_warn("Can't find default theme, fallback to ImGui default theme.");
+                ImGui::StyleColorsDark();
+                return;
+            }
+            m_selectedTheme = std::distance(m_themeNames.begin(), findIt);
+            auto &style     = ImGui::GetStyle();
+            m_uiThemeLoader.LoadTheme(defaultTheme, style);
         }
 
         void ImeUI::RenderIme() const
@@ -87,8 +96,9 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            if (m_pTextService->HasState(ImeState::IME_DISABLED) ||
-                m_pTextService->HasNoStates(ImeState::IN_CAND_CHOOSING, ImeState::IN_COMPOSING))
+            ;
+            if (State::GetInstance()->Has(State::IME_DISABLED) ||
+                State::GetInstance()->NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 return;
             }
@@ -108,7 +118,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (m_pTextService->HasState(ImeState::IN_CAND_CHOOSING))
+            if (State::GetInstance()->Has(State::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -164,122 +174,76 @@ namespace LIBC_NAMESPACE_DECL
                 m_fPinToolWindow               = true;
                 ImGui::GetIO().MouseDrawCursor = false;
             }
-            ImGui::SameLine();
 
+            ImGui::SameLine();
             ImGui::Checkbox("Settings", &m_fShowSettings);
-            ImGui::SameLine();
 
-            auto        activatedGuid     = m_langProfileUtil->GetActivatedLangProfile();
-            auto        installedProfiles = m_langProfileUtil->GetLangProfiles();
-            auto       &profile           = installedProfiles[activatedGuid];
-            const char *previewImeName    = profile.desc.c_str();
             ImGui::SameLine();
-            if (ImGui::BeginCombo("###InstalledIME", previewImeName))
-            {
-                uint32_t idx = 0;
-                for (const std::pair<GUID, LangProfile> pair : installedProfiles)
-                {
-                    auto       langProfile = pair.second;
-                    bool const isSelected  = langProfile.guidProfile == activatedGuid;
-                    auto       label       = std::format("{}##{}", langProfile.desc, idx);
-                    if (ImGui::Selectable(label.c_str()))
-                    {
-                        m_pImeWnd->SendMessage_(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
-                        activatedGuid = m_langProfileUtil->GetActivatedLangProfile();
-                    }
-                    if (isSelected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                    idx++;
-                }
-                ImGui::EndCombo();
-            }
+            ImeUIWidgets::RenderInputMethodChooseWidget(m_langProfileUtil, m_pImeWnd);
+
             ImGui::SameLine();
-            if (m_pTextService->HasState(ImeState::IN_ALPHANUMERIC))
+            if (State::GetInstance()->Has(State::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();
-            }
-            if (!m_fPinToolWindow && !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
-            {
-                ShowToolWindow();
             }
             ImGui::End();
         }
 
         void ImeUI::RenderSettings()
         {
-            static bool EnableMod       = true;
-            static bool CollapseVisible = false;
-            CollapseVisible             = m_fShowSettings;
+            static bool isSettingsWindowOpen = false;
+            isSettingsWindowOpen             = m_fShowSettings;
 
-            if (m_fShowSettings)
-            {
-                if (ImGui::CollapsingHeader("Settings##Content", &CollapseVisible, ImGuiTreeNodeFlags_DefaultOpen))
-                {
-                    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-                    if (ImGui::BeginTable("SettingsTable", 3))
-                    {
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-                        static bool EnableModFail = false;
-                        if (ImGui::Checkbox("Enable Mod", &EnableMod))
-                        {
-                            if (!m_pImeWnd->EnableMod(EnableMod))
-                            {
-                                EnableMod     = false;
-                                EnableModFail = true;
-                                log_debug("Unable to enable mod: {}", GetLastError());
-                            }
-                        }
-                        ImGui::SetItemTooltip("Uncheck will disable all mod feature(Disable keyboard).");
-                        if (EnableModFail)
-                        {
-                            ImGui::TableNextColumn();
-                            ImGui::SameLine();
-                            ImGui::TextColored(ImVec4(1.0f, .0f, .0f, 1.0f), "%s", "Failed to enable mod");
-                            if (ImGui::Button("X"))
-                            {
-                                EnableModFail = false;
-                            }
-                        }
-
-                        ImGui::TableNextColumn();
-                        if (m_pTextService->HasState(ImeState::IME_DISABLED))
-                        {
-                            ImGui::Text("Ime Enabled %s", "\xe2\x9d\x8c"); // red  ❌
-                        }
-                        else
-                        {
-                            ImGui::Text("Ime Enabled %s", "\xe2\x9c\x85"); // green ✅
-                        }
-
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-                        bool const focused = m_pImeWnd->IsFocused();
-                        ImGui::Text("Ime Focus: %s", focused ? "\xe2\x9c\x85" : "\xe2\x9d\x8c");
-                        ImGui::SetItemTooltip("Mod must has keyboard focus to work.");
-
-                        ImGui::TableNextColumn();
-                        if (ImGui::Button("Force Focus Ime"))
-                        {
-                            m_pImeWnd->Focus();
-                        }
-
-                        ImGui::TableNextColumn();
-                        ImGui::Checkbox("Ime follow cursor", &m_fFollowCursor);
-                        ImGui::SetItemTooltip("Ime window appear in cursor position.");
-                        ImGui::EndTable();
-                    }
-                    ImGui::PopStyleVar();
-                }
-                m_fShowSettings = CollapseVisible;
-            }
-            else
+            if (!m_fShowSettings)
             {
                 ImGui::SameLine();
+                return;
             }
+            ImGui::Begin("Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
+            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
+            if (ImGui::BeginTable("SettingsTable", 3))
+            {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImeUIWidgets::RenderEnableModWidget([this](bool enable) { return m_pImeWnd->EnableMod(enable); });
+
+                ImGui::TableNextColumn();
+                ImeUIWidgets::RenderImeStateWidget(State::GetInstance()->Has(State::IME_DISABLED));
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImeUIWidgets::RenderImeFocusStateWidget(m_pImeWnd->IsFocused());
+
+                ImGui::TableNextColumn();
+                if (ImGui::Button("Force Focus Ime"))
+                {
+                    m_pImeWnd->Focus();
+                }
+
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Ime follow cursor", &m_fFollowCursor);
+                ImGui::SetItemTooltip("Ime window appear in cursor position.");
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImeUIWidgets::RenderKeepImeOpenWidget([this](const bool keepImeOpen) {
+                    if (keepImeOpen)
+                    {
+                        return m_pImeWnd->SendMessage(CM_IME_ENABLE, TRUE, 0);
+                    }
+                    const auto count = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                    return m_pImeWnd->SendMessage(CM_IME_ENABLE, count == 0 ? FALSE : TRUE, 0);
+                });
+                ImGui::EndTable();
+            }
+            ImGui::PopStyleVar();
+
+            ImeUIWidgets::RenderThemeChooseWidget(m_themeNames, m_selectedTheme, [this](const std::string &name) {
+                return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
+            });
+            ImGui::End();
+            m_fShowSettings = isSettingsWindowOpen;
         }
 
         void ImeUI::RenderCompWindow() const

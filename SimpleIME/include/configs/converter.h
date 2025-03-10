@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "common/config.h"
+
 #include <cstdlib>
 #include <ranges>
 #include <spdlog/common.h>
@@ -184,6 +186,18 @@ namespace LIBC_NAMESPACE_DECL
                 return result;
             }
         };
+
+        template <typename Type>
+        std::string toString(const Type &value)
+        {
+            return toString<Type>(value);
+        }
+
+        template <>
+        constexpr auto toString(const float &value) -> std::string
+        {
+             return std::to_string(value);
+        }
     }
 };
 

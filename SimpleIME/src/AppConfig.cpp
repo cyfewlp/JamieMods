@@ -37,26 +37,8 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Load config file failed. May config file {} missing", configFilePath);
                 return;
             }
-            GetSimpleIniValue(ini, "General", destAppConfig.m_logLevel);
-            GetSimpleIniValue(ini, "General", destAppConfig.m_flushLevel);
-            GetSimpleIniValue(ini, "General", destAppConfig.m_toolWindowShortcutKey);
-            GetSimpleIniValue(ini, "General", destAppConfig.enableTsf_);
-            GetSimpleIniValue(ini, "General", destAppConfig.alwaysActiveIme_);
-            GetSimpleIniValue(ini, "General", destAppConfig.enableUnicodePaste_);
-
-            // load ui configs
-            auto &appUiConfig = destAppConfig.m_appUiConfig;
-            GetSimpleIniValue(ini, "UI", appUiConfig.textColor_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.useClassicTheme_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.highlightTextColor_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_windowBgColor);
-            GetSimpleIniValue(ini, "UI", appUiConfig.windowBorderColor_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_btnColor);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_btnHoveredColor);
-            GetSimpleIniValue(ini, "UI", appUiConfig.m_btnActiveColor);
-            GetSimpleIniValue(ini, "UI", appUiConfig.eastAsiaFontFile_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.emojiFontFile_);
-            GetSimpleIniValue(ini, "UI", appUiConfig.fontSize_);
+            destAppConfig.Load(ini);
+            destAppConfig.m_appUiConfig.Load(ini);
         }
     }
 }

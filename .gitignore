@@ -24,3 +24,5 @@ imgui.ini
 *.bsa
 /vcpkg_installed
 Data/SKSE/Plugins/version*.bin
+/Folder.DotSettings.user
+/scripts/game-profile

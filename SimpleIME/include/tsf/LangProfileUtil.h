@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TsfSupport.h"
+#include "core/State.h"
 
 #include <msctf.h>
 #include <unordered_map>
@@ -41,6 +42,8 @@ namespace LIBC_NAMESPACE_DECL
 
         class LangProfileUtil : public ITfInputProcessorProfileActivationSink
         {
+            using State = Ime::Core::State;
+
         public:
             LangProfileUtil()                                                     = default;
             virtual ~LangProfileUtil()                                            = default;
@@ -73,6 +76,7 @@ namespace LIBC_NAMESPACE_DECL
             auto QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
             auto OnActivated(DWORD dwProfileType, LANGID langid, const IID &clsid, const GUID &catid,
                              const GUID &guidProfile, HKL hkl, DWORD dwFlags) -> HRESULT override;
+            void UpdateLangProfileState() const;
 
             bool                                  m_initialized = false;
             DWORD                                 m_refCount{};

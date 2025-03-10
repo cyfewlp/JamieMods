@@ -1,0 +1,17 @@
+<fomod>
+  <Name>SimpleIME</Name>
+
+  <Author>Jamie</Author>
+
+  <Version MachineVersion="0.0.7">
+    0.0.7
+  </Version>
+
+  <Description>
+    Simple Input Method Editor (IME) for Chinese, Japanese, and Korean.
+  </Description>
+
+  <Website>
+    https://www.nexusmods.com/skyrimspecialedition/mods/140136
+  </Website>
+</fomod>
