@@ -15,7 +15,7 @@ namespace LIBC_NAMESPACE_DECL
             m_pTextStore           = new TextStore(this, &m_textEditor);
             auto const &tsfSupport = TsfSupport::GetSingleton();
             // callback
-            auto callback = [this](const GUID * /*guid*/, const ULONG ulong) {
+            auto callback = [](const GUID * /*guid*/, const ULONG ulong) {
                 DoUpdateConversionMode(ulong);
                 return S_OK;
             };
@@ -40,6 +40,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void TextService::DoUpdateConversionMode(const ULONG convertionMode)
         {
+            log_trace("DoUpdateConversionMode");
             if ((convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
             {
                 State::GetInstance()->Set(State::IN_ALPHANUMERIC);
@@ -48,29 +49,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 State::GetInstance()->Clear(State::IN_ALPHANUMERIC);
             }
-        }
-
-        void TextService::Enable(const bool enable)
-        {
-            if (enable)
-            {
-                if (State::GetInstance()->Has(State::IME_DISABLED))
-                {
-                    UpdateConversionMode();
-                    m_pTextStore->Focus();
-                }
-            }
-            else
-            {
-                if (State::GetInstance()->NotHas(State::IME_DISABLED))
-                {
-                    if (FAILED(m_pTextStore->ClearFocus()))
-                    {
-                        log_warn("Unexpected error, failed clear focus");
-                    }
-                }
-            }
-            ITextService::Enable(enable);
         }
 
         auto TextService::ProcessImeMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> bool

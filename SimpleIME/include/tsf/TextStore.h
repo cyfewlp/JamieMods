@@ -267,15 +267,24 @@ namespace LIBC_NAMESPACE_DECL
                 m_pTextStore->SetOnEndCompositionCallback(callback);
             }
 
-            // associate focus to null DocumentMgr when disabled.
-            void Enable(bool enable) override;
-
             void OnStart(HWND hWnd) override
             {
                 m_pTextStore->SetHWND(hWnd);
-                m_pTextStore->Focus();
-                UpdateConversionMode();
-                ITextService::OnStart(hWnd);
+            }
+
+            bool OnFocus(bool focus) override
+            {
+                HRESULT hr = E_FAIL;
+                if (focus)
+                {
+                    hr = m_pTextStore->Focus();
+                    UpdateConversionMode();
+                }
+                else
+                {
+                    hr = m_pTextStore->ClearFocus();
+                }
+                return SUCCEEDED(hr);
             }
 
             [[nodiscard]] auto GetCandidateUi() -> Ime::CandidateUi & override

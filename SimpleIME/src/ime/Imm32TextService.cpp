@@ -34,11 +34,6 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool
         {
-            if (!isEnabled)
-            {
-                return false;
-            }
-
             switch (message)
             {
                 case WM_IME_STARTCOMPOSITION: {
@@ -86,7 +81,7 @@ namespace LIBC_NAMESPACE_DECL
                 m_textEditor.InsertText(compositionSting.c_str(), compositionSting.length());
                 if (spdlog::should_log(spdlog::level::trace))
                 {
-                    const auto str = WCharUtils::ToString(compositionSting.data());
+                    const auto str = WCharUtils::ToString(compositionSting);
                     log_trace("IME Composition Result String: {}", str.c_str());
                 }
             }
@@ -94,7 +89,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (spdlog::should_log(spdlog::level::trace))
                 {
-                    const auto str = WCharUtils::ToString(compositionSting.data());
+                    const auto str = WCharUtils::ToString(compositionSting);
                     log_trace("IME Composition String: {}", str.c_str());
                 }
                 m_textEditor.SelectAll();

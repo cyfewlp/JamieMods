@@ -1,6 +1,4 @@
 #include "hooks/Hooks.hpp"
-#include "FakeDirectInputDevice.h"
-#include "ImeWnd.hpp"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "detours/detours.h"
@@ -186,9 +184,9 @@ namespace LIBC_NAMESPACE_DECL
 
         void InstallRegisterClassHook()
         {
-            auto        pszModule   = "User32.dll";
-            auto        pszFunction = "RegisterClassA";
-            const PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
+            auto *pszModule   = "User32.dll";
+            auto *pszFunction = "RegisterClassA";
+            PVOID pVoid       = DetourFindFunction(pszModule, pszFunction);
             DetourTransactionBegin();
             DetourUpdateThread(GetCurrentThread());
             RealRegisterClassExA = reinterpret_cast<FuncRegisterClass>(pVoid);

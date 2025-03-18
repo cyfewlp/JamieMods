@@ -3,6 +3,9 @@
 #include "common/log.h"
 #include "hooks/Hooks.hpp"
 
+#include <Unknwnbase.h>
+#include <guiddef.h>
+
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Hooks

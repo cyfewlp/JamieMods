@@ -1,6 +1,8 @@
 #pragma once
 
 #include "enumeration.h"
+#include <atomic>
+#include <cstdint>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -72,6 +74,16 @@ namespace LIBC_NAMESPACE_DECL
                 return Has(StateKey::IME_DISABLED);
             }
 
+            auto SetEnableMod(bool enable) -> void
+            {
+                m_fModEnabled.store(enable);
+            }
+
+            [[nodiscard]] auto IsModEnabled() const -> bool
+            {
+                return m_fModEnabled.load();
+            }
+
             static auto GetInstance() -> State *
             {
                 if (g_instance == nullptr)
@@ -83,6 +95,7 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             Enumeration<StateKey>         m_state;
+            std::atomic_bool              m_fModEnabled = false;
             static std::unique_ptr<State> g_instance;
         };
     }

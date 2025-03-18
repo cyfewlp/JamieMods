@@ -5,10 +5,12 @@
 #ifndef HOOK_H
 #define HOOK_H
 
+#include "hooks/Hooks.hpp"
+
 #include "common/hook.h"
 #include "common/log.h"
 
-#include "hooks/Hooks.hpp"
+#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -20,22 +22,26 @@ namespace LIBC_NAMESPACE_DECL
         class ControlMap : public RE::BSTSingletonSDM<ControlMap>,         // 00
                            public RE::BSTEventSource<RE::UserEventEnabled> // 08
         {
+            using CM = RE::ControlMap;
+
         public:
-            RE::ControlMap::InputContext                *controlMap[RE::ControlMap::InputContextID::kTotal]; // 060
-            RE::BSTArray<RE::ControlMap::LinkedMapping>  linkedMappings;                                     // 0E8
-            RE::BSTArray<RE::ControlMap::InputContextID> contextPriorityStack;                               // 100
-            uint32_t                                     enabledControls;                                    // 118
-            uint32_t                                     unk11C;                                             // 11C
-            std::int8_t                                  textEntryCount;                                     // 120
-            bool                                         ignoreKeyboardMouse;                                // 121
-            bool                                         ignoreActivateDisabledEvents;                       // 122
-            std::uint8_t                                 pad123;                                             // 123
-            uint32_t                                     gamePadMapType;                                     // 124
-            uint8_t                                      allowTextInput;                                     // 128
-            uint8_t                                      unk129;                                             // 129
-            uint8_t                                      unk12A;                                             // 12A
-            uint8_t                                      pad12B;                                             // 12B
-            uint32_t                                     unk12C;                                             // 12C
+            // NOLINTBEGIN( misc-non-private-member-variables-in-classes)
+            CM::InputContext                *controlMap[CM::InputContextID::kTotal]; // 060
+            RE::BSTArray<CM::LinkedMapping>  linkedMappings;                         // 0E8
+            RE::BSTArray<CM::InputContextID> contextPriorityStack;                   // 100
+            uint32_t                         enabledControls;                        // 118
+            uint32_t                         unk11C;                                 // 11C
+            std::int8_t                      textEntryCount;                         // 120
+            bool                             ignoreKeyboardMouse;                    // 121
+            bool                             ignoreActivateDisabledEvents;           // 122
+            std::uint8_t                     pad123;                                 // 123
+            uint32_t                         gamePadMapType;                         // 124
+            uint8_t                          allowTextInput;                         // 128
+            uint8_t                          unk129;                                 // 129
+            uint8_t                          unk12A;                                 // 12A
+            uint8_t                          pad12B;                                 // 12B
+            uint32_t                         unk12C;                                 // 12C
+            // NOLINTEND(misc-non-private-member-variables-in-classes)
 
             // A SKSE copy: InputManager::AllowTextInput
             auto SKSE_AllowTextInput(bool allow) -> uint8_t;
@@ -43,18 +49,34 @@ namespace LIBC_NAMESPACE_DECL
             static ControlMap *GetSingleton(void);
         };
 
-        struct Scaleform_SetScaleModeTypeHookData : HookData<void(RE::GFxMovieView *, RE::GFxMovieView::ScaleModeType)>
+        class Scaleform_SetScaleModeTypeHookData
+            : public HookData<void(RE::GFxMovieView *, RE::GFxMovieView::ScaleModeType)>
         {
-            // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
+        public:
+            // NOLINTBEGIN(*-magic-numbers)
             explicit Scaleform_SetScaleModeTypeHookData(func_type *ptr)
                 : HookData(REL::RelocationID(80302, 82325),        //
                            REL::VariantOffset(0x1D9, 0x1DD, 0x00), //
                            ptr, true)
             {
-                log_debug("GfxMovieInstall hooked at {:#x}", m_address);
+                log_debug("{} hooked at {:#x}", __func__, m_address);
             }
 
-            // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
+            // NOLINTEND(*-magic-numbers)
+        };
+
+        class Scaleform_LoadMovieHook
+            : public FunctionHook<bool(RE::BSScaleformManager *, RE::IMenu *, RE::GPtr<RE::GFxMovieView> &,
+                                       const char *, RE::BSScaleformManager::ScaleModeType, float)>
+        {
+        public:
+            // NOLINTBEGIN(*-magic-numbers)
+            explicit Scaleform_LoadMovieHook(func_type *ptr) : FunctionHook(REL::RelocationID(80302, 82325), ptr)
+            {
+                log_debug("{} hooked at {:#x}", __func__, m_address);
+            }
+
+            // NOLINTEND(*-magic-numbers)
         };
 
         class ScaleformAllowTextInput final : public RE::GFxFunctionHandler
@@ -69,6 +91,11 @@ namespace LIBC_NAMESPACE_DECL
             // use our text-entry-count
             static void OnTextEntryCountChanged();
 
+            static constexpr auto HasTextEntry() -> bool
+            {
+                return g_textEntryCount > 0;
+            }
+
             static constexpr auto TextEntryCount() -> std::uint8_t
             {
                 return g_textEntryCount;
@@ -78,7 +105,11 @@ namespace LIBC_NAMESPACE_DECL
         class ScaleformHooks
         {
             static inline std::unique_ptr<Scaleform_SetScaleModeTypeHookData> g_SetScaleModeTypeHook = nullptr;
+            static inline std::unique_ptr<Scaleform_LoadMovieHook>            g_LoadMovieHook        = nullptr;
+
             static void SetScaleModeTypeHook(RE::GFxMovieView *pMovieView, RE::GFxMovieView::ScaleModeType scaleMode);
+            static bool LoadMovieHook(RE::BSScaleformManager *, RE::IMenu *, RE::GPtr<RE::GFxMovieView> &, const char *,
+                                      RE::BSScaleformManager::ScaleModeType, float);
 
         public:
             static void InstallHooks();

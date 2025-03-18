@@ -8,8 +8,6 @@
 #include "TextEditor.h"
 #include "core/State.h"
 
-#include "enumeration.h"
-
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
@@ -37,21 +35,13 @@ namespace LIBC_NAMESPACE_DECL
             {
             }
 
-            // Enable of disable TextService;derived class must call parent Enable fun.
-            virtual void Enable([[maybe_unused]] const bool enable)
-            {
-                if (enable)
-                {
-                    State::GetInstance()->Clear(State::IME_DISABLED);
-                }
-                else
-                {
-                    State::GetInstance()->Set(State::IME_DISABLED);
-                }
-            }
-
             virtual void OnStart([[maybe_unused]] HWND hWnd)
             {
+            }
+
+            virtual bool OnFocus([[maybe_unused]] bool focus)
+            {
+                return true;
             }
 
             virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
@@ -80,13 +70,6 @@ namespace LIBC_NAMESPACE_DECL
                 Imm32TextService(Imm32TextService &&other) noexcept                     = delete;
                 auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
                 auto operator=(Imm32TextService &&other) noexcept -> Imm32TextService & = delete;
-
-                // silent ignore any IME message when disabled.
-                void Enable(const bool enable) override
-                {
-                    isEnabled = enable;
-                    ITextService::Enable(enable);
-                }
 
                 /**
                  * return true means message hav processed.
@@ -120,7 +103,6 @@ namespace LIBC_NAMESPACE_DECL
 
                 CandidateUi m_candidateUi;
                 TextEditor  m_textEditor;
-                bool        isEnabled = true;
             };
         } // namespace Imm32
     } // namespace Ime

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <atlcomcli.h>
+#include <core/State.h>
 #include <olectl.h>
 #include <string>
 
@@ -108,16 +109,28 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("Can't associate focus. Please first Initialize & set hwnd");
                 return E_FAIL;
             }
-            log_trace("Associate Focus");
+            auto *state = State::GetInstance();
+            log_debug("Associate Focus");
             m_pPrevDocMgr.Release();
-            return m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
+            HRESULT hr = m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
+            if (SUCCEEDED(hr))
+            {
+                state->Set(State::TSF_FOCUS);
+            }
+            return hr;
         }
 
         auto TextStore::ClearFocus() const -> HRESULT
         {
-            log_trace("Clear Focus");
+            log_debug("Clear Focus");
+            auto *state = State::GetInstance();
             CComPtr<ITfDocumentMgr> tempDocMgr;
-            return m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
+            HRESULT                 hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
+            if (SUCCEEDED(hr))
+            {
+                state->Clear(State::TSF_FOCUS);
+            }
+            return hr;
         }
 
         auto TextStore::QueryInterface(REFIID riid, void **ppvObject) -> HRESULT

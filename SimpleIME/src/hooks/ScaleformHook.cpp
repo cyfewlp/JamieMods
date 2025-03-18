@@ -3,11 +3,10 @@
 //
 
 #include "hooks/ScaleformHook.h"
-
+#include "ime/ImeManager.h"
 #include "common/log.h"
-#include "configs/AppConfig.h"
-#include "configs/CustomMessage.h"
-#include "context.h"
+
+#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -65,34 +64,23 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto newValue = ControlMap::GetSingleton()->allowTextInput;
             auto oldValue = g_textEntryCount;
+            if (newValue == oldValue)
+            {
+                return;
+            }
 
-            auto *context = Ime::Context::GetInstance();
             if (oldValue == 0 && newValue > 0)
             {
-                if (context->HwndIme() != nullptr)
+                if (!Ime::ImeManagerComposer::GetInstance()->NotifyEnableIme(true))
                 {
-                    if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, TRUE, 0) != TRUE)
-                    {
-                        log_error("Send notify message fail {}", GetLastError());
-                    }
-                }
-                else
-                {
-                    log_warn("ImeWnd is not Start yet!");
+                    log_error("Send notify message fail {}", GetLastError());
                 }
             }
             else if (oldValue > 0 && newValue == 0)
             {
-                if (context->HwndIme() != nullptr)
+                if (!Ime::ImeManagerComposer::GetInstance()->NotifyEnableIme(false))
                 {
-                    if (::SendNotifyMessageW(context->HwndIme(), CM_IME_ENABLE, FALSE, 0) != TRUE)
-                    {
-                        log_error("Send notify message fail {}", GetLastError());
-                    }
-                }
-                else
-                {
-                    log_warn("ImeWnd is not Start yet!");
+                    log_error("Send notify message fail {}", GetLastError());
                 }
             }
             g_textEntryCount = newValue;
@@ -119,9 +107,10 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-
-            log_trace("GfxMovieInstallHook: {}",
-                      pMovieView->GetMovieDef() ? pMovieView->GetMovieDef()->GetFileURL() : "");
+            if (auto *movieView = pMovieView->GetMovieDef(); movieView != nullptr)
+            {
+                log_trace("GfxMovieInstallHook: {}", movieView->GetFileURL());
+            }
 
             RE::GFxValue skse;
             if (!pMovieView->GetVariable(&skse, "_global.skse") || !skse.IsObject())
@@ -135,15 +124,42 @@ namespace LIBC_NAMESPACE_DECL
             skse.SetMember("AllowTextInput", fn_AllowTextInput);
         }
 
+        bool ScaleformHooks::LoadMovieHook(RE::BSScaleformManager *self, RE::IMenu *menu,
+                                           RE::GPtr<RE::GFxMovieView> &viewOut, const char *fileName,
+                                           RE::BSScaleformManager::ScaleModeType mode, float backgroundAlpha)
+        {
+            bool result = g_LoadMovieHook->Original(self, menu, viewOut, fileName, mode, backgroundAlpha);
+            /*if (menu != nullptr)
+            {
+                auto &callbacksMap = menu->fxDelegate->callbacks;
+
+                if (auto *registeredCallback = callbacksMap.Get("addHealth");
+                    registeredCallback != nullptr && registeredCallback->callback != nullptr)
+                {
+                    AddHealth                    = registeredCallback->callback;
+                    registeredCallback->callback = MyAddHealth;
+                }
+            }*/
+            return result;
+        }
+
         void ScaleformHooks::InstallHooks()
         {
             log_debug("Install GfxMovieInstallHook...");
-            g_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
+            if (g_SetScaleModeTypeHook == nullptr)
+            {
+                g_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
+            }
+            /*if (g_LoadMovieHook == nullptr)
+            {
+                g_LoadMovieHook = std::make_unique<Scaleform_LoadMovieHook>(LoadMovieHook);
+            }*/
         }
 
         void ScaleformHooks::UninstallHooks()
         {
             g_SetScaleModeTypeHook = nullptr;
+            g_LoadMovieHook        = nullptr;
         }
 
     }

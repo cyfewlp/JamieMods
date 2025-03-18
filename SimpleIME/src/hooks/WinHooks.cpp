@@ -1,5 +1,6 @@
 #include "hooks/WinHooks.h"
 #include "FakeDirectInputDevice.h"
+#include "common/log.h"
 
 #include "detours/detours.h"
 
@@ -30,9 +31,6 @@ namespace LIBC_NAMESPACE_DECL
                 GetClipboard = std::make_unique<GetClipboardHook>(realFuncPtr, MyGetClipboardHook);
             }
         }
-
-        using FuncDirectInput8Create = HRESULT (*)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
-        static inline FuncDirectInput8Create RealDirectInput8Create = nullptr;
 
         void WinHooks::InstallDirectInput8CreateHook(const char *funcName)
         {

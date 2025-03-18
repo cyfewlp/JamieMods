@@ -145,7 +145,7 @@ namespace LIBC_NAMESPACE_DECL
         return m_activatedProfile;
     }
 
-    auto Ime::LangProfileUtil::GetLangProfiles() -> std::unordered_map<GUID, LangProfile>
+    auto Ime::LangProfileUtil::GetLangProfiles() -> std::unordered_map<GUID, LangProfile> &
     {
         return m_langProfiles;
     }

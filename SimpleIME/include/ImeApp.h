@@ -8,6 +8,7 @@
 
 #include "ImeWnd.hpp"
 #include "common/hook.h"
+#include "configs/CustomMessage.h"
 
 #include <RE/B/BSTEvent.h>
 #include <RE/I/InputEvent.h>
@@ -37,6 +38,17 @@ namespace LIBC_NAMESPACE_DECL
 
             void Initialize();
             void Uninitialize();
+            void OnInputLoaded();
+
+            constexpr auto GetGameHWND() const -> HWND
+            {
+                return m_hWnd;
+            }
+
+            constexpr auto GetImeWnd() -> ImeWnd &
+            {
+                return m_imeWnd;
+            }
 
         private:
             std::unique_ptr<Hooks::D3DInitHookData>            D3DInitHook            = nullptr;
@@ -45,9 +57,6 @@ namespace LIBC_NAMESPACE_DECL
 
             void OnD3DInit();
             void Start(RE::BSGraphics::RendererData &renderData);
-            void ProcessEvent(RE::InputEvent **a_events, bool &discard);
-            void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard);
-            void ProcessMouseEvent(const RE::ButtonEvent *btnEvent);
             void InstallHooks();
             void UninstallHooks();
 

@@ -1,4 +1,4 @@
-= Changles
+﻿= Changles
 :toc: left
 
 == 0.0.3
@@ -143,11 +143,67 @@ Solutions:
 in `RE::ControlMap` offset 128. We need sync it.
     . Can we trampline SKSE `AllowTextInput` gfx function?
 
+== 0.1.0
+
+=== Issues
+
+* [x] In some case, game & ime will lost keyboard input at same time.
+** Refactor Focus & `IME_DISABLED` state manage. Now, no longer associate empty document to tsf.
+Just restore focus to game window. 
+*** Ime enable -> Focus to `ImeWnd`
+*** Ime disable -> Focus to Game window
+* [ ] In some case, TSF may not recived the shift key up event? Can't switch english & chinese mode.
+** If checked `Keep Ime Open` and use `shift` to switch to english mode, TSF never recived shift key up/down event again.
+
+* IME and TSF work at same times and TSF can't get composition string
+** ❌ Because IME disabled in Game WndProc? No
+** ✅ Because TextService `OnFocus` call? Yes, `onFocus` not call in message `WM_SETFOCUS` 
+
+TSF focus when `CooperativeLevel` changed
+** We should first change `CooperativeLevel`, then change focus?
+** `win+Tab` switch window can fix TSF. may we clear `IME_DISABLED` and Focus game window -> Focus Ime?
+** Try `AttachThreadInput`
+
+=== improvment
+
+* [x] No longer forward keyboard event to game main window.
+** Because we have changed Focus & `IME_DISABLED` state manage logic. But we notify user close any text entry when open
+Steam overlay.
+* [x] Support mutiple language, default english and chinese
+* [x] Refactor IME focus manage
+
+== 0.1.1
+
+* [x] `KreatE` Issue: Can't open
+** Is `KreatE` depend `WM_KEYUP`, `WM_KEYDOWN` message?
+
+== 0.2.0
+
+* [x] Implement two style ImeManager
++
+--
+** `PermanentFocusManager`: completely grab game focus:
+*** unlock/restore keyboard when MOD enable/disable
+*** Change focus when IME enable/disable
+** `SafeImeManager`
+*** more *combatibility*. 
+*** Change focus when IME enable/disable
+*** unlock/restore keyboard when IME enable/disable
+** Default use `PermanentFocusManager`
+--
+
+=== Issues
+
+* [ ] `Keep Ime Open`: fix IME state inconsistency
+* [ ] when use `TemporaryFocusImeManager`, press any character key when IME active, will trigger `kTilde`(~) key event.
++
+Just giveup this feature?
+
 == To-Do
 
 === Code improve
 
-* [ ] ImeManager
+* [ ] ImeManager 
 . for enable/disable mod, enable/disbale IME
 
 * [ ] AppConfig

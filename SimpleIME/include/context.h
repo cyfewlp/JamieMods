@@ -9,7 +9,6 @@
 
 #include "common/config.h"
 
-#include <atomic>
 #include <memory>
 #include <queue>
 #include <windows.h>
@@ -31,7 +30,7 @@ namespace LIBC_NAMESPACE_DECL
                 return m_fKeepImeOpen;
             }
 
-            void SetFKeepImeOpen(const bool fKeepImeOpen)
+            void SetKeepImeOpen(const bool fKeepImeOpen)
             {
                 m_fKeepImeOpen = fKeepImeOpen;
             }

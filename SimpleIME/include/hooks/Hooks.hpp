@@ -3,9 +3,13 @@
 
 #pragma once
 
+#include "common/config.h"
+#include "common/log.h"
+
 #include <cstdint>
-#include <unknwn.h>
 #include <windows.h>
+#include <type_traits>
+#include <vadefs.h>
 
 enum : std::uint8_t
 {
@@ -73,6 +77,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (detoured)
                 {
+                    log_debug("Detour {:#x} detach {:#x}", reinterpret_cast<std::uintptr_t>(m_hook),
+                              reinterpret_cast<std::uintptr_t>(m_originalFuncPtr));
                     DetourUtil::DetourDetach(&reinterpret_cast<PVOID &>(m_originalFuncPtr), m_hook);
                 }
             }

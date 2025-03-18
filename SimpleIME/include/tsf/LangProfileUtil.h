@@ -63,7 +63,7 @@ namespace LIBC_NAMESPACE_DECL
             auto AddRef() -> ULONG override;
             auto Release() -> ULONG override;
 
-            [[nodiscard]] auto GetLangProfiles() -> std::unordered_map<GUID, LangProfile>;
+            [[nodiscard]] auto GetLangProfiles() -> std::unordered_map<GUID, LangProfile> &;
 
             [[nodiscard]] constexpr auto IsAnyProfileActivated() const -> bool
             {

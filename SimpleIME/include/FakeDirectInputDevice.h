@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include "context.h"
-
-#include <comdef.h>
+#include "common/log.h"
+#include "core/State.h"
 #include <dinput.h>
 
 #pragma comment(lib, "dxguid.lib")
@@ -34,7 +33,7 @@ namespace LIBC_NAMESPACE_DECL
             FakeDirectInputDevice &operator=(const FakeDirectInputDevice &other)     = delete;
             FakeDirectInputDevice &operator=(FakeDirectInputDevice &&other) noexcept = delete;
 
-            virtual ~FakeDirectInputDevice()                                         = default;
+            virtual ~FakeDirectInputDevice() = default;
 
             static auto GetInstance() -> FakeDirectInputDevice *
             {
@@ -118,15 +117,21 @@ namespace LIBC_NAMESPACE_DECL
             DWORD m_realCooperativeLevelFlags = 0;
             DWORD m_cooperativeLevelFlags     = 0;
             HWND  m_hWndCooperative           = nullptr;
+            using State                       = Ime::Core::State;
 
         public:
             STDMETHOD(SetCooperativeLevel)(THIS_ HWND hwnd, DWORD dwFlags)
             {
                 m_realCooperativeLevelFlags = dwFlags;
+                log_debug("Real CooperativeLevel {:#x}, {}", dwFlags, dwFlags & DISCL_EXCLUSIVE);
                 dwFlags &= ~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
                 dwFlags |= DISCL_NONEXCLUSIVE;
                 m_cooperativeLevelFlags = dwFlags;
                 m_hWndCooperative       = hwnd;
+                if (!State::GetInstance()->IsModEnabled())
+                {
+                    return m_realDevice->SetCooperativeLevel(hwnd, dwFlags);
+                }
                 return m_realDevice->SetCooperativeLevel(hwnd, dwFlags);
             }
 
@@ -137,6 +142,7 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     if (hr = Unacquire(); SUCCEEDED(hr))
                     {
+                        log_debug("Restore CooperativeLevel {:#x}", m_realCooperativeLevelFlags);
                         hr = m_realDevice->SetCooperativeLevel(hWnd, m_realCooperativeLevelFlags);
                     }
                     Acquire();
@@ -144,9 +150,13 @@ namespace LIBC_NAMESPACE_DECL
                 return hr;
             }
 
-            auto TrySetCooperativeLevel(HWND hWnd) -> HRESULT
+            auto TryUnlockCooperativeLevel(HWND hWnd) -> HRESULT
             {
                 HRESULT hr = E_FAIL;
+                if (!State::GetInstance()->IsModEnabled())
+                {
+                    return hr;
+                }
                 if (hWnd != nullptr && m_hWndCooperative == hWnd)
                 {
                     if (hr = Unacquire(); SUCCEEDED(hr))
