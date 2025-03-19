@@ -77,6 +77,7 @@ namespace LIBC_NAMESPACE_DECL
             static auto GetThis(HWND hWnd) -> ImeWnd *;
             static void NewFrame();
             static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
+            static void OnCompositionResult(const std::wstring &compositionString);
 
             void OnStart();
             auto OnCreate() const -> LRESULT;

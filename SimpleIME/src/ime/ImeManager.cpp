@@ -28,29 +28,29 @@ namespace LIBC_NAMESPACE_DECL
         // 2. Set TSF focus
         auto PermanentFocusImeManager::EnableIme(bool enable) -> bool
         {
-            if (!State::GetInstance()->IsModEnabled())
+            if (!State::GetInstance().IsModEnabled())
             {
                 return true;
             }
             log_debug("Try {} IME", enable ? "enable" : "disable");
             bool  success = true;
-            auto *state   = State::GetInstance();
+            auto &state   = State::GetInstance();
             if (Context::GetInstance()->KeepImeOpen() || enable)
             {
                 log_debug("Clear IME_DISABLED and set TSF focus");
-                state->Clear(State::IME_DISABLED);
+                state.Clear(State::IME_DISABLED);
                 success = m_ImeWnd->SetTsfFocus(true);
             }
             else
             {
                 log_debug("Set IME_DISABLED and clear TSF focus");
-                state->Set(State::IME_DISABLED);
+                state.Set(State::IME_DISABLED);
                 success = m_ImeWnd->SetTsfFocus(false);
             }
 
             if (!success)
             {
-                state->Set(State::IME_DISABLED);
+                state.Set(State::IME_DISABLED);
                 log_error("Enable IME failed! last error {}", GetLastError());
             }
 
@@ -69,7 +69,7 @@ namespace LIBC_NAMESPACE_DECL
         // 3. Focus to IME/Game
         auto PermanentFocusImeManager::EnableMod(bool fEnableMod) -> bool
         {
-            if (State::GetInstance()->IsModEnabled() == fEnableMod)
+            if (State::GetInstance().IsModEnabled() == fEnableMod)
             {
                 return true;
             }
@@ -78,7 +78,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 Context::GetInstance()->SetKeepImeOpen(false);
             }
-            State::GetInstance()->SetEnableMod(fEnableMod);
+            State::GetInstance().SetEnableMod(fEnableMod);
 
             bool success = true;
             if (!fEnableMod)
@@ -98,7 +98,7 @@ namespace LIBC_NAMESPACE_DECL
 
             if (!success)
             {
-                State::GetInstance()->SetEnableMod(false);
+                State::GetInstance().SetEnableMod(false);
                 log_error("Can't enable/disable mod. last error {}", GetLastError());
             }
             return success;
@@ -144,7 +144,7 @@ namespace LIBC_NAMESPACE_DECL
         auto PermanentFocusImeManager::TryFocusIme() -> bool
         {
             bool success = false;
-            if (State::GetInstance()->IsModEnabled())
+            if (State::GetInstance().IsModEnabled())
             {
                 log_debug("focus to IME wnd");
                 DWORD imeThreadId     = m_ImeWnd->GetImeThreadId();
@@ -179,7 +179,7 @@ namespace LIBC_NAMESPACE_DECL
         // call on Render thread
         auto PermanentFocusImeManager::SyncImeState() const -> bool
         {
-            State::GetInstance()->SetEnableMod(false);
+            State::GetInstance().SetEnableMod(false);
             return NotifyEnableMod(true);
         }
 

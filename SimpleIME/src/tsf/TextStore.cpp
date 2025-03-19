@@ -109,13 +109,13 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("Can't associate focus. Please first Initialize & set hwnd");
                 return E_FAIL;
             }
-            auto *state = State::GetInstance();
+            auto &state = State::GetInstance();
             log_debug("Associate Focus");
             m_pPrevDocMgr.Release();
             HRESULT hr = m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
             if (SUCCEEDED(hr))
             {
-                state->Set(State::TSF_FOCUS);
+                state.Set(State::TSF_FOCUS);
             }
             return hr;
         }
@@ -123,12 +123,12 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::ClearFocus() const -> HRESULT
         {
             log_debug("Clear Focus");
-            auto *state = State::GetInstance();
+            auto &state = State::GetInstance();
             CComPtr<ITfDocumentMgr> tempDocMgr;
             HRESULT                 hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
             if (SUCCEEDED(hr))
             {
-                state->Clear(State::TSF_FOCUS);
+                state.Clear(State::TSF_FOCUS);
             }
             return hr;
         }
@@ -723,14 +723,14 @@ namespace LIBC_NAMESPACE_DECL
                     break;
                 }
             }
-            State::GetInstance()->Set(State::IN_COMPOSING);
+            State::GetInstance().Set(State::IN_COMPOSING);
             return S_OK;
         }
 
         auto TextStore::OnUpdateComposition(ITfCompositionView * /*pComposition*/, ITfRange * /*pRangeNew*/) -> HRESULT
         {
             auto tracer = FuncTracer("TextStore::{}", __func__);
-            State::GetInstance()->Set(State::IN_COMPOSING);
+            State::GetInstance().Set(State::IN_COMPOSING);
             return S_OK;
         }
 
@@ -754,7 +754,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             m_pTextEditor->Select(0, 0);
             m_pTextEditor->ClearText();
-            State::GetInstance()->Clear(State::IN_COMPOSING);
+            State::GetInstance().Clear(State::IN_COMPOSING);
             return S_OK;
         }
 
@@ -762,7 +762,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto tracer = FuncTracer("TextStore::{}", __func__);
             *pbShow     = TRUE;
-            State::GetInstance()->Set(State::IN_CAND_CHOOSING);
+            State::GetInstance().Set(State::IN_CAND_CHOOSING);
             if (FAILED(GetCandidateInterface(dwUIElementId, &m_currentCandidateUi)))
             {
                 m_supportCandidateUi = false;
@@ -799,7 +799,7 @@ namespace LIBC_NAMESPACE_DECL
             auto tracer = FuncTracer("TextStore::{}", __func__);
             m_currentCandidateUi.Release();
             m_pTextService->GetCandidateUi().Close();
-            State::GetInstance()->Clear(State::IN_CAND_CHOOSING);
+            State::GetInstance().Clear(State::IN_CAND_CHOOSING);
             return S_OK;
         }
 

@@ -73,7 +73,7 @@ add_custom_command(
     VERBATIM
 )
 
-file(GLOB_RECURSE headers include/*.h include/*.hpp)
+file(GLOB_RECURSE headers *.h include/*.hpp)
 file(GLOB_RECURSE sources src/*.cpp)
 
 source_group(
@@ -109,6 +109,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_IME_DEBUG)
 endif ()
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_EXPORTS)
+
 # include directories
 target_include_directories(
     ${PROJECT_NAME}
@@ -116,7 +118,7 @@ target_include_directories(
     ${DETOURS_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    #${SIMPLEINI_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # linkage

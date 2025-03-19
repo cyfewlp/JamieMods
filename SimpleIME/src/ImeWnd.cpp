@@ -1,6 +1,7 @@
 #include "ImeWnd.hpp"
 
 #include "ImeUI.h"
+#include "SimpleImeSupport.h"
 #include "Utils.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
@@ -9,6 +10,7 @@
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeManager.h"
+#include "ime/ImeSupportUtils.h"
 
 #include <d3d11.h>
 #include <imgui.h>
@@ -57,7 +59,7 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("Can't initialize TextService");
             }
             m_pTextService.reset(pTextService);
-            m_pTextService->RegisterCallback(Utils::SendStringToGame);
+            m_pTextService->RegisterCallback(OnCompositionResult);
             m_pLangProfileUtil = new LangProfileUtil();
         }
 
@@ -166,7 +168,6 @@ namespace LIBC_NAMESPACE_DECL
         void ImeWnd::OnStart()
         {
             m_pTextService->OnStart(m_hWnd);
-            // State::GetInstance()->Set(State::IME_DISABLED);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ACCEL accelTable[] = {
@@ -404,7 +405,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::AbortIme() const
         {
-            if (State::GetInstance()->HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
+            if (State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 ::SetFocus(m_hWndParent);
             }
@@ -463,6 +464,20 @@ namespace LIBC_NAMESPACE_DECL
             pThis->m_hWnd       = hWnd;
             pThis->m_hWndParent = lpCreateStruct->hwndParent;
             return TRUE;
+        }
+
+        void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
+        {
+            if (State::GetInstance().IsSupportOtherMod())
+            {
+                std::wstring resultCopy(compositionString);
+                ImeSupportUtils::BroadcastImeMessage(SimpleIME::SkseImeMessage::IME_COMPOSITION_RESULT,
+                                                     resultCopy.data(), resultCopy.size() * sizeof(wchar_t));
+            }
+            else
+            {
+                Utils::SendStringToGame(compositionString);
+            }
         }
     }
 }

@@ -17,11 +17,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        struct State
-        {
-            std::atomic<bool> Initialized = false;
-        };
-
         class ImeApp
         {
             static ImeApp instance;
@@ -60,18 +55,19 @@ namespace LIBC_NAMESPACE_DECL
             void InstallHooks();
             void UninstallHooks();
 
-            ImeWnd m_imeWnd;
-            HWND   m_hWnd  = nullptr;
-            State  m_state = {};
+            ImeWnd           m_imeWnd;
+            HWND             m_hWnd         = nullptr;
+            std::atomic_bool m_fInitialized = false;
 
             static void D3DInit();
             static void DoD3DInit();
+            static void BroadcastImeIntegrationMessage();
             static void D3DPresent(std::uint32_t ptr);
+            static void DoD3DPresent();
             static void DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
             static auto MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static inline WNDPROC RealWndProc;
         };
-
     }
 }
 

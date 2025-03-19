@@ -33,13 +33,13 @@ namespace LIBC_NAMESPACE_DECL
 
         constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
         {
-            return State::GetInstance()->HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
-                   State::GetInstance()->NotHas(State::LANG_PROFILE_ACTIVATED);
+            return State::GetInstance().HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
+                   State::GetInstance().NotHas(State::LANG_PROFILE_ACTIVATED);
         }
 
         constexpr auto EventHandler::IsImeWantCaptureInput() -> bool
         {
-            return State::GetInstance()->HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
+            return State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
         }
 
         auto EventHandler::IsWillTriggerIme(const std::uint32_t code) -> bool

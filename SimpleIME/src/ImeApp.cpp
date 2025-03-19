@@ -1,15 +1,18 @@
 
 #include "ImeApp.h"
 #include "ImeWnd.hpp"
+#include "SimpleImeSupport.h"
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/log.h"
 #include "context.h"
 #include "core/EventHandler.h"
+#include "core/State.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeManager.h"
+#include "ime/ImeSupportUtils.h"
 
 #include <basetsd.h>
 #include <cstdint>
@@ -33,11 +36,11 @@ namespace LIBC_NAMESPACE_DECL
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
             if (a_msg->type == SKSE::MessagingInterface::kPreLoadGame)
             {
-                State::GetInstance()->Set(State::GAME_LOADING);
+                State::GetInstance().Set(State::GAME_LOADING);
             }
             else if (a_msg->type == SKSE::MessagingInterface::kPostLoadGame)
             {
-                State::GetInstance()->Clear(State::GAME_LOADING);
+                State::GetInstance().Clear(State::GAME_LOADING);
             }
             else if (a_msg->type == SKSE::MessagingInterface::kInputLoaded)
             {
@@ -61,7 +64,7 @@ namespace LIBC_NAMESPACE_DECL
          */
         void ImeApp::Initialize()
         {
-            m_state.Initialized.store(false);
+            m_fInitialized.store(false);
             // Hooks::InstallRegisterClassHook();
             Hooks::WinHooks::InstallHooks();
 
@@ -70,14 +73,14 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeApp::Uninitialize()
         {
-            if (m_state.Initialized)
+            if (m_fInitialized)
             {
                 Hooks::WinHooks::UninstallHooks();
                 D3DInitHook.reset();
                 D3DInitHook = nullptr;
                 UninstallHooks();
             }
-            m_state.Initialized.store(false);
+            m_fInitialized.store(false);
         }
 
         void ImeApp::OnInputLoaded()
@@ -143,7 +146,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto &app = GetInstance();
             app.D3DInitHook->Original();
-            if (app.m_state.Initialized.load())
+            if (app.m_fInitialized.load())
             {
                 return;
             }
@@ -176,7 +179,7 @@ namespace LIBC_NAMESPACE_DECL
 
             m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
             Start(render_data);
-            m_state.Initialized.store(true);
+            m_fInitialized.store(true);
 
             log_debug("Hooking Skyrim WndProc...");
             RealWndProc = reinterpret_cast<WNDPROC>(
@@ -186,6 +189,19 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("Hook WndProc failed!");
             }
             InstallHooks();
+            BroadcastImeIntegrationMessage();
+        }
+
+        void ImeApp::BroadcastImeIntegrationMessage()
+        {
+            static SimpleIME::IntegrationData g_IntegrationData //
+                = {.RenderIme               = DoD3DPresent,
+                   .EnableIme               = ImeSupportUtils::EnableIme,
+                   .UpdateImeWindowPosition = ImeSupportUtils::UpdateImeWindowPosition,
+                   .IsEnabled               = []() {
+                       return Core::State::GetInstance().NotHas(Core::State::IME_DISABLED);
+                   }};
+            ImeSupportUtils::BroadcastImeIntegrationMessage(&g_IntegrationData);
         }
 
         void ImeApp::Start(RE::BSGraphics::RendererData &renderData)
@@ -241,10 +257,19 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto &app = GetInstance();
             app.D3DPresentHook->Original(ptr);
-            if (!app.m_state.Initialized.load())
+            if (!app.m_fInitialized.load())
             {
                 return;
             }
+            if (!Core::State::GetInstance().IsSupportOtherMod())
+            {
+                DoD3DPresent();
+            }
+        }
+
+        void ImeApp::DoD3DPresent()
+        {
+            auto &app = GetInstance();
             app.m_imeWnd.RenderIme();
         }
 

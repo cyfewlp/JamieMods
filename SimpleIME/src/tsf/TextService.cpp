@@ -43,11 +43,11 @@ namespace LIBC_NAMESPACE_DECL
             log_trace("DoUpdateConversionMode");
             if ((convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
             {
-                State::GetInstance()->Set(State::IN_ALPHANUMERIC);
+                State::GetInstance().Set(State::IN_ALPHANUMERIC);
             }
             else
             {
-                State::GetInstance()->Clear(State::IN_ALPHANUMERIC);
+                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
             }
         }
 

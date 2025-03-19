@@ -192,6 +192,12 @@ Steam overlay.
 ** Default use `PermanentFocusManager`
 --
 
+== 0.3.0
+
+* [x] Try do IME support for other mod;
+** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
+** By send `IME_COMPOSITION_RESULT` to send composition result
+
 === Issues
 
 * [ ] `Keep Ime Open`: fix IME state inconsistency

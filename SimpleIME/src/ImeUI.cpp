@@ -110,8 +110,8 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            if (State::GetInstance()->Has(State::IME_DISABLED) ||
-                State::GetInstance()->NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
+            if (State::GetInstance().Has(State::IME_DISABLED) ||
+                State::GetInstance().NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 return;
             }
@@ -123,7 +123,7 @@ namespace LIBC_NAMESPACE_DECL
                     ImGui::SetNextWindowPos({cursor->cursorPosX, cursor->cursorPosY}, ImGuiCond_Appearing);
                 }
             }
-            ImGui::Begin("SimpleIME", nullptr, windowFlags);
+            ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags);
 
             ImGui::SameLine();
             ImGui::BeginGroup();
@@ -131,7 +131,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (State::GetInstance()->Has(State::IN_CAND_CHOOSING))
+            if (State::GetInstance().Has(State::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -198,7 +198,7 @@ namespace LIBC_NAMESPACE_DECL
             ImeUIWidgets::RenderInputMethodChooseWidget(m_langProfileUtil, m_pImeWnd);
 
             ImGui::SameLine();
-            if (State::GetInstance()->Has(State::IN_ALPHANUMERIC))
+            if (State::GetInstance().Has(State::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();
@@ -210,7 +210,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             static bool isSettingsWindowOpen = false;
             isSettingsWindowOpen             = m_fShowSettings;
-            auto *state                      = State::GetInstance();
+            auto &state                      = State::GetInstance();
 
             if (!m_fShowSettings)
             {
@@ -221,7 +221,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
             do
             {
-                bool fEnableMod = State::GetInstance()->IsModEnabled();
+                bool fEnableMod = state.IsModEnabled();
                 m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
                     return Ime::ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
                 });
@@ -244,7 +244,7 @@ namespace LIBC_NAMESPACE_DECL
 
                 // Focus Manage widget
                 ImGui::SeparatorText(m_translation.Get("$Focus_Manage"));
-                static int focusManager = Permanent;
+                static int focusManager       = Permanent;
                 int        currentFocusManage = focusManager;
                 m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusManager, Permanent);
                 ImGui::SameLine();
@@ -264,7 +264,7 @@ namespace LIBC_NAMESPACE_DECL
 
                 ImGui::SeparatorText(m_translation.Get("$States"));
 
-                m_imeUIWidgets.StateWidget("$Ime_Enabled", state->NotHas(State::IME_DISABLED));
+                m_imeUIWidgets.StateWidget("$Ime_Enabled", state.NotHas(State::IME_DISABLED));
 
                 m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
 
@@ -282,7 +282,7 @@ namespace LIBC_NAMESPACE_DECL
                     Context::GetInstance()->SetKeepImeOpen(keepImeOpen);
                     return Ime::ImeManagerComposer::GetInstance()->SyncImeState();
                 });
-                ImGui::Value("TSF Focus", State::GetInstance()->Has(State::TSF_FOCUS));
+                ImGui::Value("TSF Focus", state.Has(State::TSF_FOCUS));
             } while (false);
             ImGui::PopStyleVar();
 

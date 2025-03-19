@@ -128,7 +128,7 @@ namespace LIBC_NAMESPACE_DECL
                 dwFlags |= DISCL_NONEXCLUSIVE;
                 m_cooperativeLevelFlags = dwFlags;
                 m_hWndCooperative       = hwnd;
-                if (!State::GetInstance()->IsModEnabled())
+                if (!State::GetInstance().IsModEnabled())
                 {
                     return m_realDevice->SetCooperativeLevel(hwnd, dwFlags);
                 }
@@ -153,7 +153,7 @@ namespace LIBC_NAMESPACE_DECL
             auto TryUnlockCooperativeLevel(HWND hWnd) -> HRESULT
             {
                 HRESULT hr = E_FAIL;
-                if (!State::GetInstance()->IsModEnabled())
+                if (!State::GetInstance().IsModEnabled())
                 {
                     return hr;
                 }

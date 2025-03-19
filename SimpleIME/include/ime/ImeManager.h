@@ -119,6 +119,11 @@ namespace LIBC_NAMESPACE_DECL
                 m_delegate = m_temporaryFocusImeManager.get();
             }
 
+            auto GetTemporaryFocusImeManager() -> TemporaryFocusImeManager*
+            {
+                return m_temporaryFocusImeManager.get();
+            }
+
             auto EnableIme(bool enable) -> bool override
             {
                 return m_delegate->EnableIme(enable);
