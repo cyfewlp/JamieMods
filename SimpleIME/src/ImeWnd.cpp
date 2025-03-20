@@ -177,7 +177,7 @@ namespace LIBC_NAMESPACE_DECL
             m_hAccelTable = CreateAcceleratorTableW(accelTable, 2);
 
             ImeManagerComposer::Init(this, m_hWndParent);
-            ImeManagerComposer::GetInstance()->UsePermanentFocusImeManager();
+            ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

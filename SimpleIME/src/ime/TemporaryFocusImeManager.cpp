@@ -59,6 +59,11 @@ namespace LIBC_NAMESPACE_DECL
             return ::SendNotifyMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
+        auto TemporaryFocusImeManager::WaitEnableIme(bool enable) const -> bool
+        {
+            return ::SendMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+        }
+
         auto TemporaryFocusImeManager::EnableMod(bool fEnableMod) -> bool
         {
             if (State::GetInstance().IsModEnabled() == fEnableMod)
@@ -93,6 +98,11 @@ namespace LIBC_NAMESPACE_DECL
         auto TemporaryFocusImeManager::NotifyEnableMod(bool enable) const -> bool
         {
             return ::SendNotifyMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+        }
+
+        auto TemporaryFocusImeManager::WaitEnableMod(bool enable) const -> bool
+        {
+            return ::SendMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
         auto TemporaryFocusImeManager::GiveUpFocus() const -> bool

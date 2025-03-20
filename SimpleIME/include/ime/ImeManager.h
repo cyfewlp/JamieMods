@@ -3,6 +3,7 @@
 #include "common/config.h"
 
 #include "core/State.h"
+#include <cstdint>
 #include <memory>
 #include <windows.h>
 
@@ -26,8 +27,10 @@ namespace LIBC_NAMESPACE_DECL
 
             virtual auto EnableIme(bool enable) -> bool             = 0;
             virtual auto NotifyEnableIme(bool enable) const -> bool = 0;
+            virtual auto WaitEnableIme(bool enable) const -> bool   = 0;
             virtual auto EnableMod(bool enable) -> bool             = 0;
             virtual auto NotifyEnableMod(bool enable) const -> bool = 0;
+            virtual auto WaitEnableMod(bool enable) const -> bool   = 0;
             virtual auto GiveUpFocus() const -> bool                = 0;
             virtual auto ForceFocusIme() -> bool                    = 0;
             virtual auto SyncImeState() const -> bool               = 0;
@@ -57,8 +60,10 @@ namespace LIBC_NAMESPACE_DECL
 
             auto EnableIme(bool enable) -> bool override;
             auto NotifyEnableIme(bool enable) const -> bool override;
+            auto WaitEnableIme(bool enable) const -> bool override;
             auto EnableMod(bool enable) -> bool override;
             auto NotifyEnableMod(bool enable) const -> bool override;
+            auto WaitEnableMod(bool enable) const -> bool override;
             auto GiveUpFocus() const -> bool override;
             auto ForceFocusIme() -> bool override;
             auto TryFocusIme() -> bool override;
@@ -84,8 +89,10 @@ namespace LIBC_NAMESPACE_DECL
 
             auto EnableIme(bool enable) -> bool override;
             auto NotifyEnableIme(bool enable) const -> bool override;
+            auto WaitEnableIme(bool enable) const -> bool override;
             auto EnableMod(bool enable) -> bool override;
             auto NotifyEnableMod(bool enable) const -> bool override;
+            auto WaitEnableMod(bool enable) const -> bool override;
             auto GiveUpFocus() const -> bool override;
             auto ForceFocusIme() -> bool override;
             auto TryFocusIme() -> bool override;
@@ -95,6 +102,12 @@ namespace LIBC_NAMESPACE_DECL
             ImeWnd *m_ImeWnd;
             HWND    m_hwndGame;
             bool    m_fIsInEnableIme = false;
+        };
+
+        enum FocusManageType
+        {
+            Permanent = 0,
+            Temporary
         };
 
         class ImeManagerComposer : public ImeManager
@@ -109,17 +122,25 @@ namespace LIBC_NAMESPACE_DECL
 
             ~ImeManagerComposer() override = default;
 
-            auto UsePermanentFocusImeManager()
+            auto Use(FocusManageType type)
             {
-                m_delegate = m_PermanentFocusImeManager.get();
+                m_FocusManageType = type;
+                if (FocusManageType::Permanent == type)
+                {
+                    m_delegate = m_PermanentFocusImeManager.get();
+                }
+                else
+                {
+                    m_delegate = m_temporaryFocusImeManager.get();
+                }
             }
 
-            auto UseTemporaryFocusImeManager()
+            constexpr auto FocusManageType() const -> int
             {
-                m_delegate = m_temporaryFocusImeManager.get();
+                return m_FocusManageType;
             }
 
-            auto GetTemporaryFocusImeManager() -> TemporaryFocusImeManager*
+            auto GetTemporaryFocusImeManager() -> TemporaryFocusImeManager *
             {
                 return m_temporaryFocusImeManager.get();
             }
@@ -164,6 +185,16 @@ namespace LIBC_NAMESPACE_DECL
                 return m_delegate->NotifyEnableMod(enable);
             }
 
+            auto WaitEnableIme(bool enable) const -> bool override
+            {
+                return m_delegate->WaitEnableIme(enable);
+            }
+
+            auto WaitEnableMod(bool enable) const -> bool override
+            {
+                return m_delegate->WaitEnableMod(enable);
+            }
+
             static auto GetInstance() -> ImeManagerComposer *
             {
                 return g_instance.get();
@@ -171,8 +202,9 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             std::unique_ptr<PermanentFocusImeManager> m_PermanentFocusImeManager = nullptr;
-            std::unique_ptr<TemporaryFocusImeManager>      m_temporaryFocusImeManager         = nullptr;
-            ImeManager                          *m_delegate;
+            std::unique_ptr<TemporaryFocusImeManager> m_temporaryFocusImeManager = nullptr;
+            ImeManager                               *m_delegate                 = nullptr;
+            int                                       m_FocusManageType          = FocusManageType::Permanent;
 
             friend class ImeWnd;
 

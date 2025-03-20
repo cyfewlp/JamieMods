@@ -33,11 +33,13 @@ namespace LIBC_NAMESPACE_DECL
 
         constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
         {
-            return State::GetInstance().HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
-                   State::GetInstance().NotHas(State::LANG_PROFILE_ACTIVATED);
+            auto &state = State::GetInstance();
+            return state.IsModEnabled() || //
+                   state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
+                   state.NotHas(State::LANG_PROFILE_ACTIVATED);
         }
 
-        constexpr auto EventHandler::IsImeWantCaptureInput() -> bool
+        constexpr auto EventHandler::IsImeInputting() -> bool
         {
             return State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
         }
@@ -92,7 +94,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                if (IsImeWantCaptureInput() || IsWillTriggerIme(code))
+                if (IsImeInputting() || IsWillTriggerIme(code))
                 {
                     Hooks::UiHooks::EnableMessageFilter(true);
                 }

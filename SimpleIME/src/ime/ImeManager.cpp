@@ -62,6 +62,11 @@ namespace LIBC_NAMESPACE_DECL
             return m_ImeWnd->SendNotifyMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
+        auto PermanentFocusImeManager::WaitEnableIme(bool enable) const -> bool
+        {
+            return m_ImeWnd->SendMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+        }
+
         // must call on IME thread(by send message)
         // 0. Unset keepImeOpen if will disable mod
         // 1. Enable/Disable IME if any text entry changed
@@ -107,6 +112,11 @@ namespace LIBC_NAMESPACE_DECL
         auto PermanentFocusImeManager::NotifyEnableMod(bool enable) const -> bool
         {
             return m_ImeWnd->SendNotifyMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+        }
+
+        auto PermanentFocusImeManager::WaitEnableMod(bool enable) const -> bool
+        {
+            return m_ImeWnd->SendMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
         auto PermanentFocusImeManager::GiveUpFocus() const -> bool

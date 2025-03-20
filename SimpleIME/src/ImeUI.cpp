@@ -236,28 +236,22 @@ namespace LIBC_NAMESPACE_DECL
                     break;
                 }
 
-                enum FocusManage
-                {
-                    Permanent,
-                    Temporary
-                };
-
                 // Focus Manage widget
                 ImGui::SeparatorText(m_translation.Get("$Focus_Manage"));
-                static int focusManager       = Permanent;
+                static int focusManager       = FocusManageType::Permanent;
                 int        currentFocusManage = focusManager;
-                m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusManager, Permanent);
+                m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusManager, FocusManageType::Permanent);
                 ImGui::SameLine();
-                m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusManager, Temporary);
+                m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusManager, FocusManageType::Temporary);
                 if (focusManager != currentFocusManage)
                 {
                     if (focusManager == Permanent)
                     {
-                        ImeManagerComposer::GetInstance()->UsePermanentFocusImeManager();
+                        ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
                     }
                     else
                     {
-                        ImeManagerComposer::GetInstance()->UseTemporaryFocusImeManager();
+                        ImeManagerComposer::GetInstance()->Use(FocusManageType::Temporary);
                     }
                     ImeManagerComposer::GetInstance()->SyncImeState();
                 }
@@ -282,7 +276,6 @@ namespace LIBC_NAMESPACE_DECL
                     Context::GetInstance()->SetKeepImeOpen(keepImeOpen);
                     return Ime::ImeManagerComposer::GetInstance()->SyncImeState();
                 });
-                ImGui::Value("TSF Focus", state.Has(State::TSF_FOCUS));
             } while (false);
             ImGui::PopStyleVar();
 

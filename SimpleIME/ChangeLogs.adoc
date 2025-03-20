@@ -197,6 +197,7 @@ Steam overlay.
 * [x] Try do IME support for other mod;
 ** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
 ** By send `IME_COMPOSITION_RESULT` to send composition result
+* [x] Optimize & fix `ImeSupportUtils::EnableIme`
 
 === Issues
 

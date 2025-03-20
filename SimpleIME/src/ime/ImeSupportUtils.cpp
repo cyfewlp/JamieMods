@@ -1,5 +1,5 @@
-#include "SimpleImeSupport.h"
 #include "ime/ImeSupportUtils.h"
+#include "SimpleImeSupport.h"
 #include "core/State.h"
 #include "ime/ImeManager.h"
 #include "imgui.h"
@@ -38,19 +38,25 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return false;
             }
-            if (enable)
+            auto *manager = ImeManagerComposer::GetInstance();
+            if (manager->FocusManageType() != FocusManageType::Temporary && enable &&
+                State::GetInstance().NotHas(State::IME_DISABLED))
             {
-                // State::GetInstance()->NotHas(State::IME_DISABLED)
                 log_debug("Received enable IME message by other mod, try disable current IME.");
-                ImeManagerComposer::GetInstance()->NotifyEnableIme(false);
+                manager->WaitEnableIme(false); // Sync wait IME close.
             }
 
             State::GetInstance().SetSupportOtherMod(enable);
 
-            auto *imeManager = ImeManagerComposer::GetInstance()->GetTemporaryFocusImeManager();
-            imeManager->SyncImeState();
+            return manager->GetTemporaryFocusImeManager()->NotifyEnableIme(enable);
+        }
 
-            return imeManager->NotifyEnableIme(enable);
+        bool ImeSupportUtils::IsWantCaptureInput()
+        {
+            auto &state = Core::State::GetInstance();
+
+            return state.IsModEnabled() && state.NotHas(Core::State::IME_DISABLED, Core::State::IN_ALPHANUMERIC) &&
+                   state.Has(Core::State::LANG_PROFILE_ACTIVATED);
         }
     }
 }

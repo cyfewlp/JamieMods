@@ -198,9 +198,7 @@ namespace LIBC_NAMESPACE_DECL
                 = {.RenderIme               = DoD3DPresent,
                    .EnableIme               = ImeSupportUtils::EnableIme,
                    .UpdateImeWindowPosition = ImeSupportUtils::UpdateImeWindowPosition,
-                   .IsEnabled               = []() {
-                       return Core::State::GetInstance().NotHas(Core::State::IME_DISABLED);
-                   }};
+                   .IsWantCaptureInput      = ImeSupportUtils::IsWantCaptureInput};
             ImeSupportUtils::BroadcastImeIntegrationMessage(&g_IntegrationData);
         }
 
@@ -297,12 +295,6 @@ namespace LIBC_NAMESPACE_DECL
                 case WM_ACTIVATEAPP:
                     log_info("WM_ACTIVATEAPP {:#x}, {:#x}", wParam, lParam);
                     break;*/
-                case WM_IME_STARTCOMPOSITION:
-                case WM_IME_ENDCOMPOSITION:
-                case WM_IME_COMPOSITION:
-                case WM_IME_NOTIFY:
-                    log_debug("{:#x}  {:#x}, {:#x}", uMsg, wParam, lParam);
-                    break;
                 case WM_NCACTIVATE:
                     log_debug("WM_NCACTIVATE {:#x}, {:#x}", wParam, lParam);
                     if (wParam == TRUE)

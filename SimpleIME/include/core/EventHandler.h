@@ -64,7 +64,7 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             static constexpr auto IsImeNotActivateOrGameLoading() -> bool;
-            static constexpr auto IsImeWantCaptureInput() -> bool;
+            static constexpr auto IsImeInputting() -> bool;
             static constexpr auto IsPasteShortcutPressed(auto &code);
             static auto           IsWillTriggerIme(std::uint32_t code) -> bool;
         };
