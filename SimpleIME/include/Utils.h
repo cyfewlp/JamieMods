@@ -5,18 +5,15 @@
 #ifndef GAMESTRINGSENDER_H
 #define GAMESTRINGSENDER_H
 
-#include "common/WCharUtils.h"
 #include "common/log.h"
 
 #include "hooks/UiHooks.h"
+#include "hooks/WinHooks.h"
 
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace RE
 {
-    namespace Ime
-    {
-        // language id for english keyboard
         class GFxCharEvent : public RE::GFxEvent
         {
         public:
@@ -33,7 +30,12 @@ namespace LIBC_NAMESPACE_DECL
         };
 
         static_assert(sizeof(GFxCharEvent) == 0x0C);
+}
 
+namespace LIBC_NAMESPACE_DECL
+{
+    namespace Ime
+    {
         class Utils
         {
             static constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `
@@ -49,16 +51,18 @@ namespace LIBC_NAMESPACE_DECL
             static auto PasteText(HWND hWnd) -> bool
             {
                 bool result = false;
-                if (OpenClipboard(hWnd))
+                if (::OpenClipboard(hWnd))
                 {
-                    BOOL unicode = IsClipboardFormatAvailable(CF_UNICODETEXT);
-                    BOOL utf8    = IsClipboardFormatAvailable(CF_TEXT);
+                    bool unicode = IsClipboardFormatAvailable(CF_UNICODETEXT) != FALSE;
+                    bool utf8    = IsClipboardFormatAvailable(CF_TEXT) != FALSE;
                     if (unicode || utf8)
                     {
                         if (HANDLE handle = GetClipboardData(unicode ? CF_UNICODETEXT : CF_TEXT); handle != nullptr)
                         {
                             if (auto const textData = static_cast<LPTSTR>(GlobalLock(handle)); textData != nullptr)
                             {
+                                bool prev = Hooks::UiHooks::IsEnableMessageFilter();
+                                Hooks::UiHooks::EnableMessageFilter(true);
                                 if (unicode)
                                 {
                                     SendStringToGame(std::wstring(textData));
@@ -67,6 +71,7 @@ namespace LIBC_NAMESPACE_DECL
                                 {
                                     SendStringToGame(std::string(reinterpret_cast<LPSTR>(textData)));
                                 }
+                                Hooks::UiHooks::EnableMessageFilter(prev);
                                 GlobalUnlock(handle);
                                 result = true;
                             }
@@ -114,7 +119,7 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     return true;
                 }
-                auto *pCharEvent            = new GFxCharEvent(code, 0);
+                auto *pCharEvent            = new RE::GFxCharEvent(code, 0);
                 auto *pScaleFormMessageData = pFactory->Create();
                 if (pScaleFormMessageData == nullptr)
                 {

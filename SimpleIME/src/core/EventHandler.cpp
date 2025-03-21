@@ -34,7 +34,7 @@ namespace LIBC_NAMESPACE_DECL
         constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
         {
             auto &state = State::GetInstance();
-            return state.IsModEnabled() || //
+            return !state.IsModEnabled() || //
                    state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
                    state.NotHas(State::LANG_PROFILE_ACTIVATED);
         }
@@ -46,6 +46,16 @@ namespace LIBC_NAMESPACE_DECL
 
         auto EventHandler::IsWillTriggerIme(const std::uint32_t code) -> bool
         {
+            // check modifier keys is down?
+            auto isDown = [](auto vkCode) -> bool {
+                return (::GetKeyState(vkCode) & 0x8000) != 0;
+            };
+
+            if (isDown(VK_CONTROL) || isDown(VK_SHIFT) || isDown(VK_MENU) || isDown(VK_LWIN) || isDown(VK_RWIN))
+            {
+                return false;
+            }
+
             bool result = false;
             using Key   = RE::BSKeyboardDevice::Keys::Key;
             result |= code >= Key::kQ && code <= Key::kP;

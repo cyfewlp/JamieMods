@@ -269,6 +269,11 @@ namespace LIBC_NAMESPACE_DECL
                 });
 
                 m_imeUIWidgets.Checkbox("$Ime_Follow_Ime", m_fFollowCursor);
+                bool fEnableUnicodePaste = state.IsEnableUnicodePaste();
+                m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste, [](const bool isChecked) {
+                    State::GetInstance().SetEnableUnicodePaste(isChecked);
+                    return true;
+                });
 
                 ImGui::SameLine();
                 bool fKeepImeOpen = Context::GetInstance()->KeepImeOpen();

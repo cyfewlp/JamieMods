@@ -52,9 +52,16 @@ namespace LIBC_NAMESPACE_DECL
                 m_originalFunc(args...);
             }
 
-            auto Original(Args... args) const noexcept
+            auto Original(Args... args) const noexcept -> ReturnT
             {
-                m_originalFunc(args...);
+                if constexpr (std::is_void_v<ReturnT>)
+                {
+                    m_originalFunc(args...);
+                }
+                else
+                {
+                    return m_originalFunc(args...);
+                }
             }
 
         protected:

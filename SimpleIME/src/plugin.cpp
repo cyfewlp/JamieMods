@@ -4,10 +4,10 @@
 #include "common/common.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
+#include "core/State.h"
 
 #include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <stacktrace>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -40,6 +40,7 @@ namespace LIBC_NAMESPACE_DECL
 
             const auto &pConfig = Ime::AppConfig::GetConfig();
             InitializeLogging(pConfig.GetLogLevel(), pConfig.GetFlushLevel());
+            Ime::Core::State::GetInstance().SetEnableUnicodePaste(pConfig.EnableUnicodePaste());
 
             Init(skse);
 

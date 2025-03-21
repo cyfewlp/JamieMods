@@ -33,7 +33,7 @@ namespace LIBC_NAMESPACE_DECL
             void        StateWidget(String label, const bool isEnabled) const;
             void        Button(String label, OnClick onClick) const;
             void        Checkbox(String label, bool &checked,
-                                 const std::function<bool(bool keepImeOpen)> &&onChecked = {}) const;
+                                 const std::function<bool(bool isChecked)> &&onChecked = {}) const;
             auto        ComboApply(String label, const std::vector<std::string> &values,
                                    std::function<bool(const std::string &)> onApply) -> uint32_t;
 

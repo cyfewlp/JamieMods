@@ -198,10 +198,13 @@ Steam overlay.
 ** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
 ** By send `IME_COMPOSITION_RESULT` to send composition result
 * [x] Optimize & fix `ImeSupportUtils::EnableIme`
+* [x] Support unicode paste
++
+By hook `ProcessMessage` and ignore `CursorMenus#ProcessMessage` call by check vtable.
 
 === Issues
 
-* [ ] `Keep Ime Open`: fix IME state inconsistency
+* [x] `Keep Ime Open`: fix IME state inconsistency
 * [ ] when use `TemporaryFocusImeManager`, press any character key when IME active, will trigger `kTilde`(~) key event.
 +
 Just giveup this feature?
