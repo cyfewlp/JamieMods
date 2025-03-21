@@ -34,7 +34,7 @@ namespace LIBC_NAMESPACE_DECL
         constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
         {
             auto &state = State::GetInstance();
-            return state.IsModEnabled() || //
+            return !state.IsModEnabled() || //
                    state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
                    state.NotHas(State::LANG_PROFILE_ACTIVATED);
         }
