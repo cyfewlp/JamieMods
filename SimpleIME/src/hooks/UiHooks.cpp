@@ -5,7 +5,6 @@
 #include "hooks/UiHooks.h"
 #include "Utils.h"
 #include "hooks/WinHooks.h"
-#include <Utils.h>
 
 #include <RE/Offsets_VTABLE.h>
 #include <memory>

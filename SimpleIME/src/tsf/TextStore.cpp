@@ -1,12 +1,11 @@
 #include "tsf/TextStore.h"
-#include "tsf/TsfSupport.h"
-
 #include "common/WCharUtils.h"
 #include "common/log.h"
+#include "core/State.h"
+#include "tsf/TsfSupport.h"
 
-#include <algorithm>
+#include <InputScope.h>
 #include <atlcomcli.h>
-#include <core/State.h>
 #include <olectl.h>
 #include <string>
 
@@ -123,7 +122,7 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::ClearFocus() const -> HRESULT
         {
             log_debug("Clear Focus");
-            auto &state = State::GetInstance();
+            auto                   &state = State::GetInstance();
             CComPtr<ITfDocumentMgr> tempDocMgr;
             HRESULT                 hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
             if (SUCCEEDED(hr))
@@ -267,7 +266,7 @@ namespace LIBC_NAMESPACE_DECL
 
             if (m_fLocked)
             {
-                if ((dwLockFlags & TS_LF_SYNC) != 0U)
+                if ((dwLockFlags & TS_LF_SYNC) == TS_LF_SYNC)
                 {
                     *phrSession = TS_E_SYNCHRONOUS;
                     return S_OK;
@@ -291,13 +290,14 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextStore::GetStatus(TS_STATUS *pdcs) -> HRESULT
         {
+            auto tracer = FuncTracer("TextStore::{}", __func__);
             if (nullptr == pdcs)
             {
                 return E_INVALIDARG;
             }
 
             pdcs->dwDynamicFlags = 0;
-            pdcs->dwStaticFlags  = TS_SS_REGIONS;
+            pdcs->dwStaticFlags  = 0;
 
             return S_OK;
         }
@@ -467,7 +467,8 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR *pwszText, ULONG cch, LONG *pacpStart,
                                               LONG *pacpEnd, TS_TEXTCHANGE *pChange) -> HRESULT
         {
-            LONG lTemp = 0;
+            auto tracer = FuncTracer("TextStore::{}", __func__);
+            LONG lTemp  = 0;
             if (nullptr == pacpStart)
             {
                 pacpStart = &lTemp;
@@ -536,7 +537,7 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::GetEmbedded(LONG /*acpPos*/, REFGUID /*rguidService*/, REFIID /*riid*/, IUnknown ** /*ppunk*/)
             -> HRESULT
         {
-            OutputDebugString(TEXT("TextStore::GetEmbedded \n"));
+            auto tracer = FuncTracer("TextStore::{}", __func__);
 
             // this implementation doesn't support embedded objects
             return E_NOTIMPL;
@@ -545,7 +546,7 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::QueryInsertEmbedded(const GUID * /*pguidService*/, const FORMATETC * /*pFormatEtc*/,
                                             BOOL *pfInsertable) -> HRESULT
         {
-            OutputDebugString(TEXT("TextStore::QueryInsertEmbedded \n"));
+            auto tracer = FuncTracer("TextStore::{}", __func__);
 
             // this implementation doesn't support embedded objects
             *pfInsertable = FALSE;
@@ -556,7 +557,7 @@ namespace LIBC_NAMESPACE_DECL
         auto TextStore::InsertEmbedded(DWORD /*dwFlags*/, LONG /*acpStart*/, LONG /*acpEnd*/,
                                        IDataObject * /*pDataObject*/, TS_TEXTCHANGE * /*pChange*/) -> HRESULT
         {
-            OutputDebugString(TEXT("TextStore::InsertEmbedded \n"));
+            auto tracer = FuncTracer("TextStore::{}", __func__);
 
             // this implementation doesn't support embedded objects
             return E_NOTIMPL;
@@ -602,7 +603,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto tracer = FuncTracer("TextStore::{}", __func__);
 
-            return E_NOTIMPL;
+            return S_OK;
         }
 
         auto TextStore::GetEndACP(LONG *pacp) -> HRESULT
@@ -624,7 +625,8 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextStore::GetActiveView(TsViewCookie *pvcView) -> HRESULT
         {
-            *pvcView = EDIT_VIEW_COOKIE;
+            auto tracer = FuncTracer("TextStore::{}", __func__);
+            *pvcView    = EDIT_VIEW_COOKIE;
             return S_OK;
         }
 
@@ -684,6 +686,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TextStore::GetWnd(TsViewCookie vcView, HWND *phwnd) -> HRESULT
         {
+            auto tracer = FuncTracer("TextStore::{}", __func__);
             if (EDIT_VIEW_COOKIE == vcView)
             {
                 *phwnd = m_hWnd;
@@ -922,7 +925,7 @@ namespace LIBC_NAMESPACE_DECL
             // if any layout changes occurred during the lock, notify the manager
             if (m_fLayoutChanged)
             {
-                m_fLayoutChanged = FALSE;
+                m_fLayoutChanged = false;
                 m_adviseSinkCache.pTextStoreAcpSink->OnLayoutChange(TS_LC_CHANGE, EDIT_VIEW_COOKIE);
             }
         }

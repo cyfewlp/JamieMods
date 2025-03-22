@@ -139,25 +139,39 @@ namespace LIBC_NAMESPACE_DECL
             auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
             auto const  pMessagePump  = tsfSupport.GetMessagePump();
             auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
-            while (TRUE)
+            bool done = false;
+            while (!done)
             {
-                int fResult = 0;
-                if (pMessagePump->GetMessage(&msg, nullptr, 0, 0, &fResult) != S_OK)
+                BOOL fResult = 0;
+                if (pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult) != S_OK)
                 {
-                    fResult = -1;
+                    done = true;
                 }
-                else if (IsImeWantMessage(msg, pKeystrokeMgr))
+
+                if (fResult != FALSE)
                 {
                     continue;
                 }
 
-                if (fResult <= 0)
+                if (::GetMessageW(&msg, nullptr, 0, 0) <= 0)
                 {
                     break;
+                }
+                if (IsImeWantMessage(msg, pKeystrokeMgr))
+                {
+                    continue;
                 }
 
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
+                if (msg.message == WM_QUIT)
+                {
+                    done = true;
+                }
+                if (done)
+                {
+                    break;
+                }
             }
             log_info("Exit ImeWnd Thread...");
         }
