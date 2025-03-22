@@ -104,7 +104,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                if (IsImeInputting() || IsWillTriggerIme(code))
+                if (IsImeInputting() || (!IsCapsLockOn() && IsWillTriggerIme(code)))
                 {
                     Hooks::UiHooks::EnableMessageFilter(true);
                 }
@@ -123,6 +123,12 @@ namespace LIBC_NAMESPACE_DECL
                 discard = true;
             }
             return discard;
+        }
+
+        auto EventHandler::IsCapsLockOn() -> bool
+        {
+            SHORT capsState = GetKeyState(VK_CAPITAL);
+            return (capsState & 0x0001) != 0;
         }
 
         auto EventHandler::PostHandleKeyboardEvent() -> void
