@@ -9,6 +9,47 @@
 #include <RE/Offsets_VTABLE.h>
 #include <memory>
 
+namespace
+{
+    bool       ctrlDown            = false;
+    const auto CursorVtableAddress = RE::VTABLE_CursorMenu[0].address();
+
+    static void Free(RE::IUIMessageData *data)
+    {
+        if (auto *memoryManager = RE::MemoryManager::GetSingleton(); memoryManager != nullptr)
+        {
+            memoryManager->Deallocate(data, false);
+        }
+    }
+
+    auto ToCharEvent(RE::UIMessage &uiMessage) -> RE::GFxCharEvent *
+    {
+        if (uiMessage.type == RE::UI_MESSAGE_TYPE::kScaleformEvent)
+        {
+            RE::BSUIScaleformData *data  = reinterpret_cast<RE::BSUIScaleformData *>(uiMessage.data);
+            auto                  *event = data->scaleformEvent;
+            switch (auto type = event->type.get())
+            {
+                case RE::GFxEvent::EventType::kKeyDown:
+                case RE::GFxEvent::EventType::kKeyUp: {
+                    auto *keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
+                    if (keyEvent->keyCode == RE::GFxKey::kControl)
+                    {
+                        ctrlDown = type == RE::GFxEvent::EventType::kKeyDown;
+                    }
+                    break;
+                }
+                case RE::GFxEvent::EventType::kCharEvent: {
+                    return reinterpret_cast<RE::GFxCharEvent *>(event);
+                }
+                default:
+                    break;
+            }
+        }
+        return nullptr;
+    }
+}
+
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Hooks
@@ -17,23 +58,15 @@ namespace LIBC_NAMESPACE_DECL
         {
             log_info("Install ui hooks...");
             UiAddMessage          = std::make_unique<UiAddMessageHookData>(AddMessageHook);
-            ConsoleProcessMessage = std::make_unique<MenuProcessMessageHook>(MyConsoleProcessMessage);
+            MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
+            ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
         }
 
         void UiHooks::UninstallHooks()
         {
             UiAddMessage          = nullptr;
+            MenuProcessMessage    = nullptr;
             ConsoleProcessMessage = nullptr;
-        }
-
-        static bool ctrlDown = false;
-
-        static void Free(RE::IUIMessageData *data)
-        {
-            if (auto *memoryManager = RE::MemoryManager::GetSingleton(); memoryManager != nullptr)
-            {
-                memoryManager->Deallocate(data, false);
-            }
         }
 
         void UiHooks::AddMessageHook(RE::UIMessageQueue *self, RE::BSFixedString &menuName,
@@ -75,55 +108,43 @@ namespace LIBC_NAMESPACE_DECL
             UiAddMessage->Original(self, menuName, messageType, pMessageData);
         }
 
+        auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
+        {
+            auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
+            if (!IsEnableUnicodePaste() || self == nullptr || vtable == CursorVtableAddress)
+            {
+                return MenuProcessMessage->Original(self, uiMessage);
+            }
+
+            if (RE::GFxCharEvent *charEvent = ToCharEvent(uiMessage); charEvent != nullptr)
+            {
+                if (charEvent->wcharCode == 'v' && ctrlDown)
+                {
+                    WinHooks::DisablePaste(true);
+                    WinHooks::DisablePaste(false);
+                    Ime::Utils::PasteText(nullptr); // Do our paste
+                    return RE::UI_MESSAGE_RESULTS::kHandled;
+                }
+            }
+            return MenuProcessMessage->Original(self, uiMessage);
+        }
+
         auto UiHooks::MyConsoleProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
         {
-            if (!IsEnableUnicodePaste() || self == nullptr)
+            auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
+            if (!IsEnableUnicodePaste() || self == nullptr || vtable == CursorVtableAddress)
             {
                 return ConsoleProcessMessage->Original(self, uiMessage);
             }
-
-            if (uiMessage.type == RE::UI_MESSAGE_TYPE::kScaleformEvent)
+            if (RE::GFxCharEvent *charEvent = ToCharEvent(uiMessage); charEvent != nullptr)
             {
-                RE::BSUIScaleformData *data  = reinterpret_cast<RE::BSUIScaleformData *>(uiMessage.data);
-                auto                  *event = data->scaleformEvent;
-                if (event->type == RE::GFxEvent::EventType::kKeyDown)
+                if (charEvent->wcharCode == 'v' && ctrlDown)
                 {
-                    auto *keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
-                    if (keyEvent->keyCode == RE::GFxKey::kControl)
-                    {
-                        ctrlDown = true;
-                    }
-                }
-                else if (event->type == RE::GFxEvent::EventType::kKeyUp)
-                {
-                    auto *keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
-                    if (keyEvent->keyCode == RE::GFxKey::kControl)
-                    {
-                        ctrlDown = false;
-                    }
-                }
-                else if (event->type == RE::GFxEvent::EventType::kCharEvent)
-                {
-                    RE::GFxCharEvent *charEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
-                    auto              vtable    = reinterpret_cast<std::uintptr_t *>(self)[0];
-                    if (vtable != RE::VTABLE_CursorMenu[0].address()) // ignore cursor menu
-                    {
-                        if (charEvent->wcharCode == 'v' && ctrlDown)
-                        {
-                            auto result = RE::UI_MESSAGE_RESULTS::kHandled;
-                            WinHooks::DisablePaste(true);
-                            {
-                                // Console implemented it copy/paste feature, we should not discard message
-                                if (vtable == RE::VTABLE_Console[0].address())
-                                {
-                                    result = ConsoleProcessMessage->Original(self, uiMessage);
-                                }
-                            }
-                            WinHooks::DisablePaste(false);
-                            Ime::Utils::PasteText(nullptr); // Do our paste
-                            return result;
-                        }
-                    }
+                    WinHooks::DisablePaste(true);
+                    auto result = ConsoleProcessMessage->Original(self, uiMessage);
+                    WinHooks::DisablePaste(false);
+                    Ime::Utils::PasteText(nullptr); // Do our paste
+                    return result;
                 }
             }
             return ConsoleProcessMessage->Original(self, uiMessage);

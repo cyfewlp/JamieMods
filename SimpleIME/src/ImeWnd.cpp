@@ -139,7 +139,7 @@ namespace LIBC_NAMESPACE_DECL
             auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
             auto const  pMessagePump  = tsfSupport.GetMessagePump();
             auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
-            bool done = false;
+            bool        done          = false;
             while (!done)
             {
                 BOOL fResult = 0;

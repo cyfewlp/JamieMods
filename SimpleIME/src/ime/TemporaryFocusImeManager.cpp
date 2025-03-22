@@ -23,9 +23,9 @@ namespace LIBC_NAMESPACE_DECL
             auto &state      = State::GetInstance();
             if (Context::GetInstance()->KeepImeOpen() || enable)
             {
-                log_debug("Clear IME_DISABLED and set TSF focus");
                 if (state.Has(State::IME_DISABLED))
                 {
+                    log_debug("Clear IME_DISABLED and set TSF focus");
                     state.Clear(State::IME_DISABLED);
                     success = m_ImeWnd->Focus();
                     success = success && UnlockKeyboard();
@@ -34,9 +34,9 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                log_debug("Set IME_DISABLED and clear TSF focus");
                 if (state.NotHas(State::IME_DISABLED))
                 {
+                    log_debug("Set IME_DISABLED and clear TSF focus");
                     state.Set(State::IME_DISABLED);
                     success = Focus(m_hwndGame);
                     success = success && RestoreKeyboard();
@@ -133,7 +133,7 @@ namespace LIBC_NAMESPACE_DECL
         auto TemporaryFocusImeManager::SyncImeState() const -> bool
         {
             auto enableIme = Hooks::ScaleformAllowTextInput::HasTextEntry();
-            if (enableIme)
+            if (Context::GetInstance()->KeepImeOpen() || enableIme)
             {
                 State::GetInstance().Set(State::IME_DISABLED);
             }
