@@ -93,7 +93,6 @@ namespace LIBC_NAMESPACE_DECL
             bool                          m_fFocused    = false;
             HWND                          m_hWnd        = nullptr;
             HWND                          m_hWndParent  = nullptr;
-            HACCEL                        m_hAccelTable = nullptr;
             WNDCLASSEXW                   wc{};
         };
     } // namespace SimpleIME

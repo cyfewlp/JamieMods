@@ -236,7 +236,17 @@ namespace LIBC_NAMESPACE_DECL
                     break;
                 }
 
+                ImGui::SeparatorText(m_translation.Get("$States"));
+                m_imeUIWidgets.StateWidget("$Ime_Enabled", state.NotHas(State::IME_DISABLED));
+                m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
+                ImGui::SameLine();
+                m_imeUIWidgets.Button("$Force_Focus_Ime", []() {
+                    // ReSharper disable once CppExpressionWithoutSideEffects
+                    ImeManagerComposer::GetInstance()->ForceFocusIme();
+                });
+
                 // Focus Manage widget
+                ImGui::SeparatorText(m_translation.Get("$Features"));
                 ImGui::SeparatorText(m_translation.Get("$Focus_Manage"));
                 static int focusManager       = FocusManageType::Permanent;
                 int        currentFocusManage = focusManager;
@@ -255,20 +265,12 @@ namespace LIBC_NAMESPACE_DECL
                     }
                     ImeManagerComposer::GetInstance()->SyncImeState();
                 }
-
-                ImGui::SeparatorText(m_translation.Get("$States"));
-
-                m_imeUIWidgets.StateWidget("$Ime_Enabled", state.NotHas(State::IME_DISABLED));
-
-                m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
-
-                ImGui::SameLine();
-                m_imeUIWidgets.Button("$Force_Focus_Ime", []() {
-                    // ReSharper disable once CppExpressionWithoutSideEffects
-                    ImeManagerComposer::GetInstance()->ForceFocusIme();
-                });
-
                 m_imeUIWidgets.Checkbox("$Ime_Follow_Ime", m_fFollowCursor);
+                bool fEnableUnicodePaste = state.IsEnableUnicodePaste();
+                m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste, [](const bool isChecked) {
+                    State::GetInstance().SetEnableUnicodePaste(isChecked);
+                    return true;
+                });
 
                 ImGui::SameLine();
                 bool fKeepImeOpen = Context::GetInstance()->KeepImeOpen();

@@ -139,27 +139,38 @@ namespace LIBC_NAMESPACE_DECL
             auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
             auto const  pMessagePump  = tsfSupport.GetMessagePump();
             auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
-            while (TRUE)
+            bool        done          = false;
+            while (!done)
             {
-                int fResult = 0;
-                if (pMessagePump->GetMessage(&msg, nullptr, 0, 0, &fResult) != S_OK)
+                BOOL fResult = 0;
+                if (pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult) != S_OK)
                 {
-                    fResult = -1;
+                    done = true;
                 }
-                else if (IsImeWantMessage(msg, pKeystrokeMgr))
+
+                if (fResult != FALSE)
                 {
                     continue;
                 }
 
-                if (fResult <= 0)
+                if (::GetMessageW(&msg, nullptr, 0, 0) <= 0)
                 {
                     break;
                 }
-
-                if (!TranslateAccelerator(m_hWnd, m_hAccelTable, &msg))
+                if (IsImeWantMessage(msg, pKeystrokeMgr))
                 {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
+                    continue;
+                }
+
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+                if (msg.message == WM_QUIT)
+                {
+                    done = true;
+                }
+                if (done)
+                {
+                    break;
                 }
             }
             log_info("Exit ImeWnd Thread...");
@@ -169,12 +180,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             m_pTextService->OnStart(m_hWnd);
             Context::GetInstance()->SetHwndIme(m_hWnd);
-
-            ACCEL accelTable[] = {
-                {FVIRTKEY | FCONTROL, 'C', ID_EDIT_COPY },
-                {FVIRTKEY | FCONTROL, 'V', ID_EDIT_PASTE},
-            };
-            m_hAccelTable = CreateAcceleratorTableW(accelTable, 2);
 
             ImeManagerComposer::Init(this, m_hWndParent);
             ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
@@ -226,30 +231,6 @@ namespace LIBC_NAMESPACE_DECL
                     pThis->m_fFocused = false;
                     log_info("IME window lost focus.");
                     return S_OK;
-                case WM_COMMAND: {
-                    // if (pThis == nullptr) break;
-                    // if (!AppConfig::GetConfig().EnableUnicodePaste())
-                    //{
-                    //     break;
-                    // }
-                    // switch (LOWORD(wParam))
-                    //{
-                    //     case ID_EDIT_PASTE: {
-                    //         log_trace("Ready paste Text...");
-                    //         if (!Utils::PasteText(pThis->m_hWndParent))
-                    //         {
-                    //             log_error("Can't paste Text! {}", GetLastError());
-                    //         }
-                    //         break;
-                    //     }
-                    //     case ID_EDIT_COPY:
-                    //         // PerformCopy();
-                    //         break;
-                    //     default:
-                    //         break;
-                    // }
-                    break;
-                }
                 default:
                     // ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
                     break;

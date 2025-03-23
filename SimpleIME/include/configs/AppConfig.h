@@ -222,7 +222,7 @@ namespace LIBC_NAMESPACE_DECL
             Property<spdlog::level::level_enum> m_logLevel{DEFAULT_LOG_LEVEL, "logLevel"};
             Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
             Property<bool>                      m_enableTsf{true, "enableTsf"};
-            Property<bool>                      m_enableUnicodePaste{false, "enableUnicodePaste"};
+            Property<bool>                      m_enableUnicodePaste{true, "enableUnicodePaste"};
             AppUiConfig                         m_appUiConfig;
             static AppConfig                    g_appConfig;
 

@@ -21,7 +21,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             static std::unique_ptr<Context> g_context;
             std::queue<std::string>         m_message;
-            bool                            m_fKeepImeOpen = false;
+            std::atomic_bool                m_fKeepImeOpen = false;
             HWND                            m_hwndIme      = nullptr;
 
         public:

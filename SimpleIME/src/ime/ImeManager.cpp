@@ -90,9 +90,16 @@ namespace LIBC_NAMESPACE_DECL
             {
                 success = EnableIme(false);
             }
-            else if (Hooks::ScaleformAllowTextInput::HasTextEntry())
+            else
             {
-                success = EnableIme(true);
+                if (Context::GetInstance()->KeepImeOpen() || Hooks::ScaleformAllowTextInput::HasTextEntry())
+                {
+                    success = EnableIme(true);
+                }
+                else
+                {
+                    success = EnableIme(false);
+                }
             }
 
             if (success)

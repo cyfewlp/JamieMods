@@ -112,9 +112,6 @@ namespace LIBC_NAMESPACE_DECL
                 m_OnEndCompositionCallback = callback;
             }
 
-        private:
-            auto InitSinks() -> HRESULT;
-
             // ITextStoreACP functions
             // NOLINTBEGIN(*-use-trailing-return-type)
             STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject) override;
@@ -197,6 +194,10 @@ namespace LIBC_NAMESPACE_DECL
             STDMETHODIMP BeginUIElement(DWORD dwUIElementId, BOOL *pbShow) override;
             STDMETHODIMP UpdateUIElement(DWORD dwUIElementId) override;
             STDMETHODIMP EndUIElement(DWORD dwUIElementId) override;
+
+        private:
+            auto InitSinks() -> HRESULT;
+
             // NOLINTEND(*-use-trailing-return-type)
             auto DoUpdateUIElement() -> HRESULT;
             auto GetCandidateInterface(DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const

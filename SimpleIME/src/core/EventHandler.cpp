@@ -46,6 +46,16 @@ namespace LIBC_NAMESPACE_DECL
 
         auto EventHandler::IsWillTriggerIme(const std::uint32_t code) -> bool
         {
+            // check modifier keys is down?
+            auto isDown = [](auto vkCode) -> bool {
+                return (::GetKeyState(vkCode) & 0x8000) != 0;
+            };
+
+            if (isDown(VK_CONTROL) || isDown(VK_SHIFT) || isDown(VK_MENU) || isDown(VK_LWIN) || isDown(VK_RWIN))
+            {
+                return false;
+            }
+
             bool result = false;
             using Key   = RE::BSKeyboardDevice::Keys::Key;
             result |= code >= Key::kQ && code <= Key::kP;
@@ -94,7 +104,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                if (IsImeInputting() || IsWillTriggerIme(code))
+                if (IsImeInputting() || (!IsCapsLockOn() && IsWillTriggerIme(code)))
                 {
                     Hooks::UiHooks::EnableMessageFilter(true);
                 }
@@ -113,6 +123,12 @@ namespace LIBC_NAMESPACE_DECL
                 discard = true;
             }
             return discard;
+        }
+
+        auto EventHandler::IsCapsLockOn() -> bool
+        {
+            SHORT capsState = GetKeyState(VK_CAPITAL);
+            return (capsState & 0x0001) != 0;
         }
 
         auto EventHandler::PostHandleKeyboardEvent() -> void

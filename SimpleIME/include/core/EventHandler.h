@@ -60,6 +60,8 @@ namespace LIBC_NAMESPACE_DECL
              * Only detect first event.
              */
             static auto IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool;
+            static auto IsCapsLockOn() -> bool;
+
             static auto PostHandleKeyboardEvent() -> void;
 
         private:

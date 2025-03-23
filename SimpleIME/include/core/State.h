@@ -93,6 +93,16 @@ namespace LIBC_NAMESPACE_DECL
                 return m_fSupportOtherMod.load();
             }
 
+            auto SetEnableUnicodePaste(bool enable) -> void
+            {
+                m_fEnableUnicodePaste.store(enable);
+            }
+
+            [[nodiscard]] auto IsEnableUnicodePaste() const -> bool
+            {
+                return m_fEnableUnicodePaste.load();
+            }
+
             static auto GetInstance() -> State &
             {
                 static State g_instance;
@@ -101,8 +111,9 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             Enumeration<StateKey> m_state;
-            std::atomic_bool      m_fModEnabled      = false;
-            std::atomic_bool      m_fSupportOtherMod = false;
+            std::atomic_bool      m_fModEnabled         = false;
+            std::atomic_bool      m_fSupportOtherMod    = false;
+            std::atomic_bool      m_fEnableUnicodePaste = false;
         };
     }
 }

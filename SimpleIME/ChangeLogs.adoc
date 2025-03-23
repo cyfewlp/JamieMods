@@ -198,15 +198,33 @@ Steam overlay.
 ** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
 ** By send `IME_COMPOSITION_RESULT` to send composition result
 * [x] Optimize & fix `ImeSupportUtils::EnableIme`
+* [x] Support unicode paste
++
+By hook `ProcessMessage` and ignore `CursorMenus#ProcessMessage` call by check vtable.
 
 === Issues
 
-* [ ] `Keep Ime Open`: fix IME state inconsistency
-* [ ] when use `TemporaryFocusImeManager`, press any character key when IME active, will trigger `kTilde`(~) key event.
+* [x] `Keep Ime Open`: fix IME state inconsistency
 +
-Just giveup this feature?
+. When use `Temporary` focus, check `Keep Ime Open` won't enable IME;
+* [x] The conversion mode cause IME thread can't recive any events.
++
+. When use Microsoft Pinyin in candidate chose state, if press `shift`, Then Microsoft Pinyin will switch to alphanumeric
+mode and can't receive any events no longer. But use `iFly` input method won't trigegr this bug. And, iFly won't send conversion mode
+message.
+. When trigger this issue, and console keep open, IME window can't receive any keyboard events, and it will be send after close Console Menu
+. [line-through]#Open/Close Console menu will trigegr `EnableIme`. Is issue exists in `EnableIme`?#
+IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
+* [x] Don't enable message filter when `capslock` press.
 
 == To-Do
+
+=== Issues
+
+* [ ] when use `TemporaryFocusImeManager`, press any character key when IME active, will trigger `kTilde`(~) key event.
+* [ ] `SetFocus` is execute by async? In some case, IME will receive focus after `FocusImeOrGame` fail.
++
+Just giveup this feature?
 
 === Code improve
 
