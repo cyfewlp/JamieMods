@@ -142,6 +142,13 @@ install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION SKSE/Plugins
         COMPONENT dll
 )
+# If you perform a "Debug" build, also copy .pdb file (for debug symbols)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+        DESTINATION SKSE/Plugins
+        COMPONENT pdb
+    )
+endif ()
 install(FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.ini
         DESTINATION config
@@ -149,6 +156,7 @@ install(FILES
 )
 install(FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/SimpleImeSupport.h
         DESTINATION .
         COMPONENT doc
 )
