@@ -3,7 +3,6 @@
 #include "enumeration.h"
 #include <atomic>
 #include <cstdint>
-#include <shared_mutex>
 #include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL

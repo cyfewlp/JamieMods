@@ -197,6 +197,8 @@ namespace LIBC_NAMESPACE_DECL
             static SimpleIME::IntegrationData g_IntegrationData //
                 = {.RenderIme               = DoD3DPresent,
                    .EnableIme               = ImeSupportUtils::EnableIme,
+                   .PushContext             = ImeSupportUtils::PushContext,
+                   .PopContext              = ImeSupportUtils::PopContext,
                    .UpdateImeWindowPosition = ImeSupportUtils::UpdateImeWindowPosition,
                    .IsWantCaptureInput      = ImeSupportUtils::IsWantCaptureInput};
             ImeSupportUtils::BroadcastImeIntegrationMessage(&g_IntegrationData);
