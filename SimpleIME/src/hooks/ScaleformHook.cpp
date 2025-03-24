@@ -3,8 +3,8 @@
 //
 
 #include "hooks/ScaleformHook.h"
-#include "ime/ImeManagerComposer.h"
 #include "common/log.h"
+#include "ime/ImeManagerComposer.h"
 
 #include <memory>
 
@@ -37,12 +37,7 @@ namespace LIBC_NAMESPACE_DECL
                 }
             }
 
-            if (auto *consoleLog = RE::ConsoleLog::GetSingleton(); //
-                consoleLog != nullptr && RE::ConsoleLog::IsConsoleMode())
-            {
-                consoleLog->Print("%s text input, count = %d", allow ? "allowed" : "disallowed", allowTextInput);
-            }
-
+            log_debug("{} text input, count = {}", allow ? "allowed" : "disallowed", allowTextInput);
             return allowTextInput;
         }
 
@@ -94,7 +89,7 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
-            bool enable = params.args[0].GetBool();
+            const bool enable = params.args[0].GetBool();
             AllowTextInput(enable);
         }
 
@@ -124,22 +119,40 @@ namespace LIBC_NAMESPACE_DECL
             skse.SetMember("AllowTextInput", fn_AllowTextInput);
         }
 
+#ifdef HOOK_LOAD_MOVIE
+        RE::FxDelegateHandler::CallbackFn *SetAllowTextInput;
+
+        void MySetAllowTextInput(const RE::FxDelegateArgs &a_params)
+        {
+            log_debug("MySetAllowTextInput");
+            SetAllowTextInput(a_params); // call sub_140CD5910 id: 68552
+        }
+
         bool ScaleformHooks::LoadMovieHook(RE::BSScaleformManager *self, RE::IMenu *menu,
                                            RE::GPtr<RE::GFxMovieView> &viewOut, const char *fileName,
                                            RE::BSScaleformManager::ScaleModeType mode, float backgroundAlpha)
         {
             bool result = g_LoadMovieHook->Original(self, menu, viewOut, fileName, mode, backgroundAlpha);
-            /*if (menu != nullptr)
+            if (menu != nullptr)
             {
                 auto &callbacksMap = menu->fxDelegate->callbacks;
 
-                if (auto *registeredCallback = callbacksMap.Get("addHealth");
+                if (auto *registeredCallback = callbacksMap.Get("SetAllowTextInput");
                     registeredCallback != nullptr && registeredCallback->callback != nullptr)
                 {
-                    AddHealth                    = registeredCallback->callback;
-                    registeredCallback->callback = MyAddHealth;
+                    SetAllowTextInput            = registeredCallback->callback;
+                    registeredCallback->callback = MySetAllowTextInput;
                 }
-            }*/
+            }
+            return result;
+        }
+#endif // 0
+
+        auto ScaleformHooks::Scaleform_AllowTextInputHook(ControlMap *self, bool allow) -> uint8_t
+        {
+            log_debug("Scaleform_AllowTextInputHook");
+            auto result = g_AllowTextInputHook->Original(self, allow);
+            ScaleformAllowTextInput::OnTextEntryCountChanged();
             return result;
         }
 
@@ -150,16 +163,25 @@ namespace LIBC_NAMESPACE_DECL
             {
                 g_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
             }
-            /*if (g_LoadMovieHook == nullptr)
+#ifdef HOOK_LOAD_MOVIE
+            if (g_LoadMovieHook == nullptr)
             {
                 g_LoadMovieHook = std::make_unique<Scaleform_LoadMovieHook>(LoadMovieHook);
-            }*/
+            }
+#endif
+            if (g_AllowTextInputHook == nullptr)
+            {
+                g_AllowTextInputHook = std::make_unique<Scaleform_AllowTextInput>(Scaleform_AllowTextInputHook);
+            }
         }
 
         void ScaleformHooks::UninstallHooks()
         {
             g_SetScaleModeTypeHook = nullptr;
-            g_LoadMovieHook        = nullptr;
+#ifdef HOOK_LOAD_MOVIE
+            g_LoadMovieHook = nullptr;
+#endif
+            g_AllowTextInputHook = nullptr;
         }
 
     }

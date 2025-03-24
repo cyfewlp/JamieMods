@@ -49,6 +49,13 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             template <typename... Args>
+            auto HasAll(Args &&...state) const -> bool
+                requires((std::is_same_v<Args, StateKey> && ...))
+            {
+                return m_state.all(std::forward<Args>(state)...);
+            }
+
+            template <typename... Args>
             auto HasAny(Args &&...state) const -> bool
                 requires((std::is_same_v<Args, StateKey> && ...))
             {

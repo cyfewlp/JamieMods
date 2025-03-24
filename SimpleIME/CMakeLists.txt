@@ -162,7 +162,6 @@ install(FILES
 )
 install(DIRECTORY
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/patch
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate
         DESTINATION .

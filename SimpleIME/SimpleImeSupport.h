@@ -66,7 +66,7 @@ namespace SimpleIME
         /// <returns>return true if SimpleIME mod enabled and IME not in alphanumeric mode,
         /// otherwise, return false.
         /// </returns>
-        bool (*IsWantCaptureInput)() = nullptr;
+        bool (*IsWantCaptureInput)(uint32_t keyCode) = nullptr;
     };
 
     static_assert(sizeof(IntegrationData) == 48);

@@ -39,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
             /// <returns>return true if SimpleIME mod enabled and IME not in alphanumeric mode,
             /// otherwise, return false.
             /// </returns>
-            static bool IsWantCaptureInput();
+            static bool IsWantCaptureInput(uint32_t keyCode);
 
         private:
             mutable std::mutex    m_mutex;

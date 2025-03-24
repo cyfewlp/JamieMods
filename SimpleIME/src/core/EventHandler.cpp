@@ -1,6 +1,7 @@
 #include "core/EventHandler.h"
 
 #include "ImeWnd.hpp"
+#include "Utils.h"
 #include "configs/AppConfig.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
@@ -9,7 +10,6 @@
 #include "imgui.h"
 
 #include <RE/B/BSInputDeviceManager.h>
-#include <RE/B/BSKeyboardDevice.h>
 #include <RE/B/BSTEvent.h>
 #include <RE/B/BSWin32MouseDevice.h>
 #include <RE/B/ButtonEvent.h>
@@ -30,40 +30,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime::Core
     {
-
-        constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
-        {
-            auto &state = State::GetInstance();
-            return !state.IsModEnabled() || //
-                   state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
-                   state.NotHas(State::LANG_PROFILE_ACTIVATED);
-        }
-
-        constexpr auto EventHandler::IsImeInputting() -> bool
-        {
-            return State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
-        }
-
-        auto EventHandler::IsWillTriggerIme(const std::uint32_t code) -> bool
-        {
-            // check modifier keys is down?
-            auto isDown = [](auto vkCode) -> bool {
-                return (::GetKeyState(vkCode) & 0x8000) != 0;
-            };
-
-            if (isDown(VK_CONTROL) || isDown(VK_SHIFT) || isDown(VK_MENU) || isDown(VK_LWIN) || isDown(VK_RWIN))
-            {
-                return false;
-            }
-
-            bool result = false;
-            using Key   = RE::BSKeyboardDevice::Keys::Key;
-            result |= code >= Key::kQ && code <= Key::kP;
-            result |= code >= Key::kA && code <= Key::kL;
-            result |= code >= Key::kZ && code <= Key::kM;
-            return result;
-        }
-
         constexpr auto EventHandler::IsPasteShortcutPressed(auto &code)
         {
             return code == ENUM_DIK_V && (::GetKeyState(ENUM_VK_CONTROL) & 0x8000) != 0;
@@ -98,13 +64,13 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
             const auto code = buttonEvent->GetIDCode();
-            if (IsImeNotActivateOrGameLoading())
+            if (Utils::IsImeNotActivateOrGameLoading())
             {
                 Hooks::UiHooks::EnableMessageFilter(false);
             }
             else
             {
-                if (IsImeInputting() || (!IsCapsLockOn() && IsWillTriggerIme(code)))
+                if (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
                 {
                     Hooks::UiHooks::EnableMessageFilter(true);
                 }
@@ -123,12 +89,6 @@ namespace LIBC_NAMESPACE_DECL
                 discard = true;
             }
             return discard;
-        }
-
-        auto EventHandler::IsCapsLockOn() -> bool
-        {
-            SHORT capsState = GetKeyState(VK_CAPITAL);
-            return (capsState & 0x0001) != 0;
         }
 
         auto EventHandler::PostHandleKeyboardEvent() -> void
@@ -210,11 +170,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             log_trace("Menu {} open {}", event->menuName.c_str(), event->opening);
             static bool firstOpenMainMenu = true;
-            if (event->menuName == RE::Console::MENU_NAME)
-            {
-                Hooks::ScaleformAllowTextInput::OnTextEntryCountChanged();
-            }
-            else if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
+            if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {
                 firstOpenMainMenu = false;
                 ImeManagerComposer::GetInstance()->NotifyEnableMod(true);

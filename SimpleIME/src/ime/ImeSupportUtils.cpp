@@ -1,5 +1,6 @@
 #include "ime/ImeSupportUtils.h"
 #include "SimpleImeSupport.h"
+#include "Utils.h"
 #include "core/State.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
@@ -85,12 +86,12 @@ namespace LIBC_NAMESPACE_DECL
             return prev;
         }
 
-        bool ImeSupportUtils::IsWantCaptureInput()
+        bool ImeSupportUtils::IsWantCaptureInput(uint32_t keyCode)
         {
             auto &state = Core::State::GetInstance();
-
-            return IsAllowAction(state) && state.NotHas(Core::State::IME_DISABLED, Core::State::IN_ALPHANUMERIC) &&
-                   state.Has(Core::State::LANG_PROFILE_ACTIVATED);
+            bool  want  = state.IsSupportOtherMod() && !Utils::IsImeNotActivateOrGameLoading();
+            want = want && (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(keyCode)));
+            return want;
         }
 
         auto ImeSupportUtils::GetInstance() -> ImeSupportUtils &
