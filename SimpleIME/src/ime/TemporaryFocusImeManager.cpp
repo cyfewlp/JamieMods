@@ -1,27 +1,20 @@
-#include "ImeApp.h"
+#include "ime/TemporaryFocusImeManager.h"
 #include "ImeWnd.hpp"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "context.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
-#include "ime/ImeManager.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        auto TemporaryFocusImeManager::EnableIme(bool enable) -> bool
+        auto TemporaryFocusImeManager::DoEnableIme(bool enable) -> bool
         {
-            if (!State::GetInstance().IsModEnabled())
-            {
-                return true;
-            }
-            log_debug("Try {} IME", enable ? "enable" : "disable");
-            m_fIsInEnableIme = true;
-            bool  success    = true;
-            auto &state      = State::GetInstance();
-            if (Context::GetInstance()->KeepImeOpen() || enable)
+            bool  success = true;
+            auto &state   = State::GetInstance();
+            if (enable)
             {
                 if (state.Has(State::IME_DISABLED))
                 {
@@ -50,33 +43,22 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Enable IME failed! last error {}", GetLastError());
             }
 
-            m_fIsInEnableIme = false;
             return success;
         }
 
-        auto TemporaryFocusImeManager::NotifyEnableIme(bool enable) const -> bool
+        auto TemporaryFocusImeManager::DoNotifyEnableIme(bool enable) const -> bool
         {
             return ::SendNotifyMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
-        auto TemporaryFocusImeManager::WaitEnableIme(bool enable) const -> bool
+        auto TemporaryFocusImeManager::DoWaitEnableIme(bool enable) const -> bool
         {
             return ::SendMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
-        auto TemporaryFocusImeManager::EnableMod(bool fEnableMod) -> bool
+        // On main thread
+        auto TemporaryFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
         {
-            if (State::GetInstance().IsModEnabled() == fEnableMod)
-            {
-                return true;
-            }
-            log_debug("{} mod", fEnableMod ? "enable" : "disable");
-            if (!fEnableMod)
-            {
-                Context::GetInstance()->SetKeepImeOpen(false);
-            }
-            State::GetInstance().SetEnableMod(fEnableMod);
-
             bool success = true;
             if (!fEnableMod)
             {
@@ -95,42 +77,23 @@ namespace LIBC_NAMESPACE_DECL
             return success;
         }
 
-        auto TemporaryFocusImeManager::NotifyEnableMod(bool enable) const -> bool
+        auto TemporaryFocusImeManager::DoNotifyEnableMod(bool enable) const -> bool
         {
             return ::SendNotifyMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
-        auto TemporaryFocusImeManager::WaitEnableMod(bool enable) const -> bool
+        auto TemporaryFocusImeManager::DoWaitEnableMod(bool enable) const -> bool
         {
             return ::SendMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
         }
 
-        auto TemporaryFocusImeManager::GiveUpFocus() const -> bool
-        {
-            return false;
-        }
-
-        auto TemporaryFocusImeManager::ForceFocusIme() -> bool
+        auto TemporaryFocusImeManager::DoForceFocusIme() -> bool
         {
             return m_ImeWnd->Focus();
         }
 
-        auto TemporaryFocusImeManager::TryFocusIme() -> bool
-        {
-            if (State::GetInstance().IsModEnabled() && !m_fIsInEnableIme)
-            {
-                m_ImeWnd->Focus();
-                EnableIme(Hooks::ScaleformAllowTextInput::HasTextEntry());
-            }
-            else
-            {
-                log_warn("Can't focus IME because mod is disabled");
-            }
-            return false;
-        }
-
-        // call on Render thread
-        auto TemporaryFocusImeManager::SyncImeState() const -> bool
+        // call on render thread
+        auto TemporaryFocusImeManager::DoSyncImeState() const -> bool
         {
             auto enableIme = Hooks::ScaleformAllowTextInput::HasTextEntry();
             if (Context::GetInstance()->KeepImeOpen() || enableIme)
@@ -141,7 +104,21 @@ namespace LIBC_NAMESPACE_DECL
             {
                 State::GetInstance().Clear(State::IME_DISABLED);
             }
-            return NotifyEnableIme(enableIme);
+
+            return DoNotifyEnableIme(enableIme);
+        }
+
+        // On main thread
+        auto TemporaryFocusImeManager::DoTryFocusIme() -> bool
+        {
+            m_fIsInEnableIme = true;
+            bool success     = true;
+            if (!m_fIsInEnableIme)
+            {
+                success          = EnableIme(Hooks::ScaleformAllowTextInput::HasTextEntry());
+                m_fIsInEnableIme = false;
+            }
+            return success;
         }
     }
 }

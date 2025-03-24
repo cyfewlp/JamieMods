@@ -37,11 +37,18 @@ namespace LIBC_NAMESPACE_DECL
             auto        ComboApply(String label, const std::vector<std::string> &values,
                                    std::function<bool(const std::string &)> onApply) -> uint32_t;
 
-            constexpr void RadioButton(String label, int *pValue, int value)
+            template <typename T>
+            constexpr auto RadioButton(String label, T *pValue, T value) -> bool
             {
-                const auto *name = m_translation->Get(label);
-                ImGui::RadioButton(name, pValue, value);
+                const auto *name    = m_translation->Get(label);
+                bool        pressed = ImGui::RadioButton(name, *pValue == value);
+                if (pressed)
+                {
+                    *pValue = value;
+                }
+
                 TrySetItemTooltip(label);
+                return pressed;
             }
 
             auto Begin(String windowName, bool *open, ImGuiWindowFlags flags) -> void;

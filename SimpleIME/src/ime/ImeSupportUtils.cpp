@@ -1,7 +1,7 @@
 #include "ime/ImeSupportUtils.h"
 #include "SimpleImeSupport.h"
 #include "core/State.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 
 #include <SKSE/API.h>
@@ -31,7 +31,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeSupportUtils::UpdateImeWindowPosition(float posX, float posY)
         {
-            if (GetInstance().IsAllowAction(State::GetInstance()))
+            if (IsAllowAction(State::GetInstance()))
             {
                 auto windowName = SKSE::PluginDeclaration::GetSingleton()->GetName();
                 ImGui::SetWindowPos(windowName.data(), {posX, posY});
@@ -43,7 +43,7 @@ namespace LIBC_NAMESPACE_DECL
             const std::unique_lock lockGuard(GetInstance().m_mutex);
 
             auto &state   = State::GetInstance();
-            bool  success = GetInstance().IsAllowAction(state);
+            bool  success = IsAllowAction(state);
             if (success)
             {
                 if ((enable && state.Has(State::IME_DISABLED)) || (!enable && state.NotHas(State::IME_DISABLED)))
@@ -56,6 +56,7 @@ namespace LIBC_NAMESPACE_DECL
             return success;
         }
 
+        // force use Permanent focus manage
         uint32_t ImeSupportUtils::PushContext()
         {
             const std::unique_lock lockGuard(GetInstance().m_mutex);
@@ -65,6 +66,7 @@ namespace LIBC_NAMESPACE_DECL
             if (instance.m_refCount >= 0 && instance.m_refCount++ == 0)
             {
                 State::GetInstance().SetSupportOtherMod(true);
+                ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent);
             }
             return prev;
         }
@@ -78,7 +80,7 @@ namespace LIBC_NAMESPACE_DECL
             if (instance.m_refCount > 0 && --instance.m_refCount == 0)
             {
                 State::GetInstance().SetSupportOtherMod(false);
-                ImeManagerComposer::GetInstance()->SyncImeState();
+                ImeManagerComposer::GetInstance()->PopType();
             }
             return prev;
         }
@@ -87,8 +89,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto &state = Core::State::GetInstance();
 
-            return GetInstance().IsAllowAction(state) &&
-                   state.NotHas(Core::State::IME_DISABLED, Core::State::IN_ALPHANUMERIC) &&
+            return IsAllowAction(state) && state.NotHas(Core::State::IME_DISABLED, Core::State::IN_ALPHANUMERIC) &&
                    state.Has(Core::State::LANG_PROFILE_ACTIVATED);
         }
 
@@ -98,7 +99,7 @@ namespace LIBC_NAMESPACE_DECL
             return g_instance;
         }
 
-        auto ImeSupportUtils::IsAllowAction(State &state) const -> bool
+        auto ImeSupportUtils::IsAllowAction(State &state) -> bool
         {
             return state.IsModEnabled() && state.IsSupportOtherMod();
         }

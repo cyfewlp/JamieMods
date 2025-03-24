@@ -3,7 +3,7 @@
 //
 
 #include "hooks/ScaleformHook.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "common/log.h"
 
 #include <memory>
@@ -69,6 +69,7 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
+            g_textEntryCount = newValue;
             if (oldValue == 0 && newValue > 0)
             {
                 if (!Ime::ImeManagerComposer::GetInstance()->NotifyEnableIme(true))
@@ -83,7 +84,6 @@ namespace LIBC_NAMESPACE_DECL
                     log_error("Send notify message fail {}", GetLastError());
                 }
             }
-            g_textEntryCount = newValue;
         }
 
         void ScaleformAllowTextInput::Call(Params &params)

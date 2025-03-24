@@ -5,7 +5,7 @@
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 
 #include <RE/B/BSInputDeviceManager.h>

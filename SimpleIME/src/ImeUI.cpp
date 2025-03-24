@@ -11,7 +11,7 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "context.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
 #include "ui/ImeUIWidgets.h"
@@ -216,7 +216,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-
+            auto *imeManager = ImeManagerComposer::GetInstance();
             m_imeUIWidgets.Begin("$Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
             ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
             do
@@ -248,22 +248,14 @@ namespace LIBC_NAMESPACE_DECL
                 // Focus Manage widget
                 ImGui::SeparatorText(m_translation.Get("$Features"));
                 ImGui::SeparatorText(m_translation.Get("$Focus_Manage"));
-                static int focusManager       = FocusManageType::Permanent;
-                int        currentFocusManage = focusManager;
-                m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusManager, FocusManageType::Permanent);
+                auto focusType = imeManager->GetFocusManageType();
+                bool pressed = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, FocusType::Permanent);
                 ImGui::SameLine();
-                m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusManager, FocusManageType::Temporary);
-                if (focusManager != currentFocusManage)
+                pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, FocusType::Temporary);
+                if (pressed)
                 {
-                    if (focusManager == Permanent)
-                    {
-                        ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
-                    }
-                    else
-                    {
-                        ImeManagerComposer::GetInstance()->Use(FocusManageType::Temporary);
-                    }
-                    ImeManagerComposer::GetInstance()->SyncImeState();
+                    imeManager->PopType();
+                    imeManager->PushType(static_cast<FocusType>(focusType));
                 }
                 m_imeUIWidgets.Checkbox("$Ime_Follow_Ime", m_fFollowCursor);
                 bool fEnableUnicodePaste = state.IsEnableUnicodePaste();
@@ -276,7 +268,7 @@ namespace LIBC_NAMESPACE_DECL
                 bool fKeepImeOpen = Context::GetInstance()->KeepImeOpen();
                 m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen, [](const bool keepImeOpen) {
                     Context::GetInstance()->SetKeepImeOpen(keepImeOpen);
-                    return Ime::ImeManagerComposer::GetInstance()->SyncImeState();
+                    return ImeManagerComposer::GetInstance()->SyncImeState();
                 });
             } while (false);
             ImGui::PopStyleVar();

@@ -46,7 +46,8 @@ namespace LIBC_NAMESPACE_DECL
             std::atomic<uint32_t> m_refCount;
 
             static auto GetInstance() -> ImeSupportUtils &;
-            auto        IsAllowAction(State &state) const -> bool;
+
+            static auto IsAllowAction(State &state) -> bool;
         };
     }
 }
