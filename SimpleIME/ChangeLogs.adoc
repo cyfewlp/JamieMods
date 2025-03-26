@@ -192,7 +192,7 @@ Steam overlay.
 ** Default use `PermanentFocusManager`
 --
 
-== 0.3.0
+== 1.0.0
 
 * [x] Try do IME support for other mod;
 ** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
@@ -217,6 +217,14 @@ message.
 IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
 * [x] Don't enable message filter when `capslock` press.
 
+== 1.1.0
+
+* [x] Modex: Disable send `delete` event to ImGui
++
+Keep `IsWantCaptureInput` main logic same as `EventHandler#EnableMessageFilter`
+* [*] Fix `RaceMenu` text entry can't use IME.  By hook `AllowTextInput(67252, 68552)`. This alos fixed console, 
+so we no longer needed listen console `open/close` event and no longer needed provide pacth for `ReceMenu`
+
 == To-Do
 
 === Issues
@@ -225,6 +233,7 @@ IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
 * [ ] `SetFocus` is execute by async? In some case, IME will receive focus after `FocusImeOrGame` fail.
 +
 Just giveup this feature?
+* [ ] move "Keep Ime Open" to ImeManager?
 
 === Code improve
 
@@ -238,11 +247,9 @@ Just giveup this feature?
 
 === Feature improve
 
+* [ ] Try get current meun/ text entry position
 * [ ] Support select candidate by mouse click
 * [ ] Mod Error hint
-* [ ] Ctrl-c/v support
-    . In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
-to disable game paste feature
 * [ ] Support config `follow cursor` in `ini` file.
 * [ ] support change and save configs in `ToolWindow`
 * [ ] GameProfileSwitch script optimize;

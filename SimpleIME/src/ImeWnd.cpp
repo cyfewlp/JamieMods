@@ -9,7 +9,7 @@
 #include "context.h"
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "ime/ImeSupportUtils.h"
 
 #include <d3d11.h>
@@ -176,13 +176,15 @@ namespace LIBC_NAMESPACE_DECL
             log_info("Exit ImeWnd Thread...");
         }
 
+        std::unique_ptr<ImeManagerComposer> ImeManagerComposer::g_instance = nullptr;
+
         void ImeWnd::OnStart()
         {
             m_pTextService->OnStart(m_hWnd);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ImeManagerComposer::Init(this, m_hWndParent);
-            ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
+            ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent);
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

@@ -3,7 +3,6 @@
 #include "enumeration.h"
 #include <atomic>
 #include <cstdint>
-#include <shared_mutex>
 #include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
@@ -47,6 +46,13 @@ namespace LIBC_NAMESPACE_DECL
             auto Has(StateKey state) const -> bool
             {
                 return m_state.all(state);
+            }
+
+            template <typename... Args>
+            auto HasAll(Args &&...state) const -> bool
+                requires((std::is_same_v<Args, StateKey> && ...))
+            {
+                return m_state.all(std::forward<Args>(state)...);
             }
 
             template <typename... Args>

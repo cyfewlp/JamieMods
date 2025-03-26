@@ -60,15 +60,10 @@ namespace LIBC_NAMESPACE_DECL
              * Only detect first event.
              */
             static auto IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool;
-            static auto IsCapsLockOn() -> bool;
-
             static auto PostHandleKeyboardEvent() -> void;
 
         private:
-            static constexpr auto IsImeNotActivateOrGameLoading() -> bool;
-            static constexpr auto IsImeInputting() -> bool;
             static constexpr auto IsPasteShortcutPressed(auto &code);
-            static auto           IsWillTriggerIme(std::uint32_t code) -> bool;
         };
     }
 }
