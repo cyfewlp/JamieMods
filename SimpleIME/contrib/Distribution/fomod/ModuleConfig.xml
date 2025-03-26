@@ -5,7 +5,8 @@
 
   <requiredInstallFiles>
     <folder source="SKSE/Plugins" destination="SKSE/Plugins" />
-    <folder source="themes" destination="interface/SimpleIME_Themes" />
+    <folder source="themes" destination="interface/SimpleIME" />
+    <folder source="translate" destination="interface/SimpleIME" />
     <folder source="config" destination="SKSE/Plugins" />
   </requiredInstallFiles>
   <installSteps order="Explicit">

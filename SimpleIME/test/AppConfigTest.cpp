@@ -31,7 +31,7 @@ TEST(SimpleIniTest, SaveIni)
 {
     CSimpleIniA ini(false, false, true);
 
-    SI_Error error =  ini.LoadFile("SimpleIME.ini");
+    SI_Error error = ini.LoadFile("SimpleIME.ini");
     if (error == SI_OK)
     {
         ini.SetValue("General", "Tool_Window_Shortcut_Key", "0x2222");
@@ -66,6 +66,20 @@ colorAbgr = 0xFF00FFFF
         ASSERT_EQ(converter<uint32_t>::convert("-200"), -200);
         ASSERT_EQ(converter<uint32_t>::convert("0xFF00FF00"), 0xFF00FF00);
         ASSERT_EQ(converter<uint32_t>::convert("ddddd"), 0);
+    }
+
+    TEST(PropertyTest, NoSection)
+    {
+        CSimpleIniA ini;
+
+        ini.LoadData(R"(
+name = dave
+utf8 = 你好
+emoji = 😊
+)");
+        ASSERT_STREQ(ini.GetValue("", "name"), "dave");
+        ASSERT_STREQ(ini.GetValue("", "utf8"), "你好");
+        ASSERT_STREQ(ini.GetValue("", "emoji"), "😊");
     }
 
     TEST(PropertyTest, ConvertLogLevel)

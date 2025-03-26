@@ -16,13 +16,13 @@ namespace LIBC_NAMESPACE_DECL
     {
         auto Imm32TextService::OnStartComposition() -> HRESULT
         {
-            State::GetInstance()->Set(State::IN_COMPOSING);
+            State::GetInstance().Set(State::IN_COMPOSING);
             return S_OK;
         }
 
         auto Imm32TextService::OnEndComposition() -> HRESULT
         {
-            State::GetInstance()->Clear(State::IN_COMPOSING);
+            State::GetInstance().Clear(State::IN_COMPOSING);
             if (m_OnEndCompositionCallback != nullptr)
             {
                 m_OnEndCompositionCallback(m_textEditor.GetText());
@@ -34,11 +34,6 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool
         {
-            if (!isEnabled)
-            {
-                return false;
-            }
-
             switch (message)
             {
                 case WM_IME_STARTCOMPOSITION: {
@@ -86,7 +81,7 @@ namespace LIBC_NAMESPACE_DECL
                 m_textEditor.InsertText(compositionSting.c_str(), compositionSting.length());
                 if (spdlog::should_log(spdlog::level::trace))
                 {
-                    const auto str = WCharUtils::ToString(compositionSting.data());
+                    const auto str = WCharUtils::ToString(compositionSting);
                     log_trace("IME Composition Result String: {}", str.c_str());
                 }
             }
@@ -94,7 +89,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (spdlog::should_log(spdlog::level::trace))
                 {
-                    const auto str = WCharUtils::ToString(compositionSting.data());
+                    const auto str = WCharUtils::ToString(compositionSting);
                     log_trace("IME Composition String: {}", str.c_str());
                 }
                 m_textEditor.SelectAll();
@@ -127,7 +122,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 case IMN_SETCANDIDATEPOS:
                 case IMN_OPENCANDIDATE: {
-                    State::GetInstance()->Set(State::IN_CAND_CHOOSING);
+                    State::GetInstance().Set(State::IN_CAND_CHOOSING);
                     HIMC hImc = ImmGetContext(hWnd);
                     if (hImc != nullptr)
                     {
@@ -136,7 +131,7 @@ namespace LIBC_NAMESPACE_DECL
                     return true;
                 }
                 case IMN_CLOSECANDIDATE: {
-                    State::GetInstance()->Clear(State::IN_CAND_CHOOSING);
+                    State::GetInstance().Clear(State::IN_CAND_CHOOSING);
                     CloseCandidate();
                     return true;
                 }
@@ -243,12 +238,12 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (ImmGetOpenStatus(hIMC) != 0)
             {
-                State::GetInstance()->Set(State::IME_OPEN);
+                State::GetInstance().Set(State::IME_OPEN);
                 UpdateConversionMode(hIMC);
             }
             else
             {
-                State::GetInstance()->Clear(State::IME_OPEN);
+                State::GetInstance().Clear(State::IME_OPEN);
             }
         }
 
@@ -261,11 +256,11 @@ namespace LIBC_NAMESPACE_DECL
                 switch (conversion & IME_CMODE_LANGUAGE)
                 {
                     case IME_CMODE_ALPHANUMERIC:
-                        State::GetInstance()->Clear(State::IN_ALPHANUMERIC);
+                        State::GetInstance().Clear(State::IN_ALPHANUMERIC);
                         log_debug("CMODE:ALPHANUMERIC, Disable IME");
                         break;
                     default:
-                        State::GetInstance()->Clear(State::IN_ALPHANUMERIC);
+                        State::GetInstance().Clear(State::IN_ALPHANUMERIC);
                         break;
                 }
             }

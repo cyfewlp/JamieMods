@@ -129,6 +129,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 uiSelection.Register(m_fontSize);
                 uiSelection.Register(m_useClassicTheme);
+                uiSelection.Register(m_translationDir);
+                uiSelection.Register(m_defaultLanguage);
                 uiSelection.Register(m_themeDirectory);
                 uiSelection.Register(m_defaultTheme);
                 uiSelection.Register(m_highlightTextColor);
@@ -162,6 +164,16 @@ namespace LIBC_NAMESPACE_DECL
                 return m_useClassicTheme.Value();
             }
 
+            [[nodiscard]] auto TranslationDir() const -> const std::string &
+            {
+                return m_translationDir.Value();
+            }
+
+            [[nodiscard]] auto DefaultLanguage() const -> const std::string &
+            {
+                return m_defaultLanguage.Value();
+            }
+
             [[nodiscard]] auto ThemeDirectory() const -> const std::string &
             {
                 return m_themeDirectory.Value();
@@ -186,11 +198,13 @@ namespace LIBC_NAMESPACE_DECL
             friend class AppConfig;
             Property<float>       m_fontSize{14.0F, "fontSize"};
             Property<bool>        m_useClassicTheme{false, "useClassicTheme"};
-            Property<std::string> m_themeDirectory{"Theme", "themesDirectory"};
+            Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "themesDirectory"};
             Property<std::string> m_defaultTheme{"darcula", "defaultTheme"};
             Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "highlightTextColor"};
             Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "eastAsiaFontFile"};
             Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "emojiFontFile"};
+            Property<std::string> m_translationDir{R"(Data\interface\SimpleIME)", "translationDir"};
+            Property<std::string> m_defaultLanguage{"english", "defaultLanguage"};
         };
 
         class AppConfig
@@ -208,7 +222,7 @@ namespace LIBC_NAMESPACE_DECL
             Property<spdlog::level::level_enum> m_logLevel{DEFAULT_LOG_LEVEL, "logLevel"};
             Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
             Property<bool>                      m_enableTsf{true, "enableTsf"};
-            Property<bool>                      m_enableUnicodePaste{false, "enableUnicodePaste"};
+            Property<bool>                      m_enableUnicodePaste{true, "enableUnicodePaste"};
             AppUiConfig                         m_appUiConfig;
             static AppConfig                    g_appConfig;
 

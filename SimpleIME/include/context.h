@@ -9,7 +9,6 @@
 
 #include "common/config.h"
 
-#include <atomic>
 #include <memory>
 #include <queue>
 #include <windows.h>
@@ -22,7 +21,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             static std::unique_ptr<Context> g_context;
             std::queue<std::string>         m_message;
-            bool                            m_fKeepImeOpen = false;
+            std::atomic_bool                m_fKeepImeOpen = false;
             HWND                            m_hwndIme      = nullptr;
 
         public:
@@ -31,7 +30,7 @@ namespace LIBC_NAMESPACE_DECL
                 return m_fKeepImeOpen;
             }
 
-            void SetFKeepImeOpen(const bool fKeepImeOpen)
+            void SetKeepImeOpen(const bool fKeepImeOpen)
             {
                 m_fKeepImeOpen = fKeepImeOpen;
             }

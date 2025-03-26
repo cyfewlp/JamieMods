@@ -1,18 +1,18 @@
 
 #include "ImeApp.h"
 #include "ImeWnd.hpp"
+#include "SimpleImeSupport.h"
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/log.h"
-#include "configs/AppConfig.h"
 #include "context.h"
 #include "core/EventHandler.h"
-#include "gsl/gsl"
-#include "hooks/Hooks.hpp"
+#include "core/State.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
-#include "imgui.h"
+#include "ime/ImeManager.h"
+#include "ime/ImeSupportUtils.h"
 
 #include <basetsd.h>
 #include <cstdint>
@@ -36,11 +36,15 @@ namespace LIBC_NAMESPACE_DECL
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
             if (a_msg->type == SKSE::MessagingInterface::kPreLoadGame)
             {
-                State::GetInstance()->Set(State::GAME_LOADING);
+                State::GetInstance().Set(State::GAME_LOADING);
             }
             else if (a_msg->type == SKSE::MessagingInterface::kPostLoadGame)
             {
-                State::GetInstance()->Clear(State::GAME_LOADING);
+                State::GetInstance().Clear(State::GAME_LOADING);
+            }
+            else if (a_msg->type == SKSE::MessagingInterface::kInputLoaded)
+            {
+                Ime::ImeApp::GetInstance().OnInputLoaded();
             }
         });
     }
@@ -60,7 +64,7 @@ namespace LIBC_NAMESPACE_DECL
          */
         void ImeApp::Initialize()
         {
-            m_state.Initialized.store(false);
+            m_fInitialized.store(false);
             // Hooks::InstallRegisterClassHook();
             Hooks::WinHooks::InstallHooks();
 
@@ -69,13 +73,19 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeApp::Uninitialize()
         {
-            if (m_state.Initialized)
+            if (m_fInitialized)
             {
                 Hooks::WinHooks::UninstallHooks();
-                D3DInitHook.release();
+                D3DInitHook.reset();
+                D3DInitHook = nullptr;
                 UninstallHooks();
             }
-            m_state.Initialized.store(false);
+            m_fInitialized.store(false);
+        }
+
+        void ImeApp::OnInputLoaded()
+        {
+            Core::EventHandler::InstallEventSink(&m_imeWnd);
         }
 
         class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
@@ -126,7 +136,7 @@ namespace LIBC_NAMESPACE_DECL
             LogStacktrace();
             log_info("Force close ImeWnd.");
 
-            if (GetInstance().m_imeWnd.SendMessage(WM_QUIT, -1, 0) != S_OK)
+            if (GetInstance().m_imeWnd.SendNotifyMessageToIme(WM_QUIT, -1, 0) != S_OK)
             {
                 log_error("Send WM_QUIT to ImeWnd failed.");
             }
@@ -136,7 +146,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto &app = GetInstance();
             app.D3DInitHook->Original();
-            if (app.m_state.Initialized.load())
+            if (app.m_fInitialized.load())
             {
                 return;
             }
@@ -169,7 +179,7 @@ namespace LIBC_NAMESPACE_DECL
 
             m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
             Start(render_data);
-            m_state.Initialized.store(true);
+            m_fInitialized.store(true);
 
             log_debug("Hooking Skyrim WndProc...");
             RealWndProc = reinterpret_cast<WNDPROC>(
@@ -179,6 +189,17 @@ namespace LIBC_NAMESPACE_DECL
                 throw SimpleIMEException("Hook WndProc failed!");
             }
             InstallHooks();
+            BroadcastImeIntegrationMessage();
+        }
+
+        void ImeApp::BroadcastImeIntegrationMessage()
+        {
+            static SimpleIME::IntegrationData g_IntegrationData //
+                = {.RenderIme               = DoD3DPresent,
+                   .EnableIme               = ImeSupportUtils::EnableIme,
+                   .UpdateImeWindowPosition = ImeSupportUtils::UpdateImeWindowPosition,
+                   .IsWantCaptureInput      = ImeSupportUtils::IsWantCaptureInput};
+            ImeSupportUtils::BroadcastImeIntegrationMessage(&g_IntegrationData);
         }
 
         void ImeApp::Start(RE::BSGraphics::RendererData &renderData)
@@ -234,114 +255,29 @@ namespace LIBC_NAMESPACE_DECL
         {
             auto &app = GetInstance();
             app.D3DPresentHook->Original(ptr);
-            if (!app.m_state.Initialized.load())
+            if (!app.m_fInitialized.load())
             {
                 return;
             }
+            if (!Core::State::GetInstance().IsSupportOtherMod())
+            {
+                DoD3DPresent();
+            }
+        }
+
+        void ImeApp::DoD3DPresent()
+        {
+            auto &app = GetInstance();
             app.m_imeWnd.RenderIme();
         }
 
         // we need set our keyboard to non-exclusive after game default.
         void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
         {
-            static RE::InputEvent *dummy[] = {nullptr};
-
-            auto &app                 = GetInstance();
-            bool  discardCurrentEvent = false;
-            app.ProcessEvent(a_events, discardCurrentEvent);
-            if (discardCurrentEvent)
-            {
-                app.DispatchInputEventHook->Original(a_dispatcher, dummy);
-            }
-            else
-            {
-                app.DispatchInputEventHook->Original(a_dispatcher, a_events);
-            }
+            auto &app = GetInstance();
+            Core::EventHandler::UpdateMessageFilter(a_events);
+            app.DispatchInputEventHook->Original(a_dispatcher, a_events);
             Core::EventHandler::PostHandleKeyboardEvent();
-        }
-
-        void ImeApp::ProcessEvent(RE::InputEvent **events, bool &discard)
-        {
-            if (events == nullptr)
-            {
-                return;
-            }
-            auto *head = *events;
-            if (head == nullptr)
-            {
-                return;
-            }
-
-            switch (head->GetEventType())
-            {
-                case RE::INPUT_EVENT_TYPE::kButton: {
-                    auto *const pButtonEvent = head->AsButtonEvent();
-                    if (pButtonEvent == nullptr)
-                    {
-                        return;
-                    }
-
-                    switch (head->GetDevice())
-                    {
-                        case RE::INPUT_DEVICE::kKeyboard:
-                            ProcessKeyboardEvent(pButtonEvent, discard);
-                            break;
-                        case RE::INPUT_DEVICE ::kMouse:
-                            ProcessMouseEvent(pButtonEvent);
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-
-        void ImeApp::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent, bool &discard)
-        {
-            auto keyCode = btnEvent->GetIDCode();
-            if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
-            {
-                m_imeWnd.ShowToolWindow();
-            }
-            using Key = RE::BSKeyboardDevice::Keys::Key;
-            if (keyCode == Key::kTilde)
-            {
-                m_imeWnd.AbortIme();
-            }
-            Core::EventHandler::HandleKeyboardEvent(btnEvent);
-            discard = Core::EventHandler::IsDiscardKeyboardEvent(btnEvent);
-        }
-
-        void ImeApp::ProcessMouseEvent(const RE::ButtonEvent *btnEvent)
-        {
-            using RE::BSWin32MouseDevice;
-            auto &imGuiIo = ImGui::GetIO();
-            if (!imGuiIo.WantCaptureMouse)
-            {
-                if (btnEvent->GetIDCode() < BSWin32MouseDevice::Keys::kWheelUp)
-                {
-                    m_imeWnd.AbortIme();
-                }
-            }
-            else
-            {
-                auto value = btnEvent->Value();
-                switch (auto mouseKey = btnEvent->GetIDCode())
-                {
-                    case BSWin32MouseDevice::Keys::kWheelUp:
-                        imGuiIo.AddMouseWheelEvent(0, value);
-                        break;
-                    case BSWin32MouseDevice::Keys::kWheelDown:
-                        imGuiIo.AddMouseWheelEvent(0, value * -1);
-                        break;
-                    default:
-                        imGuiIo.AddMouseButtonEvent(static_cast<int>(mouseKey), btnEvent->IsPressed());
-                        break;
-                }
-            }
         }
 
         auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -349,21 +285,34 @@ namespace LIBC_NAMESPACE_DECL
             auto &app = GetInstance();
             switch (uMsg)
             {
-                case WM_ACTIVATE:
+                /*case WM_ACTIVATE:
+                    log_info("WM_ACTIVATE {:#x}, {:#x}", wParam, lParam);
                     if (LOWORD(wParam) != WA_INACTIVE)
                     {
-                        app.m_imeWnd.Focus();
+                        ImeManager::GetInstance()->TryFocusIme();
                     }
                     break;
-                case WM_SYSCOMMAND: {
-                    if ((wParam & 0xFFF0) == SC_RESTORE)
+                case WM_ACTIVATEAPP:
+                    log_info("WM_ACTIVATEAPP {:#x}, {:#x}", wParam, lParam);
+                    break;*/
+                case WM_NCACTIVATE:
+                    log_debug("WM_NCACTIVATE {:#x}, {:#x}", wParam, lParam);
+                    if (wParam == TRUE)
                     {
-                        app.m_imeWnd.Focus();
+                        ImeManagerComposer::GetInstance()->TryFocusIme();
                     }
+                    break;
+                case CM_IME_ENABLE: {
+                    ImeManagerComposer::GetInstance()->EnableIme(wParam != FALSE);
+                    break;
+                }
+                case CM_MOD_ENABLE: {
+                    ImeManagerComposer::GetInstance()->EnableMod(wParam != FALSE);
                     break;
                 }
                 case WM_SETFOCUS:
-                    app.m_imeWnd.Focus();
+                    log_info("WM_SETFOCUS {:#x}, {:#x}", wParam, lParam);
+                    ImeManagerComposer::GetInstance()->TryFocusIme();
                     return S_OK;
                 case WM_IME_SETCONTEXT:
                     return ::DefWindowProc(hWnd, uMsg, wParam, 0);

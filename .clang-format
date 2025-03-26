@@ -44,6 +44,7 @@ AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
   AcrossComments: false
+AllowShortLambdasOnASingleLine: Empty
 BinPackArguments: true
 BinPackParameters: true
 BreakBeforeConceptDeclarations: Always

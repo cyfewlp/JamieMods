@@ -5,9 +5,10 @@
 
 #include "ImeUI.h"
 #include "core/State.h"
-#include "tsf/TextStore.h"
-#include "tsf/TsfCompartment.h"
+#include "ime/ITextService.h"
+#include "tsf/LangProfileUtil.h"
 
+#include <atlcomcli.h>
 #include <d3d11.h>
 #include <windows.h>
 
@@ -31,16 +32,13 @@ namespace LIBC_NAMESPACE_DECL
             ImeWnd();
             ~ImeWnd();
 
-            ImeWnd(ImeWnd &&a_imeWnd)      = delete;
-            ImeWnd(const ImeWnd &a_imeWnd) = delete;
-
-            auto operator=(ImeWnd &&a_imeWnd) -> ImeWnd &      = delete;
-            auto operator=(const ImeWnd &a_imeWnd) -> ImeWnd & = delete;
+            ImeWnd(ImeWnd &&a_imeWnd)                 = delete;
+            ImeWnd(const ImeWnd &a_imeWnd)            = delete;
+            ImeWnd &operator=(ImeWnd &&a_imeWnd)      = delete;
+            ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
             void Initialize() noexcept(false);
             void UnInitialize() const noexcept;
-
-            auto IsMessagePass(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
 
             /**
              * Work on standalone thread and run own message loop.
@@ -53,32 +51,41 @@ namespace LIBC_NAMESPACE_DECL
             /**
              * initialize ImGui. Work on UI thread.
              */
-            void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const
-                noexcept(false);
-            void Focus() const;
+            void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false);
+            auto Focus() const -> bool;
+            auto SetTsfFocus(bool focus) -> bool;
             auto IsFocused() const -> bool;
-            auto SendMessage(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
-            auto EnableIme(bool enable) const -> void;
-            auto EnableMod(bool enable) const -> bool;
+            auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> BOOL;
+            auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> BOOL;
+            auto GetImeThreadId() const -> DWORD;
+
+            constexpr auto GetHWND() const -> HWND
+            {
+                return m_hWnd;
+            }
 
             /**
              * Focus to parent window to abort IME
              */
-            void AbortIme() const;
-            void RenderIme() const;
-            void ShowToolWindow() const;
+            void                   AbortIme() const;
+            void                   RenderIme() const;
+            void                   ShowToolWindow() const;
+            std::unique_ptr<ImeUI> m_pImeUi = nullptr;
 
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
             static auto GetThis(HWND hWnd) -> ImeWnd *;
-            static void ForwardKeyboardMessage(HWND hWndTarget, UINT uMsg, WPARAM wParam, LPARAM lParam);
             static void NewFrame();
             static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
+            static void OnCompositionResult(const std::wstring &compositionString);
 
             void OnStart();
             auto OnCreate() const -> LRESULT;
             auto OnDestroy() const -> LRESULT;
             void InitializeTextService(const AppConfig &pAppConfig);
+            auto IsImeWantMessage(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
+            auto OnImeEnable(bool enable) -> bool;
+            void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
             std::unique_ptr<ITextService> m_pTextService = nullptr;
             CComPtr<LangProfileUtil>      m_pLangProfileUtil{};
@@ -86,8 +93,6 @@ namespace LIBC_NAMESPACE_DECL
             bool                          m_fFocused    = false;
             HWND                          m_hWnd        = nullptr;
             HWND                          m_hWndParent  = nullptr;
-            HACCEL                        m_hAccelTable = nullptr;
-            std::unique_ptr<ImeUI>        m_pImeUi      = nullptr;
             WNDCLASSEXW                   wc{};
         };
     } // namespace SimpleIME

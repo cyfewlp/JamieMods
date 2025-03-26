@@ -1,4 +1,4 @@
-﻿[size=4][b]What?[/b][/size]
+﻿[size=4][color=#2EB2FF][b]What?[/b][/color][/size]
 
 A SKSE plugin that enables IME (Input Method Editor) support for SkyrimSE/AE, primarily aimed at Chinese players. This is achieved using ImGui, Win32, and IMM/TSF.
 The mod essentially unlocks the OS IME, receiving and forwarding IME events and messages to the game. Consequently, it should also support other languages (such as Japanese, Korean, etc.). However, I'm uncertain if IME works with the same logic across different languages, so the composition and candidate windows for other languages may not function correctly.
@@ -7,7 +7,7 @@ SKSE 插件, 使 SkyrimSE/A E支持输入法(IME), 主要针对中国用户, 使
 
 [img]https://i.imgur.com/FUJqlft.png[/img]
 
-[size=4][b]Features[/b][/size]
+[size=4][color=#2EB2FF][b]Features[/b][/color][/size]
 
 [list=1]
 [*][size=3]Unlock Systeme IME & Windows key;[/size]
@@ -15,7 +15,7 @@ SKSE 插件, 使 SkyrimSE/A E支持输入法(IME), 主要针对中国用户, 使
 [*][size=3]ToolWindow(default F2 key) support sync and switch IME; Note: ToolWindow can pined in game, you can move it to right-bottom and pin it, just like os language bar;if you decrase Game Resolution, tool window may be can't found, To reset it position, you can go forward to Game install directory and delete file imgui.ini or the [i][Window][ToolWindow##SimpleIME] configuration section;[/i][/size]
 [/list]
 
-[size=4][b]Why?[/b]
+[size=4][color=#2EB2FF][b]Why?[/b][/color]
 [/size]
 IME for the SkyrimSE game is unnecessary. But, if you installed SkyUI or other mods based on SkyUi/UIExtension, there may be a need to support Unicode characters. In one word, by the time you can: Search armor/spell/item/NPC with Unicode character in SkyUI(or other mods based on it).
 
@@ -25,7 +25,7 @@ IME for the SkyrimSE game is unnecessary. But, if you installed SkyUI or other m
 
 [size=3][b]Theme Config[/b][/size]
 
- Mod use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] as theme provider. By default, mod add "classic", "darcula“, ”modern", "light", and "Visual Studio" themes.
+ Mod use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] as theme provider. By default, mod add "classic", "darcula“, ”modern", "light", and "Visual Studio" themes.
 If you want to add other themes:
 [list=1]
 [*]Use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] and export you interested theme with TOML format, copy it;
@@ -34,21 +34,26 @@ If you want to add other themes:
 [*]The default theme file can be used as a reference.
 [/list]
 
-[size=4] [b]Usage[/b] [/size]
+[size=4][color=#2EB2FF] [b]Usage[/b][/color] [/size]
 
 [list=1]
 [*]Use your os shortcut(in my case win + space) keys or the tool window (default key `F2`) to switch different IMEs.
 [*]You must install your language font.
 [*]check your input method's usage you using 
+[*]By config "Focus Manage" and choose "Temporary" to obtain the most compatibility with other mods
 [/list]
-
 [list=1]
 [*]使用系统快捷键(win + 空格)或者ToolWindow (默认为 F2) 切换输入法切换不同的输入法
 [*]显而易见的, 必须安装具有中文支持的mod。
 [*]用法与系统的输入法相关
+[*]通过配置 "焦点管理" 并选择”临时“，以获取与其他 mod 的最大程度兼容。
 [/list]
-
-[size=4] [b]How to implement?[/b] [/size]
+[spoiler]
+The [b]Focus[/b] means which window can receive keyboard message? If some mod modify game keyboard 
+setting and depend message to work, you need to use "Temporary" focus manage to obtain compatibility
+[/spoiler]
+[spoiler]
+[size=4] [color=#2EB2FF][b]How to implement?[/b][/color] [/size]
 
 [list=1]
 [*]By default, game will lock the player keyboard input event. All other window can't receive any keyboard input event;
@@ -60,8 +65,8 @@ If you want to add other themes:
 [*]游戏窗口是 ANSI 窗口, 无法接受部分 unicode 字符(emoji)
 [*]实际上, mod 可以被认为是一个[i]不可见[/i]的, 永远捕获键盘输入的[b]输入框[/b]
 [/list]
-
-[size=4][b]Compatibility/Supports[/b][/size]
+[/spoiler]
+[size=4][color=#2EB2FF][b]Compatibility/Supports[/b][/color][/size]
 
 [list=1]
 [*]Should no compatibility issue. only hooks some functions that usually also hooked by other UI mod.
@@ -81,13 +86,12 @@ If you want to add other themes:
 [list=1]
 [*][size=2]iFly can't listen english mode switch: iFly not send conversion mode message[/size]
 [*][size=2]CompassNavigationOverhaul exception when quit game. Is causeed by our mod?[/size]
-[*][size=2]must disable mod(config in tool window) to support use IME in [b]SteamOverlay[/b][/size]
+[*][size=2]Use IME in [b]SteamOverlay: [/b]disable mod or use [b]Temporary Focus Manage[/b][/size]
 [/list]
 
-[size=4] [b]Source Code[/b] [/size]
+[size=4] [color=#2EB2FF][b]Source Code[/b][/color] [/size]
 
 [url=https://github.com/cyfewlp/JamieMods]Github[/url]
-
 
 [size=4] [b]Other[/b] [/size]
 

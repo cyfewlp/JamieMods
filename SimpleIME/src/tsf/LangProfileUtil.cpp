@@ -145,7 +145,7 @@ namespace LIBC_NAMESPACE_DECL
         return m_activatedProfile;
     }
 
-    auto Ime::LangProfileUtil::GetLangProfiles() -> std::unordered_map<GUID, LangProfile>
+    auto Ime::LangProfileUtil::GetLangProfiles() -> std::unordered_map<GUID, LangProfile> &
     {
         return m_langProfiles;
     }
@@ -200,11 +200,11 @@ namespace LIBC_NAMESPACE_DECL
     {
         if (m_activatedProfile == GUID_NULL)
         {
-            State::GetInstance()->Clear(State::LANG_PROFILE_ACTIVATED);
+            State::GetInstance().Clear(State::LANG_PROFILE_ACTIVATED);
         }
         else
         {
-            State::GetInstance()->Set(State::LANG_PROFILE_ACTIVATED);
+            State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED);
         }
     }
 } // namespace LIBC_NAMESPACE_DECL

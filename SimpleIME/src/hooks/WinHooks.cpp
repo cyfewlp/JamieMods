@@ -1,5 +1,6 @@
 #include "hooks/WinHooks.h"
 #include "FakeDirectInputDevice.h"
+#include "common/log.h"
 
 #include "detours/detours.h"
 
@@ -11,14 +12,14 @@ namespace LIBC_NAMESPACE_DECL
     {
         void WinHooks::InstallHooks()
         {
-            // InstallGetClipboardDataHook("GetClipboardData");
+            InstallGetClipboardDataHook("OpenClipboard");
             InstallDirectInput8CreateHook("DirectInput8Create");
         }
 
         void WinHooks::UninstallHooks()
         {
             DirectInput8Create = nullptr;
-            GetClipboard       = nullptr;
+            OpenClipboard      = nullptr;
         }
 
         void WinHooks::InstallGetClipboardDataHook(const char *funcName)
@@ -27,12 +28,9 @@ namespace LIBC_NAMESPACE_DECL
             if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_USER32_STRING.c_str(), funcName);
                 realFuncPtr != nullptr)
             {
-                GetClipboard = std::make_unique<GetClipboardHook>(realFuncPtr, MyGetClipboardHook);
+                OpenClipboard = std::make_unique<OpenClipboardHook>(realFuncPtr, MyOpenClipboardHook);
             }
         }
-
-        using FuncDirectInput8Create = HRESULT (*)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
-        static inline FuncDirectInput8Create RealDirectInput8Create = nullptr;
 
         void WinHooks::InstallDirectInput8CreateHook(const char *funcName)
         {
@@ -49,13 +47,14 @@ namespace LIBC_NAMESPACE_DECL
             return reinterpret_cast<std::uintptr_t>(ptr);
         }
 
-        HANDLE WinHooks::MyGetClipboardHook(UINT uFormat)
+        BOOL WinHooks::MyOpenClipboardHook(HWND hwnd)
         {
-            if (g_fDisableGetClipboardData)
+            log_debug("MyOpenClipboardHook ");
+            if (g_fDisablePaste)
             {
-                return nullptr;
+                return FALSE;
             }
-            return GetClipboard->Original(uFormat);
+            return OpenClipboard->Original(hwnd);
         }
 
         HRESULT WinHooks::MyDirectInput8CreateHook(HINSTANCE hinst, DWORD dwVersion, REFIID riidltf, LPVOID *ppvOut,

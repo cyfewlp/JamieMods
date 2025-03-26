@@ -112,9 +112,6 @@ namespace LIBC_NAMESPACE_DECL
                 m_OnEndCompositionCallback = callback;
             }
 
-        private:
-            auto InitSinks() -> HRESULT;
-
             // ITextStoreACP functions
             // NOLINTBEGIN(*-use-trailing-return-type)
             STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject) override;
@@ -197,6 +194,10 @@ namespace LIBC_NAMESPACE_DECL
             STDMETHODIMP BeginUIElement(DWORD dwUIElementId, BOOL *pbShow) override;
             STDMETHODIMP UpdateUIElement(DWORD dwUIElementId) override;
             STDMETHODIMP EndUIElement(DWORD dwUIElementId) override;
+
+        private:
+            auto InitSinks() -> HRESULT;
+
             // NOLINTEND(*-use-trailing-return-type)
             auto DoUpdateUIElement() -> HRESULT;
             auto GetCandidateInterface(DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const
@@ -267,15 +268,24 @@ namespace LIBC_NAMESPACE_DECL
                 m_pTextStore->SetOnEndCompositionCallback(callback);
             }
 
-            // associate focus to null DocumentMgr when disabled.
-            void Enable(bool enable) override;
-
             void OnStart(HWND hWnd) override
             {
                 m_pTextStore->SetHWND(hWnd);
-                m_pTextStore->Focus();
-                UpdateConversionMode();
-                ITextService::OnStart(hWnd);
+            }
+
+            bool OnFocus(bool focus) override
+            {
+                HRESULT hr = E_FAIL;
+                if (focus)
+                {
+                    hr = m_pTextStore->Focus();
+                    UpdateConversionMode();
+                }
+                else
+                {
+                    hr = m_pTextStore->ClearFocus();
+                }
+                return SUCCEEDED(hr);
             }
 
             [[nodiscard]] auto GetCandidateUi() -> Ime::CandidateUi & override

@@ -1,6 +1,10 @@
 #pragma once
 
 #include "enumeration.h"
+#include <atomic>
+#include <cstdint>
+#include <shared_mutex>
+#include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -30,34 +34,31 @@ namespace LIBC_NAMESPACE_DECL
 
             State() = default;
 
-            ~State()
-            {
-                g_instance.release();
-            }
-
-            auto Set(const StateKey &&state) -> void
+            auto Set(StateKey state) -> void
             {
                 m_state.set(state);
             }
 
-            auto Clear(const StateKey &&state) -> void
+            auto Clear(StateKey state) -> void
             {
                 m_state.reset(state);
             }
 
-            auto Has(const StateKey &&state) const -> bool
+            auto Has(StateKey state) const -> bool
             {
                 return m_state.all(state);
             }
 
             template <typename... Args>
             auto HasAny(Args &&...state) const -> bool
+                requires((std::is_same_v<Args, StateKey> && ...))
             {
                 return m_state.any(std::forward<Args>(state)...);
             }
 
             template <typename... Args>
             auto NotHas(Args &&...state) const -> bool
+                requires((std::is_same_v<Args, StateKey> && ...))
             {
                 return m_state.none(std::forward<Args>(state)...);
             }
@@ -72,18 +73,47 @@ namespace LIBC_NAMESPACE_DECL
                 return Has(StateKey::IME_DISABLED);
             }
 
-            static auto GetInstance() -> State *
+            auto SetEnableMod(bool enable) -> void
             {
-                if (g_instance == nullptr)
-                {
-                    g_instance = std::make_unique<State>();
-                }
-                return g_instance.get();
+                m_fModEnabled.store(enable);
+            }
+
+            [[nodiscard]] auto IsModEnabled() const -> bool
+            {
+                return m_fModEnabled.load();
+            }
+
+            auto SetSupportOtherMod(bool enable) -> void
+            {
+                m_fSupportOtherMod.store(enable);
+            }
+
+            [[nodiscard]] auto IsSupportOtherMod() const -> bool
+            {
+                return m_fSupportOtherMod.load();
+            }
+
+            auto SetEnableUnicodePaste(bool enable) -> void
+            {
+                m_fEnableUnicodePaste.store(enable);
+            }
+
+            [[nodiscard]] auto IsEnableUnicodePaste() const -> bool
+            {
+                return m_fEnableUnicodePaste.load();
+            }
+
+            static auto GetInstance() -> State &
+            {
+                static State g_instance;
+                return g_instance;
             }
 
         private:
-            Enumeration<StateKey>         m_state;
-            static std::unique_ptr<State> g_instance;
+            Enumeration<StateKey> m_state;
+            std::atomic_bool      m_fModEnabled         = false;
+            std::atomic_bool      m_fSupportOtherMod    = false;
+            std::atomic_bool      m_fEnableUnicodePaste = false;
         };
     }
 }

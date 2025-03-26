@@ -10,16 +10,13 @@
 #include "ImeWnd.hpp"
 #include "common/WCharUtils.h"
 #include "common/log.h"
-#include "configs/CustomMessage.h"
 #include "context.h"
-#include "hooks/ScaleformHook.h"
+#include "ime/ImeManager.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
-#include "tsf/TextStore.h"
 #include "ui/ImeUIWidgets.h"
 
 #include <clocale>
-#include <cstdint>
 #include <tchar.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -59,7 +56,24 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Failed load active ime");
                 return false;
             }
+            SetTranslate();
             return true;
+        }
+
+        void ImeUI::SetTranslate()
+        {
+            if (!m_translation.GetTranslateLanguages(m_uiConfig.TranslationDir(), m_translateLanguages) ||
+                !m_translation.UseLanguage(m_uiConfig.DefaultLanguage().c_str()))
+            {
+                log_warn("Failed load translation languages.");
+            }
+            else
+            {
+                const auto defaultLang = std::ranges::find(m_translateLanguages, m_uiConfig.DefaultLanguage());
+                size_t     index       = std::distance(m_translateLanguages.begin(), defaultLang);
+                index                  = std::min(index, m_translateLanguages.size() - 1);
+                m_imeUIWidgets.SetUInt32Var("$Languages", index);
+            }
         }
 
         void ImeUI::SetTheme()
@@ -85,8 +99,8 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::StyleColorsDark();
                 return;
             }
-            m_selectedTheme = std::distance(m_themeNames.begin(), findIt);
-            auto &style     = ImGui::GetStyle();
+            m_imeUIWidgets.SetUInt32Var("$Themes", std::distance(m_themeNames.begin(), findIt));
+            auto &style = ImGui::GetStyle();
             m_uiThemeLoader.LoadTheme(defaultTheme, style);
         }
 
@@ -96,9 +110,8 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-            ;
-            if (State::GetInstance()->Has(State::IME_DISABLED) ||
-                State::GetInstance()->NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
+            if (State::GetInstance().Has(State::IME_DISABLED) ||
+                State::GetInstance().NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 return;
             }
@@ -110,7 +123,7 @@ namespace LIBC_NAMESPACE_DECL
                     ImGui::SetNextWindowPos({cursor->cursorPosX, cursor->cursorPosY}, ImGuiCond_Appearing);
                 }
             }
-            ImGui::Begin("SimpleIME", nullptr, windowFlags);
+            ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags);
 
             ImGui::SameLine();
             ImGui::BeginGroup();
@@ -118,7 +131,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (State::GetInstance()->Has(State::IN_CAND_CHOOSING))
+            if (State::GetInstance().Has(State::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -153,9 +166,12 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
 
+            m_translation.UseSection("Tool Window");
             ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, m_toolWindowFlags);
 
             RenderSettings();
+
+            m_translation.UseSection("Tool Window");
 
             ImGui::Text("Drag");
             ImGui::SameLine();
@@ -176,13 +192,13 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             ImGui::SameLine();
-            ImGui::Checkbox("Settings", &m_fShowSettings);
+            m_imeUIWidgets.Checkbox("$Settings", m_fShowSettings);
 
             ImGui::SameLine();
             ImeUIWidgets::RenderInputMethodChooseWidget(m_langProfileUtil, m_pImeWnd);
 
             ImGui::SameLine();
-            if (State::GetInstance()->Has(State::IN_ALPHANUMERIC))
+            if (State::GetInstance().Has(State::IN_ALPHANUMERIC))
             {
                 ImGui::Text("ENG");
                 ImGui::SameLine();
@@ -194,52 +210,78 @@ namespace LIBC_NAMESPACE_DECL
         {
             static bool isSettingsWindowOpen = false;
             isSettingsWindowOpen             = m_fShowSettings;
+            auto &state                      = State::GetInstance();
 
             if (!m_fShowSettings)
             {
-                ImGui::SameLine();
                 return;
             }
-            ImGui::Begin("Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
+
+            m_imeUIWidgets.Begin("$Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
             ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-            if (ImGui::BeginTable("SettingsTable", 3))
+            do
             {
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImeUIWidgets::RenderEnableModWidget([this](bool enable) { return m_pImeWnd->EnableMod(enable); });
+                bool fEnableMod = state.IsModEnabled();
+                m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
+                    return Ime::ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
+                });
 
-                ImGui::TableNextColumn();
-                ImeUIWidgets::RenderImeStateWidget(State::GetInstance()->Has(State::IME_DISABLED));
+                m_imeUIWidgets.ComboApply("$Languages", m_translateLanguages, [this](const std::string &lang) {
+                    m_translation.UseLanguage(lang.c_str());
+                    return true;
+                });
 
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImeUIWidgets::RenderImeFocusStateWidget(m_pImeWnd->IsFocused());
-
-                ImGui::TableNextColumn();
-                if (ImGui::Button("Force Focus Ime"))
+                if (!fEnableMod)
                 {
-                    m_pImeWnd->Focus();
+                    break;
                 }
 
-                ImGui::TableNextColumn();
-                ImGui::Checkbox("Ime follow cursor", &m_fFollowCursor);
-                ImGui::SetItemTooltip("Ime window appear in cursor position.");
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImeUIWidgets::RenderKeepImeOpenWidget([this](const bool keepImeOpen) {
-                    if (keepImeOpen)
-                    {
-                        return m_pImeWnd->SendMessage(CM_IME_ENABLE, TRUE, 0);
-                    }
-                    const auto count = Hooks::ScaleformAllowTextInput::TextEntryCount();
-                    return m_pImeWnd->SendMessage(CM_IME_ENABLE, count == 0 ? FALSE : TRUE, 0);
+                ImGui::SeparatorText(m_translation.Get("$States"));
+                m_imeUIWidgets.StateWidget("$Ime_Enabled", state.NotHas(State::IME_DISABLED));
+                m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
+                ImGui::SameLine();
+                m_imeUIWidgets.Button("$Force_Focus_Ime", []() {
+                    // ReSharper disable once CppExpressionWithoutSideEffects
+                    ImeManagerComposer::GetInstance()->ForceFocusIme();
                 });
-                ImGui::EndTable();
-            }
+
+                // Focus Manage widget
+                ImGui::SeparatorText(m_translation.Get("$Features"));
+                ImGui::SeparatorText(m_translation.Get("$Focus_Manage"));
+                static int focusManager       = FocusManageType::Permanent;
+                int        currentFocusManage = focusManager;
+                m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusManager, FocusManageType::Permanent);
+                ImGui::SameLine();
+                m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusManager, FocusManageType::Temporary);
+                if (focusManager != currentFocusManage)
+                {
+                    if (focusManager == Permanent)
+                    {
+                        ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
+                    }
+                    else
+                    {
+                        ImeManagerComposer::GetInstance()->Use(FocusManageType::Temporary);
+                    }
+                    ImeManagerComposer::GetInstance()->SyncImeState();
+                }
+                m_imeUIWidgets.Checkbox("$Ime_Follow_Ime", m_fFollowCursor);
+                bool fEnableUnicodePaste = state.IsEnableUnicodePaste();
+                m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste, [](const bool isChecked) {
+                    State::GetInstance().SetEnableUnicodePaste(isChecked);
+                    return true;
+                });
+
+                ImGui::SameLine();
+                bool fKeepImeOpen = Context::GetInstance()->KeepImeOpen();
+                m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen, [](const bool keepImeOpen) {
+                    Context::GetInstance()->SetKeepImeOpen(keepImeOpen);
+                    return Ime::ImeManagerComposer::GetInstance()->SyncImeState();
+                });
+            } while (false);
             ImGui::PopStyleVar();
 
-            ImeUIWidgets::RenderThemeChooseWidget(m_themeNames, m_selectedTheme, [this](const std::string &name) {
+            m_imeUIWidgets.ComboApply("$Themes", m_themeNames, [this](const std::string &name) {
                 return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
             });
             ImGui::End();
@@ -248,9 +290,9 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::RenderCompWindow() const
         {
-            ImVec4      highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
-            const auto &editorText    = m_pTextService->GetTextEditor().GetText();
-            const auto  str           = WCharUtils::ToString(editorText);
+            const ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
+            const auto  &editorText    = m_pTextService->GetTextEditor().GetText();
+            const auto   str           = WCharUtils::ToString(editorText);
             ImGui::TextColored(highLightText, "%s", str.c_str());
         }
 

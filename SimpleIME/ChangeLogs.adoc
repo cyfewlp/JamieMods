@@ -1,4 +1,4 @@
-= Changles
+﻿= Changles
 :toc: left
 
 == 0.0.3
@@ -143,11 +143,92 @@ Solutions:
 in `RE::ControlMap` offset 128. We need sync it.
     . Can we trampline SKSE `AllowTextInput` gfx function?
 
+== 0.1.0
+
+=== Issues
+
+* [x] In some case, game & ime will lost keyboard input at same time.
+** Refactor Focus & `IME_DISABLED` state manage. Now, no longer associate empty document to tsf.
+Just restore focus to game window. 
+*** Ime enable -> Focus to `ImeWnd`
+*** Ime disable -> Focus to Game window
+* [ ] In some case, TSF may not recived the shift key up event? Can't switch english & chinese mode.
+** If checked `Keep Ime Open` and use `shift` to switch to english mode, TSF never recived shift key up/down event again.
+
+* IME and TSF work at same times and TSF can't get composition string
+** ❌ Because IME disabled in Game WndProc? No
+** ✅ Because TextService `OnFocus` call? Yes, `onFocus` not call in message `WM_SETFOCUS` 
+
+TSF focus when `CooperativeLevel` changed
+** We should first change `CooperativeLevel`, then change focus?
+** `win+Tab` switch window can fix TSF. may we clear `IME_DISABLED` and Focus game window -> Focus Ime?
+** Try `AttachThreadInput`
+
+=== improvment
+
+* [x] No longer forward keyboard event to game main window.
+** Because we have changed Focus & `IME_DISABLED` state manage logic. But we notify user close any text entry when open
+Steam overlay.
+* [x] Support mutiple language, default english and chinese
+* [x] Refactor IME focus manage
+
+== 0.1.1
+
+* [x] `KreatE` Issue: Can't open
+** Is `KreatE` depend `WM_KEYUP`, `WM_KEYDOWN` message?
+
+== 0.2.0
+
+* [x] Implement two style ImeManager
++
+--
+** `PermanentFocusManager`: completely grab game focus:
+*** unlock/restore keyboard when MOD enable/disable
+*** Change focus when IME enable/disable
+** `SafeImeManager`
+*** more *combatibility*. 
+*** Change focus when IME enable/disable
+*** unlock/restore keyboard when IME enable/disable
+** Default use `PermanentFocusManager`
+--
+
+== 0.3.0
+
+* [x] Try do IME support for other mod;
+** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
+** By send `IME_COMPOSITION_RESULT` to send composition result
+* [x] Optimize & fix `ImeSupportUtils::EnableIme`
+* [x] Support unicode paste
++
+By hook `ProcessMessage` and ignore `CursorMenus#ProcessMessage` call by check vtable.
+
+=== Issues
+
+* [x] `Keep Ime Open`: fix IME state inconsistency
++
+. When use `Temporary` focus, check `Keep Ime Open` won't enable IME;
+* [x] The conversion mode cause IME thread can't recive any events.
++
+. When use Microsoft Pinyin in candidate chose state, if press `shift`, Then Microsoft Pinyin will switch to alphanumeric
+mode and can't receive any events no longer. But use `iFly` input method won't trigegr this bug. And, iFly won't send conversion mode
+message.
+. When trigger this issue, and console keep open, IME window can't receive any keyboard events, and it will be send after close Console Menu
+. [line-through]#Open/Close Console menu will trigegr `EnableIme`. Is issue exists in `EnableIme`?#
+IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
+* [x] Don't enable message filter when `capslock` press.
+
 == To-Do
+
+=== Issues
+
+* [ ] when use `TemporaryFocusImeManager`, press any character key when IME active, will trigger `kTilde`(~) key event.
+* [ ] `SetFocus` is execute by async? In some case, IME will receive focus after `FocusImeOrGame` fail.
++
+Just giveup this feature?
 
 === Code improve
 
-* [ ] ImeManager
+* [ ] ImeManager 
 . for enable/disable mod, enable/disbale IME
 
 * [ ] AppConfig

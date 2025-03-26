@@ -6,11 +6,12 @@
 #include "ImGuiThemeLoader.h"
 #include "configs/AppConfig.h"
 #include "core/State.h"
+#include "core/Translation.h"
 #include "ime/ITextService.h"
 #include "tsf/LangProfileUtil.h"
+#include "ui/ImeUIWidgets.h"
 
 #include "imgui.h"
-
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
@@ -34,6 +35,7 @@ namespace LIBC_NAMESPACE_DECL
             ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
             bool Initialize(LangProfileUtil *pLangProfileUtil);
+            void SetTranslate();
             void SetTheme();
             void RenderIme() const;
             void RenderToolWindow();
@@ -50,12 +52,14 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
             AppUiConfig              m_uiConfig;
-            ImGuiThemeLoader         m_uiThemeLoader{};
             LangProfileUtil         *m_langProfileUtil = nullptr;
             ITextService            *m_pTextService    = nullptr;
             ImeWnd                  *m_pImeWnd         = nullptr;
+            ImGuiThemeLoader         m_uiThemeLoader{};
             std::vector<std::string> m_themeNames;
-            uint32_t                 m_selectedTheme = 0;
+            Translation              m_translation;
+            ImeUIWidgets             m_imeUIWidgets{&m_translation};
+            std::vector<std::string> m_translateLanguages;
 
             bool m_fShowToolWindow = false;
             bool m_fFollowCursor   = false;
@@ -63,7 +67,8 @@ namespace LIBC_NAMESPACE_DECL
             bool m_fPinToolWindow  = false;
 
             std::vector<std::string> m_errorMessages;
-            int m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
+            int                      m_toolWindowFlags =
+                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
         };
     } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

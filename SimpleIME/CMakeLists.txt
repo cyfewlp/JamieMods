@@ -1,6 +1,6 @@
 project(
         SimpleIME
-        VERSION 0.0.8
+        VERSION 1.0.0
         DESCRIPTION "Simple IME support for Skyrim"
         LANGUAGES CXX
 )
@@ -73,7 +73,7 @@ add_custom_command(
     VERBATIM
 )
 
-file(GLOB_RECURSE headers include/*.h include/*.hpp)
+file(GLOB_RECURSE headers *.h include/*.hpp)
 file(GLOB_RECURSE sources src/*.cpp)
 
 source_group(
@@ -109,6 +109,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_IME_DEBUG)
 endif ()
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_EXPORTS)
+
 # include directories
 target_include_directories(
     ${PROJECT_NAME}
@@ -116,7 +118,7 @@ target_include_directories(
     ${DETOURS_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    #${SIMPLEINI_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # linkage
@@ -154,6 +156,7 @@ install(DIRECTORY
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/patch
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate
         DESTINATION .
         COMPONENT Distribution
 )
@@ -185,7 +188,8 @@ if (DEFINED OUTPUT_FOLDER)
 
     # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
     set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
-    set(THEMES_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME_Themes")
+    set(THEMES_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
+    set(TRANSLATE_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
 
     message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
@@ -204,6 +208,15 @@ if (DEFINED OUTPUT_FOLDER)
             POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${THEMES_FOLDER}"
             COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes" "${THEMES_FOLDER}"
+            VERBATIM
+    )
+
+    #Copy translate dir
+    add_custom_command(
+            TARGET "${PROJECT_NAME}"
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${TRANSLATE_FOLDER}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate" "${TRANSLATE_FOLDER}"
             VERBATIM
     )
 
