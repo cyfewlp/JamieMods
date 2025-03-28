@@ -2,7 +2,6 @@
 #include "ImeWnd.hpp"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
-#include "context.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
 
@@ -16,25 +15,19 @@ namespace LIBC_NAMESPACE_DECL
             auto &state   = State::GetInstance();
             if (enable)
             {
-                if (state.Has(State::IME_DISABLED))
-                {
-                    log_debug("Clear IME_DISABLED and set TSF focus");
-                    state.Clear(State::IME_DISABLED);
-                    success = m_ImeWnd->Focus();
-                    success = success && UnlockKeyboard();
-                    success = success && m_ImeWnd->SetTsfFocus(true);
-                }
+                log_debug("Clear IME_DISABLED and set TSF focus");
+                state.Clear(State::IME_DISABLED);
+                success = m_ImeWnd->Focus();
+                success = success && UnlockKeyboard();
+                success = success && m_ImeWnd->SetTsfFocus(true);
             }
             else
             {
-                if (state.NotHas(State::IME_DISABLED))
-                {
-                    log_debug("Set IME_DISABLED and clear TSF focus");
-                    state.Set(State::IME_DISABLED);
-                    success = Focus(m_hwndGame);
-                    success = success && RestoreKeyboard();
-                    // success = success && m_ImeWnd->SetTsfFocus(false);
-                }
+                log_debug("Set IME_DISABLED and clear TSF focus");
+                state.Set(State::IME_DISABLED);
+                success = Focus(m_hwndGame);
+                success = success && RestoreKeyboard();
+                // success = success && m_ImeWnd->SetTsfFocus(false);
             }
 
             if (!success)
@@ -71,7 +64,6 @@ namespace LIBC_NAMESPACE_DECL
 
             if (!success)
             {
-                State::GetInstance().SetEnableMod(false);
                 log_error("Can't enable/disable mod. last error {}", GetLastError());
             }
             return success;
@@ -95,17 +87,8 @@ namespace LIBC_NAMESPACE_DECL
         // call on render thread
         auto TemporaryFocusImeManager::DoSyncImeState() const -> bool
         {
-            auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
-            if (Context::GetInstance()->KeepImeOpen() || enableIme)
-            {
-                State::GetInstance().Set(State::IME_DISABLED);
-            }
-            else
-            {
-                State::GetInstance().Clear(State::IME_DISABLED);
-            }
-
-            return DoNotifyEnableIme(enableIme);
+            const auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
+            return NotifyEnableIme(enableIme);
         }
 
         // On main thread

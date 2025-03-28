@@ -79,16 +79,6 @@ namespace LIBC_NAMESPACE_DECL
                 return Has(StateKey::IME_DISABLED);
             }
 
-            auto SetEnableMod(bool enable) -> void
-            {
-                m_fModEnabled.store(enable);
-            }
-
-            [[nodiscard]] auto IsModEnabled() const -> bool
-            {
-                return m_fModEnabled.load();
-            }
-
             auto SetSupportOtherMod(bool enable) -> void
             {
                 m_fSupportOtherMod.store(enable);
@@ -117,7 +107,6 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             Enumeration<StateKey> m_state;
-            std::atomic_bool      m_fModEnabled         = false;
             std::atomic_bool      m_fSupportOtherMod    = false;
             std::atomic_bool      m_fEnableUnicodePaste = false;
         };

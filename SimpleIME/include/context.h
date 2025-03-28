@@ -21,20 +21,9 @@ namespace LIBC_NAMESPACE_DECL
         {
             static std::unique_ptr<Context> g_context;
             std::queue<std::string>         m_message;
-            std::atomic_bool                m_fKeepImeOpen = false;
             HWND                            m_hwndIme      = nullptr;
 
         public:
-            [[nodiscard]] auto KeepImeOpen() const -> bool
-            {
-                return m_fKeepImeOpen;
-            }
-
-            void SetKeepImeOpen(const bool fKeepImeOpen)
-            {
-                m_fKeepImeOpen = fKeepImeOpen;
-            }
-
             [[nodiscard]] auto Messages() -> std::queue<std::string> &
             {
                 return m_message;

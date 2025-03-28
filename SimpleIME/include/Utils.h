@@ -9,6 +9,7 @@
 
 #include "core/State.h"
 #include "hooks/UiHooks.h"
+#include "ime/ImeManagerComposer.h"
 
 #include <string>
 
@@ -63,7 +64,7 @@ namespace LIBC_NAMESPACE_DECL
             static constexpr auto IsImeNotActivateOrGameLoading() -> bool
             {
                 auto &state = State::GetInstance();
-                return !state.IsModEnabled() || //
+                return !ImeManagerComposer::GetInstance()->IsModEnabled() || //
                        state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
                        state.NotHas(State::LANG_PROFILE_ACTIVATED);
             }

@@ -8,7 +8,6 @@
 #pragma once
 
 #include "common/log.h"
-#include "core/State.h"
 #include <dinput.h>
 
 #pragma comment(lib, "dxguid.lib")
@@ -117,7 +116,6 @@ namespace LIBC_NAMESPACE_DECL
             DWORD m_realCooperativeLevelFlags = 0;
             DWORD m_cooperativeLevelFlags     = 0;
             HWND  m_hWndCooperative           = nullptr;
-            using State                       = Ime::Core::State;
 
         public:
             STDMETHOD(SetCooperativeLevel)(THIS_ HWND hwnd, DWORD dwFlags)
@@ -128,11 +126,7 @@ namespace LIBC_NAMESPACE_DECL
                 dwFlags |= DISCL_NONEXCLUSIVE;
                 m_cooperativeLevelFlags = dwFlags;
                 m_hWndCooperative       = hwnd;
-                if (!State::GetInstance().IsModEnabled())
-                {
-                    return m_realDevice->SetCooperativeLevel(hwnd, dwFlags);
-                }
-                return m_realDevice->SetCooperativeLevel(hwnd, dwFlags);
+                return m_realDevice->SetCooperativeLevel(hwnd, m_realCooperativeLevelFlags);
             }
 
             auto TryRestoreCooperativeLevel(HWND hWnd) -> HRESULT
@@ -153,10 +147,6 @@ namespace LIBC_NAMESPACE_DECL
             auto TryUnlockCooperativeLevel(HWND hWnd) -> HRESULT
             {
                 HRESULT hr = E_FAIL;
-                if (!State::GetInstance().IsModEnabled())
-                {
-                    return hr;
-                }
                 if (hWnd != nullptr && m_hWndCooperative == hWnd)
                 {
                     if (hr = Unacquire(); SUCCEEDED(hr))

@@ -102,7 +102,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeSupportUtils::IsAllowAction(State &state) -> bool
         {
-            return state.IsModEnabled() && state.IsSupportOtherMod();
+            return ImeManagerComposer::GetInstance()->IsModEnabled() && state.IsSupportOtherMod();
         }
     }
 }

@@ -83,7 +83,6 @@ namespace LIBC_NAMESPACE_DECL
 
             if (!success)
             {
-                State::GetInstance().SetEnableMod(false);
                 log_error("Can't enable/disable mod. last error {}", GetLastError());
             }
             return success;
@@ -128,7 +127,6 @@ namespace LIBC_NAMESPACE_DECL
         // call on Render thread
         auto PermanentFocusImeManager::DoSyncImeState() const -> bool
         {
-            State::GetInstance().SetEnableMod(false);
             return NotifyEnableMod(true);
         }
 

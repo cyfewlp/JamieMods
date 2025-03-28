@@ -15,6 +15,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             using State = Core::State;
 
+            static inline std::atomic_bool g_fEnableMod = false;
+
         public:
             ImeManager()                        = default;
             virtual ~ImeManager()               = default;
@@ -34,11 +36,21 @@ namespace LIBC_NAMESPACE_DECL
             /// Try focus IME when mod is enabled
             /// </summary>
             /// <returns>true if mod enabled and focus success, otherwise false</returns>
-            virtual auto TryFocusIme() -> bool = 0;
+            virtual auto TryFocusIme() -> bool        = 0;
 
             static auto Focus(HWND hwnd) -> bool;
             static auto UnlockKeyboard() -> bool;
             static auto RestoreKeyboard() -> bool;
+
+            [[nodiscard]] static constexpr auto IsModEnabled() -> bool
+            {
+                return g_fEnableMod;
+            }
+
+            static void SetEnableMod(const bool enableMod)
+            {
+                g_fEnableMod = enableMod;
+            }
         };
     }
 }

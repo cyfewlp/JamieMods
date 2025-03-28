@@ -96,7 +96,7 @@ namespace LIBC_NAMESPACE_DECL
 
             [[nodiscard]] constexpr auto GetImeWindowPosUpdatePolicy() const -> ImeWindowPosUpdatePolicy
             {
-                if (!Core::State::GetInstance().IsModEnabled())
+                if (!IsModEnabled())
                 {
                     return ImeWindowPosUpdatePolicy::NONE;
                 }
@@ -108,14 +108,43 @@ namespace LIBC_NAMESPACE_DECL
                 m_ImeWindowPosUpdatePolicy = policy;
             }
 
+            [[nodiscard]] constexpr auto IsUnicodePasteEnabled() const -> bool
+            {
+                return IsModEnabled() && m_fEnableUnicodePaste;
+            }
+
+            void SetEnableUnicodePaste(const bool fEnableUnicodePaste)
+            {
+                m_fEnableUnicodePaste = fEnableUnicodePaste;
+            }
+
+            [[nodiscard]] constexpr auto IsKeepImeOpen() const -> bool
+            {
+                return m_fKeepImeOpen;
+            }
+
+            void SetKeepImeOpen(const bool fKeepImeOpen)
+            {
+                m_fKeepImeOpen = fKeepImeOpen;
+            }
+
+            //////////////////////////////////////////////////
+
             auto EnableIme(bool enable) -> bool override
             {
-                return m_delegate->EnableIme(enable);
+                return m_delegate->EnableIme(m_fKeepImeOpen || enable);
             }
 
             auto EnableMod(bool enable) -> bool override
             {
-                return m_delegate->EnableMod(enable);
+                const bool prev = IsModEnabled();
+                if (m_delegate->EnableMod(enable))
+                {
+                    SetEnableMod(enable);
+                    return true;
+                }
+                SetEnableMod(prev);
+                return false;
             }
 
             auto GiveUpFocus() const -> bool override
@@ -168,7 +197,9 @@ namespace LIBC_NAMESPACE_DECL
             std::unique_ptr<TemporaryFocusImeManager> m_temporaryFocusImeManager = nullptr;
             ImeManager                               *m_delegate                 = nullptr;
             std::stack<FocusType>                     m_FocusTypeStack{};
-            ImeWindowPosUpdatePolicy m_ImeWindowPosUpdatePolicy = ImeWindowPosUpdatePolicy::BASED_ON_CARET;
+            bool                                      m_fEnableUnicodePaste = true;
+            bool                                      m_fKeepImeOpen        = false;
+            ImeWindowPosUpdatePolicy m_ImeWindowPosUpdatePolicy             = ImeWindowPosUpdatePolicy::BASED_ON_CARET;
 
             friend class ImeWnd;
 
