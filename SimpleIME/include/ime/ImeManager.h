@@ -1,12 +1,8 @@
 #pragma once
 
 #include "common/config.h"
-#include "common/log.h"
-
 #include "core/State.h"
-#include <cstdint>
-#include <memory>
-#include <stack>
+
 #include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -20,12 +16,10 @@ namespace LIBC_NAMESPACE_DECL
             using State = Core::State;
 
         public:
-            ImeManager()                                  = default;
-            virtual ~ImeManager()                         = default;
-            ImeManager(const ImeManager &other)           = delete;
-            ImeManager(ImeManager &&other)                = delete;
-            ImeManager operator=(const ImeManager &other) = delete;
-            ImeManager operator=(ImeManager &&other)      = delete;
+            ImeManager()                        = default;
+            virtual ~ImeManager()               = default;
+            ImeManager(const ImeManager &other) = delete;
+            ImeManager(ImeManager &&other)      = delete;
 
             virtual auto EnableIme(bool enable) -> bool             = 0;
             virtual auto NotifyEnableIme(bool enable) const -> bool = 0;
@@ -43,9 +37,7 @@ namespace LIBC_NAMESPACE_DECL
             virtual auto TryFocusIme() -> bool = 0;
 
             static auto Focus(HWND hwnd) -> bool;
-
             static auto UnlockKeyboard() -> bool;
-
             static auto RestoreKeyboard() -> bool;
         };
     }

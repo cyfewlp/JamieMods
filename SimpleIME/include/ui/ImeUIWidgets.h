@@ -30,12 +30,13 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             static void RenderInputMethodChooseWidget(LangProfileUtil *pLangProfileUtil, const ImeWnd *pImeWnd);
-            void        StateWidget(String label, const bool isEnabled) const;
-            void        Button(String label, OnClick onClick) const;
-            void        Checkbox(String label, bool &checked,
-                                 const std::function<bool(bool isChecked)> &&onChecked = {}) const;
-            auto        ComboApply(String label, const std::vector<std::string> &values,
-                                   std::function<bool(const std::string &)> onApply) -> uint32_t;
+
+            void StateWidget(String label, const bool isEnabled) const;
+            void Button(String label, OnClick onClick) const;
+            void Checkbox(String label, bool &checked, const std::function<bool(bool isChecked)> &&onChecked) const;
+            auto Checkbox(String label, bool &checked) const -> bool;
+            auto ComboApply(String label, const std::vector<std::string> &values,
+                            std::function<bool(const std::string &)> onApply) -> uint32_t;
 
             template <typename T>
             constexpr auto RadioButton(String label, T *pValue, T value) -> bool
@@ -49,6 +50,12 @@ namespace LIBC_NAMESPACE_DECL
 
                 TrySetItemTooltip(label);
                 return pressed;
+            }
+
+            constexpr void SeparatorText(String label) const
+            {
+                const auto *text = m_translation->Get(label);
+                ImGui::SeparatorText(text);
             }
 
             auto Begin(String windowName, bool *open, ImGuiWindowFlags flags) -> void;

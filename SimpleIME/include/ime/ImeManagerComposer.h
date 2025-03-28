@@ -39,6 +39,13 @@ namespace LIBC_NAMESPACE_DECL
             }
 
         public:
+            enum class ImeWindowPosUpdatePolicy : uint8_t
+            {
+                NONE = 0,
+                BASED_ON_CURSOR,
+                BASED_ON_CARET,
+            };
+
             auto PushType(FocusType type)
             {
                 bool diff = !m_FocusTypeStack.empty() && type != m_FocusTypeStack.top();
@@ -85,6 +92,20 @@ namespace LIBC_NAMESPACE_DECL
             auto GetTemporaryFocusImeManager() -> TemporaryFocusImeManager *
             {
                 return m_temporaryFocusImeManager.get();
+            }
+
+            [[nodiscard]] constexpr auto GetImeWindowPosUpdatePolicy() const -> ImeWindowPosUpdatePolicy
+            {
+                if (!Core::State::GetInstance().IsModEnabled())
+                {
+                    return ImeWindowPosUpdatePolicy::NONE;
+                }
+                return m_ImeWindowPosUpdatePolicy;
+            }
+
+            void SetDetectImeWindowPosByCaret(const auto policy)
+            {
+                m_ImeWindowPosUpdatePolicy = policy;
             }
 
             auto EnableIme(bool enable) -> bool override
@@ -147,6 +168,7 @@ namespace LIBC_NAMESPACE_DECL
             std::unique_ptr<TemporaryFocusImeManager> m_temporaryFocusImeManager = nullptr;
             ImeManager                               *m_delegate                 = nullptr;
             std::stack<FocusType>                     m_FocusTypeStack{};
+            ImeWindowPosUpdatePolicy m_ImeWindowPosUpdatePolicy = ImeWindowPosUpdatePolicy::BASED_ON_CARET;
 
             friend class ImeWnd;
 

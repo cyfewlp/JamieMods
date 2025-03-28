@@ -65,7 +65,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                if (Hooks::ScaleformAllowTextInput::HasTextEntry())
+                if (Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry())
                 {
                     success = EnableIme(true);
                 }
@@ -153,7 +153,7 @@ namespace LIBC_NAMESPACE_DECL
                     success = m_ImeWnd->Focus();
                 }
             }
-            success = success && EnableIme(Hooks::ScaleformAllowTextInput::HasTextEntry());
+            success = success && EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
             if (!success)
             {
                 log_error("Failed to focus IME: {}", ::GetLastError());

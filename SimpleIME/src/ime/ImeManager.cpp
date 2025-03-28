@@ -3,6 +3,7 @@
 #include "ImeApp.h"
 
 #include "common/log.h"
+#include <cstdint>
 #include <processthreadsapi.h>
 #include <windows.h>
 

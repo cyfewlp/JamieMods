@@ -8,12 +8,12 @@
 #include "hooks/UiHooks.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
+#include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
 #include <RE/B/BSTEvent.h>
 #include <RE/B/BSWin32MouseDevice.h>
 #include <RE/B/ButtonEvent.h>
-#include <RE/C/Console.h>
 #include <RE/C/CursorMenu.h>
 #include <RE/I/InputDevices.h>
 #include <RE/I/InputEvent.h>
@@ -24,7 +24,6 @@
 #include <common/log.h>
 #include <cstdint>
 #include <dinput.h>
-#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -37,10 +36,10 @@ namespace LIBC_NAMESPACE_DECL
 
         void EventHandler::InstallEventSink(ImeWnd *imeWnd)
         {
-            static auto g_InputEventSink          = std::make_unique<InputEventSink>(imeWnd);
-            static auto g_pMenuOpenCloseEventSink = std::make_unique<MenuOpenCloseEventSink>();
-            RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(g_InputEventSink.get());
-            RE::UI::GetSingleton()->AddEventSink(g_pMenuOpenCloseEventSink.get());
+            static InputEventSink         g_InputEventSink(imeWnd);
+            static MenuOpenCloseEventSink g_pMenuOpenCloseEventSink;
+            RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&g_InputEventSink);
+            RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
         }
 
         auto EventHandler::UpdateMessageFilter(RE::InputEvent **a_events) -> void
@@ -102,7 +101,6 @@ namespace LIBC_NAMESPACE_DECL
         RE::BSEventNotifyControl InputEventSink::ProcessEvent(Event *const *events,
                                                               RE::BSTEventSource<Event *> * /*eventSource*/)
         {
-
             for (auto *event = *events; event != nullptr; event = event->next)
             {
                 if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
@@ -168,8 +166,13 @@ namespace LIBC_NAMESPACE_DECL
         RE::BSEventNotifyControl MenuOpenCloseEventSink::ProcessEvent(const Event *event,
                                                                       RE::BSTEventSource<Event> * /*eventSource*/)
         {
-            log_trace("Menu {} open {}", event->menuName.c_str(), event->opening);
+            log_debug("Menu {} open {}", event->menuName.c_str(), event->opening);
             static bool firstOpenMainMenu = true;
+            if (event->menuName != RE::CursorMenu::MENU_NAME && event->menuName != RE::HUDMenu::MENU_NAME)
+            {
+                auto movieView = RE::UI::GetSingleton()->GetMovieView(event->menuName);
+                FocusGFxCharacterInfo::GetInstance().Update(movieView.get());
+            }
             if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {
                 firstOpenMainMenu = false;
@@ -187,14 +190,14 @@ namespace LIBC_NAMESPACE_DECL
             if (event->menuName == RE::CursorMenu::MENU_NAME && !event->opening)
             {
                 // fix: MapMenu will not call AllowTextInput(false) when closing
-                uint8_t textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                uint8_t textEntryCount = Hooks::SKSE_ScaleformAllowTextInput::TextEntryCount();
                 while (textEntryCount > 0)
                 {
-                    Hooks::ScaleformAllowTextInput::AllowTextInput(false);
+                    Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(false);
                     textEntryCount--;
                 }
                 // check var consistency
-                textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                textEntryCount = Hooks::SKSE_ScaleformAllowTextInput::TextEntryCount();
                 if (textEntryCount != 0)
                 {
                     log_warn("Text entry count is incorrect and can't fix it! count: {}", textEntryCount);

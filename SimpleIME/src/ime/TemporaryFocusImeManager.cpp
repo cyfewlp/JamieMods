@@ -64,7 +64,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 success = EnableIme(false);
             }
-            else if (Hooks::ScaleformAllowTextInput::HasTextEntry())
+            else if (Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry())
             {
                 success = EnableIme(true);
             }
@@ -95,7 +95,7 @@ namespace LIBC_NAMESPACE_DECL
         // call on render thread
         auto TemporaryFocusImeManager::DoSyncImeState() const -> bool
         {
-            auto enableIme = Hooks::ScaleformAllowTextInput::HasTextEntry();
+            auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
             if (Context::GetInstance()->KeepImeOpen() || enableIme)
             {
                 State::GetInstance().Set(State::IME_DISABLED);
@@ -115,7 +115,7 @@ namespace LIBC_NAMESPACE_DECL
             bool success     = true;
             if (!m_fIsInEnableIme)
             {
-                success          = EnableIme(Hooks::ScaleformAllowTextInput::HasTextEntry());
+                success          = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
                 m_fIsInEnableIme = false;
             }
             return success;

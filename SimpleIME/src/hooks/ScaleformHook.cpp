@@ -5,8 +5,11 @@
 #include "hooks/ScaleformHook.h"
 #include "common/log.h"
 #include "ime/ImeManagerComposer.h"
+#include "utils/FocusGFxCharacterInfo.h"
 
 #include <memory>
+
+#define HOOK_LOAD_MOVIE
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -47,7 +50,7 @@ namespace LIBC_NAMESPACE_DECL
             return *singleton;
         }
 
-        auto ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
+        auto SKSE_ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
         {
             ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
             OnTextEntryCountChanged();
@@ -55,7 +58,7 @@ namespace LIBC_NAMESPACE_DECL
             return g_textEntryCount;
         }
 
-        void ScaleformAllowTextInput::OnTextEntryCountChanged()
+        void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged()
         {
             auto newValue = ControlMap::GetSingleton()->allowTextInput;
             auto oldValue = g_textEntryCount;
@@ -81,7 +84,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ScaleformAllowTextInput::Call(Params &params)
+        void SKSE_ScaleformAllowTextInput::Call(Params &params)
         {
             if (params.argCount == 0)
             {
@@ -91,6 +94,20 @@ namespace LIBC_NAMESPACE_DECL
 
             const bool enable = params.args[0].GetBool();
             AllowTextInput(enable);
+
+            UpdateFocusCharacterBound(reinterpret_cast<RE::GFxMovieView *>(params.movie), enable);
+        }
+
+        void UpdateFocusCharacterBound(RE::GFxMovieView *movieView, bool allow)
+        {
+            if (!allow || movieView == nullptr)
+            {
+                Ime::FocusGFxCharacterInfo::GetInstance().Update(nullptr);
+            }
+            else
+            {
+                Ime::FocusGFxCharacterInfo::GetInstance().Update(movieView);
+            }
         }
 
         void ScaleformHooks::SetScaleModeTypeHook(RE::GFxMovieView               *pMovieView,
@@ -114,7 +131,7 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
             RE::GFxValue fn_AllowTextInput;
-            static auto *AllowTextInput = new ScaleformAllowTextInput();
+            static auto *AllowTextInput = new SKSE_ScaleformAllowTextInput();
             pMovieView->CreateFunction(&fn_AllowTextInput, AllowTextInput);
             skse.SetMember("AllowTextInput", fn_AllowTextInput);
         }
@@ -126,6 +143,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             log_debug("MySetAllowTextInput");
             SetAllowTextInput(a_params); // call sub_140CD5910 id: 68552
+
+            UpdateFocusCharacterBound(a_params.GetMovie(), true);
         }
 
         bool ScaleformHooks::LoadMovieHook(RE::BSScaleformManager *self, RE::IMenu *menu,
@@ -146,13 +165,17 @@ namespace LIBC_NAMESPACE_DECL
             }
             return result;
         }
-#endif // 0
+#endif // HOOK_LOAD_MOVIE
 
         auto ScaleformHooks::Scaleform_AllowTextInputHook(ControlMap *self, bool allow) -> uint8_t
         {
             log_debug("Scaleform_AllowTextInputHook");
             auto result = g_AllowTextInputHook->Original(self, allow);
-            ScaleformAllowTextInput::OnTextEntryCountChanged();
+            if (!allow)
+            {
+                UpdateFocusCharacterBound(nullptr, allow);
+            }
+            SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged();
             return result;
         }
 

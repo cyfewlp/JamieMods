@@ -79,6 +79,8 @@ namespace LIBC_NAMESPACE_DECL
             // NOLINTEND(*-magic-numbers)
         };
 
+        void UpdateFocusCharacterBound(RE::GFxMovieView *movieView, bool allow);
+
         class Scaleform_AllowTextInput : public FunctionHook<uint8_t(ControlMap *, bool)>
         {
         public:
@@ -91,7 +93,7 @@ namespace LIBC_NAMESPACE_DECL
             // NOLINTEND(*-magic-numbers)
         };
 
-        class ScaleformAllowTextInput final : public RE::GFxFunctionHandler
+        class SKSE_ScaleformAllowTextInput final : public RE::GFxFunctionHandler
         {
             static inline std::uint8_t g_textEntryCount = 0;
 

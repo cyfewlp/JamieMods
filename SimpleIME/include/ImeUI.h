@@ -41,10 +41,11 @@ namespace LIBC_NAMESPACE_DECL
             void RenderToolWindow();
             void ShowToolWindow();
 
-            template <typename... Args>
-            void PushErrorMessage(std::format_string<Args...> fmt, Args &&...args);
-
         private:
+            static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;
+            static auto UpdateImeWindowPosByCursor() -> bool;
+            static auto UpdateImeWindowPosByCaret() -> bool;
+
             void RenderSettings();
             void RenderCompWindow() const;
             void RenderCandidateWindows() const;
@@ -62,7 +63,6 @@ namespace LIBC_NAMESPACE_DECL
             std::vector<std::string> m_translateLanguages;
 
             bool m_fShowToolWindow = false;
-            bool m_fFollowCursor   = false;
             bool m_fShowSettings   = false;
             bool m_fPinToolWindow  = false;
 
