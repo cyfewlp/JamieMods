@@ -170,8 +170,7 @@ namespace LIBC_NAMESPACE_DECL
             static bool firstOpenMainMenu = true;
             if (event->menuName != RE::CursorMenu::MENU_NAME && event->menuName != RE::HUDMenu::MENU_NAME)
             {
-                auto movieView = RE::UI::GetSingleton()->GetMovieView(event->menuName);
-                FocusGFxCharacterInfo::GetInstance().Update(movieView.get());
+                FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
             }
             if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {

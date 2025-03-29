@@ -27,6 +27,31 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
+    auto Ime::FocusGFxCharacterInfo::Update(const std::string &menuName, bool open) -> void
+    {
+        if (open)
+        {
+            m_menuStack.push_front(menuName);
+            auto movieView = UI::GetSingleton()->GetMovieView(menuName);
+            Update(movieView.get());
+        }
+        else
+        {
+            std::erase(m_menuStack, menuName);
+            Update(nullptr);
+        }
+    }
+
+    auto Ime::FocusGFxCharacterInfo::UpdateByTopMenu() -> void
+    {
+        if (m_menuStack.empty())
+        {
+            return;
+        }
+        const auto movieView = UI::GetSingleton()->GetMovieView(m_menuStack.front());
+        Update(movieView.get());
+    }
+
     void Ime::FocusGFxCharacterInfo::Reset()
     {
         m_bound.left     = 0.0F;
@@ -79,6 +104,10 @@ namespace LIBC_NAMESPACE_DECL
 
     auto Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries() -> void
     {
+        if (m_movieView == nullptr)
+        {
+            UpdateByTopMenu();
+        }
 
         if (m_movieView != nullptr)
         {

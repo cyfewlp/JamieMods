@@ -177,10 +177,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             log_debug("Scaleform_AllowTextInputHook");
             auto result = g_AllowTextInputHook->Original(self, allow);
-            if (!allow)
-            {
-                UpdateFocusCharacterBound(nullptr, allow);
-            }
+
+            Ime::FocusGFxCharacterInfo::GetInstance().UpdateByTopMenu();
             SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged();
             return result;
         }

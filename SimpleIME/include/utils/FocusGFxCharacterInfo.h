@@ -67,9 +67,13 @@ namespace LIBC_NAMESPACE_DECL
             // 2. Any menu open/close (expect Cursor Menu * HUD Menu)
             // 3. SKSE_AllowTextInput/Scaleform_AllowTextInput called
             auto Update(RE::GFxMovieView *movieView) -> void;
+            auto Update(const std::string &menuName, bool open) -> void;
+            auto UpdateByTopMenu() -> void;
             auto UpdateCaretCharBoundaries() -> void;
 
         private:
+            std::list<std::string> m_menuStack;
+
             void Reset();
             auto UpdateBounds(RE::GFxMovieView *movieView, const char *path, const RE::GFxValue &character) -> void;
             auto UpdateTextMetrics(const RE::GFxValue &character) -> void;
