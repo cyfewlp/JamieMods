@@ -75,7 +75,7 @@ namespace LIBC_NAMESPACE_DECL
                 }
                 else if (!ImeManager->WaitEnableIme(false))
                 {
-                    log_error("ImeSupportUtils::PushContext - Close IME failed");;
+                    log_error("ImeSupportUtils::PushContext - Close IME failed");
                 }
             }
             return prev;
