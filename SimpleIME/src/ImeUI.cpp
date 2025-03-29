@@ -110,8 +110,8 @@ namespace LIBC_NAMESPACE_DECL
             windowFlags |= ImGuiWindowFlags_NoDecoration;
             windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
             static bool g_fShowImeWindow = false, g_fImeWindowPosUpdated = false;
-            if (State::GetInstance().Has(State::IME_DISABLED) ||
-                State::GetInstance().NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
+            auto       &state = State::GetInstance();
+            if (state.Has(State::IME_DISABLED) || state.NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
             {
                 g_fShowImeWindow = false;
                 return;
@@ -127,7 +127,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::Separator();
             // render ime status window: language,
-            if (State::GetInstance().Has(State::IN_CAND_CHOOSING))
+            if (state.Has(State::IN_CAND_CHOOSING))
             {
                 RenderCandidateWindows();
             }
@@ -137,6 +137,10 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeUI::UpdateImeWindowPos(bool showIme, bool &updated) -> void
         {
+            if (ImeManagerComposer::GetInstance()->IsSupportOtherMod())
+            {
+                return;
+            }
             switch (ImeManagerComposer::GetInstance()->GetImeWindowPosUpdatePolicy())
             {
                 case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CURSOR:
@@ -275,7 +279,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             static bool isSettingsWindowOpen = false;
             isSettingsWindowOpen             = m_fShowSettings;
-            auto &state                      = State::GetInstance();
 
             if (!m_fShowSettings)
             {
@@ -300,52 +303,27 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     break;
                 }
+                RenderSettingsState();
 
-                ImGui::SeparatorText(m_translation.Get("$States"));
-                m_imeUIWidgets.StateWidget("$Ime_Enabled", state.NotHas(State::IME_DISABLED));
-                m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
-                ImGui::SameLine();
-                m_imeUIWidgets.Button("$Force_Focus_Ime", [] {
-                    // ReSharper disable once CppExpressionWithoutSideEffects
-                    ImeManagerComposer::GetInstance()->ForceFocusIme();
-                });
+                m_imeUIWidgets.SeparatorText("$Features");
 
-                // Focus Manage widget
-                ImGui::SeparatorText(m_translation.Get("$Features"));
-                ImGui::SeparatorText(m_translation.Get("$Focus_Manage"));
-                auto focusType = imeManager->GetFocusManageType();
-                bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, Permanent);
-                ImGui::SameLine();
-                pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, Temporary);
-                if (pressed)
+                RenderSettingsFocusManage();
+                if (!imeManager->IsSupportOtherMod())
                 {
-                    imeManager->PopType();
-                    imeManager->PushType(focusType);
-                }
-                using Policy = ImeManagerComposer::ImeWindowPosUpdatePolicy;
-                auto policy  = imeManager->GetImeWindowPosUpdatePolicy();
-                m_translation.UseSection("Ime Window Pos");
-                m_imeUIWidgets.SeparatorText("$Policy");
-                m_imeUIWidgets.RadioButton("$Update_By_Cursor", &policy, Policy::BASED_ON_CURSOR);
-                ImGui::SameLine();
-                m_imeUIWidgets.RadioButton("$Update_By_Caret", &policy, Policy::BASED_ON_CARET);
-                ImGui::SameLine();
-                m_imeUIWidgets.RadioButton("$Update_By_None", &policy, Policy::NONE);
-                imeManager->SetDetectImeWindowPosByCaret(policy);
+                    RenderSettingsImePosUpdatePolicy();
+                    bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
+                    if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
+                    {
+                        imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
+                    }
 
-                m_translation.UseSection("Settings");
-                bool fEnableUnicodePaste = state.IsEnableUnicodePaste();
-                if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
-                {
-                    State::GetInstance().SetEnableUnicodePaste(fEnableUnicodePaste);
+                    ImGui::SameLine();
+                    bool fKeepImeOpen = imeManager->IsKeepImeOpen();
+                    if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+                    {
+                        imeManager->SetKeepImeOpen(fKeepImeOpen);
+                    }
                 }
-
-                ImGui::SameLine();
-                bool fKeepImeOpen = imeManager->IsKeepImeOpen();
-                m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen, [&imeManager](const bool keepImeOpen) {
-                    imeManager->SetKeepImeOpen(keepImeOpen);
-                    return imeManager->SyncImeState();
-                });
             } while (false);
             ImGui::PopStyleVar();
 
@@ -353,7 +331,57 @@ namespace LIBC_NAMESPACE_DECL
                 return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
             });
             ImGui::End();
+            if (State::GetInstance().Has(State::IME_DISABLED))
+            {
+                imeManager->SyncImeStateIfDirty();
+            }
             m_fShowSettings = isSettingsWindowOpen;
+        }
+
+        void ImeUI::RenderSettingsState() const
+        {
+            m_imeUIWidgets.SeparatorText("$States");
+            m_imeUIWidgets.StateWidget("$Ime_Enabled", State::GetInstance().NotHas(State::IME_DISABLED));
+            m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
+            ImGui::SameLine();
+            m_imeUIWidgets.Button("$Force_Focus_Ime", [] {
+                // ReSharper disable once CppExpressionWithoutSideEffects
+                ImeManagerComposer::GetInstance()->ForceFocusIme();
+            });
+        }
+
+        void ImeUI::RenderSettingsFocusManage()
+        {
+            // Focus Manage widget
+            auto *imeManager = ImeManagerComposer::GetInstance();
+
+            m_imeUIWidgets.SeparatorText("$Focus_Manage");
+
+            auto focusType = imeManager->GetFocusManageType();
+            bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, Permanent);
+            ImGui::SameLine();
+            pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, Temporary);
+            if (pressed)
+            {
+                imeManager->PopAndPushType(focusType);
+            }
+        }
+
+        void ImeUI::RenderSettingsImePosUpdatePolicy()
+        {
+            using Policy = ImeManagerComposer::ImeWindowPosUpdatePolicy;
+            auto policy  = ImeManagerComposer::GetInstance()->GetImeWindowPosUpdatePolicy();
+            m_translation.UseSection("Ime Window Pos");
+            {
+                m_imeUIWidgets.SeparatorText("$Policy");
+                m_imeUIWidgets.RadioButton("$Update_By_Cursor", &policy, Policy::BASED_ON_CURSOR);
+                ImGui::SameLine();
+                m_imeUIWidgets.RadioButton("$Update_By_Caret", &policy, Policy::BASED_ON_CARET);
+                ImGui::SameLine();
+                m_imeUIWidgets.RadioButton("$Update_By_None", &policy, Policy::NONE);
+                ImeManagerComposer::GetInstance()->SetDetectImeWindowPosByCaret(policy);
+            }
+            m_translation.UseSection("Settings");
         }
 
         void ImeUI::RenderCompWindow() const

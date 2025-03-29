@@ -31,12 +31,12 @@ namespace LIBC_NAMESPACE_DECL
             virtual auto WaitEnableMod(bool enable) const -> bool   = 0;
             virtual auto GiveUpFocus() const -> bool                = 0;
             virtual auto ForceFocusIme() -> bool                    = 0;
-            virtual auto SyncImeState() const -> bool               = 0;
+            virtual auto SyncImeState() -> bool                     = 0;
             /// <summary>
             /// Try focus IME when mod is enabled
             /// </summary>
             /// <returns>true if mod enabled and focus success, otherwise false</returns>
-            virtual auto TryFocusIme() -> bool        = 0;
+            virtual auto TryFocusIme() -> bool = 0;
 
             static auto Focus(HWND hwnd) -> bool;
             static auto UnlockKeyboard() -> bool;

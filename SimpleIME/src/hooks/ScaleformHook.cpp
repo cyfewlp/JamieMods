@@ -68,16 +68,22 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             g_textEntryCount = newValue;
+            auto *imeManager = Ime::ImeManagerComposer::GetInstance();
+            if (Ime::ImeManagerComposer::GetInstance()->IsSupportOtherMod())
+            {
+                return;
+            }
+            imeManager->SyncImeStateIfDirty();
             if (oldValue == 0 && newValue > 0)
             {
-                if (!Ime::ImeManagerComposer::GetInstance()->NotifyEnableIme(true))
+                if (!imeManager->NotifyEnableIme(true))
                 {
                     log_error("Send notify message fail {}", GetLastError());
                 }
             }
             else if (oldValue > 0 && newValue == 0)
             {
-                if (!Ime::ImeManagerComposer::GetInstance()->NotifyEnableIme(false))
+                if (!imeManager->NotifyEnableIme(false))
                 {
                     log_error("Send notify message fail {}", GetLastError());
                 }

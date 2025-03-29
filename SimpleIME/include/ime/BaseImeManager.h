@@ -65,7 +65,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{} {}", __func__, fEnableMod ? "enable" : "disable");
                 if (m_fForceUpdate)
                 {
-                    auto result = DoEnableMod(fEnableMod);
+                    auto result    = DoEnableMod(fEnableMod);
                     m_fForceUpdate = false;
                     return result;
                 }
@@ -112,7 +112,7 @@ namespace LIBC_NAMESPACE_DECL
                 return DoForceFocusIme();
             }
 
-            auto SyncImeState() const -> bool override
+            auto SyncImeState() -> bool override
             {
                 log_debug("BaseImeManager::{}", __func__);
                 if (!IsModEnabled())

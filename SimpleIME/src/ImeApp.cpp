@@ -262,7 +262,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-            if (!Core::State::GetInstance().IsSupportOtherMod())
+            if (!ImeManagerComposer::GetInstance()->IsSupportOtherMod())
             {
                 DoD3DPresent();
             }

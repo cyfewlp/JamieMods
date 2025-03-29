@@ -32,7 +32,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeSupportUtils::UpdateImeWindowPosition(float posX, float posY)
         {
-            if (IsAllowAction(State::GetInstance()))
+            if (IsAllowAction())
             {
                 auto windowName = SKSE::PluginDeclaration::GetSingleton()->GetName();
                 ImGui::SetWindowPos(windowName.data(), {posX, posY});
@@ -44,7 +44,7 @@ namespace LIBC_NAMESPACE_DECL
             const std::unique_lock lockGuard(GetInstance().m_mutex);
 
             auto &state   = State::GetInstance();
-            bool  success = IsAllowAction(state);
+            bool  success = IsAllowAction();
             if (success)
             {
                 if ((enable && state.Has(State::IME_DISABLED)) || (!enable && state.NotHas(State::IME_DISABLED)))
@@ -66,8 +66,17 @@ namespace LIBC_NAMESPACE_DECL
             auto  prev     = instance.m_refCount.load();
             if (instance.m_refCount >= 0 && instance.m_refCount++ == 0)
             {
-                State::GetInstance().SetSupportOtherMod(true);
-                ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent);
+                auto *ImeManager = ImeManagerComposer::GetInstance();
+                ImeManager->SetSupportOtherMod(true);
+                ImeManager->PushType(FocusType::Permanent);
+                if (ImeManager->IsDirty())
+                {
+                    ImeManager->SyncImeState();
+                }
+                else if (!ImeManager->WaitEnableIme(false))
+                {
+                    log_error("ImeSupportUtils::PushContext - Close IME failed");;
+                }
             }
             return prev;
         }
@@ -80,16 +89,18 @@ namespace LIBC_NAMESPACE_DECL
             auto  prev     = instance.m_refCount.load();
             if (instance.m_refCount > 0 && --instance.m_refCount == 0)
             {
-                State::GetInstance().SetSupportOtherMod(false);
-                ImeManagerComposer::GetInstance()->PopType();
+                auto *ImeManager = ImeManagerComposer::GetInstance();
+                ImeManager->SetSupportOtherMod(false);
+                ImeManager->PopType();
+                ImeManager->SyncImeState();
             }
             return prev;
         }
 
         bool ImeSupportUtils::IsWantCaptureInput(uint32_t keyCode)
         {
-            auto &state = Core::State::GetInstance();
-            bool  want  = state.IsSupportOtherMod() && !Utils::IsImeNotActivateOrGameLoading();
+            bool want = ImeManagerComposer::GetInstance()->IsSupportOtherMod();
+            want      = want && !Utils::IsImeNotActivateOrGameLoading();
             want = want && (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(keyCode)));
             return want;
         }
@@ -100,9 +111,9 @@ namespace LIBC_NAMESPACE_DECL
             return g_instance;
         }
 
-        auto ImeSupportUtils::IsAllowAction(State &state) -> bool
+        auto ImeSupportUtils::IsAllowAction() -> bool
         {
-            return ImeManagerComposer::GetInstance()->IsModEnabled() && state.IsSupportOtherMod();
+            return ImeManager::IsModEnabled() && ImeManagerComposer::GetInstance()->IsSupportOtherMod();
         }
     }
 }

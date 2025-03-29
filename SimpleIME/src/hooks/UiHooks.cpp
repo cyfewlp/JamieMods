@@ -15,7 +15,7 @@ namespace
     bool       ctrlDown            = false;
     const auto CursorVtableAddress = RE::VTABLE_CursorMenu[0].address();
 
-    static void Free(RE::IUIMessageData *data)
+    void Free(RE::IUIMessageData *data)
     {
         if (auto *memoryManager = RE::MemoryManager::GetSingleton(); memoryManager != nullptr)
         {

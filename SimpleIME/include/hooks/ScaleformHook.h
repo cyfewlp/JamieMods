@@ -9,11 +9,17 @@
 
 #include "common/hook.h"
 #include "common/log.h"
+#include "ime/ImeManagerComposer.h"
 
 #include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
+    namespace Ime
+    {
+        class ImeManagerComposer;
+    }
+
     namespace Hooks
     {
 
@@ -107,6 +113,10 @@ namespace LIBC_NAMESPACE_DECL
 
             static constexpr auto HasTextEntry() -> bool
             {
+                if (Ime::ImeManagerComposer::GetInstance()->IsSupportOtherMod())
+                {
+                    return false;
+                }
                 return g_textEntryCount > 0;
             }
 

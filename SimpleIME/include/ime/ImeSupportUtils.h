@@ -47,7 +47,7 @@ namespace LIBC_NAMESPACE_DECL
 
             static auto GetInstance() -> ImeSupportUtils &;
 
-            static auto IsAllowAction(State &state) -> bool;
+            static auto IsAllowAction() -> bool;
         };
     }
 }

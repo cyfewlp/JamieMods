@@ -47,6 +47,9 @@ namespace LIBC_NAMESPACE_DECL
             static auto UpdateImeWindowPosByCaret() -> bool;
 
             void RenderSettings();
+            void RenderSettingsState() const;
+            void RenderSettingsFocusManage();
+            void RenderSettingsImePosUpdatePolicy();
             void RenderCompWindow() const;
             void RenderCandidateWindows() const;
 

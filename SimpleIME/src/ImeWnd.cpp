@@ -176,15 +176,13 @@ namespace LIBC_NAMESPACE_DECL
             log_info("Exit ImeWnd Thread...");
         }
 
-        std::unique_ptr<ImeManagerComposer> ImeManagerComposer::g_instance = nullptr;
-
         void ImeWnd::OnStart()
         {
             m_pTextService->OnStart(m_hWnd);
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ImeManagerComposer::Init(this, m_hWndParent);
-            ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent);
+            ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent, true);
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -451,7 +449,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
         {
-            if (State::GetInstance().IsSupportOtherMod())
+            if (ImeManagerComposer::GetInstance()->IsSupportOtherMod())
             {
                 std::wstring resultCopy(compositionString);
                 ImeSupportUtils::BroadcastImeMessage(SimpleIME::SkseImeMessage::IME_COMPOSITION_RESULT,

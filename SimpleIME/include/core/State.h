@@ -71,32 +71,12 @@ namespace LIBC_NAMESPACE_DECL
 
             [[nodiscard]] constexpr auto TsfFocus() const -> bool
             {
-                return Has(StateKey::TSF_FOCUS);
+                return Has(TSF_FOCUS);
             }
 
             [[nodiscard]] auto ImeDisabled() const -> bool
             {
-                return Has(StateKey::IME_DISABLED);
-            }
-
-            auto SetSupportOtherMod(bool enable) -> void
-            {
-                m_fSupportOtherMod.store(enable);
-            }
-
-            [[nodiscard]] auto IsSupportOtherMod() const -> bool
-            {
-                return m_fSupportOtherMod.load();
-            }
-
-            auto SetEnableUnicodePaste(bool enable) -> void
-            {
-                m_fEnableUnicodePaste.store(enable);
-            }
-
-            [[nodiscard]] auto IsEnableUnicodePaste() const -> bool
-            {
-                return m_fEnableUnicodePaste.load();
+                return Has(IME_DISABLED);
             }
 
             static auto GetInstance() -> State &
@@ -107,8 +87,6 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             Enumeration<StateKey> m_state;
-            std::atomic_bool      m_fSupportOtherMod    = false;
-            std::atomic_bool      m_fEnableUnicodePaste = false;
         };
     }
 }
