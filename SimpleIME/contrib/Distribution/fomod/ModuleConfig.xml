@@ -30,25 +30,4 @@ Check the mod page to learn how to add yourself themes.
     </installStep>
   </installSteps>
 
-  <conditionalFileInstalls>
-    <patterns>
-      <pattern>
-        <dependencies operator="And">
-          <flagDependency flag="patch_race_menu_ae" value="On"/>
-        </dependencies>
-        <files>
-          <folder source="patch/RaceMenuAE" destination="interface" priority="0" />
-        </files>
-      </pattern>
-      <pattern>
-        <dependencies operator="And">
-          <flagDependency flag="patch_default_race_menu" value="On"/>
-        </dependencies>
-        <files>
-          <folder source="patch/DefaultRaceMenu" destination="interface" priority="0" />
-        </files>
-      </pattern>
-    </patterns>
-  </conditionalFileInstalls>
-
 </config>
