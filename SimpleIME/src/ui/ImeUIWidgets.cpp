@@ -96,6 +96,18 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        auto ImeUIWidgets::Checkbox(String label, bool &checked) const -> bool
+        {
+            const auto *name    = m_translation->Get(label);
+            bool        clicked = false;
+            if (ImGui::Checkbox(name, &checked))
+            {
+                clicked = true;
+            }
+            TrySetItemTooltip(label);
+            return clicked;
+        }
+
         auto ImeUIWidgets::Begin(String windowName, bool *open, ImGuiWindowFlags flags) -> void
         {
             const auto *name = m_translation->Get(windowName);

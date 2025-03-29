@@ -3,7 +3,6 @@
 #include "enumeration.h"
 #include <atomic>
 #include <cstdint>
-#include <shared_mutex>
 #include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
@@ -50,6 +49,13 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             template <typename... Args>
+            auto HasAll(Args &&...state) const -> bool
+                requires((std::is_same_v<Args, StateKey> && ...))
+            {
+                return m_state.all(std::forward<Args>(state)...);
+            }
+
+            template <typename... Args>
             auto HasAny(Args &&...state) const -> bool
                 requires((std::is_same_v<Args, StateKey> && ...))
             {
@@ -65,42 +71,12 @@ namespace LIBC_NAMESPACE_DECL
 
             [[nodiscard]] constexpr auto TsfFocus() const -> bool
             {
-                return Has(StateKey::TSF_FOCUS);
+                return Has(TSF_FOCUS);
             }
 
             [[nodiscard]] auto ImeDisabled() const -> bool
             {
-                return Has(StateKey::IME_DISABLED);
-            }
-
-            auto SetEnableMod(bool enable) -> void
-            {
-                m_fModEnabled.store(enable);
-            }
-
-            [[nodiscard]] auto IsModEnabled() const -> bool
-            {
-                return m_fModEnabled.load();
-            }
-
-            auto SetSupportOtherMod(bool enable) -> void
-            {
-                m_fSupportOtherMod.store(enable);
-            }
-
-            [[nodiscard]] auto IsSupportOtherMod() const -> bool
-            {
-                return m_fSupportOtherMod.load();
-            }
-
-            auto SetEnableUnicodePaste(bool enable) -> void
-            {
-                m_fEnableUnicodePaste.store(enable);
-            }
-
-            [[nodiscard]] auto IsEnableUnicodePaste() const -> bool
-            {
-                return m_fEnableUnicodePaste.load();
+                return Has(IME_DISABLED);
             }
 
             static auto GetInstance() -> State &
@@ -111,9 +87,6 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             Enumeration<StateKey> m_state;
-            std::atomic_bool      m_fModEnabled         = false;
-            std::atomic_bool      m_fSupportOtherMod    = false;
-            std::atomic_bool      m_fEnableUnicodePaste = false;
         };
     }
 }

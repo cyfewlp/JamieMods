@@ -9,7 +9,7 @@
 #include "context.h"
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "ime/ImeSupportUtils.h"
 
 #include <d3d11.h>
@@ -182,7 +182,7 @@ namespace LIBC_NAMESPACE_DECL
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ImeManagerComposer::Init(this, m_hWndParent);
-            ImeManagerComposer::GetInstance()->Use(FocusManageType::Permanent);
+            ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent, true);
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -449,7 +449,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
         {
-            if (State::GetInstance().IsSupportOtherMod())
+            if (ImeManagerComposer::GetInstance()->IsSupportOtherMod())
             {
                 std::wstring resultCopy(compositionString);
                 ImeSupportUtils::BroadcastImeMessage(SimpleIME::SkseImeMessage::IME_COMPOSITION_RESULT,

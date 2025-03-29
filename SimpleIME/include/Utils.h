@@ -7,29 +7,30 @@
 
 #include "common/log.h"
 
+#include "core/State.h"
 #include "hooks/UiHooks.h"
-#include "hooks/WinHooks.h"
+#include "ime/ImeManagerComposer.h"
 
 #include <string>
 
 namespace RE
 {
-        class GFxCharEvent : public RE::GFxEvent
+    class GFxCharEvent : public RE::GFxEvent
+    {
+    public:
+        GFxCharEvent() = default;
+
+        explicit GFxCharEvent(UINT32 a_wcharCode, UINT8 a_keyboardIndex = 0)
+            : GFxEvent(EventType::kCharEvent), wcharCode(a_wcharCode), keyboardIndex(a_keyboardIndex)
         {
-        public:
-            GFxCharEvent() = default;
+        }
 
-            explicit GFxCharEvent(UINT32 a_wcharCode, UINT8 a_keyboardIndex = 0)
-                : GFxEvent(EventType::kCharEvent), wcharCode(a_wcharCode), keyboardIndex(a_keyboardIndex)
-            {
-            }
+        // @members
+        std::uint32_t wcharCode{};     // 04
+        std::uint32_t keyboardIndex{}; // 08
+    };
 
-            // @members
-            std::uint32_t wcharCode{};     // 04
-            std::uint32_t keyboardIndex{}; // 08
-        };
-
-        static_assert(sizeof(GFxCharEvent) == 0x0C);
+    static_assert(sizeof(GFxCharEvent) == 0x0C);
 }
 
 namespace LIBC_NAMESPACE_DECL
@@ -40,12 +41,53 @@ namespace LIBC_NAMESPACE_DECL
         {
             static constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `
             static constexpr auto ASCII_MIDDLE_DOT   = 0xB7; // ·
+            using State                              = Core::State;
 
         public:
             template <typename Ptr>
             static auto ToLongPtr(Ptr *ptr) -> LONG_PTR
             {
                 return reinterpret_cast<LONG_PTR>(ptr);
+            }
+
+            static constexpr auto IsVkCodeDown(uint32_t vkCode) -> bool
+            {
+                return (::GetKeyState(vkCode) & 0x8000) != 0;
+            }
+
+            static constexpr auto IsCapsLockOn() -> bool
+            {
+                SHORT capsState = GetKeyState(VK_CAPITAL);
+                return (capsState & 0x0001) != 0;
+            }
+
+            static constexpr auto IsImeNotActivateOrGameLoading() -> bool
+            {
+                auto &state = State::GetInstance();
+                return !ImeManagerComposer::GetInstance()->IsModEnabled() || //
+                       state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
+                       state.NotHas(State::LANG_PROFILE_ACTIVATED);
+            }
+
+            static constexpr auto IsImeInputting() -> bool
+            {
+                return State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
+            }
+
+            static constexpr auto IsKeyWillTriggerIme(const uint32_t keycode) -> bool
+            {
+                if (IsVkCodeDown(VK_CONTROL) || IsVkCodeDown(VK_SHIFT) || IsVkCodeDown(VK_MENU) ||
+                    IsVkCodeDown(VK_LWIN) || IsVkCodeDown(VK_RWIN))
+                {
+                    return false;
+                }
+
+                bool result = false;
+                using Key   = RE::BSKeyboardDevice::Keys::Key;
+                result      = result || (keycode >= Key::kQ && keycode <= Key::kP);
+                result      = result || (keycode >= Key::kA && keycode <= Key::kL);
+                result      = result || (keycode >= Key::kZ && keycode <= Key::kM);
+                return result;
             }
 
             static auto PasteText(HWND hWnd) -> bool

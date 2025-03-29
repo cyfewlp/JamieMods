@@ -1,19 +1,19 @@
 #include "core/EventHandler.h"
 
 #include "ImeWnd.hpp"
+#include "Utils.h"
 #include "configs/AppConfig.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "imgui.h"
+#include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
-#include <RE/B/BSKeyboardDevice.h>
 #include <RE/B/BSTEvent.h>
 #include <RE/B/BSWin32MouseDevice.h>
 #include <RE/B/ButtonEvent.h>
-#include <RE/C/Console.h>
 #include <RE/C/CursorMenu.h>
 #include <RE/I/InputDevices.h>
 #include <RE/I/InputEvent.h>
@@ -24,46 +24,11 @@
 #include <common/log.h>
 #include <cstdint>
 #include <dinput.h>
-#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime::Core
     {
-
-        constexpr auto EventHandler::IsImeNotActivateOrGameLoading() -> bool
-        {
-            auto &state = State::GetInstance();
-            return !state.IsModEnabled() || //
-                   state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
-                   state.NotHas(State::LANG_PROFILE_ACTIVATED);
-        }
-
-        constexpr auto EventHandler::IsImeInputting() -> bool
-        {
-            return State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
-        }
-
-        auto EventHandler::IsWillTriggerIme(const std::uint32_t code) -> bool
-        {
-            // check modifier keys is down?
-            auto isDown = [](auto vkCode) -> bool {
-                return (::GetKeyState(vkCode) & 0x8000) != 0;
-            };
-
-            if (isDown(VK_CONTROL) || isDown(VK_SHIFT) || isDown(VK_MENU) || isDown(VK_LWIN) || isDown(VK_RWIN))
-            {
-                return false;
-            }
-
-            bool result = false;
-            using Key   = RE::BSKeyboardDevice::Keys::Key;
-            result |= code >= Key::kQ && code <= Key::kP;
-            result |= code >= Key::kA && code <= Key::kL;
-            result |= code >= Key::kZ && code <= Key::kM;
-            return result;
-        }
-
         constexpr auto EventHandler::IsPasteShortcutPressed(auto &code)
         {
             return code == ENUM_DIK_V && (::GetKeyState(ENUM_VK_CONTROL) & 0x8000) != 0;
@@ -71,10 +36,10 @@ namespace LIBC_NAMESPACE_DECL
 
         void EventHandler::InstallEventSink(ImeWnd *imeWnd)
         {
-            static auto g_InputEventSink          = std::make_unique<InputEventSink>(imeWnd);
-            static auto g_pMenuOpenCloseEventSink = std::make_unique<MenuOpenCloseEventSink>();
-            RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(g_InputEventSink.get());
-            RE::UI::GetSingleton()->AddEventSink(g_pMenuOpenCloseEventSink.get());
+            static InputEventSink         g_InputEventSink(imeWnd);
+            static MenuOpenCloseEventSink g_pMenuOpenCloseEventSink;
+            RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&g_InputEventSink);
+            RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
         }
 
         auto EventHandler::UpdateMessageFilter(RE::InputEvent **a_events) -> void
@@ -98,13 +63,13 @@ namespace LIBC_NAMESPACE_DECL
                 return;
             }
             const auto code = buttonEvent->GetIDCode();
-            if (IsImeNotActivateOrGameLoading())
+            if (Utils::IsImeNotActivateOrGameLoading())
             {
                 Hooks::UiHooks::EnableMessageFilter(false);
             }
             else
             {
-                if (IsImeInputting() || (!IsCapsLockOn() && IsWillTriggerIme(code)))
+                if (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
                 {
                     Hooks::UiHooks::EnableMessageFilter(true);
                 }
@@ -125,12 +90,6 @@ namespace LIBC_NAMESPACE_DECL
             return discard;
         }
 
-        auto EventHandler::IsCapsLockOn() -> bool
-        {
-            SHORT capsState = GetKeyState(VK_CAPITAL);
-            return (capsState & 0x0001) != 0;
-        }
-
         auto EventHandler::PostHandleKeyboardEvent() -> void
         {
         }
@@ -142,7 +101,6 @@ namespace LIBC_NAMESPACE_DECL
         RE::BSEventNotifyControl InputEventSink::ProcessEvent(Event *const *events,
                                                               RE::BSTEventSource<Event *> * /*eventSource*/)
         {
-
             for (auto *event = *events; event != nullptr; event = event->next)
             {
                 if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
@@ -208,13 +166,13 @@ namespace LIBC_NAMESPACE_DECL
         RE::BSEventNotifyControl MenuOpenCloseEventSink::ProcessEvent(const Event *event,
                                                                       RE::BSTEventSource<Event> * /*eventSource*/)
         {
-            log_trace("Menu {} open {}", event->menuName.c_str(), event->opening);
+            log_debug("Menu {} open {}", event->menuName.c_str(), event->opening);
             static bool firstOpenMainMenu = true;
-            if (event->menuName == RE::Console::MENU_NAME)
+            if (event->menuName != RE::CursorMenu::MENU_NAME && event->menuName != RE::HUDMenu::MENU_NAME)
             {
-                Hooks::ScaleformAllowTextInput::OnTextEntryCountChanged();
+                FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
             }
-            else if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
+            if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {
                 firstOpenMainMenu = false;
                 ImeManagerComposer::GetInstance()->NotifyEnableMod(true);
@@ -231,14 +189,14 @@ namespace LIBC_NAMESPACE_DECL
             if (event->menuName == RE::CursorMenu::MENU_NAME && !event->opening)
             {
                 // fix: MapMenu will not call AllowTextInput(false) when closing
-                uint8_t textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                uint8_t textEntryCount = Hooks::SKSE_ScaleformAllowTextInput::TextEntryCount();
                 while (textEntryCount > 0)
                 {
-                    Hooks::ScaleformAllowTextInput::AllowTextInput(false);
+                    Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(false);
                     textEntryCount--;
                 }
                 // check var consistency
-                textEntryCount = Hooks::ScaleformAllowTextInput::TextEntryCount();
+                textEntryCount = Hooks::SKSE_ScaleformAllowTextInput::TextEntryCount();
                 if (textEntryCount != 0)
                 {
                     log_warn("Text entry count is incorrect and can't fix it! count: {}", textEntryCount);

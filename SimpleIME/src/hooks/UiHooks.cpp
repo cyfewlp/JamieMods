@@ -5,6 +5,7 @@
 #include "hooks/UiHooks.h"
 #include "Utils.h"
 #include "hooks/WinHooks.h"
+#include "ime/ImeManagerComposer.h"
 
 #include <RE/Offsets_VTABLE.h>
 #include <memory>
@@ -14,7 +15,7 @@ namespace
     bool       ctrlDown            = false;
     const auto CursorVtableAddress = RE::VTABLE_CursorMenu[0].address();
 
-    static void Free(RE::IUIMessageData *data)
+    void Free(RE::IUIMessageData *data)
     {
         if (auto *memoryManager = RE::MemoryManager::GetSingleton(); memoryManager != nullptr)
         {
@@ -111,7 +112,8 @@ namespace LIBC_NAMESPACE_DECL
         auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
         {
             auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
-            if (!IsEnableUnicodePaste() || self == nullptr || vtable == CursorVtableAddress)
+
+            if (!Ime::ImeManagerComposer::GetInstance()->IsUnicodePasteEnabled() || vtable == CursorVtableAddress)
             {
                 return MenuProcessMessage->Original(self, uiMessage);
             }
@@ -132,7 +134,7 @@ namespace LIBC_NAMESPACE_DECL
         auto UiHooks::MyConsoleProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
         {
             auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
-            if (!IsEnableUnicodePaste() || self == nullptr || vtable == CursorVtableAddress)
+            if (!Ime::ImeManagerComposer::GetInstance()->IsUnicodePasteEnabled() || vtable == CursorVtableAddress)
             {
                 return ConsoleProcessMessage->Original(self, uiMessage);
             }

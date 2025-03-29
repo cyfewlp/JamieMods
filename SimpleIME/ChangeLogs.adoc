@@ -192,7 +192,7 @@ Steam overlay.
 ** Default use `PermanentFocusManager`
 --
 
-== 0.3.0
+== 1.0.0
 
 * [x] Try do IME support for other mod;
 ** By send `IME_INTEGRATION_INIT` to public API RenderIme/EnableIme/UpdateImeWindowPosition/IsEnabled
@@ -217,6 +217,31 @@ message.
 IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
 * [x] Don't enable message filter when `capslock` press.
 
+== 1.1.0
+
+* [x] Modex: Disable send `delete` event to ImGui
++
+Keep `IsWantCaptureInput` main logic same as `EventHandler#EnableMessageFilter`
+* [*] Fix `RaceMenu` text entry can't use IME.  By hook `AllowTextInput(67252, 68552)`. This alos fixed console, 
+so we no longer needed listen console `open/close` event and no longer needed provide pacth for `ReceMenu`
+* [x] Dynamic detect current text entry position
+* [x] Support auto detect caret screen position.
++
+. Handle scroll text
+. Add config to enable/disable this feature
+. Merge `Ime Follow Cursor` config
+* [x] Don't render only support game configs?
++
+. Ignore `Ime Window Update policy` config when IME used for Other mod;
+. Ignore `KeepImeOpen` config when IME used for Other mod;
+* [x] move "Keep Ime Open" to ImeManager?
+* [x] Try get current meun/ text entry position
+* [x] Disable Notify Enable IME from Game menu open/close hwne in support other mods.
+
+=== Issues
+
+* [x] Fix `Enable Mod`
+
 == To-Do
 
 === Issues
@@ -225,24 +250,23 @@ IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
 * [ ] `SetFocus` is execute by async? In some case, IME will receive focus after `FocusImeOrGame` fail.
 +
 Just giveup this feature?
+* [ ] `GSysAllocPaged#ShutdownHeapEngine` crash
++
+crash in `GMemoryHeapMH::destroyItself()`?
+* [ ] Disable message filter when in support other mods?
 
 === Code improve
 
-* [ ] ImeManager 
-. for enable/disable mod, enable/disbale IME
-
 * [ ] AppConfig
-    - [ ] section;
+    - [x] section;
     - [x] add new key by register;
     - universal config name style
 
 === Feature improve
 
+* [ ] Call ActionScript method do copy/paste?
 * [ ] Support select candidate by mouse click
 * [ ] Mod Error hint
-* [ ] Ctrl-c/v support
-    . In `DispatchInputEvent` detect copy command and transfer clipboard data to `TextService`
-to disable game paste feature
 * [ ] Support config `follow cursor` in `ini` file.
 * [ ] support change and save configs in `ToolWindow`
 * [ ] GameProfileSwitch script optimize;

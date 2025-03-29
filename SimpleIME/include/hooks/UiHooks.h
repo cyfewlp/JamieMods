@@ -68,12 +68,6 @@ namespace LIBC_NAMESPACE_DECL
             static void AddMessageHook(RE::UIMessageQueue *self, RE::BSFixedString &menuName,
                                        RE::UI_MESSAGE_TYPE messageType, RE::IUIMessageData *pMessageData);
 
-            static auto IsEnableUnicodePaste() -> bool
-            {
-                auto &state = Ime::Core::State::GetInstance();
-                return state.IsModEnabled() && state.IsEnableUnicodePaste();
-            }
-
             // Handle Ctrl-V: if mod enabled paste, disable game do paste operation.
             // And do our paste operation after the original function return.
             static auto MyMenuProcessMessage(RE::IMenu *, RE::UIMessage &) -> RE::UI_MESSAGE_RESULTS;

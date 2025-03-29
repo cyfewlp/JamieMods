@@ -11,7 +11,7 @@
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
-#include "ime/ImeManager.h"
+#include "ime/ImeManagerComposer.h"
 #include "ime/ImeSupportUtils.h"
 
 #include <basetsd.h>
@@ -65,7 +65,7 @@ namespace LIBC_NAMESPACE_DECL
         void ImeApp::Initialize()
         {
             m_fInitialized.store(false);
-            // Hooks::InstallRegisterClassHook();
+            // TODO: Read type by config?
             Hooks::WinHooks::InstallHooks();
 
             D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(ImeApp::D3DInit);
@@ -80,6 +80,7 @@ namespace LIBC_NAMESPACE_DECL
                 D3DInitHook = nullptr;
                 UninstallHooks();
             }
+            ImeManagerComposer::GetInstance()->PopType();
             m_fInitialized.store(false);
         }
 
@@ -197,6 +198,8 @@ namespace LIBC_NAMESPACE_DECL
             static SimpleIME::IntegrationData g_IntegrationData //
                 = {.RenderIme               = DoD3DPresent,
                    .EnableIme               = ImeSupportUtils::EnableIme,
+                   .PushContext             = ImeSupportUtils::PushContext,
+                   .PopContext              = ImeSupportUtils::PopContext,
                    .UpdateImeWindowPosition = ImeSupportUtils::UpdateImeWindowPosition,
                    .IsWantCaptureInput      = ImeSupportUtils::IsWantCaptureInput};
             ImeSupportUtils::BroadcastImeIntegrationMessage(&g_IntegrationData);
@@ -259,7 +262,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-            if (!Core::State::GetInstance().IsSupportOtherMod())
+            if (!ImeManagerComposer::GetInstance()->IsSupportOtherMod())
             {
                 DoD3DPresent();
             }
