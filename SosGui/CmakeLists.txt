@@ -1,7 +1,7 @@
 project(
-    SkyrimSETransmogrify
+    SosGui
     VERSION 0.0.1 
-    DESCRIPTION "SkyrmiSE Transmogrify System"
+    DESCRIPTION "SkyrimOutfitSystemSE ImGui"
     LANGUAGES CXX
 )
 
@@ -14,43 +14,34 @@ configure_file(
 set(EXTERN_LIBS ${CMAKE_SOURCE_DIR}/extern)
 
 ## Set Output folder
-if(DEFINED ENV{SKYRIM_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_FOLDER}/Data")
-    set(OUTPUT_FOLDER "$ENV{SKYRIM_FOLDER}/Data")
-endif()
 
-if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
-    set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
-endif()
+if (DEFINED ENV{MO2_MODS_PATH} AND IS_DIRECTORY "$ENV{MO2_MODS_PATH}")
+    set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
+endif ()
 
 ## Plugin setttings
 
 find_package(spdlog CONFIG REQUIRED)
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
-#find_package(CommonLibSSE CONFIG REQUIRED)
 
+file(GLOB_RECURSE headers include/*.h)
+file(GLOB_RECURSE sources src/*.cpp)
 
-# [BEGIN Build CommonlibSSE]
-# Set your project name. This will be the name of your SKSE .dll file.
+source_group(
+    TREE ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES
+    ${sources} ${headers}
+)
 
-#find_library(
-#    CommonLibSSE_LIB CommonLibSSE PATHS "${EXTERN_LIBS}/CommonLibSSE-NG"
-#    REQUIRED
-#)
+include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 
-add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
-    src/plugin.cpp
-    src/input.cpp
-    src/RenderManager.cpp
-    src/Transmogrify.cpp
-    src/Hooks.cpp
-    src/Context.cpp
-    src/SKSEDetours.cpp
-    src/Window.cpp
-    src/ImeUI.cpp
+add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
+    ${sources}
+	${headers}
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
-    MINIMUM_SKSE_VERSION "1.6.317"
-) # <--- specifies plugin.cpp
+    MINIMUM_SKSE_VERSION "1.5.97"
+)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h) # <--- PCH.h is required!
 
@@ -58,16 +49,15 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h) # <--- PCH.h is req
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
-        ${DETOURS_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
-		# ${CMAKE_CURRENT_SOURCE_DIR}/../extern
+        ${DETOURS_INCLUDE_DIRS}
 )
 
 # linkage
 target_link_libraries(
 	${PROJECT_NAME} 
 	PRIVATE
-		#CommonLibSSE_LIB
 		spdlog::spdlog
 		imgui
         ${DETOURS_LIBRARY}
@@ -89,7 +79,6 @@ if(DEFINED OUTPUT_FOLDER)
         POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/Data/SKSE/Plugins/SkyrimTransmogrify.ini" "${DLL_FOLDER}/SkyrimTransmogrify.ini"
         VERBATIM
     )
 

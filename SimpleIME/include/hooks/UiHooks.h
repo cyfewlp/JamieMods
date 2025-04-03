@@ -5,6 +5,7 @@
 #ifndef UIADDMESSAGEHOOK_H
 #define UIADDMESSAGEHOOK_H
 
+#include "common/FunctionHook.h"
 #include "common/log.h"
 
 #include "core/State.h"

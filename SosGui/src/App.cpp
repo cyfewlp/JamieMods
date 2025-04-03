@@ -1,0 +1,144 @@
+#include "App.h"
+#include "EventHandler.h"
+#include "PapyrusEvent.h"
+#include "common/common.h"
+#include "common/log.h"
+
+#include <cstdint>
+#include <exception>
+#include <string>
+
+namespace LIBC_NAMESPACE_DECL
+{
+    auto PluginInit() -> bool
+    {
+        using Message = SKSE::MessagingInterface::Message;
+        SKSE::GetMessagingInterface()->RegisterListener([](Message *message) {
+            if (message->type == SKSE::MessagingInterface::kPostLoadGame)
+            {
+                log_debug("Send Event with Init");
+                PapyrusEvent::GetInstance().CallNoArgs("Init");
+            }
+            else if (message->type == SKSE::MessagingInterface::kInputLoaded)
+            {
+                App::GetInstance().InstallSinks();
+            }
+        });
+        SKSE::GetPapyrusInterface()->Register(PapyrusEvent::Bind);
+
+        App::GetInstance().Init();
+        return true;
+    }
+
+    auto App::Init() -> void
+    {
+        log_info("Initializing....");
+
+        log_info("Install D3DInitHook....");
+        D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
+    }
+
+    auto App::InstallSinks() -> void
+    {
+        EventHandler::InstallSink(&m_SosGui);
+    }
+
+    void App::D3DInit()
+    {
+        try
+        {
+            GetInstance().DoD3DInit();
+            return;
+        }
+        catch (std::exception &error)
+        {
+            const auto message = std::format("SimpleIME initialize fail: \n {}", error.what());
+            log_error(message.c_str());
+        }
+        catch (...)
+        {
+            const auto message = std::string("SimpleIME initialize fail: \n occur unexpected error.");
+            log_error(message.c_str());
+        }
+        LogStacktrace();
+    }
+
+    void App::DoD3DInit()
+    {
+        D3DInitHook->Original();
+
+        auto *renderer = RE::BSGraphics::Renderer::GetSingleton();
+        if (renderer == nullptr)
+        {
+            throw InitFail("Cannot find render manager.");
+        }
+
+        auto &renderData = renderer->data;
+        log_debug("Getting SwapChain...");
+        auto *pSwapChain = renderData.renderWindows[0].swapChain;
+        if (pSwapChain == nullptr)
+        {
+            throw InitFail("Cannot find SwapChain.");
+        }
+        log_debug("Getting SwapChain desc...");
+        REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
+        if (pSwapChain->GetDesc(&swapChainDesc) < 0)
+        {
+            throw InitFail("IDXGISwapChain::GetDesc failed.");
+        }
+
+        m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
+        if (!m_SosGui.Init(renderData, m_hWnd))
+        {
+            throw InitFail("Can't initialize SosGui.");
+        }
+        m_fInitialized.store(true);
+
+        log_debug("Hooking Skyrim WndProc...");
+        RealWndProc =
+            reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
+        if (RealWndProc == nullptr)
+        {
+            throw InitFail("Hook WndProc failed!");
+        }
+        InstallHooks();
+    }
+
+    void App::D3DPresent(std::uint32_t ptr)
+    {
+        // auto &app = GetInstance();
+        // app.D3DPresentHook->Original(ptr);
+        // app.m_SosGui.Render();
+    }
+
+    void App::MenuPostDisplay(RE::IMenu *self)
+    {
+        static const auto CursorVtableAddress = RE::VTABLE_CursorMenu[0].address();
+
+        // Is cursor menu?
+        auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
+        if (vtable == CursorVtableAddress)
+        {
+            GetInstance().m_SosGui.Render();
+        }
+
+        GetInstance().g_MenuPostDisplayHook->Original(self);
+    }
+
+    void App::InstallHooks()
+    {
+        // D3DPresentHook        = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
+        g_MenuPostDisplayHook = std::make_unique<MenuPostDisplayHook>(MenuPostDisplay);
+    }
+
+    auto App::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
+    {
+        auto &app = GetInstance();
+        switch (uMsg)
+        {
+            default:
+                break;
+        }
+        return app.RealWndProc(hWnd, uMsg, wParam, lParam);
+    }
+}
