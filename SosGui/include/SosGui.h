@@ -42,11 +42,11 @@ namespace LIBC_NAMESPACE_DECL
         auto DoRender() -> void;
         void RenderCharactersConfig();
         void RenderCharactersList();
-        void RenderLocationBasedAutoswitch(RE::Actor *currentActor);
         void RenderOutfitConfiguration();
         void RenderOutfitArmors(const std::string_view &outfitName);
         auto RenderArmorConflictPopup();
 
+        static void RenderLocationBasedAutoswitch(RE::Actor *currentActor);
         static void RenderOutfitEditPanel(const std::string_view &outfitName);
         static void RenderOutfitAddPolicyById(const std::string_view &outfitName, bool &fFilterPlayable);
         static void RenderOutfitAddPolicyByCandidates(const std::string_view &outfitName);

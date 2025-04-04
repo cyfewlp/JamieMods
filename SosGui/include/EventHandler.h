@@ -2,6 +2,8 @@
 
 #include "SosGui.h"
 
+enum ImGuiKey : int;
+
 namespace LIBC_NAMESPACE_DECL
 {
     class InputEventSink : public RE::BSTEventSink<RE::InputEvent *>
@@ -17,8 +19,10 @@ namespace LIBC_NAMESPACE_DECL
                                               RE::BSTEventSource<RE::InputEvent *> * /*eventSource*/) override;
 
     private:
-        void        ProcessKeyboardButtonEvent(const RE::ButtonEvent *buttonEvent);
+        static void ProcessKeyboardButtonEvent(const RE::ButtonEvent *buttonEvent);
+        static void ProcessCharEvent(const RE::CharEvent *charEvent);
         static void ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent);
+        static auto DikToImGuiKey(uint32_t dikCode) -> ImGuiKey;
     };
 
     class EventHandler

@@ -16,7 +16,6 @@ namespace LIBC_NAMESPACE_DECL
     auto SosGui::ToggleShow() -> void
     {
         m_fShow = !m_fShow;
-
         if (m_fShow)
         {
             PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
@@ -107,10 +106,10 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::DoRender() -> void
     {
-        if (!m_fShow)
-        {
-            return;
-        }
+        // if (!m_fShow)
+        // {
+        //     return;
+        // }
         ImGui::Begin("SosGuiOptions", &m_fShow);
         {
             bool fEnabled = SosUiData::GetInstance().IsEnabled();
@@ -208,7 +207,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 ImGui::PushID(idx);
                 ImGui::TableNextRow();
-                bool isSelected = selectedIdx == idx;
+                bool const isSelected = selectedIdx == idx;
                 if (isSelected)
                 {
                     auto color = ImGui::GetColorU32(ImGuiCol_HeaderActive);
@@ -436,7 +435,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             ImGui::PushID(idx);
 
-            ImGui::SameLine();
             if (ImGui::RadioButton(policy.c_str(), idx == selectedIdx))
             {
                 selectedIdx = idx;

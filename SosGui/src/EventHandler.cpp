@@ -1,8 +1,11 @@
 #include "EventHandler.h"
 
+#include "SosGuiMenu.h"
 #include "imgui.h"
 
 #include <common/log.h>
+
+extern ImGuiKey ImGui_ImplWin32_KeyEventToImGuiKey(WPARAM wParam, LPARAM lParam);
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -13,22 +16,30 @@ namespace LIBC_NAMESPACE_DECL
         {
             for (auto *event = *events; event != nullptr; event = event->next)
             {
-                if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
+                switch (event->GetEventType())
                 {
-                    if (auto *buttonEvent = event->AsButtonEvent(); buttonEvent != nullptr)
-                    {
-                        switch (buttonEvent->GetDevice())
+                    case RE::INPUT_EVENT_TYPE::kButton: {
+                        if (auto *buttonEvent = event->AsButtonEvent(); buttonEvent != nullptr)
                         {
-                            case RE::INPUT_DEVICE::kKeyboard:
-                                ProcessKeyboardButtonEvent(buttonEvent);
-                                break;
-                            case RE::INPUT_DEVICE ::kMouse:
-                                ProcessMouseButtonEvent(buttonEvent);
-                                break;
-                            default:
-                                break;
+                            switch (buttonEvent->GetDevice())
+                            {
+                                case RE::INPUT_DEVICE::kKeyboard:
+                                    ProcessKeyboardButtonEvent(buttonEvent);
+                                    break;
+                                case RE::INPUT_DEVICE ::kMouse:
+                                    ProcessMouseButtonEvent(buttonEvent);
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
+                        break;
                     }
+                    case RE::INPUT_EVENT_TYPE::kChar:
+                        ProcessCharEvent(event->AsCharEvent());
+                        break;
+                    default:
+                        break;
                 }
             }
 
@@ -42,8 +53,24 @@ namespace LIBC_NAMESPACE_DECL
         using Keys = RE::BSWin32KeyboardDevice::Keys;
         if (buttonEvent->GetIDCode() == Keys::kF1 && buttonEvent->IsDown())
         {
-            m_SosGui->ToggleShow();
+            // m_SosGui->ToggleShow();
+            static bool fShow  = false;
+            fShow              = !fShow;
+            auto *messageQueue = RE::UIMessageQueue::GetSingleton();
+            messageQueue->AddMessage(SosGuiMenu::MENU_NAME,
+                                     fShow ? RE::UI_MESSAGE_TYPE::kShow : RE::UI_MESSAGE_TYPE::kHide, nullptr);
         }
+        auto imGuiKey = DikToImGuiKey(buttonEvent->GetIDCode());
+        ImGui::GetIO().AddKeyEvent(imGuiKey, buttonEvent->IsPressed());
+    }
+
+    auto InputEventSink::DikToImGuiKey(uint32_t dikCode) -> ImGuiKey
+    {
+        HKL          keyboardLayout = GetKeyboardLayout(0);
+        const UINT   vkCode         = ::MapVirtualKeyEx(dikCode, MAPVK_VSC_TO_VK, keyboardLayout);
+        const BOOL   isExtended     = (vkCode == VK_RCONTROL || vkCode == VK_RMENU);
+        const LPARAM lParam         = isExtended << 24;
+        return ImGui_ImplWin32_KeyEventToImGuiKey(vkCode, lParam);
     }
 
     void InputEventSink::ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent)
@@ -65,10 +92,21 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
+    void InputEventSink::ProcessCharEvent(const RE::CharEvent *charEvent)
+    {
+        if (charEvent == nullptr)
+        {
+            return;
+        }
+
+        ImGui::GetIO().AddInputCharacter(charEvent->keycode);
+    }
+
     void EventHandler::InstallSink(SosGui *sosGui)
     {
         static InputEventSink sink(sosGui);
-        log_info("Installing InputEvent sink..");;
+        log_info("Installing InputEvent sink..");
+
         RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&sink);
     }
 }

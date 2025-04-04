@@ -1,10 +1,10 @@
 #include "App.h"
 #include "EventHandler.h"
 #include "PapyrusEvent.h"
+#include "SosGuiMenu.h"
 #include "common/common.h"
 #include "common/log.h"
 
-#include <cstdint>
 #include <exception>
 #include <string>
 
@@ -101,34 +101,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             throw InitFail("Hook WndProc failed!");
         }
-        InstallHooks();
-    }
-
-    void App::D3DPresent(std::uint32_t ptr)
-    {
-        // auto &app = GetInstance();
-        // app.D3DPresentHook->Original(ptr);
-        // app.m_SosGui.Render();
-    }
-
-    void App::MenuPostDisplay(RE::IMenu *self)
-    {
-        static const auto CursorVtableAddress = RE::VTABLE_CursorMenu[0].address();
-
-        // Is cursor menu?
-        auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
-        if (vtable == CursorVtableAddress)
-        {
-            GetInstance().m_SosGui.Render();
-        }
-
-        GetInstance().g_MenuPostDisplayHook->Original(self);
-    }
-
-    void App::InstallHooks()
-    {
-        // D3DPresentHook        = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
-        g_MenuPostDisplayHook = std::make_unique<MenuPostDisplayHook>(MenuPostDisplay);
+        SosGuiMenu::RegisterMenu();
     }
 
     auto App::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
