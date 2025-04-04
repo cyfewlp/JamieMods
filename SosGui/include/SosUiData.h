@@ -8,6 +8,7 @@
 #pragma once
 
 #include "RE/A/Actor.h"
+#include "SosDataType.h"
 #include "common/config.h"
 
 #include <vector>
@@ -16,9 +17,21 @@ namespace LIBC_NAMESPACE_DECL
 {
     class SosUiData
     {
-        std::vector<RE::Actor *> m_actors;
-        std::vector<RE::Actor *> m_NearActors;
-        bool                     m_enabled;
+    public:
+        using BodySlot      = int32_t;
+        using OutfitState   = std::pair<StateType, std::string_view>;
+        using BodySlotArmor = std::pair<BodySlot, RE::TESObjectARMO *>;
+
+    private:
+        std::vector<RE::Actor *>                                         m_actors;
+        std::vector<RE::Actor *>                                         m_NearActors;
+        bool                                                             m_enabled = false;
+        std::unordered_map<RE::Actor *, bool>                            m_autoSwitchEnabled;
+        std::unordered_map<RE::Actor *, OutfitState>                     m_actorOutfitStates;
+        std::unordered_map<std::string_view, std::vector<BodySlotArmor>> m_outfitBodySlotArmors;
+        std::vector<std::string_view>                                    m_outfitList;
+        std::vector<RE::TESObjectARMO *>                                 m_armorCandidates;
+        std::vector<RE::TESObjectARMO *>                                 m_armorCandidatesCopy;
 
     public:
         static auto GetInstance() -> SosUiData &
@@ -63,6 +76,93 @@ namespace LIBC_NAMESPACE_DECL
         void SetEnabled(const bool enabled)
         {
             m_enabled = enabled;
+        }
+
+        [[nodiscard]] auto IsAutoSwitchEnabled(RE::Actor *actor) const -> bool
+        {
+            return m_autoSwitchEnabled.contains(actor) ? m_autoSwitchEnabled.at(actor) : false;
+        }
+
+        void SetAutoSwitchEnabled(RE::Actor *actor, const bool autoSwitchEnabled)
+        {
+            if (actor != nullptr)
+            {
+                m_autoSwitchEnabled[actor] = autoSwitchEnabled;
+                m_actorOutfitStates.clear();
+            }
+        }
+
+        [[nodiscard]] auto GetActorOutfitStates() const -> const std::unordered_map<RE::Actor *, OutfitState> &
+        {
+            return m_actorOutfitStates;
+        }
+
+        void PutActorOutfitState(RE::Actor *actor, OutfitState &&state)
+        {
+            m_actorOutfitStates[actor] = std::forward<OutfitState>(state);
+        }
+
+        [[nodiscard]] constexpr auto GetOutfitList() const -> const std::vector<std::string_view> &
+        {
+            return m_outfitList;
+        }
+
+        void SetOutfitList(const std::vector<std::string_view> &outfitLists)
+        {
+            m_outfitList.clear();
+            for (const auto &outfit : outfitLists)
+            {
+                m_outfitList.push_back(outfit);
+            }
+        }
+
+        [[nodiscard]] constexpr auto GetArmorCandidates() -> std::vector<RE::TESObjectARMO *> &
+        {
+            return m_armorCandidates;
+        }
+
+        [[nodiscard]] constexpr auto GetArmorCandidatesCopy() -> std::vector<RE::TESObjectARMO *> &
+        {
+            return m_armorCandidatesCopy;
+        }
+
+        void SetArmorCandidates(const std::vector<RE::TESObjectARMO *> &armorCandidates)
+        {
+            m_armorCandidates.clear();
+            m_armorCandidatesCopy.clear();
+            for (const auto &outfit : armorCandidates)
+            {
+                m_armorCandidates.push_back(outfit);
+                m_armorCandidatesCopy.push_back(outfit);
+            }
+        }
+
+        void ResetArmorCandidatesCopy()
+        {
+            m_armorCandidatesCopy.clear();
+            for (const auto &outfit : m_armorCandidates)
+            {
+                m_armorCandidatesCopy.push_back(outfit);
+            }
+        }
+
+        [[nodiscard]] auto GetOutfitBodySlotArmors() const
+            -> const std::unordered_map<std::string_view, std::vector<BodySlotArmor>> &
+        {
+            return m_outfitBodySlotArmors;
+        }
+
+        void SetOutfitBodySlotArmors(std::string_view &outfitName, std::vector<int32_t> slots,
+                                     std::vector<RE::TESObjectARMO *> armors)
+        {
+            m_outfitBodySlotArmors.erase(outfitName);
+            std::vector<BodySlotArmor> bodySlotArmors;
+            int                        size = armors.size();
+            for (int idx = 0; idx < size; ++idx)
+            {
+                bodySlotArmors.emplace_back(slots[idx], armors[idx]);
+            }
+            m_outfitBodySlotArmors[outfitName] = bodySlotArmors;
         }
     };
 }

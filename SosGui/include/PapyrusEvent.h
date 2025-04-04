@@ -1,74 +1,34 @@
 #pragma once
+#include "SosDataType.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
-    struct SosFunctionNames
-    {
-        static constexpr auto GetOutfitNameMaxLength                    = "GetOutfitNameMaxLength";
-        static constexpr auto GetCarriedArmor                           = "GetCarriedArmor";
-        static constexpr auto GetWornItems                              = "GetWornItems";
-        static constexpr auto RefreshArmorFor                           = "RefreshArmorFor";
-        static constexpr auto RefreshArmorForAllConfiguredActors        = "RefreshArmorForAllConfiguredActors";
-        static constexpr auto ActorNearPC                               = "ActorNearPC";
-        static constexpr auto PrepArmorSearch                           = "PrepArmorSearch";
-        static constexpr auto GetArmorSearchResultForms                 = "GetArmorSearchResultForms";
-        static constexpr auto GetArmorSearchResultNames                 = "GetArmorSearchResultNames";
-        static constexpr auto ClearArmorSearch                          = "ClearArmorSearch";
-        static constexpr auto PrepOutfitBodySlotListing                 = "PrepOutfitBodySlotListing";
-        static constexpr auto GetOutfitBodySlotListingArmorForms        = "GetOutfitBodySlotListingArmorForms";
-        static constexpr auto GetOutfitBodySlotListingArmorNames        = "GetOutfitBodySlotListingArmorNames";
-        static constexpr auto GetOutfitBodySlotListingSlotIndices       = "GetOutfitBodySlotListingSlotIndices";
-        static constexpr auto ClearOutfitBodySlotListing                = "ClearOutfitBodySlotListing";
-        static constexpr auto NaturalSort_ASCII                         = "NaturalSort_ASCII";
-        static constexpr auto NaturalSortPairArmor_ASCII                = "NaturalSortPairArmor_ASCII";
-        static constexpr auto HexToInt32                                = "HexToInt32";
-        static constexpr auto ToHex                                     = "ToHex";
-        static constexpr auto AddArmorToOutfit                          = "AddArmorToOutfit";
-        static constexpr auto ArmorConflictsWithOutfit                  = "ArmorConflictsWithOutfit";
-        static constexpr auto CreateOutfit                              = "CreateOutfit";
-        static constexpr auto DeleteOutfit                              = "DeleteOutfit";
-        static constexpr auto GetOutfitContents                         = "GetOutfitContents";
-        static constexpr auto GetOutfitFavoriteStatus                   = "GetOutfitFavoriteStatus";
-        static constexpr auto SetOutfitFavoriteStatus                   = "SetOutfitFavoriteStatus";
-        static constexpr auto BodySlotPolicyNamesForOutfit              = "BodySlotPolicyNamesForOutfit";
-        static constexpr auto SetBodySlotPoliciesForOutfit              = "SetBodySlotPoliciesForOutfit";
-        static constexpr auto SetAllBodySlotPoliciesForOutfit           = "SetAllBodySlotPoliciesForOutfit";
-        static constexpr auto SetBodySlotPolicyToDefaultForOutfit       = "SetBodySlotPolicyToDefaultForOutfit";
-        static constexpr auto GetAvailablePolicyNames                   = "GetAvailablePolicyNames";
-        static constexpr auto GetAvailablePolicyCodes                   = "GetAvailablePolicyCodes";
-        static constexpr auto GetSelectedOutfit                         = "GetSelectedOutfit";
-        static constexpr auto IsEnabled                                 = "IsEnabled";
-        static constexpr auto ListOutfits                               = "ListOutfits";
-        static constexpr auto RemoveArmorFromOutfit                     = "RemoveArmorFromOutfit";
-        static constexpr auto RemoveConflictingArmorsFrom               = "RemoveConflictingArmorsFrom";
-        static constexpr auto RenameOutfit                              = "RenameOutfit";
-        static constexpr auto OutfitExists                              = "OutfitExists";
-        static constexpr auto OverwriteOutfit                           = "OverwriteOutfit";
-        static constexpr auto SetEnabled                                = "SetEnabled";
-        static constexpr auto SetSelectedOutfit                         = "SetSelectedOutfit";
-        static constexpr auto AddActor                                  = "AddActor";
-        static constexpr auto RemoveActor                               = "RemoveActor";
-        static constexpr auto ListActors                                = "ListActors";
-        static constexpr auto SetLocationBasedAutoSwitchEnabled         = "SetLocationBasedAutoSwitchEnabled";
-        static constexpr auto GetLocationBasedAutoSwitchEnabled         = "GetLocationBasedAutoSwitchEnabled";
-        static constexpr auto GetAutoSwitchStateArray                   = "GetAutoSwitchStateArray";
-        static constexpr auto IdentifyStateType                         = "IdentifyStateType";
-        static constexpr auto SetOutfitUsingState                       = "SetOutfitUsingState";
-        static constexpr auto SetOutfitUsingStateForAllConfiguredActors = "SetOutfitUsingStateForAllConfiguredActors";
-        static constexpr auto SetStateOutfit                            = "SetStateOutfit";
-        static constexpr auto UnsetStateOutfit                          = "UnsetStateOutfit";
-        static constexpr auto GetStateOutfit                            = "GetStateOutfit";
-        static constexpr auto ExportSettings                            = "ExportSettings";
-        static constexpr auto ImportSettings                            = "ImportSettings";
-        static constexpr auto NotifyCombatStateChanged                  = "NotifyCombatStateChanged";
-    };
+#define REGISTER_FUNCTION(name) vm->RegisterFunction(#name, "SosGuiNative", name)
+
+#define ADD_NEW_EVENT(funcName, type...)                                                                               \
+    SKSE::RegistrationSet<type> require##funcName{"OnRequire" #funcName};                                              \
+    static void                 RegisterForRequire##funcName(RE::StaticFunctionTag *, RE::TESForm *thisForm)           \
+    {                                                                                                                  \
+        GetInstance().require##funcName.Register(thisForm);                                                            \
+    }
 
     class PapyrusEvent
     {
-        SKSE::RegistrationSet<const char *>      requireUiDataEvent{"OnRequireUiData"};
+        using String = const char *;
+        SKSE::RegistrationSet<String>            requireUiDataEvent{"OnRequireUiData"};
         SKSE::RegistrationSet<const RE::Actor *> requireAddActor{"OnRequireAddActor"};
         SKSE::RegistrationSet<bool>              requireSetEnabled{"OnRequireSetEnabled"};
-        SKSE::RegistrationSet<const RE::Actor *> requireRemoveActor{"OnRequireRemoveActor"};
+        ADD_NEW_EVENT(RemoveActor, const RE::Actor *)
+        ADD_NEW_EVENT(SetAutoSwitchEnabled, const RE::Actor *, bool)
+        ADD_NEW_EVENT(GetAutoSwitchEnabled, const RE::Actor *)
+        ADD_NEW_EVENT(GetOutfitState, const RE::Actor *, StateType)
+        ADD_NEW_EVENT(GetOutfitList)
+        ADD_NEW_EVENT(CreateOutfit, String, bool)
+        ADD_NEW_EVENT(RenameOutfit, String, String)
+        ADD_NEW_EVENT(GetOutfitArmors, String)
+
+        ADD_NEW_EVENT(GetActorArmors, const RE::Actor *, OutfitAddPolicy)
+        ADD_NEW_EVENT(AddToOutfit, String, const RE::TESObjectARMO *)
 
     public:
         static auto Bind(RE::BSScript::IVirtualMachine *vm) -> bool;
@@ -79,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
             return g_instance;
         }
 
-        constexpr auto CallNoArgs(const char *methodName)
+        constexpr auto CallNoArgs(String methodName)
         {
             requireUiDataEvent.QueueEvent(methodName);
         }
@@ -99,6 +59,51 @@ namespace LIBC_NAMESPACE_DECL
             requireRemoveActor.QueueEvent(actor);
         }
 
+        constexpr auto CallSetAutoSwitchEnabled(const RE::Actor *actor, bool enable)
+        {
+            requireSetAutoSwitchEnabled.QueueEvent(actor, enable);
+        }
+
+        constexpr auto CallGetAutoSwitchEnabled(const RE::Actor *actor)
+        {
+            requireGetAutoSwitchEnabled.QueueEvent(actor);
+        }
+
+        constexpr auto CallGetOutfitState(const RE::Actor *actor, StateType state)
+        {
+            requireGetOutfitState.QueueEvent(actor, state);
+        }
+
+        constexpr auto CallGetOutfitList()
+        {
+            requireGetOutfitList.QueueEvent();
+        }
+
+        constexpr auto CallCreateOutfit(String outfitName, bool fromWorn)
+        {
+            requireCreateOutfit.QueueEvent(outfitName, fromWorn);
+        }
+
+        constexpr auto CallRenameOutfit(String outfitName, String newName)
+        {
+            requireRenameOutfit.QueueEvent(outfitName, newName);
+        }
+
+        constexpr auto CallGetActorArmors(const RE::Actor *actor, OutfitAddPolicy policy)
+        {
+            requireGetActorArmors.QueueEvent(actor, policy);
+        }
+
+        constexpr auto CallAddToOutfit(String outfitName, const RE::TESObjectARMO *armor)
+        {
+            requireAddToOutfit.QueueEvent(outfitName, armor);
+        }
+
+        constexpr auto CallGetOutfitArmors(String outfitName)
+        {
+            requireGetOutfitArmors.QueueEvent(outfitName);
+        }
+
     private:
         static void RegisterForRequireUiData(RE::StaticFunctionTag *, RE::TESForm *thisForm)
         {
@@ -113,11 +118,6 @@ namespace LIBC_NAMESPACE_DECL
         static void RegisterForRequireSetEnabled(RE::StaticFunctionTag *, RE::TESForm *thisForm)
         {
             GetInstance().requireSetEnabled.Register(thisForm);
-        }
-
-        static void RegisterForRequireRemoveActor(RE::StaticFunctionTag *, RE::TESForm *thisForm)
-        {
-            GetInstance().requireRemoveActor.Register(thisForm);
         }
     };
 }

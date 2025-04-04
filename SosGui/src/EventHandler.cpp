@@ -40,7 +40,7 @@ namespace LIBC_NAMESPACE_DECL
     void InputEventSink::ProcessKeyboardButtonEvent(const RE::ButtonEvent *buttonEvent)
     {
         using Keys = RE::BSWin32KeyboardDevice::Keys;
-        if (buttonEvent->GetIDCode() == Keys::kF5)
+        if (buttonEvent->GetIDCode() == Keys::kF1 && buttonEvent->IsDown())
         {
             m_SosGui->ToggleShow();
         }
