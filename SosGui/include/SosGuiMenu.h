@@ -21,6 +21,7 @@ namespace LIBC_NAMESPACE_DECL
         static void                       RegisterMenu();
 
         void PostDisplay() override;
+        void OnShow();
         void OnHide();
         auto ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS override;
 

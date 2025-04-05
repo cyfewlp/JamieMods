@@ -1,5 +1,4 @@
 #include "App.h"
-#include "EventHandler.h"
 #include "PapyrusFunctions.h"
 #include "SosGuiMenu.h"
 #include "common/common.h"

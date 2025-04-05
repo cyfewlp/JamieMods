@@ -137,6 +137,8 @@ namespace LIBC_NAMESPACE_DECL
         "ModMisc2",
         "FX01",
     };
+
+    constexpr std::string_view SOS_SPELL_EDITOR_ID = "SkyrimOutfitSystemQuickslotSpell";
 }
 
 #endif // SOSDATATYPE_H

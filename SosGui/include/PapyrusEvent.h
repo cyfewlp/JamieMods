@@ -26,6 +26,7 @@ namespace LIBC_NAMESPACE_DECL
         ADD_NEW_EVENT(CreateOutfit, String, bool)
         ADD_NEW_EVENT(RenameOutfit, String, String)
         ADD_NEW_EVENT(GetOutfitArmors, String)
+        ADD_NEW_EVENT(SetQuickslot, bool) // add spelll
 
         ADD_NEW_EVENT(GetActorArmors, const RE::Actor *, OutfitAddPolicy)
         ADD_NEW_EVENT(AddToOutfit, String, const RE::TESObjectARMO *)
@@ -102,6 +103,11 @@ namespace LIBC_NAMESPACE_DECL
         constexpr auto CallGetOutfitArmors(String outfitName)
         {
             requireGetOutfitArmors.QueueEvent(outfitName);
+        }
+
+        constexpr auto CallSetQuickslot(bool enable)
+        {
+            requireSetQuickslot.QueueEvent(enable);
         }
 
     private:

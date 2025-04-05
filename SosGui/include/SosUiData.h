@@ -25,7 +25,8 @@ namespace LIBC_NAMESPACE_DECL
     private:
         std::vector<RE::Actor *>                                         m_actors;
         std::vector<RE::Actor *>                                         m_NearActors;
-        bool                                                             m_enabled = false;
+        bool                                                             m_enabled           = false;
+        bool                                                             m_fQuickSlotEnabled = false;
         std::unordered_map<RE::Actor *, bool>                            m_autoSwitchEnabled;
         std::unordered_map<RE::Actor *, OutfitState>                     m_actorOutfitStates;
         std::unordered_map<std::string_view, std::vector<BodySlotArmor>> m_outfitBodySlotArmors;
@@ -52,6 +53,16 @@ namespace LIBC_NAMESPACE_DECL
             {
                 m_actors.push_back(actor);
             }
+        }
+
+        [[nodiscard]] constexpr auto IsQuickSlotEnabled() const -> bool
+        {
+            return m_fQuickSlotEnabled;
+        }
+
+        void SetQuickSlotEnabled(const bool fQuickSlotEnabled)
+        {
+            m_fQuickSlotEnabled = fQuickSlotEnabled;
         }
 
         [[nodiscard]] auto GetNearActors() const -> const std::vector<RE::Actor *> &

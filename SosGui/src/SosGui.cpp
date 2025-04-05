@@ -13,6 +13,19 @@ namespace LIBC_NAMESPACE_DECL
 {
     static constexpr int BASIC_TABLE_FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
 
+    constexpr void T(const char *key, std::string &result)
+    {
+        // TODO cache key
+        SKSE::Translation::Translate(key, result);
+    }
+
+    constexpr auto T(const char *key) -> std::string
+    {
+        std::string result;
+        SKSE::Translation::Translate(key, result);
+        return result;
+    }
+
     auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool
     {
         auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
@@ -116,6 +129,24 @@ namespace LIBC_NAMESPACE_DECL
         PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
         PapyrusEvent::GetInstance().CallGetAutoSwitchEnabled(RE::PlayerCharacter::GetSingleton());
         PapyrusEvent::GetInstance().CallGetOutfitList();
+
+        SosUiData::GetInstance().SetQuickSlotEnabled(HasQuickslotSpell());
+    }
+
+    void SosGui::RenderQuickslotConfig()
+    {
+        std::string key;
+        bool        quickslotEnabled = SosUiData::GetInstance().IsQuickSlotEnabled();
+        T("$SkyOutSys_MCMHeader_Quickslots", key);
+        if (ImGui::Checkbox(key.c_str(), &quickslotEnabled))
+        {
+            if (!EnableQuickslot(quickslotEnabled))
+            {
+                SosUiData::GetInstance().SetQuickSlotEnabled(false);
+            }
+        }
+        T("$SkyOutSys_Desc_EnableQuickslots", key);
+        ImGui::SetItemTooltip(key.c_str());
     }
 
     auto SosGui::DoRender() -> void
@@ -123,16 +154,14 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
         {
             bool fEnabled = SosUiData::GetInstance().IsEnabled();
-            if (ImGui::Checkbox("Enabled", &fEnabled))
+            auto key      = T("$Enabled");
+            if (ImGui::Checkbox(key.c_str(), &fEnabled))
             {
                 PapyrusEvent::GetInstance().CallSetEnabled(fEnabled);
             }
 
+            RenderQuickslotConfig();
             RenderCharactersConfig();
-
-            static bool enableQuickslots = false;
-
-            ImGui::Checkbox("Quickslots", &enableQuickslots);
 
             ImGui::Button("Export to Json");
             ImGui::SameLine();
@@ -141,19 +170,6 @@ namespace LIBC_NAMESPACE_DECL
             RenderOutfitConfiguration();
         }
         ImGui::End();
-    }
-
-    constexpr void T(const char *key, std::string &result)
-    {
-        // TODO cache key
-        SKSE::Translation::Translate(key, result);
-    }
-
-    constexpr auto T(const char *key) -> std::string
-    {
-        std::string result;
-        SKSE::Translation::Translate(key, result);
-        return result;
     }
 
     void SosGui::RenderCharactersConfig()
@@ -262,8 +278,9 @@ namespace LIBC_NAMESPACE_DECL
             PapyrusEvent::GetInstance().CallSetAutoSwitchEnabled(currentActor, fAutoSwitchEnabled);
         }
         // don't call GetAutoSwitchStateArray because it's result is static
-        static std::array stateArray = {Combat, World,     WorldSnowy, WorldRainy, City,         CitySnowy,   CityRainy,
-                                        Town,   TownSnowy, TownRainy,  Dungeon,    DungeonSnowy, DungeonRainy};
+        static std::array const stateArray = {Combat,    World,        WorldSnowy,  WorldRainy, City,
+                                              CitySnowy, CityRainy,    Town,        TownSnowy,  TownRainy,
+                                              Dungeon,   DungeonSnowy, DungeonRainy};
         if (fAutoSwitchEnabled)
         {
             std::string noneState;
@@ -306,7 +323,6 @@ namespace LIBC_NAMESPACE_DECL
         // create
         static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
         ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
-        // TODO call AllowTextInput
         static bool        showErrorMessage = false;
         static std::string errorMessage;
 
@@ -359,6 +375,10 @@ namespace LIBC_NAMESPACE_DECL
         {
             ImGui::TableSetupColumn("Outfits##Header");
             ImGui::TableHeadersRow();
+            if (outfitList.empty())
+            {
+                ImGui::Text("No any outfit");
+            }
             int idx = 0;
             for (const auto &outfitName : outfitList)
             {
@@ -710,6 +730,29 @@ namespace LIBC_NAMESPACE_DECL
         if (armorName.empty() || !armorName.contains(filterString) || !modName.contains(filterString))
         {
             return true;
+        }
+        return false;
+    }
+
+    auto SosGui::EnableQuickslot(bool enable) -> bool
+    {
+        const auto &player = RE::PlayerCharacter::GetSingleton();
+        auto       *spell  = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
+        if (spell != nullptr)
+        {
+            enable ? player->AddSpell(spell) : player->RemoveSpell(spell);
+            return true;
+        }
+        return false;
+    }
+
+    auto SosGui::HasQuickslotSpell() -> bool
+    {
+        const auto &player = RE::PlayerCharacter::GetSingleton();
+        auto       *spell  = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
+        if (spell != nullptr)
+        {
+            return player->HasSpell(spell);
         }
         return false;
     }

@@ -34,6 +34,7 @@ namespace LIBC_NAMESPACE_DECL
 
         static auto Render() -> void;
         static auto Refresh() -> void;
+        static void RenderQuickslotConfig();
 
     private:
         static void NewFrame();
@@ -61,5 +62,8 @@ namespace LIBC_NAMESPACE_DECL
         static void FilterArmorCandidates(const std::string_view           &filterString,
                                           std::vector<RE::TESObjectARMO *> &armorCandidates);
         static auto IsFilterArmor(const std::string_view &filterString, RE::TESObjectARMO *armor) -> bool;
+
+        static auto EnableQuickslot(bool enable) -> bool;
+        static auto HasQuickslotSpell() -> bool;
     };
 }

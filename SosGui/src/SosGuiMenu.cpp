@@ -68,6 +68,13 @@ namespace LIBC_NAMESPACE_DECL
         SosGui::GetInstance().Render();
     }
 
+    void SosGuiMenu::OnShow()
+    {
+        m_fShow = true;
+        log_debug("SosGuiMenu::kShow");
+        SosGui::GetInstance().Refresh();
+    }
+
     void SosGuiMenu::OnHide()
     {
         m_fShow = false;
@@ -94,8 +101,7 @@ namespace LIBC_NAMESPACE_DECL
                 break;
             }
             case RE::UI_MESSAGE_TYPE::kShow:
-                m_fShow = true;
-                log_debug("SosGuiMenu::kShow");
+                OnShow();
                 break;
             case RE::UI_MESSAGE_TYPE::kHide:
                 OnHide();
@@ -122,19 +128,19 @@ namespace LIBC_NAMESPACE_DECL
         messageQueue->AddMessage(MENU_NAME, type, nullptr);
     }
 
-        auto SosGuiMenu::Creator() -> IMenu *
-        {
-            using Flags = RE::UI_MENU_FLAGS;
-            auto *menu  = new SosGuiMenu();
-            menu->menuFlags.set(Flags::kPausesGame);
-            menu->menuFlags.set(Flags::kUpdateUsesCursor, Flags::kUsesCursor);
-            menu->menuFlags.set(Flags::kCustomRendering);
-            menu->menuFlags.set(Flags::kTopmostRenderedMenu);
-            menu->menuFlags.set(Flags::kUsesMenuContext);
+    auto SosGuiMenu::Creator() -> IMenu *
+    {
+        using Flags = RE::UI_MENU_FLAGS;
+        auto *menu  = new SosGuiMenu();
+        menu->menuFlags.set(Flags::kPausesGame);
+        menu->menuFlags.set(Flags::kUpdateUsesCursor, Flags::kUsesCursor);
+        menu->menuFlags.set(Flags::kCustomRendering);
+        menu->menuFlags.set(Flags::kTopmostRenderedMenu);
+        menu->menuFlags.set(Flags::kUsesMenuContext);
 
-            menu->inputContext.set(Context::kConsole);
-            return menu;
-        }
+        menu->inputContext.set(Context::kConsole);
+        return menu;
+    }
 
     void SosGuiMenu::ProcessScaleformEvent(RE::BSUIScaleformData *data)
     {
