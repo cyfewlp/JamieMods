@@ -65,14 +65,14 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGuiMenu::PostDisplay()
     {
-        SosGui::GetInstance().Render();
+        m_sosGui.Render();
     }
 
     void SosGuiMenu::OnShow()
     {
         m_fShow = true;
         log_debug("SosGuiMenu::kShow");
-        SosGui::GetInstance().Refresh();
+        m_sosGui.Refresh();
     }
 
     void SosGuiMenu::OnHide()

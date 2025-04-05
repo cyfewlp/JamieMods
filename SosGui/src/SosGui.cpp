@@ -69,6 +69,33 @@ namespace LIBC_NAMESPACE_DECL
         return true;
     }
 
+    void SosGui::InitTables()
+    {
+        m_outfitListTable.name       = "##OutfitLists";
+        m_outfitListTable.headersRow = {T("$SkyOutSys_MCM_OutfitList")};
+
+        m_outfitArmorsTable.name = "##OutfitArmors";
+        m_outfitArmorsTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
+        m_outfitArmorsTable.flags |= ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_SizingFixedSame;
+        m_outfitArmorsTable.headersRow = {T("$SosGui_TableHeader_Slot"), T("$$ARMOR")};
+
+        m_armorCandidatesTable.name = "##ArmorCandidates";
+        m_armorCandidatesTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
+        m_armorCandidatesTable.flags |= ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_SizingFixedSame;
+        m_armorCandidatesTable.headersRow = {
+            T("$ARMOR"),
+            T("$SosGui_TableHeader_Slot"),
+            T("$Add"),
+        };
+
+        m_locationAutoSwitchTable.name = "##AutoswitchStateList";
+        m_locationAutoSwitchTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
+        m_locationAutoSwitchTable.headersRow = {
+            T("$SosGui_TableHeader_Location"),
+            T("$SosGui_TableHeader_Location_State"),
+        };
+    }
+
     void SosGui::NewFrame()
     {
         if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
@@ -289,10 +316,64 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
+    template <size_t Columns>
+    bool RenderTable(ImTable<Columns> &imTable, std::function<bool(uint32_t &)> renderRow)
+    {
+        bool result = true;
+        if (ImGui::BeginTable(imTable.name.c_str(), Columns, imTable.flags))
+        {
+            ImGui::PushID("HeaderRow");
+            for (size_t idx = 0; idx < Columns; ++idx)
+            {
+                ImGui::TableSetupColumn(imTable.headersRow[idx].c_str());
+            }
+            ImGui::TableHeadersRow();
+
+            for (uint32_t rowIdx = 0; rowIdx < imTable.rows;)
+            {
+                ImGui::PushID(rowIdx);
+                ImGui::TableNextRow();
+                if (!renderRow(rowIdx))
+                {
+                    result = false;
+                    break;
+                }
+                ImGui::PopID();
+            }
+            ImGui::PopID();
+            ImGui::EndTable();
+        }
+        return result;
+    }
+
+    template <size_t Columns>
+    void RenderTable(ImTable<Columns> &imTable, std::function<void(int)> renderRow)
+    {
+        if (ImGui::BeginTable(imTable.name.c_str(), Columns, imTable.flags))
+        {
+            ImGui::PushID("HeaderRow");
+            for (size_t idx = 0; idx < Columns; ++idx)
+            {
+                ImGui::TableSetupColumn(imTable.headersRow[idx].c_str());
+            }
+            ImGui::TableHeadersRow();
+
+            for (uint32_t rowIdx = 0; rowIdx < imTable.rows; ++rowIdx)
+            {
+                ImGui::PushID(rowIdx);
+                ImGui::TableNextRow();
+                renderRow(rowIdx);
+                ImGui::PopID();
+            }
+            ImGui::PopID();
+            ImGui::EndTable();
+        }
+    }
+
     void SosGui::RenderLocationBasedAutoswitch(RE::Actor *currentActor)
     {
-        bool        fAutoSwitchEnabled = SosUiData::GetInstance().IsAutoSwitchEnabled(currentActor);
-        std::string key;
+        bool               fAutoSwitchEnabled = SosUiData::GetInstance().IsAutoSwitchEnabled(currentActor);
+        static std::string key;
         T("$SkyOutSys_MCMHeader_Autoswitch", key);
         if (ImGui::Checkbox(key.c_str(), &fAutoSwitchEnabled))
         {
@@ -302,40 +383,19 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr std::array stateArray = {Combat,    World,        WorldSnowy,  WorldRainy, City,
                                                   CitySnowy, CityRainy,    Town,        TownSnowy,  TownRainy,
                                                   Dungeon,   DungeonSnowy, DungeonRainy};
+        m_locationAutoSwitchTable.rows         = stateArray.size();
         if (fAutoSwitchEnabled)
         {
-            std::string noneState;
-            T("$SkyOutSys_AutoswitchEdit_None", noneState);
+            static std::string noneState = T("$SkyOutSys_AutoswitchEdit_None");
+            RenderTable(m_locationAutoSwitchTable, [](int idx) {
+                auto state = stateArray.at(idx);
+                T(std::format("$SkyOutSys_Text_Autoswitch{}", static_cast<int8_t>(state)).c_str(), key);
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", key.c_str());
 
-            auto flags = BASIC_TABLE_FLAGS | ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
-            if (ImGui::BeginTable("##AutoswitchStateList", 2, flags))
-            {
-                ImGui::PushID("HeaderRow");
-                T("$SosGui_TableHeader_Location", key);
-                ImGui::TableSetupColumn(key.c_str());
-                T("$SosGui_TableHeader_Location_State", key);
-                ImGui::TableSetupColumn(key.c_str());
-                ImGui::TableHeadersRow();
-                ImGui::PopID();
-
-                int idx = 0;
-                for (const auto &state : stateArray)
-                {
-                    ImGui::TableNextRow();
-                    ImGui::PushID(idx);
-
-                    T(std::format("$SkyOutSys_Text_Autoswitch{}", static_cast<int8_t>(state)).c_str(), key);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", key.c_str());
-
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", noneState.c_str());
-
-                    ImGui::PopID();
-                    ++idx;
-                }
-                ImGui::EndTable();
-            }
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", noneState.c_str());
+            });
         }
     }
 
@@ -396,44 +456,34 @@ namespace LIBC_NAMESPACE_DECL
         const auto &outfitList = SosUiData::GetInstance().GetOutfitList();
         if (outfitList.empty())
         {
-            ImGui::PushFontSize(ImGui::GetFontSize() * 1.5F);
+            ImGui::PushFontSize(ImGui::GetFontSize() * 1.2F);
             T("$SosGui_Outfit_EmptyHint", key);
             ImGui::Text("%s", key.c_str());
             ImGui::PopFontSize();
             return;
         }
-        auto       flags       = BASIC_TABLE_FLAGS | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX;
         static int selectedIdx = -1, prevSelectedIdx = -1;
         if (selectedIdx == -1)
         {
             T("$SosGui_Outfit_SelectHint", key);
             ImGui::Text("%s", key.c_str());
         }
-        if (ImGui::BeginTable("##OutfitLists", 1, flags))
-        {
-            T("$SkyOutSys_MCM_OutfitList", key);
-            ImGui::TableSetupColumn(key.c_str());
-            ImGui::TableHeadersRow();
-            int idx = 0;
-            for (const auto &outfitName : outfitList)
+
+        m_outfitListTable.rows = outfitList.size();
+        RenderTable(m_outfitListTable, [&outfitList](int idx) {
+            auto outfitName = outfitList.at(idx);
+            ImGui::TableNextColumn();
+            bool const isSelected = selectedIdx == idx;
+            if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_None))
             {
-                ImGui::PushID(idx);
-                ImGui::TableNextRow(ImGuiTableRowFlags_None);
-                ImGui::TableNextColumn();
-                bool isSelected = selectedIdx == idx;
-                if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_None))
-                {
-                    selectedIdx = selectedIdx != idx ? idx : -1;
-                }
-                if (isSelected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-                ImGui::PopID();
-                idx++;
+                selectedIdx = selectedIdx != idx ? idx : -1;
             }
-            ImGui::EndTable();
-        }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        });
+
         if (selectedIdx != -1)
         {
             const auto &outfitName = outfitList.at(selectedIdx);
@@ -454,11 +504,10 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::RenderOutfitArmors(const std::string &outfitName)
     {
-        static auto empty_list    = std::vector<SosUiData::BodySlotArmor>();
-        static auto flags         = BASIC_TABLE_FLAGS | ImGuiTableFlags_Resizable;
-        auto        slotArmors    = SosUiData::GetInstance().GetOutfitBodySlotArmors();
-        auto        slotArmorList = slotArmors.contains(outfitName) ? slotArmors.at(outfitName) : empty_list;
-        std::string key;
+        static auto        empty_list    = std::vector<SosUiData::BodySlotArmor>();
+        auto               slotArmors    = SosUiData::GetInstance().GetOutfitBodySlotArmors();
+        auto               slotArmorList = slotArmors.contains(outfitName) ? slotArmors.at(outfitName) : empty_list;
+        static std::string key;
         if (slotArmorList.empty())
         {
             ImGui::PushFontSize(ImGui::GetFontSize() * 1.5F);
@@ -467,37 +516,18 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::PopFontSize();
             return;
         }
+        m_outfitArmorsTable.rows = slotArmorList.size();
+        RenderTable(m_outfitArmorsTable, [&slotArmorList](int idx) {
+            auto slotArmor = slotArmorList.at(idx);
+            ImGui::TableNextRow();
 
-        flags |= ImGuiTableFlags_Sortable;
-        flags |= ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_SizingFixedSame;
-        if (ImGui::BeginTable("##BodySlotsTable", 2, flags))
-        {
-            ImGui::PushID("HeaderRow");
-            T("$SosGui_TableHeader_Slot", key);
-            ImGui::TableSetupColumn(key.c_str(), ImGuiTableColumnFlags_DefaultSort);
-            T("$ARMOR", key);
-            ImGui::TableSetupColumn(key.c_str());
-            ImGui::TableHeadersRow();
-            ImGui::PopID();
+            ImGui::TableNextColumn();
+            T(std::format("$SkyOutSys_BodySlot{}", slotArmor.first).c_str(), key);
+            ImGui::Text("%s", key.c_str());
 
-            int idx = 0;
-            for (const auto &slotArmor : slotArmorList)
-            {
-                ImGui::PushID(idx);
-                ImGui::TableNextRow();
-
-                ImGui::TableNextColumn();
-                T(std::format("$SkyOutSys_BodySlot{}", slotArmor.first).c_str(), key);
-                ImGui::Text("%s", key.c_str());
-
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", slotArmor.second->GetName());
-
-                ImGui::PopID();
-                ++idx;
-            }
-            ImGui::EndTable();
-        }
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", slotArmor.second->GetName());
+        });
     }
 
     void SosGui::RenderOutfitEditPanel(const std::string &outfitName)
@@ -601,8 +631,6 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::RenderOutfitAddPolicyByCandidates(const std::string &outfitName)
     {
-        auto flags = BASIC_TABLE_FLAGS | ImGuiTableFlags_Resizable;
-        flags |= ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_SizingFixedSame;
         static std::string key;
         static int         pageSize        = 20;
         static int         currentPage     = 0;
@@ -624,68 +652,54 @@ namespace LIBC_NAMESPACE_DECL
             return;
         }
 
-        if (ImGui::BeginTable("##ArmorCandidates", 3, flags))
+        int  startIdx               = currentPage * pageSize;
+        auto begin                  = outfitCandidates.begin() + startIdx;
+        m_armorCandidatesTable.rows = pageSize;
+        bool complete = RenderTable(m_armorCandidatesTable, [&begin, &outfitName, &outfitCandidates](uint32_t &rowIdx) {
+            if (begin == outfitCandidates.end())
+            {
+                return false;
+            }
+            auto *armor = *begin;
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", armor->GetName());
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", static_cast<uint32_t>(armor->GetSlotMask()));
+
+            ImGui::TableNextColumn();
+            if (ImGui::Button(T("$Add").c_str()))
+            {
+                PapyrusEvent::GetInstance().CallAddToOutfit(outfitName, armor);
+                begin = outfitCandidates.erase(begin);
+            }
+            else
+            {
+                ++begin;
+            }
+            ++rowIdx;
+            return true;
+        });
+
+        T("$SosGui_Table_PrevPage", key);
+        ImGui::BeginDisabled(currentPage == 0);
+        if (ImGui::Button(key.c_str()))
         {
-            ImGui::PushID("HeaderRow");
-            T("$ARMOR", key);
-            ImGui::TableSetupColumn(key.c_str(), ImGuiTableColumnFlags_DefaultSort);
-            T("$SosGui_TableHeader_Slot", key);
-            ImGui::TableSetupColumn(key.c_str(), ImGuiTableColumnFlags_None);
-            T("$Add", key);
-            ImGui::TableSetupColumn(key.c_str(), ImGuiTableColumnFlags_NoSort);
-            ImGui::TableHeadersRow();
-            ImGui::PopID();
-
-            int  startIdx = currentPage * pageSize;
-            auto begin    = outfitCandidates.begin() + startIdx;
-            int  idx      = 0;
-            for (auto armorIter = begin; idx < pageSize && armorIter != outfitCandidates.end();)
-            {
-                auto *armor = *armorIter;
-                ImGui::PushID(idx);
-                ImGui::TableNextRow();
-
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", armor->GetName());
-
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", static_cast<uint32_t>(armor->GetSlotMask()));
-
-                ImGui::TableNextColumn();
-                if (ImGui::Button(key.c_str())) // $Add
-                {
-                    PapyrusEvent::GetInstance().CallAddToOutfit(outfitName, armor);
-                    armorIter = outfitCandidates.erase(armorIter);
-                }
-                else
-                {
-                    ++armorIter;
-                }
-                ImGui::PopID();
-                ++idx;
-            }
-            ImGui::EndTable();
-
-            T("$SosGui_Table_PrevPage", key);
-            ImGui::BeginDisabled(currentPage == 0);
-            if (ImGui::Button(key.c_str()))
-            {
-                currentPage -= 1;
-            }
-            ImGui::SameLine();
-            ImGui::EndDisabled();
-
-            ImGui::Text("%d", currentPage + 1);
-            ImGui::SameLine();
-
-            ImGui::BeginDisabled(idx != pageSize);
-            T("$SosGui_Table_NextPage", key);
-            if (ImGui::Button(key.c_str()))
-            {
-                currentPage += 1;
-            }
-            ImGui::EndDisabled();
+            currentPage -= 1;
         }
+        ImGui::SameLine();
+        ImGui::EndDisabled();
+
+        ImGui::Text("%d", currentPage + 1);
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(!complete);
+        T("$SosGui_Table_NextPage", key);
+        if (ImGui::Button(key.c_str()))
+        {
+            currentPage += 1;
+        }
+        ImGui::EndDisabled();
     }
 
     constexpr int BODY_SLOT_MIN = 29;

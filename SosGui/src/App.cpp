@@ -82,7 +82,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-        if (!m_SosGui.Init(renderData, m_hWnd))
+        if (!SosGui::Init(renderData, m_hWnd))
         {
             throw InitFail("Can't initialize SosGui.");
         }

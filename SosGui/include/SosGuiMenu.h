@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "SosGui.h"
+
 enum ImGuiKey : int;
 
 namespace LIBC_NAMESPACE_DECL
@@ -14,7 +16,8 @@ namespace LIBC_NAMESPACE_DECL
 
     class SosGuiMenu : public RE::IMenu
     {
-        bool m_fShow = false;
+        bool   m_fShow = false;
+        SosGui m_sosGui;
 
     public:
         static constexpr std::string_view MENU_NAME = "SosGuiMenu";

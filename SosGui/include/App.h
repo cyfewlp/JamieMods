@@ -22,7 +22,6 @@ namespace LIBC_NAMESPACE_DECL
             }
         };
 
-        SosGui           m_SosGui;
         HWND             m_hWnd         = nullptr;
         std::atomic_bool m_fInitialized = false;
 
