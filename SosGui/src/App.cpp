@@ -1,6 +1,6 @@
 #include "App.h"
 #include "EventHandler.h"
-#include "PapyrusEvent.h"
+#include "PapyrusFunctions.h"
 #include "SosGuiMenu.h"
 #include "common/common.h"
 #include "common/log.h"
@@ -19,12 +19,8 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("Send Event with Init");
                 PapyrusEvent::GetInstance().CallNoArgs("Init");
             }
-            else if (message->type == SKSE::MessagingInterface::kInputLoaded)
-            {
-                App::GetInstance().InstallSinks();
-            }
         });
-        SKSE::GetPapyrusInterface()->Register(PapyrusEvent::Bind);
+        SKSE::GetPapyrusInterface()->Register(PapyrusFunctions::Register);
 
         App::GetInstance().Init();
         return true;
@@ -36,11 +32,6 @@ namespace LIBC_NAMESPACE_DECL
 
         log_info("Install D3DInitHook....");
         D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
-    }
-
-    auto App::InstallSinks() -> void
-    {
-        EventHandler::InstallSink(&m_SosGui);
     }
 
     void App::D3DInit()
@@ -93,25 +84,6 @@ namespace LIBC_NAMESPACE_DECL
             throw InitFail("Can't initialize SosGui.");
         }
         m_fInitialized.store(true);
-
-        log_debug("Hooking Skyrim WndProc...");
-        RealWndProc =
-            reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
-        if (RealWndProc == nullptr)
-        {
-            throw InitFail("Hook WndProc failed!");
-        }
         SosGuiMenu::RegisterMenu();
-    }
-
-    auto App::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
-    {
-        auto &app = GetInstance();
-        switch (uMsg)
-        {
-            default:
-                break;
-        }
-        return app.RealWndProc(hWnd, uMsg, wParam, lParam);
     }
 }

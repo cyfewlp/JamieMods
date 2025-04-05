@@ -13,17 +13,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     static constexpr int BASIC_TABLE_FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
 
-    auto SosGui::ToggleShow() -> void
-    {
-        m_fShow = !m_fShow;
-        if (m_fShow)
-        {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
-            PapyrusEvent::GetInstance().CallGetAutoSwitchEnabled(RE::PlayerCharacter::GetSingleton());
-            PapyrusEvent::GetInstance().CallGetOutfitList();
-        }
-    }
-
     auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool
     {
         auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
@@ -91,6 +80,8 @@ namespace LIBC_NAMESPACE_DECL
         NewFrame();
         ImGui::NewFrame();
 
+        TrySetAllowTextInput();
+
         DoRender();
 
         ImGui::Render();
@@ -104,13 +95,32 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
+    void SosGui::TrySetAllowTextInput()
+    {
+        static bool fWantTextInput = false;
+        bool        cWantTextInput = ImGui::GetIO().WantTextInput;
+        if (!fWantTextInput && cWantTextInput)
+        {
+            AllowTextInput(true);
+        }
+        else if (fWantTextInput && !cWantTextInput)
+        {
+            AllowTextInput(false);
+        }
+
+        fWantTextInput = cWantTextInput;
+    }
+
+    auto SosGui::Refresh() -> void
+    {
+        PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
+        PapyrusEvent::GetInstance().CallGetAutoSwitchEnabled(RE::PlayerCharacter::GetSingleton());
+        PapyrusEvent::GetInstance().CallGetOutfitList();
+    }
+
     auto SosGui::DoRender() -> void
     {
-        // if (!m_fShow)
-        // {
-        //     return;
-        // }
-        ImGui::Begin("SosGuiOptions", &m_fShow);
+        ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
         {
             bool fEnabled = SosUiData::GetInstance().IsEnabled();
             if (ImGui::Checkbox("Enabled", &fEnabled))
@@ -280,6 +290,7 @@ namespace LIBC_NAMESPACE_DECL
                     ImGui::Text("%s", noneState.c_str());
 
                     ImGui::PopID();
+                    ++idx;
                 }
                 ImGui::EndTable();
             }
@@ -397,9 +408,9 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::TableSetupColumn("Armor##HeaderRow");
             ImGui::TableHeadersRow();
             auto slotArmors = SosUiData::GetInstance().GetOutfitBodySlotArmors();
-            int  idx        = 0;
             if (slotArmors.contains(outfitName))
             {
+                int  idx           = 0;
                 auto slotArmorList = slotArmors.at(outfitName);
                 for (const auto &slotArmor : slotArmorList)
                 {
@@ -481,7 +492,7 @@ namespace LIBC_NAMESPACE_DECL
         RenderOutfitAddPolicyByCandidates(outfitName);
     }
 
-    void SosGui::RenderOutfitAddPolicyById(const std::string_view &outfitName, bool &fFilterPlayable)
+    void SosGui::RenderOutfitAddPolicyById(const std::string_view &outfitName, const bool &fFilterPlayable)
     {
         static std::array<char, 32> formIdBuf;
         static char                *pEnd{};
@@ -686,7 +697,8 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::IsFilterArmor(const std::string_view &filterString, RE::TESObjectARMO *armor) -> bool
     {
-        std::string armorName, modName;
+        std::string armorName;
+        std::string modName;
         if (auto fullName = skyrim_cast<RE::TESFullName *>(armor); fullName != nullptr)
         {
             armorName.assign(fullName->GetFullName());
@@ -700,5 +712,17 @@ namespace LIBC_NAMESPACE_DECL
             return true;
         }
         return false;
+    }
+
+    void SosGui::AllowTextInput(bool allow)
+    {
+        AllowTextInput1(RE::ControlMap::GetSingleton(), allow);
+    }
+
+    void SosGui::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
+    {
+        using func_t = decltype(&SosGui::AllowTextInput1);
+        static REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
+        func(controlMap, allow);
     }
 }

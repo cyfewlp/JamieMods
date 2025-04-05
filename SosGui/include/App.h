@@ -24,13 +24,10 @@ namespace LIBC_NAMESPACE_DECL
 
         SosGui           m_SosGui;
         HWND             m_hWnd         = nullptr;
-        WNDPROC          RealWndProc    = nullptr;
         std::atomic_bool m_fInitialized = false;
 
     public:
         auto Init() -> void;
-        auto UnInit();
-        auto InstallSinks() -> void;
 
         static auto GetInstance() -> App &
         {
@@ -40,7 +37,6 @@ namespace LIBC_NAMESPACE_DECL
 
     private:
         static void D3DInit();
-        static auto MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
         void DoD3DInit();
     };
