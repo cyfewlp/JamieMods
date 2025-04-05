@@ -19,20 +19,20 @@ namespace LIBC_NAMESPACE_DECL
     {
     public:
         using BodySlot      = int32_t;
-        using OutfitState   = std::pair<StateType, std::string_view>;
+        using OutfitState   = std::pair<StateType, RE::BSFixedString>;
         using BodySlotArmor = std::pair<BodySlot, RE::TESObjectARMO *>;
 
     private:
-        std::vector<RE::Actor *>                                         m_actors;
-        std::vector<RE::Actor *>                                         m_NearActors;
-        bool                                                             m_enabled           = false;
-        bool                                                             m_fQuickSlotEnabled = false;
-        std::unordered_map<RE::Actor *, bool>                            m_autoSwitchEnabled;
-        std::unordered_map<RE::Actor *, OutfitState>                     m_actorOutfitStates;
-        std::unordered_map<std::string_view, std::vector<BodySlotArmor>> m_outfitBodySlotArmors;
-        std::vector<std::string_view>                                    m_outfitList;
-        std::vector<RE::TESObjectARMO *>                                 m_armorCandidates;
-        std::vector<RE::TESObjectARMO *>                                 m_armorCandidatesCopy;
+        std::vector<RE::Actor *>                                    m_actors;
+        std::vector<RE::Actor *>                                    m_NearActors;
+        bool                                                        m_enabled           = false;
+        bool                                                        m_fQuickSlotEnabled = false;
+        std::unordered_map<RE::Actor *, bool>                       m_autoSwitchEnabled;
+        std::unordered_map<RE::Actor *, OutfitState>                m_actorOutfitStates;
+        std::unordered_map<std::string, std::vector<BodySlotArmor>> m_outfitBodySlotArmors;
+        std::vector<std::string>                                    m_outfitList;
+        std::vector<RE::TESObjectARMO *>                            m_armorCandidates;
+        std::vector<RE::TESObjectARMO *>                            m_armorCandidatesCopy;
 
     public:
         static auto GetInstance() -> SosUiData &
@@ -113,12 +113,12 @@ namespace LIBC_NAMESPACE_DECL
             m_actorOutfitStates[actor] = std::forward<OutfitState>(state);
         }
 
-        [[nodiscard]] constexpr auto GetOutfitList() const -> const std::vector<std::string_view> &
+        [[nodiscard]] constexpr auto GetOutfitList() const -> const std::vector<std::string> &
         {
             return m_outfitList;
         }
 
-        void SetOutfitList(const std::vector<std::string_view> &outfitLists)
+        void SetOutfitList(const std::vector<std::string> &outfitLists)
         {
             m_outfitList.clear();
             for (const auto &outfit : outfitLists)
@@ -158,12 +158,12 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         [[nodiscard]] auto GetOutfitBodySlotArmors() const
-            -> const std::unordered_map<std::string_view, std::vector<BodySlotArmor>> &
+            -> const std::unordered_map<std::string, std::vector<BodySlotArmor>> &
         {
             return m_outfitBodySlotArmors;
         }
 
-        void SetOutfitBodySlotArmors(std::string_view &outfitName, std::vector<int32_t> slots,
+        void SetOutfitBodySlotArmors(std::string &outfitName, std::vector<int32_t> slots,
                                      std::vector<RE::TESObjectARMO *> armors)
         {
             m_outfitBodySlotArmors.erase(outfitName);

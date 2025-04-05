@@ -29,11 +29,11 @@ namespace LIBC_NAMESPACE_DECL
         static auto SetActorNearPC(UnusedTag, std::vector<RE::Actor *> actors) -> void;
         static auto SetIsEnabled(UnusedTag, bool isEnabled) -> void;
         static auto SetAutoSwitchEnabled(UnusedTag, RE::Actor *actor, bool isEnabled) -> void;
-        static auto SetActorOutfitState(UnusedTag, RE::Actor *actor, StateType stateType, std::string_view state)
+        static auto SetActorOutfitState(UnusedTag, RE::Actor *actor, StateType stateType, std::string state)
             -> void;
-        static auto SetOutfitList(UnusedTag, std::vector<std::string_view> outfitList) -> void;
+        static auto SetOutfitList(UnusedTag, std::vector<std::string> outfitList) -> void;
         static auto SetArmorCandidates(UnusedTag, std::vector<RE::TESObjectARMO *> armorCandidates) -> void;
-        static void SetOutfitArmors(UnusedTag, std::string_view outfitName, std::vector<int32_t> slots,
+        static void SetOutfitArmors(UnusedTag, std::string outfitName, std::vector<int32_t> slots,
                                     std::vector<RE::TESObjectARMO *> armors);
     };
 }

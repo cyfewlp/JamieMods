@@ -35,13 +35,12 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    auto SosCallback::SetActorOutfitState(UnusedTag, RE::Actor *actor, StateType stateType, std::string_view state)
-        -> void
+    auto SosCallback::SetActorOutfitState(UnusedTag, RE::Actor *actor, StateType stateType, std::string state) -> void
     {
         SosUiData::GetInstance().PutActorOutfitState(actor, {stateType, state});
     }
 
-    auto SosCallback::SetOutfitList(UnusedTag, std::vector<std::string_view> outfitList) -> void
+    auto SosCallback::SetOutfitList(UnusedTag, std::vector<std::string> outfitList) -> void
     {
         SosUiData::GetInstance().SetOutfitList(outfitList);
     }
@@ -51,7 +50,7 @@ namespace LIBC_NAMESPACE_DECL
         SosUiData::GetInstance().SetArmorCandidates(armorCandidates);
     }
 
-    void SosCallback::SetOutfitArmors(UnusedTag, std::string_view outfitName, std::vector<int32_t> slots,
+    void SosCallback::SetOutfitArmors(UnusedTag, std::string outfitName, std::vector<int32_t> slots,
                                       std::vector<RE::TESObjectARMO *> armors)
     {
         SosUiData::GetInstance().SetOutfitBodySlotArmors(outfitName, slots, armors);

@@ -5,17 +5,16 @@ namespace LIBC_NAMESPACE_DECL
 {
 #define REGISTER_FUNCTION(name) vm->RegisterFunction(#name, "SosGuiNative", name)
 
-#define ADD_NEW_EVENT(funcName, type...)                                                                               \
-    SKSE::RegistrationSet<type> require##funcName{"OnRequire" #funcName};                                              \
-    static void                 RegisterForRequire##funcName(RE::StaticFunctionTag *, RE::TESForm *thisForm)           \
+#define ADD_NEW_EVENT(funcName, ...)                                                                                   \
+    SKSE::RegistrationSet<__VA_ARGS__> require##funcName{"OnRequire" #funcName};                                       \
+    static void                        RegisterForRequire##funcName(RE::StaticFunctionTag *, RE::TESForm *thisForm)    \
     {                                                                                                                  \
         GetInstance().require##funcName.Register(thisForm);                                                            \
     }
 
     class PapyrusEvent
     {
-        using String = const char *;
-        SKSE::RegistrationSet<String>            requireUiDataEvent{"OnRequireUiData"};
+        SKSE::RegistrationSet<std::string>       requireUiDataEvent{"OnRequireUiData"};
         SKSE::RegistrationSet<const RE::Actor *> requireAddActor{"OnRequireAddActor"};
         SKSE::RegistrationSet<bool>              requireSetEnabled{"OnRequireSetEnabled"};
         ADD_NEW_EVENT(RemoveActor, const RE::Actor *)
@@ -23,13 +22,13 @@ namespace LIBC_NAMESPACE_DECL
         ADD_NEW_EVENT(GetAutoSwitchEnabled, const RE::Actor *)
         ADD_NEW_EVENT(GetOutfitState, const RE::Actor *, StateType)
         ADD_NEW_EVENT(GetOutfitList)
-        ADD_NEW_EVENT(CreateOutfit, String, bool)
-        ADD_NEW_EVENT(RenameOutfit, String, String)
-        ADD_NEW_EVENT(GetOutfitArmors, String)
-        ADD_NEW_EVENT(SetQuickslot, bool) // add spelll
+        ADD_NEW_EVENT(CreateOutfit, std::string, bool)
+        ADD_NEW_EVENT(RenameOutfit, std::string, std::string)
+        ADD_NEW_EVENT(GetOutfitArmors, std::string)
+        ADD_NEW_EVENT(SetQuickslot, bool) // add spell
 
         ADD_NEW_EVENT(GetActorArmors, const RE::Actor *, OutfitAddPolicy)
-        ADD_NEW_EVENT(AddToOutfit, String, const RE::TESObjectARMO *)
+        ADD_NEW_EVENT(AddToOutfit, std::string, const RE::TESObjectARMO *)
 
     public:
         static auto Bind(RE::BSScript::IVirtualMachine *vm) -> bool;
@@ -40,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
             return g_instance;
         }
 
-        constexpr auto CallNoArgs(String methodName)
+        constexpr auto CallNoArgs(const std::string &methodName)
         {
             requireUiDataEvent.QueueEvent(methodName);
         }
@@ -80,12 +79,12 @@ namespace LIBC_NAMESPACE_DECL
             requireGetOutfitList.QueueEvent();
         }
 
-        constexpr auto CallCreateOutfit(String outfitName, bool fromWorn)
+        auto CallCreateOutfit(const std::string &outfitName, bool fromWorn)
         {
             requireCreateOutfit.QueueEvent(outfitName, fromWorn);
         }
 
-        constexpr auto CallRenameOutfit(String outfitName, String newName)
+        auto CallRenameOutfit(const std::string &outfitName, const std::string &newName)
         {
             requireRenameOutfit.QueueEvent(outfitName, newName);
         }
@@ -95,14 +94,14 @@ namespace LIBC_NAMESPACE_DECL
             requireGetActorArmors.QueueEvent(actor, policy);
         }
 
-        constexpr auto CallAddToOutfit(String outfitName, const RE::TESObjectARMO *armor)
+        auto CallAddToOutfit(const std::string &outfitName, const RE::TESObjectARMO *armor)
         {
             requireAddToOutfit.QueueEvent(outfitName, armor);
         }
 
-        constexpr auto CallGetOutfitArmors(String outfitName)
+        auto CallGetOutfitArmors(const std::string &outfitName)
         {
-            requireGetOutfitArmors.QueueEvent(outfitName);
+            requireGetOutfitArmors.SendEvent(outfitName);
         }
 
         constexpr auto CallSetQuickslot(bool enable)
@@ -111,17 +110,17 @@ namespace LIBC_NAMESPACE_DECL
         }
 
     private:
-        static void RegisterForRequireUiData(RE::StaticFunctionTag *, RE::TESForm *thisForm)
+        static void RegisterForRequireUiData(RE::StaticFunctionTag *, const RE::TESForm *thisForm)
         {
             GetInstance().requireUiDataEvent.Register(thisForm);
         }
 
-        static void RegisterForRequireAddActor(RE::StaticFunctionTag *, RE::TESForm *thisForm)
+        static void RegisterForRequireAddActor(RE::StaticFunctionTag *, const RE::TESForm *thisForm)
         {
             GetInstance().requireAddActor.Register(thisForm);
         }
 
-        static void RegisterForRequireSetEnabled(RE::StaticFunctionTag *, RE::TESForm *thisForm)
+        static void RegisterForRequireSetEnabled(RE::StaticFunctionTag *, const RE::TESForm *thisForm)
         {
             GetInstance().requireSetEnabled.Register(thisForm);
         }

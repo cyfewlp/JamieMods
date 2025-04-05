@@ -21,7 +21,8 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr int OUTFIT_NAME_MAX_BYTES = 256;
         static constexpr int MAX_FILTER_ARMOR_NAME = 256;
 
-        using Slot = RE::BIPED_MODEL::BipedObjectSlot;
+        using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
+        using Armor = RE::TESObjectARMO;
 
     public:
         static auto GetInstance() -> SosGui &
@@ -45,12 +46,13 @@ namespace LIBC_NAMESPACE_DECL
         static void RenderOutfitConfiguration();
         static void RenderCharactersConfig();
         static void RenderCharactersList();
-        static void RenderOutfitArmors(const std::string_view &outfitName);
+        static void RenderOutfitArmors(const std::string &outfitName);
+        static void RenderOutfitEditPanelPolicy(const std::string &outfitName);
         static void TrySetAllowTextInput();
         static void RenderLocationBasedAutoswitch(RE::Actor *currentActor);
-        static void RenderOutfitEditPanel(const std::string_view &outfitName);
-        static void RenderOutfitAddPolicyById(const std::string_view &outfitName, const bool &fFilterPlayable);
-        static void RenderOutfitAddPolicyByCandidates(const std::string_view &outfitName);
+        static void RenderOutfitEditPanel(const std::string &outfitName);
+        static void RenderOutfitAddPolicyById(const std::string &outfitName, const bool &fFilterPlayable);
+        static void RenderOutfitAddPolicyByCandidates(const std::string &outfitName);
         static auto RenderArmorSlotFilter() -> Slot;
         static void UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable,
                                           OutfitAddPolicy policy);
@@ -58,6 +60,7 @@ namespace LIBC_NAMESPACE_DECL
         static void AllowTextInput1(RE::ControlMap *controlMap, bool allow);
 
         static void UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable);
+        static void UpdateArmorCandidatesBySlot(Slot slot);
 
         static void FilterArmorCandidates(const std::string_view           &filterString,
                                           std::vector<RE::TESObjectARMO *> &armorCandidates);

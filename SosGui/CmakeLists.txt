@@ -1,6 +1,6 @@
 project(
     SosGui
-    VERSION 0.0.1 
+    VERSION 0.0.1
     DESCRIPTION "SkyrimOutfitSystemSE ImGui"
     LANGUAGES CXX
 )
@@ -56,7 +56,7 @@ target_include_directories(
 
 # linkage
 target_link_libraries(
-	${PROJECT_NAME} 
+	${PROJECT_NAME}
 	PRIVATE
 		spdlog::spdlog
 		imgui
@@ -71,6 +71,7 @@ if(DEFINED OUTPUT_FOLDER)
 
     # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
     set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
+    set(TRANSLATION_FOLDER "${OUTPUT_FOLDER}/Interface/translations")
 
     message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
@@ -79,6 +80,7 @@ if(DEFINED OUTPUT_FOLDER)
         POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/${PROJECT_NAME}_english.txt" "${TRANSLATION_FOLDER}/${PROJECT_NAME}_english.txt"
         VERBATIM
     )
 
