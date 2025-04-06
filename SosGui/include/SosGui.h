@@ -47,6 +47,7 @@ namespace LIBC_NAMESPACE_DECL
         ImTable<2> m_outfitArmorsTable;
         ImTable<3> m_armorCandidatesTable;
         ImTable<2> m_locationAutoSwitchTable;
+        ImTable<2> m_charactersTable;
 
         void InitTables();
 
@@ -60,7 +61,6 @@ namespace LIBC_NAMESPACE_DECL
 
         auto        Render() -> void;
         static auto Refresh() -> void;
-        static void RenderQuickslotConfig();
 
     private:
         auto DoRender() -> void;
@@ -71,8 +71,8 @@ namespace LIBC_NAMESPACE_DECL
 
         static void NewFrame();
 
-        auto RenderArmorConflictPopup();
-
+        auto        RenderArmorConflictPopup();
+        static void RenderQuickSlotConfig();
         void        RenderCharactersConfig();
         void        RenderCharactersList();
         void        RenderLocationBasedAutoswitch(RE::Actor *currentActor);
