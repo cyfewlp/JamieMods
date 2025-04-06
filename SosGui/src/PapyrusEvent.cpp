@@ -19,6 +19,7 @@ namespace LIBC_NAMESPACE_DECL
         REGISTER_FUNCTION(RegisterForRequireAddToOutfit);
         REGISTER_FUNCTION(RegisterForRequireGetOutfitArmors);
         REGISTER_FUNCTION(RegisterForRequireSetQuickslot);
+        REGISTER_FUNCTION(RegisterForRequireSwapArmor);
 
         SosCallback::GetInstance().BindPapyrusFunctions(vm);
         return true;

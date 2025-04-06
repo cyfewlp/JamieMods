@@ -89,10 +89,106 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::Text("%s", g_widgetName.c_str());
         }
 
+        constexpr auto TextWrapped(const char *content) -> void
+        {
+            Translate(content, g_widgetName);
+            ImGui::TextWrapped("%s", g_widgetName.c_str());
+        }
+
+        constexpr auto TextWrapped(const std::string &&content) -> void
+        {
+            Translate(content.c_str(), g_widgetName);
+            ImGui::TextWrapped("%s", g_widgetName.c_str());
+        }
+
         constexpr auto Selectable(const std::string &string, bool isSelected) -> bool
         {
             Translate(string.c_str(), g_widgetName);
             return ImGui::Selectable(g_widgetName.c_str(), isSelected);
+        }
+
+        constexpr bool BeginPopupModal(const char *name)
+        {
+            Translate(name, g_widgetName);
+            return ImGui::BeginPopupModal(name);
+        }
+
+        constexpr void OpenPopup(const char *name)
+        {
+            Translate(name, g_widgetName);
+            ImGui::OpenPopup(g_widgetName.c_str(), ImGuiPopupFlags_NoOpenOverExistingPopup);
+        }
+
+        template <size_t Columns>
+        struct ImTable
+        {
+            std::string                      name;
+            uint32_t                         rows;
+            ImGuiTableFlags                  flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
+            std::array<std::string, Columns> headersRow;
+
+            ImTable() : rows(0), flags(0)
+            {
+            }
+
+            ImTable(std::string_view name, uint32_t rows, std::array<std::string_view, Columns> headersRow)
+                : name(name), rows(rows), headersRow(headersRow)
+            {
+            }
+        };
+
+        template <size_t Columns>
+        bool RenderTable(ImTable<Columns> &imTable, std::function<bool(uint32_t &)> renderRow)
+        {
+            bool result = true;
+            if (ImGui::BeginTable(imTable.name.c_str(), Columns, imTable.flags))
+            {
+                ImGui::PushID("HeaderRow");
+                for (size_t idx = 0; idx < Columns; ++idx)
+                {
+                    ImGui::TableSetupColumn(imTable.headersRow[idx].c_str());
+                }
+                ImGui::TableHeadersRow();
+
+                for (uint32_t rowIdx = 0; rowIdx < imTable.rows;)
+                {
+                    ImGui::PushID(rowIdx);
+                    ImGui::TableNextRow();
+                    if (!renderRow(rowIdx))
+                    {
+                        result = false;
+                        break;
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::PopID();
+                ImGui::EndTable();
+            }
+            return result;
+        }
+
+        template <size_t Columns>
+        constexpr void RenderTable(ImTable<Columns> &imTable, std::function<void(int)> renderRow)
+        {
+            if (ImGui::BeginTable(imTable.name.c_str(), Columns, imTable.flags))
+            {
+                ImGui::PushID("HeaderRow");
+                for (size_t idx = 0; idx < Columns; ++idx)
+                {
+                    ImGui::TableSetupColumn(imTable.headersRow[idx].c_str());
+                }
+                ImGui::TableHeadersRow();
+
+                for (uint32_t rowIdx = 0; rowIdx < imTable.rows; ++rowIdx)
+                {
+                    ImGui::PushID(rowIdx);
+                    ImGui::TableNextRow();
+                    renderRow(rowIdx);
+                    ImGui::PopID();
+                }
+                ImGui::PopID();
+                ImGui::EndTable();
+            }
         }
     }
 }

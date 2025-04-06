@@ -53,7 +53,13 @@ namespace LIBC_NAMESPACE_DECL
     void SosCallback::SetOutfitArmors(UnusedTag, std::string outfitName, std::vector<int32_t> slots,
                                       std::vector<RE::TESObjectARMO *> armors)
     {
-        SosUiData::GetInstance().SetOutfitBodySlotArmors(outfitName, slots, armors);
+        auto &outfitMap  = SosUiData::GetInstance().GetOutfitMap();
+        auto  outfitPair = outfitMap.try_emplace(outfitName, SosOutfit(outfitName));
+        auto &outfit     = outfitPair.first->second;
+        for (const auto &armor : armors)
+        {
+            outfit.AddArmor(armor);
+        }
     }
 
     auto SosCallback::BindPapyrusFunctions(RE::BSScript::IVirtualMachine *vm) -> bool

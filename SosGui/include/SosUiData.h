@@ -9,6 +9,7 @@
 
 #include "RE/A/Actor.h"
 #include "SosDataType.h"
+#include "SosOutfit.h"
 #include "common/config.h"
 
 #include <vector>
@@ -23,16 +24,16 @@ namespace LIBC_NAMESPACE_DECL
         using BodySlotArmor = std::pair<BodySlot, RE::TESObjectARMO *>;
 
     private:
-        std::vector<RE::Actor *>                                    m_actors;
-        std::vector<RE::Actor *>                                    m_NearActors;
-        bool                                                        m_enabled           = false;
-        bool                                                        m_fQuickSlotEnabled = false;
-        std::unordered_map<RE::Actor *, bool>                       m_autoSwitchEnabled;
-        std::unordered_map<RE::Actor *, OutfitState>                m_actorOutfitStates;
-        std::unordered_map<std::string, std::vector<BodySlotArmor>> m_outfitBodySlotArmors;
-        std::vector<std::string>                                    m_outfitList;
-        std::vector<RE::TESObjectARMO *>                            m_armorCandidates;
-        std::vector<RE::TESObjectARMO *>                            m_armorCandidatesCopy;
+        std::vector<RE::Actor *>                     m_actors;
+        std::vector<RE::Actor *>                     m_NearActors;
+        bool                                         m_enabled           = false;
+        bool                                         m_fQuickSlotEnabled = false;
+        std::unordered_map<RE::Actor *, bool>        m_autoSwitchEnabled;
+        std::unordered_map<RE::Actor *, OutfitState> m_actorOutfitStates;
+        std::vector<RE::TESObjectARMO *>             m_armorCandidates;
+        std::vector<RE::TESObjectARMO *>             m_armorCandidatesCopy;
+
+        std::unordered_map<std::string, SosOutfit> m_outfitMap;
 
     public:
         static auto GetInstance() -> SosUiData &
@@ -113,20 +114,6 @@ namespace LIBC_NAMESPACE_DECL
             m_actorOutfitStates[actor] = std::forward<OutfitState>(state);
         }
 
-        [[nodiscard]] constexpr auto GetOutfitList() const -> const std::vector<std::string> &
-        {
-            return m_outfitList;
-        }
-
-        void SetOutfitList(const std::vector<std::string> &outfitLists)
-        {
-            m_outfitList.clear();
-            for (const auto &outfit : outfitLists)
-            {
-                m_outfitList.push_back(outfit);
-            }
-        }
-
         [[nodiscard]] constexpr auto GetArmorCandidates() -> std::vector<RE::TESObjectARMO *> &
         {
             return m_armorCandidates;
@@ -157,23 +144,18 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        [[nodiscard]] auto GetOutfitBodySlotArmors() const
-            -> const std::unordered_map<std::string, std::vector<BodySlotArmor>> &
+        void SetOutfitList(const std::vector<std::string> &outfitLists)
         {
-            return m_outfitBodySlotArmors;
+            m_outfitMap.clear();
+            for (const auto &outfitName : outfitLists)
+            {
+                m_outfitMap.emplace(outfitName, SosOutfit(outfitName));
+            }
         }
 
-        void SetOutfitBodySlotArmors(std::string &outfitName, std::vector<int32_t> slots,
-                                     std::vector<RE::TESObjectARMO *> armors)
+        [[nodiscard]] auto GetOutfitMap() -> std::unordered_map<std::string, SosOutfit> &
         {
-            m_outfitBodySlotArmors.erase(outfitName);
-            std::vector<BodySlotArmor> bodySlotArmors;
-            int                        size = armors.size();
-            for (int idx = 0; idx < size; ++idx)
-            {
-                bodySlotArmors.emplace_back(slots[idx], armors[idx]);
-            }
-            m_outfitBodySlotArmors[outfitName] = bodySlotArmors;
+            return m_outfitMap;
         }
     };
 }

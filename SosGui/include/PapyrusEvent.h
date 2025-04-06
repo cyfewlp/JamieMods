@@ -14,6 +14,8 @@ namespace LIBC_NAMESPACE_DECL
 
     class PapyrusEvent
     {
+        using Armor = RE::TESObjectARMO;
+
         SKSE::RegistrationSet<std::string>       requireUiDataEvent{"OnRequireUiData"};
         SKSE::RegistrationSet<const RE::Actor *> requireAddActor{"OnRequireAddActor"};
         SKSE::RegistrationSet<bool>              requireSetEnabled{"OnRequireSetEnabled"};
@@ -28,7 +30,8 @@ namespace LIBC_NAMESPACE_DECL
         ADD_NEW_EVENT(SetQuickslot, bool) // add spell
 
         ADD_NEW_EVENT(GetActorArmors, const RE::Actor *, OutfitAddPolicy)
-        ADD_NEW_EVENT(AddToOutfit, std::string, const RE::TESObjectARMO *)
+        ADD_NEW_EVENT(AddToOutfit, std::string, const Armor *)
+        ADD_NEW_EVENT(SwapArmor, std::string, const Armor *)
 
     public:
         static auto Bind(RE::BSScript::IVirtualMachine *vm) -> bool;
@@ -94,7 +97,7 @@ namespace LIBC_NAMESPACE_DECL
             requireGetActorArmors.QueueEvent(actor, policy);
         }
 
-        auto CallAddToOutfit(const std::string &outfitName, const RE::TESObjectARMO *armor)
+        auto CallAddToOutfit(const std::string &outfitName, const Armor *armor)
         {
             requireAddToOutfit.QueueEvent(outfitName, armor);
         }
@@ -107,6 +110,11 @@ namespace LIBC_NAMESPACE_DECL
         constexpr auto CallSetQuickslot(bool enable)
         {
             requireSetQuickslot.QueueEvent(enable);
+        }
+
+        constexpr auto CallSwapArmor(const std::string &outfitName, const Armor *armor)
+        {
+            requireSwapArmor.QueueEvent(outfitName, armor);
         }
 
     private:
