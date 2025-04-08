@@ -20,7 +20,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else if (message->type == SKSE::MessagingInterface::kDataLoaded)
             {
-                SKSE::Translation::ParseTranslation("SosGui");
+                // SKSE::Translation::ParseTranslation("SosGui");
             }
         });
         SKSE::GetPapyrusInterface()->Register(PapyrusFunctions::Register);

@@ -1,6 +1,7 @@
 #include "SosGui.h"
 #include "ImGuiUtil.h"
 #include "PapyrusEvent.h"
+#include "SosOutfit.h"
 #include "SosUiData.h"
 #include "common/log.h"
 #include "imgui.h"
@@ -9,6 +10,7 @@
 
 #include <RE/R/Renderer.h>
 #include <d3d11.h>
+#include <format>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -56,35 +58,26 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::InitTables()
     {
-        m_outfitListTable.name       = "##OutfitLists";
-        m_outfitListTable.headersRow = {ImGuiUtil::Translate("$SkyOutSys_MCM_OutfitList")};
+        m_outfitListTable.name = "##OutfitLists";
+        m_outfitListTable.flags |= ImGuiTableFlags_NoHostExtendY | ImGuiTableFlags_SizingStretchProp;
+        m_outfitListTable.headersRow = {Translation::Translate("$SkyOutSys_MCM_OutfitList")};
 
         m_locationAutoSwitchTable.name = "##AutoswitchStateList";
         m_locationAutoSwitchTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
+        m_locationAutoSwitchTable.flags |= ImGuiTableFlags_NoHostExtendY | ImGuiTableFlags_SizingStretchProp;
         m_locationAutoSwitchTable.headersRow = {
-            ImGuiUtil::Translate("$SosGui_TableHeader_Location"),
-            ImGuiUtil::Translate("$SosGui_TableHeader_Location_State"),
+            Translation::Translate("$SosGui_TableHeader_Location"),
+            Translation::Translate("$SosGui_TableHeader_Location_State"),
         };
 
         m_charactersTable.name = "##CharactersTable";
-        m_charactersTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
-        m_charactersTable.headersRow = {ImGuiUtil::Translate("$Characters"), ImGuiUtil::Translate("$Delete")};
-    }
-
-    void SosGui::ShowErrorMessage()
-    {
-        if (!m_fShowMessage)
-        {
-            return;
-        }
-        ImGui::NewLine();
-        static ImVec4 ERROR_COLOR = ImColor(255, 0, 0, 255);
-        ImGui::TextColored(ERROR_COLOR, "%s", m_errorMessage.c_str());
-        ImGui::SameLine();
-        if (ImGui::Button("x##CancelErrorMessage"))
-        {
-            m_fShowMessage = false;
-        }
+        m_charactersTable.flags |=
+            ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable;
+        m_charactersTable.headersRow = {
+            Translation::Translate("$Characters"),
+            Translation::Translate("$Delete"),
+            Translation::Translate("$SosGui_TableHeader_ActiveOutfit"),
+        };
     }
 
     void SosGui::NewFrame()
@@ -129,7 +122,7 @@ namespace LIBC_NAMESPACE_DECL
     void SosGui::TrySetAllowTextInput()
     {
         static bool fWantTextInput = false;
-        bool        cWantTextInput = ImGui::GetIO().WantTextInput;
+        const bool  cWantTextInput = ImGui::GetIO().WantTextInput;
         if (!fWantTextInput && cWantTextInput)
         {
             AllowTextInput(true);
@@ -151,6 +144,35 @@ namespace LIBC_NAMESPACE_DECL
         SosUiData::GetInstance().SetQuickSlotEnabled(HasQuickslotSpell());
     }
 
+    auto SosGui::DoRender() -> void
+    {
+        ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
+        {
+            bool fEnabled = SosUiData::GetInstance().IsEnabled();
+            if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
+            {
+                PapyrusEvent::GetInstance().CallSetEnabled(fEnabled);
+            }
+            ImGui::Indent(2);
+            ImGui::SameLine();
+            auto key = Translation::Translate("$SosGui_Global_FontSize_Scale");
+            ImGui::DragFloat(key.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F, 0.5F, 5.0F);
+
+            if (ImGui::Button("Refresh Armor"))
+            {
+                RefreshCurrentActorArmor();
+            }
+
+            RenderQuickSlotConfig();
+            ImGui::SameLine();
+            RenderExportOrImportSettings();
+            RenderCharactersPanel();
+            RenderOutfitConfiguration();
+            RenderEditingOutfit();
+        }
+        ImGui::End();
+    }
+
     void SosGui::RenderQuickSlotConfig()
     {
         bool quickSlotEnabled = SosUiData::GetInstance().IsQuickSlotEnabled();
@@ -165,236 +187,174 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_EnableQuickslots");
     }
 
-    auto SosGui::DoRender() -> void
+    void SosGui::RenderExportOrImportSettings()
     {
-        ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
+        if (ImGuiUtil::Button("$SkyOutSys_Text_Export"))
         {
-            bool fEnabled = SosUiData::GetInstance().IsEnabled();
-            if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
-            {
-                PapyrusEvent::GetInstance().CallSetEnabled(fEnabled);
-            }
-
-            RenderQuickSlotConfig();
-            RenderCharactersConfig();
-
-            ImGuiUtil::Button("$SkyOutSys_Text_Export");
-            ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
-
-            ImGui::SameLine();
-            ImGuiUtil::Button("$SkyOutSys_Text_Import");
-            ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
-
-            RenderOutfitConfiguration();
+            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ExportSettings);
         }
-        ImGui::End();
-    }
+        ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
 
-    void SosGui::RenderCharactersConfig()
-    {
-        ImGuiUtil::SeparatorText("$SkyOutSys_Text_ActiveActorHeader");
-
-        static bool fShowNearNpcLis = false;
-        if (ImGuiUtil::CheckBox("$SkyOutSys_Text_AddActorSelection", &fShowNearNpcLis))
+        ImGui::SameLine();
+        if (ImGuiUtil::Button("$SkyOutSys_Text_Import"))
         {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ActorNearPC);
+            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ImportSettings);
+            Refresh();
         }
-        if (fShowNearNpcLis)
-        {
-            static int  selectedIdx = 0;
-            const auto &nearActors  = SosUiData::GetInstance().GetNearActors();
-            if (!nearActors.empty())
-            {
-                if (ImGui::BeginCombo("##ActorNearPC", nearActors.at(selectedIdx)->GetName()))
-                {
-                    int idx = 0;
-                    for (const auto &nearActor : nearActors)
-                    {
-                        if (ImGui::Selectable(nearActor->GetName(), idx == selectedIdx, ImGuiSelectableFlags_None))
-                        {
-                            selectedIdx = idx;
-                            PapyrusEvent::GetInstance().CallAddActor(nearActors.at(idx));
-                        }
-                        if (selectedIdx == idx)
-                        {
-                            ImGui::SetItemDefaultFocus();
-                        }
-                        idx++;
-                    }
-                    ImGui::EndCombo();
-                }
-            }
-        }
-        RenderCharactersList();
-    }
-
-    void SosGui::RenderCharactersList()
-    {
-        const auto &actors = SosUiData::GetInstance().GetActors();
-        if (ImGuiUtil::Button("$SosGui_Refresh{$Characters}"))
-        {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
-        }
-        static int selectedIdx = -1;
-        ImGui::PushFontSize(ImGui::GetFontSize() * 1.2F);
-        if (selectedIdx == -1)
-        {
-            ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
-        }
-        else
-        {
-            ImGui::Text("");
-        }
-        ImGui::PopFontSize();
-
-        ImGui::BeginGroup();
-        m_charactersTable.rows = actors.size();
-        ImGuiUtil::RenderTable(m_charactersTable, [&actors, this](int rowIdx) {
-            auto       actor      = actors.at(rowIdx);
-            bool const isSelected = selectedIdx == rowIdx;
-            if (isSelected)
-            {
-                auto color = ImGui::GetColorU32(ImGuiCol_HeaderActive);
-                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, color);
-            }
-
-            ImGui::TableNextColumn();
-            if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
-            {
-                selectedIdx = selectedIdx != rowIdx ? rowIdx : -1;
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-
-            ImGui::TableNextColumn();
-
-            if (ImGui::Button(m_charactersTable.headersRow[1].c_str()))
-            {
-                PapyrusEvent::GetInstance().CallRemoveActor(actor);
-            }
-        });
-        ImGui::EndGroup();
-
-        if (selectedIdx >= 0 && selectedIdx < actors.size())
-        {
-            RenderLocationBasedAutoswitch(actors.at(selectedIdx));
-        }
-    }
-
-    void SosGui::RenderLocationBasedAutoswitch(RE::Actor *currentActor)
-    {
-        bool fAutoSwitchEnabled = SosUiData::GetInstance().IsAutoSwitchEnabled(currentActor);
-        if (ImGuiUtil::CheckBox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))
-        {
-            PapyrusEvent::GetInstance().CallSetAutoSwitchEnabled(currentActor, fAutoSwitchEnabled);
-        }
-        // don't call GetAutoSwitchStateArray because it's result is static
-        static constexpr std::array stateArray = {Combat,    World,        WorldSnowy,  WorldRainy, City,
-                                                  CitySnowy, CityRainy,    Town,        TownSnowy,  TownRainy,
-                                                  Dungeon,   DungeonSnowy, DungeonRainy};
-        m_locationAutoSwitchTable.rows         = stateArray.size();
-        if (fAutoSwitchEnabled)
-        {
-            static std::string noneState = ImGuiUtil::Translate("$SkyOutSys_AutoswitchEdit_None");
-            ImGuiUtil::RenderTable(m_locationAutoSwitchTable, [](int idx) {
-                auto state = stateArray.at(idx);
-                ImGui::TableNextColumn();
-                ImGuiUtil::Text(std::format("$SkyOutSys_Text_Autoswitch{}", static_cast<int8_t>(state)));
-
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", noneState.c_str());
-            });
-        }
+        ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
     }
 
     void SosGui::RenderOutfitConfiguration()
     {
-        ImGuiUtil::SeparatorText("$SkyOutSys_MCMHeader_OutfitList");
-
-        // create
-        static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
-        ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
-        if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
+        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", {}, ImGuiChildFlags_AutoResizeY))
         {
-            if (outfitNameBuf[0] == '\0')
-            {
-                AddErrorMessage("Outfit name can't be empty");
-            }
-            else
+            static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
+            ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
+
+            ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
+            if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
             {
                 PapyrusEvent::GetInstance().CallCreateOutfit(outfitNameBuf.data(), false);
             }
-        }
-        ImGui::SameLine();
-        if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
-        {
-            if (outfitNameBuf[0] == '\0')
-            {
-                AddErrorMessage("Outfit name can't be empty");
-            }
-            else
+
+            ImGui::SameLine();
+            if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
             {
                 PapyrusEvent::GetInstance().CallCreateOutfit(outfitNameBuf.data(), true);
             }
-        }
-        ShowErrorMessage();
+            ImGui::EndDisabled();
 
-        if (ImGuiUtil::Button("$SosGui_Refresh{$SkyOutSys_MCM_OutfitList}"))
-        {
-            PapyrusEvent::GetInstance().CallGetOutfitList();
-        }
-        auto &outfitMap = SosUiData::GetInstance().GetOutfitMap();
-        ImGui::PushFontSize(ImGui::GetFontSize() * 1.2F);
-        if (outfitMap.empty())
-        {
-            ImGuiUtil::Text("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}");
+            if (ImGuiUtil::Button("$SosGui_Refresh{$SkyOutSys_MCM_OutfitList}"))
+            {
+                PapyrusEvent::GetInstance().CallGetOutfitList();
+            }
+            auto &outfitMap = SosUiData::GetInstance().GetOutfitMap();
+            ImGui::PushFontSize(HintFontSize());
+            if (outfitMap.empty())
+            {
+                ImGuiUtil::Text("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}");
+            }
+            static int selectedIdx     = -1;
+            ImGuiUtil::Text(selectedIdx == -1 ? "$SosGui_SelectHint{$SkyOutSys_MCM_OutfitList}" : "");
             ImGui::PopFontSize();
+
+            m_outfitListTable.rows = outfitMap.size();
+            if (BeginTable(m_outfitListTable))
+            {
+                TableHeadersRow(m_outfitListTable);
+                int idx = 0;
+                for (auto &pair : outfitMap)
+                {
+                    ImGui::PushID(idx);
+                    ImGui::TableNextRow();
+
+                    const auto &outfitName = pair.first;
+                    ImGui::TableNextColumn();
+                    bool const isSelected = selectedIdx == idx;
+                    if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
+                    {
+                        OnSelectOutfit(pair.second, isSelected);
+                        selectedIdx = selectedIdx != idx ? idx : -1;
+                    }
+                    RenderOutfitListContextMenu(outfitName);
+                    ImGui::PopID();
+                    ++idx;
+                }
+                ImGui::EndTable();
+            }
+        }
+        ImGui::EndChild();
+    }
+
+    void SosGui::RenderEditingOutfit()
+    {
+        if (m_editingOutfit == nullptr)
+        {
             return;
         }
-        static std::string selectedOutfit;
-        static int         selectedIdx     = -1;
-        static int         prevSelectedIdx = -1;
-        if (selectedIdx == -1)
+        m_editingOutfit->Render();
+    }
+
+    void SosGui::RenderOutfitListContextMenu(const std::string &outfitName)
+    {
+        if (ImGui::BeginPopupContextItem())
         {
-            ImGuiUtil::Text("$SosGui_SelectHint{$SkyOutSys_MCM_OutfitList}");
+            if (m_editingActor == nullptr)
+            {
+                ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
+            }
+            else
+            {
+                auto       &sosUiData = SosUiData::GetInstance();
+                const auto *actorName = m_editingActor->GetName();
+                auto        templateS = Translation::Translate("$SosGui_ContextMenu_EditingActor");
+                ImGui::Text("%s", std::vformat(templateS, std::make_format_args(actorName)).c_str());
+                if (sosUiData.HasActiveOutfit(m_editingActor))
+                {
+                    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
+                    {
+                        ContextMenuSetActorActiveOutfit("");
+                    }
+                }
+                else
+                {
+                    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
+                    {
+                        ContextMenuSetActorActiveOutfit(outfitName);
+                    }
+                }
+                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
+                {
+                    ContextMenuDeleteOutfit(outfitName);
+                }
+            }
+            if (ImGui::MenuItem("Close"))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+    void SosGui::ContextMenuSetActorActiveOutfit(const std::string &outfitName)
+    {
+        PapyrusEvent::GetInstance().CallActiveOutfit(m_editingActor, outfitName);
+        SosUiData::GetInstance().SetActorActiveOutfit(m_editingActor, outfitName);
+        ImGui::CloseCurrentPopup();
+        RefreshCurrentActorArmor();
+    }
+
+    void SosGui::ContextMenuDeleteOutfit(const std::string &outfitName)
+    {
+        PapyrusEvent::GetInstance().CallDeleteOutfit(outfitName);
+        SosUiData::GetInstance().DeleteOutfit(outfitName);
+        ImGui::CloseCurrentPopup();
+    }
+
+    void SosGui::RefreshCurrentActorArmor()
+    {
+        if (m_editingActor != nullptr && m_editingActor->GetActorRuntimeData().currentProcess != nullptr)
+        {
+            if (auto *currentProcess = m_editingActor->GetActorRuntimeData().currentProcess; currentProcess != nullptr)
+            {
+                currentProcess->Set3DUpdateFlag(RE::RESET_3D_FLAGS::kModel);
+                m_editingActor->Update3DModel();
+            }
+        }
+    }
+
+    void SosGui::OnSelectOutfit(SosOutfit &outfit, bool prevSelectState)
+    {
+        if (prevSelectState)
+        {
+            m_editingOutfit = nullptr;
         }
         else
         {
-            ImGui::Text("");
+            m_editingOutfit = &outfit;
+            PapyrusEvent::GetInstance().CallGetOutfitArmors(outfit.GetName());
+            outfit.ShowOutfitWindow(true);
         }
-        ImGui::PopFontSize();
-
-        auto pair              = outfitMap.begin();
-        m_outfitListTable.rows = outfitMap.size();
-        ImGuiUtil::RenderTable(m_outfitListTable, [&pair](uint32_t &idx) {
-            auto outfitName = pair->first;
-            ImGui::TableNextColumn();
-            bool const isSelected = selectedIdx == idx;
-            if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_None))
-            {
-                selectedIdx = selectedIdx != idx ? idx : -1;
-                selectedOutfit.assign(outfitName);
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-            ++idx;
-            ++pair;
-            return true;
-        });
-
-        if (selectedIdx != -1)
-        {
-            if (selectedIdx != prevSelectedIdx)
-            {
-                PapyrusEvent::GetInstance().CallGetOutfitArmors(selectedOutfit);
-            }
-            outfitMap.at(selectedOutfit).Render();
-        }
-        prevSelectedIdx = selectedIdx;
     }
 
     auto SosGui::EnableQuickslot(bool enable) -> bool

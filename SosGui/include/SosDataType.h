@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "imgui.h"
+
 #include <cstdint>
 
 namespace LIBC_NAMESPACE_DECL
@@ -139,6 +141,13 @@ namespace LIBC_NAMESPACE_DECL
     };
 
     constexpr std::string_view SOS_SPELL_EDITOR_ID = "SkyrimOutfitSystemQuickslotSpell";
+
+    constexpr auto HintFontSize = [] {
+        return ImGui::GetFontSize() * 1.2F;
+    };
+    constexpr auto HeaderFontSize = [] {
+        return ImGui::GetFontSize() * 1.3F;
+    };
 }
 
 #endif // SOSDATATYPE_H

@@ -4,8 +4,8 @@
 
 #include "SosGuiMenu.h"
 
-#include "SimpleIME/include/ImGuiThemeLoader.h"
 #include "SosGui.h"
+#include "imgui.h"
 
 #include <common/log.h>
 

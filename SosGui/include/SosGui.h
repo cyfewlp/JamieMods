@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SimpleIME/include/ImGuiThemeLoader.h"
-#include "SosDataType.h"
 #include "SosUiData.h"
 
 #include <RE/R/Renderer.h>
@@ -26,20 +24,11 @@ namespace LIBC_NAMESPACE_DECL
         using Armor = RE::TESObjectARMO;
         ImGuiUtil::ImTable<1> m_outfitListTable;
         ImGuiUtil::ImTable<2> m_locationAutoSwitchTable;
-        ImGuiUtil::ImTable<2> m_charactersTable;
-
-        bool        m_fShowMessage = false;
-        std::string m_errorMessage;
+        ImGuiUtil::ImTable<3> m_charactersTable;
+        RE::Actor            *m_editingActor  = nullptr;
+        SosOutfit            *m_editingOutfit = nullptr;
 
         void InitTables();
-
-        void AddErrorMessage(const char *msg)
-        {
-            m_errorMessage.assign(msg);
-            m_fShowMessage = true;
-        }
-
-        void ShowErrorMessage();
 
     public:
         SosGui()
@@ -54,13 +43,23 @@ namespace LIBC_NAMESPACE_DECL
 
     private:
         auto DoRender() -> void;
-        void RenderOutfitConfiguration();
+
+        static void RenderQuickSlotConfig();
+        static void RenderExportOrImportSettings();
+        void        RenderOutfitConfiguration();
+        void        RenderEditingOutfit();
+
+        void RenderOutfitListContextMenu(const std::string &outfitName);
+        void ContextMenuSetActorActiveOutfit(const std::string &outfitName);
+        void ContextMenuDeleteOutfit(const std::string &outfitName);
+        void RefreshCurrentActorArmor();
+        void OnSelectOutfit(SosOutfit &outfit, bool prevSelectState);
 
         static void NewFrame();
 
-        static void RenderQuickSlotConfig();
-        void        RenderCharactersConfig();
+        void        RenderCharactersPanel();
         void        RenderCharactersList();
+        static void RenderNearNpcList();
         void        RenderLocationBasedAutoswitch(RE::Actor *currentActor);
         static void TrySetAllowTextInput();
         static void AllowTextInput(bool allow);

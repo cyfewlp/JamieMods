@@ -15,11 +15,15 @@ namespace LIBC_NAMESPACE_DECL
         REGISTER_FUNCTION(RegisterForRequireGetOutfitList);
         REGISTER_FUNCTION(RegisterForRequireCreateOutfit);
         REGISTER_FUNCTION(RegisterForRequireRenameOutfit);
+        REGISTER_FUNCTION(RegisterForRequireDeleteOutfit);
         REGISTER_FUNCTION(RegisterForRequireGetActorArmors);
         REGISTER_FUNCTION(RegisterForRequireAddToOutfit);
         REGISTER_FUNCTION(RegisterForRequireGetOutfitArmors);
         REGISTER_FUNCTION(RegisterForRequireSetQuickslot);
+
         REGISTER_FUNCTION(RegisterForRequireSwapArmor);
+        REGISTER_FUNCTION(RegisterForRequireRemoveArmor);
+        REGISTER_FUNCTION(RegisterForRequireActiveOutfit);
 
         SosCallback::GetInstance().BindPapyrusFunctions(vm);
         return true;

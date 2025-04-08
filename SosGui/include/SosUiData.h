@@ -12,6 +12,7 @@
 #include "SosOutfit.h"
 #include "common/config.h"
 
+#include <common/log.h>
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
@@ -32,6 +33,7 @@ namespace LIBC_NAMESPACE_DECL
         std::unordered_map<RE::Actor *, OutfitState> m_actorOutfitStates;
         std::vector<RE::TESObjectARMO *>             m_armorCandidates;
         std::vector<RE::TESObjectARMO *>             m_armorCandidatesCopy;
+        std::unordered_map<RE::Actor *, std::string> m_actorActiveOutfitMap;
 
         std::unordered_map<std::string, SosOutfit> m_outfitMap;
 
@@ -97,6 +99,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void SetAutoSwitchEnabled(RE::Actor *actor, const bool autoSwitchEnabled)
         {
+            log_debug("SetAutoSwitchEnabled: {} {}", actor->GetName(), autoSwitchEnabled);
             if (actor != nullptr)
             {
                 m_autoSwitchEnabled[actor] = autoSwitchEnabled;
@@ -153,9 +156,29 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        void DeleteOutfit(const std::string& outfitName)
+        {
+            m_outfitMap.erase(outfitName);
+        }
+
         [[nodiscard]] auto GetOutfitMap() -> std::unordered_map<std::string, SosOutfit> &
         {
             return m_outfitMap;
+        }
+
+        [[nodiscard]] auto GetActorActiveOutfitMap() const -> const std::unordered_map<RE::Actor *, std::string> &
+        {
+            return m_actorActiveOutfitMap;
+        }
+
+        void SetActorActiveOutfit(RE::Actor *actor, const std::string &outfitName)
+        {
+            m_actorActiveOutfitMap[actor] = outfitName;
+        }
+
+        auto HasActiveOutfit(RE::Actor *actor) -> bool
+        {
+            return m_actorActiveOutfitMap.contains(actor) && !m_actorActiveOutfitMap.at(actor).empty();
         }
     };
 }
