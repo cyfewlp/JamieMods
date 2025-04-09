@@ -15,7 +15,6 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-
     void SosGui::RenderCharactersPanel()
     {
         if (ImGuiUtil::BeginChild("$SkyOutSys_Text_ActiveActorHeader", ImVec2(), ImGuiChildFlags_AutoResizeY))
@@ -23,7 +22,7 @@ namespace LIBC_NAMESPACE_DECL
             static bool fShowNearNpcLis = false;
             if (ImGuiUtil::CheckBox("$SkyOutSys_Text_AddActorSelection", &fShowNearNpcLis))
             {
-                PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ActorNearPC);
+                PapyrusEvent::GetInstance().CallNoArgs(SosFunction::ActorNearPC);
             }
             if (fShowNearNpcLis)
             {
@@ -40,7 +39,7 @@ namespace LIBC_NAMESPACE_DECL
         const auto &actors = SosUiData::GetInstance().GetActors();
         if (ImGuiUtil::Button("$SosGui_Refresh{$Characters}"))
         {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
+            PapyrusEvent::GetInstance().CallNoArgs(SosFunction::ListActors);
         }
         static int selectedIdx = -1;
         ImGui::PushFontSize(HintFontSize());

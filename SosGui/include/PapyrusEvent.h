@@ -26,7 +26,6 @@ namespace LIBC_NAMESPACE_DECL
         ADD_NEW_EVENT(GetOutfitList)
         ADD_NEW_EVENT(CreateOutfit, std::string, bool)
         ADD_NEW_EVENT(RenameOutfit, std::string, std::string)
-        ADD_NEW_EVENT(DeleteOutfit, std::string)
         ADD_NEW_EVENT(GetOutfitArmors, std::string)
         ADD_NEW_EVENT(SetQuickslot, bool) // add spell
 
@@ -34,7 +33,6 @@ namespace LIBC_NAMESPACE_DECL
         ADD_NEW_EVENT(AddToOutfit, std::string, const Armor *)
         ADD_NEW_EVENT(SwapArmor, std::string, const Armor *)
         ADD_NEW_EVENT(RemoveArmor, std::string, const Armor *)
-        ADD_NEW_EVENT(ActiveOutfit, const RE::Actor*, std::string)
 
     public:
         static auto Bind(RE::BSScript::IVirtualMachine *vm) -> bool;
@@ -95,11 +93,6 @@ namespace LIBC_NAMESPACE_DECL
             requireRenameOutfit.QueueEvent(outfitName, newName);
         }
 
-        auto CallDeleteOutfit(const std::string &outfitName)
-        {
-            requireDeleteOutfit.QueueEvent(outfitName);
-        }
-
         constexpr auto CallGetActorArmors(const RE::Actor *actor, OutfitAddPolicy policy)
         {
             requireGetActorArmors.QueueEvent(actor, policy);
@@ -128,11 +121,6 @@ namespace LIBC_NAMESPACE_DECL
         constexpr auto CallRemoveArmor(const std::string &outfitName, const Armor *armor)
         {
             requireRemoveArmor.QueueEvent(outfitName, armor);
-        }
-
-        constexpr auto CallActiveOutfit(const RE::Actor* actor, const std::string &outfitName)
-        {
-            requireActiveOutfit.QueueEvent(actor, outfitName);
         }
 
     private:

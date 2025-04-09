@@ -1,9 +1,10 @@
 #include "SosGui.h"
 #include "ImGuiUtil.h"
-#include "PapyrusEvent.h"
+#include "SosNativeCaller.h"
 #include "SosOutfit.h"
 #include "SosUiData.h"
 #include "common/log.h"
+#include "gui/SosDataCoordinator.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -59,7 +60,7 @@ namespace LIBC_NAMESPACE_DECL
     void SosGui::InitTables()
     {
         m_outfitListTable.name = "##OutfitLists";
-        m_outfitListTable.flags |= ImGuiTableFlags_NoHostExtendY | ImGuiTableFlags_SizingStretchProp;
+        // m_outfitListTable.flags |= ImGuiTableFlags_NoHostExtendY;
         m_outfitListTable.headersRow = {Translation::Translate("$SkyOutSys_MCM_OutfitList")};
 
         m_locationAutoSwitchTable.name = "##AutoswitchStateList";
@@ -137,21 +138,31 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::Refresh() -> void
     {
-        PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ListActors);
-        PapyrusEvent::GetInstance().CallGetAutoSwitchEnabled(RE::PlayerCharacter::GetSingleton());
-        PapyrusEvent::GetInstance().CallGetOutfitList();
-
-        SosUiData::GetInstance().SetQuickSlotEnabled(HasQuickslotSpell());
     }
 
     auto SosGui::DoRender() -> void
     {
         ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
         {
-            bool fEnabled = SosUiData::GetInstance().IsEnabled();
+            auto &errorMessages = m_uiData.GetErrorMessages();
+            for (auto iter = errorMessages.begin(); iter != errorMessages.end();)
+            {
+                ImGui::Text("%s", (*iter).c_str());
+                ImGui::SameLine();
+                if (ImGui::Button("x"))
+                {
+                    iter = errorMessages.erase(iter);
+                }
+                else
+                {
+                    ++iter;
+                }
+            }
+
+            bool fEnabled = m_uiData.IsEnabled();
             if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
             {
-                PapyrusEvent::GetInstance().CallSetEnabled(fEnabled);
+                m_dataCoordinator.RequestEnable(fEnabled);
             }
             ImGui::Indent(2);
             ImGui::SameLine();
@@ -175,12 +186,12 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::RenderQuickSlotConfig()
     {
-        bool quickSlotEnabled = SosUiData::GetInstance().IsQuickSlotEnabled();
+        bool quickSlotEnabled = m_uiData.IsQuickSlotEnabled();
         if (ImGuiUtil::CheckBox("$SkyOutSys_MCMHeader_Quickslots", &quickSlotEnabled))
         {
             if (!EnableQuickslot(quickSlotEnabled))
             {
-                SosUiData::GetInstance().SetQuickSlotEnabled(false);
+                m_uiData.SetQuickSlotEnabled(false);
             }
         }
 
@@ -191,14 +202,14 @@ namespace LIBC_NAMESPACE_DECL
     {
         if (ImGuiUtil::Button("$SkyOutSys_Text_Export"))
         {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ExportSettings);
+            m_dataCoordinator.RequestExportSettings();
         }
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
 
         ImGui::SameLine();
         if (ImGuiUtil::Button("$SkyOutSys_Text_Import"))
         {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunctionNames::ImportSettings);
+            m_dataCoordinator.RequestImportSettings();
             Refresh();
         }
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
@@ -206,7 +217,7 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::RenderOutfitConfiguration()
     {
-        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", {}, ImGuiChildFlags_AutoResizeY))
+        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", ImVec2(), ImGuiChildFlags_AutoResizeY))
         {
             static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
             ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
@@ -214,27 +225,27 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
             if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
             {
-                PapyrusEvent::GetInstance().CallCreateOutfit(outfitNameBuf.data(), false);
+                m_dataCoordinator.RequestCreateOutfit(outfitNameBuf.data());
             }
 
             ImGui::SameLine();
             if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
             {
-                PapyrusEvent::GetInstance().CallCreateOutfit(outfitNameBuf.data(), true);
+                m_dataCoordinator.RequestCreateOutfitFromWorn(outfitNameBuf.data());
             }
             ImGui::EndDisabled();
 
             if (ImGuiUtil::Button("$SosGui_Refresh{$SkyOutSys_MCM_OutfitList}"))
             {
-                PapyrusEvent::GetInstance().CallGetOutfitList();
+                m_dataCoordinator.RequestOutfitList();
             }
-            auto &outfitMap = SosUiData::GetInstance().GetOutfitMap();
+            auto &outfitMap = m_uiData.GetOutfitMap();
             ImGui::PushFontSize(HintFontSize());
             if (outfitMap.empty())
             {
                 ImGuiUtil::Text("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}");
             }
-            static int selectedIdx     = -1;
+            static int selectedIdx = -1;
             ImGuiUtil::Text(selectedIdx == -1 ? "$SosGui_SelectHint{$SkyOutSys_MCM_OutfitList}" : "");
             ImGui::PopFontSize();
 
@@ -285,11 +296,10 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                auto       &sosUiData = SosUiData::GetInstance();
                 const auto *actorName = m_editingActor->GetName();
                 auto        templateS = Translation::Translate("$SosGui_ContextMenu_EditingActor");
                 ImGui::Text("%s", std::vformat(templateS, std::make_format_args(actorName)).c_str());
-                if (sosUiData.HasActiveOutfit(m_editingActor))
+                if (m_uiData.HasActiveOutfit(m_editingActor))
                 {
                     if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
                     {
@@ -316,19 +326,18 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosGui::ContextMenuSetActorActiveOutfit(const std::string &outfitName)
+    void SosGui::ContextMenuSetActorActiveOutfit(std::string outfitName)
     {
-        PapyrusEvent::GetInstance().CallActiveOutfit(m_editingActor, outfitName);
-        SosUiData::GetInstance().SetActorActiveOutfit(m_editingActor, outfitName);
         ImGui::CloseCurrentPopup();
-        RefreshCurrentActorArmor();
+        m_dataCoordinator.RequestActiveOutfit(m_editingActor, outfitName, [this]() {
+            RefreshCurrentActorArmor();
+        });
     }
 
-    void SosGui::ContextMenuDeleteOutfit(const std::string &outfitName)
+    void SosGui::ContextMenuDeleteOutfit(std::string outfitName)
     {
-        PapyrusEvent::GetInstance().CallDeleteOutfit(outfitName);
-        SosUiData::GetInstance().DeleteOutfit(outfitName);
         ImGui::CloseCurrentPopup();
+        m_dataCoordinator.RequestDeleteOutfit(outfitName);
     }
 
     void SosGui::RefreshCurrentActorArmor()
@@ -352,7 +361,7 @@ namespace LIBC_NAMESPACE_DECL
         else
         {
             m_editingOutfit = &outfit;
-            PapyrusEvent::GetInstance().CallGetOutfitArmors(outfit.GetName());
+            m_dataCoordinator.RequestOutfitArmors(outfit.GetName());
             outfit.ShowOutfitWindow(true);
         }
     }
@@ -365,17 +374,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             enable ? player->AddSpell(spell) : player->RemoveSpell(spell);
             return true;
-        }
-        return false;
-    }
-
-    auto SosGui::HasQuickslotSpell() -> bool
-    {
-        const auto &player = RE::PlayerCharacter::GetSingleton();
-        auto       *spell  = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
-        if (spell != nullptr)
-        {
-            return player->HasSpell(spell);
         }
         return false;
     }

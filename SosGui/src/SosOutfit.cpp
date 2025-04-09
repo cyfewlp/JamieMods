@@ -9,7 +9,6 @@
 #include "SosUiData.h"
 #include "imgui.h"
 
-#include <ranges>
 #include <vector>
 #include <format>
 #include <array>

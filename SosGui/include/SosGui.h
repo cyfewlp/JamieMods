@@ -1,9 +1,13 @@
 #pragma once
 
 #include "SosUiData.h"
+#include "gui/SosDataCoordinator.h"
 
+#include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
+#include <SosOutfit.h>
 #include <stdexcept>
+#include <string>
 #include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -27,31 +31,33 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::ImTable<3> m_charactersTable;
         RE::Actor            *m_editingActor  = nullptr;
         SosOutfit            *m_editingOutfit = nullptr;
+        SosUiData             m_uiData;
+        SosDataCoordinator    m_dataCoordinator;
 
         void InitTables();
 
     public:
-        SosGui()
+        SosGui() : m_dataCoordinator(m_uiData)
         {
             InitTables();
         }
 
         static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
 
-        auto        Render() -> void;
-        static auto Refresh() -> void;
+        auto Render() -> void;
+        auto Refresh() -> void;
 
     private:
         auto DoRender() -> void;
 
-        static void RenderQuickSlotConfig();
-        static void RenderExportOrImportSettings();
-        void        RenderOutfitConfiguration();
-        void        RenderEditingOutfit();
+        void RenderQuickSlotConfig();
+        void RenderExportOrImportSettings();
+        void RenderOutfitConfiguration();
+        void RenderEditingOutfit();
 
         void RenderOutfitListContextMenu(const std::string &outfitName);
-        void ContextMenuSetActorActiveOutfit(const std::string &outfitName);
-        void ContextMenuDeleteOutfit(const std::string &outfitName);
+        void ContextMenuSetActorActiveOutfit(std::string outfitName);
+        void ContextMenuDeleteOutfit(std::string outfitName);
         void RefreshCurrentActorArmor();
         void OnSelectOutfit(SosOutfit &outfit, bool prevSelectState);
 
@@ -66,6 +72,5 @@ namespace LIBC_NAMESPACE_DECL
         static void AllowTextInput1(RE::ControlMap *controlMap, bool allow);
 
         static auto EnableQuickslot(bool enable) -> bool;
-        static auto HasQuickslotSpell() -> bool;
     };
 }

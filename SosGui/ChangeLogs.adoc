@@ -1,0 +1,12 @@
+== 0.1.0
+
+* [ ] switch Add armor policy state not sync
+* [ ] Set Page table for armor candidates
+* [ ] Sort armors
+* [ ] Notify Sos refresh character outfit
+* [ ] solve outfit solt conflicts
+* [ ] armor candidates list more column
+* [ ] register new object type?
+* [ ] nameless armor
++
+* mod name. form id fullname?

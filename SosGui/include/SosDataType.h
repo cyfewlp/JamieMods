@@ -13,7 +13,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    struct SosFunctionNames
+    struct SosFunction
     {
         static constexpr auto GetOutfitNameMaxLength                    = "GetOutfitNameMaxLength";
         static constexpr auto GetCarriedArmor                           = "GetCarriedArmor";
@@ -141,6 +141,7 @@ namespace LIBC_NAMESPACE_DECL
     };
 
     constexpr std::string_view SOS_SPELL_EDITOR_ID = "SkyrimOutfitSystemQuickslotSpell";
+    constexpr std::string_view SOS_NATIVE_CLASS_NAME = "SkyrimOutfitSystemNativeFuncs";
 
     constexpr auto HintFontSize = [] {
         return ImGui::GetFontSize() * 1.2F;

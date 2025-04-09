@@ -34,8 +34,8 @@ namespace LIBC_NAMESPACE_DECL
         std::vector<RE::TESObjectARMO *>             m_armorCandidates;
         std::vector<RE::TESObjectARMO *>             m_armorCandidatesCopy;
         std::unordered_map<RE::Actor *, std::string> m_actorActiveOutfitMap;
-
-        std::unordered_map<std::string, SosOutfit> m_outfitMap;
+        std::unordered_map<std::string, SosOutfit>   m_outfitMap;
+        std::list<std::string>                       m_errorMessages;
 
     public:
         static auto GetInstance() -> SosUiData &
@@ -45,6 +45,11 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
+        {
+            return m_actors;
+        }
+
+        [[nodiscard]] auto GetActors() -> std::vector<RE::Actor *> &
         {
             return m_actors;
         }
@@ -156,9 +161,14 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void DeleteOutfit(const std::string& outfitName)
+        void DeleteOutfit(const std::string &outfitName)
         {
             m_outfitMap.erase(outfitName);
+        }
+
+        void AddOutfit(const std::string &outfitName)
+        {
+            m_outfitMap.emplace(outfitName, SosOutfit(outfitName));
         }
 
         [[nodiscard]] auto GetOutfitMap() -> std::unordered_map<std::string, SosOutfit> &
@@ -179,6 +189,16 @@ namespace LIBC_NAMESPACE_DECL
         auto HasActiveOutfit(RE::Actor *actor) -> bool
         {
             return m_actorActiveOutfitMap.contains(actor) && !m_actorActiveOutfitMap.at(actor).empty();
+        }
+
+        void PushErrorMessage(std::string &&message)
+        {
+            m_errorMessages.emplace_back(std::move(message));
+        }
+
+        [[nodiscard]] auto GetErrorMessages() -> std::list<std::string> &
+        {
+            return m_errorMessages;
         }
     };
 }
