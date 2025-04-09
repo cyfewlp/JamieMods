@@ -64,16 +64,52 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::SetSelectedOutfit, args);
     }
 
+    auto SosNativeCaller::RenameOutfit(std::string &&outfitName, std::string &&outfitNewName) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName), //
+                                               std::forward<std::string>(outfitName));
+        return StaticCall(SosFunction::RenameOutfit, args);
+    }
+
     auto SosNativeCaller::DeleteOutfit(std::string &&outfitName) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName));
         return StaticCall(SosFunction::DeleteOutfit, args);
     }
 
+    auto SosNativeCaller::AddArmorToOutfit(std::string &&outfitName, Armor *armor) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName), std::move(armor));
+        return StaticCall(SosFunction::AddArmorToOutfit, args);
+    }
+
+    auto SosNativeCaller::RemoveArmorFromOutfit(std::string &&outfitName, Armor *armor) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName), std::move(armor));
+        return StaticCall(SosFunction::RemoveArmorFromOutfit, args);
+    }
+
     auto SosNativeCaller::IsOutfitExisting(std::string &&outfitName) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName));
         return StaticCall(SosFunction::OutfitExists, args);
+    }
+
+    auto SosNativeCaller::ActorNearPC() -> Awaitable
+    {
+        return StaticCall(SosFunction::ActorNearPC);
+    }
+
+    auto SosNativeCaller::AddActor(RE::Actor *actor) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(actor));
+        return StaticCall(SosFunction::AddActor, args);
+    }
+
+    auto SosNativeCaller::RemoveActor(RE::Actor *actor) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(actor));
+        return StaticCall(SosFunction::RemoveActor, args);
     }
 
     auto SosNativeCaller::ListActor() -> Awaitable
@@ -111,10 +147,28 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::GetLocationBasedAutoSwitchEnabled, args);
     }
 
+    auto SosNativeCaller::SetActorAutoSwitchEnabled(RE::Actor *actor, bool &enabled) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(actor), std::move(enabled));
+        return StaticCall(SosFunction::SetLocationBasedAutoSwitchEnabled, args);
+    }
+
+    auto SosNativeCaller::GetCarriedArmor(RE::Actor *actor) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(actor));
+        return StaticCall(SosFunction::GetWornItems, args);
+    }
+
     auto SosNativeCaller::GetWornItems(RE::Actor *actor) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::move(actor));
         return StaticCall(SosFunction::GetWornItems, args);
+    }
+
+    auto SosNativeCaller::CreateOutfit(std::string &&outfitName) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName));
+        return StaticCall(SosFunction::CreateOutfit, args);
     }
 
     auto SosNativeCaller::ImportSettings() -> Awaitable

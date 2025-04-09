@@ -1,5 +1,5 @@
 ﻿Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,readability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
-HeaderFileExtensions:
+HeaderFileExtensions,-readability-static-accessed-through-instance:
   - ''
   - h
   - hh

@@ -1,19 +1,22 @@
-//
-// Created by jamie on 2025/4/6.
-//
-
-#ifndef SOSOUTFIT_H
-#define SOSOUTFIT_H
-
 #pragma once
 
 #include "ImGuiUtil.h"
-#include "SosDataType.h"
+#include "SosUiData.h"
+#include "Translation.h"
 #include "common/config.h"
+#include "data/SosUiOutfit.h"
+#include "gui/SosDataCoordinator.h"
+
+#include <RE/B/BGSBipedObjectForm.h>
+#include <RE/T/TESObjectARMO.h>
+#include <array>
+#include <functional>
+#include <imgui.h>
+#include <string>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    class SosOutfit
+    class SosGuiOutfit
     {
         using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
         using Armor = RE::TESObjectARMO;
@@ -22,16 +25,14 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr int SLOT_COUNT            = 32;
         static constexpr int SOS_SLOT_OFFSET       = 30;
 
-        std::string                     m_name;
-        std::string                     m_windowTitle;
-        SKSE::stl::enumeration<Slot>    m_slotMask = Slot::kNone;
-        std::array<Armor *, SLOT_COUNT> m_armors;
-        // ui variables
+        std::string                             m_windowTitle;
         ImGuiUtil::ImTable<3>                   m_armorListTable;
         ImGuiUtil::ImTable<3>                   m_armorCandidatesTable;
         int                                     m_armorAddPolicy  = 0;
         bool                                    m_fFilterPlayable = false;
         std::array<char, MAX_FILTER_ARMOR_NAME> m_filterStringBuf;
+        SosUiData                              &m_uiData;
+        SosDataCoordinator                     &m_dataCoordinator;
 
         bool m_fShowOutfitWindow = false;
 
@@ -65,19 +66,15 @@ namespace LIBC_NAMESPACE_DECL
         ConfirmPopup m_armorRemoveConfirmPopup;
 
     public:
-        void UpdateWindowTitle();
-
-        explicit SosOutfit(const std::string &name)
-            : m_armors(), m_filterStringBuf(), //
+        explicit SosGuiOutfit(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
+            : m_uiData(uiData), m_dataCoordinator(dataCoordinator),
               m_armorConflictConfirmPopup("$SosGui_Confirm_ArmorConflict"),
               m_armorRemoveConfirmPopup("$SosGui_Confirm_ArmorDelete")
         {
-            m_name                = name;
             m_armorListTable.name = "##OutfitArmors";
             m_armorListTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
             m_armorListTable.headersRow = {Translation::Translate("$SosGui_TableHeader_Slot"),
                                            Translation::Translate("$ARMOR"), Translation::Translate("$Delete")};
-
             m_armorCandidatesTable.name = "##ArmorCandidates";
             m_armorCandidatesTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
             m_armorCandidatesTable.headersRow = {
@@ -85,60 +82,34 @@ namespace LIBC_NAMESPACE_DECL
                 Translation::Translate("$SosGui_TableHeader_Slot"),
                 Translation::Translate("$Add"),
             };
-            UpdateWindowTitle();
         }
 
-        ~SosOutfit() = default;
+        auto Render(SosUiOutfit &editingOutfit) -> bool;
 
-        auto Render() -> bool;
-
-        void AddArmor(Armor *armor);
-        void RemoveArmor(const Armor *armor);
-
-        void SwapArmor(Armor *armor);
-        void SosRemoveArmor(const Armor *armor);
-
-        constexpr void ShowOutfitWindow(bool show)
+        /// <summary>
+        /// Show thsi outfit edit window with specificy outfit-name.
+        /// </summary>
+        /// <param name="outfitName">be used to set window title</param>
+        /// <param name="show">true, show window</param>
+        void ShowWindow(const std::string &outfitName, bool show = true)
         {
             m_fShowOutfitWindow = show;
-            if (show)
-            {
-                auto policy = static_cast<OutfitAddPolicy>(m_armorAddPolicy);
-                UpdateArmorCandidates(m_filterStringBuf.data(), m_fFilterPlayable, policy);
-            }
-        }
-
-        constexpr auto IsConflictWith(const Armor *armor) const -> bool
-        {
-            return m_slotMask.any(armor->GetSlotMask());
-        }
-
-        constexpr auto IsEmpty() const -> bool
-        {
-            return m_slotMask.underlying() == 0;
-        }
-
-        [[nodiscard]] constexpr auto GetName() const -> const std::string &
-        {
-            return m_name;
+            UpdateWindowTitle(outfitName);
         }
 
     private:
-        void        RenderProperties();
-        void        RenderArmorList();
-        void        RenderEditPanel();
-        static auto RenderArmorSlotFilter() -> Slot;
-        void        RenderArmorCandidates(Slot selectedSlot);
-        void        RenderOutfitAddPolicyById(const bool &fFilterPlayable) const;
-        void        RenderEditPanelPolicy();
-        auto        ArmorRemovePopup(const Armor *armor, bool &closed) const -> bool;
-        static void UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable,
-                                          OutfitAddPolicy policy);
-        static void UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable);
-        static void UpdateArmorCandidatesBySlot(Slot slot);
-        static void FilterArmorCandidates(const std::string_view &filterString, std::vector<Armor *> &armorCandidates);
-        static auto IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool;
+        void UpdateWindowTitle(const std::string &outfitName);
+        void RenderProperties(SosUiOutfit &editingOutfit);
+        void RenderArmorList(SosUiOutfit &editingOutfit);
+        void RenderEditPanel(SosUiOutfit &editingOutfit);
+        auto RenderArmorSlotFilter() -> Slot;
+        void RenderArmorCandidates(SosUiOutfit &editingOutfit, Slot selectedSlot);
+        void RenderEditPanelPolicy(SosUiOutfit &editingOutfit);
+        void RenderOutfitAddPolicyById(SosUiOutfit &editingOutfit, const bool &fFilterPlayable) const;
+
+        void UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable, OutfitAddPolicy policy);
+        void UpdateArmorCandidatesBySlot(Slot slot);
+        void UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable);
+        auto IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool;
     };
 }
-
-#endif // SOSOUTFIT_H

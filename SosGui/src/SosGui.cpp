@@ -1,9 +1,8 @@
 #include "SosGui.h"
 #include "ImGuiUtil.h"
-#include "SosNativeCaller.h"
-#include "SosOutfit.h"
 #include "SosUiData.h"
 #include "common/log.h"
+#include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -256,7 +255,7 @@ namespace LIBC_NAMESPACE_DECL
                 int idx = 0;
                 for (auto &pair : outfitMap)
                 {
-                    ImGui::PushID(idx);
+                    ImGuiUtil::PushIdGuard idguard(idx);
                     ImGui::TableNextRow();
 
                     const auto &outfitName = pair.first;
@@ -268,7 +267,6 @@ namespace LIBC_NAMESPACE_DECL
                         selectedIdx = selectedIdx != idx ? idx : -1;
                     }
                     RenderOutfitListContextMenu(outfitName);
-                    ImGui::PopID();
                     ++idx;
                 }
                 ImGui::EndTable();
@@ -283,7 +281,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             return;
         }
-        m_editingOutfit->Render();
+        m_guiOutfit.Render(*m_editingOutfit);
     }
 
     void SosGui::RenderOutfitListContextMenu(const std::string &outfitName)
@@ -352,7 +350,7 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosGui::OnSelectOutfit(SosOutfit &outfit, bool prevSelectState)
+    void SosGui::OnSelectOutfit(SosUiOutfit &outfit, bool prevSelectState)
     {
         if (prevSelectState)
         {
@@ -362,7 +360,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             m_editingOutfit = &outfit;
             m_dataCoordinator.RequestOutfitArmors(outfit.GetName());
-            outfit.ShowOutfitWindow(true);
+            m_guiOutfit.ShowWindow(outfit.GetName());
         }
     }
 

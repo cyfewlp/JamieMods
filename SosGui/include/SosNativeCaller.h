@@ -12,6 +12,8 @@ namespace LIBC_NAMESPACE_DECL
 {
     class SosNativeCaller
     {
+        using Armor = RE::TESObjectARMO;
+
     public:
         struct Awaitable
         {
@@ -53,26 +55,25 @@ namespace LIBC_NAMESPACE_DECL
             RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor> callback;
         };
 
+        static auto ActorNearPC() -> Awaitable;
+        static auto AddActor(RE::Actor *actor) -> Awaitable;
+        static auto RemoveActor(RE::Actor *actor) -> Awaitable;
         static auto ListActor() -> Awaitable;
         static auto IsActorAutoSwitchEnabled(RE::Actor *actor) -> Awaitable;
+        static auto SetActorAutoSwitchEnabled(RE::Actor *actor, bool &enabled) -> Awaitable;
 
+        static auto GetCarriedArmor(RE::Actor *actor) -> Awaitable;
         static auto GetWornItems(RE::Actor *actor) -> Awaitable;
 
-        template <typename String>
-        static auto CreateOutfit(String &&outfitName) -> Awaitable
-        {
-            auto *args = RE::MakeFunctionArguments(std::move(outfitName));
-            return StaticCall(SosFunction::CreateOutfit, args);
-        }
-
+        static auto CreateOutfit(std::string &&outfitName) -> Awaitable;
         static auto ActiveOutfit(RE::Actor *actor, std::string &&outfitName) -> Awaitable;
+        static auto RenameOutfit(std::string &&outfitName, std::string &&outfitNewName) -> Awaitable;
         static auto DeleteOutfit(std::string &&outfitName) -> Awaitable;
-
+        static auto AddArmorToOutfit(std::string &&outfitName, Armor *armor) -> Awaitable;
+        static auto RemoveArmorFromOutfit(std::string &&outfitName, Armor *armor) -> Awaitable;
         static auto IsOutfitExisting(std::string &&outfitName) -> Awaitable;
-
         static auto GetOutfitList(bool favoritesOnly = false) -> Awaitable;
-
-        static auto OverwriteOutfit(std::string &&outfitName, std::vector<RE::TESObjectARMO *> &armors) -> Awaitable;
+        static auto OverwriteOutfit(std::string &&outfitName, std::vector<Armor *> &armors) -> Awaitable;
         static auto PrepOutfitBodySlotListing(std::string &&outfitName) -> Awaitable;
         static auto GetOutfitBodySlotListingArmorForms() -> Awaitable;
         static auto GetOutfitNameMaxLength() -> Awaitable;

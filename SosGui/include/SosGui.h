@@ -1,11 +1,13 @@
 #pragma once
 
+#include "ImGuiUtil.h"
 #include "SosUiData.h"
+#include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
+#include "gui/SosGuiOutfit.h"
 
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
-#include <SosOutfit.h>
 #include <stdexcept>
 #include <string>
 #include <windows.h>
@@ -30,14 +32,15 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::ImTable<2> m_locationAutoSwitchTable;
         ImGuiUtil::ImTable<3> m_charactersTable;
         RE::Actor            *m_editingActor  = nullptr;
-        SosOutfit            *m_editingOutfit = nullptr;
+        SosUiOutfit          *m_editingOutfit = nullptr;
         SosUiData             m_uiData;
         SosDataCoordinator    m_dataCoordinator;
+        SosGuiOutfit          m_guiOutfit;
 
         void InitTables();
 
     public:
-        SosGui() : m_dataCoordinator(m_uiData)
+        SosGui() : m_dataCoordinator(m_uiData), m_guiOutfit(m_uiData, m_dataCoordinator)
         {
             InitTables();
         }
@@ -59,13 +62,13 @@ namespace LIBC_NAMESPACE_DECL
         void ContextMenuSetActorActiveOutfit(std::string outfitName);
         void ContextMenuDeleteOutfit(std::string outfitName);
         void RefreshCurrentActorArmor();
-        void OnSelectOutfit(SosOutfit &outfit, bool prevSelectState);
+        void OnSelectOutfit(SosUiOutfit &outfit, bool prevSelectState);
 
         static void NewFrame();
 
         void        RenderCharactersPanel();
         void        RenderCharactersList();
-        static void RenderNearNpcList();
+        void        RenderNearNpcList();
         void        RenderLocationBasedAutoswitch(RE::Actor *currentActor);
         static void TrySetAllowTextInput();
         static void AllowTextInput(bool allow);

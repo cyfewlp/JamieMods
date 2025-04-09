@@ -44,6 +44,7 @@ namespace LIBC_NAMESPACE_DECL
         SosUiData &m_uiData;
         using OnComplete = std::function<void()>;
         using Variable   = RE::BSScript::Variable;
+        using Armor      = RE::TESObjectARMO;
 
     public:
         explicit SosDataCoordinator(SosUiData &uiData) : m_uiData(uiData)
@@ -57,11 +58,21 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestCreateOutfit(std::string outfitName) -> CoroutineTask;
         auto RequestCreateOutfitFromWorn(std::string outfitName) -> CoroutineTask;
         auto RequestOutfitList(OnComplete onComplete = {}) -> CoroutineTask;
-        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor, OnComplete onComplete = {}) -> CoroutineTask;
+        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) -> CoroutineTask;
+        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) -> CoroutineTask;
+        auto RequestRenameOutfit(std::string outfitName, std::string newName) -> CoroutineTask;
         auto RequestDeleteOutfit(std::string outfitName, OnComplete onComplete = {}) -> CoroutineTask;
+        auto RequestAddArmor(std::string outfitName, Armor *armor) -> CoroutineTask;
+        auto RequestDeleteArmor(std::string outfitName, Armor *armor) -> CoroutineTask;
         auto RequestOutfitArmors(std::string outfitName) -> CoroutineTask;
 
+        auto RequestGetArmorsByCarried() -> CoroutineTask;
+        auto RequestGetArmorsByWorn() -> CoroutineTask;
+
         auto RequestActorList(OnComplete onComplete = {}) -> CoroutineTask;
+        auto RequestAddActor(RE::Actor *actor) -> CoroutineTask;
+        auto RequestRemoveActor(RE::Actor *actor) -> CoroutineTask;
+        auto RequestNearActorList() -> CoroutineTask;
         auto RequestActiveOutfit(RE::Actor *actor, std::string outfitName, OnComplete onComplete = {}) -> CoroutineTask;
 
         auto Refresh() -> CoroutineTask;

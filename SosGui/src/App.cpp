@@ -1,10 +1,11 @@
 #include "App.h"
-#include "PapyrusFunctions.h"
 #include "SosGuiMenu.h"
+#include "PapyrusFunctions.h"
 #include "common/common.h"
 #include "common/log.h"
 
 #include <exception>
+#include <memory>
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -16,11 +17,6 @@ namespace LIBC_NAMESPACE_DECL
             if (message->type == SKSE::MessagingInterface::kPostLoadGame)
             {
                 log_debug("Send Event with Init");
-                PapyrusEvent::GetInstance().CallNoArgs("Init");
-            }
-            else if (message->type == SKSE::MessagingInterface::kDataLoaded)
-            {
-                // SKSE::Translation::ParseTranslation("SosGui");
             }
         });
         SKSE::GetPapyrusInterface()->Register(PapyrusFunctions::Register);

@@ -10,6 +10,7 @@
 #include "Translation.h"
 #include "imgui.h"
 
+#include <array>
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -196,6 +197,40 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::EndTable();
             }
         }
+
+        struct PushIdGuard
+        {
+            template <typename ID>
+            PushIdGuard(ID id)
+            {
+                ImGui::PushID(id);
+            }
+
+            ~PushIdGuard()
+            {
+                ImGui::PopID();
+            }
+        };
+
+        struct ChildGuard
+        {
+            bool isBegin;
+
+            explicit ChildGuard(const char *name, const ImVec2 &size, ImGuiChildFlags flags = 0)
+            {
+                isBegin = ImGui::BeginChild(name, size, flags);
+            }
+
+            explicit operator bool()
+            {
+                return isBegin;
+            }
+
+            ~ChildGuard()
+            {
+                ImGui::EndChild();
+            }
+        };
     }
 }
 

@@ -5,7 +5,6 @@
 #include "SosGui.h"
 
 #include "ImGuiUtil.h"
-#include "PapyrusEvent.h"
 #include "SosDataType.h"
 #include "imgui.h"
 
@@ -22,7 +21,7 @@ namespace LIBC_NAMESPACE_DECL
             static bool fShowNearNpcLis = false;
             if (ImGuiUtil::CheckBox("$SkyOutSys_Text_AddActorSelection", &fShowNearNpcLis))
             {
-                PapyrusEvent::GetInstance().CallNoArgs(SosFunction::ActorNearPC);
+                m_dataCoordinator.RequestNearActorList();
             }
             if (fShowNearNpcLis)
             {
@@ -36,10 +35,10 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::RenderCharactersList()
     {
-        const auto &actors = SosUiData::GetInstance().GetActors();
+        const auto &actors = m_uiData.GetActors();
         if (ImGuiUtil::Button("$SosGui_Refresh{$Characters}"))
         {
-            PapyrusEvent::GetInstance().CallNoArgs(SosFunction::ListActors);
+            m_dataCoordinator.RequestActorList();
         }
         static int selectedIdx = -1;
         ImGui::PushFontSize(HintFontSize());
@@ -65,18 +64,18 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::TableNextColumn();
             if (ImGui::Button(m_charactersTable.headersRow[1].c_str()))
             {
-                PapyrusEvent::GetInstance().CallRemoveActor(actor);
+                m_dataCoordinator.RequestRemoveActor(actor);
             }
 
             ImGui::TableNextColumn();
-            const auto &activeOutfitMap = SosUiData::GetInstance().GetActorActiveOutfitMap();
+            const auto &activeOutfitMap = m_uiData.GetActorActiveOutfitMap();
             if (auto iter = activeOutfitMap.find(actor); iter != activeOutfitMap.end())
             {
                 ImGui::Text("%s", (*iter).second.c_str());
             }
         });
 
-        if (selectedIdx >= 0 && selectedIdx < actors.size())
+        if (selectedIdx >= 0 && selectedIdx < static_cast<int>(actors.size()))
         {
             m_editingActor = actors.at(selectedIdx);
             RenderLocationBasedAutoswitch(m_editingActor);
@@ -86,7 +85,7 @@ namespace LIBC_NAMESPACE_DECL
     void SosGui::RenderNearNpcList()
     {
         static int  selectedIdx = 0;
-        const auto &nearActors  = SosUiData::GetInstance().GetNearActors();
+        const auto &nearActors  = m_uiData.GetNearActors();
         if (nearActors.empty())
         {
             return;
@@ -99,7 +98,7 @@ namespace LIBC_NAMESPACE_DECL
                 if (ImGui::Selectable(nearActor->GetName(), idx == selectedIdx, ImGuiSelectableFlags_None))
                 {
                     selectedIdx = idx;
-                    PapyrusEvent::GetInstance().CallAddActor(nearActors.at(idx));
+                    m_dataCoordinator.RequestAddActor(nearActors.at(idx));
                 }
                 if (selectedIdx == idx)
                 {
@@ -113,10 +112,10 @@ namespace LIBC_NAMESPACE_DECL
 
     void SosGui::RenderLocationBasedAutoswitch(RE::Actor *currentActor)
     {
-        bool fAutoSwitchEnabled = SosUiData::GetInstance().IsAutoSwitchEnabled(currentActor);
+        bool fAutoSwitchEnabled = m_uiData.IsAutoSwitchEnabled(currentActor);
         if (ImGuiUtil::CheckBox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))
         {
-            PapyrusEvent::GetInstance().CallSetAutoSwitchEnabled(currentActor, fAutoSwitchEnabled);
+            m_dataCoordinator.RequestSetActorAutoSwitchState(currentActor, fAutoSwitchEnabled);
         }
 
         if (!fAutoSwitchEnabled)

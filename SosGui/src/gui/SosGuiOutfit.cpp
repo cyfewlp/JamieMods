@@ -1,30 +1,40 @@
-//
-// Created by jamie on 2025/4/6.
-//
-
-#include "SosOutfit.h"
+#include "gui/SosGuiOutfit.h"
 
 #include "ImGuiUtil.h"
-#include "PapyrusEvent.h"
-#include "SosUiData.h"
+#include "SosDataType.h"
+#include "Translation.h"
+#include "common/config.h"
+#include "data/SosUiOutfit.h"
 #include "imgui.h"
 
-#include <vector>
-#include <format>
+#include <RE/B/BGSBipedObjectForm.h>
+#include <RE/F/FormTypes.h>
+#include <RE/RTTI.h>
+#include <RE/T/TESDataHandler.h>
+#include <RE/T/TESForm.h>
+#include <RE/T/TESFullName.h>
+#include <RE/T/TESObjectARMO.h>
 #include <array>
+#include <cstdint>
+#include <format>
+#include <functional>
+#include <ranges>
+#include <stdlib.h>
+#include <string>
+#include <vector>
 
 namespace LIBC_NAMESPACE_DECL
 {
     constexpr auto SELECTABLE_SPAN_FLAGS = ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_SpanAllColumns;
 
-    void SosOutfit::ConfirmPopup::Open(Armor *data, const std::function<void(Armor *)> &callback)
+    void SosGuiOutfit::ConfirmPopup::Open(Armor *data, const std::function<void(Armor *)> &callback)
     {
         ImGui::OpenPopup(id);
         this->data      = data;
         this->onConfirm = callback;
     }
 
-    void SosOutfit::ConfirmPopup::Close()
+    void SosGuiOutfit::ConfirmPopup::Close()
     {
         ImGui::CloseCurrentPopup();
         if (onConfirm != nullptr && isConfirm)
@@ -36,25 +46,23 @@ namespace LIBC_NAMESPACE_DECL
         onConfirm = nullptr;
     }
 
-    void SosOutfit::ConfirmPopup::Render(const std::string_view &message)
+    void SosGuiOutfit::ConfirmPopup::Render(const std::string_view &message)
     {
         this->id = ImGui::GetID(name.c_str());
         if (ImGui::BeginPopupModal(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
+            constexpr std::string_view delim{"\n"};
+            std::ranges::split_view    splitView{message, delim};
+            const auto                &contentSize = ImGui::GetContentRegionAvail();
+            for (const auto &lineView : splitView)
             {
-                constexpr std::string_view delim{"\n"};
-                std::ranges::split_view    splitView{message, delim};
-                const auto                &contentSize = ImGui::GetContentRegionAvail();
-                for (const auto &lineView : splitView)
+                auto line     = std::string_view(lineView);
+                auto textSize = ImGui::CalcTextSize(line.data());
+                if (contentSize.x > textSize.x)
                 {
-                    auto line     = std::string_view(lineView);
-                    auto textSize = ImGui::CalcTextSize(line.data());
-                    if (contentSize.x > textSize.x)
-                    {
-                        ImGui::SetCursorPosX((contentSize.x - textSize.x) * 0.5F);
-                    }
-                    ImGui::TextWrapped("%s", line.data());
+                    ImGui::SetCursorPosX((contentSize.x - textSize.x) * 0.5F);
                 }
+                ImGui::TextWrapped("%s", line.data());
             }
             if (ImGuiUtil::Button("$SkyOutSys_Confirm_BodySlotConflict_Yes"))
             {
@@ -70,87 +78,48 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosOutfit::UpdateWindowTitle()
-    {
-        m_windowTitle = Translation::TranslateIgnoreNested("$SkyOutSys_MCMHeader_OutfitEditor{}");
-        auto pos      = m_windowTitle.find("{}");
-        if (pos != std::string::npos)
-        {
-            m_windowTitle.replace(pos, 2, m_name);
-        }
-    }
-
-    auto SosOutfit::Render() -> bool
+    auto SosGuiOutfit::Render(SosUiOutfit &editingOutfit) -> bool
     {
         auto flags = ImGuiWindowFlags_NoSavedSettings;
         ImGui::PushID(this);
         ImGui::Begin(m_windowTitle.c_str(), &m_fShowOutfitWindow, flags);
-        RenderProperties();
-        RenderArmorList();
-        RenderEditPanel();
+        RenderProperties(editingOutfit);
+        RenderArmorList(editingOutfit);
+        RenderEditPanel(editingOutfit);
         ImGui::End();
         ImGui::PopID();
         return m_fShowOutfitWindow;
     }
 
-    void SosOutfit::AddArmor(Armor *armor)
+    void SosGuiOutfit::UpdateWindowTitle(const std::string &outfitName)
     {
-        auto mask = static_cast<uint32_t>(armor->GetSlotMask());
-        m_slotMask.set(armor->GetSlotMask());
-        for (uint32_t slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
+        m_windowTitle = Translation::TranslateIgnoreNested("$SkyOutSys_MCMHeader_OutfitEditor{}");
+        auto pos      = m_windowTitle.find("{}");
+        if (pos != std::string::npos)
         {
-            if ((mask & 1 << slotIdx) != 0)
-            {
-                m_armors.at(slotIdx) = armor;
-            }
-        }
-    }
-
-    void SosOutfit::SwapArmor(Armor *armor)
-    {
-        PapyrusEvent::GetInstance().CallSwapArmor(m_name, armor);
-        AddArmor(armor);
-    }
-
-    void SosOutfit::SosRemoveArmor(const Armor *armor)
-    {
-        PapyrusEvent::GetInstance().CallRemoveArmor(m_name, armor);
-        RemoveArmor(armor);
-    }
-
-    void SosOutfit::RemoveArmor(const Armor *armor)
-    {
-        auto mask = static_cast<uint32_t>(armor->GetSlotMask());
-        m_slotMask.reset(armor->GetSlotMask());
-        for (uint32_t slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
-        {
-            if ((mask & 1 << slotIdx) != 0)
-            {
-                m_armors.at(slotIdx) = nullptr;
-            }
+            m_windowTitle.replace(pos, 2, outfitName);
         }
     }
 
     constexpr int BODY_SLOT_MIN = 29;
 
-    void SosOutfit::RenderProperties()
+    void SosGuiOutfit::RenderProperties(SosUiOutfit &editingOutfit)
     {
         static std::array<char, 256> outfitNameBuf;
-        ImGui::InputText("##OutfitRenameInput", outfitNameBuf.data(), outfitNameBuf.size());
+        ImGuiUtil::InputText("##OutfitRenameInput", outfitNameBuf);
         ImGui::SameLine();
         ImGui::BeginDisabled(outfitNameBuf.at(0) == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_Rename"))
         {
-            PapyrusEvent::GetInstance().CallRenameOutfit(m_name, outfitNameBuf.data());
-            m_name.assign(outfitNameBuf.data());
-            UpdateWindowTitle();
+            m_dataCoordinator.RequestRenameOutfit(editingOutfit.GetName(), outfitNameBuf.data());
+            UpdateWindowTitle(editingOutfit.GetName());
         }
         ImGui::EndDisabled();
     }
 
-    void SosOutfit::RenderArmorList()
+    void SosGuiOutfit::RenderArmorList(SosUiOutfit &editingOutfit)
     {
-        if (IsEmpty())
+        if (editingOutfit.IsEmpty())
         {
             ImGui::PushFontSize(ImGui::GetFontSize() * 1.2F);
             ImGuiUtil::Text("$SosGui_EmptyHint{$ARMOR}");
@@ -165,13 +134,13 @@ namespace LIBC_NAMESPACE_DECL
             TableHeadersRow(m_armorListTable);
             for (int slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
             {
-                const auto &armor = m_armors.at(slotIdx);
+                const auto &armor = editingOutfit.GetArmorAt(slotIdx);
                 if (armor == nullptr)
                 {
                     continue;
                 }
 
-                ImGui::PushID(slotIdx);
+                ImGuiUtil::PushIdGuard idHolder(slotIdx);
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 bool        isSelected = selectedIdx == slotIdx;
@@ -188,12 +157,10 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::TableNextColumn();
                 if (ImGuiUtil::Button("$Delete"))
                 {
-                    m_armorRemoveConfirmPopup.Open(armor, [this](Armor *a_armor) {
-                        SosRemoveArmor(a_armor);
+                    m_armorRemoveConfirmPopup.Open(armor, [this, &editingOutfit](Armor *a_armor) {
+                        m_dataCoordinator.RequestDeleteArmor(editingOutfit.GetName(), a_armor);
                     });
                 }
-
-                ImGui::PopID();
             }
             ImGui::EndTable();
         }
@@ -210,25 +177,27 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosOutfit::RenderEditPanel()
+    void SosGuiOutfit::RenderEditPanel(SosUiOutfit &editingOutfit)
     {
         auto selectedSlot = RenderArmorSlotFilter();
 
         ImGuiStyle &style     = ImGui::GetStyle();
         float       halfWidth = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) / 2;
 
-        ImGui::BeginChild("##RenderArmorCandidates", {halfWidth, 0.0F});
-        RenderArmorCandidates(selectedSlot);
-        ImGui::EndChild();
+        {
+            ImGuiUtil::ChildGuard guard("##RenderArmorCandidates", {halfWidth, 0.0F});
+            RenderArmorCandidates(editingOutfit, selectedSlot);
+        }
 
         ImGui::SameLine();
 
-        ImGui::BeginChild("##RenderEditPanelPolicy", {halfWidth, 0.0F});
-        RenderEditPanelPolicy();
-        ImGui::EndChild();
+        {
+            ImGuiUtil::ChildGuard guard("##RenderEditPanelPolicy", {halfWidth, 0.0F});
+            RenderEditPanelPolicy(editingOutfit);
+        }
     }
 
-    auto SosOutfit::RenderArmorSlotFilter() -> Slot
+    auto SosGuiOutfit::RenderArmorSlotFilter() -> Slot
     {
         static int selectedIdx = 0;
 
@@ -236,7 +205,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             for (int idx = 0; idx <= 32; ++idx)
             {
-                ImGui::PushID(idx);
+                ImGuiUtil::PushIdGuard idGuard(idx);
+
                 bool isSelected = selectedIdx == idx;
                 if (ImGuiUtil::Selectable(std::format("$SkyOutSys_BodySlot{}", idx + BODY_SLOT_MIN), isSelected))
                 {
@@ -246,14 +216,13 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     ImGui::SetItemDefaultFocus();
                 }
-                ImGui::PopID();
             }
             ImGui::EndCombo();
         }
         return selectedIdx == 0 ? Slot::kNone : static_cast<Slot>(1 << (selectedIdx - 1));
     }
 
-    void SosOutfit::RenderArmorCandidates(Slot selectedSlot)
+    void SosGuiOutfit::RenderArmorCandidates(SosUiOutfit &editingOutfit, Slot selectedSlot)
     {
         static int  pageSize        = 20;
         static int  currentPage     = 0;
@@ -264,7 +233,7 @@ namespace LIBC_NAMESPACE_DECL
             preSelectedSlot = selectedSlot;
             UpdateArmorCandidatesBySlot(preSelectedSlot);
         }
-        auto &outfitCandidates = SosUiData::GetInstance().GetArmorCandidatesCopy();
+        auto &outfitCandidates = m_uiData.GetArmorCandidatesCopy();
         ImGui::PushFontSize(HintFontSize());
         ImGuiUtil::Text(outfitCandidates.empty() ? "$SosGui_EmptyHint{$ARMOR}" : "");
         ImGui::PopFontSize();
@@ -282,42 +251,37 @@ namespace LIBC_NAMESPACE_DECL
         TableHeadersRow(m_armorCandidatesTable);
         for (auto &armorIter = begin; count < pageSize && armorIter != outfitCandidates.end(); ++count)
         {
-            ImGui::PushID(count);
+            ImGuiUtil::PushIdGuard idGuard(count);
             ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            auto *armor      = *armorIter;
+            bool  isSelected = selectedIdx == count;
+            if (ImGui::Selectable(armor->GetName(), isSelected, SELECTABLE_SPAN_FLAGS))
             {
-                auto *armor = *armorIter;
-                ImGui::TableNextColumn();
-                bool isSelected = selectedIdx == count;
-                if (ImGui::Selectable(armor->GetName(), isSelected, SELECTABLE_SPAN_FLAGS))
+                selectedIdx = isSelected ? -1 : count;
+            }
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", static_cast<uint32_t>(armor->GetSlotMask()));
+
+            ImGui::TableNextColumn();
+            if (ImGuiUtil::Button("$Add"))
+            {
+                if (editingOutfit.IsConflictWith(armor))
                 {
-                    selectedIdx = isSelected ? -1 : count;
+                    m_armorConflictConfirmPopup.Open(armor, [this, &editingOutfit, &outfitCandidates](Armor *a_armor) {
+                        m_dataCoordinator.RequestAddArmor(editingOutfit.GetName(), a_armor);
+                        std::erase(outfitCandidates, a_armor);
+                    });
                 }
-
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", static_cast<uint32_t>(armor->GetSlotMask()));
-
-                ImGui::TableNextColumn();
-                if (ImGuiUtil::Button("$Add"))
+                else
                 {
-                    if (IsConflictWith(armor))
-                    {
-                        m_armorConflictConfirmPopup.Open(armor, [this, &outfitCandidates](Armor *a_armor) {
-                            SwapArmor(a_armor);
-                            std::erase(outfitCandidates, a_armor);
-                        });
-                    }
-                    else
-                    {
-                        PapyrusEvent::GetInstance().CallAddToOutfit(m_name, armor);
-                        AddArmor(armor);
-                        armorIter = outfitCandidates.erase(armorIter);
-                        ImGui::PopID();
-                        continue;
-                    }
+                    m_dataCoordinator.RequestAddArmor(editingOutfit.GetName(), armor);
+                    armorIter = outfitCandidates.erase(armorIter);
+                    continue;
                 }
             }
             ++armorIter;
-            ImGui::PopID();
         }
         ImGui::EndTable();
 
@@ -342,7 +306,7 @@ namespace LIBC_NAMESPACE_DECL
         m_armorConflictConfirmPopup.Render(msg);
     }
 
-    void SosOutfit::RenderEditPanelPolicy()
+    void SosGuiOutfit::RenderEditPanelPolicy(SosUiOutfit &editingOutfit)
     {
         static std::array outfitPolicy{Translation::Translate("$SkyOutSys_OEdit_AddFromCarried"),
                                        Translation::Translate("$SkyOutSys_OEdit_AddFromWorn"),
@@ -353,14 +317,13 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::NewLine();
         for (const auto &policy : outfitPolicy)
         {
-            ImGui::PushID(idx);
+            ImGuiUtil::PushIdGuard idguard(idx);
 
             if (ImGui::RadioButton(policy.c_str(), idx == m_armorAddPolicy))
             {
                 fSelected        = m_armorAddPolicy != idx;
                 m_armorAddPolicy = idx;
             }
-            ImGui::PopID();
             idx++;
         }
 
@@ -380,7 +343,7 @@ namespace LIBC_NAMESPACE_DECL
         }
         if (selectedPolicy == OutfitAddPolicy_AddByID)
         {
-            RenderOutfitAddPolicyById(m_fFilterPlayable);
+            RenderOutfitAddPolicyById(editingOutfit, m_fFilterPlayable);
             return;
         }
 
@@ -396,7 +359,7 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosOutfit::RenderOutfitAddPolicyById(const bool &fFilterPlayable) const
+    void SosGuiOutfit::RenderOutfitAddPolicyById(SosUiOutfit &editingOutfit, const bool &fFilterPlayable) const
     {
         static std::array<char, 32> formIdBuf;
         static char                *pEnd{};
@@ -414,7 +377,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::BeginDisabled(fFilterPlayable && (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0);
             if (ImGuiUtil::Button("$Add"))
             {
-                PapyrusEvent::GetInstance().CallAddToOutfit(m_name, armor);
+                m_dataCoordinator.RequestAddArmor(editingOutfit.GetName(), armor);
             }
             ImGui::EndDisabled();
         }
@@ -422,55 +385,16 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::PopID();
     }
 
-    auto SosOutfit::ArmorRemovePopup(const Armor *armor, bool &closed) const -> bool
-    {
-        if (armor == nullptr)
-        {
-            return false;
-        }
-
-        ImGuiStyle &style    = ImGui::GetStyle();
-        float       width    = (ImGui::GetContentRegionAvail().x - 3 * style.ItemSpacing.x) / 4;
-        bool        toRemove = false;
-        if (ImGuiUtil::BeginPopupModal("$SosGui_Confirm_ArmorDelete"))
-        {
-            static auto removeHintTemplate =
-                Translation::TranslateIgnoreNested("$SkyOutSys_Confirm_RemoveArmor_Text{}");
-
-            const auto  name       = armor->GetName();
-            std::string removeHint = std::vformat(removeHintTemplate, std::make_format_args(name));
-            ImGui::TextWrapped("%s", removeHint.c_str());
-            ImGui::SetCursorPosX(width / 2.0F);
-            if (ImGuiUtil::Button("SkyOutSys_Confirm_RemoveArmor_Yes", {width, 0.0F}))
-            {
-                toRemove = true;
-                closed   = true;
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::SetCursorPosX(width * 2.5F);
-            if (!ImGuiUtil::Button("SkyOutSys_Confirm_RemoveArmor_No", {width, 0.0F}))
-            {
-                closed = true;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-        if (toRemove)
-        {
-            PapyrusEvent::GetInstance().CallRemoveArmor(m_name, armor);
-        }
-        return toRemove;
-    }
-
-    void SosOutfit::UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable,
-                                          OutfitAddPolicy policy)
+    void SosGuiOutfit::UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable,
+                                             OutfitAddPolicy policy)
     {
         switch (policy)
         {
             case OutfitAddPolicy_AddFromCarried:
+                m_dataCoordinator.RequestGetArmorsByCarried();
+                break;
             case OutfitAddPolicy_AddFromWorn:
-                PapyrusEvent::GetInstance().CallGetActorArmors(RE::PlayerCharacter::GetSingleton(), policy);
+                m_dataCoordinator.RequestGetArmorsByWorn();
                 break;
             case OutfitAddPolicy_AddByID:
                 break;
@@ -482,14 +406,13 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosOutfit::UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable)
+    void SosGuiOutfit::UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable)
     {
-        auto       data   = RE::TESDataHandler::GetSingleton();
-        auto      &list   = data->GetFormArray(RE::FormType::Armor);
-        const auto size   = list.size();
-        auto      &uiData = SosUiData::GetInstance();
-        uiData.SetArmorCandidates({});
-        auto &candidates = uiData.GetArmorCandidates();
+        auto       data       = RE::TESDataHandler::GetSingleton();
+        auto      &list       = data->GetFormArray(RE::FormType::Armor);
+        const auto size       = list.size();
+        auto      &candidates = m_uiData.GetArmorCandidates();
+        candidates.clear();
 
         for (std::uint32_t idx = 0; idx < size; idx++)
         {
@@ -512,13 +435,13 @@ namespace LIBC_NAMESPACE_DECL
                 candidates.push_back(armor);
             }
         }
-        uiData.ResetArmorCandidatesCopy();
+        m_uiData.ResetArmorCandidatesCopy();
     }
 
-    void SosOutfit::UpdateArmorCandidatesBySlot(Slot slot)
+    void SosGuiOutfit::UpdateArmorCandidatesBySlot(Slot slot)
     {
-        const auto &candidates = SosUiData::GetInstance().GetArmorCandidates();
-        auto       &copy       = SosUiData::GetInstance().GetArmorCandidatesCopy();
+        const auto &candidates = m_uiData.GetArmorCandidates();
+        auto       &copy       = m_uiData.GetArmorCandidatesCopy();
         copy.clear();
         for (const auto &candidate : candidates)
         {
@@ -530,29 +453,12 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosOutfit::FilterArmorCandidates(const std::string_view &filterString, std::vector<Armor *> &armorCandidates)
+    auto SosGuiOutfit::IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool
     {
         if (filterString.empty())
         {
-            return;
+            return false;
         }
-
-        for (auto armorIter = armorCandidates.begin(); armorIter != armorCandidates.end();)
-        {
-            auto *armor = *armorIter;
-            if (IsFilterArmor(filterString, armor))
-            {
-                armorIter = armorCandidates.erase(armorIter);
-            }
-            else
-            {
-                ++armorIter;
-            }
-        }
-    }
-
-    auto SosOutfit::IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool
-    {
         std::string armorName;
         std::string modName;
         if (auto *fullName = skyrim_cast<RE::TESFullName *>(armor); fullName != nullptr)

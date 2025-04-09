@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "PapyrusEvent.h"
 #include "SosGuiMenu.h"
 
 #include "RE/I/IVirtualMachine.h"
@@ -20,10 +19,6 @@ namespace LIBC_NAMESPACE_DECL
     public:
         static bool Register(RE::BSScript::IVirtualMachine *vm)
         {
-            if (!PapyrusEvent::Bind(vm))
-            {
-                return false;
-            }
             vm->RegisterFunction("ShowSosGuiMenu", "SosGuiNative", ShowSosGuiMenu);
             return true;
         }

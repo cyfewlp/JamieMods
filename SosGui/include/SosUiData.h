@@ -7,12 +7,15 @@
 
 #pragma once
 
-#include "RE/A/Actor.h"
 #include "SosDataType.h"
-#include "SosOutfit.h"
 #include "common/config.h"
+#include "data/SosUiOutfit.h"
 
+#include <RE/A/Actor.h>
 #include <common/log.h>
+#include <list>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
@@ -23,6 +26,7 @@ namespace LIBC_NAMESPACE_DECL
         using BodySlot      = int32_t;
         using OutfitState   = std::pair<StateType, RE::BSFixedString>;
         using BodySlotArmor = std::pair<BodySlot, RE::TESObjectARMO *>;
+        using Armor         = RE::TESObjectARMO;
 
     private:
         std::vector<RE::Actor *>                     m_actors;
@@ -34,16 +38,10 @@ namespace LIBC_NAMESPACE_DECL
         std::vector<RE::TESObjectARMO *>             m_armorCandidates;
         std::vector<RE::TESObjectARMO *>             m_armorCandidatesCopy;
         std::unordered_map<RE::Actor *, std::string> m_actorActiveOutfitMap;
-        std::unordered_map<std::string, SosOutfit>   m_outfitMap;
+        std::unordered_map<std::string, SosUiOutfit> m_outfitMap;
         std::list<std::string>                       m_errorMessages;
 
     public:
-        static auto GetInstance() -> SosUiData &
-        {
-            static SosUiData instance;
-            return instance;
-        }
-
         [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
         {
             return m_actors;
@@ -63,6 +61,19 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        void AddActor(RE::Actor *actor)
+        {
+            if (actor != nullptr && std::find(m_actors.begin(), m_actors.end(), actor) == m_actors.end())
+            {
+                m_actors.push_back(actor);
+            }
+        }
+
+        void RemoveActor(RE::Actor *actor)
+        {
+            std::erase(m_actors, actor);
+        }
+
         [[nodiscard]] constexpr auto IsQuickSlotEnabled() const -> bool
         {
             return m_fQuickSlotEnabled;
@@ -78,13 +89,10 @@ namespace LIBC_NAMESPACE_DECL
             return m_NearActors;
         }
 
-        void SetNearActors(const std::vector<RE::Actor *> &nearActors)
+        void SetNearActors(std::vector<RE::Actor *> &nearActors)
         {
             m_NearActors.clear();
-            for (const auto &actor : nearActors)
-            {
-                m_NearActors.push_back(actor);
-            }
+            m_NearActors = std::move(nearActors);
         }
 
         [[nodiscard]] auto IsEnabled() const -> bool
@@ -152,12 +160,32 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        ////////////////////////////////////////////////////////////////////////////
+        // SosUiOutfit
+        ////////////////////////////////////////////////////////////////////////////
+
         void SetOutfitList(const std::vector<std::string> &outfitLists)
         {
             m_outfitMap.clear();
             for (const auto &outfitName : outfitLists)
             {
-                m_outfitMap.emplace(outfitName, SosOutfit(outfitName));
+                m_outfitMap.emplace(outfitName, SosUiOutfit(outfitName));
+            }
+        }
+
+        void AddOutfit(const std::string &outfitName)
+        {
+            m_outfitMap.emplace(outfitName, SosUiOutfit(outfitName));
+        }
+
+        void RenameOutfit(std::string &&outfitName, std::string &&newName)
+        {
+            if (m_outfitMap.contains(outfitName))
+            {
+                auto &outfit = m_outfitMap.at(outfitName);
+                m_outfitMap.erase(outfitName);
+                outfit.SetName(newName);
+                m_outfitMap.at(newName) = outfit;
             }
         }
 
@@ -166,12 +194,25 @@ namespace LIBC_NAMESPACE_DECL
             m_outfitMap.erase(outfitName);
         }
 
-        void AddOutfit(const std::string &outfitName)
+        void AddArmor(const std::string &&outfitName, Armor *armor)
         {
-            m_outfitMap.emplace(outfitName, SosOutfit(outfitName));
+            if (m_outfitMap.contains(outfitName))
+            {
+                auto &outfit = m_outfitMap.at(outfitName);
+                outfit.AddArmor(armor);
+            }
         }
 
-        [[nodiscard]] auto GetOutfitMap() -> std::unordered_map<std::string, SosOutfit> &
+        void DeleteArmor(const std::string &&outfitName, Armor *armor)
+        {
+            if (m_outfitMap.contains(outfitName))
+            {
+                auto &outfit = m_outfitMap.at(outfitName);
+                outfit.RemoveArmor(armor);
+            }
+        }
+
+        [[nodiscard]] auto GetOutfitMap() -> std::unordered_map<std::string, SosUiOutfit> &
         {
             return m_outfitMap;
         }
