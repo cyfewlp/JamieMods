@@ -137,27 +137,14 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::Refresh() -> void
     {
+        m_dataCoordinator.Refresh();
     }
 
     auto SosGui::DoRender() -> void
     {
         ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
         {
-            auto &errorMessages = m_uiData.GetErrorMessages();
-            for (auto iter = errorMessages.begin(); iter != errorMessages.end();)
-            {
-                ImGui::Text("%s", (*iter).c_str());
-                ImGui::SameLine();
-                if (ImGui::Button("x"))
-                {
-                    iter = errorMessages.erase(iter);
-                }
-                else
-                {
-                    ++iter;
-                }
-            }
-
+            ShowErrorMessages();
             bool fEnabled = m_uiData.IsEnabled();
             if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
             {
@@ -181,6 +168,27 @@ namespace LIBC_NAMESPACE_DECL
             RenderEditingOutfit();
         }
         ImGui::End();
+    }
+
+    void SosGui::ShowErrorMessages()
+    {
+        static ImVec4 RED_COLOR = ImColor(255, 0, 0, 255);
+
+        auto &errorMessages = m_uiData.GetErrorMessages();
+        auto  remainning    = MAX_ERROR_SHOW_COUNT;
+        for (auto iter = errorMessages.begin(); remainning != 0 && iter != errorMessages.end(); --remainning)
+        {
+            ImGui::TextColored(RED_COLOR, "%s", (*iter).c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("x"))
+            {
+                iter = errorMessages.erase(iter);
+            }
+            else
+            {
+                ++iter;
+            }
+        }
     }
 
     void SosGui::RenderQuickSlotConfig()

@@ -52,6 +52,7 @@ namespace LIBC_NAMESPACE_DECL
 
     private:
         auto DoRender() -> void;
+        void ShowErrorMessages();
 
         void RenderQuickSlotConfig();
         void RenderExportOrImportSettings();

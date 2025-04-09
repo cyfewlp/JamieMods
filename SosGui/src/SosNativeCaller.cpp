@@ -64,10 +64,10 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::SetSelectedOutfit, args);
     }
 
-    auto SosNativeCaller::RenameOutfit(std::string &&outfitName, std::string &&outfitNewName) -> Awaitable
+    auto SosNativeCaller::RenameOutfit(std::string &&outfitName, std::string &&newName) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName), //
-                                               std::forward<std::string>(outfitName));
+                                               std::forward<std::string>(newName));
         return StaticCall(SosFunction::RenameOutfit, args);
     }
 

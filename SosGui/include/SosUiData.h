@@ -234,6 +234,10 @@ namespace LIBC_NAMESPACE_DECL
 
         void PushErrorMessage(std::string &&message)
         {
+            while (m_errorMessages.size() >= MAX_ERROR_COUNT)
+            {
+                m_errorMessages.erase(m_errorMessages.begin());
+            }
             m_errorMessages.emplace_back(std::move(message));
         }
 

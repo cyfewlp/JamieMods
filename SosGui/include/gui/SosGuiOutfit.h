@@ -73,6 +73,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             m_armorListTable.name = "##OutfitArmors";
             m_armorListTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
+            m_armorListTable.flags |= ImGuiTableFlags_SizingStretchProp;
             m_armorListTable.headersRow = {Translation::Translate("$SosGui_TableHeader_Slot"),
                                            Translation::Translate("$ARMOR"), Translation::Translate("$Delete")};
             m_armorCandidatesTable.name = "##ArmorCandidates";

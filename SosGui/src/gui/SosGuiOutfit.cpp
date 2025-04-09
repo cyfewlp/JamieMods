@@ -80,12 +80,14 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGuiOutfit::Render(SosUiOutfit &editingOutfit) -> bool
     {
-        auto flags = ImGuiWindowFlags_NoSavedSettings;
+        auto flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
         ImGui::PushID(this);
-        ImGui::Begin(m_windowTitle.c_str(), &m_fShowOutfitWindow, flags);
-        RenderProperties(editingOutfit);
-        RenderArmorList(editingOutfit);
-        RenderEditPanel(editingOutfit);
+        if (ImGui::Begin(m_windowTitle.c_str(), &m_fShowOutfitWindow, flags))
+        {
+            RenderProperties(editingOutfit);
+            RenderArmorList(editingOutfit);
+            RenderEditPanel(editingOutfit);
+        }
         ImGui::End();
         ImGui::PopID();
         return m_fShowOutfitWindow;

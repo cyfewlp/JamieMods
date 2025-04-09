@@ -140,8 +140,10 @@ namespace LIBC_NAMESPACE_DECL
         "FX01",
     };
 
-    constexpr std::string_view SOS_SPELL_EDITOR_ID = "SkyrimOutfitSystemQuickslotSpell";
+    constexpr std::string_view SOS_SPELL_EDITOR_ID   = "SkyrimOutfitSystemQuickslotSpell";
     constexpr std::string_view SOS_NATIVE_CLASS_NAME = "SkyrimOutfitSystemNativeFuncs";
+    constexpr uint8_t          MAX_ERROR_COUNT       = 64;
+    constexpr uint8_t          MAX_ERROR_SHOW_COUNT  = 5;
 
     constexpr auto HintFontSize = [] {
         return ImGui::GetFontSize() * 1.2F;
