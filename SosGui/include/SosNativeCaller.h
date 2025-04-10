@@ -59,8 +59,6 @@ namespace LIBC_NAMESPACE_DECL
         static auto AddActor(RE::Actor *actor) -> Awaitable;
         static auto RemoveActor(RE::Actor *actor) -> Awaitable;
         static auto ListActor() -> Awaitable;
-        static auto IsActorAutoSwitchEnabled(RE::Actor *actor) -> Awaitable;
-        static auto SetActorAutoSwitchEnabled(RE::Actor *actor, bool &enabled) -> Awaitable;
 
         static auto GetCarriedArmor(RE::Actor *actor) -> Awaitable;
         static auto GetWornItems(RE::Actor *actor) -> Awaitable;
@@ -79,6 +77,9 @@ namespace LIBC_NAMESPACE_DECL
         static auto GetOutfitNameMaxLength() -> Awaitable;
 
         // auto-switch
+        static auto IsActorAutoSwitchEnabled(RE::Actor *actor) -> Awaitable;
+        static auto SetActorAutoSwitchEnabled(RE::Actor *actor, bool &enabled) -> Awaitable;
+        static auto SetStateOutfit(RE::Actor *actor, uint32_t &&location, std::string&& outfitName) -> Awaitable;
         static auto GetStateOutfit(RE::Actor *actor, uint32_t &&location) -> Awaitable;
 
         // Enable SkyrimOutfitSystem?

@@ -104,13 +104,19 @@ namespace LIBC_NAMESPACE_DECL
                                   ImGuiChildFlags chiildFlags = ImGuiChildFlags_None) -> bool
         {
             Translation::Translate(windowId, g_widgetName);
-            return ImGui::BeginChild(windowId, size, chiildFlags);
+            return ImGui::BeginChild(g_widgetName.c_str(), size, chiildFlags);
+        }
+
+        constexpr bool BeginPopupModal(const std::string &nameKey)
+        {
+            Translation::Translate(nameKey.c_str(), g_widgetName);
+            return ImGui::BeginPopupModal(g_widgetName.c_str(), nullptr, ImGuiWindowFlags_None);
         }
 
         constexpr bool BeginPopupModal(const char *name)
         {
             Translation::Translate(name, g_widgetName);
-            return ImGui::BeginPopupModal(name, nullptr, ImGuiWindowFlags_None);
+            return ImGui::BeginPopupModal(g_widgetName.c_str(), nullptr, ImGuiWindowFlags_None);
         }
 
         constexpr void OpenPopup(const char *name)

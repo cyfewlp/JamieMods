@@ -6,6 +6,7 @@
 #include "common/config.h"
 #include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
+#include "gui/SosGuiPopup.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
 #include <RE/T/TESObjectARMO.h>
@@ -28,48 +29,19 @@ namespace LIBC_NAMESPACE_DECL
         std::string                             m_windowTitle;
         ImGuiUtil::ImTable<3>                   m_armorListTable;
         ImGuiUtil::ImTable<3>                   m_armorCandidatesTable;
-        int                                     m_armorAddPolicy  = 0;
-        bool                                    m_fFilterPlayable = false;
+        int                                     m_armorAddPolicy    = 0;
+        bool                                    m_fFilterPlayable   = false;
+        bool                                    m_fShowOutfitWindow = false;
         std::array<char, MAX_FILTER_ARMOR_NAME> m_filterStringBuf;
         SosUiData                              &m_uiData;
         SosDataCoordinator                     &m_dataCoordinator;
-
-        bool m_fShowOutfitWindow = false;
-
-        class ConfirmPopup
-        {
-            std::string name;
-            ImGuiID     id;
-            Armor      *data      = nullptr;
-            bool        isOpen    = false;
-            bool        isConfirm = false;
-
-            std::function<void(Armor *)> onConfirm = nullptr;
-
-        public:
-            explicit ConfirmPopup(const std::string_view &nameKey) : id(0)
-            {
-                name = Translation::Translate(nameKey.data());
-            }
-
-            void Open(Armor *data, const std::function<void(Armor *)> &callback);
-            void Close();
-            void Render(const std::string_view &message);
-
-            constexpr auto GetData() const -> Armor *
-            {
-                return data;
-            }
-        };
-
-        ConfirmPopup m_armorConflictConfirmPopup;
-        ConfirmPopup m_armorRemoveConfirmPopup;
+        Armor                                  *m_selectedArmor = nullptr;
+        Popup::DeleteArmorPopup                 m_DeleteArmorPopup;
+        Popup::ConflictArmorPopup               m_ConflictArmorPopup;
 
     public:
         explicit SosGuiOutfit(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
-            : m_uiData(uiData), m_dataCoordinator(dataCoordinator),
-              m_armorConflictConfirmPopup("$SosGui_Confirm_ArmorConflict"),
-              m_armorRemoveConfirmPopup("$SosGui_Confirm_ArmorDelete")
+            : m_uiData(uiData), m_dataCoordinator(dataCoordinator)
         {
             m_armorListTable.name = "##OutfitArmors";
             m_armorListTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
@@ -112,5 +84,7 @@ namespace LIBC_NAMESPACE_DECL
         void UpdateArmorCandidatesBySlot(Slot slot);
         void UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable);
         auto IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool;
+
+        void RenderPopups(const std::string &outfitName);
     };
 }

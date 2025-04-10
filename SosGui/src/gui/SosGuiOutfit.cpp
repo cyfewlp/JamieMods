@@ -5,6 +5,7 @@
 #include "Translation.h"
 #include "common/config.h"
 #include "data/SosUiOutfit.h"
+#include "gui/SosGuiPopup.h"
 #include "imgui.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
@@ -17,8 +18,6 @@
 #include <array>
 #include <cstdint>
 #include <format>
-#include <functional>
-#include <ranges>
 #include <stdlib.h>
 #include <string>
 #include <vector>
@@ -27,63 +26,13 @@ namespace LIBC_NAMESPACE_DECL
 {
     constexpr auto SELECTABLE_SPAN_FLAGS = ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_SpanAllColumns;
 
-    void SosGuiOutfit::ConfirmPopup::Open(Armor *data, const std::function<void(Armor *)> &callback)
-    {
-        ImGui::OpenPopup(id);
-        this->data      = data;
-        this->onConfirm = callback;
-    }
-
-    void SosGuiOutfit::ConfirmPopup::Close()
-    {
-        ImGui::CloseCurrentPopup();
-        if (onConfirm != nullptr && isConfirm)
-        {
-            onConfirm(data);
-        }
-        data      = nullptr;
-        isOpen    = false;
-        onConfirm = nullptr;
-    }
-
-    void SosGuiOutfit::ConfirmPopup::Render(const std::string_view &message)
-    {
-        this->id = ImGui::GetID(name.c_str());
-        if (ImGui::BeginPopupModal(name.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            constexpr std::string_view delim{"\n"};
-            std::ranges::split_view    splitView{message, delim};
-            const auto                &contentSize = ImGui::GetContentRegionAvail();
-            for (const auto &lineView : splitView)
-            {
-                auto line     = std::string_view(lineView);
-                auto textSize = ImGui::CalcTextSize(line.data());
-                if (contentSize.x > textSize.x)
-                {
-                    ImGui::SetCursorPosX((contentSize.x - textSize.x) * 0.5F);
-                }
-                ImGui::TextWrapped("%s", line.data());
-            }
-            if (ImGuiUtil::Button("$SkyOutSys_Confirm_BodySlotConflict_Yes"))
-            {
-                this->isConfirm = true;
-                Close();
-            }
-            ImGui::SameLine(0, 12.0F);
-            if (ImGuiUtil::Button("$SkyOutSys_Confirm_BodySlotConflict_No"))
-            {
-                Close();
-            }
-            ImGui::EndPopup();
-        }
-    }
-
     auto SosGuiOutfit::Render(SosUiOutfit &editingOutfit) -> bool
     {
         auto flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
         ImGui::PushID(this);
         if (ImGui::Begin(m_windowTitle.c_str(), &m_fShowOutfitWindow, flags))
         {
+            RenderPopups(editingOutfit.GetName());
             RenderProperties(editingOutfit);
             RenderArmorList(editingOutfit);
             RenderEditPanel(editingOutfit);
@@ -159,23 +108,11 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::TableNextColumn();
                 if (ImGuiUtil::Button("$Delete"))
                 {
-                    m_armorRemoveConfirmPopup.Open(armor, [this, &editingOutfit](Armor *a_armor) {
-                        m_dataCoordinator.RequestDeleteArmor(editingOutfit.GetName(), a_armor);
-                    });
+                    m_selectedArmor = armor;
+                    m_DeleteArmorPopup.Open();
                 }
             }
             ImGui::EndTable();
-        }
-        if (auto *armor = m_armorRemoveConfirmPopup.GetData(); armor != nullptr)
-        {
-            const auto  templateS = Translation::TranslateIgnoreNested("$SkyOutSys_Confirm_RemoveArmor_Text{}");
-            const auto *name      = armor->GetName();
-            const auto  msg       = std::vformat(templateS, std::make_format_args(name));
-            m_armorRemoveConfirmPopup.Render(msg);
-        }
-        else
-        {
-            m_armorRemoveConfirmPopup.Render("Invalid");
         }
     }
 
@@ -271,10 +208,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (editingOutfit.IsConflictWith(armor))
                 {
-                    m_armorConflictConfirmPopup.Open(armor, [this, &editingOutfit, &outfitCandidates](Armor *a_armor) {
-                        m_dataCoordinator.RequestAddArmor(editingOutfit.GetName(), a_armor);
-                        std::erase(outfitCandidates, a_armor);
-                    });
+                    m_selectedArmor = armor;
+                    m_ConflictArmorPopup.Open();
                 }
                 else
                 {
@@ -304,8 +239,6 @@ namespace LIBC_NAMESPACE_DECL
             currentPage += 1;
         }
         ImGui::EndDisabled();
-        auto msg = Translation::Translate("$SosGui_Confirm_ArmorConflict");
-        m_armorConflictConfirmPopup.Render(msg);
     }
 
     void SosGuiOutfit::RenderEditPanelPolicy(SosUiOutfit &editingOutfit)
@@ -476,5 +409,25 @@ namespace LIBC_NAMESPACE_DECL
             return true;
         }
         return false;
+    }
+
+    void SosGuiOutfit::RenderPopups(const std::string &outfitName)
+    {
+        ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
+        if (m_ConflictArmorPopup.Render(m_selectedArmor))
+        {
+            m_dataCoordinator.RequestAddArmor(outfitName, m_selectedArmor);
+            m_uiData.DeleteCandidateArmor(m_selectedArmor);
+        }
+
+        if (m_DeleteArmorPopup.Render(m_selectedArmor))
+        {
+            m_dataCoordinator.RequestDeleteArmor(outfitName, m_selectedArmor);
+        }
+        ImGui::PopStyleVar();
+        if (m_ConflictArmorPopup.IsLastClosed() || m_DeleteArmorPopup.IsLastClosed())
+        {
+            m_selectedArmor = nullptr;
+        }
     }
 }

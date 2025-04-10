@@ -58,8 +58,6 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestCreateOutfit(std::string outfitName) -> CoroutineTask;
         auto RequestCreateOutfitFromWorn(std::string outfitName) -> CoroutineTask;
         auto RequestOutfitList(OnComplete onComplete = {}) -> CoroutineTask;
-        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) -> CoroutineTask;
-        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) -> CoroutineTask;
         auto RequestRenameOutfit(std::string outfitName, std::string newName) -> CoroutineTask;
         auto RequestDeleteOutfit(std::string outfitName, OnComplete onComplete = {}) -> CoroutineTask;
         auto RequestAddArmor(std::string outfitName, Armor *armor) -> CoroutineTask;
@@ -69,7 +67,10 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestGetArmorsByCarried() -> CoroutineTask;
         auto RequestGetArmorsByWorn() -> CoroutineTask;
 
-        auto RequestActorAutoSwitchOutfit(RE::Actor *actor, StateType location) -> CoroutineTask;
+        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) -> CoroutineTask;
+        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) -> CoroutineTask;
+        auto RequestActorStateOutfit(RE::Actor *actor, StateType location) -> CoroutineTask;
+        auto RequestSetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName) -> CoroutineTask;
 
         auto RequestActorList(OnComplete onComplete = {}) -> CoroutineTask;
         auto RequestAddActor(RE::Actor *actor) -> CoroutineTask;

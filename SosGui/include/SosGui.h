@@ -5,6 +5,7 @@
 #include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
 #include "gui/SosGuiOutfit.h"
+#include "gui/SosGuiPopup.h"
 
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
@@ -32,13 +33,15 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::ImTable<2> m_locationAutoSwitchTable;
         ImGuiUtil::ImTable<3> m_charactersTable;
 
-        RE::Actor         *m_editingActor           = nullptr;
-        SosUiOutfit       *m_editingOutfit          = nullptr;
-        StateType          m_editingAutoSwitchState = StateType::None;
-        bool               m_fShowNearNpc           = false;
-        SosUiData          m_uiData;
-        SosDataCoordinator m_dataCoordinator;
-        SosGuiOutfit       m_guiOutfit;
+        RE::Actor               *m_editingActor           = nullptr;
+        SosUiOutfit             *m_editingOutfit          = nullptr;
+        SosUiOutfit             *m_selectedOutfit         = nullptr;
+        StateType                m_editingAutoSwitchState = StateType::None;
+        bool                     m_fShowNearNpc           = false;
+        SosUiData                m_uiData;
+        SosDataCoordinator       m_dataCoordinator;
+        SosGuiOutfit             m_guiOutfit;
+        Popup::DeleteOutfitPopup m_DeleteOutfitPopup;
 
         void InitTables();
 
@@ -69,12 +72,14 @@ namespace LIBC_NAMESPACE_DECL
         void RenderExportOrImportSettings();
         void RenderOutfitConfiguration(const ImVec2 &childSize);
         void RenderEditingOutfit();
+        void RenderPopups();
+
+        void RefreshCurrentActorArmor();
 
         void RenderOutfitListContextMenu(SosUiOutfit &outfit);
         void ContextMenuSetActorActiveOutfit(std::string outfitName);
-        void ContextMenuDeleteOutfit(std::string outfitName);
-        void RefreshCurrentActorArmor();
-        void OnEditingOutfit(SosUiOutfit &outfit);
+        void OnAcceptEditingOutfit(SosUiOutfit &outfit);
+        void OnAcceptOutfitForState(SosUiOutfit &outfit);
 
         static void NewFrame();
 

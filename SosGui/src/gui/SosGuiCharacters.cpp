@@ -147,7 +147,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (!isSelected)
                 {
-                    m_dataCoordinator.RequestActorAutoSwitchOutfit(currentActor, state);
+                    m_dataCoordinator.RequestActorStateOutfit(currentActor, state);
                 }
                 m_editingAutoSwitchState = isSelected ? StateType::None : state;
             }

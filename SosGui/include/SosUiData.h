@@ -21,6 +21,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
+
     class SosUiData
     {
     public:
@@ -129,12 +130,9 @@ namespace LIBC_NAMESPACE_DECL
 
         void PutActorOutfitState(RE::Actor *actor, OutfitState &&state)
         {
-            if (!m_actorOutfitStates.contains(actor))
-            {
-                m_actorOutfitStates.emplace(actor, std::unordered_map<StateType, std::string>());
-            }
+            m_actorOutfitStates.emplace(actor, std::unordered_map<StateType, std::string>());
             auto &stateMap = m_actorOutfitStates.at(actor);
-            stateMap.emplace(state.first, state.second);
+            stateMap.insert_or_assign(state.first, state.second);
         }
 
         auto GetActorOutfitByState(RE::Actor *actor, const StateType &state) const -> const std::string &
@@ -158,7 +156,12 @@ namespace LIBC_NAMESPACE_DECL
             return m_armorCandidatesCopy;
         }
 
-        void SetArmorCandidates(const std::vector<RE::TESObjectARMO *> &armorCandidates)
+        void DeleteCandidateArmor(Armor *armor)
+        {
+            std::erase(m_armorCandidatesCopy, armor);
+        }
+
+        void SetArmorCandidates(const std::vector<Armor *> &armorCandidates)
         {
             m_armorCandidates.clear();
             m_armorCandidatesCopy.clear();
@@ -181,15 +184,6 @@ namespace LIBC_NAMESPACE_DECL
         ////////////////////////////////////////////////////////////////////////////
         // SosUiOutfit
         ////////////////////////////////////////////////////////////////////////////
-
-        void SetOutfitList(const std::vector<std::string> &outfitLists)
-        {
-            m_outfitMap.clear();
-            for (const auto &outfitName : outfitLists)
-            {
-                m_outfitMap.emplace(outfitName, SosUiOutfit(outfitName));
-            }
-        }
 
         void AddOutfit(const std::string &outfitName)
         {

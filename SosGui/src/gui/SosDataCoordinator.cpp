@@ -283,7 +283,7 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    auto SosDataCoordinator::RequestActorAutoSwitchOutfit(RE::Actor *actor, StateType location) -> CoroutineTask
+    auto SosDataCoordinator::RequestActorStateOutfit(RE::Actor *actor, StateType location) -> CoroutineTask
     {
         Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, static_cast<uint32_t>(location));
         if (!outfitVar.IsString())
@@ -292,6 +292,13 @@ namespace LIBC_NAMESPACE_DECL
             co_return;
         }
         m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::string(outfitVar.GetString())));
+    }
+
+    auto SosDataCoordinator::RequestSetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName)
+        -> CoroutineTask
+    {
+        co_await SosNativeCaller::SetStateOutfit(actor, static_cast<uint32_t>(location), std::string(outfitName));
+        m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::move(outfitName)));
     }
 
     auto SosDataCoordinator::RequestImportSettings() -> CoroutineTask
