@@ -143,7 +143,8 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::TableNextColumn();
             auto key        = std::format("$SkyOutSys_Text_Autoswitch{}", stateV);
             bool isSelected = state == m_editingAutoSwitchState;
-            if (ImGuiUtil::Selectable(key.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
+            auto flags      = ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_SpanAllColumns;
+            if (ImGuiUtil::Selectable(key.c_str(), isSelected, flags))
             {
                 if (!isSelected)
                 {
@@ -153,17 +154,52 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             ImGui::TableNextColumn();
-            auto &outfitName = m_uiData.GetActorOutfitByState(currentActor, state);
-            if (outfitName.empty())
-            {
-                ImGuiUtil::Text("$SkyOutSys_AutoswitchEdit_None");
-            }
-            else
-            {
-                ImGui::Text("%s", outfitName.c_str());
-            }
+            ComboStateOutfitList(state);
             ImGui::PopID();
         }
         ImGui::EndTable();
+    }
+
+    void SosGui::ComboStateOutfitList(const StateType &state)
+    {
+        static auto NONE_STATE = Translation::Translate("$SkyOutSys_AutoswitchEdit_None");
+
+        auto &outfitName = m_uiData.GetActorOutfitByState(m_editingActor, state);
+        auto  flags      = ImGuiComboFlags_HeightRegular | ImGuiComboFlags_HeightRegular;
+        auto &preview    = outfitName.empty() ? NONE_STATE : outfitName;
+        if (!ImGui::BeginCombo("##OutfitListCombo", preview.c_str(), flags))
+        {
+            return;
+        }
+
+        if (ImGuiUtil::Selectable("$SkyOutSys_AutoswitchEdit_None", outfitName.empty()))
+        {
+            if (!outfitName.empty())
+            {
+                m_dataCoordinator.RequestSetActorStateOutfit(m_editingActor, state, "");
+            }
+        }
+
+        auto &outfitMap = m_uiData.GetOutfitMap();
+        int   idx       = 0;
+        for (const auto &pair : outfitMap)
+        {
+            ImGui::PushID(idx);
+            bool isSelected = outfitName == pair.first;
+            if (ImGui::Selectable(pair.first.c_str(), isSelected))
+            {
+                if (!isSelected)
+                {
+                    m_dataCoordinator.RequestSetActorStateOutfit(m_editingActor, state, pair.first);
+                }
+            }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+            ImGui::PopID();
+        }
+
+        ImGui::EndCombo();
     }
 }

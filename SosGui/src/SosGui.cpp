@@ -255,14 +255,11 @@ namespace LIBC_NAMESPACE_DECL
                 m_dataCoordinator.RequestOutfitList();
             }
             auto &outfitMap = m_uiData.GetOutfitMap();
-            ImGui::PushFontSize(HintFontSize());
             if (outfitMap.empty())
             {
-                ImGuiUtil::Text("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}");
+                ImGuiUtil::TextScale("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}", HintFontSize());
             }
             static int selectedIdx = -1;
-            ImGuiUtil::Text(selectedIdx == -1 ? "$SosGui_SelectHint{$SkyOutSys_MCM_OutfitList}" : "");
-            ImGui::PopFontSize();
 
             m_outfitListTable.rows = outfitMap.size();
             if (BeginTable(m_outfitListTable))
@@ -335,7 +332,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::BeginDisabled(m_editingAutoSwitchState == StateType::None);
             if (ImGui::MenuItem("AutoSwitch: Use this outfit"))
             {
-                OnAcceptOutfitForState(outfit);
+                OnAcceptOutfitForState(outfit.GetName());
             }
             ImGui::EndDisabled();
             ImGui::EndDisabled();
@@ -394,15 +391,14 @@ namespace LIBC_NAMESPACE_DECL
         m_guiOutfit.ShowWindow(outfit.GetName());
     }
 
-    void SosGui::OnAcceptOutfitForState(SosUiOutfit &outfit)
+    void SosGui::OnAcceptOutfitForState(const std::string &outfitName)
     {
         if (m_editingActor == nullptr || m_editingAutoSwitchState == StateType::None)
         {
             return;
         }
 
-        m_dataCoordinator.RequestSetActorStateOutfit( //
-            m_editingActor, m_editingAutoSwitchState, outfit.GetName());
+        m_dataCoordinator.RequestSetActorStateOutfit(m_editingActor, m_editingAutoSwitchState, outfitName);
     }
 
     auto SosGui::EnableQuickslot(bool enable) -> bool

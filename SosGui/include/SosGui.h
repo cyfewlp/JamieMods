@@ -79,14 +79,16 @@ namespace LIBC_NAMESPACE_DECL
         void RenderOutfitListContextMenu(SosUiOutfit &outfit);
         void ContextMenuSetActorActiveOutfit(std::string outfitName);
         void OnAcceptEditingOutfit(SosUiOutfit &outfit);
-        void OnAcceptOutfitForState(SosUiOutfit &outfit);
+        void OnAcceptOutfitForState(const std::string &outfitName);
 
         static void NewFrame();
 
-        void        RenderCharactersPanel();
-        void        RenderCharactersList();
-        void        RenderNearNpcList();
-        void        RenderLocationBasedAutoswitch(RE::Actor *currentActor, ImVec2 &childSize);
+        void RenderCharactersPanel();
+        void RenderCharactersList();
+        void RenderNearNpcList();
+        void RenderLocationBasedAutoswitch(RE::Actor *currentActor, ImVec2 &childSize);
+        void ComboStateOutfitList(const StateType &state);
+
         static void TrySetAllowTextInput();
         static void AllowTextInput(bool allow);
         static void AllowTextInput1(RE::ControlMap *controlMap, bool allow);

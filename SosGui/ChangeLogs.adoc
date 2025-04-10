@@ -12,3 +12,4 @@
 * mod name. form id fullname?
 * [ ] Location auto-switch panel
 * [ ] Success message
+* [ ] Delete SosGui/SosUiData when menu hide?
