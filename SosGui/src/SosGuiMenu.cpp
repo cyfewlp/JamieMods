@@ -78,6 +78,7 @@ namespace LIBC_NAMESPACE_DECL
     void SosGuiMenu::OnHide()
     {
         m_fShow = false;
+        m_sosGui.Close();
         log_debug("SosGuiMenu::kHide");
         auto &io = ImGui::GetIO();
         io.ClearInputKeys();

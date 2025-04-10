@@ -9,6 +9,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <cstdint>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -56,6 +57,12 @@ namespace LIBC_NAMESPACE_DECL
     auto SosNativeCaller::GetOutfitNameMaxLength() -> Awaitable
     {
         return StaticCall(SosFunction::GetOutfitNameMaxLength);
+    }
+
+    auto SosNativeCaller::GetStateOutfit(RE::Actor *actor, uint32_t &&location) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(actor), std::move(location));
+        return StaticCall(SosFunction::GetStateOutfit, args);
     }
 
     auto SosNativeCaller::ActiveOutfit(RE::Actor *actor, std::string &&outfitName) -> Awaitable

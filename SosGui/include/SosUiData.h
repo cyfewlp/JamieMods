@@ -12,10 +12,11 @@
 #include "data/SosUiOutfit.h"
 
 #include <RE/A/Actor.h>
-#include <common/log.h>
+#include <cstdint>
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
@@ -23,23 +24,24 @@ namespace LIBC_NAMESPACE_DECL
     class SosUiData
     {
     public:
-        using BodySlot      = int32_t;
-        using OutfitState   = std::pair<StateType, RE::BSFixedString>;
-        using BodySlotArmor = std::pair<BodySlot, RE::TESObjectARMO *>;
         using Armor         = RE::TESObjectARMO;
+        using BodySlot      = int32_t;
+        using OutfitState   = std::pair<StateType, std::string>;
+        using BodySlotArmor = std::pair<BodySlot, Armor *>;
 
     private:
         std::vector<RE::Actor *>                     m_actors;
         std::vector<RE::Actor *>                     m_NearActors;
         bool                                         m_enabled           = false;
         bool                                         m_fQuickSlotEnabled = false;
-        std::unordered_map<RE::Actor *, bool>        m_autoSwitchEnabled;
-        std::unordered_map<RE::Actor *, OutfitState> m_actorOutfitStates;
         std::vector<RE::TESObjectARMO *>             m_armorCandidates;
         std::vector<RE::TESObjectARMO *>             m_armorCandidatesCopy;
         std::unordered_map<RE::Actor *, std::string> m_actorActiveOutfitMap;
         std::unordered_map<std::string, SosUiOutfit> m_outfitMap;
         std::list<std::string>                       m_errorMessages;
+
+        std::unordered_map<RE::Actor *, bool>                                       m_autoSwitchEnabled;
+        std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> m_actorOutfitStates;
 
     public:
         [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
@@ -112,7 +114,6 @@ namespace LIBC_NAMESPACE_DECL
 
         void SetAutoSwitchEnabled(RE::Actor *actor, const bool autoSwitchEnabled)
         {
-            log_debug("SetAutoSwitchEnabled: {} {}", actor->GetName(), autoSwitchEnabled);
             if (actor != nullptr)
             {
                 m_autoSwitchEnabled[actor] = autoSwitchEnabled;
@@ -120,14 +121,31 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        [[nodiscard]] auto GetActorOutfitStates() const -> const std::unordered_map<RE::Actor *, OutfitState> &
+        [[nodiscard]] auto GetActorOutfitStates() const
+            -> const std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> &
         {
             return m_actorOutfitStates;
         }
 
         void PutActorOutfitState(RE::Actor *actor, OutfitState &&state)
         {
-            m_actorOutfitStates[actor] = std::forward<OutfitState>(state);
+            if (!m_actorOutfitStates.contains(actor))
+            {
+                m_actorOutfitStates.emplace(actor, std::unordered_map<StateType, std::string>());
+            }
+            auto &stateMap = m_actorOutfitStates.at(actor);
+            stateMap.emplace(state.first, state.second);
+        }
+
+        auto GetActorOutfitByState(RE::Actor *actor, const StateType &state) const -> const std::string &
+        {
+            static std::string empty = "";
+            if (!m_actorOutfitStates.contains(actor))
+            {
+                return empty;
+            }
+            auto &stateMap = m_actorOutfitStates.at(actor);
+            return stateMap.contains(state) ? stateMap.at(state) : empty;
         }
 
         [[nodiscard]] constexpr auto GetArmorCandidates() -> std::vector<RE::TESObjectARMO *> &
@@ -230,6 +248,11 @@ namespace LIBC_NAMESPACE_DECL
         auto HasActiveOutfit(RE::Actor *actor) -> bool
         {
             return m_actorActiveOutfitMap.contains(actor) && !m_actorActiveOutfitMap.at(actor).empty();
+        }
+
+        auto IsActorActiveOutfit(RE::Actor *actor, const std::string &outfitName) -> bool
+        {
+            return m_actorActiveOutfitMap.contains(actor) && m_actorActiveOutfitMap.at(actor) == outfitName;
         }
 
         void PushErrorMessage(std::string &&message)

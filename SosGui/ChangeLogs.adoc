@@ -10,3 +10,6 @@
 * [ ] nameless armor
 +
 * mod name. form id fullname?
+* [ ] Location auto-switch panel
++
+* render at the right part of outfit list ?

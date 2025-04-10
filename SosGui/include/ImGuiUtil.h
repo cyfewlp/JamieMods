@@ -38,6 +38,12 @@ namespace LIBC_NAMESPACE_DECL
             return ImGui::InputText(g_widgetName.c_str(), inputBuf.data(), inputBuf.size());
         }
 
+        constexpr auto BeginTabItem(const std::string &nameKey) -> bool
+        {
+            Translation::Translate(nameKey.c_str(), g_widgetName);
+            return ImGui::BeginTabItem(g_widgetName.c_str());
+        }
+
         constexpr auto SetItemTooltip(const char *content) -> void
         {
             Translation::Translate(content, g_widgetName);

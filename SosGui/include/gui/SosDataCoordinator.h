@@ -69,6 +69,8 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestGetArmorsByCarried() -> CoroutineTask;
         auto RequestGetArmorsByWorn() -> CoroutineTask;
 
+        auto RequestActorAutoSwitchOutfit(RE::Actor *actor, StateType location) -> CoroutineTask;
+
         auto RequestActorList(OnComplete onComplete = {}) -> CoroutineTask;
         auto RequestAddActor(RE::Actor *actor) -> CoroutineTask;
         auto RequestRemoveActor(RE::Actor *actor) -> CoroutineTask;

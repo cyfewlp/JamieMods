@@ -15,6 +15,14 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Translate(const char *key) -> std::string;
 
+        template <typename... Args>
+        auto Translate(const char *key, Args &&...args) -> std::string
+        {
+            std::string templateStr;
+            Translate(key, templateStr);
+            return std::vformat(templateStr, std::make_format_args(std::forward<Args>(args)...));
+        }
+
         auto TranslateIgnoreNested(const std::string &a_key, std::string &a_result) -> bool;
 
         auto TranslateIgnoreNested(const std::string &a_key) -> std::string;

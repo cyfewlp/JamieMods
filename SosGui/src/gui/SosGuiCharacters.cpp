@@ -18,12 +18,11 @@ namespace LIBC_NAMESPACE_DECL
     {
         if (ImGuiUtil::BeginChild("$SkyOutSys_Text_ActiveActorHeader", ImVec2(), ImGuiChildFlags_AutoResizeY))
         {
-            static bool fShowNearNpcLis = false;
-            if (ImGuiUtil::CheckBox("$SkyOutSys_Text_AddActorSelection", &fShowNearNpcLis))
+            if (ImGuiUtil::CheckBox("$SkyOutSys_Text_AddActorSelection", &m_fShowNearNpc))
             {
                 m_dataCoordinator.RequestNearActorList();
             }
-            if (fShowNearNpcLis)
+            if (m_fShowNearNpc)
             {
                 ImGui::SameLine();
                 RenderNearNpcList();
@@ -58,7 +57,8 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::TableNextColumn();
             if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
             {
-                selectedIdx = selectedIdx != rowIdx ? rowIdx : -1;
+                m_editingActor = selectedIdx != rowIdx ? actor : nullptr;
+                selectedIdx    = selectedIdx != rowIdx ? rowIdx : -1;
             }
 
             ImGui::TableNextColumn();
@@ -74,12 +74,6 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::Text("%s", (*iter).second.c_str());
             }
         });
-
-        if (selectedIdx >= 0 && selectedIdx < static_cast<int>(actors.size()))
-        {
-            m_editingActor = actors.at(selectedIdx);
-            RenderLocationBasedAutoswitch(m_editingActor);
-        }
     }
 
     void SosGui::RenderNearNpcList()
@@ -110,8 +104,15 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosGui::RenderLocationBasedAutoswitch(RE::Actor *currentActor)
+    void SosGui::RenderLocationBasedAutoswitch(RE::Actor *currentActor, ImVec2 &childSize)
     {
+        ImGuiUtil::ChildGuard child("##LocationAutoSwitch", childSize, ImGuiChildFlags_AutoResizeY);
+        if (currentActor == nullptr)
+        {
+            ImGui::Text("Please select a actor to edit");
+            return;
+        }
+
         bool fAutoSwitchEnabled = m_uiData.IsAutoSwitchEnabled(currentActor);
         if (ImGuiUtil::CheckBox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))
         {
@@ -123,17 +124,46 @@ namespace LIBC_NAMESPACE_DECL
             return;
         }
         // don't call GetAutoSwitchStateArray because it's result is static
-        static constexpr std::array stateArray = {Combat,    World,        WorldSnowy,  WorldRainy, City,
-                                                  CitySnowy, CityRainy,    Town,        TownSnowy,  TownRainy,
-                                                  Dungeon,   DungeonSnowy, DungeonRainy};
-        m_locationAutoSwitchTable.rows         = stateArray.size();
-        RenderTable(m_locationAutoSwitchTable, [](int idx) {
-            auto state = stateArray.at(idx);
-            ImGui::TableNextColumn();
-            ImGuiUtil::Text(std::format("$SkyOutSys_Text_Autoswitch{}", static_cast<int8_t>(state)));
+        static constexpr std::array stateArray = {StateType::Combat,      StateType::World,   StateType::WorldSnowy,
+                                                  StateType::WorldRainy,  StateType::City,    StateType::CitySnowy,
+                                                  StateType::CityRainy,   StateType::Town,    StateType::TownSnowy,
+                                                  StateType::TownRainy,   StateType::Dungeon, StateType::DungeonSnowy,
+                                                  StateType::DungeonRainy};
+        if (!ImGuiUtil::BeginTable(m_locationAutoSwitchTable))
+        {
+            return;
+        }
+        ImGuiUtil::TableHeadersRow(m_locationAutoSwitchTable);
+        for (const auto &state : stateArray)
+        {
+            auto stateV = static_cast<uint32_t>(state);
+            ImGui::PushID(stateV);
+            ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
-            ImGuiUtil::Text("$SkyOutSys_AutoswitchEdit_None");
-        });
+            auto key        = std::format("$SkyOutSys_Text_Autoswitch{}", stateV);
+            bool isSelected = state == m_editingAutoSwitchState;
+            if (ImGuiUtil::Selectable(key.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
+            {
+                if (!isSelected)
+                {
+                    m_dataCoordinator.RequestActorAutoSwitchOutfit(currentActor, state);
+                }
+                m_editingAutoSwitchState = isSelected ? StateType::None : state;
+            }
+
+            ImGui::TableNextColumn();
+            auto &outfitName = m_uiData.GetActorOutfitByState(currentActor, state);
+            if (outfitName.empty())
+            {
+                ImGuiUtil::Text("$SkyOutSys_AutoswitchEdit_None");
+            }
+            else
+            {
+                ImGui::Text("%s", outfitName.c_str());
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
     }
 }

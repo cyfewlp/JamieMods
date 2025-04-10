@@ -59,20 +59,20 @@ namespace LIBC_NAMESPACE_DECL
     void SosGui::InitTables()
     {
         m_outfitListTable.name = "##OutfitLists";
-        // m_outfitListTable.flags |= ImGuiTableFlags_NoHostExtendY;
+        m_outfitListTable.flags |= ImGuiTableFlags_NoHostExtendX;
         m_outfitListTable.headersRow = {Translation::Translate("$SkyOutSys_MCM_OutfitList")};
 
         m_locationAutoSwitchTable.name = "##AutoswitchStateList";
         m_locationAutoSwitchTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
-        m_locationAutoSwitchTable.flags |= ImGuiTableFlags_NoHostExtendY | ImGuiTableFlags_SizingStretchProp;
+        m_locationAutoSwitchTable.flags |= ImGuiTableFlags_NoHostExtendX;
         m_locationAutoSwitchTable.headersRow = {
             Translation::Translate("$SosGui_TableHeader_Location"),
             Translation::Translate("$SosGui_TableHeader_Location_State"),
         };
 
         m_charactersTable.name = "##CharactersTable";
-        m_charactersTable.flags |=
-            ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable;
+        m_charactersTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
+        m_charactersTable.flags |= ImGuiTableFlags_SizingStretchProp;
         m_charactersTable.headersRow = {
             Translation::Translate("$Characters"),
             Translation::Translate("$Delete"),
@@ -164,7 +164,13 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::SameLine();
             RenderExportOrImportSettings();
             RenderCharactersPanel();
-            RenderOutfitConfiguration();
+
+            auto  &style     = ImGui::GetStyle();
+            ImVec2 childSize = {(ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5F, 0.0F};
+            RenderLocationBasedAutoswitch(m_editingActor, childSize);
+            ImGui::SameLine();
+            RenderOutfitConfiguration(childSize);
+
             RenderEditingOutfit();
         }
         ImGui::End();
@@ -222,9 +228,9 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
     }
 
-    void SosGui::RenderOutfitConfiguration()
+    void SosGui::RenderOutfitConfiguration(const ImVec2 &childSize)
     {
-        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", ImVec2(), ImGuiChildFlags_AutoResizeY))
+        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", childSize, ImGuiChildFlags_AutoResizeY))
         {
             static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
             ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
@@ -271,10 +277,9 @@ namespace LIBC_NAMESPACE_DECL
                     bool const isSelected = selectedIdx == idx;
                     if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
                     {
-                        OnSelectOutfit(pair.second, isSelected);
                         selectedIdx = selectedIdx != idx ? idx : -1;
                     }
-                    RenderOutfitListContextMenu(outfitName);
+                    RenderOutfitListContextMenu(pair.second);
                     ++idx;
                 }
                 ImGui::EndTable();
@@ -289,40 +294,49 @@ namespace LIBC_NAMESPACE_DECL
         {
             return;
         }
-        m_guiOutfit.Render(*m_editingOutfit);
+        if (!m_guiOutfit.Render(*m_editingOutfit))
+        {
+            m_editingOutfit = nullptr;
+        }
     }
 
-    void SosGui::RenderOutfitListContextMenu(const std::string &outfitName)
+    void SosGui::RenderOutfitListContextMenu(SosUiOutfit &outfit)
     {
         if (ImGui::BeginPopupContextItem())
         {
+            const auto &outfitName   = outfit.GetName();
+            auto        menuItemName = Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName);
+            if (ImGui::MenuItem(menuItemName.c_str()))
+            {
+                OnEditingOutfit(outfit);
+            }
+            ImGui::BeginDisabled(m_editingActor == nullptr);
             if (m_editingActor == nullptr)
             {
                 ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
             }
-            else
+            const auto *actorName = m_editingActor->GetName();
+            ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
+            if (m_uiData.IsActorActiveOutfit(m_editingActor, outfitName))
             {
-                const auto *actorName = m_editingActor->GetName();
-                auto        templateS = Translation::Translate("$SosGui_ContextMenu_EditingActor");
-                ImGui::Text("%s", std::vformat(templateS, std::make_format_args(actorName)).c_str());
-                if (m_uiData.HasActiveOutfit(m_editingActor))
+                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
                 {
-                    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
-                    {
-                        ContextMenuSetActorActiveOutfit("");
-                    }
+                    ContextMenuSetActorActiveOutfit("");
                 }
-                else
-                {
-                    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
-                    {
-                        ContextMenuSetActorActiveOutfit(outfitName);
-                    }
-                }
-                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
-                {
-                    ContextMenuDeleteOutfit(outfitName);
-                }
+            }
+            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
+            {
+                ContextMenuSetActorActiveOutfit(outfitName);
+            }
+            ImGui::EndDisabled();
+            //
+            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
+            {
+                ContextMenuDeleteOutfit(outfitName);
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("AutoSwitch: Use this outfit"))
+            {
             }
             if (ImGui::MenuItem("Close"))
             {
@@ -358,18 +372,11 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void SosGui::OnSelectOutfit(SosUiOutfit &outfit, bool prevSelectState)
+    void SosGui::OnEditingOutfit(SosUiOutfit &outfit)
     {
-        if (prevSelectState)
-        {
-            m_editingOutfit = nullptr;
-        }
-        else
-        {
-            m_editingOutfit = &outfit;
-            m_dataCoordinator.RequestOutfitArmors(outfit.GetName());
-            m_guiOutfit.ShowWindow(outfit.GetName());
-        }
+        m_editingOutfit = &outfit;
+        m_dataCoordinator.RequestOutfitArmors(outfit.GetName());
+        m_guiOutfit.ShowWindow(outfit.GetName());
     }
 
     auto SosGui::EnableQuickslot(bool enable) -> bool

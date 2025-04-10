@@ -12,6 +12,7 @@
 #include <RE/T/TESForm.h>
 #include <RE/T/TESObjectARMO.h>
 #include <RE/V/Variable.h>
+#include <cstdint>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -280,6 +281,17 @@ namespace LIBC_NAMESPACE_DECL
                 errorMessage.append("can't get player worn armors");
             }
         }
+    }
+
+    auto SosDataCoordinator::RequestActorAutoSwitchOutfit(RE::Actor *actor, StateType location) -> CoroutineTask
+    {
+        Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, static_cast<uint32_t>(location));
+        if (!outfitVar.IsString())
+        {
+            m_uiData.PushErrorMessage("Can't get actor state outfit");
+            co_return;
+        }
+        m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::string(outfitVar.GetString())));
     }
 
     auto SosDataCoordinator::RequestImportSettings() -> CoroutineTask

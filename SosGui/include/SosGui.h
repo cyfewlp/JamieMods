@@ -31,11 +31,14 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::ImTable<1> m_outfitListTable;
         ImGuiUtil::ImTable<2> m_locationAutoSwitchTable;
         ImGuiUtil::ImTable<3> m_charactersTable;
-        RE::Actor            *m_editingActor  = nullptr;
-        SosUiOutfit          *m_editingOutfit = nullptr;
-        SosUiData             m_uiData;
-        SosDataCoordinator    m_dataCoordinator;
-        SosGuiOutfit          m_guiOutfit;
+
+        RE::Actor         *m_editingActor           = nullptr;
+        SosUiOutfit       *m_editingOutfit          = nullptr;
+        StateType          m_editingAutoSwitchState = StateType::None;
+        bool               m_fShowNearNpc           = false;
+        SosUiData          m_uiData;
+        SosDataCoordinator m_dataCoordinator;
+        SosGuiOutfit       m_guiOutfit;
 
         void InitTables();
 
@@ -50,27 +53,35 @@ namespace LIBC_NAMESPACE_DECL
         auto Render() -> void;
         auto Refresh() -> void;
 
+        auto Close() -> void
+        {
+            m_editingActor           = nullptr;
+            m_editingOutfit          = nullptr;
+            m_editingAutoSwitchState = StateType::None;
+            m_fShowNearNpc           = false;
+        }
+
     private:
         auto DoRender() -> void;
         void ShowErrorMessages();
 
         void RenderQuickSlotConfig();
         void RenderExportOrImportSettings();
-        void RenderOutfitConfiguration();
+        void RenderOutfitConfiguration(const ImVec2 &childSize);
         void RenderEditingOutfit();
 
-        void RenderOutfitListContextMenu(const std::string &outfitName);
+        void RenderOutfitListContextMenu(SosUiOutfit &outfit);
         void ContextMenuSetActorActiveOutfit(std::string outfitName);
         void ContextMenuDeleteOutfit(std::string outfitName);
         void RefreshCurrentActorArmor();
-        void OnSelectOutfit(SosUiOutfit &outfit, bool prevSelectState);
+        void OnEditingOutfit(SosUiOutfit &outfit);
 
         static void NewFrame();
 
         void        RenderCharactersPanel();
         void        RenderCharactersList();
         void        RenderNearNpcList();
-        void        RenderLocationBasedAutoswitch(RE::Actor *currentActor);
+        void        RenderLocationBasedAutoswitch(RE::Actor *currentActor, ImVec2 &childSize);
         static void TrySetAllowTextInput();
         static void AllowTextInput(bool allow);
         static void AllowTextInput1(RE::ControlMap *controlMap, bool allow);

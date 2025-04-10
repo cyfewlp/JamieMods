@@ -78,6 +78,9 @@ namespace LIBC_NAMESPACE_DECL
         static auto GetOutfitBodySlotListingArmorForms() -> Awaitable;
         static auto GetOutfitNameMaxLength() -> Awaitable;
 
+        // auto-switch
+        static auto GetStateOutfit(RE::Actor *actor, uint32_t &&location) -> Awaitable;
+
         // Enable SkyrimOutfitSystem?
         static auto Enable(bool &isEnable) -> Awaitable;
         static auto IsEnabled() -> Awaitable;
