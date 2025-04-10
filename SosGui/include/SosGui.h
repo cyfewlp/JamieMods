@@ -1,11 +1,13 @@
 #pragma once
 
 #include "ImGuiUtil.h"
+#include "SosDataType.h"
 #include "SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
 #include "gui/SosGuiOutfit.h"
-#include "gui/SosGuiPopup.h"
+#include "gui/Popup.h"
+#include "gui/Table.h"
 
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
@@ -29,9 +31,9 @@ namespace LIBC_NAMESPACE_DECL
 
         using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
         using Armor = RE::TESObjectARMO;
-        ImGuiUtil::ImTable<1> m_outfitListTable;
-        ImGuiUtil::ImTable<2> m_locationAutoSwitchTable;
-        ImGuiUtil::ImTable<3> m_charactersTable;
+        TableContext<1> m_outfitListTable;
+        TableContext<2> m_locationAutoSwitchTable;
+        TableContext<3> m_charactersTable;
 
         RE::Actor               *m_editingActor           = nullptr;
         SosUiOutfit             *m_editingOutfit          = nullptr;
@@ -43,12 +45,18 @@ namespace LIBC_NAMESPACE_DECL
         SosGuiOutfit             m_guiOutfit;
         Popup::DeleteOutfitPopup m_DeleteOutfitPopup;
 
-        void InitTables();
-
     public:
-        SosGui() : m_dataCoordinator(m_uiData), m_guiOutfit(m_uiData, m_dataCoordinator)
+        SosGui()
+            : m_outfitListTable(TableContext<1>::Create("##OutfitLists", {"$SkyOutSys_MCM_OutfitList"})),
+              m_locationAutoSwitchTable(TableContext<2>::Create(
+                  "##AutoSwitchStateList", {"$SosGui_TableHeader_Location", "$SosGui_TableHeader_Location_State"})),
+              m_charactersTable(TableContext<3>::Create(
+                  "##CharactersTable", {"$Characters", "$Delete", "$SosGui_TableHeader_ActiveOutfit"})),
+              m_dataCoordinator(m_uiData), m_guiOutfit(m_uiData, m_dataCoordinator)
         {
-            InitTables();
+            m_outfitListTable.NoHostExtendX();
+            m_locationAutoSwitchTable.Sortable().Resizable().NoHostExtendX();
+            m_charactersTable.Sortable().Resizable().SizingStretchProp();
         }
 
         static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;

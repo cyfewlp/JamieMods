@@ -30,6 +30,13 @@ namespace LIBC_NAMESPACE_DECL
             return result;
         }
 
+        auto TranslateNoCache(const char *key) -> std::string
+        {
+            std::string result(key);
+            SKSE::Translation::Translate(key, result);
+            return result;
+        }
+
         auto TranslateIgnoreNested(const std::string &a_key, std::string &a_result) -> bool
         {
             if (!a_key.starts_with('$'))

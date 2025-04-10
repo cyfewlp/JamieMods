@@ -1,4 +1,4 @@
-#include "gui/SosGuiPopup.h"
+#include "gui/Popup.h"
 #include "SosGui.h"
 #include "gui/SosGuiOutfit.h"
 

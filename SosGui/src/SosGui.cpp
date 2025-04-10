@@ -4,6 +4,7 @@
 #include "common/log.h"
 #include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
+#include "gui/Table.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -54,30 +55,6 @@ namespace LIBC_NAMESPACE_DECL
 
         log_info("ImGui initialized!");
         return true;
-    }
-
-    void SosGui::InitTables()
-    {
-        m_outfitListTable.name = "##OutfitLists";
-        m_outfitListTable.flags |= ImGuiTableFlags_NoHostExtendX;
-        m_outfitListTable.headersRow = {Translation::Translate("$SkyOutSys_MCM_OutfitList")};
-
-        m_locationAutoSwitchTable.name = "##AutoswitchStateList";
-        m_locationAutoSwitchTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
-        m_locationAutoSwitchTable.flags |= ImGuiTableFlags_NoHostExtendX;
-        m_locationAutoSwitchTable.headersRow = {
-            Translation::Translate("$SosGui_TableHeader_Location"),
-            Translation::Translate("$SosGui_TableHeader_Location_State"),
-        };
-
-        m_charactersTable.name = "##CharactersTable";
-        m_charactersTable.flags |= ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable;
-        m_charactersTable.flags |= ImGuiTableFlags_SizingStretchProp;
-        m_charactersTable.headersRow = {
-            Translation::Translate("$Characters"),
-            Translation::Translate("$Delete"),
-            Translation::Translate("$SosGui_TableHeader_ActiveOutfit"),
-        };
     }
 
     void SosGui::NewFrame()
@@ -261,10 +238,9 @@ namespace LIBC_NAMESPACE_DECL
             }
             static int selectedIdx = -1;
 
-            m_outfitListTable.rows = outfitMap.size();
-            if (BeginTable(m_outfitListTable))
+            if (m_outfitListTable.Begin())
             {
-                TableHeadersRow(m_outfitListTable);
+                m_outfitListTable.HeadersRow();
                 int idx = 0;
                 for (auto &pair : outfitMap)
                 {

@@ -6,12 +6,12 @@
 #include "common/config.h"
 #include "data/SosUiOutfit.h"
 #include "gui/SosDataCoordinator.h"
-#include "gui/SosGuiPopup.h"
+#include "gui/Popup.h"
+#include "gui/Table.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
 #include <RE/T/TESObjectARMO.h>
 #include <array>
-#include <functional>
 #include <imgui.h>
 #include <string>
 
@@ -27,8 +27,8 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr int SOS_SLOT_OFFSET       = 30;
 
         std::string                             m_windowTitle;
-        ImGuiUtil::ImTable<3>                   m_armorListTable;
-        ImGuiUtil::ImTable<3>                   m_armorCandidatesTable;
+        TableContext<3>                         m_armorListTable;
+        TableContext<3>                         m_armorCandidatesTable;
         int                                     m_armorAddPolicy    = 0;
         bool                                    m_fFilterPlayable   = false;
         bool                                    m_fShowOutfitWindow = false;
@@ -41,20 +41,12 @@ namespace LIBC_NAMESPACE_DECL
 
     public:
         explicit SosGuiOutfit(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
-            : m_uiData(uiData), m_dataCoordinator(dataCoordinator)
+            : m_armorListTable( TableContext<3>::Create("##OutfitArmors", {"$SosGui_TableHeader_Slot", "$ARMOR", "$Delete"})),
+              m_armorCandidatesTable( TableContext<3>::Create("##ArmorCandidates", {"$ARMOR", "$SosGui_TableHeader_Slot", "$Add"})),
+              m_uiData(uiData), m_dataCoordinator(dataCoordinator)
         {
-            m_armorListTable.name = "##OutfitArmors";
-            m_armorListTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
-            m_armorListTable.flags |= ImGuiTableFlags_SizingStretchProp;
-            m_armorListTable.headersRow = {Translation::Translate("$SosGui_TableHeader_Slot"),
-                                           Translation::Translate("$ARMOR"), Translation::Translate("$Delete")};
-            m_armorCandidatesTable.name = "##ArmorCandidates";
-            m_armorCandidatesTable.flags |= ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
-            m_armorCandidatesTable.headersRow = {
-                Translation::Translate("$ARMOR"),
-                Translation::Translate("$SosGui_TableHeader_Slot"),
-                Translation::Translate("$Add"),
-            };
+            m_armorListTable.Resizable().Sortable().SizingStretchProp();
+            m_armorCandidatesTable.Resizable().Sortable();
         }
 
         auto Render(SosUiOutfit &editingOutfit) -> bool;

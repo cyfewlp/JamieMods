@@ -15,6 +15,8 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Translate(const char *key) -> std::string;
 
+        auto TranslateNoCache(const char *key) -> std::string;
+
         constexpr auto Translate(const std::string &key) -> std::string
         {
             return Translate(key.c_str());

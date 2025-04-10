@@ -5,7 +5,7 @@
 #include "Translation.h"
 #include "common/config.h"
 #include "data/SosUiOutfit.h"
-#include "gui/SosGuiPopup.h"
+#include "gui/Popup.h"
 #include "imgui.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
@@ -80,9 +80,9 @@ namespace LIBC_NAMESPACE_DECL
 
         // render all in order but skip empty slot
         static int selectedIdx = -1;
-        if (BeginTable(m_armorListTable))
+        if (m_armorListTable.Begin())
         {
-            TableHeadersRow(m_armorListTable);
+            m_armorListTable.HeadersRow();
             for (int slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
             {
                 const auto &armor = editingOutfit.GetArmorAt(slotIdx);
@@ -177,17 +177,16 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::Text(outfitCandidates.empty() ? "$SosGui_EmptyHint{$ARMOR}" : "");
         ImGui::PopFontSize();
 
-        if (outfitCandidates.empty() || !BeginTable(m_armorCandidatesTable))
+        if (outfitCandidates.empty() || !m_armorCandidatesTable.Begin())
         {
             return;
         }
 
-        m_armorCandidatesTable.rows = pageSize;
-        int        count            = 0;
-        int        startIdx         = currentPage * pageSize;
-        static int selectedIdx      = -1;
-        auto       begin            = outfitCandidates.begin() + startIdx;
-        TableHeadersRow(m_armorCandidatesTable);
+        int        count       = 0;
+        int        startIdx    = currentPage * pageSize;
+        static int selectedIdx = -1;
+        auto       begin       = outfitCandidates.begin() + startIdx;
+        m_armorCandidatesTable.HeadersRow();
         for (auto &armorIter = begin; count < pageSize && armorIter != outfitCandidates.end(); ++count)
         {
             ImGuiUtil::PushIdGuard idGuard(count);

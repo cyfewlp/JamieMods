@@ -44,36 +44,43 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::Text(selectedIdx == -1 ? "$SosGui_SelectHint{$Characters}" : "");
         ImGui::PopFontSize();
 
-        m_charactersTable.rows = actors.size();
-        RenderTable(m_charactersTable, [&actors, this](int rowIdx) {
-            auto      *actor      = actors.at(rowIdx);
-            bool const isSelected = selectedIdx == rowIdx;
-            if (isSelected)
+        if (m_charactersTable.Begin())
+        {
+            m_charactersTable.HeadersRow();
+            int idx = 0;
+            for (const auto &actor : actors)
             {
-                auto color = ImGui::GetColorU32(ImGuiCol_HeaderActive);
-                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, color);
-            }
+                ImGui::PushID(idx);
+                bool const isSelected = selectedIdx == idx;
+                if (isSelected)
+                {
+                    auto color = ImGui::GetColorU32(ImGuiCol_HeaderActive);
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, color);
+                }
 
-            ImGui::TableNextColumn();
-            if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
-            {
-                m_editingActor = selectedIdx != rowIdx ? actor : nullptr;
-                selectedIdx    = selectedIdx != rowIdx ? rowIdx : -1;
-            }
+                ImGui::TableNextColumn();
+                if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
+                {
+                    m_editingActor = selectedIdx != idx ? actor : nullptr;
+                    selectedIdx    = selectedIdx != idx ? idx : -1;
+                }
 
-            ImGui::TableNextColumn();
-            if (ImGui::Button(m_charactersTable.headersRow[1].c_str()))
-            {
-                m_dataCoordinator.RequestRemoveActor(actor);
-            }
+                ImGui::TableNextColumn();
+                if (ImGui::Button(m_charactersTable.GetHeader(1).data()))
+                {
+                    m_dataCoordinator.RequestRemoveActor(actor);
+                }
 
-            ImGui::TableNextColumn();
-            const auto &activeOutfitMap = m_uiData.GetActorActiveOutfitMap();
-            if (auto iter = activeOutfitMap.find(actor); iter != activeOutfitMap.end())
-            {
-                ImGui::Text("%s", (*iter).second.c_str());
+                ImGui::TableNextColumn();
+                const auto &activeOutfitMap = m_uiData.GetActorActiveOutfitMap();
+                if (auto iter = activeOutfitMap.find(actor); iter != activeOutfitMap.end())
+                {
+                    ImGui::Text("%s", (*iter).second.c_str());
+                }
+                ImGui::PopID();
             }
-        });
+            ImGui::EndTable();
+        }
     }
 
     void SosGui::RenderNearNpcList()
@@ -129,11 +136,11 @@ namespace LIBC_NAMESPACE_DECL
                                                   StateType::CityRainy,   StateType::Town,    StateType::TownSnowy,
                                                   StateType::TownRainy,   StateType::Dungeon, StateType::DungeonSnowy,
                                                   StateType::DungeonRainy};
-        if (!ImGuiUtil::BeginTable(m_locationAutoSwitchTable))
+        if (!m_locationAutoSwitchTable.Begin())
         {
             return;
         }
-        ImGuiUtil::TableHeadersRow(m_locationAutoSwitchTable);
+        m_locationAutoSwitchTable.HeadersRow();
         for (const auto &state : stateArray)
         {
             auto stateV = static_cast<uint32_t>(state);
