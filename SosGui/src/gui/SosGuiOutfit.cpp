@@ -15,10 +15,12 @@
 #include <RE/T/TESForm.h>
 #include <RE/T/TESFullName.h>
 #include <RE/T/TESObjectARMO.h>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <format>
 #include <stdlib.h>
+#include <string.h>
 #include <string>
 #include <vector>
 
@@ -123,15 +125,15 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiStyle &style     = ImGui::GetStyle();
         float       halfWidth = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) / 2;
 
+        if (ImGuiUtil::ChildGuard("##RenderArmorCandidates", {halfWidth, 0.0F}))
         {
-            ImGuiUtil::ChildGuard guard("##RenderArmorCandidates", {halfWidth, 0.0F});
             RenderArmorCandidates(editingOutfit, selectedSlot);
         }
 
         ImGui::SameLine();
 
+        if (ImGuiUtil::ChildGuard("##RenderEditPanelPolicy", {halfWidth, 0.0F}))
         {
-            ImGuiUtil::ChildGuard guard("##RenderEditPanelPolicy", {halfWidth, 0.0F});
             RenderEditPanelPolicy(editingOutfit);
         }
     }
@@ -181,12 +183,29 @@ namespace LIBC_NAMESPACE_DECL
         {
             return;
         }
+        ImGui::PushID("HeadersRow");
+        // clang-format off
+        m_armorCandidatesTable
+            .Column(0).DefaultSort().Setup()
+            .Column(1).NoSort().Setup()
+            .Column(2).NoSort().Setup();
+        // clang-format on
+        ImGui::TableHeadersRow();
+        ImGui::PopID();
+
+        if (auto *sortSpecs = ImGui::TableGetSortSpecs(); sortSpecs != nullptr)
+        {
+            if (sortSpecs->SpecsDirty)
+            {
+                SortArmorCandidates(sortSpecs);
+                sortSpecs->SpecsDirty = false;
+            }
+        }
 
         int        count       = 0;
         int        startIdx    = currentPage * pageSize;
         static int selectedIdx = -1;
         auto       begin       = outfitCandidates.begin() + startIdx;
-        m_armorCandidatesTable.HeadersRow();
         for (auto &armorIter = begin; count < pageSize && armorIter != outfitCandidates.end(); ++count)
         {
             ImGuiUtil::PushIdGuard idGuard(count);
@@ -283,7 +302,7 @@ namespace LIBC_NAMESPACE_DECL
 
         // filter armor name and mod name
         ImGuiUtil::InputText("$SkyOutSys_OEdit_AddFromList_Filter_Name", m_filterStringBuf);
-        if (!ImGui::GetIO().WantTextInput && ImGui::IsItemDeactivated())
+        if (ImGui::IsItemDeactivatedAfterEdit())
         {
             shouldUpdateCandidates = true;
         }
@@ -317,6 +336,26 @@ namespace LIBC_NAMESPACE_DECL
         }
         ImGui::SameLine();
         ImGui::PopID();
+    }
+
+    void SosGuiOutfit::SortArmorCandidates(ImGuiTableSortSpecs *sortSpecs)
+    {
+        auto &candidates = m_uiData.GetArmorCandidatesCopy();
+        if (candidates.size() <= 1)
+        {
+            return;
+        }
+        assert(sortSpecs->SpecsCount == 1);
+        for (int idx = 0; idx < sortSpecs->SpecsCount; idx++)
+        {
+            const auto *columnSortSpec = &sortSpecs->Specs[idx];
+
+            int direction = columnSortSpec->SortDirection == ImGuiSortDirection_Ascending ? 1 : -1;
+            std::sort( //
+                candidates.begin(), candidates.end(), [direction](Armor *prev, Armor *next) {
+                    return direction * strcmp(prev->GetName(), next->GetName()) < 0;
+                });
+        }
     }
 
     void SosGuiOutfit::UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable,

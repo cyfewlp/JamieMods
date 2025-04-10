@@ -5,8 +5,8 @@
 #include "Translation.h"
 #include "common/config.h"
 #include "data/SosUiOutfit.h"
-#include "gui/SosDataCoordinator.h"
 #include "gui/Popup.h"
+#include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
@@ -41,11 +41,13 @@ namespace LIBC_NAMESPACE_DECL
 
     public:
         explicit SosGuiOutfit(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
-            : m_armorListTable( TableContext<3>::Create("##OutfitArmors", {"$SosGui_TableHeader_Slot", "$ARMOR", "$Delete"})),
-              m_armorCandidatesTable( TableContext<3>::Create("##ArmorCandidates", {"$ARMOR", "$SosGui_TableHeader_Slot", "$Add"})),
+            : m_armorListTable(
+                  TableContext<3>::Create("##OutfitArmors", {"$SosGui_TableHeader_Slot", "$ARMOR", "$Delete"})),
+              m_armorCandidatesTable(
+                  TableContext<3>::Create("##ArmorCandidates", {"$ARMOR", "$SosGui_TableHeader_Slot", "$Add"})),
               m_uiData(uiData), m_dataCoordinator(dataCoordinator)
         {
-            m_armorListTable.Resizable().Sortable().SizingStretchProp();
+            m_armorListTable.Resizable().SizingStretchProp();
             m_armorCandidatesTable.Resizable().Sortable();
         }
 
@@ -72,6 +74,7 @@ namespace LIBC_NAMESPACE_DECL
         void RenderEditPanelPolicy(SosUiOutfit &editingOutfit);
         void RenderOutfitAddPolicyById(SosUiOutfit &editingOutfit, const bool &fFilterPlayable) const;
 
+        void SortArmorCandidates(ImGuiTableSortSpecs* sort_specs);
         void UpdateArmorCandidates(const std::string_view &filterString, bool mustBePlayable, OutfitAddPolicy policy);
         void UpdateArmorCandidatesBySlot(Slot slot);
         void UpdateArmorCandidatesForAny(const std::string_view &filterString, bool mustBePlayable);

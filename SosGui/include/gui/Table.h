@@ -12,12 +12,43 @@ namespace LIBC_NAMESPACE_DECL
     template <size_t Columns>
     class TableContext
     {
-        std::string_view                      m_name;
-        ImGuiTableFlags                       m_flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
-        std::array<std::string_view, Columns> m_headers;
+        std::string                      m_name;
+        ImGuiTableFlags                  m_flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
+        std::array<std::string, Columns> m_headers;
 
     public:
-        TableContext(std::string_view name, std::array<std::string_view, Columns> &headers)
+        struct ColumnContext
+        {
+            std::string            colName;
+            ImGuiTableColumnFlags  flags;
+            TableContext<Columns> &context;
+
+            ColumnContext(const std::string &colName, TableContext<Columns> &context)
+                : colName(colName), context(context)
+            {
+                flags = ImGuiTableColumnFlags_None;
+            }
+
+            constexpr auto DefaultSort() -> ColumnContext &
+            {
+                flags |= ImGuiTableColumnFlags_DefaultSort;
+                return *this;
+            }
+
+            constexpr auto NoSort() -> ColumnContext &
+            {
+                flags |= ImGuiTableColumnFlags_NoSort;
+                return *this;
+            }
+
+            constexpr auto Setup() -> TableContext &
+            {
+                ImGui::TableSetupColumn(colName.data(), flags);
+                return context;
+            }
+        };
+
+        TableContext(std::string &name, std::array<std::string, Columns> &headers)
             : m_name(name), m_headers(std::move(headers))
         {
         }
@@ -25,7 +56,18 @@ namespace LIBC_NAMESPACE_DECL
         auto Begin() -> bool;
         void HeadersRow();
 
-        constexpr auto GetHeader(size_t col) const -> const std::string_view &
+        constexpr auto Column(size_t colIdx) -> ColumnContext
+        {
+            const auto &name = m_headers.at(colIdx);
+            return ColumnContext(name, *this);
+        }
+
+        constexpr auto GetColumns() const -> size_t
+        {
+            return Columns;
+        }
+
+        constexpr auto GetHeader(size_t col) const -> const std::string &
         {
             return m_headers.at(col);
         }
@@ -57,7 +99,7 @@ namespace LIBC_NAMESPACE_DECL
         static auto Create(const std::string_view &&nameKey, std::array<std::string_view, Columns> &&headerKey)
             -> TableContext
         {
-            std::array<std::string_view, Columns> headers;
+            std::array<std::string, Columns> headers;
 
             auto name = Translation::TranslateNoCache(nameKey.data());
             int  idx  = 0;
