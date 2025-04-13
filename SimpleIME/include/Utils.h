@@ -5,33 +5,12 @@
 #ifndef GAMESTRINGSENDER_H
 #define GAMESTRINGSENDER_H
 
+#include "RE/GFxCharEvent.h"
 #include "common/log.h"
 
 #include "core/State.h"
 #include "hooks/UiHooks.h"
 #include "ime/ImeManagerComposer.h"
-
-#include <string>
-
-namespace RE
-{
-    class GFxCharEvent : public RE::GFxEvent
-    {
-    public:
-        GFxCharEvent() = default;
-
-        explicit GFxCharEvent(UINT32 a_wcharCode, UINT8 a_keyboardIndex = 0)
-            : GFxEvent(EventType::kCharEvent), wcharCode(a_wcharCode), keyboardIndex(a_keyboardIndex)
-        {
-        }
-
-        // @members
-        std::uint32_t wcharCode{};     // 04
-        std::uint32_t keyboardIndex{}; // 08
-    };
-
-    static_assert(sizeof(GFxCharEvent) == 0x0C);
-}
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -90,42 +69,8 @@ namespace LIBC_NAMESPACE_DECL
                 return result;
             }
 
-            static auto PasteText(HWND hWnd) -> bool
-            {
-                bool result = false;
-                if (::OpenClipboard(hWnd))
-                {
-                    bool unicode = IsClipboardFormatAvailable(CF_UNICODETEXT) != FALSE;
-                    bool utf8    = IsClipboardFormatAvailable(CF_TEXT) != FALSE;
-                    if (unicode || utf8)
-                    {
-                        if (HANDLE handle = GetClipboardData(unicode ? CF_UNICODETEXT : CF_TEXT); handle != nullptr)
-                        {
-                            if (auto const textData = static_cast<LPTSTR>(GlobalLock(handle)); textData != nullptr)
-                            {
-                                bool prev = Hooks::UiHooks::IsEnableMessageFilter();
-                                Hooks::UiHooks::EnableMessageFilter(true);
-                                if (unicode)
-                                {
-                                    SendStringToGame(std::wstring(textData));
-                                }
-                                else
-                                {
-                                    SendStringToGame(std::string(reinterpret_cast<LPSTR>(textData)));
-                                }
-                                Hooks::UiHooks::EnableMessageFilter(prev);
-                                GlobalUnlock(handle);
-                                result = true;
-                            }
-                        }
-                    }
-                    CloseClipboard();
-                }
-                return result;
-            }
-
             template <typename String>
-            static void SendStringToGame(const String &sourceString)
+            static void SendStringToGame(String &&sourceString)
             {
                 log_debug("Ready result string to Skyrim...");
                 auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
