@@ -52,7 +52,7 @@ namespace LIBC_NAMESPACE_DECL
         m_slotMask.reset(slot);
     }
 
-    auto SosUiOutfit::GetArmorAt(uint32_t slotPos) -> Armor *
+    auto SosUiOutfit::GetArmorAt(uint32_t slotPos) const -> Armor *
     {
         if (slotPos == 0 || slotPos >= SLOT_COUNT)
         {

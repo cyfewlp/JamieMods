@@ -1,6 +1,4 @@
 #include "gui/Popup.h"
-#include "SosGui.h"
-#include "gui/SosGuiOutfit.h"
 
 #include "ImGuiUtil.h"
 #include "SosDataType.h"
@@ -34,8 +32,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 continue;
             }
-            auto line        = std::string(lineStrView);
-            auto textSize    = ImGui::CalcTextSize(line.data());
+            auto line     = std::string(lineStrView);
+            auto textSize = ImGui::CalcTextSize(line.data());
             if (contentWidth > textSize.x)
             {
                 ImGui::SetCursorPosX((contentWidth - textSize.x) * 0.5F);
@@ -66,11 +64,12 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    auto Popup::DeleteOutfitPopup::Render(const std::string &outfitName) -> bool
+    auto Popup::DeleteOutfitPopup::Render(const std::string &outfitName, bool &isConfirmed) -> bool
     {
+        isConfirmed = false;
         if (!PreRender())
         {
-            return m_fConfirmed;
+            return false;
         }
 
         auto message = Translation::Translate(messageKey.data(), true, outfitName);
@@ -79,7 +78,8 @@ namespace LIBC_NAMESPACE_DECL
         RenderConfirmButtons();
 
         ImGui::EndPopup();
-        return m_fConfirmed;
+        isConfirmed = m_fConfirmed;
+        return m_fLastClosed;
     }
 
     auto Popup::ConflictArmorPopup::Render(Armor *armor) -> bool

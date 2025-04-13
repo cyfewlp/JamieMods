@@ -15,6 +15,7 @@
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "imgui_internal.h"
 #include "spdlog/spdlog.h"
 
 #include <array>
@@ -176,6 +177,7 @@ namespace
     void           OnStatusbarSize(HWND hWnd, UINT state, int cx, int cy);
     void           RenderSettings();
     void           ShowToolWindow();
+    void           RenderTileBarWindow();
     void           RenderToolWindow();
     bool           InitDirectInput() noexcept;
     bool           GetState() noexcept;
@@ -306,36 +308,20 @@ int main(int, char **)
             ImGui::Checkbox("Another Window", &show_another_window);
             ImGui::EndGroup();
 
+            if (ImGui::BeginChild("First Child Window"))
+            {
+                ImGui::Text("Text in child 1");
+                ImGui::Text("Text in child 2");
+                ImGui::Text("Text in child 3");
+            }
+            ImGui::EndChild();
+
             static char buf[64] = "";
             ImGui::InputText("UTF-8 input", buf, IM_ARRAYSIZE(buf));
             ImGui::End();
         }
 
-        ImGui::Begin("Candidate");
-        auto &style = ImGui::GetStyle();
-        auto color = style.Colors[ImGuiCol_FrameBgActive];
-
-        ImDrawList * drawList = ImGui::GetWindowDrawList();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {10.0f, 10.0f});
-        ImGui::Text("1. ni");
-        ImGui::SameLine();
-
-        ImVec2 cursorPos = ImGui::GetCursorScreenPos();
-        cursorPos.x -=  style.ItemSpacing.x / 2;
-        cursorPos.y -=  style.ItemSpacing.y / 2;
-        auto width = ImGui::CalcTextSize("2. wo").x;
-        drawList->AddRectFilled(cursorPos,
-            cursorPos + ImVec2(width + style.ItemSpacing.x, ImGui::GetTextLineHeight() + style.ItemSpacing.y),
-            ImColor(color));
-        ImGui::Text("2. wo");
-        ImGui::SameLine();
-
-        ImGui::Text("3. ta");
-        ImGui::SameLine();
-        ImGui::PopStyleVar();
-        ImGui::End();
-
+        RenderTileBarWindow();
         RenderToolWindow();
 
         ImGui::PopFont();
@@ -568,6 +554,134 @@ namespace
         return SUCCEEDED(hresult);
     }
 
+    bool TagTabButton(const char* label, bool* p_open, bool selected, const ImVec2& size_arg = ImVec2(0, 0)) {
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return false;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+    const ImGuiID id = window->GetID(label);
+    const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+    // 主按钮区域计算
+    ImVec2 pos = window->DC.CursorPos;
+    ImVec2 size = ImGui::CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
+
+    // 为关闭按钮预留空间
+    const float close_button_size_base = g.FontSize * 0.5f;
+    const float close_button_padding = 2.0f;
+    size.x += close_button_size_base + close_button_padding + style.ItemSpacing.x;
+
+    // 添加主按钮到布局
+    const ImRect bb(pos, pos + size);
+    ImGui::ItemSize(bb, style.FramePadding.y);
+    if (!ImGui::ItemAdd(bb, id)) return false;
+
+    // 主按钮交互逻辑
+    bool main_hovered, main_held;
+    bool main_pressed = ImGui::ButtonBehavior(bb, id, &main_hovered, &main_held);
+
+    // 绘制主按钮背景
+    ImU32 bg_col = selected ? 
+        ImGui::GetColorU32(ImGuiCol_TabActive) : 
+        (main_hovered ? ImGui::GetColorU32(ImGuiCol_TabHovered) : ImGui::GetColorU32(ImGuiCol_Tab));
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, bg_col, style.FrameRounding);
+
+    // 绘制边框
+    if (selected || main_hovered) {
+        ImU32 border_col = selected ? ImGui::GetColorU32(ImGuiCol_Border) : ImGui::GetColorU32(ImGuiCol_TabHovered);
+        window->DrawList->AddRect(bb.Min, bb.Max, border_col, style.FrameRounding, 0, 1.0f);
+    }
+
+    // 绘制标签文本
+    ImVec2 text_pos = pos + style.FramePadding;
+    ImGui::RenderText(text_pos, label);
+
+    // --- 关闭按钮逻辑修复 ---
+    bool close_clicked = false;
+    if (p_open) {
+        // 生成唯一 ID
+        ImGuiID close_id = window->GetID(label);
+        close_id = ImHashStr("#CLOSE", 0, close_id);
+
+        // 计算关闭按钮区域
+        const ImVec2 close_button_size(close_button_size_base, close_button_size_base);
+        const ImVec2 close_button_offset(
+            bb.Max.x - close_button_size.x - style.FramePadding.x - close_button_padding,
+            bb.Min.y + (bb.GetHeight() - close_button_size.y) * 0.5f
+        );
+        const ImRect close_bb(close_button_offset, close_button_offset + close_button_size);
+
+        // 添加关闭按钮交互区域
+        ImGui::ItemAdd(close_bb, close_id);
+
+        // 处理关闭按钮交互
+        bool close_hovered, close_held;
+        bool close_pressed = ImGui::ButtonBehavior(close_bb, close_id, &close_hovered, &close_held);
+
+        // 点击逻辑：在鼠标释放时触发关闭
+        if (close_pressed && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            *p_open = false;
+            close_clicked = true;
+        }
+
+        // 绘制 "×" 图标
+        const ImU32 col = close_hovered ? 
+            ImGui::GetColorU32(ImGuiCol_ButtonHovered) : 
+            ImGui::GetColorU32(ImGuiCol_Text);
+        const float thickness = 1.5f;
+        const ImVec2 center = close_bb.GetCenter();
+        window->DrawList->AddLine(
+            center + ImVec2(-close_button_size_base*0.3f, -close_button_size_base*0.3f),
+            center + ImVec2( close_button_size_base*0.3f,  close_button_size_base*0.3f),
+            col, thickness
+        );
+        window->DrawList->AddLine(
+            center + ImVec2( close_button_size_base*0.3f, -close_button_size_base*0.3f),
+            center + ImVec2(-close_button_size_base*0.3f,  close_button_size_base*0.3f),
+            col, thickness
+        );
+    }
+
+    return main_pressed && !close_clicked;
+}
+
+    void RenderTileBarWindow()
+    {
+        if (ImGui::BeginCombo("Combo1", "combo1 v1", ImGuiComboFlags_HeightRegular))
+        {
+            ImGui::Selectable("combo1 v2");
+            ImGui::Selectable("combo1 v3");
+            ImGui::Selectable("combo1 v2");
+            ImGui::Selectable("combo1 v3");
+            ImGui::Selectable("combo1 v2");
+            ImGui::Selectable("combo1 v3");
+            ImGui::EndCombo();
+        }
+        // 在 ImGui 窗口中调用
+        static bool tag1_open    = true;
+        static bool tag2_open    = true;
+        static int  selected_tag = 0;
+        // 标签1
+        if (tag1_open)
+        {
+            if (TagTabButton("Document 1", &tag1_open, selected_tag == 0))
+            {
+                selected_tag = 0;
+            }
+            ImGui::SameLine();
+        }
+        // 标签2
+        if (tag2_open)
+        {
+            if (TagTabButton("Settings", &tag2_open, selected_tag == 1))
+            {
+                selected_tag = 1;
+            }
+            ImGui::SameLine();
+        }
+    }
+
     void RenderToolWindow()
     {
         if (!g_fShowToolWindow)
@@ -598,12 +712,17 @@ namespace
         static uint8_t selectedProfileIdx = 0;
         const char    *previewImeName     = fakeLangProfiles[selectedProfileIdx].data();
         ImGui::SameLine();
-        if (ImGui::BeginCombo("###InstalledIME", previewImeName))
+        if (ImGui::BeginTable("###InstalledIME", 3))
         {
             uint8_t idx = 0;
             for (const std::string_view langProfile : fakeLangProfiles)
             {
-                if (ImGui::Selectable(langProfile.data()))
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("1st column");
+                ImGui::TableNextColumn();
+                if (ImGui::Selectable(langProfile.data(), selectedProfileIdx == idx,
+                                      ImGuiSelectableFlags_SpanAllColumns))
                 {
                     selectedProfileIdx = idx;
                 }
@@ -611,9 +730,11 @@ namespace
                 {
                     ImGui::SetItemDefaultFocus();
                 }
+                ImGui::TableNextColumn();
+                ImGui::Text("3rd column");
                 idx++;
             }
-            ImGui::EndCombo();
+            ImGui::EndTable();
         }
         ImGui::SameLine();
 
@@ -638,7 +759,7 @@ namespace
         ImGui::Begin("Settings", &CollapseVisible, ImGuiWindowFlags_AlwaysAutoResize);
         {
             ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-            if (ImGui::BeginTable("SettingsTable", 3))
+            if (ImGui::BeginTable("SettingsTable", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders))
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();

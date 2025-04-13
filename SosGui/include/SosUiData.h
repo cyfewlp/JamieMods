@@ -9,6 +9,7 @@
 
 #include "SosDataType.h"
 #include "common/config.h"
+#include "data/PagedArmorList.h"
 #include "data/SosUiOutfit.h"
 
 #include <RE/A/Actor.h>
@@ -25,26 +26,53 @@ namespace LIBC_NAMESPACE_DECL
     class SosUiData
     {
     public:
-        using Armor         = RE::TESObjectARMO;
-        using BodySlot      = int32_t;
-        using OutfitState   = std::pair<StateType, std::string>;
-        using BodySlotArmor = std::pair<BodySlot, Armor *>;
+        using Armor               = RE::TESObjectARMO;
+        using BodySlot            = int32_t;
+        using OutfitState         = std::pair<StateType, std::string>;
+        using BodySlotArmor       = std::pair<BodySlot, Armor *>;
+        using OutfitList          = std::list<SosUiOutfit>;
+        using OutfitConstIterator = std::list<SosUiOutfit>::const_iterator;
+        using OutfitIterator      = std::list<SosUiOutfit>::iterator;
+
+        static constexpr uint8_t DEFAULT_PAGE_SIZE = 20;
 
     private:
         std::vector<RE::Actor *>                     m_actors;
         std::vector<RE::Actor *>                     m_NearActors;
         bool                                         m_enabled           = false;
         bool                                         m_fQuickSlotEnabled = false;
-        std::vector<RE::TESObjectARMO *>             m_armorCandidates;
-        std::vector<RE::TESObjectARMO *>             m_armorCandidatesCopy;
+        PagedArmorList                               m_armorCandidates{DEFAULT_PAGE_SIZE};
         std::unordered_map<RE::Actor *, std::string> m_actorActiveOutfitMap;
-        std::unordered_map<std::string, SosUiOutfit> m_outfitMap;
+        OutfitList                                   m_outfitList;
         std::list<std::string>                       m_errorMessages;
 
         std::unordered_map<RE::Actor *, bool>                                       m_autoSwitchEnabled;
         std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> m_actorOutfitStates;
 
+        std::queue<std::function<void(SosUiData &uiData)>> uiTasks;
+        std::mutex                                         m_mutex;
+
     public:
+        void PushTask(std::function<void(SosUiData &uiData)> &&task)
+        {
+            std::lock_guard lock(m_mutex);
+            uiTasks.push(std::move(task));
+        }
+
+        void ExecuteUiTasks()
+        {
+            std::queue<std::function<void(SosUiData & uiData)>> localQueue;
+            {
+                std::lock_guard lock(m_mutex);
+                localQueue.swap(uiTasks);
+            }
+            while (!localQueue.empty())
+            {
+                localQueue.front()(*this);
+                localQueue.pop();
+            }
+        }
+
         [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
         {
             return m_actors;
@@ -66,7 +94,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void AddActor(RE::Actor *actor)
         {
-            if (actor != nullptr && std::find(m_actors.begin(), m_actors.end(), actor) == m_actors.end())
+            if (actor != nullptr && std::ranges::find(m_actors, actor) == m_actors.end())
             {
                 m_actors.push_back(actor);
             }
@@ -146,38 +174,36 @@ namespace LIBC_NAMESPACE_DECL
             return stateMap.contains(state) ? stateMap.at(state) : empty;
         }
 
-        [[nodiscard]] constexpr auto GetArmorCandidates() -> std::vector<RE::TESObjectARMO *> &
+        ////////////////////////////////////////////////////////////////////////////
+        // Candidate Armor
+        ////////////////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] constexpr auto GetArmorCandidates() -> PagedArmorList &
         {
             return m_armorCandidates;
         }
 
-        [[nodiscard]] constexpr auto GetArmorCandidatesCopy() -> std::vector<RE::TESObjectARMO *> &
+        void MarkArmorIsUsed(Armor *armor)
         {
-            return m_armorCandidatesCopy;
+            m_armorCandidates.Insert(armor, true);
+        }
+
+        void MarkArmorIsUnused(Armor *armor)
+        {
+            m_armorCandidates.Insert(armor, false);
         }
 
         void DeleteCandidateArmor(Armor *armor)
         {
-            std::erase(m_armorCandidatesCopy, armor);
+            m_armorCandidates.Remove(armor);
         }
 
         void SetArmorCandidates(const std::vector<Armor *> &armorCandidates)
         {
-            m_armorCandidates.clear();
-            m_armorCandidatesCopy.clear();
-            for (const auto &outfit : armorCandidates)
+            m_armorCandidates.Clear();
+            for (const auto &armor : armorCandidates)
             {
-                m_armorCandidates.push_back(outfit);
-                m_armorCandidatesCopy.push_back(outfit);
-            }
-        }
-
-        void ResetArmorCandidatesCopy()
-        {
-            m_armorCandidatesCopy.clear();
-            for (const auto &outfit : m_armorCandidates)
-            {
-                m_armorCandidatesCopy.push_back(outfit);
+                m_armorCandidates.Insert(armor);
             }
         }
 
@@ -185,49 +211,70 @@ namespace LIBC_NAMESPACE_DECL
         // SosUiOutfit
         ////////////////////////////////////////////////////////////////////////////
 
-        void AddOutfit(const std::string &outfitName)
+        void AddOutfit(const std::string &&outfitName)
         {
-            m_outfitMap.emplace(outfitName, SosUiOutfit(outfitName));
+            m_outfitList.push_back(SosUiOutfit(outfitName));
         }
 
-        void RenameOutfit(std::string &&outfitName, std::string &&newName)
+        void AddOutfits(auto &&container)
         {
-            if (m_outfitMap.contains(outfitName))
+            for (const auto &outfit : container)
             {
-                auto &outfit = m_outfitMap.at(outfitName);
-                m_outfitMap.erase(outfitName);
-                outfit.SetName(newName);
-                m_outfitMap.at(newName) = outfit;
+                m_outfitList.emplace_back(outfit);
             }
         }
 
-        void DeleteOutfit(const std::string &outfitName)
+        void RenameOutfit(const OutfitIterator &where, const std::string &&newName)
         {
-            m_outfitMap.erase(outfitName);
-        }
-
-        void AddArmor(const std::string &&outfitName, Armor *armor)
-        {
-            if (m_outfitMap.contains(outfitName))
+            if (where != m_outfitList.end())
             {
-                auto &outfit = m_outfitMap.at(outfitName);
-                outfit.AddArmor(armor);
+                where->SetName(newName);
             }
         }
 
-        void DeleteArmor(const std::string &&outfitName, Armor *armor)
+        void AddArmor(const OutfitIterator &where, Armor *armor)
         {
-            if (m_outfitMap.contains(outfitName))
+            if (where != m_outfitList.end())
             {
-                auto &outfit = m_outfitMap.at(outfitName);
-                outfit.RemoveArmor(armor);
+                where->AddArmor(armor);
             }
         }
 
-        [[nodiscard]] auto GetOutfitMap() -> std::unordered_map<std::string, SosUiOutfit> &
+        void AddArmors(const OutfitIterator &where, const std::vector<Armor *> &armors)
         {
-            return m_outfitMap;
+            if (where != m_outfitList.end())
+            {
+                for (const auto &armor : armors)
+                {
+                    where->AddArmor(armor);
+                }
+            }
         }
+
+        void DeleteOutfit(const OutfitConstIterator &where)
+        {
+            if (where != m_outfitList.cend())
+            {
+                m_outfitList.erase(where);
+            }
+        }
+
+        void DeleteArmor(const OutfitIterator &where, const Armor *armor)
+        {
+            if (where != m_outfitList.end())
+            {
+                where->RemoveArmor(armor);
+            }
+        }
+
+        [[nodiscard]] constexpr auto GetOutfitList() -> std::list<SosUiOutfit> &
+        {
+            return m_outfitList;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        // Active outfit
+        ////////////////////////////////////////////////////////////////////////////
 
         [[nodiscard]] auto GetActorActiveOutfitMap() const -> const std::unordered_map<RE::Actor *, std::string> &
         {
@@ -239,12 +286,12 @@ namespace LIBC_NAMESPACE_DECL
             m_actorActiveOutfitMap[actor] = outfitName;
         }
 
-        auto HasActiveOutfit(RE::Actor *actor) -> bool
+        auto HasActiveOutfit(RE::Actor *actor) const -> bool
         {
             return m_actorActiveOutfitMap.contains(actor) && !m_actorActiveOutfitMap.at(actor).empty();
         }
 
-        auto IsActorActiveOutfit(RE::Actor *actor, const std::string &outfitName) -> bool
+        auto IsActorActiveOutfit(RE::Actor *actor, const std::string &outfitName) const -> bool
         {
             return m_actorActiveOutfitMap.contains(actor) && m_actorActiveOutfitMap.at(actor) == outfitName;
         }

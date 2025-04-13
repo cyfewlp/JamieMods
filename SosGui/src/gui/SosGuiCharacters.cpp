@@ -61,8 +61,8 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::TableNextColumn();
                 if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
                 {
-                    m_editingActor = selectedIdx != idx ? actor : nullptr;
-                    selectedIdx    = selectedIdx != idx ? idx : -1;
+                    m_context.editingActor = selectedIdx != idx ? actor : nullptr;
+                    selectedIdx            = selectedIdx != idx ? idx : -1;
                 }
 
                 ImGui::TableNextColumn();
@@ -149,7 +149,7 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::TableNextColumn();
             auto key        = std::format("$SkyOutSys_Text_Autoswitch{}", stateV);
-            bool isSelected = state == m_editingAutoSwitchState;
+            bool isSelected = state == m_context.editingState;
             auto flags      = ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_SpanAllColumns;
             if (ImGuiUtil::Selectable(key.c_str(), isSelected, flags))
             {
@@ -157,7 +157,7 @@ namespace LIBC_NAMESPACE_DECL
                 {
                     m_dataCoordinator.RequestActorStateOutfit(currentActor, state);
                 }
-                m_editingAutoSwitchState = isSelected ? StateType::None : state;
+                m_context.editingState = isSelected ? StateType::None : state;
             }
 
             ImGui::TableNextColumn();
@@ -171,8 +171,8 @@ namespace LIBC_NAMESPACE_DECL
     {
         static auto NONE_STATE = Translation::Translate("$SkyOutSys_AutoswitchEdit_None");
 
-        auto &outfitName = m_uiData.GetActorOutfitByState(m_editingActor, state);
-        auto  flags      = ImGuiComboFlags_HeightRegular | ImGuiComboFlags_HeightRegular;
+        auto &outfitName = m_uiData.GetActorOutfitByState(m_context.editingActor, state);
+        auto  flags      = ImGuiComboFlags_HeightRegular;
         auto &preview    = outfitName.empty() ? NONE_STATE : outfitName;
         if (!ImGui::BeginCombo("##OutfitListCombo", preview.c_str(), flags))
         {
@@ -183,21 +183,20 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (!outfitName.empty())
             {
-                m_dataCoordinator.RequestSetActorStateOutfit(m_editingActor, state, "");
+                m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state, "");
             }
         }
 
-        auto &outfitMap = m_uiData.GetOutfitMap();
-        int   idx       = 0;
-        for (const auto &pair : outfitMap)
+        int idx = 0;
+        for (const auto &outfit : m_uiData.GetOutfitList())
         {
             ImGui::PushID(idx);
-            bool isSelected = outfitName == pair.first;
-            if (ImGui::Selectable(pair.first.c_str(), isSelected))
+            bool isSelected = outfitName == outfit.GetName();
+            if (ImGui::Selectable(outfit.GetName().c_str(), isSelected))
             {
                 if (!isSelected)
                 {
-                    m_dataCoordinator.RequestSetActorStateOutfit(m_editingActor, state, pair.first);
+                    m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state, outfit.GetName());
                 }
             }
             if (isSelected)

@@ -10,8 +10,8 @@
 #include "imgui_impl_win32.h"
 
 #include <RE/R/Renderer.h>
+#include <array>
 #include <d3d11.h>
-#include <format>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -83,6 +83,7 @@ namespace LIBC_NAMESPACE_DECL
 
         TrySetAllowTextInput();
 
+        m_uiData.ExecuteUiTasks();
         DoRender();
 
         ImGui::Render();
@@ -114,7 +115,9 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::Refresh() -> void
     {
+        log_debug("RequestOutfitList thread-id {}", std::this_thread::get_id());
         m_dataCoordinator.Refresh();
+        m_outfitListTable.Refresh();
     }
 
     auto SosGui::DoRender() -> void
@@ -144,13 +147,10 @@ namespace LIBC_NAMESPACE_DECL
 
             auto  &style     = ImGui::GetStyle();
             ImVec2 childSize = {(ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5F, 0.0F};
-            RenderLocationBasedAutoswitch(m_editingActor, childSize);
+            RenderLocationBasedAutoswitch(m_context.editingActor, childSize);
             ImGui::SameLine();
-            RenderOutfitConfiguration(childSize);
 
-            RenderEditingOutfit();
-
-            RenderPopups();
+            m_outfitListTable.Render(m_context, childSize);
         }
         ImGui::End();
     }
@@ -207,174 +207,18 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
     }
 
-    void SosGui::RenderOutfitConfiguration(const ImVec2 &childSize)
-    {
-        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", childSize, ImGuiChildFlags_AutoResizeY))
-        {
-            static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
-            ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
-
-            ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
-            if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
-            {
-                m_dataCoordinator.RequestCreateOutfit(outfitNameBuf.data());
-            }
-
-            ImGui::SameLine();
-            if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
-            {
-                m_dataCoordinator.RequestCreateOutfitFromWorn(outfitNameBuf.data());
-            }
-            ImGui::EndDisabled();
-
-            if (ImGuiUtil::Button("$SosGui_Refresh{$SkyOutSys_MCM_OutfitList}"))
-            {
-                m_dataCoordinator.RequestOutfitList();
-            }
-            auto &outfitMap = m_uiData.GetOutfitMap();
-            if (outfitMap.empty())
-            {
-                ImGuiUtil::TextScale("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}", HintFontSize());
-            }
-            static int selectedIdx = -1;
-
-            if (m_outfitListTable.Begin())
-            {
-                m_outfitListTable.HeadersRow();
-                int idx = 0;
-                for (auto &pair : outfitMap)
-                {
-                    ImGuiUtil::PushIdGuard idguard(idx);
-                    ImGui::TableNextRow();
-
-                    const auto &outfitName = pair.first;
-                    ImGui::TableNextColumn();
-                    bool const isSelected = selectedIdx == idx;
-                    if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
-                    {
-                        selectedIdx = selectedIdx != idx ? idx : -1;
-                    }
-                    RenderOutfitListContextMenu(pair.second);
-                    ++idx;
-                }
-                ImGui::EndTable();
-            }
-        }
-        ImGui::EndChild();
-    }
-
-    void SosGui::RenderEditingOutfit()
-    {
-        if (m_editingOutfit == nullptr)
-        {
-            return;
-        }
-        if (!m_guiOutfit.Render(*m_editingOutfit))
-        {
-            m_editingOutfit = nullptr;
-        }
-    }
-
-    void SosGui::RenderOutfitListContextMenu(SosUiOutfit &outfit)
-    {
-        if (ImGui::BeginPopupContextItem())
-        {
-            m_selectedOutfit         = &outfit;
-            const auto &outfitName   = outfit.GetName();
-            auto        menuItemName = Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName);
-            if (ImGui::MenuItem(menuItemName.c_str()))
-            {
-                OnAcceptEditingOutfit(outfit);
-            }
-            ImGui::Separator();
-            ImGui::BeginDisabled(m_editingActor == nullptr);
-            if (m_editingActor == nullptr)
-            {
-                ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
-            }
-            const auto *actorName = m_editingActor != nullptr ? m_editingActor->GetName() : "";
-            ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
-            if (m_uiData.IsActorActiveOutfit(m_editingActor, outfitName))
-            {
-                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
-                {
-                    ContextMenuSetActorActiveOutfit("");
-                }
-            }
-            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
-            {
-                ContextMenuSetActorActiveOutfit(outfitName);
-            }
-            ImGui::BeginDisabled(m_editingAutoSwitchState == StateType::None);
-            if (ImGui::MenuItem("AutoSwitch: Use this outfit"))
-            {
-                OnAcceptOutfitForState(outfit.GetName());
-            }
-            ImGui::EndDisabled();
-            ImGui::EndDisabled();
-            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
-            {
-                m_DeleteOutfitPopup.Open();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Close"))
-            {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-    }
-
-    void SosGui::ContextMenuSetActorActiveOutfit(std::string outfitName)
-    {
-        ImGui::CloseCurrentPopup();
-        m_dataCoordinator.RequestActiveOutfit(m_editingActor, outfitName, [this]() {
-            RefreshCurrentActorArmor();
-        });
-    }
-
-    void SosGui::RenderPopups()
-    {
-        if (m_selectedOutfit != nullptr)
-        {
-            if (m_DeleteOutfitPopup.Render(m_selectedOutfit->GetName()))
-            {
-                m_dataCoordinator.RequestDeleteOutfit(m_selectedOutfit->GetName());
-            }
-        }
-        if (m_DeleteOutfitPopup.IsLastClosed())
-        {
-            m_selectedOutfit = nullptr;
-        }
-    }
-
     void SosGui::RefreshCurrentActorArmor()
     {
-        if (m_editingActor != nullptr && m_editingActor->GetActorRuntimeData().currentProcess != nullptr)
+        if (m_context.editingActor != nullptr &&
+            m_context.editingActor->GetActorRuntimeData().currentProcess != nullptr)
         {
-            if (auto *currentProcess = m_editingActor->GetActorRuntimeData().currentProcess; currentProcess != nullptr)
+            if (auto *currentProcess = m_context.editingActor->GetActorRuntimeData().currentProcess;
+                currentProcess != nullptr)
             {
                 currentProcess->Set3DUpdateFlag(RE::RESET_3D_FLAGS::kModel);
-                m_editingActor->Update3DModel();
+                m_context.editingActor->Update3DModel();
             }
         }
-    }
-
-    void SosGui::OnAcceptEditingOutfit(SosUiOutfit &outfit)
-    {
-        m_editingOutfit = &outfit;
-        m_dataCoordinator.RequestOutfitArmors(outfit.GetName());
-        m_guiOutfit.ShowWindow(outfit.GetName());
-    }
-
-    void SosGui::OnAcceptOutfitForState(const std::string &outfitName)
-    {
-        if (m_editingActor == nullptr || m_editingAutoSwitchState == StateType::None)
-        {
-            return;
-        }
-
-        m_dataCoordinator.RequestSetActorStateOutfit(m_editingActor, m_editingAutoSwitchState, outfitName);
     }
 
     auto SosGui::EnableQuickslot(bool enable) -> bool

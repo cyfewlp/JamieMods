@@ -31,6 +31,12 @@ namespace LIBC_NAMESPACE_DECL
             return ImGui::Checkbox(g_widgetName.c_str(), isChecked);
         }
 
+        static constexpr auto CheckBox(std::string &name, bool *isChecked) -> bool
+        {
+            Translation::Translate(name.c_str(), g_widgetName);
+            return ImGui::Checkbox(g_widgetName.c_str(), isChecked);
+        }
+
         template <size_t Size>
         constexpr auto InputText(const char *name, std::array<char, Size> &inputBuf) -> bool
         {

@@ -10,11 +10,11 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    struct CoroutineTask
+    struct CoroutinePromise
     {
         struct promise_type
         {
-            static CoroutineTask get_return_object()
+            static CoroutinePromise get_return_object()
             {
                 return {};
             }
@@ -51,35 +51,35 @@ namespace LIBC_NAMESPACE_DECL
         {
         }
 
-        auto RequestEnable(bool isEnabled) -> CoroutineTask;
-        auto RequestImportSettings() -> CoroutineTask;
-        auto RequestExportSettings() -> CoroutineTask;
+        auto RequestEnable(bool isEnabled) const -> CoroutinePromise;
+        auto RequestImportSettings() -> CoroutinePromise;
+        auto RequestExportSettings() const -> CoroutinePromise;
 
-        auto RequestCreateOutfit(std::string outfitName) -> CoroutineTask;
-        auto RequestCreateOutfitFromWorn(std::string outfitName) -> CoroutineTask;
-        auto RequestOutfitList(OnComplete onComplete = {}) -> CoroutineTask;
-        auto RequestRenameOutfit(std::string outfitName, std::string newName) -> CoroutineTask;
-        auto RequestDeleteOutfit(std::string outfitName, OnComplete onComplete = {}) -> CoroutineTask;
-        auto RequestAddArmor(std::string outfitName, Armor *armor) -> CoroutineTask;
-        auto RequestDeleteArmor(std::string outfitName, Armor *armor) -> CoroutineTask;
-        auto RequestOutfitArmors(std::string outfitName) -> CoroutineTask;
+        auto RequestCreateOutfit(std::string outfitName) const -> CoroutinePromise;
+        auto RequestCreateOutfitFromWorn(std::string outfitName) const -> CoroutinePromise;
+        auto RequestOutfitList() const -> CoroutinePromise;
+        auto RequestRenameOutfit(SosUiData::OutfitIterator where, std::string newName) const -> CoroutinePromise;
+        auto RequestDeleteOutfit(SosUiData::OutfitConstIterator where) const -> CoroutinePromise;
+        auto RequestAddArmor(SosUiData::OutfitIterator where, Armor *armor) const -> CoroutinePromise;
+        auto RequestDeleteArmor(SosUiData::OutfitIterator where, Armor *armor) const -> CoroutinePromise;
+        auto RequestOutfitArmors(SosUiData::OutfitIterator where) const -> CoroutinePromise;
 
-        auto RequestGetArmorsByCarried() -> CoroutineTask;
-        auto RequestGetArmorsByWorn() -> CoroutineTask;
+        auto RequestGetArmorsByCarried() const -> CoroutinePromise;
+        auto RequestGetArmorsByWorn() const -> CoroutinePromise;
 
-        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) -> CoroutineTask;
-        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) -> CoroutineTask;
-        auto RequestActorStateOutfit(RE::Actor *actor, StateType location) -> CoroutineTask;
-        auto RequestSetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName) -> CoroutineTask;
+        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> CoroutinePromise;
+        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> CoroutinePromise;
+        auto RequestActorStateOutfit(RE::Actor *actor, StateType location) const -> CoroutinePromise;
+        auto RequestSetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName) const -> CoroutinePromise;
 
-        auto RequestActorList(OnComplete onComplete = {}) -> CoroutineTask;
-        auto RequestAddActor(RE::Actor *actor) -> CoroutineTask;
-        auto RequestRemoveActor(RE::Actor *actor) -> CoroutineTask;
-        auto RequestNearActorList() -> CoroutineTask;
-        auto RequestActiveOutfit(RE::Actor *actor, std::string outfitName, OnComplete onComplete = {}) -> CoroutineTask;
+        auto RequestActorList(OnComplete onComplete = {}) const -> CoroutinePromise;
+        auto RequestAddActor(RE::Actor *actor) const -> CoroutinePromise;
+        auto RequestRemoveActor(RE::Actor *actor) const -> CoroutinePromise;
+        auto RequestNearActorList() const -> CoroutinePromise;
+        auto RequestActiveOutfit(RE::Actor *actor, std::string outfitName, OnComplete onComplete = {}) const -> CoroutinePromise;
 
-        auto Refresh() -> CoroutineTask;
+        auto Refresh() -> CoroutinePromise;
 
-        auto HasQuickSlotSpell() -> bool;
+        static auto HasQuickSlotSpell() -> bool;
     };
 }

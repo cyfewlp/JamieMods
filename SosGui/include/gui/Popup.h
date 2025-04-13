@@ -56,7 +56,8 @@ namespace LIBC_NAMESPACE_DECL
                 popupNameKey = "$SosGui_PopupName_ConfirmDeleteOutfit";
             }
 
-            auto Render(const std::string &outfitName) -> bool;
+            // return true if this popup just closed;
+            auto Render(const std::string &outfitName, bool &isConfirmed) -> bool;
         };
 
         struct ConflictArmorPopup : MessagePopup

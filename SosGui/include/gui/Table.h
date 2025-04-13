@@ -41,6 +41,12 @@ namespace LIBC_NAMESPACE_DECL
                 return *this;
             }
 
+            constexpr auto WidthFixed() -> ColumnContext &
+            {
+                flags |= ImGuiTableColumnFlags_WidthFixed;
+                return *this;
+            }
+
             constexpr auto Setup() -> TableContext &
             {
                 ImGui::TableSetupColumn(colName.data(), flags);
@@ -90,9 +96,21 @@ namespace LIBC_NAMESPACE_DECL
             return *this;
         }
 
+        constexpr auto NoHostExtendY() -> TableContext &
+        {
+            m_flags |= ImGuiTableFlags_NoHostExtendY;
+            return *this;
+        }
+
         constexpr auto SizingStretchProp() -> TableContext &
         {
             m_flags |= ImGuiTableFlags_SizingStretchProp;
+            return *this;
+        }
+
+        constexpr auto SizingFixedFit() -> TableContext &
+        {
+            m_flags |= ImGuiTableFlags_SizingFixedFit;
             return *this;
         }
 
