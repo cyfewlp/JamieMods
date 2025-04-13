@@ -36,7 +36,7 @@ namespace LIBC_NAMESPACE_DECL
 
         struct ConsoleProcessMessageHook : public FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *, RE::UIMessage &)>
         {
-            explicit ConsoleProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(442669, 442669), ptr)
+            explicit ConsoleProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(50155, 442669), ptr)
             {
                 log_debug("{} hooked at {:#x}", __func__, m_address);
             }

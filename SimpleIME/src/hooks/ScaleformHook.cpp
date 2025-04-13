@@ -60,8 +60,16 @@ namespace LIBC_NAMESPACE_DECL
 
         void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged()
         {
-            auto newValue = ControlMap::GetSingleton()->allowTextInput;
-            auto oldValue = g_textEntryCount;
+            uint8_t newValue = 0;
+            uint8_t oldValue = g_textEntryCount;
+            if (REL::Module::IsAE())
+            {
+                newValue = ControlMap::GetSingleton()->allowTextInput;
+            }
+            else if (REL::Module::IsSE())
+            {
+                newValue = ControlMap::GetSingleton()->textEntryCount;
+            }
             if (newValue == oldValue)
             {
                 return;
