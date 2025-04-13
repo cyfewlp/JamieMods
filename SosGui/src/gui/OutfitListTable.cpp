@@ -1,22 +1,25 @@
 #include "gui/OutfitListTable.h"
 
+#include "GuiContext.h"
 #include "ImGuiUtil.h"
 #include "Translation.h"
 #include "imgui.h"
+
 #include <array>
+#include <utility>
 
 namespace LIBC_NAMESPACE_DECL
 {
     void OutfitListTable::Refresh()
     {
-        m_clickIt    = m_uiData.GetOutfitList().cend();
-        m_wantEditIt = m_uiData.GetOutfitList().end();
+        m_click    = DEFAULT_INVALID_PAIR;
+        m_wantEdit = DEFAULT_INVALID_PAIR;
     }
 
     void OutfitListTable::Close()
     {
-        m_clickIt    = m_uiData.GetOutfitList().cend();
-        m_wantEditIt = m_uiData.GetOutfitList().end();
+        m_click    = DEFAULT_INVALID_PAIR;
+        m_wantEdit = DEFAULT_INVALID_PAIR;
     }
 
     void OutfitListTable::Render(GuiContext &guiContext, ImVec2 childSize)
@@ -26,14 +29,13 @@ namespace LIBC_NAMESPACE_DECL
             RenderChildContent(guiContext);
         }
         // must out of BeginChild braces because when dock window, BeginChild will be return false;
-        auto &outfits = m_uiData.GetOutfitList();
-        if (m_clickIt != outfits.cend() && DeletePopup(m_clickIt))
+        if (IsValidOutfit(m_click) && DeletePopup(m_click))
         {
-            m_clickIt = outfits.cend();
+            m_click = DEFAULT_INVALID_PAIR;
         }
-        if (m_wantEditIt != outfits.end() && EditingPanel(m_wantEditIt))
+        if (IsValidOutfit(m_wantEdit) && EditingPanel(m_wantEdit))
         {
-            m_wantEditIt = outfits.end();
+            m_wantEdit = DEFAULT_INVALID_PAIR;
         }
         ImGui::EndChild();
     }
@@ -72,12 +74,12 @@ namespace LIBC_NAMESPACE_DECL
             m_outfitListTable.HeadersRow();
 
             int idx = 0;
-            for (auto iterator = outfits.begin(); iterator != outfits.end(); ++iterator)
+            for (auto &outfitPair : outfits)
             {
                 ImGuiUtil::PushIdGuard idGuard(idx);
                 ImGui::TableNextRow();
 
-                const auto &outfit     = *iterator;
+                const auto &outfit     = outfitPair.second;
                 const auto &outfitName = outfit.GetName();
                 ImGui::TableNextColumn();
                 bool const isSelected = selectedIdx == idx;
@@ -86,92 +88,91 @@ namespace LIBC_NAMESPACE_DECL
                     selectedIdx = selectedIdx != idx ? idx : -1;
                 }
                 bool acceptEdit = false;
-                if (OpenContextMenu(guiContext, iterator, acceptEdit))
+                if (OpenContextMenu(guiContext, outfitPair.second.GetName(), acceptEdit))
                 {
-                    m_clickIt = iterator;
+                    m_click = std::make_pair(outfitPair.first, &outfitPair.second);
                 }
                 if (acceptEdit)
                 {
-                    OnAcceptEditOutfit(iterator);
-                    m_wantEditIt = iterator;
+                    auto pair = std::make_pair(outfitPair.first, &outfitPair.second);
+                    OnAcceptEditOutfit(pair);
+                    m_wantEdit = pair;
                 }
             }
             ImGui::EndTable();
         }
     }
 
-    bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const SosUiData::OutfitConstIterator &selectIt,
-                                          bool &acceptEdit)
+    bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit)
     {
-        if (ImGui::BeginPopupContextItem())
+        if (!ImGui::BeginPopupContextItem())
         {
-            const auto &outfitName             = selectIt->GetName();
-            auto        menuItemEditOutfitName = Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName);
-            if (ImGui::MenuItem(menuItemEditOutfitName.c_str()))
+            return false;
+        }
+        auto menuItemEditOutfitName = Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName);
+        if (ImGui::MenuItem(menuItemEditOutfitName.c_str()))
+        {
+            acceptEdit = true;
+        }
+        ImGui::Separator();
+        bool noEditingActor = guiContext.editingActor == nullptr;
+        ImGui::BeginDisabled(noEditingActor);
+        {
+            if (noEditingActor)
             {
-                acceptEdit = true;
+                ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
             }
-            ImGui::Separator();
-            bool noEditingActor = guiContext.editingActor == nullptr;
-            ImGui::BeginDisabled(noEditingActor);
+            const auto *actorName = noEditingActor ? "" : guiContext.editingActor->GetName();
+            ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
+            if (m_uiData.IsActorActiveOutfit(guiContext.editingActor, outfitName))
             {
-                if (noEditingActor)
+                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
                 {
-                    ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
+                    OnAcceptActiveOutfit(guiContext.editingActor, "");
                 }
-                const auto *actorName = noEditingActor ? "" : guiContext.editingActor->GetName();
-                ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
-                if (m_uiData.IsActorActiveOutfit(guiContext.editingActor, outfitName))
+            }
+            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
+            {
+                OnAcceptActiveOutfit(guiContext.editingActor, outfitName);
+            }
+            ImGui::BeginDisabled(guiContext.editingState == StateType::None);
+            {
+                if (ImGui::MenuItem("AutoSwitch: Use this outfit"))
                 {
-                    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
-                    {
-                        OnAcceptActiveOutfit(guiContext.editingActor, "");
-                    }
+                    OnAcceptOutfitForState(guiContext, outfitName);
                 }
-                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
-                {
-                    OnAcceptActiveOutfit(guiContext.editingActor, outfitName);
-                }
-                ImGui::BeginDisabled(guiContext.editingState == StateType::None);
-                {
-                    if (ImGui::MenuItem("AutoSwitch: Use this outfit"))
-                    {
-                        OnAcceptOutfitForState(guiContext, selectIt->GetName());
-                    }
-                }
-                ImGui::EndDisabled();
             }
             ImGui::EndDisabled();
-            ImGui::Separator();
-            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
-            {
-                m_DeleteOutfitPopup.Open();
-            }
-            if (ImGui::MenuItem("Close"))
-            {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-            return true;
         }
-        return false;
+        ImGui::EndDisabled();
+        ImGui::Separator();
+        if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
+        {
+            m_DeleteOutfitPopup.Open();
+        }
+        if (ImGui::MenuItem("Close"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+        return true;
     }
 
-    bool OutfitListTable::DeletePopup(const SosUiData::OutfitConstIterator &clickedIt)
+    bool OutfitListTable::DeletePopup(const SosUiData::OutfitPair &clicked)
     {
         bool isConfirmDelete = false;
-        bool justClosed      = m_DeleteOutfitPopup.Render(clickedIt->GetName(), isConfirmDelete);
+        bool justClosed      = m_DeleteOutfitPopup.Render(clicked.second->GetName(), isConfirmDelete);
         if (isConfirmDelete)
         {
-            m_dataCoordinator.RequestDeleteOutfit(clickedIt);
+            m_dataCoordinator.RequestDeleteOutfit(clicked);
         }
         return justClosed;
     }
 
-    void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitIterator &toEditIt)
+    void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
     {
-        m_dataCoordinator.RequestOutfitArmors(toEditIt);
-        m_editPanel.ShowWindow(toEditIt->GetName());
+        m_dataCoordinator.RequestOutfitArmors(wantEdit);
+        m_editPanel.ShowWindow(wantEdit.second->GetName());
     }
 
     void OutfitListTable::OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName)

@@ -7,14 +7,20 @@
 
 #pragma once
 
+#include "GuiContext.h"
 #include "SosDataType.h"
 #include "common/config.h"
 #include "data/PagedArmorList.h"
 #include "data/SosUiOutfit.h"
 
 #include <RE/A/Actor.h>
+#include <boost/optional/optional.hpp>
+#include <boost/optional/detail/optional_reference_spec.hpp>
 #include <cstdint>
+#include <functional>
 #include <list>
+#include <mutex>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -22,7 +28,6 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-
     class SosUiData
     {
     public:
@@ -30,13 +35,14 @@ namespace LIBC_NAMESPACE_DECL
         using BodySlot            = int32_t;
         using OutfitState         = std::pair<StateType, std::string>;
         using BodySlotArmor       = std::pair<BodySlot, Armor *>;
-        using OutfitList          = std::list<SosUiOutfit>;
-        using OutfitConstIterator = std::list<SosUiOutfit>::const_iterator;
-        using OutfitIterator      = std::list<SosUiOutfit>::iterator;
+        using OutfitList          = std::unordered_map<SosUiOutfit::OutfitId, SosUiOutfit>;
+        using OutfitPair          = std::pair<SosUiOutfit::OutfitId, SosUiOutfit *>;
 
-        static constexpr uint8_t DEFAULT_PAGE_SIZE = 20;
+        static constexpr uint8_t            DEFAULT_PAGE_SIZE = 20;
+        static inline SosUiOutfit::OutfitId g_NextOutfitId    = 1;
 
     private:
+        GuiContext                                   m_context;
         std::vector<RE::Actor *>                     m_actors;
         std::vector<RE::Actor *>                     m_NearActors;
         bool                                         m_enabled           = false;
@@ -53,6 +59,19 @@ namespace LIBC_NAMESPACE_DECL
         std::mutex                                         m_mutex;
 
     public:
+        ////////////////////////////////////////////////////////////////////////////
+        // Context
+        ////////////////////////////////////////////////////////////////////////////
+
+        [[nodiscard]] constexpr auto GetContext() -> GuiContext &
+        {
+            return m_context;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        // UI Tasks
+        ////////////////////////////////////////////////////////////////////////////
+
         void PushTask(std::function<void(SosUiData &uiData)> &&task)
         {
             std::lock_guard lock(m_mutex);
@@ -72,6 +91,10 @@ namespace LIBC_NAMESPACE_DECL
                 localQueue.pop();
             }
         }
+
+        ////////////////////////////////////////////////////////////////////////////
+        // Actors
+        ////////////////////////////////////////////////////////////////////////////
 
         [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
         {
@@ -211,65 +234,81 @@ namespace LIBC_NAMESPACE_DECL
         // SosUiOutfit
         ////////////////////////////////////////////////////////////////////////////
 
-        void AddOutfit(const std::string &&outfitName)
+        template <typename String>
+        constexpr void AddOutfit(String &&outfitName)
         {
-            m_outfitList.push_back(SosUiOutfit(outfitName));
+            m_outfitList.emplace(std::piecewise_construct, std::forward_as_tuple(g_NextOutfitId),
+                                 std::forward_as_tuple(g_NextOutfitId, std::move(outfitName)));
+            ++g_NextOutfitId;
         }
 
         void AddOutfits(auto &&container)
         {
             for (const auto &outfit : container)
             {
-                m_outfitList.emplace_back(outfit);
+                AddOutfit(outfit);
             }
         }
 
-        void RenameOutfit(const OutfitIterator &where, const std::string &&newName)
+        auto GetOutfit(const SosUiOutfit::OutfitId id) -> boost::optional<SosUiOutfit &>
         {
-            if (where != m_outfitList.end())
+            boost::optional<SosUiOutfit &> opt;
+            if (m_outfitList.contains(id))
             {
-                where->SetName(newName);
+                opt = m_outfitList.at(id);
             }
+            return opt;
         }
 
-        void AddArmor(const OutfitIterator &where, Armor *armor)
+        void RenameOutfit(const SosUiOutfit::OutfitId id, const std::string &&newName)
         {
-            if (where != m_outfitList.end())
+            if (auto opt = GetOutfit(id); opt)
             {
-                where->AddArmor(armor);
+                opt.value().SetName(newName);
             }
         }
 
-        void AddArmors(const OutfitIterator &where, const std::vector<Armor *> &armors)
+        void AddArmor(const SosUiOutfit::OutfitId id, Armor *armor)
         {
-            if (where != m_outfitList.end())
+            if (auto opt = GetOutfit(id); opt)
             {
-                for (const auto &armor : armors)
-                {
-                    where->AddArmor(armor);
-                }
+                opt.value().AddArmor(armor);
             }
         }
 
-        void DeleteOutfit(const OutfitConstIterator &where)
+        void AddArmors(const SosUiOutfit::OutfitId id, const std::vector<Armor *> &armors)
         {
-            if (where != m_outfitList.cend())
+            if (!m_outfitList.contains(id))
             {
-                m_outfitList.erase(where);
+                return;
+            }
+            for (const auto &armor : armors)
+            {
+                AddArmor(id, armor);
             }
         }
 
-        void DeleteArmor(const OutfitIterator &where, const Armor *armor)
+        void DeleteOutfit(const SosUiOutfit::OutfitId id)
         {
-            if (where != m_outfitList.end())
+            m_outfitList.erase(id);
+        }
+
+        void DeleteArmor(const SosUiOutfit::OutfitId id, const Armor *armor)
+        {
+            if (auto opt = GetOutfit(id); opt)
             {
-                where->RemoveArmor(armor);
+                opt.value().RemoveArmor(armor);
             }
         }
 
-        [[nodiscard]] constexpr auto GetOutfitList() -> std::list<SosUiOutfit> &
+        [[nodiscard]] constexpr auto GetOutfitList() -> OutfitList &
         {
             return m_outfitList;
+        }
+
+        bool HasOutfit(SosUiOutfit::OutfitId &id)
+        {
+            return m_outfitList.contains(id);
         }
 
         ////////////////////////////////////////////////////////////////////////////

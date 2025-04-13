@@ -8,28 +8,36 @@
 #include <cstdint>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
     class SosUiOutfit
     {
     public:
-        static constexpr int SLOT_COUNT = 32;
-        using Slot                      = RE::BIPED_MODEL::BipedObjectSlot;
-        using Armor                     = RE::TESObjectARMO;
+        static constexpr int SLOT_COUNT      = 32;
+        using OutfitId                       = uint32_t; // id begin 1
+        static constexpr OutfitId INVALID_ID = 0;
+        using Slot                           = RE::BIPED_MODEL::BipedObjectSlot;
+        using Armor                          = RE::TESObjectARMO;
 
     private:
+
+        OutfitId                               m_id;
         std::string                            m_name;
         SKSE::stl::enumeration<Slot, uint32_t> m_slotMask = Slot::kNone;
         std::array<Armor *, SLOT_COUNT>        m_armors;
 
     public:
-        explicit SosUiOutfit(const std::string &name) : m_name(name)
+        explicit SosUiOutfit(OutfitId id, const std::string &name) : m_id(id), m_name(name)
         {
             m_armors.fill(nullptr);
         }
 
         ~SosUiOutfit() = default;
+
+        [[nodiscard]] constexpr auto GetId() const -> OutfitId
+        {
+            return m_id;
+        }
 
         void AddArmor(Armor *armor);
 

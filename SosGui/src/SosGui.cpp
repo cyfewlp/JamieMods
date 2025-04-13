@@ -1,17 +1,22 @@
 #include "SosGui.h"
-#include "ImGuiUtil.h"
-#include "SosUiData.h"
+#include "common/config.h"
 #include "common/log.h"
-#include "data/SosUiOutfit.h"
-#include "gui/SosDataCoordinator.h"
-#include "gui/Table.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 
+#include <RE/C/ControlMap.h>
+#include <RE/C/CursorMenu.h>
+#include <RE/M/MenuCursor.h>
+#include <RE/M/MiddleHighProcessData.h>
+#include <RE/P/PlayerCharacter.h>
 #include <RE/R/Renderer.h>
-#include <array>
-#include <d3d11.h>
+#include <RE/S/SpellItem.h>
+#include <RE/T/TESForm.h>
+#include <RE/U/UI.h>
+#include <REL/Relocation.h>
+#include <SKSE/Impl/PCH.h>
+#include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
 {

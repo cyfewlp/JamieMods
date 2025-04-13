@@ -13,12 +13,11 @@
 #include <RE/V/Variable.h>
 #include <cstdint>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <vector>
-#include <thread>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
     auto SosDataCoordinator::RequestActorList(OnComplete onComplete) const -> CoroutinePromise
     {
@@ -28,7 +27,7 @@ LIBC_NAMESPACE_DECL
             m_uiData.PushErrorMessage("Can't get actor list");
             co_return;
         }
-        auto array       = actorListVar.GetArray();
+        auto  array      = actorListVar.GetArray();
         auto &actorsList = m_uiData.GetActors();
         actorsList.clear();
         for (auto *iter = array->begin(); iter != array->end(); ++iter)
@@ -59,7 +58,7 @@ LIBC_NAMESPACE_DECL
             m_uiData.PushErrorMessage("Can't get near actor list");
             co_return;
         }
-        auto array = actorsVar.GetArray();
+        auto                     array = actorsVar.GetArray();
         std::vector<RE::Actor *> actorsList;
         for (auto *iter = array->begin(); iter != array->end(); ++iter)
         {
@@ -94,7 +93,7 @@ LIBC_NAMESPACE_DECL
             Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
             if (wornArmorsVar.IsObjectArray())
             {
-                auto array = wornArmorsVar.GetArray();
+                auto                             array = wornArmorsVar.GetArray();
                 std::vector<RE::TESObjectARMO *> armors;
                 for (auto *iter = array->begin(); iter != array->end(); ++iter)
                 {
@@ -164,21 +163,6 @@ LIBC_NAMESPACE_DECL
         m_uiData.SetAutoSwitchEnabled(actor, enabled);
     }
 
-    auto SosDataCoordinator::RequestRenameOutfit(SosUiData::OutfitIterator where,
-                                                 std::string newName) const -> CoroutinePromise
-    {
-        Variable successVar = co_await SosNativeCaller::RenameOutfit(std::string(where->GetName()),
-                                                                     std::string(newName));
-        if (!successVar.IsBool() || !successVar.GetBool())
-        {
-            m_uiData.PushErrorMessage("Can't rename outfit");
-            co_return;
-        }
-        m_uiData.PushTask([where, newName](SosUiData &uiData) {
-            uiData.RenameOutfit(where, std::move(newName));
-        });
-    }
-
     auto SosDataCoordinator::RequestActiveOutfit(RE::Actor *actor, std::string outfitName, OnComplete onComplete) const
         -> CoroutinePromise
     {
@@ -187,63 +171,83 @@ LIBC_NAMESPACE_DECL
         onComplete();
     }
 
-    auto SosDataCoordinator::RequestDeleteOutfit(SosUiData::OutfitConstIterator where) const -> CoroutinePromise
+    auto SosDataCoordinator::RequestRenameOutfit(SosUiData::OutfitPair pair, std::string newName) const
+        -> CoroutinePromise
     {
-        co_await SosNativeCaller::DeleteOutfit(std::string(where->GetName()));
-        m_uiData.PushTask([where](SosUiData &uiData) {
-            uiData.DeleteOutfit(where);
+        Variable successVar =
+            co_await SosNativeCaller::RenameOutfit(std::string(pair.second->GetName()), std::string(newName));
+        if (!successVar.IsBool() || !successVar.GetBool())
+        {
+            m_uiData.PushErrorMessage("Can't rename outfit");
+            co_return;
+        }
+        auto &id = pair.first;
+        m_uiData.PushTask([id, newName](SosUiData &uiData) {
+            uiData.RenameOutfit(id, std::move(newName));
         });
     }
 
-    auto SosDataCoordinator::RequestAddArmor(SosUiData::OutfitIterator where, Armor *armor) const -> CoroutinePromise
+    auto SosDataCoordinator::RequestDeleteOutfit(SosUiData::OutfitPair pair) const -> CoroutinePromise
+    {
+        co_await SosNativeCaller::DeleteOutfit(std::string(pair.second->GetName()));
+        auto &id = pair.first;
+        m_uiData.PushTask([id](SosUiData &uiData) {
+            uiData.DeleteOutfit(id);
+        });
+    }
+
+    auto SosDataCoordinator::RequestAddArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutinePromise
     {
         if (armor == nullptr)
         {
             co_return;
         }
-        co_await SosNativeCaller::AddArmorToOutfit(std::string(where->GetName()), armor);
-        m_uiData.PushTask([where, armor](SosUiData &uiData) {
-            uiData.AddArmor(where, armor);
+        co_await SosNativeCaller::AddArmorToOutfit(std::string(pair.second->GetName()), armor);
+        auto &id = pair.first;
+        m_uiData.PushTask([id, armor](SosUiData &uiData) {
+            uiData.AddArmor(id, armor);
         });
     }
 
-    auto SosDataCoordinator::RequestDeleteArmor(SosUiData::OutfitIterator where, Armor *armor) const -> CoroutinePromise
+    auto SosDataCoordinator::RequestDeleteArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutinePromise
     {
         if (armor == nullptr)
         {
             co_return;
         }
-        co_await SosNativeCaller::RemoveArmorFromOutfit(std::string(where->GetName()), armor);
-        m_uiData.PushTask([where, armor](SosUiData &uiData) {
-            uiData.DeleteArmor(where, armor);
+        co_await SosNativeCaller::RemoveArmorFromOutfit(std::string(pair.second->GetName()), armor);
+        auto &id = pair.first;
+        m_uiData.PushTask([id, armor](SosUiData &uiData) {
+            uiData.DeleteArmor(id, armor);
         });
     }
 
-    auto SosDataCoordinator::RequestOutfitArmors(SosUiData::OutfitIterator where) const -> CoroutinePromise
+    auto SosDataCoordinator::RequestOutfitArmors(SosUiData::OutfitPair pair) const -> CoroutinePromise
     {
-        co_await SosNativeCaller::PrepOutfitBodySlotListing(std::string(where->GetName()));
+        co_await SosNativeCaller::PrepOutfitBodySlotListing(std::string(pair.second->GetName()));
         Variable armorsVar = co_await SosNativeCaller::GetOutfitBodySlotListingArmorForms();
         if (!armorsVar.IsObjectArray())
         {
             m_uiData.PushErrorMessage("Can't get outfit armors");
             co_return;
         }
-        auto array = armorsVar.GetArray();
+        auto                 array = armorsVar.GetArray();
         std::vector<Armor *> armors;
         for (auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
             armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
         }
-        m_uiData.PushTask([where, armors](SosUiData &uiData) {
-            uiData.AddArmors(where, std::move(armors));
+        auto &id = pair.first;
+        m_uiData.PushTask([id, armors](SosUiData &uiData) {
+            uiData.AddArmors(id, std::move(armors));
         });
     }
 
     auto SosDataCoordinator::RequestGetArmorsByCarried() const -> CoroutinePromise
     {
         std::string errorMessage;
-        auto *player = RE::PlayerCharacter::GetSingleton();
+        auto       *player = RE::PlayerCharacter::GetSingleton();
         if (player == nullptr)
         {
             errorMessage.append("can't get player");
@@ -253,7 +257,7 @@ LIBC_NAMESPACE_DECL
             Variable carriedArmorsVar = co_await SosNativeCaller::GetCarriedArmor(player);
             if (carriedArmorsVar.IsObjectArray())
             {
-                auto array = carriedArmorsVar.GetArray();
+                auto                             array = carriedArmorsVar.GetArray();
                 std::vector<RE::TESObjectARMO *> armors;
                 for (auto *iter = array->begin(); iter != array->end(); ++iter)
                 {
@@ -272,7 +276,7 @@ LIBC_NAMESPACE_DECL
     auto SosDataCoordinator::RequestGetArmorsByWorn() const -> CoroutinePromise
     {
         std::string errorMessage;
-        auto *player = RE::PlayerCharacter::GetSingleton();
+        auto       *player = RE::PlayerCharacter::GetSingleton();
         if (player == nullptr)
         {
             errorMessage.append("can't get player");
@@ -282,7 +286,7 @@ LIBC_NAMESPACE_DECL
             Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
             if (wornArmorsVar.IsObjectArray())
             {
-                auto array = wornArmorsVar.GetArray();
+                auto                             array = wornArmorsVar.GetArray();
                 std::vector<RE::TESObjectARMO *> armors;
                 for (auto *iter = array->begin(); iter != array->end(); ++iter)
                 {
@@ -310,8 +314,7 @@ LIBC_NAMESPACE_DECL
     }
 
     auto SosDataCoordinator::RequestSetActorStateOutfit(RE::Actor *actor, StateType location,
-                                                        std::string outfitName) const
-        -> CoroutinePromise
+                                                        std::string outfitName) const -> CoroutinePromise
     {
         co_await SosNativeCaller::SetStateOutfit(actor, static_cast<uint32_t>(location), std::string(outfitName));
         m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::move(outfitName)));
@@ -364,7 +367,7 @@ LIBC_NAMESPACE_DECL
     auto SosDataCoordinator::HasQuickSlotSpell() -> bool
     {
         const auto &player = RE::PlayerCharacter::GetSingleton();
-        auto *spell        = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
+        auto       *spell  = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
         if (spell != nullptr)
         {
             return player->HasSpell(spell);

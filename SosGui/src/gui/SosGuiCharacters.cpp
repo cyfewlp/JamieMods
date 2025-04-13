@@ -191,12 +191,13 @@ namespace LIBC_NAMESPACE_DECL
         for (const auto &outfit : m_uiData.GetOutfitList())
         {
             ImGui::PushID(idx);
-            bool isSelected = outfitName == outfit.GetName();
-            if (ImGui::Selectable(outfit.GetName().c_str(), isSelected))
+            bool isSelected = outfitName == outfit.second.GetName();
+            if (ImGui::Selectable(outfit.second.GetName().c_str(), isSelected))
             {
                 if (!isSelected)
                 {
-                    m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state, outfit.GetName());
+                    m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state,
+                                                                 outfit.second.GetName());
                 }
             }
             if (isSelected)

@@ -2,6 +2,7 @@
 
 #include "ImGuiUtil.h"
 #include "SosDataType.h"
+#include "SosUiData.h"
 #include "Translation.h"
 #include "common/config.h"
 #include "data/PagedArmorList.h"
@@ -28,17 +29,17 @@ namespace LIBC_NAMESPACE_DECL
 {
     constexpr auto SELECTABLE_SPAN_FLAGS = ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_SpanAllColumns;
 
-    auto OutfitEditPanel::Render(const SosUiData::OutfitIterator &toEditIt) -> bool
+    auto OutfitEditPanel::Render(const SosUiData::OutfitPair &wantEdit) -> bool
     {
         auto flags = ImGuiWindowFlags_NoSavedSettings;
 
         ImGui::PushID(this);
         if (ImGui::Begin(m_windowTitle.c_str(), &m_fShowOutfitWindow, flags))
         {
-            RenderPopups(toEditIt);
-            RenderProperties(toEditIt);
-            RenderArmorList(toEditIt);
-            RenderEditPanel(toEditIt);
+            RenderPopups(wantEdit);
+            RenderProperties(wantEdit);
+            RenderArmorList(wantEdit);
+            RenderEditPanel(wantEdit);
         }
         ImGui::End();
         ImGui::PopID();
@@ -55,7 +56,7 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void OutfitEditPanel::RenderProperties(const SosUiData::OutfitIterator &toEditIt) const
+    void OutfitEditPanel::RenderProperties(const SosUiData::OutfitPair &wantEdit) const
     {
         static std::array<char, 256> outfitNameBuf;
 
@@ -64,14 +65,14 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::BeginDisabled(outfitNameBuf.at(0) == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_Rename"))
         {
-            m_dataCoordinator.RequestRenameOutfit(toEditIt, outfitNameBuf.data());
+            m_dataCoordinator.RequestRenameOutfit(wantEdit, outfitNameBuf.data());
         }
         ImGui::EndDisabled();
     }
 
-    void OutfitEditPanel::RenderArmorList(const SosUiData::OutfitConstIterator &toEditIt)
+    void OutfitEditPanel::RenderArmorList(const SosUiData::OutfitPair &wantEdit)
     {
-        if (toEditIt->IsEmpty())
+        if (wantEdit.second->IsEmpty())
         {
             ImGui::PushFontSize(ImGui::GetFontSize() * 1.2F);
             ImGuiUtil::Text("$SosGui_EmptyHint{$ARMOR}");
@@ -86,7 +87,7 @@ namespace LIBC_NAMESPACE_DECL
             m_armorListTable.HeadersRow();
             for (int slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
             {
-                const auto &armor = toEditIt->GetArmorAt(slotIdx);
+                const auto &armor = wantEdit.second->GetArmorAt(slotIdx);
                 if (armor == nullptr)
                 {
                     continue;
@@ -117,24 +118,24 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void OutfitEditPanel::RenderEditPanel(const SosUiData::OutfitIterator &toEditIt)
+    void OutfitEditPanel::RenderEditPanel(const SosUiData::OutfitPair &wantEdit)
     {
         if (RenderArmorSlotFilter())
         {
-            UpdateArmorCandidatesBySlot(toEditIt, m_selectedFilterSlot.get());
+            UpdateArmorCandidatesBySlot(wantEdit, m_selectedFilterSlot.get());
         }
 
         ImGuiStyle &style     = ImGui::GetStyle();
         float       halfWidth = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) / 2;
         {
             ImGuiUtil::ChildGuard child("##RenderArmorCandidates", {halfWidth, 0.0F});
-            RenderArmorCandidates(toEditIt);
+            RenderArmorCandidates(wantEdit);
         }
 
         ImGui::SameLine();
         {
             ImGuiUtil::ChildGuard child("##RenderEditPanelPolicy", {halfWidth, 0.0F});
-            RenderEditPanelPolicy(toEditIt);
+            RenderEditPanelPolicy(wantEdit);
         }
     }
 
@@ -218,7 +219,7 @@ namespace LIBC_NAMESPACE_DECL
         return checked;
     }
 
-    void OutfitEditPanel::RenderArmorCandidates(const SosUiData::OutfitIterator &toEditIt)
+    void OutfitEditPanel::RenderArmorCandidates(const SosUiData::OutfitPair &wantEdit)
     {
         auto &armorCandidates = m_uiData.GetArmorCandidates();
 
@@ -302,7 +303,7 @@ namespace LIBC_NAMESPACE_DECL
         if (requireAdd)
         {
             requireAdd = false;
-            OnAddArmor(toEditIt, m_selectedArmor);
+            OnAddArmor(wantEdit, m_selectedArmor);
         }
 
         // ImGui::BeginDisabled(currentPage == 0);
@@ -326,7 +327,7 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::EndDisabled();
     }
 
-    void OutfitEditPanel::RenderEditPanelPolicy(const SosUiData::OutfitIterator &toEditIt)
+    void OutfitEditPanel::RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit)
     {
         static std::array outfitPolicy{Translation::Translate("$SkyOutSys_OEdit_AddFromCarried"),
                                        Translation::Translate("$SkyOutSys_OEdit_AddFromWorn"),
@@ -364,7 +365,7 @@ namespace LIBC_NAMESPACE_DECL
         }
         if (selectedPolicy == OutfitAddPolicy_AddByID)
         {
-            RenderOutfitAddPolicyById(toEditIt, m_fFilterPlayable);
+            RenderOutfitAddPolicyById(wantEdit, m_fFilterPlayable);
             return;
         }
 
@@ -376,12 +377,12 @@ namespace LIBC_NAMESPACE_DECL
         }
         if (shouldUpdateCandidates)
         {
-            UpdateArmorCandidates(toEditIt, m_fFilterPlayable, selectedPolicy);
+            UpdateArmorCandidates(wantEdit, m_fFilterPlayable, selectedPolicy);
         }
     }
 
-    void OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitIterator &toEditIt,
-                                                    const bool                      &fFilterPlayable) const
+    void OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
+                                                    const bool                  &fFilterPlayable) const
     {
         static std::array<char, 32> formIdBuf;
         static char                *pEnd{};
@@ -400,7 +401,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::BeginDisabled(fFilterPlayable && (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0);
             if (ImGuiUtil::Button("$Add"))
             {
-                m_dataCoordinator.RequestAddArmor(toEditIt, armor);
+                m_dataCoordinator.RequestAddArmor(wantEdit, armor);
             }
             ImGui::EndDisabled();
         }
@@ -408,7 +409,7 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::PopID();
     }
 
-    void OutfitEditPanel::UpdateArmorCandidates(const SosUiData::OutfitConstIterator &toEditIt, bool mustBePlayable,
+    void OutfitEditPanel::UpdateArmorCandidates(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable,
                                                 OutfitAddPolicy policy)
     {
         switch (policy)
@@ -425,7 +426,7 @@ namespace LIBC_NAMESPACE_DECL
                 break;
 
             case OutfitAddPolicy_AddAny:
-                UpdateArmorCandidatesForAny(toEditIt, mustBePlayable);
+                UpdateArmorCandidatesForAny(wantEdit, mustBePlayable);
                 break;
 
             default:
@@ -434,8 +435,7 @@ namespace LIBC_NAMESPACE_DECL
         m_selectedFilterSlot = Slot::kNone;
     }
 
-    void OutfitEditPanel::UpdateArmorCandidatesForAny(const SosUiData::OutfitConstIterator &toEditIt,
-                                                      bool                                  mustBePlayable)
+    void OutfitEditPanel::UpdateArmorCandidatesForAny(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable)
     {
         auto  data       = RE::TESDataHandler::GetSingleton();
         auto &list       = data->GetFormArray(RE::FormType::Armor);
@@ -468,12 +468,12 @@ namespace LIBC_NAMESPACE_DECL
         }
         for (size_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; slotPos++)
         {
-            auto *armor = toEditIt->GetArmorAt(slotPos);
+            auto *armor = wantEdit.second->GetArmorAt(slotPos);
             candidates.Insert(armor, false);
         }
     }
 
-    void OutfitEditPanel::UpdateArmorCandidatesBySlot(const SosUiData::OutfitConstIterator &toEditIt, Slot slot) const
+    void OutfitEditPanel::UpdateArmorCandidatesBySlot(const SosUiData::OutfitPair &wantEdit, Slot slot) const
     {
         auto &candidates = m_uiData.GetArmorCandidates();
 
@@ -490,7 +490,7 @@ namespace LIBC_NAMESPACE_DECL
         candidates.Insert(filterArmors, false);
         for (size_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; slotPos++)
         {
-            auto *armor = toEditIt->GetArmorAt(slotPos);
+            auto *armor = wantEdit.second->GetArmorAt(slotPos);
             candidates.Insert(armor, false);
         }
     }
@@ -525,31 +525,31 @@ namespace LIBC_NAMESPACE_DECL
         return true;
     }
 
-    void OutfitEditPanel::OnAddArmor(const SosUiData::OutfitIterator &toEditIt, Armor *armor)
+    void OutfitEditPanel::OnAddArmor(const SosUiData::OutfitPair &wantEdit, Armor *armor)
     {
-        if (toEditIt->IsConflictWith(armor))
+        if (wantEdit.second->IsConflictWith(armor))
         {
             m_ConflictArmorPopup.Open();
         }
         else
         {
-            m_dataCoordinator.RequestAddArmor(toEditIt, armor);
+            m_dataCoordinator.RequestAddArmor(wantEdit, armor);
             m_uiData.MarkArmorIsUnused(armor);
         }
     }
 
-    void OutfitEditPanel::RenderPopups(const SosUiData::OutfitIterator &toEditIt)
+    void OutfitEditPanel::RenderPopups(const SosUiData::OutfitPair &wantEdit)
     {
         ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
         if (m_ConflictArmorPopup.Render(m_selectedArmor))
         {
-            m_dataCoordinator.RequestAddArmor(toEditIt, m_selectedArmor);
+            m_dataCoordinator.RequestAddArmor(wantEdit, m_selectedArmor);
             m_uiData.MarkArmorIsUnused(m_selectedArmor);
         }
 
         if (m_DeleteArmorPopup.Render(m_selectedArmor))
         {
-            m_dataCoordinator.RequestDeleteArmor(toEditIt, m_selectedArmor);
+            m_dataCoordinator.RequestDeleteArmor(wantEdit, m_selectedArmor);
         }
         ImGui::PopStyleVar();
         if (m_ConflictArmorPopup.IsLastClosed() || m_DeleteArmorPopup.IsLastClosed())

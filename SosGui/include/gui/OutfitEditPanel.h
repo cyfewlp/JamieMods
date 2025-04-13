@@ -53,7 +53,7 @@ LIBC_NAMESPACE_DECL
         }
 
         // return true if edit window closed;
-        auto Render(const SosUiData::OutfitIterator &toEditIt) -> bool;
+        auto Render(const SosUiData::OutfitPair &wantEdit) -> bool;
 
         /// <summary>
         /// Show this outfit edit window with specificy outfit-name.
@@ -69,32 +69,32 @@ LIBC_NAMESPACE_DECL
     private:
         void UpdateWindowTitle(const std::string &outfitName);
 
-        void RenderProperties(const SosUiData::OutfitIterator &toEditIt) const;
+        void RenderProperties(const SosUiData::OutfitPair &wantEdit) const;
 
-        void RenderArmorList(const SosUiData::OutfitConstIterator &toEditIt);
+        void RenderArmorList(const SosUiData::OutfitPair &wantEdit);
 
-        void RenderEditPanel(const SosUiData::OutfitIterator &toEditIt);
+        void RenderEditPanel(const SosUiData::OutfitPair &wantEdit);
 
         auto RenderArmorSlotFilter() -> bool;
 
-        void RenderArmorCandidates(const SosUiData::OutfitIterator &toEditIt);
+        void RenderArmorCandidates(const SosUiData::OutfitPair &wantEdit);
 
-        void RenderEditPanelPolicy(const SosUiData::OutfitIterator &toEditIt);
+        void RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit);
 
-        void RenderOutfitAddPolicyById(const SosUiData::OutfitIterator &toEditIt,
+        void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
                                        const bool &fFilterPlayable) const;
 
-        void UpdateArmorCandidates(const SosUiData::OutfitConstIterator &toEditIt, bool mustBePlayable,
+        void UpdateArmorCandidates(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable,
                                    OutfitAddPolicy policy);
 
-        void UpdateArmorCandidatesBySlot(const SosUiData::OutfitConstIterator &toEditIt, Slot slot) const;
+        void UpdateArmorCandidatesBySlot(const SosUiData::OutfitPair &wantEdit, Slot slot) const;
 
-        void UpdateArmorCandidatesForAny(const SosUiData::OutfitConstIterator &toEditIt, bool mustBePlayable);
+        void UpdateArmorCandidatesForAny(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable);
 
         auto IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool;
 
-        void OnAddArmor(const SosUiData::OutfitIterator &toEditIt, Armor *armor);
+        void OnAddArmor(const SosUiData::OutfitPair &wantEdit, Armor *armor);
 
-        void RenderPopups(const SosUiData::OutfitIterator &toEditIt);
+        void RenderPopups(const SosUiData::OutfitPair &wantEdit);
     };
 }

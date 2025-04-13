@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GuiContext.h"
 #include "ImGuiUtil.h"
 #include "SosDataType.h"
 #include "SosUiData.h"
@@ -58,9 +59,9 @@ namespace LIBC_NAMESPACE_DECL
 
         virtual auto Close() -> void override
         {
-            m_context.editingActor   = nullptr;
-            m_context.editingState   = StateType::None;
-            m_fShowNearNpc           = false;
+            m_context.editingActor = nullptr;
+            m_context.editingState = StateType::None;
+            m_fShowNearNpc         = false;
             m_outfitListTable.Close();
         }
 

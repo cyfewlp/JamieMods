@@ -58,11 +58,11 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestCreateOutfit(std::string outfitName) const -> CoroutinePromise;
         auto RequestCreateOutfitFromWorn(std::string outfitName) const -> CoroutinePromise;
         auto RequestOutfitList() const -> CoroutinePromise;
-        auto RequestRenameOutfit(SosUiData::OutfitIterator where, std::string newName) const -> CoroutinePromise;
-        auto RequestDeleteOutfit(SosUiData::OutfitConstIterator where) const -> CoroutinePromise;
-        auto RequestAddArmor(SosUiData::OutfitIterator where, Armor *armor) const -> CoroutinePromise;
-        auto RequestDeleteArmor(SosUiData::OutfitIterator where, Armor *armor) const -> CoroutinePromise;
-        auto RequestOutfitArmors(SosUiData::OutfitIterator where) const -> CoroutinePromise;
+        auto RequestRenameOutfit(SosUiData::OutfitPair pair, std::string newName) const -> CoroutinePromise;
+        auto RequestDeleteOutfit(SosUiData::OutfitPair pair) const -> CoroutinePromise;
+        auto RequestAddArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutinePromise;
+        auto RequestDeleteArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutinePromise;
+        auto RequestOutfitArmors(SosUiData::OutfitPair pair) const -> CoroutinePromise;
 
         auto RequestGetArmorsByCarried() const -> CoroutinePromise;
         auto RequestGetArmorsByWorn() const -> CoroutinePromise;
