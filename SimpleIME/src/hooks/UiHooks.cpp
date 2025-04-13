@@ -3,12 +3,27 @@
 //
 
 #include "hooks/UiHooks.h"
-#include "Utils.h"
+#include "RE/GFxCharEvent.h"
+#include "common/config.h"
+#include "common/log.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeManagerComposer.h"
 
+#include <RE/B/BSFixedString.h>
+#include <RE/B/BSUIScaleformData.h>
+#include <RE/G/GFxEvent.h>
+#include <RE/G/GFxKey.h>
+#include <RE/G/GFxMovieView.h>
+#include <RE/I/IMenu.h>
+#include <RE/I/IUIMessageData.h>
+#include <RE/I/InterfaceStrings.h>
+#include <RE/M/MemoryManager.h>
 #include <RE/Offsets_VTABLE.h>
+#include <RE/U/UIMessage.h>
+#include <RE/U/UIMessageQueue.h>
+#include <cstdint>
 #include <memory>
+#include <string>
 
 namespace
 {
@@ -109,6 +124,46 @@ namespace LIBC_NAMESPACE_DECL
             UiAddMessage->Original(self, menuName, messageType, pMessageData);
         }
 
+        void UiHooks::ScaleformPasteText(RE::GFxMovieView *const uiMovie, RE::GFxCharEvent *const charEvent)
+        {
+            if (::OpenClipboard(nullptr) == FALSE)
+            {
+                return;
+            }
+            const bool unicode = IsClipboardFormatAvailable(CF_UNICODETEXT) != FALSE;
+            const bool utf8    = IsClipboardFormatAvailable(CF_TEXT) != FALSE;
+            if (unicode || utf8)
+            {
+                if (HANDLE handle = ::GetClipboardData(unicode ? CF_UNICODETEXT : CF_TEXT); handle != nullptr)
+                {
+                    if (auto *const textData = static_cast<LPTSTR>(GlobalLock(handle)); textData != nullptr)
+                    {
+                        const auto action = [uiMovie, charEvent](uint32_t code) {
+                            charEvent->wcharCode = code;
+                            uiMovie->HandleEvent(*charEvent);
+                        };
+                        if (unicode)
+                        {
+                            for (const uint32_t code : std::wstring(textData))
+                            {
+                                action(code);
+                            }
+                        }
+                        else
+                        {
+                            for (const uint32_t code : std::string(reinterpret_cast<LPSTR>(textData)))
+                            {
+                                action(code);
+                            }
+                        }
+
+                        GlobalUnlock(handle);
+                    }
+                }
+            }
+            CloseClipboard();
+        }
+
         auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
         {
             auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
@@ -122,9 +177,12 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (charEvent->wcharCode == 'v' && ctrlDown)
                 {
+#ifdef ENABLE_MENU_PROCESSMESSAGE // except for console menu, other menu not need call ProcessMessage
                     WinHooks::DisablePaste(true);
+                    MenuProcessMessage->Original(self, uiMessage);
                     WinHooks::DisablePaste(false);
-                    Ime::Utils::PasteText(nullptr); // Do our paste
+#endif // ENABLE_MENU_PROCESSMESSAGE
+                    ScaleformPasteText(self->uiMovie.get(), charEvent);
                     return RE::UI_MESSAGE_RESULTS::kHandled;
                 }
             }
@@ -143,10 +201,10 @@ namespace LIBC_NAMESPACE_DECL
                 if (charEvent->wcharCode == 'v' && ctrlDown)
                 {
                     WinHooks::DisablePaste(true);
-                    auto result = ConsoleProcessMessage->Original(self, uiMessage);
+                    ConsoleProcessMessage->Original(self, uiMessage);
                     WinHooks::DisablePaste(false);
-                    Ime::Utils::PasteText(nullptr); // Do our paste
-                    return result;
+                    ScaleformPasteText(self->uiMovie.get(), charEvent);
+                    return RE::UI_MESSAGE_RESULTS::kHandled;
                 }
             }
             return ConsoleProcessMessage->Original(self, uiMessage);

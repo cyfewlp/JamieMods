@@ -5,11 +5,12 @@
 #ifndef UIADDMESSAGEHOOK_H
 #define UIADDMESSAGEHOOK_H
 
-#include "common/FunctionHook.h"
+#include "RE/GFxCharEvent.h"
 #include "common/log.h"
 
-#include "core/State.h"
 #include "hooks/Hooks.hpp"
+#include <atomic>
+#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -35,7 +36,7 @@ namespace LIBC_NAMESPACE_DECL
 
         struct ConsoleProcessMessageHook : public FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *, RE::UIMessage &)>
         {
-            explicit ConsoleProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(442669, 442669), ptr)
+            explicit ConsoleProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(50155, 442669), ptr)
             {
                 log_debug("{} hooked at {:#x}", __func__, m_address);
             }
@@ -68,6 +69,10 @@ namespace LIBC_NAMESPACE_DECL
         private:
             static void AddMessageHook(RE::UIMessageQueue *self, RE::BSFixedString &menuName,
                                        RE::UI_MESSAGE_TYPE messageType, RE::IUIMessageData *pMessageData);
+
+            // use GFxMovieView::handleEvent paset text;
+            // reuse the input CharEvent;
+            static void ScaleformPasteText(RE::GFxMovieView *const uiMovie, RE::GFxCharEvent *const charEvent);
 
             // Handle Ctrl-V: if mod enabled paste, disable game do paste operation.
             // And do our paste operation after the original function return.
