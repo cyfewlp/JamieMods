@@ -56,7 +56,7 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    void OutfitEditPanel::RenderProperties(const SosUiData::OutfitPair &wantEdit) const
+    void OutfitEditPanel::RenderProperties(const SosUiData::OutfitPair &wantEdit)
     {
         static std::array<char, 256> outfitNameBuf;
 
@@ -65,7 +65,7 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::BeginDisabled(outfitNameBuf.at(0) == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_Rename"))
         {
-            m_dataCoordinator.RequestRenameOutfit(wantEdit, outfitNameBuf.data());
+            *this << m_dataCoordinator.RequestRenameOutfit(wantEdit, outfitNameBuf.data());
         }
         ImGui::EndDisabled();
     }
@@ -382,7 +382,7 @@ namespace LIBC_NAMESPACE_DECL
     }
 
     void OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
-                                                    const bool                  &fFilterPlayable) const
+                                                    const bool                  &fFilterPlayable) 
     {
         static std::array<char, 32> formIdBuf;
         static char                *pEnd{};
@@ -401,7 +401,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::BeginDisabled(fFilterPlayable && (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0);
             if (ImGuiUtil::Button("$Add"))
             {
-                m_dataCoordinator.RequestAddArmor(wantEdit, armor);
+                *this << m_dataCoordinator.RequestAddArmor(wantEdit, armor);
             }
             ImGui::EndDisabled();
         }
@@ -415,11 +415,11 @@ namespace LIBC_NAMESPACE_DECL
         switch (policy)
         {
             case OutfitAddPolicy_AddFromCarried:
-                m_dataCoordinator.RequestGetArmorsByCarried();
+                *this << m_dataCoordinator.RequestGetArmorsByCarried();
                 break;
 
             case OutfitAddPolicy_AddFromWorn:
-                m_dataCoordinator.RequestGetArmorsByWorn();
+                *this << m_dataCoordinator.RequestGetArmorsByWorn();
                 break;
 
             case OutfitAddPolicy_AddByID:
@@ -533,7 +533,7 @@ namespace LIBC_NAMESPACE_DECL
         }
         else
         {
-            m_dataCoordinator.RequestAddArmor(wantEdit, armor);
+            *this << m_dataCoordinator.RequestAddArmor(wantEdit, armor);
             m_uiData.MarkArmorIsUnused(armor);
         }
     }
@@ -543,13 +543,13 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
         if (m_ConflictArmorPopup.Render(m_selectedArmor))
         {
-            m_dataCoordinator.RequestAddArmor(wantEdit, m_selectedArmor);
+            *this << m_dataCoordinator.RequestAddArmor(wantEdit, m_selectedArmor);
             m_uiData.MarkArmorIsUnused(m_selectedArmor);
         }
 
         if (m_DeleteArmorPopup.Render(m_selectedArmor))
         {
-            m_dataCoordinator.RequestDeleteArmor(wantEdit, m_selectedArmor);
+            *this << m_dataCoordinator.RequestDeleteArmor(wantEdit, m_selectedArmor);
         }
         ImGui::PopStyleVar();
         if (m_ConflictArmorPopup.IsLastClosed() || m_DeleteArmorPopup.IsLastClosed())

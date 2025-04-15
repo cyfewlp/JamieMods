@@ -1,7 +1,7 @@
 #pragma once
 
+#include "coroutine.h"
 #include "GuiContext.h"
-#include "ImGuiUtil.h"
 #include "SosDataType.h"
 #include "SosUiData.h"
 #include "gui/BaseGui.h"
@@ -12,7 +12,6 @@
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
 #include <stdexcept>
-#include <string>
 #include <windows.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -57,6 +56,8 @@ namespace LIBC_NAMESPACE_DECL
 
         virtual auto Refresh() -> void override;
 
+        CoroutinePromise operator<<(CoroutineTask &&task);
+
         virtual auto Close() -> void override
         {
             m_context.editingActor = nullptr;
@@ -66,6 +67,8 @@ namespace LIBC_NAMESPACE_DECL
         }
 
     private:
+        auto DoRefresh() -> CoroutinePromise;
+
         auto DoRender() -> void;
 
         void ShowErrorMessages();

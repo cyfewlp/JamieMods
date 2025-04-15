@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/config.h"
+#include "coroutine.h"
 #include "gui/Popup.h"
 #include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
@@ -10,8 +11,7 @@
 #include <array>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
     class OutfitEditPanel
     {
@@ -26,19 +26,19 @@ LIBC_NAMESPACE_DECL
     private:
         static void init_slot_name();
 
-        std::string m_windowTitle;
-        TableContext<3> m_armorListTable;
-        TableContext<5> m_armorCandidatesTable;
-        int m_armorAddPolicy                                        = 0;
-        SKSE::stl::enumeration<Slot, uint32_t> m_selectedFilterSlot = Slot::kNone;
-        bool m_fFilterPlayable                                      = false;
-        bool m_fShowOutfitWindow                                    = false;
+        std::string                             m_windowTitle;
+        TableContext<3>                         m_armorListTable;
+        TableContext<5>                         m_armorCandidatesTable;
+        int                                     m_armorAddPolicy     = 0;
+        SKSE::stl::enumeration<Slot, uint32_t>  m_selectedFilterSlot = Slot::kNone;
+        bool                                    m_fFilterPlayable    = false;
+        bool                                    m_fShowOutfitWindow  = false;
         std::array<char, MAX_FILTER_ARMOR_NAME> m_filterStringBuf;
-        SosUiData &m_uiData;
-        SosDataCoordinator &m_dataCoordinator;
-        Armor *m_selectedArmor = nullptr;
-        Popup::DeleteArmorPopup m_DeleteArmorPopup;
-        Popup::ConflictArmorPopup m_ConflictArmorPopup;
+        SosUiData                              &m_uiData;
+        SosDataCoordinator                     &m_dataCoordinator;
+        Armor                                  *m_selectedArmor = nullptr;
+        Popup::DeleteArmorPopup                 m_DeleteArmorPopup;
+        Popup::ConflictArmorPopup               m_ConflictArmorPopup;
 
     public:
         explicit OutfitEditPanel(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
@@ -67,9 +67,11 @@ LIBC_NAMESPACE_DECL
         }
 
     private:
+        CoroutinePromise operator<<(CoroutineTask &&task) { co_await task; }
+
         void UpdateWindowTitle(const std::string &outfitName);
 
-        void RenderProperties(const SosUiData::OutfitPair &wantEdit) const;
+        void RenderProperties(const SosUiData::OutfitPair &wantEdit);
 
         void RenderArmorList(const SosUiData::OutfitPair &wantEdit);
 
@@ -81,11 +83,9 @@ LIBC_NAMESPACE_DECL
 
         void RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit);
 
-        void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
-                                       const bool &fFilterPlayable) const;
+        void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable);
 
-        void UpdateArmorCandidates(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable,
-                                   OutfitAddPolicy policy);
+        void UpdateArmorCandidates(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable, OutfitAddPolicy policy);
 
         void UpdateArmorCandidatesBySlot(const SosUiData::OutfitPair &wantEdit, Slot slot) const;
 

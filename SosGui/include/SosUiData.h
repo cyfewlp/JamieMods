@@ -10,14 +10,15 @@
 #include "GuiContext.h"
 #include "SosDataType.h"
 #include "common/config.h"
+#include "common/log.h"
+#include "coroutine.h"
 #include "data/PagedArmorList.h"
 #include "data/SosUiOutfit.h"
 
 #include <RE/A/Actor.h>
-#include <boost/optional/optional.hpp>
+#include <boost/optional.hpp>
 #include <boost/optional/detail/optional_reference_spec.hpp>
 #include <cstdint>
-#include <functional>
 #include <list>
 #include <mutex>
 #include <queue>
@@ -31,12 +32,12 @@ namespace LIBC_NAMESPACE_DECL
     class SosUiData
     {
     public:
-        using Armor               = RE::TESObjectARMO;
-        using BodySlot            = int32_t;
-        using OutfitState         = std::pair<StateType, std::string>;
-        using BodySlotArmor       = std::pair<BodySlot, Armor *>;
-        using OutfitList          = std::unordered_map<SosUiOutfit::OutfitId, SosUiOutfit>;
-        using OutfitPair          = std::pair<SosUiOutfit::OutfitId, SosUiOutfit *>;
+        using Armor         = RE::TESObjectARMO;
+        using BodySlot      = int32_t;
+        using OutfitState   = std::pair<StateType, std::string>;
+        using BodySlotArmor = std::pair<BodySlot, Armor *>;
+        using OutfitList    = std::unordered_map<SosUiOutfit::OutfitId, SosUiOutfit>;
+        using OutfitPair    = std::pair<SosUiOutfit::OutfitId, SosUiOutfit *>;
 
         static constexpr uint8_t            DEFAULT_PAGE_SIZE = 20;
         static inline SosUiOutfit::OutfitId g_NextOutfitId    = 1;
@@ -55,39 +56,57 @@ namespace LIBC_NAMESPACE_DECL
         std::unordered_map<RE::Actor *, bool>                                       m_autoSwitchEnabled;
         std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> m_actorOutfitStates;
 
-        std::queue<std::function<void(SosUiData &uiData)>> uiTasks;
-        std::mutex                                         m_mutex;
+        std::queue<CoroutineTask>           uiTasks;
+        std::queue<std::coroutine_handle<>> m_resumeQueue;
+        std::mutex                          m_mutex;
 
     public:
         ////////////////////////////////////////////////////////////////////////////
         // Context
         ////////////////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] constexpr auto GetContext() -> GuiContext &
-        {
-            return m_context;
-        }
+        [[nodiscard]] constexpr auto GetContext() -> GuiContext & { return m_context; }
 
         ////////////////////////////////////////////////////////////////////////////
         // UI Tasks
         ////////////////////////////////////////////////////////////////////////////
 
-        void PushTask(std::function<void(SosUiData &uiData)> &&task)
+        struct awaitable
         {
-            std::lock_guard lock(m_mutex);
-            uiTasks.push(std::move(task));
-        }
+            SosUiData *self;
+
+            bool await_ready() const noexcept { return false; }
+
+            auto await_suspend(std::coroutine_handle<> a_handle) const noexcept
+            {
+                std::lock_guard lock(self->m_mutex);
+                self->m_resumeQueue.push(a_handle);
+            }
+
+            void await_resume() {}
+        };
+
+        awaitable await_execute_on_ui() { return awaitable{this}; }
 
         void ExecuteUiTasks()
         {
-            std::queue<std::function<void(SosUiData & uiData)>> localQueue;
+            std::queue<std::coroutine_handle<>> localQueue;
             {
                 std::lock_guard lock(m_mutex);
-                localQueue.swap(uiTasks);
+                localQueue.swap(m_resumeQueue);
             }
             while (!localQueue.empty())
             {
-                localQueue.front()(*this);
+                auto &coroutineHandle = localQueue.front();
+                try
+                {
+                    if (coroutineHandle) { coroutineHandle(); }
+                }
+                catch (const std::exception &ex)
+                {
+                    log_error("Coroutine task occurs exception: ", ex.what());
+                    LogStacktrace();
+                }
                 localQueue.pop();
             }
         }
@@ -96,15 +115,9 @@ namespace LIBC_NAMESPACE_DECL
         // Actors
         ////////////////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
-        {
-            return m_actors;
-        }
+        [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> & { return m_actors; }
 
-        [[nodiscard]] auto GetActors() -> std::vector<RE::Actor *> &
-        {
-            return m_actors;
-        }
+        [[nodiscard]] auto GetActors() -> std::vector<RE::Actor *> & { return m_actors; }
 
         void SetActors(const std::vector<RE::Actor *> &actors)
         {
@@ -117,31 +130,16 @@ namespace LIBC_NAMESPACE_DECL
 
         void AddActor(RE::Actor *actor)
         {
-            if (actor != nullptr && std::ranges::find(m_actors, actor) == m_actors.end())
-            {
-                m_actors.push_back(actor);
-            }
+            if (actor != nullptr && std::ranges::find(m_actors, actor) == m_actors.end()) { m_actors.push_back(actor); }
         }
 
-        void RemoveActor(RE::Actor *actor)
-        {
-            std::erase(m_actors, actor);
-        }
+        void RemoveActor(RE::Actor *actor) { std::erase(m_actors, actor); }
 
-        [[nodiscard]] constexpr auto IsQuickSlotEnabled() const -> bool
-        {
-            return m_fQuickSlotEnabled;
-        }
+        [[nodiscard]] constexpr auto IsQuickSlotEnabled() const -> bool { return m_fQuickSlotEnabled; }
 
-        void SetQuickSlotEnabled(const bool fQuickSlotEnabled)
-        {
-            m_fQuickSlotEnabled = fQuickSlotEnabled;
-        }
+        void SetQuickSlotEnabled(const bool fQuickSlotEnabled) { m_fQuickSlotEnabled = fQuickSlotEnabled; }
 
-        [[nodiscard]] auto GetNearActors() const -> const std::vector<RE::Actor *> &
-        {
-            return m_NearActors;
-        }
+        [[nodiscard]] auto GetNearActors() const -> const std::vector<RE::Actor *> & { return m_NearActors; }
 
         void SetNearActors(std::vector<RE::Actor *> &nearActors)
         {
@@ -149,15 +147,9 @@ namespace LIBC_NAMESPACE_DECL
             m_NearActors = std::move(nearActors);
         }
 
-        [[nodiscard]] auto IsEnabled() const -> bool
-        {
-            return m_enabled;
-        }
+        [[nodiscard]] auto IsEnabled() const -> bool { return m_enabled; }
 
-        void SetEnabled(const bool enabled)
-        {
-            m_enabled = enabled;
-        }
+        void SetEnabled(const bool enabled) { m_enabled = enabled; }
 
         [[nodiscard]] auto IsAutoSwitchEnabled(RE::Actor *actor) const -> bool
         {
@@ -189,10 +181,7 @@ namespace LIBC_NAMESPACE_DECL
         auto GetActorOutfitByState(RE::Actor *actor, const StateType &state) const -> const std::string &
         {
             static std::string empty = "";
-            if (!m_actorOutfitStates.contains(actor))
-            {
-                return empty;
-            }
+            if (!m_actorOutfitStates.contains(actor)) { return empty; }
             auto &stateMap = m_actorOutfitStates.at(actor);
             return stateMap.contains(state) ? stateMap.at(state) : empty;
         }
@@ -201,25 +190,13 @@ namespace LIBC_NAMESPACE_DECL
         // Candidate Armor
         ////////////////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] constexpr auto GetArmorCandidates() -> PagedArmorList &
-        {
-            return m_armorCandidates;
-        }
+        [[nodiscard]] constexpr auto GetArmorCandidates() -> PagedArmorList & { return m_armorCandidates; }
 
-        void MarkArmorIsUsed(Armor *armor)
-        {
-            m_armorCandidates.Insert(armor, true);
-        }
+        void MarkArmorIsUsed(Armor *armor) { m_armorCandidates.Insert(armor, true); }
 
-        void MarkArmorIsUnused(Armor *armor)
-        {
-            m_armorCandidates.Insert(armor, false);
-        }
+        void MarkArmorIsUnused(Armor *armor) { m_armorCandidates.Insert(armor, false); }
 
-        void DeleteCandidateArmor(Armor *armor)
-        {
-            m_armorCandidates.Remove(armor);
-        }
+        void DeleteCandidateArmor(Armor *armor) { m_armorCandidates.Remove(armor); }
 
         void SetArmorCandidates(const std::vector<Armor *> &armorCandidates)
         {
@@ -253,63 +230,39 @@ namespace LIBC_NAMESPACE_DECL
         auto GetOutfit(const SosUiOutfit::OutfitId id) -> boost::optional<SosUiOutfit &>
         {
             boost::optional<SosUiOutfit &> opt;
-            if (m_outfitList.contains(id))
-            {
-                opt = m_outfitList.at(id);
-            }
+            if (m_outfitList.contains(id)) { opt = m_outfitList.at(id); }
             return opt;
         }
 
         void RenameOutfit(const SosUiOutfit::OutfitId id, const std::string &&newName)
         {
-            if (auto opt = GetOutfit(id); opt)
-            {
-                opt.value().SetName(newName);
-            }
+            if (auto opt = GetOutfit(id); opt) { opt.value().SetName(newName); }
         }
 
         void AddArmor(const SosUiOutfit::OutfitId id, Armor *armor)
         {
-            if (auto opt = GetOutfit(id); opt)
-            {
-                opt.value().AddArmor(armor);
-            }
+            if (auto opt = GetOutfit(id); opt) { opt.value().AddArmor(armor); }
         }
 
         void AddArmors(const SosUiOutfit::OutfitId id, const std::vector<Armor *> &armors)
         {
-            if (!m_outfitList.contains(id))
-            {
-                return;
-            }
+            if (!m_outfitList.contains(id)) { return; }
             for (const auto &armor : armors)
             {
                 AddArmor(id, armor);
             }
         }
 
-        void DeleteOutfit(const SosUiOutfit::OutfitId id)
-        {
-            m_outfitList.erase(id);
-        }
+        void DeleteOutfit(const SosUiOutfit::OutfitId id) { m_outfitList.erase(id); }
 
         void DeleteArmor(const SosUiOutfit::OutfitId id, const Armor *armor)
         {
-            if (auto opt = GetOutfit(id); opt)
-            {
-                opt.value().RemoveArmor(armor);
-            }
+            if (auto opt = GetOutfit(id); opt) { opt.value().RemoveArmor(armor); }
         }
 
-        [[nodiscard]] constexpr auto GetOutfitList() -> OutfitList &
-        {
-            return m_outfitList;
-        }
+        [[nodiscard]] constexpr auto GetOutfitList() -> OutfitList & { return m_outfitList; }
 
-        bool HasOutfit(SosUiOutfit::OutfitId &id)
-        {
-            return m_outfitList.contains(id);
-        }
+        bool HasOutfit(SosUiOutfit::OutfitId &id) { return m_outfitList.contains(id); }
 
         ////////////////////////////////////////////////////////////////////////////
         // Active outfit
@@ -344,10 +297,7 @@ namespace LIBC_NAMESPACE_DECL
             m_errorMessages.emplace_back(std::move(message));
         }
 
-        [[nodiscard]] auto GetErrorMessages() -> std::list<std::string> &
-        {
-            return m_errorMessages;
-        }
+        [[nodiscard]] auto GetErrorMessages() -> std::list<std::string> & { return m_errorMessages; }
     };
 }
 

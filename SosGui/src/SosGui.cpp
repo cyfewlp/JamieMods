@@ -1,4 +1,6 @@
 #include "SosGui.h"
+#include "coroutine.h"
+#include "ImGuiUtil.h"
 #include "common/config.h"
 #include "common/log.h"
 #include "imgui.h"
@@ -121,8 +123,18 @@ namespace LIBC_NAMESPACE_DECL
     auto SosGui::Refresh() -> void
     {
         log_debug("RequestOutfitList thread-id {}", std::this_thread::get_id());
-        m_dataCoordinator.Refresh();
+        DoRefresh();
+    }
+
+    auto SosGui::DoRefresh() -> CoroutinePromise
+    {
+        co_await m_dataCoordinator.Refresh();
         m_outfitListTable.Refresh();
+    }
+
+    CoroutinePromise SosGui::operator<<(CoroutineTask &&task)
+    {
+        co_await task;
     }
 
     auto SosGui::DoRender() -> void
@@ -133,7 +145,7 @@ namespace LIBC_NAMESPACE_DECL
             bool fEnabled = m_uiData.IsEnabled();
             if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
             {
-                m_dataCoordinator.RequestEnable(fEnabled);
+                *this << m_dataCoordinator.RequestEnable(fEnabled);
             }
             ImGui::Indent(2);
             ImGui::SameLine();
@@ -199,14 +211,14 @@ namespace LIBC_NAMESPACE_DECL
     {
         if (ImGuiUtil::Button("$SkyOutSys_Text_Export"))
         {
-            m_dataCoordinator.RequestExportSettings();
+            *this << m_dataCoordinator.RequestExportSettings();
         }
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
 
         ImGui::SameLine();
         if (ImGuiUtil::Button("$SkyOutSys_Text_Import"))
         {
-            m_dataCoordinator.RequestImportSettings();
+            *this << m_dataCoordinator.RequestImportSettings();
             Refresh();
         }
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");

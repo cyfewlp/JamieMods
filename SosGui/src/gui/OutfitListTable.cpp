@@ -48,13 +48,13 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
         {
-            m_dataCoordinator.RequestCreateOutfit(outfitNameBuf.data());
+            *this << m_dataCoordinator.RequestCreateOutfit(outfitNameBuf.data());
         }
 
         ImGui::SameLine();
         if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
         {
-            m_dataCoordinator.RequestCreateOutfitFromWorn(outfitNameBuf.data());
+            *this << m_dataCoordinator.RequestCreateOutfitFromWorn(outfitNameBuf.data());
         }
         ImGui::EndDisabled();
 
@@ -164,24 +164,25 @@ namespace LIBC_NAMESPACE_DECL
         bool justClosed      = m_DeleteOutfitPopup.Render(clicked.second->GetName(), isConfirmDelete);
         if (isConfirmDelete)
         {
-            m_dataCoordinator.RequestDeleteOutfit(clicked);
+            *this << m_dataCoordinator.RequestDeleteOutfit(clicked);
         }
         return justClosed;
     }
 
     void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
     {
-        m_dataCoordinator.RequestOutfitArmors(wantEdit);
+        *this << m_dataCoordinator.RequestOutfitArmors(wantEdit);
         m_editPanel.ShowWindow(wantEdit.second->GetName());
     }
 
     void OutfitListTable::OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName)
     {
-        m_dataCoordinator.RequestSetActorStateOutfit(guiContext.editingActor, guiContext.editingState, outfitName);
+        *this << m_dataCoordinator.RequestSetActorStateOutfit(guiContext.editingActor, guiContext.editingState,
+                                                              outfitName);
     }
 
     void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const std::string &outfitName)
     {
-        m_dataCoordinator.RequestActiveOutfit(editingActor, outfitName);
+        *this << m_dataCoordinator.RequestActiveOutfit(editingActor, outfitName);
     }
 }

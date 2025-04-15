@@ -20,7 +20,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (ImGuiUtil::CheckBox("$SkyOutSys_Text_AddActorSelection", &m_fShowNearNpc))
             {
-                m_dataCoordinator.RequestNearActorList();
+                *this << m_dataCoordinator.RequestNearActorList();
             }
             if (m_fShowNearNpc)
             {
@@ -68,7 +68,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::TableNextColumn();
                 if (ImGui::Button(m_charactersTable.GetHeader(1).data()))
                 {
-                    m_dataCoordinator.RequestRemoveActor(actor);
+                    *this << m_dataCoordinator.RequestRemoveActor(actor);
                 }
 
                 ImGui::TableNextColumn();
@@ -99,7 +99,7 @@ namespace LIBC_NAMESPACE_DECL
                 if (ImGui::Selectable(nearActor->GetName(), idx == selectedIdx, ImGuiSelectableFlags_None))
                 {
                     selectedIdx = idx;
-                    m_dataCoordinator.RequestAddActor(nearActors.at(idx));
+                    *this << m_dataCoordinator.RequestAddActor(nearActors.at(idx));
                 }
                 if (selectedIdx == idx)
                 {
@@ -123,7 +123,7 @@ namespace LIBC_NAMESPACE_DECL
         bool fAutoSwitchEnabled = m_uiData.IsAutoSwitchEnabled(currentActor);
         if (ImGuiUtil::CheckBox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))
         {
-            m_dataCoordinator.RequestSetActorAutoSwitchState(currentActor, fAutoSwitchEnabled);
+            *this << m_dataCoordinator.RequestSetActorAutoSwitchState(currentActor, fAutoSwitchEnabled);
         }
 
         if (!fAutoSwitchEnabled)
@@ -155,7 +155,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (!isSelected)
                 {
-                    m_dataCoordinator.RequestActorStateOutfit(currentActor, state);
+                    *this << m_dataCoordinator.RequestActorStateOutfit(currentActor, state);
                 }
                 m_context.editingState = isSelected ? StateType::None : state;
             }
@@ -183,7 +183,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (!outfitName.empty())
             {
-                m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state, "");
+                *this << m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state, "");
             }
         }
 
@@ -196,8 +196,8 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (!isSelected)
                 {
-                    m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state,
-                                                                 outfit.second.GetName());
+                    *this << m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state,
+                                                                          outfit.second.GetName());
                 }
             }
             if (isSelected)

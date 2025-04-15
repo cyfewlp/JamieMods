@@ -42,6 +42,8 @@ namespace LIBC_NAMESPACE_DECL
         virtual void Close() override;
 
     private:
+        CoroutinePromise operator<<(CoroutineTask &&task) { co_await task; }
+
         void RenderChildContent(GuiContext &guiContext);
 
         /**
@@ -52,10 +54,7 @@ namespace LIBC_NAMESPACE_DECL
          */
         bool OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit);
 
-        inline bool EditingPanel(const SosUiData::OutfitPair &wantEdit)
-        {
-            return m_editPanel.Render(wantEdit);
-        }
+        inline bool EditingPanel(const SosUiData::OutfitPair &wantEdit) { return m_editPanel.Render(wantEdit); }
 
         bool DeletePopup(const SosUiData::OutfitPair &clicked);
 
@@ -63,9 +62,6 @@ namespace LIBC_NAMESPACE_DECL
         void OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName);
         void OnAcceptActiveOutfit(RE::Actor *editingActor, const std::string &outfitName);
 
-        inline bool IsValidOutfit(SosUiData::OutfitPair &pair)
-        {
-            return m_uiData.HasOutfit(pair.first);
-        }
+        inline bool IsValidOutfit(SosUiData::OutfitPair &pair) { return m_uiData.HasOutfit(pair.first); }
     };
 }
