@@ -18,10 +18,7 @@ namespace LIBC_NAMESPACE_DECL
         pending = false;
         result  = a_result;
 
-        if (continuation)
-        {
-            continuation.resume();
-        }
+        if (continuation) { continuation.resume(); }
     }
 
     bool SosNativeCaller::Awaitable::await_ready() const
@@ -41,10 +38,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto &continuation = static_cast<CallbackFunctor *>(callback.get())->continuation;
 
-        if (continuation)
-        {
-            continuation.destroy();
-        }
+        if (continuation) { continuation.destroy(); }
 
         continuation = a_handle;
     }
@@ -57,6 +51,19 @@ namespace LIBC_NAMESPACE_DECL
     auto SosNativeCaller::GetOutfitNameMaxLength() -> Awaitable
     {
         return StaticCall(SosFunction::GetOutfitNameMaxLength);
+    }
+
+    auto SosNativeCaller::BodySlotPolicyNamesForOutfit(std::string &&outfitName) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName));
+        return StaticCall(SosFunction::BodySlotPolicyNamesForOutfit, args);
+    }
+
+    auto SosNativeCaller::SetBodySlotPoliciesForOutfit(std::string &&outfitName, uint32_t slotPos,
+                                                       std::string &&policyCode) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(outfitName), std::move(slotPos), std::move(policyCode));
+        return StaticCall(SosFunction::SetBodySlotPoliciesForOutfit, args);
     }
 
     auto SosNativeCaller::ActiveOutfit(RE::Actor *actor, std::string &&outfitName) -> Awaitable
@@ -96,10 +103,7 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::OutfitExists, args);
     }
 
-    auto SosNativeCaller::ActorNearPC() -> Awaitable
-    {
-        return StaticCall(SosFunction::ActorNearPC);
-    }
+    auto SosNativeCaller::ActorNearPC() -> Awaitable { return StaticCall(SosFunction::ActorNearPC); }
 
     auto SosNativeCaller::AddActor(RE::Actor *actor) -> Awaitable
     {
@@ -113,10 +117,7 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::RemoveActor, args);
     }
 
-    auto SosNativeCaller::ListActor() -> Awaitable
-    {
-        return StaticCall(SosFunction::ListActors);
-    }
+    auto SosNativeCaller::ListActor() -> Awaitable { return StaticCall(SosFunction::ListActors); }
 
     auto SosNativeCaller::GetOutfitList(bool favoritesOnly) -> Awaitable
     {
@@ -169,7 +170,7 @@ namespace LIBC_NAMESPACE_DECL
     auto SosNativeCaller::GetCarriedArmor(RE::Actor *actor) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::move(actor));
-        return StaticCall(SosFunction::GetWornItems, args);
+        return StaticCall(SosFunction::GetCarriedArmor, args);
     }
 
     auto SosNativeCaller::GetWornItems(RE::Actor *actor) -> Awaitable
@@ -184,15 +185,9 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::CreateOutfit, args);
     }
 
-    auto SosNativeCaller::ImportSettings() -> Awaitable
-    {
-        return StaticCall(SosFunction::ImportSettings);
-    }
+    auto SosNativeCaller::ImportSettings() -> Awaitable { return StaticCall(SosFunction::ImportSettings); }
 
-    auto SosNativeCaller::ExportSettings() -> Awaitable
-    {
-        return StaticCall(SosFunction::ExportSettings);
-    }
+    auto SosNativeCaller::ExportSettings() -> Awaitable { return StaticCall(SosFunction::ExportSettings); }
 
     auto SosNativeCaller::Enable(bool &isEnable) -> Awaitable
     {
@@ -200,8 +195,5 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::SetEnabled, args);
     }
 
-    auto SosNativeCaller::IsEnabled() -> Awaitable
-    {
-        return StaticCall(SosFunction::IsEnabled);
-    }
+    auto SosNativeCaller::IsEnabled() -> Awaitable { return StaticCall(SosFunction::IsEnabled); }
 }

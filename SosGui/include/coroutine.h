@@ -2,6 +2,7 @@
 
 #include "common/config.h"
 
+#include <common/log.h>
 #include <coroutine>
 #include <exception>
 #include <memory>
@@ -68,7 +69,11 @@ namespace LIBC_NAMESPACE_DECL
         friend struct CoroutineTask;
 
     public:
-        CoroutineTask get_return_object() { return CoroutineTask{handle_type::from_promise(*this)}; }
+        CoroutineTask get_return_object(const std::source_location &location = std::source_location::current())
+        {
+            log_debug("CoroutineTaskPromise::get_return_object: {}", location.function_name());
+            return CoroutineTask{handle_type::from_promise(*this)};
+        }
 
         struct initial_awaitable
         {

@@ -34,6 +34,8 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestAddArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutineTask;
         auto RequestDeleteArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutineTask;
         auto RequestOutfitArmors(SosUiData::OutfitPair pair) const -> CoroutineTask;
+        auto RequestSetOutfitSlotPolicy(SosUiData::OutfitPair pair, uint32_t slotPos, SlotPolicy policy) const -> CoroutineTask;
+        auto RequestOutfitSlotPolicy(SosUiData::OutfitPair pair) const -> CoroutineTask;
 
         auto RequestGetArmorsByCarried() const -> CoroutineTask;
         auto RequestGetArmorsByWorn() const -> CoroutineTask;

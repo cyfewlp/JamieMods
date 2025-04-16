@@ -38,7 +38,7 @@ struct
     {RE::GFxKey::kControl,      ImGuiKey_ModCtrl       },
     {RE::GFxKey::kShift,        ImGuiKey_ModShift      },
     {RE::GFxKey::kCapsLock,     ImGuiKey_CapsLock      },
-    {RE::GFxKey::kTab,          ImGuiKey_Tab           },
+    // {RE::GFxKey::kTab,          ImGuiKey_Tab           }, // Don't sent tab key: bug when use tab close menu
     {RE::GFxKey::kHome,         ImGuiKey_Home          },
     {RE::GFxKey::kEnd,          ImGuiKey_End           },
     {RE::GFxKey::kPageUp,       ImGuiKey_PageUp        },

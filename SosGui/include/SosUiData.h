@@ -27,8 +27,7 @@
 #include <utility>
 #include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
     class SosUiData
     {
@@ -54,12 +53,12 @@ LIBC_NAMESPACE_DECL
         OutfitList                                   m_outfitList;
         std::list<std::string>                       m_errorMessages;
 
-        std::unordered_map<RE::Actor *, bool>                                        m_autoSwitchEnabled;
-        std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string> > m_actorOutfitStates;
+        std::unordered_map<RE::Actor *, bool>                                       m_autoSwitchEnabled;
+        std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> m_actorOutfitStates;
 
-        std::queue<CoroutineTask>            uiTasks;
-        std::queue<std::coroutine_handle<> > m_resumeQueue;
-        std::mutex                           m_mutex;
+        std::queue<CoroutineTask>           uiTasks;
+        std::queue<std::coroutine_handle<>> m_resumeQueue;
+        std::mutex                          m_mutex;
 
     public:
         ////////////////////////////////////////////////////////////////////////////
@@ -91,14 +90,18 @@ LIBC_NAMESPACE_DECL
 
         void ExecuteUiTasks()
         {
-            std::queue<std::coroutine_handle<> > localQueue; {
+            std::queue<std::coroutine_handle<>> localQueue;
+            {
                 std::lock_guard lock(m_mutex);
                 localQueue.swap(m_resumeQueue);
             }
             while (!localQueue.empty())
             {
                 auto &coroutineHandle = localQueue.front();
-                try { if (coroutineHandle) { coroutineHandle(); } }
+                try
+                {
+                    if (coroutineHandle) { coroutineHandle(); }
+                }
                 catch (const std::exception &ex)
                 {
                     log_error("Coroutine task occurs exception: ", ex.what());
@@ -119,7 +122,10 @@ LIBC_NAMESPACE_DECL
         void SetActors(const std::vector<RE::Actor *> &actors)
         {
             m_actors.clear();
-            for (const auto &actor : actors) { m_actors.push_back(actor); }
+            for (const auto &actor : actors)
+            {
+                m_actors.push_back(actor);
+            }
         }
 
         void AddActor(RE::Actor *actor)
@@ -160,7 +166,7 @@ LIBC_NAMESPACE_DECL
         }
 
         [[nodiscard]] auto GetActorOutfitStates() const
-            -> const std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string> > &
+            -> const std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> &
         {
             return m_actorOutfitStates;
         }
@@ -195,7 +201,10 @@ LIBC_NAMESPACE_DECL
         void SetArmorCandidates(const std::vector<Armor *> &armorCandidates)
         {
             m_armorCandidates.Clear();
-            for (const auto &armor : armorCandidates) { m_armorCandidates.Insert(armor); }
+            for (const auto &armor : armorCandidates)
+            {
+                MarkArmorIsUsed(armor);
+            }
         }
 
         auto GetCandidateArmorCount() const -> uint32_t { return m_armorCandidates.Size(); }
@@ -214,7 +223,13 @@ LIBC_NAMESPACE_DECL
             ++g_NextOutfitId;
         }
 
-        void AddOutfits(auto &&container) { for (const auto &outfit : container) { AddOutfit(outfit); } }
+        void AddOutfits(auto &&container)
+        {
+            for (const auto &outfit : container)
+            {
+                AddOutfit(outfit);
+            }
+        }
 
         auto GetOutfit(const SosUiOutfit::OutfitId id) -> boost::optional<SosUiOutfit &>
         {
@@ -236,7 +251,10 @@ LIBC_NAMESPACE_DECL
         void AddArmors(const SosUiOutfit::OutfitId id, const std::vector<Armor *> &armors)
         {
             if (!m_outfitList.contains(id)) { return; }
-            for (const auto &armor : armors) { AddArmor(id, armor); }
+            for (const auto &armor : armors)
+            {
+                AddArmor(id, armor);
+            }
         }
 
         void DeleteOutfit(const SosUiOutfit::OutfitId id) { m_outfitList.erase(id); }
@@ -276,7 +294,10 @@ LIBC_NAMESPACE_DECL
 
         void PushErrorMessage(std::string &&message)
         {
-            while (m_errorMessages.size() >= MAX_ERROR_COUNT) { m_errorMessages.erase(m_errorMessages.begin()); }
+            while (m_errorMessages.size() >= MAX_ERROR_COUNT)
+            {
+                m_errorMessages.erase(m_errorMessages.begin());
+            }
             m_errorMessages.emplace_back(std::move(message));
         }
 

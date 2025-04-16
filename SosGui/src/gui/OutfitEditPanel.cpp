@@ -82,55 +82,89 @@ namespace LIBC_NAMESPACE_DECL
         // render all in order but skip empty slot
         auto page = m_uiData.GetArmorCandidates().GetCurrentPage();
 
-        // record all selected armor slots to highlight conflict armors
-        SlotEnumeration selectedCandidatesSlot;
-        if (m_editContext.armorSelection.Size > 0)
-        {
-            uint16_t index = 0;
-            for (auto itBegin = page.begin(); itBegin != page.end(); ++index, ++itBegin)
-            {
-                if (m_editContext.armorSelection.Contains(index))
-                {
-                    selectedCandidatesSlot.set((*itBegin)->GetSlotMask());
-                }
-            }
-        }
+        static bool showAllSlots = false;
+        ImGuiUtil::CheckBox("$SosGui_CheckBox_SlotFilter", &showAllSlots);
 
         static int selectedIdx = -1;
         if (m_armorListTable.Begin())
         {
-            m_armorListTable.HeadersRow();
-            for (int slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
+            // clang-format off
+            m_armorListTable.Column(0).NoHide().Setup()
+                .Column(1).NoSort().Setup()
+                .Column(2).NoSort().Setup()
+                .Column(3).WidthFixed().NoSort().Setup()
+                .Column(4).WidthFixed().NoSort().Setup();
+            // clang-format on
+            ImGui::TableHeadersRow();
+            auto slotPolicies = wantEdit.second->GetSlotPolicies();
+            for (uint32_t slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
             {
                 const auto &armor = wantEdit.second->GetArmorAt(slotIdx);
-                if (armor == nullptr) { continue; }
+                if (!showAllSlots && armor == nullptr) { continue; }
 
                 ImGuiUtil::PushIdGuard idHolder(slotIdx);
 
                 ImGui::TableNextRow();
-                ImGui::TableNextColumn();
+                ImGui::TableNextColumn(); // number column
+                ImGui::Text("%d", slotIdx);
+
+                ImGui::TableNextColumn(); // slot name column
                 const bool  isSelected = selectedIdx == slotIdx;
                 auto        name       = std::format("$SkyOutSys_BodySlot{}", slotIdx + SOS_SLOT_OFFSET);
                 static auto flags      = ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_SpanAllColumns;
                 if (ImGuiUtil::Selectable(name, isSelected, flags)) { selectedIdx = isSelected ? -1 : slotIdx; }
-                if (selectedCandidatesSlot.any(armor->GetSlotMask()))
-                {
-                    auto *drawList = ImGui::GetWindowDrawList();
-                    drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(255, 0, 0, 255), 0,
-                                      ImDrawFlags_None, 2.0F);
-                }
+                if (armor != nullptr) { HighlightConflictArmor(armor); }
 
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", armor->GetName());
+                ImGui::TableNextColumn(); // armor name column
+                ImGui::Text("%s", armor == nullptr ? "" : armor->GetName());
 
-                ImGui::TableNextColumn();
-                if (ImGuiUtil::Button("$Delete"))
+                ImGui::TableNextColumn(); // slot policy combo column
+                SlotPolicyCombo(wantEdit, slotIdx);
+
+                ImGui::TableNextColumn(); // action column
+                ImGui::BeginDisabled(armor == nullptr);
                 {
-                    m_editContext.selectedArmor = armor;
-                    m_DeleteArmorPopup.Open();
+                    if (ImGuiUtil::Button("$Delete"))
+                    {
+                        m_editContext.selectedArmor = armor;
+                        m_DeleteArmorPopup.Open();
+                    }
                 }
+                ImGui::EndDisabled();
             }
             ImGui::EndTable();
+        }
+    }
+
+    void OutfitEditPanel::HighlightConflictArmor(Armor *armor) const
+    {
+        if (m_editContext.candidateSelectedSlot.any(armor->GetSlotMask()))
+        {
+            auto *drawList = ImGui::GetWindowDrawList();
+            drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(255, 0, 0, 255), 0,
+                              ImDrawFlags_None, 2.0F);
+        }
+    }
+
+    void OutfitEditPanel::SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const
+    {
+        auto        policyNameKey = wantEdit.second->GetSlotPolicies().at(slotIdx);
+        std::string policyName;
+
+        if (ImGui::BeginCombo("##SlotPolicy", Translation::Translate(policyNameKey).c_str()))
+        {
+            for (const auto &policy : {SlotPolicy::Inherit, SlotPolicy::Passthrough, SlotPolicy::RequireEquipped,
+                                       SlotPolicy::AlwaysUseOutfit})
+            {
+                policyName = SlotPolicyToUiString(policy);
+                if (ImGui::Selectable(policyName.c_str(), false))
+                {
+                    SlotPolicyToCode(policy);
+                    *this << m_dataCoordinator.RequestSetOutfitSlotPolicy(wantEdit, slotIdx, policy);
+                }
+                ImGuiUtil::SetItemTooltip(SlotPolicyToTooltipString(policy));
+            }
+            ImGui::EndCombo();
         }
     }
 
@@ -290,11 +324,11 @@ namespace LIBC_NAMESPACE_DECL
         static bool requireAddAll = false;
 
         // clang-format off
-        auto *multiSelectionIo = m_editContext.armorSelection
+        auto *multiSelectionIo = m_editContext.candidateSelection
                 .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
                 .Begin(armorCandidates.GetPageSize());
         // clang-format on
-        m_editContext.armorSelection.ApplyRequests(multiSelectionIo);
+        m_editContext.candidateSelection.ApplyRequests(multiSelectionIo);
 
         requireAddAll = false;
         armorCandidates.ForEachPage([this, &count](const size_t index, Armor *armor) {
@@ -305,9 +339,11 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::TableNextColumn(); // armor name column
 
-            bool isSelected = m_editContext.armorSelection.Contains(static_cast<ImGuiID>(index));
+            bool isSelected = m_editContext.candidateSelection.Contains(static_cast<ImGuiID>(index));
             ImGui::SetNextItemSelectionUserData(index);
             ImGui::Selectable(armor->GetName(), isSelected, SELECTABLE_SPAN_FLAGS);
+            if (isSelected) { m_editContext.candidateSelectedSlot.set(armor->GetSlotMask()); }
+            else { m_editContext.candidateSelectedSlot.reset(armor->GetSlotMask()); }
 
             CandidateContextMenu(requireAddAll);
 
@@ -329,22 +365,22 @@ namespace LIBC_NAMESPACE_DECL
         });
         ImGui::EndTable();
         multiSelectionIo = ImGui::EndMultiSelect();
-        m_editContext.armorSelection.ApplyRequests(multiSelectionIo);
+        m_editContext.candidateSelection.ApplyRequests(multiSelectionIo);
 
         // handle multi-selection
-        if (requireAddAll && m_editContext.armorSelection.Size > 0)
+        if (requireAddAll && m_editContext.candidateSelection.Size > 0)
         {
             auto page = armorCandidates.GetCurrentPage();
 
             uint16_t index = 0;
             for (auto itBegin = page.begin(); itBegin != page.end(); ++index, ++itBegin)
             {
-                if (m_editContext.armorSelection.Contains(index))
+                if (m_editContext.candidateSelection.Contains(index))
                 {
                     *this << m_dataCoordinator.RequestAddArmor(wantEdit, *itBegin);
                 }
             }
-            m_editContext.armorSelection.Clear();
+            m_editContext.candidateSelection.Clear();
         }
 
         if (requireAdd)

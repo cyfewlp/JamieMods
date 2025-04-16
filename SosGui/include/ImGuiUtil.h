@@ -62,6 +62,13 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::SetItemTooltip("%s", g_widgetName.c_str());
         }
 
+        template <typename String>
+        constexpr auto SetItemTooltip(String &&content) -> void
+        {
+            Translation::Translate(content.c_str(), g_widgetName);
+            ImGui::SetItemTooltip("%s", g_widgetName.c_str());
+        }
+
         constexpr auto SeparatorText(const char *content) -> void
         {
             Translation::Translate(content, g_widgetName);

@@ -18,26 +18,21 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr OutfitId INVALID_ID = 0;
         using Slot                           = RE::BIPED_MODEL::BipedObjectSlot;
         using Armor                          = RE::TESObjectARMO;
+        using SlotPolicyArray                = std::array<std::string, SLOT_COUNT>;
 
     private:
-
         OutfitId                               m_id;
         std::string                            m_name;
         SKSE::stl::enumeration<Slot, uint32_t> m_slotMask = Slot::kNone;
         std::array<Armor *, SLOT_COUNT>        m_armors;
+        SlotPolicyArray                        m_slotPolicies;
 
     public:
-        explicit SosUiOutfit(OutfitId id, const std::string &name) : m_id(id), m_name(name)
-        {
-            m_armors.fill(nullptr);
-        }
+        explicit SosUiOutfit(OutfitId id, const std::string &name) : m_id(id), m_name(name) { m_armors.fill(nullptr); }
 
         ~SosUiOutfit() = default;
 
-        [[nodiscard]] constexpr auto GetId() const -> OutfitId
-        {
-            return m_id;
-        }
+        [[nodiscard]] constexpr auto GetId() const -> OutfitId { return m_id; }
 
         void AddArmor(Armor *armor);
 
@@ -45,29 +40,22 @@ namespace LIBC_NAMESPACE_DECL
 
         auto GetArmorAt(uint32_t slotPos) const -> Armor *;
 
-        auto HasSlot(uint32_t slotPos) const -> bool
+        auto HasSlot(uint32_t slotPos) const -> bool { return m_slotMask.all(static_cast<Slot>(1 << slotPos)); }
+
+        auto IsConflictWith(const Armor *armor) const -> bool { return m_slotMask.any(armor->GetSlotMask()); }
+
+        void SetName(const std::string &newName) { m_name.assign(newName); }
+
+        [[nodiscard]] auto GetName() const -> const std::string & { return m_name; }
+
+        [[nodiscard]] auto IsEmpty() const -> bool { return m_slotMask.underlying() == 0; }
+
+        auto SetSlotPolicies(uint32_t slotPos, std::string policy)
         {
-            return m_slotMask.all(static_cast<Slot>(1 << slotPos));
+            if (slotPos >= SLOT_COUNT) { return; }
+            m_slotPolicies.at(slotPos) = policy;
         }
 
-        auto IsConflictWith(const Armor *armor) const -> bool
-        {
-            return m_slotMask.any(armor->GetSlotMask());
-        }
-
-        void SetName(const std::string &newName)
-        {
-            m_name.assign(newName);
-        }
-
-        [[nodiscard]] auto GetName() const -> const std::string &
-        {
-            return m_name;
-        }
-
-        [[nodiscard]] auto IsEmpty() const -> bool
-        {
-            return m_slotMask.underlying() == 0;
-        }
+        [[nodiscard]] auto GetSlotPolicies() const -> const SlotPolicyArray & { return m_slotPolicies; }
     };
 }

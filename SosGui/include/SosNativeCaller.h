@@ -75,6 +75,8 @@ namespace LIBC_NAMESPACE_DECL
         static auto PrepOutfitBodySlotListing(std::string &&outfitName) -> Awaitable;
         static auto GetOutfitBodySlotListingArmorForms() -> Awaitable;
         static auto GetOutfitNameMaxLength() -> Awaitable;
+        static auto BodySlotPolicyNamesForOutfit(std::string &&outfitName) -> Awaitable;
+        static auto SetBodySlotPoliciesForOutfit(std::string &&outfitName, uint32_t slotPos, std::string &&policyCode) -> Awaitable;
 
         // auto-switch
         static auto IsActorAutoSwitchEnabled(RE::Actor *actor) -> Awaitable;

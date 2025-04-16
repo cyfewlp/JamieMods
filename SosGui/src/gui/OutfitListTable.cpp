@@ -172,6 +172,7 @@ namespace LIBC_NAMESPACE_DECL
     void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
     {
         *this << m_dataCoordinator.RequestOutfitArmors(wantEdit);
+        *this << m_dataCoordinator.RequestOutfitSlotPolicy(wantEdit);
         m_editPanel.ShowWindow(wantEdit.second->GetName());
     }
 

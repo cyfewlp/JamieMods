@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Translation.h"
 #include "imgui.h"
 
 #include <cstdint>
@@ -139,6 +140,99 @@ namespace LIBC_NAMESPACE_DECL
         "ModMisc2",
         "FX01",
     };
+
+    static constexpr std::array SLOT_POLICY_NAMES = {
+        "XXXX", // not available advanced: true
+        "XXXE", // not available advanced: true
+        "XXXO", //     available advanced: false  // name: Require equipped
+        "XXOX", // not available advanced: true
+        "XXOE", // not available advanced: true
+        "XXOO", //     available advanced: false  // name: Always use outfit
+        "XEXX", // not available advanced: true
+        "XEXE", // not available advanced: true
+        "XEXO", //     available advanced: false  // name: Passthrough
+        "XEOX", // not available advanced: true
+        "XEOE", // not available advanced: true
+        "XEOO", // not available advanced: true
+    };
+
+    static constexpr std::array AVAILABLE_SLOT_POLICY = {
+        "XXXO", //     available advanced: false  // name: Require equipped
+        "XXOO", //     available advanced: false  // name: Always use outfit
+        "XEXO", //     available advanced: false  // name: Passthrough
+    };
+
+    enum class SlotPolicy : uint8_t
+    {
+        Inherit,
+        RequireEquipped,
+        AlwaysUseOutfit,
+        Passthrough
+    };
+
+    inline auto SlotPolicyToUiKey(SlotPolicy policy) -> const char *
+    {
+        switch (policy)
+        {
+            case SlotPolicy::Inherit:
+                return "$SkyOutSys_Desc_PolicyName_INHERIT";
+            case SlotPolicy::RequireEquipped:
+                return "$SkyOutSys_Desc_EasyPolicyName_XXXO";
+            case SlotPolicy::AlwaysUseOutfit:
+                return "$SkyOutSys_Desc_EasyPolicyName_XXOO";
+            case SlotPolicy::Passthrough:
+                return "$SkyOutSys_Desc_EasyPolicyName_XEXO";
+            default:
+                return "$SkyOutSys_Desc_EasyPolicyName_UNKNOWN";
+        }
+    }
+
+    inline auto SlotPolicyToUiString(SlotPolicy policy) -> std::string
+    {
+        auto key = SlotPolicyToUiKey(policy);
+        return Translation::Translate(key);
+    }
+
+    inline auto SlotPolicyToTooltipKey(SlotPolicy policy) -> const char *
+    {
+        switch (policy)
+        {
+            case SlotPolicy::Inherit:
+                return "";
+            case SlotPolicy::RequireEquipped:
+                return "$SkyOutSys_Desc_PolicyName_XXXO";
+            case SlotPolicy::AlwaysUseOutfit:
+                return "$SkyOutSys_Desc_PolicyName_XXOO";
+            case SlotPolicy::Passthrough:
+                return "$SkyOutSys_Desc_PolicyName_XEXO";
+            default:
+                return "$SkyOutSys_Desc_PolicyName_UNKNOWN";
+        }
+    }
+
+    inline auto SlotPolicyToTooltipString(SlotPolicy policy) -> std::string
+    {
+        auto key = SlotPolicyToTooltipKey(policy);
+        return Translation::Translate(key);
+    }
+
+    // used for SkyrimOutfitSystem
+    inline auto SlotPolicyToCode(SlotPolicy policy) -> std::string
+    {
+        switch (policy)
+        {
+            case SlotPolicy::Inherit:
+                return "";
+            case SlotPolicy::RequireEquipped:
+                return "XXXO";
+            case SlotPolicy::AlwaysUseOutfit:
+                return "XXOO";
+            case SlotPolicy::Passthrough:
+                return "XEXO";
+            default:
+                return "UNKNOWN";
+        }
+    }
 
     constexpr std::string_view SOS_SPELL_EDITOR_ID   = "SkyrimOutfitSystemQuickslotSpell";
     constexpr std::string_view SOS_NATIVE_CLASS_NAME = "SkyrimOutfitSystemNativeFuncs";

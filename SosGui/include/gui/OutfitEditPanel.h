@@ -38,12 +38,15 @@ namespace LIBC_NAMESPACE_DECL
             bool                                    filterPlayable   = false;
             bool                                    showOutfitWindow = false;
             std::array<char, MAX_FILTER_ARMOR_NAME> filterStringBuf;
-            Armor                                  *selectedArmor = nullptr;
-            MultiSelection                          armorSelection;
+            // be used on click add(candidate table)/delete(armor table)
+            Armor *selectedArmor = nullptr;
+            // candidate armor variables
+            MultiSelection  candidateSelection;
+            SlotEnumeration candidateSelectedSlot; // be used to highlight conflict armors
         } m_editContext = {};
 
         std::string               m_windowTitle;
-        TableContext<3>           m_armorListTable;
+        TableContext<5>           m_armorListTable;
         TableContext<5>           m_armorCandidatesTable;
         SosUiData                &m_uiData;
         SosDataCoordinator       &m_dataCoordinator;
@@ -53,7 +56,8 @@ namespace LIBC_NAMESPACE_DECL
     public:
         explicit OutfitEditPanel(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
             : m_armorListTable(
-                  TableContext<3>::Create("##OutfitArmors", {"$SosGui_TableHeader_Slot", "$ARMOR", "$Delete"})),
+                  TableContext<5>::Create("##OutfitArmors", {"##Number", "$SosGui_TableHeader_Slot", "$ARMOR",
+                                                             "$SkyOutSys_OEdit_OutfitSettings_Header", "$Delete"})),
               m_armorCandidatesTable(
                   TableContext<5>::Create("##ArmorCandidates", {"##Number", "$ARMOR", "FormID", "ModName", "$Add"})),
               m_uiData(uiData), m_dataCoordinator(dataCoordinator)
@@ -84,6 +88,8 @@ namespace LIBC_NAMESPACE_DECL
         void RenderProperties(const SosUiData::OutfitPair &wantEdit);
 
         void RenderArmorList(const SosUiData::OutfitPair &wantEdit);
+        void HighlightConflictArmor(Armor *armor) const;
+        void SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const;
 
         void RenderEditPanel(const SosUiData::OutfitPair &wantEdit);
 
@@ -114,4 +120,5 @@ namespace LIBC_NAMESPACE_DECL
             return slotPos >= SLOT_COUNT ? Slot::kNone : static_cast<Slot>(1 << slotPos);
         }
     };
+
 }

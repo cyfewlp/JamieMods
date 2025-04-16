@@ -1,10 +1,11 @@
 #include "gui/SosDataCoordinator.h"
-#include "coroutine.h"
 #include "SosDataType.h"
 #include "SosNativeCaller.h"
 #include "SosUiData.h"
 #include "common/config.h"
 #include "common/log.h"
+#include "coroutine.h"
+#include "gui/OutfitEditPanel.h"
 
 #include <RE/A/Actor.h>
 #include <RE/P/PlayerCharacter.h>
@@ -74,10 +75,7 @@ namespace LIBC_NAMESPACE_DECL
     auto SosDataCoordinator::RequestCreateOutfit(std::string outfitName) const -> CoroutineTask
     {
         Variable isAlreadyExist = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-        if (isAlreadyExist.IsBool() && isAlreadyExist.GetBool())
-        {
-            co_return;
-        }
+        if (isAlreadyExist.IsBool() && isAlreadyExist.GetBool()) { co_return; }
         co_await SosNativeCaller::CreateOutfit(std::string(outfitName));
         Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
         if (!existVar.IsBool() || !existVar.GetBool()) { m_uiData.PushErrorMessage("Can't get outfit list"); }
@@ -224,6 +222,53 @@ namespace LIBC_NAMESPACE_DECL
         m_uiData.AddArmors(pair.first, std::move(armors));
     }
 
+    auto SosDataCoordinator::RequestSetOutfitSlotPolicy(SosUiData::OutfitPair pair, uint32_t slotPos,
+                                                        SlotPolicy policy) const -> CoroutineTask
+    {
+        co_await SosNativeCaller::SetBodySlotPoliciesForOutfit(std::string(pair.second->GetName()), slotPos,
+                                                               SlotPolicyToCode(policy));
+        co_await m_uiData.await_execute_on_ui();
+        auto outfit = m_uiData.GetOutfit(pair.first);
+        if (outfit.has_value()) { outfit.value().SetSlotPolicies(slotPos, SlotPolicyToUiString(policy)); }
+    }
+
+    auto SosDataCoordinator::RequestOutfitSlotPolicy(SosUiData::OutfitPair pair) const -> CoroutineTask
+    {
+        Variable variable = co_await SosNativeCaller::BodySlotPolicyNamesForOutfit(std::string(pair.second->GetName()));
+        if (!variable.IsLiteralArray())
+        {
+            m_uiData.PushErrorMessage("Can't get outfit slot policies");
+            co_return;
+        }
+        auto                     array = variable.GetArray();
+        if (array->size() < SosUiOutfit::SLOT_COUNT)
+        {
+            m_uiData.PushErrorMessage("Invalid outfit slot policies: slot count incorrect.");
+            co_return;
+        }
+        std::vector<std::string> slotPolicies;
+        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        {
+            const RE::BSScript::Variable var = *iter;
+
+            slotPolicies.emplace_back(var.GetString());
+        }
+
+        co_await m_uiData.await_execute_on_ui();
+
+        auto outfitOpt = m_uiData.GetOutfit(pair.first);
+        if (!outfitOpt.has_value())
+        {
+            m_uiData.PushErrorMessage(std::format("Fatal Error: Can't found outfit {}", pair.first));
+            co_return;
+        }
+        auto &outfit = outfitOpt.value();
+        for (uint32_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; ++slotPos)
+        {
+            outfit.SetSlotPolicies(slotPos, slotPolicies[slotPos]);
+        }
+    }
+
     auto SosDataCoordinator::RequestGetArmorsByCarried() const -> CoroutineTask
     {
         std::string errorMessage;
@@ -351,7 +396,6 @@ namespace LIBC_NAMESPACE_DECL
         co_await task2;
         co_await task3;
         co_await task4;
-
     }
 
     auto SosDataCoordinator::HasQuickSlotSpell() -> bool
