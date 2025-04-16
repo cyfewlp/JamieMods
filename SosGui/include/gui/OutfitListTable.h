@@ -38,8 +38,8 @@ namespace LIBC_NAMESPACE_DECL
 
         void Render(GuiContext &guiContext, ImVec2 childSize);
 
-        virtual void Refresh() override;
-        virtual void Close() override;
+        void Refresh() override;
+        void Close() override;
 
     private:
         CoroutinePromise operator<<(CoroutineTask &&task) { co_await task; }
@@ -48,13 +48,12 @@ namespace LIBC_NAMESPACE_DECL
 
         /**
          * open a context menu if user right-click current row
-         * @param outfit that current row outfit in loop
          * @param acceptEdit modify to true if accept "Edit this outfit"
          * @return true if the context menu is open.
          */
         bool OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit);
 
-        inline bool EditingPanel(const SosUiData::OutfitPair &wantEdit) { return m_editPanel.Render(wantEdit); }
+        bool EditingPanel(const SosUiData::OutfitPair &wantEdit) { return m_editPanel.Render(wantEdit); }
 
         bool DeletePopup(const SosUiData::OutfitPair &clicked);
 
@@ -62,6 +61,6 @@ namespace LIBC_NAMESPACE_DECL
         void OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName);
         void OnAcceptActiveOutfit(RE::Actor *editingActor, const std::string &outfitName);
 
-        inline bool IsValidOutfit(SosUiData::OutfitPair &pair) { return m_uiData.HasOutfit(pair.first); }
+        bool IsValidOutfit(SosUiData::OutfitPair &pair) { return m_uiData.HasOutfit(pair.first); }
     };
 }

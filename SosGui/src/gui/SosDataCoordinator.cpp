@@ -327,16 +327,31 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
+    auto SosDataCoordinator::QueryIsEnable() const -> CoroutinePromise
+    {
+        RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled();
+        if (!isEnabledVar.IsBool())
+        {
+            m_uiData.PushErrorMessage("Can't set SkyrimOutfitSystem enabled state");
+            co_return;
+        }
+        co_await m_uiData.await_execute_on_ui();
+        m_uiData.SetEnabled(isEnabledVar.GetBool());
+    }
+
     auto SosDataCoordinator::Refresh() const -> CoroutineTask
     {
         auto task1 = RequestActorList();
         auto task2 = RequestOutfitList();
         auto task3 = RequestUpdateActorAutoSwitchState(RE::PlayerCharacter::GetSingleton());
+        auto task4 = QueryIsEnable();
         m_uiData.SetQuickSlotEnabled(HasQuickSlotSpell());
 
         co_await task1;
         co_await task2;
         co_await task3;
+        co_await task4;
+
     }
 
     auto SosDataCoordinator::HasQuickSlotSpell() -> bool

@@ -31,7 +31,7 @@ namespace LIBC_NAMESPACE_DECL
             return ImGui::Checkbox(g_widgetName.c_str(), isChecked);
         }
 
-        static constexpr auto CheckBox(std::string &name, bool *isChecked) -> bool
+        static constexpr auto CheckBox(const std::string &name, bool *isChecked) -> bool
         {
             Translation::Translate(name.c_str(), g_widgetName);
             return ImGui::Checkbox(g_widgetName.c_str(), isChecked);
@@ -42,6 +42,12 @@ namespace LIBC_NAMESPACE_DECL
         {
             Translation::Translate(name, g_widgetName);
             return ImGui::InputText(g_widgetName.c_str(), inputBuf.data(), inputBuf.size());
+        }
+
+        constexpr bool BeginCombo(const char *nameKey, const char *previeValue)
+        {
+            Translation::Translate(nameKey, g_widgetName);
+            return ImGui::BeginCombo(g_widgetName.c_str(), previeValue);
         }
 
         constexpr auto BeginTabItem(const std::string &nameKey) -> bool
@@ -94,6 +100,12 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::TextWrapped("%s", g_widgetName.c_str());
         }
 
+        constexpr bool SliderInt(const char *nameKey, int *curPageSize, int min, int max)
+        {
+            Translation::Translate(nameKey, g_widgetName);
+            return ImGui::SliderInt(g_widgetName.c_str(), curPageSize, min, max);
+        }
+
         constexpr auto Selectable(const std::string &string, bool isSelected, ImGuiSelectableFlags flags = 0) -> bool
         {
             Translation::Translate(string.c_str(), g_widgetName);
@@ -139,10 +151,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::PushID(id);
             }
 
-            ~PushIdGuard()
-            {
-                ImGui::PopID();
-            }
+            ~PushIdGuard() { ImGui::PopID(); }
         };
 
         struct ChildGuard
@@ -154,15 +163,9 @@ namespace LIBC_NAMESPACE_DECL
                 isBegin = ImGui::BeginChild(name, size, flags);
             }
 
-            explicit operator bool()
-            {
-                return isBegin;
-            }
+            explicit operator bool() const { return isBegin; }
 
-            ~ChildGuard()
-            {
-                ImGui::EndChild();
-            }
+            ~ChildGuard() { ImGui::EndChild(); }
         };
     }
 }

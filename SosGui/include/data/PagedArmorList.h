@@ -31,7 +31,7 @@ namespace LIBC_NAMESPACE_DECL
 
     class PagedArmorList
     {
-        uint8_t  m_pageSize;
+        uint16_t m_pageSize;
         uint32_t m_currentPage = 0;
         uint32_t m_pageCount   = 0;
         bool     m_fAscend     = true;
@@ -43,24 +43,17 @@ namespace LIBC_NAMESPACE_DECL
         {
             Armor *armorPtr = nullptr;
 
-            ArmorWrap(Armor *armorPtr) : armorPtr(armorPtr)
-            {
-            }
+            ArmorWrap(Armor *armorPtr) : armorPtr(armorPtr) {}
 
-            auto HasAnyPartOf(auto &slot) const -> bool
+            template <typename Slot>
+            auto HasAnyPartOf(Slot &&slot) const -> bool
             {
                 return armorPtr->bipedModelData.bipedObjectSlots.any(slot);
             }
 
-            auto GetName() const -> const char *
-            {
-                return armorPtr->GetName();
-            }
+            auto GetName() const -> const char * { return armorPtr->GetName(); }
 
-            auto GetFormID() const -> RE::FormID
-            {
-                return armorPtr->GetFormID();
-            }
+            auto GetFormID() const -> RE::FormID { return armorPtr->GetFormID(); }
 
             [[nodiscard]] inline friend bool operator==(const ArmorWrap &a_lhs, const ArmorWrap &a_rhs) noexcept
             {
@@ -86,9 +79,10 @@ namespace LIBC_NAMESPACE_DECL
         typedef nth_index<Container, 0>::type                  ContainerByFormId;
         typedef nth_index<Container, 1>::type                  ContainerByName;
 
-        using RankedIndex     = Container::nth_index<0>::type;
-        using Iterator        = RankedIndex::iterator;
-        using ReverseIterator = RankedIndex::reverse_iterator;
+        using FormIdIterator        = ContainerByFormId::iterator;
+        using ReverseFormIdIterator = ContainerByFormId::reverse_iterator;
+        using NameIterator          = ContainerByName::iterator;
+        using ReverseNameIterator   = ContainerByName::reverse_iterator;
 
     private:
         Container          m_Container;
@@ -98,42 +92,28 @@ namespace LIBC_NAMESPACE_DECL
 
         void UpdatePageInfo()
         {
-            m_pageCount = m_Container.size() / m_pageSize;
-            if (m_currentPage >= m_pageCount)
-            {
-                m_currentPage = std::max(0U, m_pageCount - 1);
-            }
+            m_pageCount = m_Container.size() / m_pageSize + 1;
+            if (m_currentPage >= m_pageCount) { m_currentPage = std::max(0U, m_pageCount - 1); }
         }
 
     public:
         struct invalid_page_size : std::runtime_error
         {
-            explicit invalid_page_size() : runtime_error("Invalid Page Size 0")
-            {
-            }
+            explicit invalid_page_size() : runtime_error("Invalid Page Size 0") {}
         };
 
-        PagedArmorList(uint8_t pageSize) : m_pageSize(pageSize)
+        PagedArmorList(uint16_t pageSize) : m_pageSize(pageSize)
         {
-            if (pageSize == 0)
-            {
-                throw invalid_page_size();
-            }
+            if (pageSize == 0) { throw invalid_page_size(); }
         }
 
         ~PagedArmorList() = default;
 
         void Insert(const ArmorWrap &armorWrap, bool isUsed = false)
         {
-            Iterator iter = m_Container.cend();
-            if (armorWrap.armorPtr == nullptr)
-            {
-                return;
-            }
-            if (isUsed)
-            {
-                m_Container.insert(armorWrap);
-            }
+            FormIdIterator iter = m_Container.cend();
+            if (armorWrap.armorPtr == nullptr) { return; }
+            if (isUsed) { m_Container.insert(armorWrap); }
             else
             {
                 m_Container.erase(armorWrap.armorPtr->GetFormID());
@@ -163,10 +143,7 @@ namespace LIBC_NAMESPACE_DECL
             UpdatePageInfo();
         }
 
-        void Insert(Armor *armor, bool isUsed = false)
-        {
-            Insert(ArmorWrap(armor), isUsed);
-        }
+        void Insert(Armor *armor, bool isUsed = false) { Insert(ArmorWrap(armor), isUsed); }
 
         void RestoreUnusedArmors()
         {
@@ -180,10 +157,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void Remove(Armor *armor)
         {
-            if (armor == nullptr)
-            {
-                return;
-            }
+            if (armor == nullptr) { return; }
             m_unusedArmor.insert(armor);
             m_Container.erase(armor->GetFormID());
             UpdatePageInfo();
@@ -197,104 +171,63 @@ namespace LIBC_NAMESPACE_DECL
             m_pageCount   = 0;
         }
 
-        constexpr void SetSortDirection(bool ascend)
-        {
-            m_fAscend = ascend;
-        }
+        constexpr void SetSortDirection(bool ascend) { m_fAscend = ascend; }
 
-        constexpr auto IsEmpty() const -> bool
-        {
-            return m_Container.empty();
-        }
+        constexpr auto IsEmpty() const -> bool { return m_Container.empty(); }
 
-        constexpr auto Size() const -> size_t
-        {
-            return m_Container.size();
-        }
+        constexpr auto Size() const -> size_t { return m_Container.size(); }
 
         // iterator function
 
-        auto begin() -> Iterator
-        {
-            return m_Container.begin();
-        }
+        auto begin() -> FormIdIterator { return m_Container.begin(); }
 
-        auto end() -> Iterator
-        {
-            return m_Container.end();
-        }
+        auto end() -> FormIdIterator { return m_Container.end(); }
 
         /// Page Function
 
-        [[nodiscard]] auto GetPageSize() const -> uint8_t
-        {
-            return m_pageSize;
-        }
+        [[nodiscard]] auto GetPageSize() const -> uint16_t { return m_pageSize; }
 
-        [[nodiscard]] auto GetPageIndex() const -> uint32_t
-        {
-            return m_currentPage + 1;
-        }
+        [[nodiscard]] auto GetPageIndex() const -> uint32_t { return m_currentPage + 1; }
 
-        [[nodiscard]] auto GetPageCount() const -> uint32_t
-        {
-            return m_pageSize;
-        }
+        [[nodiscard]] auto GetPageCount() const -> uint32_t { return m_pageCount; }
 
-        void SetPageSize(uint8_t newPageSize)
+        void SetPageSize(uint16_t newPageSize)
         {
-            if (newPageSize == 0)
-            {
-                throw invalid_page_size();
-            }
-            m_pageSize  = newPageSize;
-            m_pageCount = m_Container.size() / m_pageSize;
+            if (newPageSize == 0) { throw invalid_page_size(); }
+            m_pageSize = newPageSize;
+            UpdatePageInfo();
         }
 
         void SetCurrentPage(uint32_t pageIndex)
         {
-            if (pageIndex >= m_pageCount)
-            {
-                throw invalid_page_size();
-            }
+            if (pageIndex >= m_pageCount) { throw invalid_page_size(); }
             m_currentPage = 0;
         }
 
         void PrevPage()
         {
-            if (m_currentPage > 0)
-            {
-                m_currentPage--;
-            }
+            if (m_currentPage > 0) { m_currentPage--; }
         }
 
         void NextPage()
         {
-            if (m_currentPage < m_pageCount)
-            {
-                m_currentPage++;
-            }
+            if (m_currentPage < m_pageCount) { m_currentPage++; }
         }
 
-        bool HasPrevPage() const
-        {
-            return m_pageCount > 1 && m_currentPage > 0;
-        }
+        bool HasPrevPage() const { return m_pageCount > 1 && m_currentPage > 0; }
 
-        bool HasNextPage() const
-        {
-            return m_currentPage < m_pageCount - 1;
-        }
+        bool HasNextPage() const { return m_currentPage < m_pageCount - 1; }
+
+        auto GetAllArmorCount() const -> uint32_t { return m_unusedArmor.size() + m_Container.size(); }
 
         // Auto skip unused armors
         template <typename Func>
         void ForEachPage(Func &&func)
         {
             size_t start = m_currentPage * m_pageSize;
-
             if (start >= m_containerByName.size()) return;
 
-            if (!m_fAscend)
+            if (m_fAscend)
             {
                 auto itBegin = m_containerByName.nth(start);
                 for (size_t index = 0; index < m_pageSize && itBegin != m_containerByName.end(); ++itBegin)
@@ -305,15 +238,47 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                auto _itEnd  = std::min(start + m_pageSize, m_containerByName.size());
-                auto itBegin = boost::make_reverse_iterator(m_containerByName.nth(_itEnd));
-                auto itEnd   = m_containerByName.rend();
+                start            = m_containerByName.size() - start;
+                size_t available = std::min(static_cast<size_t>(m_pageSize), start);
+                auto   itBegin   = boost::make_reverse_iterator(m_containerByName.nth(start));
+                auto   itEnd     = boost::make_reverse_iterator(m_containerByName.nth(start - available));
                 for (size_t index = 0; index < m_pageSize && itBegin != itEnd; ++itBegin)
                 {
                     func(index, (*itBegin).armorPtr);
                     ++index;
                 }
             }
+        }
+
+        auto GetCurrentPage() const -> std::vector<Armor *>
+        {
+            size_t start = m_currentPage * m_pageSize;
+
+            if (start >= m_containerByName.size()) { return {}; }
+
+            std::vector<Armor *> result;
+            if (m_fAscend)
+            {
+                auto itBegin = m_containerByName.nth(start);
+                auto itEnd   = m_containerByName.nth(start + m_pageSize);
+                for (auto it = itBegin; it != itEnd; ++it)
+                {
+                    result.push_back(it->armorPtr);
+                }
+            }
+            else
+            {
+                start            = m_containerByName.size() - start;
+                size_t available = std::min(static_cast<size_t>(m_pageSize), start);
+                auto   itBegin   = boost::make_reverse_iterator(m_containerByName.nth(start));
+                auto   itEnd     = boost::make_reverse_iterator(m_containerByName.nth(start - available));
+                for (auto it = itBegin; it != itEnd; ++it)
+                {
+                    result.push_back(it->armorPtr);
+                }
+            }
+
+            return result;
         }
     };
 }

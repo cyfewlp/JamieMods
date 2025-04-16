@@ -34,39 +34,51 @@ struct
     RE::GFxKey::Code gfxCode;
     ImGuiKey         imGuiKey;
 } GFxCodeToImGuiKeyTable[] = {
-    {RE::GFxKey::kReturn,      ImGuiKey_Enter         },
-    {RE::GFxKey::kEscape,      ImGuiKey_Escape        },
-    {RE::GFxKey::kLeft,        ImGuiKey_LeftArrow     },
-    {RE::GFxKey::kUp,          ImGuiKey_UpArrow       },
-    {RE::GFxKey::kRight,       ImGuiKey_RightArrow    },
-    {RE::GFxKey::kDown,        ImGuiKey_DownArrow     },
-    {RE::GFxKey::kSpace,       ImGuiKey_Space         },
-    {RE::GFxKey::kBackspace,   ImGuiKey_Backspace     },
-    {RE::GFxKey::kDelete,      ImGuiKey_Delete        },
-    {RE::GFxKey::kInsert,      ImGuiKey_Insert        },
-    {RE::GFxKey::kKP_Multiply, ImGuiKey_KeypadMultiply},
-    {RE::GFxKey::kKP_Add,      ImGuiKey_KeypadAdd     },
-    {RE::GFxKey::kKP_Enter,    ImGuiKey_KeypadEnter   },
-    {RE::GFxKey::kKP_Subtract, ImGuiKey_KeypadSubtract},
-    {RE::GFxKey::kKP_Decimal,  ImGuiKey_KeypadDecimal },
-    {RE::GFxKey::kKP_Divide,   ImGuiKey_KeypadDivide  },
-    {RE::GFxKey::kVoidSymbol,  ImGuiKey_None          }
+    {RE::GFxKey::kAlt,          ImGuiKey_ModAlt        },
+    {RE::GFxKey::kControl,      ImGuiKey_ModCtrl       },
+    {RE::GFxKey::kShift,        ImGuiKey_ModShift      },
+    {RE::GFxKey::kCapsLock,     ImGuiKey_CapsLock      },
+    {RE::GFxKey::kTab,          ImGuiKey_Tab           },
+    {RE::GFxKey::kHome,         ImGuiKey_Home          },
+    {RE::GFxKey::kEnd,          ImGuiKey_End           },
+    {RE::GFxKey::kPageUp,       ImGuiKey_PageUp        },
+    {RE::GFxKey::kPageDown,     ImGuiKey_PageDown      },
+    {RE::GFxKey::kComma,        ImGuiKey_Comma         },
+    {RE::GFxKey::kPeriod,       ImGuiKey_Period        },
+    {RE::GFxKey::kSlash,        ImGuiKey_Slash         },
+    {RE::GFxKey::kBackslash,    ImGuiKey_Backslash     },
+    {RE::GFxKey::kQuote,        ImGuiKey_Apostrophe    },
+    {RE::GFxKey::kBracketLeft,  ImGuiKey_LeftBracket   },
+    {RE::GFxKey::kBracketRight, ImGuiKey_RightBracket  },
+    {RE::GFxKey::kReturn,       ImGuiKey_Enter         },
+    {RE::GFxKey::kEqual,        ImGuiKey_Equal         },
+    {RE::GFxKey::kMinus,        ImGuiKey_Minus         },
+    {RE::GFxKey::kEscape,       ImGuiKey_Escape        },
+    {RE::GFxKey::kLeft,         ImGuiKey_LeftArrow     },
+    {RE::GFxKey::kUp,           ImGuiKey_UpArrow       },
+    {RE::GFxKey::kRight,        ImGuiKey_RightArrow    },
+    {RE::GFxKey::kDown,         ImGuiKey_DownArrow     },
+    {RE::GFxKey::kSpace,        ImGuiKey_Space         },
+    {RE::GFxKey::kBackspace,    ImGuiKey_Backspace     },
+    {RE::GFxKey::kDelete,       ImGuiKey_Delete        },
+    {RE::GFxKey::kInsert,       ImGuiKey_Insert        },
+    {RE::GFxKey::kKP_Multiply,  ImGuiKey_KeypadMultiply},
+    {RE::GFxKey::kKP_Add,       ImGuiKey_KeypadAdd     },
+    {RE::GFxKey::kKP_Enter,     ImGuiKey_KeypadEnter   },
+    {RE::GFxKey::kKP_Subtract,  ImGuiKey_KeypadSubtract},
+    {RE::GFxKey::kKP_Decimal,   ImGuiKey_KeypadDecimal },
+    {RE::GFxKey::kKP_Divide,    ImGuiKey_KeypadDivide  },
+    {RE::GFxKey::kVoidSymbol,   ImGuiKey_None          }
 };
 
 namespace LIBC_NAMESPACE_DECL
 {
     void SosGuiMenu::RegisterMenu()
     {
-        if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
-        {
-            ui->Register(MENU_NAME, Creator);
-        }
+        if (auto *ui = RE::UI::GetSingleton(); ui != nullptr) { ui->Register(MENU_NAME, Creator); }
     }
 
-    void SosGuiMenu::PostDisplay()
-    {
-        m_sosGui.Render();
-    }
+    void SosGuiMenu::PostDisplay() { m_sosGui.Render(); }
 
     void SosGuiMenu::OnShow()
     {
@@ -221,11 +233,11 @@ namespace LIBC_NAMESPACE_DECL
         }
         else
         {
-            for (const auto &table : GFxCodeToImGuiKeyTable)
+            for (const auto &[gfxCode, imGuiKey] : GFxCodeToImGuiKeyTable)
             {
-                if (keyCode == table.gfxCode)
+                if (keyCode == gfxCode)
                 {
-                    imguiKey = table.imGuiKey;
+                    imguiKey = imGuiKey;
                     break;
                 }
             }

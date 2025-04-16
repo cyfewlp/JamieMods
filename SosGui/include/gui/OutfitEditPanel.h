@@ -5,6 +5,7 @@
 #include "gui/Popup.h"
 #include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
+#include "widgets.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
 #include <RE/T/TESObjectARMO.h>
@@ -16,8 +17,9 @@ namespace LIBC_NAMESPACE_DECL
     class OutfitEditPanel
     {
     public:
-        using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
-        using Armor = RE::TESObjectARMO;
+        using Slot            = RE::BIPED_MODEL::BipedObjectSlot;
+        using Armor           = RE::TESObjectARMO;
+        using SlotEnumeration = SKSE::stl::enumeration<Slot, uint32_t>;
 
         static constexpr int MAX_FILTER_ARMOR_NAME = 256;
         static constexpr int SLOT_COUNT            = 32;
@@ -26,30 +28,38 @@ namespace LIBC_NAMESPACE_DECL
     private:
         static void init_slot_name();
 
-        std::string                             m_windowTitle;
-        TableContext<3>                         m_armorListTable;
-        TableContext<5>                         m_armorCandidatesTable;
-        int                                     m_armorAddPolicy     = 0;
-        SKSE::stl::enumeration<Slot, uint32_t>  m_selectedFilterSlot = Slot::kNone;
-        bool                                    m_fFilterPlayable    = false;
-        bool                                    m_fShowOutfitWindow  = false;
-        std::array<char, MAX_FILTER_ARMOR_NAME> m_filterStringBuf;
-        SosUiData                              &m_uiData;
-        SosDataCoordinator                     &m_dataCoordinator;
-        Armor                                  *m_selectedArmor = nullptr;
-        Popup::DeleteArmorPopup                 m_DeleteArmorPopup;
-        Popup::ConflictArmorPopup               m_ConflictArmorPopup;
+        struct EditContext
+        {
+            int                                     armorAddPolicy     = 0;
+            SlotEnumeration                         selectedFilterSlot = Slot::kNone;
+            bool                                    checkSlotAll       = true; // default shows all armor slot
+            uint8_t                                 newFilterSlot      = SLOT_COUNT;
+            std::array<uint16_t, SLOT_COUNT>        slotArmorCounter;
+            bool                                    filterPlayable   = false;
+            bool                                    showOutfitWindow = false;
+            std::array<char, MAX_FILTER_ARMOR_NAME> filterStringBuf;
+            Armor                                  *selectedArmor = nullptr;
+            MultiSelection                          armorSelection;
+        } m_editContext = {};
+
+        std::string               m_windowTitle;
+        TableContext<3>           m_armorListTable;
+        TableContext<5>           m_armorCandidatesTable;
+        SosUiData                &m_uiData;
+        SosDataCoordinator       &m_dataCoordinator;
+        Popup::DeleteArmorPopup   m_DeleteArmorPopup;
+        Popup::ConflictArmorPopup m_ConflictArmorPopup;
 
     public:
         explicit OutfitEditPanel(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
             : m_armorListTable(
                   TableContext<3>::Create("##OutfitArmors", {"$SosGui_TableHeader_Slot", "$ARMOR", "$Delete"})),
-              m_armorCandidatesTable(TableContext<5>::Create(
-                  "##ArmorCandidates", {"$ARMOR", "FormID", "ModName", "$SosGui_TableHeader_Slot", "$Add"})),
+              m_armorCandidatesTable(
+                  TableContext<5>::Create("##ArmorCandidates", {"##Number", "$ARMOR", "FormID", "ModName", "$Add"})),
               m_uiData(uiData), m_dataCoordinator(dataCoordinator)
         {
             m_armorListTable.Resizable().SizingStretchProp();
-            m_armorCandidatesTable.Resizable().Sortable();
+            m_armorCandidatesTable.Resizable().Sortable().Hideable().Reorderable();
         }
 
         // return true if edit window closed;
@@ -62,12 +72,12 @@ namespace LIBC_NAMESPACE_DECL
         /// <param name="show">true, show window</param>
         void ShowWindow(const std::string &outfitName, bool show = true)
         {
-            m_fShowOutfitWindow = show;
+            m_editContext.showOutfitWindow = show;
             UpdateWindowTitle(outfitName);
         }
 
     private:
-        CoroutinePromise operator<<(CoroutineTask &&task) { co_await task; }
+        CoroutinePromise operator<<(CoroutineTask &&task) const { co_await task; }
 
         void UpdateWindowTitle(const std::string &outfitName);
 
@@ -81,20 +91,27 @@ namespace LIBC_NAMESPACE_DECL
 
         void RenderArmorCandidates(const SosUiData::OutfitPair &wantEdit);
 
+        static void CandidateContextMenu(bool &acceptAddAll);
+
         void RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit);
 
         void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable);
 
         void UpdateArmorCandidates(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable, OutfitAddPolicy policy);
 
-        void UpdateArmorCandidatesBySlot(const SosUiData::OutfitPair &wantEdit, Slot slot) const;
+        void UpdateArmorCandidatesBySlot(const SosUiData::OutfitPair &wantEdit, Slot slot);
 
-        void UpdateArmorCandidatesForAny(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable);
+        void UpdateArmorCandidatesForAny(const SosUiData::OutfitPair &wantEdit, bool mustBePlayable) const;
 
-        auto IsFilterArmor(const std::string_view &filterString, Armor *armor) -> bool;
+        static auto IsFilterArmor(const std::string_view &filterString, const Armor *armor) -> bool;
 
         void OnAddArmor(const SosUiData::OutfitPair &wantEdit, Armor *armor);
 
         void RenderPopups(const SosUiData::OutfitPair &wantEdit);
+
+        static auto ToSlot(const uint8_t slotPos) -> Slot
+        {
+            return slotPos >= SLOT_COUNT ? Slot::kNone : static_cast<Slot>(1 << slotPos);
+        }
     };
 }

@@ -22,6 +22,7 @@ namespace LIBC_NAMESPACE_DECL
         explicit SosDataCoordinator(SosUiData &uiData) : m_uiData(uiData) {}
 
         auto RequestEnable(bool isEnabled) const -> CoroutineTask;
+        auto QueryIsEnable() const -> CoroutinePromise;
         auto RequestImportSettings() -> CoroutineTask;
         auto RequestExportSettings() const -> CoroutineTask;
 

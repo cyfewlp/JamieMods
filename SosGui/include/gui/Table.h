@@ -35,6 +35,12 @@ namespace LIBC_NAMESPACE_DECL
                 return *this;
             }
 
+            constexpr auto NoHide() -> ColumnContext &
+            {
+                flags |= ImGuiTableColumnFlags_NoHide;
+                return *this;
+            }
+
             constexpr auto NoSort() -> ColumnContext &
             {
                 flags |= ImGuiTableColumnFlags_NoSort;
@@ -81,6 +87,18 @@ namespace LIBC_NAMESPACE_DECL
         constexpr auto Sortable() -> TableContext &
         {
             m_flags |= ImGuiTableFlags_Sortable;
+            return *this;
+        }
+
+        constexpr auto Hideable() -> TableContext &
+        {
+            m_flags |= ImGuiTableFlags_Hideable;
+            return *this;
+        }
+
+        constexpr auto Reorderable() -> TableContext &
+        {
+            m_flags |= ImGuiTableFlags_Reorderable;
             return *this;
         }
 
