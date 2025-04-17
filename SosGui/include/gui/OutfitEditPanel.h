@@ -52,6 +52,7 @@ namespace LIBC_NAMESPACE_DECL
         SosDataCoordinator       &m_dataCoordinator;
         Popup::DeleteArmorPopup   m_DeleteArmorPopup;
         Popup::ConflictArmorPopup m_ConflictArmorPopup;
+        Popup::SlotPolicyHelp     m_slotPolicyHelp;
 
     public:
         explicit OutfitEditPanel(SosUiData &uiData, SosDataCoordinator &dataCoordinator)

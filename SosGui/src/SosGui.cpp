@@ -1,11 +1,13 @@
 #include "SosGui.h"
-#include "coroutine.h"
 #include "ImGuiUtil.h"
 #include "common/config.h"
 #include "common/log.h"
+#include "coroutine.h"
+#include "util/ImThemeLoader.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "util/ImGuiSettinsHandler.h"
 
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>
@@ -59,6 +61,17 @@ namespace LIBC_NAMESPACE_DECL
             style.WindowRounding              = 0.0F;
             style.Colors[ImGuiCol_WindowBg].w = 1.0F;
         }
+
+        // add our setting handler
+        ImGuiSettingsHandler ini_handler;
+        ini_handler.TypeName   = SKSE::PluginDeclaration::GetSingleton()->GetName().data();
+        ini_handler.TypeHash   = ImHashStr(ini_handler.TypeName);
+        ini_handler.ReadOpenFn = Setting::UiSettingReadOpenFn;
+        ini_handler.ReadLineFn = Setting::UiSettingReadLineFn;
+        ini_handler.WriteAllFn = Setting::UiSettingWriteAll;
+        ini_handler.ClearAllFn = Setting::UiSettingClearAll;
+        ini_handler.ApplyAllFn = Setting::UiSettingApplyAll;
+        ImGui::AddSettingsHandler(&ini_handler);
 
         log_info("ImGui initialized!");
         return true;
@@ -150,7 +163,13 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::Indent(2);
             ImGui::SameLine();
             auto key = Translation::Translate("$SosGui_Global_FontSize_Scale");
-            ImGui::DragFloat(key.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F, 0.5F, 5.0F);
+
+            if (ImGui::DragFloat(key.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F,
+                                 Setting::UiSetting::FONT_SCALE_MIN, Setting::UiSetting::FONT_SCALE_MAX))
+            {
+                Setting::UiSetting::GetInstance()->globalFontScale = ImGui::GetIO().FontGlobalScale;
+            }
+            ThemeCombo();
 
             if (ImGui::Button("Refresh Armor"))
             {
@@ -170,6 +189,29 @@ namespace LIBC_NAMESPACE_DECL
             m_outfitListTable.Render(m_context, childSize);
         }
         ImGui::End();
+    }
+
+    auto SosGui::ThemeCombo() -> void
+    {
+        auto   *settings    = Setting::UiSetting::GetInstance();
+        int32_t themeIndex  = settings->selectedThemeIndex;
+        using Loader        = ImThemeLoader::Loader;
+        std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
+        if (!ImGui::BeginCombo("Theme", preview.c_str()))
+        {
+            return;
+        }
+        size_t index = 0;
+        for (const auto &themeName : Loader::g_availableThemes)
+        {
+            if (ImGui::Selectable(themeName.c_str(), false))
+            {
+                Loader::UseTheme(index);
+                settings->selectedThemeIndex = index;
+            }
+            ++index;
+        }
+        ImGui::EndCombo();
     }
 
     void SosGui::ShowErrorMessages()

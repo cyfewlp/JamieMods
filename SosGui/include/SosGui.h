@@ -1,9 +1,9 @@
 #pragma once
 
-#include "coroutine.h"
 #include "GuiContext.h"
 #include "SosDataType.h"
 #include "SosUiData.h"
+#include "coroutine.h"
 #include "gui/BaseGui.h"
 #include "gui/OutfitListTable.h"
 #include "gui/SosDataCoordinator.h"
@@ -21,9 +21,7 @@ namespace LIBC_NAMESPACE_DECL
     {
         struct InitFail : std::runtime_error
         {
-            explicit InitFail(const char *msg) : std::runtime_error(msg)
-            {
-            }
+            explicit InitFail(const char *msg) : std::runtime_error(msg) {}
         };
 
         using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
@@ -69,7 +67,8 @@ namespace LIBC_NAMESPACE_DECL
     private:
         auto DoRefresh() -> CoroutinePromise;
 
-        auto DoRender() -> void;
+        auto        DoRender() -> void;
+        static auto ThemeCombo() -> void;
 
         void ShowErrorMessages();
 

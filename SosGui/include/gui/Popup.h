@@ -16,15 +16,9 @@ namespace LIBC_NAMESPACE_DECL
             bool        m_fConfirmed  = false;
             bool        m_fLastClosed = true;
 
-            constexpr void Open(ImGuiPopupFlags flags = 0)
-            {
-                ImGui::OpenPopup(popupId, flags);
-            }
+            constexpr void Open(ImGuiPopupFlags flags = 0) { ImGui::OpenPopup(popupId, flags); }
 
-            [[nodiscard]] constexpr auto IsLastClosed() const -> bool
-            {
-                return m_fLastClosed;
-            }
+            [[nodiscard]] constexpr auto IsLastClosed() const -> bool { return m_fLastClosed; }
 
         protected:
             void RenderConfirmButtons();
@@ -37,9 +31,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
 
         public:
-            MessagePopup(const std::string_view messageKey) : messageKey(messageKey)
-            {
-            }
+            MessagePopup(const std::string_view messageKey) : messageKey(messageKey) {}
 
             ~MessagePopup() = default;
 
@@ -78,6 +70,16 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             auto Render(Armor *armor) -> bool;
+        };
+
+        struct SlotPolicyHelp : MessagePopup
+        {
+            SlotPolicyHelp() : MessagePopup("$SosGui_SlotPolicy_HelpText{}")
+            {
+                popupNameKey = "$SkyOutSys_OEdit_SlotPolicyHelp";
+            }
+
+            void Render();
         };
     }
 }

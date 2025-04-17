@@ -1,0 +1,31 @@
+#pragma once
+
+#include "common/config.h"
+#include "common/log.h"
+#include <windows.h>
+
+#include <stringapiset.h>
+
+namespace LIBC_NAMESPACE_DECL
+{
+	namespace StringUtil
+	{
+		static auto UnicodeStringCompare(const char*lhs, const char *rhs) -> bool
+		{
+            if (lhs == nullptr || rhs == nullptr)
+            {
+                return false;
+            }
+            auto lUtf16 = SKSE::stl::utf8_to_utf16(lhs).value_or(L"");
+            auto rUtf16 = SKSE::stl::utf8_to_utf16(rhs).value_or(L"");
+
+            int result = ::CompareStringEx(LOCALE_NAME_SYSTEM_DEFAULT, 0, lUtf16.c_str(), -1, rUtf16.c_str(), -1, NULL,
+                                           NULL, NULL);
+            if (result == 0)
+            {
+                log_error("Compare unicode string fail: {}, {}", lhs, rhs);
+            }
+            return result > 0 && result == CSTR_LESS_THAN;
+		}
+	}
+}

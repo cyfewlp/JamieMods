@@ -14,3 +14,4 @@
 * [ ] Success message
 * [ ] Delete SosGui/SosUiData when menu hide?
 * [ ] Sort outfit list
+* [ ] Can use corutine to speed-up armor candidates operation(in same thread)?

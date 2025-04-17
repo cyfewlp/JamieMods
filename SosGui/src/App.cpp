@@ -1,8 +1,9 @@
 #include "App.h"
-#include "SosGuiMenu.h"
 #include "PapyrusFunctions.h"
+#include "SosGuiMenu.h"
 #include "common/common.h"
 #include "common/log.h"
+#include "util/ImThemeLoader.h"
 
 #include <exception>
 #include <memory>
@@ -21,6 +22,7 @@ namespace LIBC_NAMESPACE_DECL
         });
         SKSE::GetPapyrusInterface()->Register(PapyrusFunctions::Register);
 
+        ImThemeLoader::Loader::loadThemes();
         App::GetInstance().Init();
         return true;
     }
@@ -57,13 +59,13 @@ namespace LIBC_NAMESPACE_DECL
     {
         D3DInitHook->Original();
 
-        auto *renderer = RE::BSGraphics::Renderer::GetSingleton();
+        const auto *renderer = RE::BSGraphics::Renderer::GetSingleton();
         if (renderer == nullptr)
         {
             throw InitFail("Cannot find render manager.");
         }
 
-        auto &renderData = renderer->data;
+        const auto &renderData = renderer->data;
         log_debug("Getting SwapChain...");
         auto *pSwapChain = renderData.renderWindows[0].swapChain;
         if (pSwapChain == nullptr)

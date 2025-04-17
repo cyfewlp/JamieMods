@@ -119,4 +119,36 @@ namespace LIBC_NAMESPACE_DECL
         return m_fConfirmed;
     }
 
+    void Popup::SlotPolicyHelp::Render()
+    {
+        if (!PreRender())
+        {
+            return;
+        }
+        constexpr const char *templateStr = "$SkyOutSys_OEdit_SlotPolicy_HelpText{}";
+        static uint8_t        index       = 1;
+        const auto            message     = Translation::Translate(std::format(templateStr, index).c_str());
+        RenderMultilineMessage(message);
+        ImGui::BeginDisabled(index <= 1);
+        if (ImGuiUtil::Button("$SosGui_Table_PrevPage"))
+        {
+            index--;
+        }
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(index > 3);
+        ImGui::SameLine();
+        if (ImGuiUtil::Button("$SosGui_Table_NextPage"))
+        {
+            index++;
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGuiUtil::Button("$SosGui_Button_Close"))
+        {
+            index = 1;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
 }

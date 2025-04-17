@@ -84,6 +84,11 @@ namespace LIBC_NAMESPACE_DECL
 
         static bool showAllSlots = false;
         ImGuiUtil::CheckBox("$SosGui_CheckBox_SlotFilter", &showAllSlots);
+        ImGui::SameLine();
+        if (ImGuiUtil::Button("$SkyOutSys_OEdit_SlotPolicyHelp"))
+        {
+            m_slotPolicyHelp.Open();
+        }
 
         static int selectedIdx = -1;
         if (m_armorListTable.Begin())
@@ -580,6 +585,7 @@ namespace LIBC_NAMESPACE_DECL
     void OutfitEditPanel::RenderPopups(const SosUiData::OutfitPair &wantEdit)
     {
         ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
+        ImGui::PushFontSize(HintFontSize());
         if (m_ConflictArmorPopup.Render(m_editContext.selectedArmor))
         {
             *this << m_dataCoordinator.RequestAddArmor(wantEdit, m_editContext.selectedArmor);
@@ -590,6 +596,9 @@ namespace LIBC_NAMESPACE_DECL
         {
             *this << m_dataCoordinator.RequestDeleteArmor(wantEdit, m_editContext.selectedArmor);
         }
+        m_slotPolicyHelp.Render();
+
+        ImGui::PopFontSize();
         ImGui::PopStyleVar();
         if (m_ConflictArmorPopup.IsLastClosed() || m_DeleteArmorPopup.IsLastClosed())
         {
