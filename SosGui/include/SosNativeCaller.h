@@ -69,6 +69,7 @@ namespace LIBC_NAMESPACE_DECL
         static auto DeleteOutfit(std::string &&outfitName) -> Awaitable;
         static auto AddArmorToOutfit(std::string &&outfitName, Armor *armor) -> Awaitable;
         static auto RemoveArmorFromOutfit(std::string &&outfitName, Armor *armor) -> Awaitable;
+        static auto RemoveConflictingArmorsFrom(Armor *armor, std::string &&outfitName) -> Awaitable;
         static auto IsOutfitExisting(std::string &&outfitName) -> Awaitable;
         static auto GetOutfitList(bool favoritesOnly = false) -> Awaitable;
         static auto OverwriteOutfit(std::string &&outfitName, std::vector<Armor *> &armors) -> Awaitable;

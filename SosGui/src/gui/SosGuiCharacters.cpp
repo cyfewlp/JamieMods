@@ -52,17 +52,12 @@ namespace LIBC_NAMESPACE_DECL
             {
                 ImGui::PushID(idx);
                 bool const isSelected = selectedIdx == idx;
-                if (isSelected)
-                {
-                    auto color = ImGui::GetColorU32(ImGuiCol_HeaderActive);
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, color);
-                }
 
                 ImGui::TableNextColumn();
                 if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
                 {
-                    m_context.editingActor = selectedIdx != idx ? actor : nullptr;
-                    selectedIdx            = selectedIdx != idx ? idx : -1;
+                    m_context.editingActor = !isSelected ? actor : nullptr;
+                    selectedIdx            = !isSelected ? idx : -1;
                 }
 
                 ImGui::TableNextColumn();

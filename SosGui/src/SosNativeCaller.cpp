@@ -18,7 +18,10 @@ namespace LIBC_NAMESPACE_DECL
         pending = false;
         result  = a_result;
 
-        if (continuation) { continuation.resume(); }
+        if (continuation)
+        {
+            continuation.resume();
+        }
     }
 
     bool SosNativeCaller::Awaitable::await_ready() const
@@ -38,7 +41,10 @@ namespace LIBC_NAMESPACE_DECL
 
         auto &continuation = static_cast<CallbackFunctor *>(callback.get())->continuation;
 
-        if (continuation) { continuation.destroy(); }
+        if (continuation)
+        {
+            continuation.destroy();
+        }
 
         continuation = a_handle;
     }
@@ -97,13 +103,22 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::RemoveArmorFromOutfit, args);
     }
 
+    auto SosNativeCaller::RemoveConflictingArmorsFrom(Armor *armor, std::string &&outfitName) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(armor), std::forward<std::string>(outfitName));
+        return StaticCall(SosFunction::RemoveConflictingArmorsFrom, args);
+    }
+
     auto SosNativeCaller::IsOutfitExisting(std::string &&outfitName) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName));
         return StaticCall(SosFunction::OutfitExists, args);
     }
 
-    auto SosNativeCaller::ActorNearPC() -> Awaitable { return StaticCall(SosFunction::ActorNearPC); }
+    auto SosNativeCaller::ActorNearPC() -> Awaitable
+    {
+        return StaticCall(SosFunction::ActorNearPC);
+    }
 
     auto SosNativeCaller::AddActor(RE::Actor *actor) -> Awaitable
     {
@@ -117,7 +132,10 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::RemoveActor, args);
     }
 
-    auto SosNativeCaller::ListActor() -> Awaitable { return StaticCall(SosFunction::ListActors); }
+    auto SosNativeCaller::ListActor() -> Awaitable
+    {
+        return StaticCall(SosFunction::ListActors);
+    }
 
     auto SosNativeCaller::GetOutfitList(bool favoritesOnly) -> Awaitable
     {
@@ -185,9 +203,15 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::CreateOutfit, args);
     }
 
-    auto SosNativeCaller::ImportSettings() -> Awaitable { return StaticCall(SosFunction::ImportSettings); }
+    auto SosNativeCaller::ImportSettings() -> Awaitable
+    {
+        return StaticCall(SosFunction::ImportSettings);
+    }
 
-    auto SosNativeCaller::ExportSettings() -> Awaitable { return StaticCall(SosFunction::ExportSettings); }
+    auto SosNativeCaller::ExportSettings() -> Awaitable
+    {
+        return StaticCall(SosFunction::ExportSettings);
+    }
 
     auto SosNativeCaller::Enable(bool &isEnable) -> Awaitable
     {
@@ -195,5 +219,8 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::SetEnabled, args);
     }
 
-    auto SosNativeCaller::IsEnabled() -> Awaitable { return StaticCall(SosFunction::IsEnabled); }
+    auto SosNativeCaller::IsEnabled() -> Awaitable
+    {
+        return StaticCall(SosFunction::IsEnabled);
+    }
 }

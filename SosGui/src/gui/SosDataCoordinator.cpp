@@ -211,6 +211,17 @@ namespace LIBC_NAMESPACE_DECL
         m_uiData.GetOutfitList().AddArmor(pair.first, armor);
     }
 
+    auto SosDataCoordinator::RequestDeleteConflictArmorsWith(SosUiData::OutfitPair pair, Armor *armor) const
+        -> CoroutineTask
+    {
+        if (armor == nullptr)
+        {
+            co_return;
+        }
+        co_await SosNativeCaller::RemoveConflictingArmorsFrom(armor, std::string(pair.second->GetName()));
+        // We no need update UI data because we default directly override armor in slot
+    }
+
     auto SosDataCoordinator::RequestDeleteArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutineTask
     {
         if (armor == nullptr)

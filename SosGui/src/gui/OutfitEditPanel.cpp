@@ -376,8 +376,11 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::TableNextColumn(); // Action
             if (ImGuiUtil::Button("$Add"))
             {
+                requireAdd = true;
+            }
+            if (requireAdd || requireAddAll)
+            {
                 m_editContext.selectedArmor = armor;
-                requireAdd                  = true;
             }
             ++count;
         });
@@ -388,7 +391,14 @@ namespace LIBC_NAMESPACE_DECL
         // handle multi-selection
         if (requireAddAll && m_editContext.candidateSelection.Size > 0)
         {
-            m_batchAddArmorsPopUp.Open();
+            if (m_editContext.candidateSelection.Size == 1)
+            {
+                requireAdd = true; // just back to add one select armor
+            }
+            else
+            {
+                m_batchAddArmorsPopUp.Open();
+            }
         }
 
         if (requireAdd)
@@ -422,6 +432,10 @@ namespace LIBC_NAMESPACE_DECL
             if (m_editContext.candidateSelection.Contains(index) && usedSlot.none(armor->GetSlotMask()))
             {
                 usedSlot.set(armor->GetSlotMask());
+                if (wantEdit.second->IsConflictWith(armor))
+                {
+                    *this << m_dataCoordinator.RequestDeleteConflictArmorsWith(wantEdit, armor);
+                }
                 *this << m_dataCoordinator.RequestAddArmor(wantEdit, armor);
             }
             ++index;
