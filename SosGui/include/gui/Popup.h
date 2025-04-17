@@ -81,5 +81,15 @@ namespace LIBC_NAMESPACE_DECL
 
             void Render();
         };
+
+        struct BatchAddArmors : MessagePopup
+        {
+            BatchAddArmors() : MessagePopup("$SosGui_BatchAddArmors_Message")
+            {
+                popupNameKey = "$SosGui_BatchAddArmors";
+            }
+
+            auto Render() -> bool;
+        };
     }
 }

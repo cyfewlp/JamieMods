@@ -4,7 +4,7 @@
 
 #include "SosGui.h"
 
-#include "ImGuiUtil.h"
+#include "util/ImGuiUtil.h"
 #include "SosDataType.h"
 #include "imgui.h"
 
@@ -187,17 +187,15 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        int idx = 0;
-        for (const auto &outfit : m_uiData.GetOutfitList())
-        {
-            ImGui::PushID(idx);
-            bool isSelected = outfitName == outfit.second.GetName();
-            if (ImGui::Selectable(outfit.second.GetName().c_str(), isSelected))
+        m_uiData.GetOutfitList().for_each([&](const auto &outfit, size_t index) {
+            ImGui::PushID(index);
+            bool isSelected = outfitName == outfit.GetName();
+            if (ImGui::Selectable(outfit.GetName().c_str(), isSelected))
             {
                 if (!isSelected)
                 {
                     *this << m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state,
-                                                                          outfit.second.GetName());
+                                                                          outfit.GetName());
                 }
             }
             if (isSelected)
@@ -205,8 +203,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::SetItemDefaultFocus();
             }
             ImGui::PopID();
-        }
-
+        });
         ImGui::EndCombo();
     }
 }

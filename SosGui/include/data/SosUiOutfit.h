@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -28,11 +29,17 @@ namespace LIBC_NAMESPACE_DECL
         SlotPolicyArray                        m_slotPolicies;
 
     public:
-        explicit SosUiOutfit(OutfitId id, const std::string &name) : m_id(id), m_name(name) { m_armors.fill(nullptr); }
+        explicit SosUiOutfit(OutfitId id, const std::string &name) : m_id(id), m_name(name)
+        {
+            m_armors.fill(nullptr);
+        }
 
         ~SosUiOutfit() = default;
 
-        [[nodiscard]] constexpr auto GetId() const -> OutfitId { return m_id; }
+        [[nodiscard]] constexpr auto GetId() const -> OutfitId
+        {
+            return m_id;
+        }
 
         void AddArmor(Armor *armor);
 
@@ -40,22 +47,44 @@ namespace LIBC_NAMESPACE_DECL
 
         auto GetArmorAt(uint32_t slotPos) const -> Armor *;
 
-        auto HasSlot(uint32_t slotPos) const -> bool { return m_slotMask.all(static_cast<Slot>(1 << slotPos)); }
-
-        auto IsConflictWith(const Armor *armor) const -> bool { return m_slotMask.any(armor->GetSlotMask()); }
-
-        void SetName(const std::string &newName) { m_name.assign(newName); }
-
-        [[nodiscard]] auto GetName() const -> const std::string & { return m_name; }
-
-        [[nodiscard]] auto IsEmpty() const -> bool { return m_slotMask.underlying() == 0; }
-
-        auto SetSlotPolicies(uint32_t slotPos, std::string policy)
+        auto HasSlot(uint32_t slotPos) const -> bool
         {
-            if (slotPos >= SLOT_COUNT) { return; }
-            m_slotPolicies.at(slotPos) = policy;
+            return m_slotMask.all(static_cast<Slot>(1 << slotPos));
         }
 
-        [[nodiscard]] auto GetSlotPolicies() const -> const SlotPolicyArray & { return m_slotPolicies; }
+        auto IsConflictWith(const Armor *armor) const -> bool
+        {
+            return m_slotMask.any(armor->GetSlotMask());
+        }
+
+        void SetName(const std::string &newName)
+        {
+            m_name.assign(newName);
+        }
+
+        [[nodiscard]] auto GetName() const -> const std::string &
+        {
+            return m_name;
+        }
+
+        [[nodiscard]] auto IsEmpty() const -> bool
+        {
+            return m_slotMask.underlying() == 0;
+        }
+
+        template <typename string>
+        auto SetSlotPolicies(uint32_t slotPos, string &&policy)
+        {
+            if (slotPos >= SLOT_COUNT)
+            {
+                return;
+            }
+            m_slotPolicies.at(slotPos) = std::forward<string>(policy);
+        }
+
+        [[nodiscard]] auto GetSlotPolicies() const -> const SlotPolicyArray &
+        {
+            return m_slotPolicies;
+        }
     };
 }

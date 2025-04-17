@@ -53,6 +53,12 @@ namespace LIBC_NAMESPACE_DECL
                 return *this;
             }
 
+            constexpr auto WidthStretch() -> ColumnContext &
+            {
+                flags |= ImGuiTableColumnFlags_WidthStretch;
+                return *this;
+            }
+
             constexpr auto Setup() -> TableContext &
             {
                 ImGui::TableSetupColumn(colName.data(), flags);
@@ -166,4 +172,10 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::TableHeadersRow();
         ImGui::PopID();
     }
+
+    template <size_t Column>
+    struct PagedTable : TableContext<Column>
+    {
+ 
+    };
 }

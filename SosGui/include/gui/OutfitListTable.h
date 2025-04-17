@@ -9,6 +9,7 @@
 #include "gui/Popup.h"
 #include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
+#include "util/PageUtil.h"
 
 #include "imgui.h"
 
@@ -22,16 +23,17 @@ namespace LIBC_NAMESPACE_DECL
         SosUiData          &m_uiData;
         SosDataCoordinator &m_dataCoordinator;
 
-        Popup::DeleteOutfitPopup m_DeleteOutfitPopup;
+        Popup::DeleteOutfitPopup m_DeleteOutfitPopup{};
         SosUiData::OutfitPair    m_wantEdit = DEFAULT_INVALID_PAIR;
         SosUiData::OutfitPair    m_click    = DEFAULT_INVALID_PAIR;
         OutfitEditPanel          m_editPanel;
-        TableContext<1>          m_outfitListTable;
+        TableContext<2>          m_outfitListTable;
+        util::PageUtil           m_outfitLisPage;
 
     public:
         OutfitListTable(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
             : m_uiData(uiData), m_dataCoordinator(dataCoordinator), m_editPanel(m_uiData, m_dataCoordinator),
-              m_outfitListTable(TableContext<1>::Create("##OutfitLists", {"$SkyOutSys_MCM_OutfitList"}))
+              m_outfitListTable(TableContext<2>::Create("##OutfitLists", {"##Number", "$SkyOutSys_MCM_OutfitList"}))
         {
             m_outfitListTable.Sortable().NoHostExtendX();
         }
@@ -42,7 +44,10 @@ namespace LIBC_NAMESPACE_DECL
         void Close() override;
 
     private:
-        CoroutinePromise operator<<(CoroutineTask &&task) { co_await task; }
+        CoroutinePromise operator<<(CoroutineTask &&task)
+        {
+            co_await task;
+        }
 
         void RenderChildContent(GuiContext &guiContext);
 
@@ -53,7 +58,10 @@ namespace LIBC_NAMESPACE_DECL
          */
         bool OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit);
 
-        bool EditingPanel(const SosUiData::OutfitPair &wantEdit) { return m_editPanel.Render(wantEdit); }
+        bool EditingPanel(const SosUiData::OutfitPair &wantEdit)
+        {
+            return m_editPanel.Render(wantEdit);
+        }
 
         bool DeletePopup(const SosUiData::OutfitPair &clicked);
 
@@ -61,6 +69,9 @@ namespace LIBC_NAMESPACE_DECL
         void OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName);
         void OnAcceptActiveOutfit(RE::Actor *editingActor, const std::string &outfitName);
 
-        bool IsValidOutfit(SosUiData::OutfitPair &pair) { return m_uiData.HasOutfit(pair.first); }
+        bool IsValidOutfit(SosUiData::OutfitPair &pair) const
+        {
+            return m_uiData.GetOutfitList().HasOutfit(pair.first);
+        }
     };
 }

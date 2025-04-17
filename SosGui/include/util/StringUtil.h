@@ -8,10 +8,10 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-	namespace StringUtil
-	{
-		static auto UnicodeStringCompare(const char*lhs, const char *rhs) -> bool
-		{
+    namespace util
+    {
+        static auto UnicodeStringCompare(const char *lhs, const char *rhs) -> bool
+        {
             if (lhs == nullptr || rhs == nullptr)
             {
                 return false;
@@ -26,6 +26,19 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Compare unicode string fail: {}, {}", lhs, rhs);
             }
             return result > 0 && result == CSTR_LESS_THAN;
-		}
-	}
+        }
+
+        struct StringCompactor
+        {
+            bool operator()(const char *lhs, const char *rhs) const
+            {
+                return UnicodeStringCompare(lhs, rhs);
+            }
+
+            bool operator()(const std::string &lhs, const std::string &rhs) const
+            {
+                return UnicodeStringCompare(lhs.c_str(), rhs.c_str());
+            }
+        };
+    }
 }

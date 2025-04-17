@@ -75,14 +75,20 @@ namespace LIBC_NAMESPACE_DECL
     auto SosDataCoordinator::RequestCreateOutfit(std::string outfitName) const -> CoroutineTask
     {
         Variable isAlreadyExist = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-        if (isAlreadyExist.IsBool() && isAlreadyExist.GetBool()) { co_return; }
+        if (isAlreadyExist.IsBool() && isAlreadyExist.GetBool())
+        {
+            co_return;
+        }
         co_await SosNativeCaller::CreateOutfit(std::string(outfitName));
         Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-        if (!existVar.IsBool() || !existVar.GetBool()) { m_uiData.PushErrorMessage("Can't get outfit list"); }
+        if (!existVar.IsBool() || !existVar.GetBool())
+        {
+            m_uiData.PushErrorMessage("Can't get outfit list");
+        }
         else
         {
             co_await m_uiData.await_execute_on_ui();
-            m_uiData.AddOutfit(std::move(outfitName));
+            m_uiData.GetOutfitList().AddOutfit(std::move(outfitName));
         }
     }
 
@@ -106,14 +112,20 @@ namespace LIBC_NAMESPACE_DECL
                 if (existVar.IsBool() && existVar.GetBool())
                 {
                     co_await m_uiData.await_execute_on_ui();
-                    m_uiData.AddOutfit(std::move(outfitName));
+                    m_uiData.GetOutfitList().AddOutfit(std::move(outfitName));
                     co_return;
                 }
                 errorMessage.append("create outfit fail.");
             }
-            else { errorMessage.append("can't get player worn armors."); }
+            else
+            {
+                errorMessage.append("can't get player worn armors.");
+            }
         }
-        else { errorMessage.append("can't get player"); }
+        else
+        {
+            errorMessage.append("can't get player");
+        }
 
         m_uiData.PushErrorMessage(std::move(errorMessage));
     }
@@ -135,7 +147,9 @@ namespace LIBC_NAMESPACE_DECL
             outfitNames.emplace_back(var.Unpack<std::string>());
         }
         co_await m_uiData.await_execute_on_ui();
-        m_uiData.AddOutfits(std::move(outfitNames));
+        auto &outfitList = m_uiData.GetOutfitList();
+        outfitList.clear();
+        outfitList.AddOutfits(std::move(outfitNames));
     }
 
     auto SosDataCoordinator::RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> CoroutinePromise
@@ -176,30 +190,36 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         co_await m_uiData.await_execute_on_ui();
-        m_uiData.RenameOutfit(pair.first, std::move(newName));
+        m_uiData.GetOutfitList().RenameOutfit(pair.first, std::move(newName));
     }
 
     auto SosDataCoordinator::RequestDeleteOutfit(SosUiData::OutfitPair pair) const -> CoroutineTask
     {
         co_await SosNativeCaller::DeleteOutfit(std::string(pair.second->GetName()));
         co_await m_uiData.await_execute_on_ui();
-        m_uiData.DeleteOutfit(pair.first);
+        m_uiData.GetOutfitList().DeleteOutfit(pair.first);
     }
 
     auto SosDataCoordinator::RequestAddArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutineTask
     {
-        if (armor == nullptr) { co_return; }
+        if (armor == nullptr)
+        {
+            co_return;
+        }
         co_await SosNativeCaller::AddArmorToOutfit(std::string(pair.second->GetName()), armor);
         co_await m_uiData.await_execute_on_ui();
-        m_uiData.AddArmor(pair.first, armor);
+        m_uiData.GetOutfitList().AddArmor(pair.first, armor);
     }
 
     auto SosDataCoordinator::RequestDeleteArmor(SosUiData::OutfitPair pair, Armor *armor) const -> CoroutineTask
     {
-        if (armor == nullptr) { co_return; }
+        if (armor == nullptr)
+        {
+            co_return;
+        }
         co_await SosNativeCaller::RemoveArmorFromOutfit(std::string(pair.second->GetName()), armor);
         co_await m_uiData.await_execute_on_ui();
-        m_uiData.DeleteArmor(pair.first, armor);
+        m_uiData.GetOutfitList().DeleteArmor(pair.first, armor);
     }
 
     auto SosDataCoordinator::RequestOutfitArmors(SosUiData::OutfitPair pair) const -> CoroutineTask
@@ -219,7 +239,7 @@ namespace LIBC_NAMESPACE_DECL
             armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
         }
         co_await m_uiData.await_execute_on_ui();
-        m_uiData.AddArmors(pair.first, std::move(armors));
+        m_uiData.GetOutfitList().AddArmors(pair.first, std::move(armors));
     }
 
     auto SosDataCoordinator::RequestSetOutfitSlotPolicy(SosUiData::OutfitPair pair, uint32_t slotPos,
@@ -228,8 +248,7 @@ namespace LIBC_NAMESPACE_DECL
         co_await SosNativeCaller::SetBodySlotPoliciesForOutfit(std::string(pair.second->GetName()), slotPos,
                                                                SlotPolicyToCode(policy));
         co_await m_uiData.await_execute_on_ui();
-        auto outfit = m_uiData.GetOutfit(pair.first);
-        if (outfit.has_value()) { outfit.value().SetSlotPolicies(slotPos, SlotPolicyToUiString(policy)); }
+        m_uiData.GetOutfitList().SetSlotPolicy(pair.first, slotPos, SlotPolicyToUiString(policy));
     }
 
     auto SosDataCoordinator::RequestOutfitSlotPolicy(SosUiData::OutfitPair pair) const -> CoroutineTask
@@ -240,7 +259,7 @@ namespace LIBC_NAMESPACE_DECL
             m_uiData.PushErrorMessage("Can't get outfit slot policies");
             co_return;
         }
-        auto                     array = variable.GetArray();
+        auto array = variable.GetArray();
         if (array->size() < SosUiOutfit::SLOT_COUNT)
         {
             m_uiData.PushErrorMessage("Invalid outfit slot policies: slot count incorrect.");
@@ -256,24 +275,17 @@ namespace LIBC_NAMESPACE_DECL
 
         co_await m_uiData.await_execute_on_ui();
 
-        auto outfitOpt = m_uiData.GetOutfit(pair.first);
-        if (!outfitOpt.has_value())
-        {
-            m_uiData.PushErrorMessage(std::format("Fatal Error: Can't found outfit {}", pair.first));
-            co_return;
-        }
-        auto &outfit = outfitOpt.value();
-        for (uint32_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; ++slotPos)
-        {
-            outfit.SetSlotPolicies(slotPos, slotPolicies[slotPos]);
-        }
+        m_uiData.GetOutfitList().SetAllSlotPolicies(pair.first, slotPolicies);
     }
 
     auto SosDataCoordinator::RequestGetArmorsByCarried() const -> CoroutineTask
     {
         std::string errorMessage;
         auto       *player = RE::PlayerCharacter::GetSingleton();
-        if (player == nullptr) { errorMessage.append("can't get player"); }
+        if (player == nullptr)
+        {
+            errorMessage.append("can't get player");
+        }
         else
         {
             Variable carriedArmorsVar = co_await SosNativeCaller::GetCarriedArmor(player);
@@ -289,7 +301,10 @@ namespace LIBC_NAMESPACE_DECL
                 co_await m_uiData.await_execute_on_ui();
                 m_uiData.SetArmorCandidates(std::move(armors));
             }
-            else { errorMessage.append("can't get player carried armors"); }
+            else
+            {
+                errorMessage.append("can't get player carried armors");
+            }
         }
     }
 
@@ -297,7 +312,10 @@ namespace LIBC_NAMESPACE_DECL
     {
         std::string errorMessage;
         auto       *player = RE::PlayerCharacter::GetSingleton();
-        if (player == nullptr) { errorMessage.append("can't get player"); }
+        if (player == nullptr)
+        {
+            errorMessage.append("can't get player");
+        }
         else
         {
             Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
@@ -313,7 +331,10 @@ namespace LIBC_NAMESPACE_DECL
                 co_await m_uiData.await_execute_on_ui();
                 m_uiData.SetArmorCandidates(std::move(armors));
             }
-            else { errorMessage.append("can't get player worn armors"); }
+            else
+            {
+                errorMessage.append("can't get player worn armors");
+            }
         }
     }
 
@@ -402,7 +423,10 @@ namespace LIBC_NAMESPACE_DECL
     {
         const auto &player = RE::PlayerCharacter::GetSingleton();
         auto       *spell  = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
-        if (spell != nullptr) { return player->HasSpell(spell); }
+        if (spell != nullptr)
+        {
+            return player->HasSpell(spell);
+        }
         return false;
     }
 }

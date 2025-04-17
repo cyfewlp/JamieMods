@@ -1,11 +1,15 @@
 #include "gui/OutfitListTable.h"
+#include "gui/Table.h"
 
 #include "GuiContext.h"
-#include "ImGuiUtil.h"
 #include "Translation.h"
 #include "imgui.h"
+#include "util/ImGuiUtil.h"
+#include "util/PageUtil.h"
 
 #include <array>
+#include <cstdint>
+#include <string>
 #include <utility>
 
 namespace LIBC_NAMESPACE_DECL
@@ -24,7 +28,8 @@ namespace LIBC_NAMESPACE_DECL
 
     void OutfitListTable::Render(GuiContext &guiContext, ImVec2 childSize)
     {
-        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", childSize, ImGuiChildFlags_AutoResizeY))
+        constexpr auto flags = ImGuiChildFlags_None;
+        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", childSize, flags))
         {
             RenderChildContent(guiContext);
         }
@@ -69,38 +74,59 @@ namespace LIBC_NAMESPACE_DECL
         }
         static int selectedIdx = -1;
 
-        if (m_outfitListTable.Begin())
+        util::RenderPageWidgets(m_outfitLisPage);
+        if (!m_outfitListTable.Begin())
         {
-            m_outfitListTable.HeadersRow();
-
-            int idx = 0;
-            for (auto &outfitPair : outfits)
-            {
-                ImGuiUtil::PushIdGuard idGuard(idx);
-                ImGui::TableNextRow();
-
-                const auto &outfit     = outfitPair.second;
-                const auto &outfitName = outfit.GetName();
-                ImGui::TableNextColumn();
-                bool const isSelected = selectedIdx == idx;
-                if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
-                {
-                    selectedIdx = selectedIdx != idx ? idx : -1;
-                }
-                bool acceptEdit = false;
-                if (OpenContextMenu(guiContext, outfitPair.second.GetName(), acceptEdit))
-                {
-                    m_click = std::make_pair(outfitPair.first, &outfitPair.second);
-                }
-                if (acceptEdit)
-                {
-                    auto pair = std::make_pair(outfitPair.first, &outfitPair.second);
-                    OnAcceptEditOutfit(pair);
-                    m_wantEdit = pair;
-                }
-            }
-            ImGui::EndTable();
+            return;
         }
+
+        // clang-format off
+        m_outfitListTable
+            .Column(0).NoSort().WidthFixed().NoHide().Setup()
+            .Column(1).DefaultSort().WidthStretch().Setup();
+        // clang-format on
+        ImGui::TableHeadersRow();
+
+        if (auto *sortSpecs = ImGui::TableGetSortSpecs(); sortSpecs != nullptr)
+        {
+            if (sortSpecs->SpecsDirty)
+            {
+                assert(sortSpecs->SpecsCount == 1);
+                const auto direction = sortSpecs->Specs[0].SortDirection;
+                m_outfitLisPage.SetAscendSort(direction == ImGuiSortDirection_Ascending);
+                sortSpecs->SpecsDirty = false;
+            }
+        }
+
+        m_outfitLisPage.SetItemCount(outfits.size());
+
+        auto pageRange = m_outfitLisPage.PageRange();
+        outfits.for_each(pageRange.first, pageRange.second, [&](const auto &outfit, size_t index) {
+            ImGuiUtil::PushIdGuard idGuard(index);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); // number column
+            ImGui::Text("%zu", index + 1);
+
+            const auto &outfitName = outfit.GetName();
+            ImGui::TableNextColumn(); // outfit name column
+            bool const isSelected = static_cast<size_t>(selectedIdx) == index;
+            if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
+            {
+                selectedIdx = isSelected ? -1 : index;
+            }
+            bool acceptEdit = false;
+            if (OpenContextMenu(guiContext, outfit.GetName(), acceptEdit))
+            {
+                m_click = std::make_pair(outfit.GetId(), &outfit);
+            }
+            if (acceptEdit)
+            {
+                auto pair = std::make_pair(outfit.GetId(), &outfit);
+                OnAcceptEditOutfit(pair);
+                m_wantEdit = pair;
+            }
+        });
+        ImGui::EndTable();
     }
 
     bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit)

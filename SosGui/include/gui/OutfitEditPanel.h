@@ -5,6 +5,7 @@
 #include "gui/Popup.h"
 #include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
+#include "util/PageUtil.h"
 #include "widgets.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
@@ -53,6 +54,8 @@ namespace LIBC_NAMESPACE_DECL
         Popup::DeleteArmorPopup   m_DeleteArmorPopup;
         Popup::ConflictArmorPopup m_ConflictArmorPopup;
         Popup::SlotPolicyHelp     m_slotPolicyHelp;
+        Popup::BatchAddArmors     m_batchAddArmorsPopUp;
+        util::PageUtil            m_armorCandidatesPage;
 
     public:
         explicit OutfitEditPanel(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
@@ -82,7 +85,10 @@ namespace LIBC_NAMESPACE_DECL
         }
 
     private:
-        CoroutinePromise operator<<(CoroutineTask &&task) const { co_await task; }
+        CoroutinePromise operator<<(CoroutineTask &&task) const
+        {
+            co_await task;
+        }
 
         void UpdateWindowTitle(const std::string &outfitName);
 
@@ -99,6 +105,8 @@ namespace LIBC_NAMESPACE_DECL
         void RenderArmorCandidates(const SosUiData::OutfitPair &wantEdit);
 
         static void CandidateContextMenu(bool &acceptAddAll);
+
+        void BatchAddArmors(const SosUiData::OutfitPair &wantEdit);
 
         void RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit);
 

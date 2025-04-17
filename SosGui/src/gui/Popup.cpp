@@ -1,6 +1,6 @@
 #include "gui/Popup.h"
 
-#include "ImGuiUtil.h"
+#include "util/ImGuiUtil.h"
 #include "SosDataType.h"
 #include "Translation.h"
 #include "common/config.h"
@@ -149,6 +149,20 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
+    }
+
+    auto Popup::BatchAddArmors::Render() -> bool
+    {
+        if (!PreRender())
+        {
+            return m_fConfirmed;
+        }
+        const auto message = Translation::Translate(messageKey.data());
+
+        ImGuiUtil::TextScale(message.c_str(), HintFontSize());
+        RenderConfirmButtons();
+        ImGui::EndPopup();
+        return m_fConfirmed;
     }
 
 }

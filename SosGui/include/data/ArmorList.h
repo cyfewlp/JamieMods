@@ -20,23 +20,10 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    struct ArmorNameCompactor
-    {
-        bool operator()(const char *lhs, const char *rhs) const
-        {
-            return StringUtil::UnicodeStringCompare(lhs, rhs);
-        }
-    };
-
     using namespace boost::multi_index;
 
-    class PagedArmorList
+    class ArmorList
     {
-        uint16_t m_pageSize;
-        uint32_t m_currentPage = 0;
-        uint32_t m_pageCount   = 0;
-        bool     m_fAscend     = true;
-
         using Armor = RE::TESObjectARMO;
 
     public:
@@ -81,7 +68,7 @@ namespace LIBC_NAMESPACE_DECL
             indexed_by< //
                 ordered_unique<BOOST_MULTI_INDEX_CONST_MEM_FUN(ArmorWrap, RE::FormID, GetFormID)>,
                 ranked_non_unique<BOOST_MULTI_INDEX_CONST_MEM_FUN(ArmorWrap, const char *, GetName),
-                                  ArmorNameCompactor>>>
+                                  util::StringCompactor>>>
             Container;
 
         typedef std::unordered_set<ArmorWrap, ArmorWrap::Hash> UnusedArmor;
@@ -94,19 +81,10 @@ namespace LIBC_NAMESPACE_DECL
         using ReverseNameIterator   = ContainerByName::reverse_iterator;
 
     private:
-        Container          m_Container;
-        UnusedArmor        m_unusedArmor;
-        ContainerByFormId &m_containerByFormId = get<0>(m_Container);
-        ContainerByName   &m_containerByName   = get<1>(m_Container);
-
-        void UpdatePageInfo()
-        {
-            m_pageCount = m_Container.size() / m_pageSize + 1;
-            if (m_currentPage >= m_pageCount)
-            {
-                m_currentPage = std::max(0U, m_pageCount - 1);
-            }
-        }
+        Container   m_Container;
+        UnusedArmor m_unusedArmor;
+        // ContainerByFormId &m_containerByFormId = get<0>(m_Container);
+        ContainerByName &m_containerByName = get<1>(m_Container);
 
     public:
         struct invalid_page_size : std::runtime_error
@@ -114,15 +92,8 @@ namespace LIBC_NAMESPACE_DECL
             explicit invalid_page_size() : runtime_error("Invalid Page Size 0") {}
         };
 
-        PagedArmorList(uint16_t pageSize) : m_pageSize(pageSize)
-        {
-            if (pageSize == 0)
-            {
-                throw invalid_page_size();
-            }
-        }
-
-        ~PagedArmorList() = default;
+        ArmorList()  = default;
+        ~ArmorList() = default;
 
         void Insert(const ArmorWrap &armorWrap, bool isUsed = false)
         {
@@ -140,7 +111,6 @@ namespace LIBC_NAMESPACE_DECL
                 m_Container.erase(armorWrap.armorPtr->GetFormID());
                 m_unusedArmor.insert(armorWrap);
             }
-            UpdatePageInfo();
         }
 
         void Insert(std::vector<ArmorWrap> armorList, bool isUsed = false)
@@ -161,7 +131,6 @@ namespace LIBC_NAMESPACE_DECL
                     m_unusedArmor.insert(armorWrap);
                 }
             }
-            UpdatePageInfo();
         }
 
         void Insert(Armor *armor, bool isUsed = false)
@@ -176,7 +145,6 @@ namespace LIBC_NAMESPACE_DECL
                 m_Container.insert(*itBegin);
                 itBegin = m_unusedArmor.erase(itBegin);
             }
-            UpdatePageInfo();
         }
 
         void Remove(Armor *armor)
@@ -187,20 +155,12 @@ namespace LIBC_NAMESPACE_DECL
             }
             m_unusedArmor.insert(armor);
             m_Container.erase(armor->GetFormID());
-            UpdatePageInfo();
         }
 
         void Clear()
         {
             m_Container.clear();
             m_unusedArmor.clear();
-            m_currentPage = 0;
-            m_pageCount   = 0;
-        }
-
-        constexpr void SetSortDirection(bool ascend)
-        {
-            m_fAscend = ascend;
         }
 
         constexpr auto IsEmpty() const -> bool
@@ -213,147 +173,77 @@ namespace LIBC_NAMESPACE_DECL
             return m_Container.size();
         }
 
-        // iterator function
-
-        auto begin() -> FormIdIterator
-        {
-            return m_Container.begin();
-        }
-
-        auto end() -> FormIdIterator
-        {
-            return m_Container.end();
-        }
-
-        /// Page Function
-
-        [[nodiscard]] auto GetPageSize() const -> uint16_t
-        {
-            return m_pageSize;
-        }
-
-        [[nodiscard]] auto GetPageIndex() const -> uint32_t
-        {
-            return m_currentPage + 1;
-        }
-
-        [[nodiscard]] auto GetPageCount() const -> uint32_t
-        {
-            return m_pageCount;
-        }
-
-        void SetPageSize(uint16_t newPageSize)
-        {
-            if (newPageSize == 0)
-            {
-                throw invalid_page_size();
-            }
-            m_pageSize = newPageSize;
-            UpdatePageInfo();
-        }
-
-        void SetCurrentPage(uint32_t pageIndex)
-        {
-            if (pageIndex >= m_pageCount)
-            {
-                throw invalid_page_size();
-            }
-            m_currentPage = 0;
-        }
-
-        void PrevPage()
-        {
-            if (m_currentPage > 0)
-            {
-                m_currentPage--;
-            }
-        }
-
-        void NextPage()
-        {
-            if (m_currentPage < m_pageCount)
-            {
-                m_currentPage++;
-            }
-        }
-
-        bool HasPrevPage() const
-        {
-            return m_pageCount > 1 && m_currentPage > 0;
-        }
-
-        bool HasNextPage() const
-        {
-            return m_currentPage < m_pageCount - 1;
-        }
-
         auto GetAllArmorCount() const -> uint32_t
         {
             return m_unusedArmor.size() + m_Container.size();
         }
 
-        // Auto skip unused armors
-        template <typename Func>
-        void ForEachPage(Func &&func)
-        {
-            size_t start = m_currentPage * m_pageSize;
-            if (start >= m_containerByName.size()) return;
+        /// Page Function
 
-            if (m_fAscend)
+        template <typename Func>
+        void for_each(Func &&func)
+        {
+            for (auto it = m_containerByName.begin(); it != m_containerByName.end(); ++it)
             {
-                auto itBegin = m_containerByName.nth(start);
-                for (size_t index = 0; index < m_pageSize && itBegin != m_containerByName.end(); ++itBegin)
+                func(*it);
+            }
+        }
+
+        template <typename Func>
+        void for_each(size_t startPos, size_t endPos, Func &&func)
+        {
+            if (startPos > endPos)
+            {
+                reverse_for_each(startPos, endPos, func);
+                return;
+            }
+            if (startPos >= m_containerByName.size())
+            {
+                return;
+            }
+            auto itBegin = m_containerByName.nth(startPos);
+            if constexpr (std::is_invocable_v<Func &&, Armor *, size_t>)
+            {
+                for (auto &it = itBegin; startPos < endPos && it != m_containerByName.end(); ++startPos, ++it)
                 {
-                    func(index, (*itBegin).armorPtr);
-                    ++index;
+                    func(it->armorPtr, startPos);
                 }
             }
-            else
+            else if constexpr (std::is_invocable_v<Func &&, Armor *>)
             {
-                start            = m_containerByName.size() - start;
-                size_t available = std::min(static_cast<size_t>(m_pageSize), start);
-                auto   itBegin   = boost::make_reverse_iterator(m_containerByName.nth(start));
-                auto   itEnd     = boost::make_reverse_iterator(m_containerByName.nth(start - available));
-                for (size_t index = 0; index < m_pageSize && itBegin != itEnd; ++itBegin)
+                for (auto &it = itBegin; startPos < endPos && it != m_containerByName.end(); ++startPos, ++it)
                 {
-                    func(index, (*itBegin).armorPtr);
-                    ++index;
+                    func(it->armorPtr);
                 }
             }
         }
 
-        auto GetCurrentPage() const -> std::vector<Armor *>
+        template <typename Func>
+        void reverse_for_each(size_t startPos, size_t endPos, Func &&func)
         {
-            size_t start = m_currentPage * m_pageSize;
-
-            if (start >= m_containerByName.size())
+            if (startPos > m_containerByName.size() || endPos > startPos)
             {
-                return {};
+                return;
             }
-
-            std::vector<Armor *> result;
-            if (m_fAscend)
+            auto   itBegin = boost::make_reverse_iterator(m_containerByName.nth(startPos));
+            auto   itEnd   = boost::make_reverse_iterator(m_containerByName.nth(endPos));
+            size_t index   = 0;
+            if constexpr (std::is_invocable_v<Func &&, Armor *, size_t>)
             {
-                auto itBegin = m_containerByName.nth(start);
-                auto itEnd   = m_containerByName.nth(start + m_pageSize);
-                for (auto it = itBegin; it != itEnd; ++it)
+                for (auto &it = itBegin; it != itEnd; ++it)
                 {
-                    result.push_back(it->armorPtr);
+                    func(it->armorPtr, index);
+                    ++index;
                 }
             }
-            else
+            else if constexpr (std::is_invocable_v<Func &&, Armor *>)
             {
-                start            = m_containerByName.size() - start;
-                size_t available = std::min(static_cast<size_t>(m_pageSize), start);
-                auto   itBegin   = boost::make_reverse_iterator(m_containerByName.nth(start));
-                auto   itEnd     = boost::make_reverse_iterator(m_containerByName.nth(start - available));
-                for (auto it = itBegin; it != itEnd; ++it)
+                for (auto &it = itBegin; it != itEnd; ++it)
                 {
-                    result.push_back(it->armorPtr);
+                    func(it->armorPtr);
+                    ++index;
                 }
             }
-
-            return result;
         }
     };
 }
