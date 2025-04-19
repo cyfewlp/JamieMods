@@ -1,14 +1,16 @@
 #include "gui/OutfitListTable.h"
-#include "gui/Table.h"
 
 #include "GuiContext.h"
 #include "Translation.h"
+#include "data/SosUiData.h"
+#include "data/SosUiOutfit.h"
+#include "data/id.h"
+#include "gui/Table.h"
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
 #include "util/PageUtil.h"
 
 #include <array>
-#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -45,32 +47,50 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::EndChild();
     }
 
+    void OutfitListTable::FocusOutfit(const OutfitId &id)
+    {
+        auto &outfitList = m_uiData.GetOutfitList();
+        auto  pos        = outfitList.Rank(id);
+        if (pos >= outfitList.size())
+        {
+            return;
+        }
+        m_outfitLisPage.TurnTo(pos);
+    }
+
     void OutfitListTable::RenderChildContent(GuiContext &guiContext)
     {
+        //////////////////////////////////////////////////////////
+        // Create Outfit widgets
         static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
         ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
 
         ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
         {
-            *this << m_dataCoordinator.RequestCreateOutfit(outfitNameBuf.data());
+            *this << m_outfitService.CreateOutfit(outfitNameBuf.data());
         }
 
         ImGui::SameLine();
         if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
         {
-            *this << m_dataCoordinator.RequestCreateOutfitFromWorn(outfitNameBuf.data());
+            *this << m_outfitService.CreateOutfitFromWorn(outfitNameBuf.data());
         }
         ImGui::EndDisabled();
 
         if (ImGuiUtil::Button("$SosGui_Refresh{$SkyOutSys_MCM_OutfitList}"))
         {
-            m_dataCoordinator.RequestOutfitList();
+            m_outfitService.GetOutfitList();
         }
+
+        //////////////////////////////////////////////////////////
+        // Table Content
         auto &outfits = m_uiData.GetOutfitList();
-        if (outfits.empty())
+        ImGui::SameLine();
+        static bool onlyShowFavorites = false;
+        if (ImGuiUtil::CheckBox("$SosGui_CheckBox_OnlyShowFavorites", &onlyShowFavorites))
         {
-            ImGuiUtil::TextScale("$SosGui_EmptyHint{$SkyOutSys_MCM_OutfitList}", HintFontSize());
+            outfits.OnlyFavoriteOutfits(onlyShowFavorites);
         }
         static int selectedIdx = -1;
 
@@ -83,7 +103,8 @@ namespace LIBC_NAMESPACE_DECL
         // clang-format off
         m_outfitListTable
             .Column(0).NoSort().WidthFixed().NoHide().Setup()
-            .Column(1).DefaultSort().WidthStretch().Setup();
+            .Column(1).DefaultSort().WidthStretch().Setup()
+            .Column(2).NoSort().WidthFixed().Setup();
         // clang-format on
         ImGui::TableHeadersRow();
 
@@ -91,7 +112,6 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (sortSpecs->SpecsDirty)
             {
-                assert(sortSpecs->SpecsCount == 1);
                 const auto direction = sortSpecs->Specs[0].SortDirection;
                 m_outfitLisPage.SetAscendSort(direction == ImGuiSortDirection_Ascending);
                 sortSpecs->SpecsDirty = false;
@@ -99,9 +119,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         m_outfitLisPage.SetItemCount(outfits.size());
-
-        auto pageRange = m_outfitLisPage.PageRange();
-        outfits.for_each(pageRange.first, pageRange.second, [&](const auto &outfit, size_t index) {
+        auto rowAction = [&](const auto &outfit, size_t index) {
             ImGuiUtil::PushIdGuard idGuard(index);
             ImGui::TableNextRow();
             ImGui::TableNextColumn(); // number column
@@ -109,34 +127,61 @@ namespace LIBC_NAMESPACE_DECL
 
             const auto &outfitName = outfit.GetName();
             ImGui::TableNextColumn(); // outfit name column
-            bool const isSelected = static_cast<size_t>(selectedIdx) == index;
-            if (ImGui::Selectable(outfitName.data(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
             {
-                selectedIdx = isSelected ? -1 : index;
+                constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
+
+                bool const isSelected = static_cast<size_t>(selectedIdx) == index;
+                if (ImGui::Selectable(outfitName.data(), isSelected, flags))
+                {
+                    selectedIdx = isSelected ? -1 : index;
+                }
+
+                bool acceptEdit = false;
+                if (OpenContextMenu(guiContext, outfit, acceptEdit))
+                {
+                    m_click = std::make_pair(outfit.GetId(), &outfit);
+                }
+                if (acceptEdit)
+                {
+                    auto pair = std::make_pair(outfit.GetId(), &outfit);
+                    OnAcceptEditOutfit(pair);
+                    m_wantEdit = pair;
+                }
             }
-            bool acceptEdit = false;
-            if (OpenContextMenu(guiContext, outfit.GetName(), acceptEdit))
+
+            ImGui::TableNextColumn(); // active outfit hint column
             {
-                m_click = std::make_pair(outfit.GetId(), &outfit);
+                if (m_uiData.GetActorOutfitMap().IsActorOutfit(guiContext.editingActor, outfit.GetId()))
+                {
+                    ImGuiUtil::AddItemRectWithCol(ImGuiCol_HeaderActive, 2.5F);
+                    ImGuiUtil::Text("$SkyOutSys_OutfitBrowser_ActiveMark");
+                }
+                else
+                {
+                    ImGui::Text("");
+                }
+                if (outfit.IsFavorite())
+                {
+                    ImGui::SameLine();
+                    ImGui::Text("\xe2\xad\x90");
+                }
             }
-            if (acceptEdit)
-            {
-                auto pair = std::make_pair(outfit.GetId(), &outfit);
-                OnAcceptEditOutfit(pair);
-                m_wantEdit = pair;
-            }
-        });
+        };
+
+        auto pageRange = m_outfitLisPage.PageRange();
+        outfits.for_each(m_outfitLisPage.IsAscend(), pageRange.first, pageRange.second, rowAction);
         ImGui::EndTable();
     }
 
-    bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit)
+    bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const SosUiOutfit &outfit, bool &acceptEdit)
     {
-        if (!ImGui::BeginPopupContextItem())
+        if (!ImGui::BeginPopupContextItem("##OutfitListContextMenu"))
         {
             return false;
         }
-        auto menuItemEditOutfitName = Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName);
-        if (ImGui::MenuItem(menuItemEditOutfitName.c_str()))
+        const auto &outfitName = outfit.GetName();
+
+        if (ImGui::MenuItem(Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName).c_str()))
         {
             acceptEdit = true;
         }
@@ -150,16 +195,16 @@ namespace LIBC_NAMESPACE_DECL
             }
             const auto *actorName = noEditingActor ? "" : guiContext.editingActor->GetName();
             ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
-            if (m_uiData.IsActorActiveOutfit(guiContext.editingActor, outfitName))
+            if (m_uiData.GetActorOutfitMap().IsActorOutfit(guiContext.editingActor, outfit.GetId()))
             {
                 if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
                 {
-                    OnAcceptActiveOutfit(guiContext.editingActor, "");
+                    OnAcceptActiveOutfit(guiContext.editingActor, INVALID_ID, "");
                 }
             }
             if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
             {
-                OnAcceptActiveOutfit(guiContext.editingActor, outfitName);
+                OnAcceptActiveOutfit(guiContext.editingActor, outfit.GetId(), outfitName);
             }
             ImGui::BeginDisabled(guiContext.editingState == StateType::None);
             {
@@ -190,26 +235,25 @@ namespace LIBC_NAMESPACE_DECL
         bool justClosed      = m_DeleteOutfitPopup.Render(clicked.second->GetName(), isConfirmDelete);
         if (isConfirmDelete)
         {
-            *this << m_dataCoordinator.RequestDeleteOutfit(clicked);
+            *this << m_outfitService.DeleteOutfit(clicked.first, clicked.second->GetName());
         }
         return justClosed;
     }
 
     void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
     {
-        *this << m_dataCoordinator.RequestOutfitArmors(wantEdit);
-        *this << m_dataCoordinator.RequestOutfitSlotPolicy(wantEdit);
+        *this << m_outfitService.GetOutfitArmors(wantEdit.first, wantEdit.second->GetName());
+        *this << m_outfitService.GetSlotPolicy(wantEdit.first, wantEdit.second->GetName());
         m_editPanel.ShowWindow(wantEdit.second->GetName());
     }
 
     void OutfitListTable::OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName)
     {
-        *this << m_dataCoordinator.RequestSetActorStateOutfit(guiContext.editingActor, guiContext.editingState,
-                                                              outfitName);
+        *this << m_outfitService.SetActorStateOutfit(guiContext.editingActor, guiContext.editingState, outfitName);
     }
 
-    void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const std::string &outfitName)
+    void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName)
     {
-        *this << m_dataCoordinator.RequestActiveOutfit(editingActor, outfitName);
+        *this << m_outfitService.SetActorOutfit(editingActor, id, outfitName);
     }
 }

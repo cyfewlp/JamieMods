@@ -1,10 +1,10 @@
 #include "gui/OutfitEditPanel.h"
 
 #include "SosDataType.h"
-#include "SosUiData.h"
 #include "Translation.h"
 #include "common/config.h"
 #include "data/ArmorList.h"
+#include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "gui/Popup.h"
 #include "gui/widgets.h"
@@ -65,7 +65,7 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::BeginDisabled(outfitNameBuf.at(0) == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_Rename"))
         {
-            *this << m_dataCoordinator.RequestRenameOutfit(wantEdit, outfitNameBuf.data());
+            *this << m_outfitService.RenameOutfit(wantEdit.first, wantEdit.second->GetName(), outfitNameBuf.data());
         }
         ImGui::EndDisabled();
     }
@@ -112,7 +112,7 @@ namespace LIBC_NAMESPACE_DECL
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn(); // number column
-                ImGui::Text("%d", slotIdx);
+                ImGui::Text("%d", slotIdx + 1);
 
                 ImGui::TableNextColumn(); // slot name column
                 const bool  isSelected = static_cast<uint32_t>(selectedIdx) == slotIdx;
@@ -172,7 +172,7 @@ namespace LIBC_NAMESPACE_DECL
                 if (ImGui::Selectable(policyName.c_str(), false))
                 {
                     SlotPolicyToCode(policy);
-                    *this << m_dataCoordinator.RequestSetOutfitSlotPolicy(wantEdit, slotIdx, policy);
+                    *this << m_outfitService.SetSlotPolicy(wantEdit.first, wantEdit.second->GetName(), slotIdx, policy);
                 }
                 ImGuiUtil::SetItemTooltip(SlotPolicyToTooltipString(policy));
             }
@@ -338,13 +338,13 @@ namespace LIBC_NAMESPACE_DECL
         // clang-format on
         m_editContext.candidateSelection.ApplyRequests(multiSelectionIo);
 
-        auto range    = m_armorCandidatesPage.PageRange();
-        requireAddAll = false;
-        armorCandidates.for_each(range.first, range.second, [&](Armor *armor, size_t index) {
+        auto range     = m_armorCandidatesPage.PageRange();
+        requireAddAll  = false;
+        auto rowAction = [&](Armor *armor, size_t index) {
             ImGuiUtil::PushIdGuard idGuard(index);
             ImGui::TableNextRow();
             ImGui::TableNextColumn(); // number column
-            ImGui::Text("%zu", index);
+            ImGui::Text("%zu", index + 1);
 
             ImGui::TableNextColumn(); // armor name column
 
@@ -383,7 +383,8 @@ namespace LIBC_NAMESPACE_DECL
                 m_editContext.selectedArmor = armor;
             }
             ++count;
-        });
+        };
+        armorCandidates.for_each(m_armorCandidatesPage.IsAscend(), range.first, range.second, rowAction);
         ImGui::EndTable();
         multiSelectionIo = ImGui::EndMultiSelect();
         m_editContext.candidateSelection.ApplyRequests(multiSelectionIo);
@@ -434,9 +435,9 @@ namespace LIBC_NAMESPACE_DECL
                 usedSlot.set(armor->GetSlotMask());
                 if (wantEdit.second->IsConflictWith(armor))
                 {
-                    *this << m_dataCoordinator.RequestDeleteConflictArmorsWith(wantEdit, armor);
+                    *this << m_outfitService.DeleteConflictArmors(wantEdit.second->GetName(), armor);
                 }
-                *this << m_dataCoordinator.RequestAddArmor(wantEdit, armor);
+                *this << m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
             }
             ++index;
         });
@@ -515,7 +516,7 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::BeginDisabled(fFilterPlayable && (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0);
             if (ImGuiUtil::Button("$Add"))
             {
-                *this << m_dataCoordinator.RequestAddArmor(wantEdit, armor);
+                *this << m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
             }
             ImGui::EndDisabled();
         }
@@ -529,11 +530,11 @@ namespace LIBC_NAMESPACE_DECL
         switch (policy)
         {
             case OutfitAddPolicy_AddFromCarried:
-                *this << m_dataCoordinator.RequestGetArmorsByCarried();
+                *this << m_outfitService.GetArmorsByCarried();
                 break;
 
             case OutfitAddPolicy_AddFromWorn:
-                *this << m_dataCoordinator.RequestGetArmorsByWorn();
+                *this << m_outfitService.GetArmorsByWorn();
                 break;
 
             case OutfitAddPolicy_AddByID:
@@ -656,7 +657,7 @@ namespace LIBC_NAMESPACE_DECL
         }
         else
         {
-            *this << m_dataCoordinator.RequestAddArmor(wantEdit, armor);
+            *this << m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
             m_uiData.MarkArmorIsUnused(armor);
         }
     }
@@ -667,13 +668,14 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::PushFontSize(HintFontSize());
         if (m_ConflictArmorPopup.Render(m_editContext.selectedArmor))
         {
-            *this << m_dataCoordinator.RequestAddArmor(wantEdit, m_editContext.selectedArmor);
+            *this << m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), m_editContext.selectedArmor);
             m_uiData.MarkArmorIsUnused(m_editContext.selectedArmor);
         }
 
         if (m_DeleteArmorPopup.Render(m_editContext.selectedArmor))
         {
-            *this << m_dataCoordinator.RequestDeleteArmor(wantEdit, m_editContext.selectedArmor);
+            *this << m_outfitService.DeleteArmor(wantEdit.first, wantEdit.second->GetName(),
+                                                 m_editContext.selectedArmor);
         }
         m_slotPolicyHelp.Render();
         if (m_batchAddArmorsPopUp.Render())

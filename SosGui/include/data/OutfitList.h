@@ -2,22 +2,29 @@
 
 #include "common/config.h"
 #include "data/SosUiOutfit.h"
+#include "data/id.h"
 #include "util/StringUtil.h"
+#include "util/utils.h"
 
 #if !defined(NDEBUG)
     #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
     #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
 #endif
 
+#include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/indexed_by.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/ranked_index.hpp>
+#include <boost/multi_index/tag.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/optional.hpp>
 #include <boost/optional/detail/optional_reference_spec.hpp>
+#include <boost/range/adaptor/indexed.hpp>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
@@ -26,25 +33,74 @@ namespace LIBC_NAMESPACE_DECL
 
     class OutfitList
     {
-        typedef boost::multi_index_container<
-            SosUiOutfit,
-            indexed_by< //
-                ordered_unique<BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, SosUiOutfit::OutfitId, GetId)>,
-                ranked_non_unique<BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName),
-                                  util::StringCompactor>>>
-            Container;
+        static inline OutfitId g_NextOutfitId = 1;
 
-        using Armor               = RE::TESObjectARMO;
-        using ContainerById       = nth_index<Container, 0>::type;
-        using ContainerByName     = nth_index<Container, 1>::type;
-        using IdIterator          = ContainerById::iterator;
-        using ReverseIdIterator   = ContainerById::reverse_iterator;
-        using NameIterator        = ContainerByName::iterator;
-        using ReverseNameIterator = ContainerByName::reverse_iterator;
+        struct by_Id
+        {
+        };
 
-        Container        m_container{};
-        ContainerById   &m_containerById   = get<0>(m_container);
-        ContainerByName &m_containerByName = get<1>(m_container);
+        struct by_name
+        {
+        };
+
+        struct favorite_by_name
+        {
+        };
+
+        struct favorite_outfit
+        {
+            OutfitId    id = INVALID_ID;
+            std::string name;
+
+            constexpr auto GetId() const -> OutfitId
+            {
+                return id;
+            }
+
+            constexpr auto GetName() const -> const std::string &
+            {
+                return name;
+            }
+        };
+
+        struct favorite_name_key
+            : composite_key<SosUiOutfit, BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, bool, IsFavorite),
+                            BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName)>
+        {
+        };
+
+        using favorite_name_compare = composite_key_compare<std::less<bool>, util::StringCompactor>;
+
+        typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, OutfitId, GetId) IdKey;
+        typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName) NameKey;
+
+        struct outfit_index : indexed_by<ordered_unique<tag<by_Id>, IdKey>,
+                                         ranked_non_unique<tag<by_name>, NameKey, util::StringCompactor>>
+        {
+        };
+
+        typedef boost::multi_index_container<SosUiOutfit, outfit_index>         Container;
+        typedef boost::multi_index_container<const SosUiOutfit *, outfit_index> FavoriteContainer;
+
+        using Armor             = RE::TESObjectARMO;
+        using OutfitById        = index<Container, by_Id>::type;
+        using OutfitByName      = index<Container, by_name>::type;
+        using IdIterator        = OutfitById::iterator;
+        using ReverseIdIterator = OutfitById::reverse_iterator;
+
+        Container         m_container{};
+        FavoriteContainer m_favorites;
+        OutfitById       &m_outfitById   = get<by_Id>(m_container);
+        OutfitByName     &m_outfitByName = get<by_name>(m_container);
+        bool              m_onlyFavorite = false;
+
+        struct unassociated_outfit_error : std::runtime_error
+        {
+            explicit unassociated_outfit_error()
+                : std::runtime_error("The provide outfit id is unassociated any outfit.")
+            {
+            }
+        };
 
     public:
         OutfitList()  = default;
@@ -55,11 +111,14 @@ namespace LIBC_NAMESPACE_DECL
         OutfitList(OutfitList &&other)                 = delete;
         OutfitList &operator=(OutfitList &&other)      = delete;
 
+        //////////////////////////////////////////////////////////////////////////
+        // Modifiers
+        //////////////////////////////////////////////////////////////////////////
+
         template <typename String>
         constexpr void AddOutfit(String &&outfitName)
         {
-            static SosUiOutfit::OutfitId g_NextOutfitId = 1;
-            m_container.emplace_hint(m_containerById.end(), g_NextOutfitId, std::move(outfitName));
+            m_container.emplace(g_NextOutfitId, std::move(outfitName));
             ++g_NextOutfitId;
         }
 
@@ -71,43 +130,57 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        auto GetOutfit(const SosUiOutfit::OutfitId id) const -> boost::optional<const SosUiOutfit &>
+        void SetFavoriteOutfit(const OutfitId id, bool favorite) noexcept(false)
+        {
+            auto outfitIt = m_outfitById.find(id);
+            if (outfitIt == m_outfitById.end())
+            {
+                throw unassociated_outfit_error{};
+            }
+            m_favorites.erase(id);
+            m_favorites.insert(&*outfitIt);
+            m_outfitById.modify(outfitIt, [&](auto &outfit) {
+                outfit.SetFavorite(favorite);
+            });
+        }
+
+        auto GetOutfit(const OutfitId id) const -> boost::optional<const SosUiOutfit &>
         {
             boost::optional<const SosUiOutfit &> opt;
 
-            if (auto foundId = m_containerById.find(id); foundId != m_containerById.end())
+            if (auto foundId = m_outfitById.find(id); foundId != m_outfitById.end())
             {
                 opt = *foundId;
             }
             return opt;
         }
 
-        void RenameOutfit(const SosUiOutfit::OutfitId id, const std::string &&newName)
+        void RenameOutfit(const OutfitId id, const std::string &&newName)
         {
-            if (auto where = m_containerById.find(id); where != m_containerById.end())
+            if (auto where = m_outfitById.find(id); where != m_outfitById.end())
             {
-                m_containerById.modify(where, [&](auto &outfit) {
+                m_outfitById.modify(where, [&](auto &outfit) {
                     outfit.SetName(newName);
                 });
             }
         }
 
-        void AddArmor(const SosUiOutfit::OutfitId id, Armor *armor)
+        void AddArmor(const OutfitId id, Armor *armor)
         {
-            if (auto where = m_containerById.find(id); where != m_containerById.end())
+            if (auto where = m_outfitById.find(id); where != m_outfitById.end())
             {
-                m_containerById.modify(where, [&](auto &outfit) {
+                m_outfitById.modify(where, [&](auto &outfit) {
                     outfit.AddArmor(armor);
                 });
             }
         }
 
         template <typename Container>
-        void AddArmors(const SosUiOutfit::OutfitId id, const Container &armors)
+        void AddArmors(const OutfitId id, const Container &armors)
         {
-            if (auto where = m_containerById.find(id); where != m_containerById.end())
+            if (auto where = m_outfitById.find(id); where != m_outfitById.end())
             {
-                m_containerById.modify(where, [&](auto &outfit) {
+                m_outfitById.modify(where, [&](auto &outfit) {
                     for (const auto &armor : armors)
                     {
                         outfit.AddArmor(armor);
@@ -116,36 +189,36 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void DeleteOutfit(const SosUiOutfit::OutfitId id)
+        void DeleteOutfit(const OutfitId id)
         {
-            m_containerById.erase(id);
+            m_outfitById.erase(id);
         }
 
-        void DeleteArmor(const SosUiOutfit::OutfitId id, const Armor *armor)
+        void DeleteArmor(const OutfitId id, const Armor *armor)
         {
-            if (auto where = m_containerById.find(id); where != m_containerById.end())
+            if (auto where = m_outfitById.find(id); where != m_outfitById.end())
             {
-                m_containerById.modify(where, [&](auto &outfit) {
+                m_outfitById.modify(where, [&](auto &outfit) {
                     outfit.RemoveArmor(armor);
                 });
             }
         }
 
-        void SetSlotPolicy(const SosUiOutfit::OutfitId id, uint32_t slotPos, std::string &&policyString)
+        void SetSlotPolicy(const OutfitId id, uint32_t slotPos, std::string &&policyString)
         {
-            if (auto where = m_containerById.find(id); where != m_containerById.end())
+            if (auto where = m_outfitById.find(id); where != m_outfitById.end())
             {
-                m_containerById.modify(where, [&](auto &outfit) {
+                m_outfitById.modify(where, [&](auto &outfit) {
                     outfit.SetSlotPolicies(slotPos, std::move(policyString));
                 });
             }
         }
 
-        void SetAllSlotPolicies(const SosUiOutfit::OutfitId id, std::vector<std::string> slotPolicies)
+        void SetAllSlotPolicies(const OutfitId id, std::vector<std::string> slotPolicies)
         {
-            if (auto where = m_containerById.find(id); where != m_containerById.end())
+            if (auto where = m_outfitById.find(id); where != m_outfitById.end())
             {
-                m_containerById.modify(where, [&](auto &outfit) {
+                m_outfitById.modify(where, [&](auto &outfit) {
                     for (uint32_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; ++slotPos)
                     {
                         outfit.SetSlotPolicies(slotPos, slotPolicies[slotPos]);
@@ -154,92 +227,165 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        // only iterate favorite outfits when call for_each
+        void OnlyFavoriteOutfits(bool yes)
+        {
+            m_onlyFavorite = yes;
+        }
+
         constexpr void clear()
         {
             m_container.clear();
         }
 
-        auto HasOutfit(SosUiOutfit::OutfitId &id) const -> bool
+        //////////////////////////////////////////////////////////////////////////
+        // Query
+        //////////////////////////////////////////////////////////////////////////
+
+        auto Rank(const OutfitId &id) const -> size_t;
+
+        auto findByName(const std::string &outfitName) const -> OutfitId;
+
+        auto HasOutfit(const OutfitId &id) const -> bool
         {
-            return m_container.contains(id);
+            return m_outfitById.contains(id);
         }
 
-        [[nodiscard]] constexpr auto empty() -> bool
+        [[nodiscard]] constexpr auto empty() const -> bool
         {
-            return m_container.empty();
+            return m_onlyFavorite ? m_favorites.empty() : m_container.empty();
         }
 
         [[nodiscard]] constexpr auto size() -> size_t
         {
-            return m_container.size();
+            return m_onlyFavorite ? m_favorites.size() : m_container.size();
         }
+
+        //////////////////////////////////////////////////////////////////////////
+        // Iterator
+        //////////////////////////////////////////////////////////////////////////
 
         template <typename Func>
         void for_each(Func &&func)
         {
-            size_t index = 0;
-            for (auto it = m_containerByName.begin(); it != m_containerByName.end(); ++index, ++it)
+            using namespace boost::adaptors;
+            if (m_onlyFavorite)
             {
-                func(*it, index);
+                for (const auto &element : get<by_name>(m_favorites) | indexed())
+                {
+                    func(*element.value(), element.index());
+                }
+            }
+            else
+            {
+                for (const auto &element : m_outfitByName | indexed())
+                {
+                    func(element.value(), element.index());
+                }
+            }
+        }
+
+        template <typename Func>
+        void for_each(bool ascend, size_t startPos, size_t endPos, Func &&func)
+        {
+            if (empty())
+            {
+                return;
+            }
+            if (ascend)
+            {
+                for_each(startPos, endPos, std::forward<Func>(func));
+            }
+            else
+            {
+                reverse_for_each(startPos, endPos, std::forward<Func>(func));
             }
         }
 
         template <typename Func>
         void for_each(size_t startPos, size_t endPos, Func &&func)
         {
-            if (startPos > endPos)
+            if (m_onlyFavorite)
             {
-                reverse_for_each(startPos, endPos, func);
-                return;
+                for_each_on(get<by_name>(m_favorites), startPos, endPos, [&](const auto &outfit, size_t index) {
+                    do_each(std::forward<Func>(func), *outfit, index);
+                });
             }
-            if (startPos >= m_containerByName.size())
+            else
             {
-                return;
-            }
-            auto itBegin = m_containerByName.nth(startPos);
-            if constexpr (std::is_invocable_v<Func &&, const SosUiOutfit &, size_t>)
-            {
-                for (auto &it = itBegin; startPos < endPos && it != m_containerByName.end(); ++startPos, ++it)
-                {
-                    func(*it, startPos);
-                }
-            }
-            else if constexpr (std::is_invocable_v<Func &&, const SosUiOutfit &>)
-            {
-                for (auto &it = itBegin; startPos < endPos && it != m_containerByName.end(); ++startPos, ++it)
-                {
-                    func(*it);
-                }
+                for_each_on(m_outfitByName, startPos, endPos, [&](const auto &outfit, size_t index) {
+                    do_each(std::forward<Func>(func), outfit, index);
+                });
             }
         }
 
         template <typename Func>
         void reverse_for_each(size_t startPos, size_t endPos, Func &&func)
         {
-            if (startPos > m_containerByName.size() || endPos > startPos)
+            if (m_onlyFavorite)
             {
-                return;
+                reverse_for_each_on(get<by_name>(m_favorites), startPos, endPos, [&](const auto &outfit, size_t index) {
+                    do_each(std::forward<Func>(func), *outfit, index);
+                });
             }
-            auto itBegin = boost::make_reverse_iterator(m_containerByName.nth(startPos));
-            auto itEnd = boost::make_reverse_iterator(m_containerByName.nth(endPos));
-            size_t index = 0;
+            else
+            {
+                reverse_for_each_on(m_outfitByName, startPos, endPos, [&](const auto &outfit, size_t index) {
+                    do_each(std::forward<Func>(func), outfit, index);
+                });
+            }
+        }
+
+    private:
+        template <typename RankedIndex>
+        constexpr void validate_range(const RankedIndex &index, size_t startPos, size_t endPos)
+        {
+            if (startPos >= index.size())
+            {
+                throw std::out_of_range(std::format("Invalid startPos: {} out of range {}", startPos, index.size()));
+            }
+            if (startPos > endPos)
+            {
+                throw std::invalid_argument(std::format("startPos {} can't greater endPos {}", startPos, endPos));
+            }
+        }
+
+        template <typename Func>
+        void do_each(Func &&func, const SosUiOutfit &outfit, size_t index)
+        {
             if constexpr (std::is_invocable_v<Func &&, const SosUiOutfit &, size_t>)
             {
-                for (auto &it = itBegin;it != itEnd;++it)
-                {
-                    func(*it, index);
-                    ++index;
-                }
+                func(outfit, index);
             }
             else if constexpr (std::is_invocable_v<Func &&, const SosUiOutfit &>)
             {
-                for (auto &it = itBegin; it != itEnd;++it)
-                {
-                    func(*it);
-                    ++index;
-                }
+                func(outfit);
+            }
+        }
+
+        template <typename RankedIndex, typename Func>
+        void for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
+        {
+            validate_range(index, startPos, endPos);
+            for (auto itBegin = index.nth(startPos); startPos < endPos && itBegin != index.end(); ++startPos, ++itBegin)
+            {
+                func(*itBegin, startPos);
+            }
+        }
+
+        template <typename RankedIndex, typename Func>
+        void reverse_for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
+        {
+            validate_range(index, startPos, endPos);
+            auto range = util::reverse_range(startPos, endPos, index.size());
+
+            auto it0 = boost::make_reverse_iterator(index.nth(range.first));
+            auto it1 = boost::make_reverse_iterator(index.nth(range.second));
+
+            for (auto itBegin = it0; startPos < endPos && itBegin != it1; ++startPos, ++itBegin)
+            {
+                func(*itBegin, startPos);
             }
         }
     };
-
 }

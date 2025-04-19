@@ -2,9 +2,10 @@
 
 #include "common/config.h"
 #include "coroutine.h"
+#include "data/SosUiData.h"
 #include "gui/Popup.h"
-#include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
+#include "service/OutfitService.h"
 #include "util/PageUtil.h"
 #include "widgets.h"
 
@@ -50,7 +51,7 @@ namespace LIBC_NAMESPACE_DECL
         TableContext<5>           m_armorListTable;
         TableContext<5>           m_armorCandidatesTable;
         SosUiData                &m_uiData;
-        SosDataCoordinator       &m_dataCoordinator;
+        OutfitService            &m_outfitService;
         Popup::DeleteArmorPopup   m_DeleteArmorPopup;
         Popup::ConflictArmorPopup m_ConflictArmorPopup;
         Popup::SlotPolicyHelp     m_slotPolicyHelp;
@@ -58,13 +59,13 @@ namespace LIBC_NAMESPACE_DECL
         util::PageUtil            m_armorCandidatesPage;
 
     public:
-        explicit OutfitEditPanel(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
+        explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService)
             : m_armorListTable(
                   TableContext<5>::Create("##OutfitArmors", {"##Number", "$SosGui_TableHeader_Slot", "$ARMOR",
                                                              "$SkyOutSys_OEdit_OutfitSettings_Header", "$Delete"})),
               m_armorCandidatesTable(
                   TableContext<5>::Create("##ArmorCandidates", {"##Number", "$ARMOR", "FormID", "ModName", "$Add"})),
-              m_uiData(uiData), m_dataCoordinator(dataCoordinator)
+              m_uiData(uiData), m_outfitService(outfitService)
         {
             m_armorListTable.Resizable().SizingStretchProp();
             m_armorCandidatesTable.Resizable().Sortable().Hideable().Reorderable();
@@ -74,7 +75,7 @@ namespace LIBC_NAMESPACE_DECL
         auto Render(const SosUiData::OutfitPair &wantEdit) -> bool;
 
         /// <summary>
-        /// Show this outfit edit window with specificy outfit-name.
+        /// Show this outfit edit window with specify outfit-name.
         /// </summary>
         /// <param name="outfitName">be used to set window title</param>
         /// <param name="show">true, show window</param>

@@ -65,6 +65,7 @@ namespace LIBC_NAMESPACE_DECL
 
         static auto CreateOutfit(std::string &&outfitName) -> Awaitable;
         static auto ActiveOutfit(RE::Actor *actor, std::string &&outfitName) -> Awaitable;
+        static auto GetSelectedOutfit(RE::Actor *actor) -> Awaitable;
         static auto RenameOutfit(std::string &&outfitName, std::string &&newName) -> Awaitable;
         static auto DeleteOutfit(std::string &&outfitName) -> Awaitable;
         static auto AddArmorToOutfit(std::string &&outfitName, Armor *armor) -> Awaitable;

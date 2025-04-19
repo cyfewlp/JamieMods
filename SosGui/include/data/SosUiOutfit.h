@@ -1,25 +1,23 @@
 #pragma once
 
 #include "common/config.h"
+#include "data/id.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
 #include <RE/T/TESObjectARMO.h>
 #include <array>
 #include <cstdint>
 #include <string>
-#include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
 {
     class SosUiOutfit
     {
     public:
-        static constexpr int SLOT_COUNT      = 32;
-        using OutfitId                       = uint32_t; // id begin 1
-        static constexpr OutfitId INVALID_ID = 0;
-        using Slot                           = RE::BIPED_MODEL::BipedObjectSlot;
-        using Armor                          = RE::TESObjectARMO;
-        using SlotPolicyArray                = std::array<std::string, SLOT_COUNT>;
+        static constexpr int SLOT_COUNT = 32;
+        using Slot                      = RE::BIPED_MODEL::BipedObjectSlot;
+        using Armor                     = RE::TESObjectARMO;
+        using SlotPolicyArray           = std::array<std::string, SLOT_COUNT>;
 
     private:
         OutfitId                               m_id;
@@ -27,9 +25,11 @@ namespace LIBC_NAMESPACE_DECL
         SKSE::stl::enumeration<Slot, uint32_t> m_slotMask = Slot::kNone;
         std::array<Armor *, SLOT_COUNT>        m_armors;
         SlotPolicyArray                        m_slotPolicies;
+        bool                                   m_isFavorite = false;
 
     public:
-        explicit SosUiOutfit(OutfitId id, const std::string &name) : m_id(id), m_name(name)
+        explicit SosUiOutfit(OutfitId id, const std::string &name, bool favorite = false)
+            : m_id(id), m_name(name), m_isFavorite(favorite)
         {
             m_armors.fill(nullptr);
         }
@@ -60,6 +60,16 @@ namespace LIBC_NAMESPACE_DECL
         void SetName(const std::string &newName)
         {
             m_name.assign(newName);
+        }
+
+        void SetFavorite(bool isFavorite)
+        {
+            m_isFavorite = isFavorite;
+        }
+
+        [[nodiscard]] constexpr auto IsFavorite() const -> bool
+        {
+            return m_isFavorite;
         }
 
         [[nodiscard]] auto GetName() const -> const std::string &

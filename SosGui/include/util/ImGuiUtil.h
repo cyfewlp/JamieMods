@@ -17,7 +17,8 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace ImGuiUtil
     {
-        static std::string g_widgetName;
+        static std::string       g_widgetName;
+        static constexpr ImColor RED_COLOR = ImColor(255, 0, 0, 255);
 
         static constexpr auto Button(const char *name, const ImVec2 &size = ImVec2(0, 0)) -> bool
         {
@@ -150,6 +151,36 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::OpenPopup(g_widgetName.c_str(), ImGuiPopupFlags_None);
         }
 
+        constexpr void AddItemRectWithCol(ImGuiCol colorIndex, float thickness = 1.0F)
+        {
+            auto *drawList = ImGui::GetWindowDrawList();
+            auto color = ImGui::GetColorU32(colorIndex);
+            drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
+        }
+
+        constexpr void AddItemRect(ImColor color, float thickness = 1.0F)
+        {
+            auto *drawList = ImGui::GetWindowDrawList();
+            drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
+        }
+
+        struct SelectableFlag
+        {
+            ImGuiSelectableFlags flags = ImGuiSelectableFlags_None;
+
+            constexpr auto AllowOverlap() -> SelectableFlag &
+            {
+                flags |= ImGuiSelectableFlags_AllowOverlap;
+                return *this;
+            }
+
+            constexpr auto SpanAllColumns() -> SelectableFlag &
+            {
+                flags |= ImGuiSelectableFlags_SpanAllColumns;
+                return *this;
+            }
+        };
+
         struct PushIdGuard
         {
             template <typename ID>
@@ -158,7 +189,10 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::PushID(id);
             }
 
-            ~PushIdGuard() { ImGui::PopID(); }
+            ~PushIdGuard()
+            {
+                ImGui::PopID();
+            }
         };
 
         struct ChildGuard
@@ -170,9 +204,15 @@ namespace LIBC_NAMESPACE_DECL
                 isBegin = ImGui::BeginChild(name, size, flags);
             }
 
-            explicit operator bool() const { return isBegin; }
+            explicit operator bool() const
+            {
+                return isBegin;
+            }
 
-            ~ChildGuard() { ImGui::EndChild(); }
+            ~ChildGuard()
+            {
+                ImGui::EndChild();
+            }
         };
     }
 }

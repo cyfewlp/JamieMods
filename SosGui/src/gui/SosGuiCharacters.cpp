@@ -4,10 +4,15 @@
 
 #include "SosGui.h"
 
-#include "util/ImGuiUtil.h"
 #include "SosDataType.h"
+#include "common/config.h"
+#include "data/id.h"
 #include "imgui.h"
+#include "util/ImGuiUtil.h"
 
+#include <RE/A/Actor.h>
+#include <Translation.h>
+#include <boost/optional/detail/optional_reference_spec.hpp>
 #include <cstdint>
 #include <format>
 #include <string>
@@ -32,6 +37,19 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::EndChild();
     }
 
+    void SosGui::CharactersContextMenu(const OutfitId &outfitId)
+    {
+        if (!ImGui::BeginPopupContextItem("##CharactersContextMenu"))
+        {
+            return;
+        }
+        if (ImGui::MenuItem("Turn to outfit list"))
+        {
+            m_outfitListTable.FocusOutfit(outfitId);
+        }
+        ImGui::EndPopup();
+    }
+
     void SosGui::RenderCharactersList()
     {
         const auto &actors = m_uiData.GetActors();
@@ -39,43 +57,65 @@ namespace LIBC_NAMESPACE_DECL
         {
             m_dataCoordinator.RequestActorList();
         }
-        static int selectedIdx = -1;
-        ImGui::PushFontSize(HintFontSize());
-        ImGuiUtil::Text(selectedIdx == -1 ? "$SosGui_SelectHint{$Characters}" : "");
-        ImGui::PopFontSize();
-
-        if (m_charactersTable.Begin())
+        if (!m_charactersTable.Begin())
         {
-            m_charactersTable.HeadersRow();
-            int idx = 0;
-            for (const auto &actor : actors)
-            {
-                ImGui::PushID(idx);
-                bool const isSelected = selectedIdx == idx;
-
-                ImGui::TableNextColumn();
-                if (ImGui::Selectable(actor->GetName(), isSelected, ImGuiSelectableFlags_SpanAllColumns))
-                {
-                    m_context.editingActor = !isSelected ? actor : nullptr;
-                    selectedIdx            = !isSelected ? idx : -1;
-                }
-
-                ImGui::TableNextColumn();
-                if (ImGui::Button(m_charactersTable.GetHeader(1).data()))
-                {
-                    *this << m_dataCoordinator.RequestRemoveActor(actor);
-                }
-
-                ImGui::TableNextColumn();
-                const auto &activeOutfitMap = m_uiData.GetActorActiveOutfitMap();
-                if (auto iter = activeOutfitMap.find(actor); iter != activeOutfitMap.end())
-                {
-                    ImGui::Text("%s", (*iter).second.c_str());
-                }
-                ImGui::PopID();
-            }
-            ImGui::EndTable();
+            return;
         }
+        m_charactersTable.HeadersRow();
+        static int selectedIdx = 0;
+        int        idx         = 0;
+        for (const auto &actor : actors)
+        {
+            ImGui::PushID(idx);
+
+            ImGui::TableNextColumn(); // character column
+            {
+                constexpr auto flags      = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
+                const bool     isSelected = selectedIdx == idx;
+                if (ImGui::Selectable(actor->GetName(), isSelected, flags))
+                {
+                    selectedIdx = idx;
+                }
+                if (isSelected)
+                {
+                    m_context.editingActor = actor;
+                    ImGuiUtil::AddItemRectWithCol(ImGuiCol_HeaderActive, 2.5F);
+                }
+            }
+
+            ImGui::TableNextColumn(); // remove character column
+            if (ImGui::Button(m_charactersTable.GetHeader(1).data()))
+            {
+                *this << m_dataCoordinator.RequestRemoveActor(actor);
+            }
+
+            ImGui::TableNextColumn(); // active outfit column
+            {
+                const auto &activeOutfitMap = m_uiData.GetActorOutfitMap();
+                activeOutfitMap.GetOutfit(actor);
+
+                auto id      = activeOutfitMap.GetOutfit(actor);
+                bool isFound = id != INVALID_ID;
+                if (isFound)
+                {
+                    auto outfitOpt  = m_uiData.GetOutfitList().GetOutfit(id);
+                    auto outfitName = outfitOpt
+                                          .map([](const auto &outfit) {
+                                              return outfit.GetName();
+                                          })
+                                          .value_or("No outfit");
+                    ImGui::Text("%s", outfitName.c_str());
+                }
+                ImGui::BeginDisabled(!isFound);
+                {
+                    CharactersContextMenu(id);
+                }
+                ImGui::EndDisabled();
+            }
+            idx++;
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
     }
 
     void SosGui::RenderNearNpcList()
@@ -150,7 +190,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (!isSelected)
                 {
-                    *this << m_dataCoordinator.RequestActorStateOutfit(currentActor, state);
+                    *this << m_outfitService.GetActorStateOutfit(currentActor, state);
                 }
                 m_context.editingState = isSelected ? StateType::None : state;
             }
@@ -178,7 +218,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (!outfitName.empty())
             {
-                *this << m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state, "");
+                *this << m_outfitService.SetActorStateOutfit(m_context.editingActor, state, "");
             }
         }
 
@@ -189,8 +229,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (!isSelected)
                 {
-                    *this << m_dataCoordinator.RequestSetActorStateOutfit(m_context.editingActor, state,
-                                                                          outfit.GetName());
+                    *this << m_outfitService.SetActorStateOutfit(m_context.editingActor, state, outfit.GetName());
                 }
             }
             if (isSelected)

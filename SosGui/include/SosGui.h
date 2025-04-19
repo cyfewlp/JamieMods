@@ -2,12 +2,14 @@
 
 #include "GuiContext.h"
 #include "SosDataType.h"
-#include "SosUiData.h"
 #include "coroutine.h"
+#include "data/SosUiData.h"
+#include "data/id.h"
 #include "gui/BaseGui.h"
 #include "gui/OutfitListTable.h"
-#include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
+#include "service/OutfitService.h"
+#include "service/SosDataCoordinator.h"
 
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
@@ -31,6 +33,7 @@ namespace LIBC_NAMESPACE_DECL
         TableContext<2>    m_locationAutoSwitchTable;
         TableContext<3>    m_charactersTable;
         SosUiData          m_uiData;
+        OutfitService      m_outfitService;
         SosDataCoordinator m_dataCoordinator;
         OutfitListTable    m_outfitListTable;
 
@@ -42,7 +45,8 @@ namespace LIBC_NAMESPACE_DECL
                   "##AutoSwitchStateList", {"$SosGui_TableHeader_Location", "$SosGui_TableHeader_Location_State"})),
               m_charactersTable(TableContext<3>::Create(
                   "##CharactersTable", {"$Characters", "$Delete", "$SosGui_TableHeader_ActiveOutfit"})),
-              m_dataCoordinator(m_uiData), m_outfitListTable(m_uiData, m_dataCoordinator)
+              m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService),
+              m_outfitListTable(m_uiData, m_outfitService)
         {
             m_locationAutoSwitchTable.Resizable().NoHostExtendX();
             m_charactersTable.Resizable().SizingStretchProp();
@@ -83,6 +87,8 @@ namespace LIBC_NAMESPACE_DECL
         void RenderCharactersPanel();
 
         void RenderCharactersList();
+
+        void CharactersContextMenu(const OutfitId &outfitId);
 
         void RenderNearNpcList();
 

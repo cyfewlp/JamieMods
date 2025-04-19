@@ -12,9 +12,11 @@
 #include "common/config.h"
 #include "common/log.h"
 #include "coroutine.h"
+#include "data/ActorOutfitMap.h"
 #include "data/ArmorList.h"
 #include "data/OutfitList.h"
 #include "data/SosUiOutfit.h"
+#include "data/id.h"
 
 #include <RE/A/Actor.h>
 #include <cstdint>
@@ -35,21 +37,21 @@ namespace LIBC_NAMESPACE_DECL
         using BodySlot      = int32_t;
         using OutfitState   = std::pair<StateType, std::string>;
         using BodySlotArmor = std::pair<BodySlot, Armor *>;
-        using OutfitPair    = std::pair<SosUiOutfit::OutfitId, const SosUiOutfit *>;
+        using OutfitPair    = std::pair<OutfitId, const SosUiOutfit *>;
 
-        static constexpr uint8_t            DEFAULT_PAGE_SIZE = 20;
-        static inline SosUiOutfit::OutfitId g_NextOutfitId    = 1;
+        static constexpr uint8_t DEFAULT_PAGE_SIZE = 20;
+        static inline OutfitId   g_NextOutfitId    = 1;
 
     private:
-        GuiContext                                   m_context;
-        std::vector<RE::Actor *>                     m_actors;
-        std::vector<RE::Actor *>                     m_NearActors;
-        bool                                         m_enabled           = false;
-        bool                                         m_fQuickSlotEnabled = false;
-        ArmorList                                    m_armorCandidates;
-        std::unordered_map<RE::Actor *, std::string> m_actorActiveOutfitMap;
-        OutfitList                                   m_outfitList{};
-        std::list<std::string>                       m_errorMessages;
+        GuiContext               m_context;
+        std::vector<RE::Actor *> m_actors;
+        std::vector<RE::Actor *> m_NearActors;
+        bool                     m_enabled           = false;
+        bool                     m_fQuickSlotEnabled = false;
+        ArmorList                m_armorCandidates;
+        ActorOutfitMap           m_actorOutfitMap;
+        OutfitList               m_outfitList{};
+        std::list<std::string>   m_errorMessages;
 
         std::unordered_map<RE::Actor *, bool>                                       m_autoSwitchEnabled;
         std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> m_actorOutfitStates;
@@ -287,25 +289,19 @@ namespace LIBC_NAMESPACE_DECL
         // Active outfit
         ////////////////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] auto GetActorActiveOutfitMap() const -> const std::unordered_map<RE::Actor *, std::string> &
+        [[nodiscard]] auto GetActorOutfitMap() const -> const ActorOutfitMap &
         {
-            return m_actorActiveOutfitMap;
+            return m_actorOutfitMap;
         }
 
-        void SetActorActiveOutfit(RE::Actor *actor, const std::string &outfitName)
+        [[nodiscard]] auto GetActorOutfitMap() -> ActorOutfitMap &
         {
-            m_actorActiveOutfitMap[actor] = outfitName;
+            return m_actorOutfitMap;
         }
 
-        auto HasActiveOutfit(RE::Actor *actor) const -> bool
-        {
-            return m_actorActiveOutfitMap.contains(actor) && !m_actorActiveOutfitMap.at(actor).empty();
-        }
-
-        auto IsActorActiveOutfit(RE::Actor *actor, const std::string &outfitName) const -> bool
-        {
-            return m_actorActiveOutfitMap.contains(actor) && m_actorActiveOutfitMap.at(actor) == outfitName;
-        }
+        ////////////////////////////////////////////////////////////////////////////
+        // UI Error Messages
+        ////////////////////////////////////////////////////////////////////////////
 
         void PushErrorMessage(std::string &&message)
         {

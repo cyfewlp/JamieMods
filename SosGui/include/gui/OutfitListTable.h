@@ -1,14 +1,15 @@
 #pragma once
 
 #include "GuiContext.h"
-#include "SosUiData.h"
 #include "common/config.h"
+#include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
+#include "data/id.h"
 #include "gui/BaseGui.h"
 #include "gui/OutfitEditPanel.h"
 #include "gui/Popup.h"
-#include "gui/SosDataCoordinator.h"
 #include "gui/Table.h"
+#include "service/OutfitService.h"
 #include "util/PageUtil.h"
 
 #include "imgui.h"
@@ -18,27 +19,30 @@ namespace LIBC_NAMESPACE_DECL
     class OutfitListTable : public BaseGui
     {
         static constexpr int                   OUTFIT_NAME_MAX_BYTES = 256;
-        static constexpr SosUiData::OutfitPair DEFAULT_INVALID_PAIR  = {SosUiOutfit::INVALID_ID, nullptr};
+        static constexpr SosUiData::OutfitPair DEFAULT_INVALID_PAIR  = {INVALID_ID, nullptr};
 
-        SosUiData          &m_uiData;
-        SosDataCoordinator &m_dataCoordinator;
+        SosUiData     &m_uiData;
+        OutfitService &m_outfitService;
 
         Popup::DeleteOutfitPopup m_DeleteOutfitPopup{};
         SosUiData::OutfitPair    m_wantEdit = DEFAULT_INVALID_PAIR;
         SosUiData::OutfitPair    m_click    = DEFAULT_INVALID_PAIR;
         OutfitEditPanel          m_editPanel;
-        TableContext<2>          m_outfitListTable;
+        TableContext<3>          m_outfitListTable;
         util::PageUtil           m_outfitLisPage;
 
     public:
-        OutfitListTable(SosUiData &uiData, SosDataCoordinator &dataCoordinator)
-            : m_uiData(uiData), m_dataCoordinator(dataCoordinator), m_editPanel(m_uiData, m_dataCoordinator),
-              m_outfitListTable(TableContext<2>::Create("##OutfitLists", {"##Number", "$SkyOutSys_MCM_OutfitList"}))
+        OutfitListTable(SosUiData &uiData, OutfitService &outfitService)
+            : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_uiData, m_outfitService),
+              m_outfitListTable(
+                  TableContext<3>::Create("##OutfitLists", {"##Number", "$SkyOutSys_MCM_OutfitList", "##ActiveMark"}))
         {
             m_outfitListTable.Sortable().NoHostExtendX();
         }
 
         void Render(GuiContext &guiContext, ImVec2 childSize);
+
+        void FocusOutfit(const OutfitId &id);
 
         void Refresh() override;
         void Close() override;
@@ -56,7 +60,7 @@ namespace LIBC_NAMESPACE_DECL
          * @param acceptEdit modify to true if accept "Edit this outfit"
          * @return true if the context menu is open.
          */
-        bool OpenContextMenu(GuiContext &guiContext, const std::string &outfitName, bool &acceptEdit);
+        bool OpenContextMenu(GuiContext &guiContext, const SosUiOutfit &outfit, bool &acceptEdit);
 
         bool EditingPanel(const SosUiData::OutfitPair &wantEdit)
         {
@@ -67,7 +71,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit);
         void OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName);
-        void OnAcceptActiveOutfit(RE::Actor *editingActor, const std::string &outfitName);
+        void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName);
 
         bool IsValidOutfit(SosUiData::OutfitPair &pair) const
         {

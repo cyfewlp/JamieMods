@@ -1,13 +1,14 @@
 #include "SosGui.h"
-#include "util/ImGuiUtil.h"
 #include "common/config.h"
 #include "common/log.h"
 #include "coroutine.h"
-#include "util/ImThemeLoader.h"
 #include "imgui.h"
+#include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "util/ImGuiSettinsHandler.h"
+#include "util/ImGuiUtil.h"
+#include "util/ImThemeLoader.h"
 
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>
@@ -48,12 +49,22 @@ namespace LIBC_NAMESPACE_DECL
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigNavMoveSetMousePos = false;
-        ImGui::StyleColorsDark();
         ::GetClientRect(hWnd, &rect);
         io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-        io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\simsun.ttc)", 14.0F, nullptr,
-                                     io.Fonts->GetGlyphRangesChineseFull());
+        ImGui::StyleColorsDark();
+        constexpr auto mainFont  = R"(C:\Windows\Fonts\simsun.ttc)";
+        constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
+
+        static ImFontConfig      emojiFontConfig;
+        static constexpr ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
+        emojiFontConfig.OversampleH = emojiFontConfig.OversampleV = 1;
+        emojiFontConfig.MergeMode                                 = true;
+        emojiFontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+
+        io.Fonts->AddFontFromFileTTF(mainFont, 14.0F, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+        io.Fonts->AddFontFromFileTTF(emojiFont, 14.0F, &emojiFontConfig, icons_ranges);
+        io.Fonts->Build();
 
         ImGuiStyle &style = ImGui::GetStyle();
         if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -135,7 +146,7 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::Refresh() -> void
     {
-        log_debug("RequestOutfitList thread-id {}", std::this_thread::get_id());
+        log_debug("GetOutfitList thread-id {}", std::this_thread::get_id());
         DoRefresh();
     }
 

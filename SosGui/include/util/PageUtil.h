@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/assert.hpp>
+
 namespace LIBC_NAMESPACE_DECL
 {
     namespace util
@@ -43,9 +45,21 @@ namespace LIBC_NAMESPACE_DECL
                 pageIndex++;
             }
 
+            // index must be ascend mode
+            void TurnTo(size_t index)
+            {
+                BOOST_ASSERT_MSG(index <= itemCount, "Invalid index.");
+                pageIndex = index / pageSize;
+            }
+
             void SetAscendSort(bool ascend)
             {
                 this->ascend = ascend;
+            }
+
+            constexpr auto IsAscend() const -> bool
+            {
+                return ascend;
             }
 
             constexpr auto GetPageIndex() const -> uint16_t
@@ -73,12 +87,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 size_t start = pageIndex * pageSize;
                 size_t end   = start + pageSize;
-                if (ascend)
-                {
-                    return {start, end};
-                }
-                start = itemCount - start;
-                end   = start < pageSize ? 0 : start - pageSize;
                 return {start, end};
             }
 

@@ -13,5 +13,11 @@
 * [ ] Location auto-switch panel
 * [ ] Success message
 * [ ] Delete SosGui/SosUiData when menu hide?
-* [ ] Sort outfit list
+* [x] Sort outfit list
 * [ ] Can use corutine to speed-up armor candidates operation(in same thread)?
+* [x] need call Sos remove current slot armor
+* [ ] Drag child window as main window;
+* [x] Refresh read active outfit
+* [x] Hightlight Current actor active outfit;
+* [ ] refactor ui translate key: by use context string to avoid specify full ket;
+* [ ] fix: selected armor inconsistency with UI display;
