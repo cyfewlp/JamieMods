@@ -8,7 +8,6 @@
 #include "gui/BaseGui.h"
 #include "gui/OutfitEditPanel.h"
 #include "gui/Popup.h"
-#include "gui/Table.h"
 #include "imgui.h"
 #include "service/OutfitService.h"
 #include "util/PageUtil.h"
@@ -31,16 +30,12 @@ namespace LIBC_NAMESPACE_DECL
         SosUiData::OutfitPair    m_wantEdit = DEFAULT_INVALID_PAIR;
         SosUiData::OutfitPair    m_click    = DEFAULT_INVALID_PAIR;
         OutfitEditPanel          m_editPanel;
-        TableContext<3>          m_outfitListTable;
         util::PageUtil           m_outfitLisPage;
 
     public:
         OutfitListTable(SosUiData &uiData, OutfitService &outfitService)
-            : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_outfitService),
-              m_outfitListTable(
-                  TableContext<3>::Create("##OutfitLists", {"##Number", "$SkyOutSys_MCM_OutfitList", "##ActiveMark"}))
+            : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_outfitService)
         {
-            m_outfitListTable.Sortable().NoHostExtendX();
         }
 
         void Render(GuiContext &guiContext, ImVec2 childSize);

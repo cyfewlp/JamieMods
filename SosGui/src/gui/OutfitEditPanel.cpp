@@ -7,6 +7,7 @@
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "gui/Popup.h"
+#include "gui/Table.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
@@ -92,16 +93,17 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         static int selectedIdx = -1;
-        if (m_armorListTable.Begin())
+        if (TableBuilder("##OutfitArmors").Resizable().SizingStretchProp().Begin(5))
         {
             // clang-format off
-            m_armorListTable.Column(0).NoHide().Setup()
-                .Column(1).NoSort().Setup()
-                .Column(2).NoSort().Setup()
-                .Column(3).WidthFixed().NoSort().Setup()
-                .Column(4).WidthFixed().NoSort().Setup();
+            TableHeadersBuilder().Column("##Number").NoHide()
+                .Column("$SosGui_TableHeader_Slot").NoSort()
+                .Column("$ARMOR").NoSort()
+                .Column("$SkyOutSys_OEdit_OutfitSettings_Header").WidthFixed().NoSort()
+                .Column("$Delete").WidthFixed().NoSort()
+                .CommitHeadersRow();
             // clang-format on
-            ImGui::TableHeadersRow();
+
             for (uint32_t slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
             {
                 const auto &armor = wantEdit.second->GetArmorAt(slotIdx);
@@ -296,32 +298,28 @@ namespace LIBC_NAMESPACE_DECL
 
     void OutfitEditPanel::RenderArmorCandidates(const SosUiData::OutfitPair &wantEdit)
     {
-        if (m_editContext.armorView2.IsEmpty())
-        {
-            ImGui::PushFontSize(HintFontSize());
-            ImGuiUtil::Text(m_editContext.armorView2.IsEmpty() ? "$SosGui_EmptyHint{$ARMOR}" : "");
-            ImGui::PopFontSize();
-            return;
-        }
-
+        m_armorCandidatesPage.SetItemCount(m_editContext.armorView2.Size());
         util::RenderPageWidgets(m_armorCandidatesPage);
 
-        if (!m_armorCandidatesTable.Begin())
+        if (m_editContext.armorView2.IsEmpty() || !TableBuilder("##ArmorCandidates")
+                                                       .Resizable()
+                                                       .SizingFixedFit()
+                                                       .Sortable()
+                                                       .Hideable()
+                                                       .Reorderable()
+                                                       .Begin(5))
         {
             return;
         }
 
-        ImGui::PushID("HeadersRow");
         // clang-format off
-        m_armorCandidatesTable
-            .Column(0).NoSort().WidthFixed().NoHide().Setup()
-            .Column(1).DefaultSort().NoHide().Setup()
-            .Column(2).WidthFixed().NoSort().Setup()
-            .Column(3).NoSort().Setup()
-            .Column(4).WidthFixed().NoSort().Setup();
+        TableHeadersBuilder().Column("##Number").NoSort().WidthFixed().NoHide()
+            .Column("$ARMOR").DefaultSort().NoHide()
+            .Column("FormID").WidthFixed().NoSort()
+            .Column("ModName").NoSort()
+            .Column("$Add").WidthFixed().NoSort()
+            .CommitHeadersRow();
         // clang-format on
-        ImGui::TableHeadersRow();
-        ImGui::PopID();
 
         if (auto *sortSpecs = ImGui::TableGetSortSpecs(); sortSpecs != nullptr)
         {
@@ -336,7 +334,6 @@ namespace LIBC_NAMESPACE_DECL
 
         static bool requireAdd    = false;
         static bool requireAddAll = false;
-        m_armorCandidatesPage.SetItemCount(m_editContext.armorView2.Size());
 
         // clang-format off
         auto *multiSelectionIo = m_editContext.candidateSelection
@@ -378,6 +375,10 @@ namespace LIBC_NAMESPACE_DECL
 
             ImGui::TableNextColumn(); // mod name column
             ImGui::Text("%s", util::GetArmorModFileName(armor).data());
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+            {
+                ImGui::SetItemTooltip("%s", util::GetArmorModFileName(armor).data());
+            }
 
             ImGui::TableNextColumn(); // Action
             if (ImGuiUtil::Button("$Add"))
@@ -467,14 +468,15 @@ namespace LIBC_NAMESPACE_DECL
             idx++;
         }
 
-        const auto selectedPolicy         = static_cast<OutfitAddPolicy>(m_editContext.armorAddPolicy);
-        bool       shouldUpdateCandidates = fSelected;
+        const auto selectedPolicy = static_cast<OutfitAddPolicy>(m_editContext.armorAddPolicy);
         if (fSelected)
         {
             if (selectedPolicy == OutfitAddPolicy_AddByID)
             {
                 m_editContext.filterStringBuf[0] = '\0';
             }
+
+            view_add_armors_by_policy(wantEdit.second);
         }
 
         if (ImGuiUtil::CheckBox("$SkyOutSys_OEdit_AddFromList_Filter_Playable", &m_editContext.filterPlayable))
@@ -511,11 +513,6 @@ namespace LIBC_NAMESPACE_DECL
             {
                 view_filter_reset(wantEdit.second);
             }
-        }
-
-        if (shouldUpdateCandidates)
-        {
-            view_add_armors_by_policy(wantEdit.second);
         }
     }
 
@@ -609,6 +606,15 @@ namespace LIBC_NAMESPACE_DECL
                     m_editContext.armorView1.Insert(armor);
                 }
             });
+        }
+    }
+
+    void OutfitEditPanel::view_add_armor(Armor *armor)
+    {
+        m_editContext.armorView1.Insert(armor);
+        if (!IsFilterArmor(armor))
+        {
+            m_editContext.armorView2.Insert(armor);
         }
     }
 
@@ -755,6 +761,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             *this << m_outfitService.DeleteArmor(wantEdit.first, wantEdit.second->GetName(),
                                                  m_editContext.selectedArmor);
+            view_add_armor(m_editContext.selectedArmor);
         }
         m_slotPolicyHelp.Render();
         if (m_batchAddArmorsPopUp.Render())

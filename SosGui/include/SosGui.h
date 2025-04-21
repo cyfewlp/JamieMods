@@ -37,7 +37,8 @@ namespace LIBC_NAMESPACE_DECL
         SosDataCoordinator m_dataCoordinator;
         OutfitListTable    m_outfitListTable;
 
-        bool m_fShowNearNpc = false;
+        bool m_fShowNearNpc    = false;
+        bool m_fShowMainWindow = true;
 
     public:
         SosGui()

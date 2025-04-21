@@ -6,7 +6,6 @@
 #include "data/ArmorView.h"
 #include "data/SosUiData.h"
 #include "gui/Popup.h"
-#include "gui/Table.h"
 #include "service/OutfitService.h"
 #include "util/PageUtil.h"
 #include "widgets.h"
@@ -56,8 +55,6 @@ namespace LIBC_NAMESPACE_DECL
         } m_editContext = {};
 
         std::string               m_windowTitle;
-        TableContext<5>           m_armorListTable;
-        TableContext<5>           m_armorCandidatesTable;
         OutfitService            &m_outfitService;
         Popup::DeleteArmorPopup   m_DeleteArmorPopup{};
         Popup::ConflictArmorPopup m_ConflictArmorPopup{};
@@ -67,17 +64,7 @@ namespace LIBC_NAMESPACE_DECL
         UINT32                    m_availableArmorCount;
 
     public:
-        explicit OutfitEditPanel(OutfitService &outfitService)
-            : m_armorListTable(
-                  TableContext<5>::Create("##OutfitArmors", {"##Number", "$SosGui_TableHeader_Slot", "$ARMOR",
-                                                             "$SkyOutSys_OEdit_OutfitSettings_Header", "$Delete"})),
-              m_armorCandidatesTable(
-                  TableContext<5>::Create("##ArmorCandidates", {"##Number", "$ARMOR", "FormID", "ModName", "$Add"})),
-              m_outfitService(outfitService)
-        {
-            m_armorListTable.Resizable().SizingStretchProp();
-            m_armorCandidatesTable.Resizable().Sortable().Hideable().Reorderable();
-        }
+        explicit OutfitEditPanel(OutfitService &outfitService) : m_outfitService(outfitService) {}
 
         // return true if edit window closed;
         auto Render(const SosUiData::OutfitPair &wantEdit) -> bool;
@@ -129,6 +116,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void view_add_armors_by_policy(const SosUiOutfit *outfit);
         void view_add_armors_has_slot(RE::BIPED_OBJECT equipIndex);
+        void view_add_armor(Armor *armor);
 
         template <typename Generator>
         void view_add_armors_with_generator(Generator &&generator)

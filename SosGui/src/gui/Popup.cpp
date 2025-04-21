@@ -24,9 +24,10 @@ namespace LIBC_NAMESPACE_DECL
 
     void Popup::MessagePopup::RenderMultilineMessage(const std::string &message)
     {
-        constexpr auto delim        = "\\n"sv;
-        const auto    &contentWidth = ImGui::GetContentRegionAvail().x;
-        ImGui::PushFontSize(HintFontSize());
+        constexpr auto delim    = "\\n"sv;
+        auto          *viewport = ImGui::GetMainViewport();
+        ImGui::PushTextWrapPos(ImGui::GetCursorScreenPos().x + viewport->WorkSize.x * 0.5F);
+        const auto &contentWidth = ImGui::GetContentRegionAvail().x;
         for (const auto &lineView : std::views::split(message, delim))
         {
             auto lineStrView = std::string_view(lineView);
@@ -40,9 +41,9 @@ namespace LIBC_NAMESPACE_DECL
             {
                 ImGui::SetCursorPosX((contentWidth - textSize.x) * 0.5F);
             }
-            ImGui::TextWrapped("%s", line.data());
+            ImGui::Text("%s", line.data());
         }
-        ImGui::PopFontSize();
+        ImGui::PopTextWrapPos();
     }
 
     void Popup::PopupContext::RenderConfirmButtons()

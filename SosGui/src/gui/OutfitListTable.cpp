@@ -98,18 +98,18 @@ namespace LIBC_NAMESPACE_DECL
         static int selectedIdx = -1;
 
         util::RenderPageWidgets(m_outfitLisPage);
-        if (!m_outfitListTable.Begin())
+        if (!TableBuilder("##OutfitLists").Sortable().NoHostExtendX().Begin(3))
         {
             return;
         }
 
         // clang-format off
-        m_outfitListTable
-            .Column(0).NoSort().WidthFixed().NoHide().Setup()
-            .Column(1).DefaultSort().WidthStretch().Setup()
-            .Column(2).NoSort().WidthFixed().Setup();
+        TableHeadersBuilder()
+            .Column("##Number").NoSort().WidthFixed().NoHide()
+            .Column("$SkyOutSys_MCM_OutfitList").DefaultSort().WidthStretch()
+            .Column("##ActiveMark").NoSort().WidthFixed()
+            .CommitHeadersRow();
         // clang-format on
-        ImGui::TableHeadersRow();
 
         if (auto *sortSpecs = ImGui::TableGetSortSpecs(); sortSpecs != nullptr)
         {

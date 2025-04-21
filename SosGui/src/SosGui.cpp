@@ -148,6 +148,7 @@ namespace LIBC_NAMESPACE_DECL
     {
         log_debug("GetOutfitList thread-id {}", std::this_thread::get_id());
         DoRefresh();
+        m_fShowMainWindow = true;
     }
 
     auto SosGui::DoRefresh() -> CoroutinePromise
@@ -163,6 +164,34 @@ namespace LIBC_NAMESPACE_DECL
 
     auto SosGui::DoRender() -> void
     {
+        // clang-format off
+        constexpr auto flags = ImGuiUtil::WindowFlag().AlwaysAutoResize()
+                .NoDecoration().NoDocking().NoNav().NoMove().flags;
+        // clang-format on
+        auto *mainViewPort = ImGui::GetMainViewport();
+        if (ImGui::Begin("Menu Window", nullptr, flags))
+        {
+            auto contentSize = ImGui::GetContentRegionAvail();
+            ImGui::SetWindowPos(ImVec2((mainViewPort->WorkSize.x - contentSize.x) * 0.5F, 0.0F));
+
+            if (ImGui::Button("Show/Hide"))
+            {
+                m_fShowMainWindow = !m_fShowMainWindow;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Close"))
+            {
+                auto *messageQueue = RE::UIMessageQueue::GetSingleton();
+                messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
+            }
+        }
+        ImGui::End();
+
+        if (!m_fShowMainWindow)
+        {
+            return;
+        }
+
         ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
         {
             ShowErrorMessages();
