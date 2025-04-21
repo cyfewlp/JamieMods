@@ -5,7 +5,7 @@
 #include "imgui.h"
 
 #include <array>
-#include <string_view>
+#include <string>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -176,6 +176,5 @@ namespace LIBC_NAMESPACE_DECL
     template <size_t Column>
     struct PagedTable : TableContext<Column>
     {
- 
     };
 }

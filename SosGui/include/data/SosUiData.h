@@ -11,19 +11,21 @@
 #include "SosDataType.h"
 #include "common/config.h"
 #include "common/log.h"
-#include "coroutine.h"
 #include "data/ActorOutfitMap.h"
-#include "data/ArmorList.h"
 #include "data/OutfitList.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 
 #include <RE/A/Actor.h>
+#include <RE/T/TESObjectARMO.h>
+#include <coroutine>
 #include <cstdint>
+#include <exception>
 #include <list>
 #include <mutex>
 #include <queue>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -48,7 +50,6 @@ namespace LIBC_NAMESPACE_DECL
         std::vector<RE::Actor *> m_NearActors;
         bool                     m_enabled           = false;
         bool                     m_fQuickSlotEnabled = false;
-        ArmorList                m_armorCandidates;
         ActorOutfitMap           m_actorOutfitMap;
         OutfitList               m_outfitList{};
         std::list<std::string>   m_errorMessages;
@@ -56,7 +57,6 @@ namespace LIBC_NAMESPACE_DECL
         std::unordered_map<RE::Actor *, bool>                                       m_autoSwitchEnabled;
         std::unordered_map<RE::Actor *, std::unordered_map<StateType, std::string>> m_actorOutfitStates;
 
-        std::queue<CoroutineTask>           uiTasks;
         std::queue<std::coroutine_handle<>> m_resumeQueue;
         std::mutex                          m_mutex;
 
@@ -226,49 +226,6 @@ namespace LIBC_NAMESPACE_DECL
             }
             auto &stateMap = m_actorOutfitStates.at(actor);
             return stateMap.contains(state) ? stateMap.at(state) : empty;
-        }
-
-        ////////////////////////////////////////////////////////////////////////////
-        // Candidate Armor
-        ////////////////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] constexpr auto GetArmorCandidates() -> ArmorList &
-        {
-            return m_armorCandidates;
-        }
-
-        void MarkArmorIsUsed(Armor *armor)
-        {
-            m_armorCandidates.Insert(armor, true);
-        }
-
-        void MarkArmorIsUnused(Armor *armor)
-        {
-            m_armorCandidates.Insert(armor, false);
-        }
-
-        void DeleteCandidateArmor(Armor *armor)
-        {
-            m_armorCandidates.Remove(armor);
-        }
-
-        void SetArmorCandidates(const std::vector<Armor *> &armorCandidates)
-        {
-            m_armorCandidates.Clear();
-            for (const auto &armor : armorCandidates)
-            {
-                MarkArmorIsUsed(armor);
-            }
-        }
-
-        auto GetCandidateArmorCount() const -> uint32_t
-        {
-            return m_armorCandidates.Size();
-        }
-
-        auto GetAllArmorCount() const -> uint32_t
-        {
-            return m_armorCandidates.GetAllArmorCount();
         }
 
         ////////////////////////////////////////////////////////////////////////////

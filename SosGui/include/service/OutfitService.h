@@ -8,6 +8,8 @@
 #include "data/id.h"
 
 #include <RE/A/Actor.h>
+#include <RE/T/TESObjectARMO.h>
+#include <RE/V/Variable.h>
 #include <cstdint>
 #include <string>
 
@@ -55,8 +57,5 @@ namespace LIBC_NAMESPACE_DECL
         auto GetActorStateOutfit(RE::Actor *actor, StateType location) const -> CoroutineTask;
 
         auto SetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName) const -> CoroutineTask;
-
-        auto GetArmorsByCarried() const -> CoroutineTask;
-        auto GetArmorsByWorn() const -> CoroutineTask;
     };
 }

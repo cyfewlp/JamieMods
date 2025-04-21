@@ -9,10 +9,13 @@
 #include "gui/OutfitEditPanel.h"
 #include "gui/Popup.h"
 #include "gui/Table.h"
+#include "imgui.h"
 #include "service/OutfitService.h"
 #include "util/PageUtil.h"
 
-#include "imgui.h"
+#include <RE/A/Actor.h>
+#include <coroutine.h>
+#include <string>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -33,7 +36,7 @@ namespace LIBC_NAMESPACE_DECL
 
     public:
         OutfitListTable(SosUiData &uiData, OutfitService &outfitService)
-            : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_uiData, m_outfitService),
+            : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_outfitService),
               m_outfitListTable(
                   TableContext<3>::Create("##OutfitLists", {"##Number", "$SkyOutSys_MCM_OutfitList", "##ActiveMark"}))
         {

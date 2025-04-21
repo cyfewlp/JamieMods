@@ -3,6 +3,7 @@
 #include "common/config.h"
 #include "imgui.h"
 
+#include <RE/T/TESObjectARMO.h>
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -16,9 +17,15 @@ namespace LIBC_NAMESPACE_DECL
             bool        m_fConfirmed  = false;
             bool        m_fLastClosed = true;
 
-            constexpr void Open(ImGuiPopupFlags flags = 0) { ImGui::OpenPopup(popupId, flags); }
+            constexpr void Open(ImGuiPopupFlags flags = 0) const
+            {
+                ImGui::OpenPopup(popupId, flags);
+            }
 
-            [[nodiscard]] constexpr auto IsLastClosed() const -> bool { return m_fLastClosed; }
+            [[nodiscard]] constexpr auto IsLastClosed() const -> bool
+            {
+                return m_fLastClosed;
+            }
 
         protected:
             void RenderConfirmButtons();
@@ -36,7 +43,7 @@ namespace LIBC_NAMESPACE_DECL
             ~MessagePopup() = default;
 
         protected:
-            std::string_view messageKey;
+            std::string_view messageKey{};
             auto             PreRender() -> bool;
             static void      RenderMultilineMessage(const std::string &message);
         };

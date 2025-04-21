@@ -2,6 +2,7 @@
 
 #include "GuiContext.h"
 #include "Translation.h"
+#include "common/config.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
@@ -10,6 +11,8 @@
 #include "util/ImGuiUtil.h"
 #include "util/PageUtil.h"
 
+#include <RE/A/Actor.h>
+#include <SosDataType.h>
 #include <array>
 #include <string>
 #include <utility>

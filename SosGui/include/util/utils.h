@@ -11,5 +11,24 @@ namespace LIBC_NAMESPACE_DECL
             end         = start < length ? 0 : start - length;
             return {start, end};
         }
+
+        constexpr auto IsArmorHasAnySlotOf(const RE::TESObjectARMO *armor, RE::BIPED_MODEL::BipedObjectSlot slot)
+        {
+            return armor->bipedModelData.bipedObjectSlots.any(slot);
+        }
+
+        constexpr auto IsArmorHasNoneSlotOf(const RE::TESObjectARMO *armor, RE::BIPED_MODEL::BipedObjectSlot slot)
+        {
+            return armor->bipedModelData.bipedObjectSlots.none(slot);
+        }
+
+        constexpr auto GetArmorModFileName(const RE::TESObjectARMO *armor) -> std::string_view
+        {
+            if (const auto modFile = armor->GetFile(); modFile != nullptr)
+            {
+                return modFile->GetFilename();
+            }
+            return "";
+        }
     }
 }

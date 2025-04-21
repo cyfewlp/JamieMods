@@ -105,7 +105,7 @@ namespace LIBC_NAMESPACE_DECL
                 break;
             case RE::UI_MESSAGE_TYPE::kUserEvent: {
                 const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
-                log_debug("SosGuiMenu::kUserEvent {}", data->fixedStr.c_str());
+                //log_debug("SosGuiMenu::kUserEvent {}", data->fixedStr.c_str());
                 if (data->fixedStr == "Cancel")
                 {
                     auto *messageQueue = RE::UIMessageQueue::GetSingleton();

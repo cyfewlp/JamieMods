@@ -5,18 +5,15 @@
 #include "common/config.h"
 #include "coroutine.h"
 #include "data/SosUiData.h"
-#include "data/id.h"
 #include "service/OutfitService.h"
 
 #include <RE/A/Actor.h>
+#include <RE/P/PackUnpack.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/S/SpellItem.h>
 #include <RE/T/TESForm.h>
-#include <RE/T/TESObjectARMO.h>
 #include <RE/V/Variable.h>
-#include <cstdint>
-#include <format>
-#include <string>
+#include <queue>
 #include <type_traits>
 #include <vector>
 
@@ -142,7 +139,7 @@ namespace LIBC_NAMESPACE_DECL
         m_uiData.SetEnabled(isEnabledVar.GetBool());
     }
 
-    void operator+=(std::queue<CoroutinePromise> &promiseQueue, CoroutinePromise &&promise)
+    static void operator+=(std::queue<CoroutinePromise> &promiseQueue, CoroutinePromise &&promise)
     {
         promiseQueue.emplace(std::forward<CoroutinePromise>(promise));
     }

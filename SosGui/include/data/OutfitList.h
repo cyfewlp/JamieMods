@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/config.h"
+#include "data/BaseContainer.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "util/StringUtil.h"
@@ -31,7 +32,7 @@ namespace LIBC_NAMESPACE_DECL
 {
     using namespace boost::multi_index;
 
-    class OutfitList
+    class OutfitList : BaseContainer
     {
         static inline OutfitId g_NextOutfitId = 1;
 
@@ -308,13 +309,13 @@ namespace LIBC_NAMESPACE_DECL
             if (m_onlyFavorite)
             {
                 for_each_on(get<by_name>(m_favorites), startPos, endPos, [&](const auto &outfit, size_t index) {
-                    do_each(std::forward<Func>(func), *outfit, index);
+                    BaseContainer::do_each(std::forward<Func>(func), *outfit, index);
                 });
             }
             else
             {
                 for_each_on(m_outfitByName, startPos, endPos, [&](const auto &outfit, size_t index) {
-                    do_each(std::forward<Func>(func), outfit, index);
+                    BaseContainer::do_each(std::forward<Func>(func), outfit, index);
                 });
             }
         }
@@ -325,66 +326,14 @@ namespace LIBC_NAMESPACE_DECL
             if (m_onlyFavorite)
             {
                 reverse_for_each_on(get<by_name>(m_favorites), startPos, endPos, [&](const auto &outfit, size_t index) {
-                    do_each(std::forward<Func>(func), *outfit, index);
+                    BaseContainer::do_each(std::forward<Func>(func), *outfit, index);
                 });
             }
             else
             {
                 reverse_for_each_on(m_outfitByName, startPos, endPos, [&](const auto &outfit, size_t index) {
-                    do_each(std::forward<Func>(func), outfit, index);
+                    BaseContainer::do_each(std::forward<Func>(func), outfit, index);
                 });
-            }
-        }
-
-    private:
-        template <typename RankedIndex>
-        constexpr void validate_range(const RankedIndex &index, size_t startPos, size_t endPos)
-        {
-            if (startPos >= index.size())
-            {
-                throw std::out_of_range(std::format("Invalid startPos: {} out of range {}", startPos, index.size()));
-            }
-            if (startPos > endPos)
-            {
-                throw std::invalid_argument(std::format("startPos {} can't greater endPos {}", startPos, endPos));
-            }
-        }
-
-        template <typename Func>
-        void do_each(Func &&func, const SosUiOutfit &outfit, size_t index)
-        {
-            if constexpr (std::is_invocable_v<Func &&, const SosUiOutfit &, size_t>)
-            {
-                func(outfit, index);
-            }
-            else if constexpr (std::is_invocable_v<Func &&, const SosUiOutfit &>)
-            {
-                func(outfit);
-            }
-        }
-
-        template <typename RankedIndex, typename Func>
-        void for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
-        {
-            validate_range(index, startPos, endPos);
-            for (auto itBegin = index.nth(startPos); startPos < endPos && itBegin != index.end(); ++startPos, ++itBegin)
-            {
-                func(*itBegin, startPos);
-            }
-        }
-
-        template <typename RankedIndex, typename Func>
-        void reverse_for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
-        {
-            validate_range(index, startPos, endPos);
-            auto range = util::reverse_range(startPos, endPos, index.size());
-
-            auto it0 = boost::make_reverse_iterator(index.nth(range.first));
-            auto it1 = boost::make_reverse_iterator(index.nth(range.second));
-
-            for (auto itBegin = it0; startPos < endPos && itBegin != it1; ++startPos, ++itBegin)
-            {
-                func(*itBegin, startPos);
             }
         }
     };

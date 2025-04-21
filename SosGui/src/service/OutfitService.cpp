@@ -1,8 +1,23 @@
 #include "service/OutfitService.h"
+#include "SosDataType.h"
 #include "SosNativeCaller.h"
+#include "common/config.h"
+#include "coroutine.h"
+#include "data/OutfitList.h"
 #include "data/SosUiData.h"
+#include "data/SosUiOutfit.h"
 
+#include <RE/A/Actor.h>
+#include <RE/P/PackUnpack.h>
+#include <RE/P/PlayerCharacter.h>
+#include <RE/T/TESObjectARMO.h>
+#include <RE/V/Variable.h>
+#include <cstdint>
+#include <list>
 #include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -78,10 +93,10 @@ namespace LIBC_NAMESPACE_DECL
         for (auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
-            //outfitNames.emplace_back(var.Unpack<std::string>());
+            // outfitNames.emplace_back(var.Unpack<std::string>());
             m_outfitList.AddOutfit(var.Unpack<std::string>());
         }
-        //co_await m_uiData.await_execute_on_ui();
+        // co_await m_uiData.await_execute_on_ui();
     }
 
     auto OutfitService::RequestFavoriteOutfits() const -> CoroutinePromise
@@ -249,65 +264,5 @@ namespace LIBC_NAMESPACE_DECL
     {
         co_await SosNativeCaller::SetStateOutfit(actor, static_cast<uint32_t>(location), std::string(outfitName));
         m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::move(outfitName)));
-    }
-
-    auto OutfitService::GetArmorsByCarried() const -> CoroutineTask
-    {
-        std::string errorMessage;
-        auto       *player = RE::PlayerCharacter::GetSingleton();
-        if (player == nullptr)
-        {
-            errorMessage.append("can't get player");
-        }
-        else
-        {
-            Variable carriedArmorsVar = co_await SosNativeCaller::GetCarriedArmor(player);
-            if (carriedArmorsVar.IsObjectArray())
-            {
-                auto                             array = carriedArmorsVar.GetArray();
-                std::vector<RE::TESObjectARMO *> armors;
-                for (auto *iter = array->begin(); iter != array->end(); ++iter)
-                {
-                    const RE::BSScript::Variable var = *iter;
-                    armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
-                }
-                co_await m_uiData.await_execute_on_ui();
-                m_uiData.SetArmorCandidates(std::move(armors));
-            }
-            else
-            {
-                errorMessage.append("can't get player carried armors");
-            }
-        }
-    }
-
-    auto OutfitService::GetArmorsByWorn() const -> CoroutineTask
-    {
-        std::string errorMessage;
-        auto       *player = RE::PlayerCharacter::GetSingleton();
-        if (player == nullptr)
-        {
-            errorMessage.append("can't get player");
-        }
-        else
-        {
-            Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
-            if (wornArmorsVar.IsObjectArray())
-            {
-                auto                             array = wornArmorsVar.GetArray();
-                std::vector<RE::TESObjectARMO *> armors;
-                for (auto *iter = array->begin(); iter != array->end(); ++iter)
-                {
-                    const RE::BSScript::Variable var = *iter;
-                    armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
-                }
-                co_await m_uiData.await_execute_on_ui();
-                m_uiData.SetArmorCandidates(std::move(armors));
-            }
-            else
-            {
-                errorMessage.append("can't get player worn armors");
-            }
-        }
     }
 }

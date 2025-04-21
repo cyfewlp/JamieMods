@@ -99,7 +99,7 @@ namespace LIBC_NAMESPACE_DECL
     enum OutfitAddPolicy : int8_t
     {
         OutfitAddPolicy_AddFromCarried = 0,
-        OutfitAddPolicy_AddFromWorn,
+        OutfitAddPolicy_AddFromInventory,
         OutfitAddPolicy_AddByID,
         OutfitAddPolicy_AddAny,
         OutfitAddPolicy_Count,

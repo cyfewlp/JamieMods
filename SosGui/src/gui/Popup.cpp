@@ -1,11 +1,13 @@
 #include "gui/Popup.h"
 
-#include "util/ImGuiUtil.h"
 #include "SosDataType.h"
 #include "Translation.h"
 #include "common/config.h"
 #include "imgui.h"
+#include "util/ImGuiUtil.h"
 
+#include <cstdint>
+#include <format>
 #include <ranges>
 #include <string>
 
@@ -38,7 +40,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 ImGui::SetCursorPosX((contentWidth - textSize.x) * 0.5F);
             }
-            ImGui::Text("%s", line.data());
+            ImGui::TextWrapped("%s", line.data());
         }
         ImGui::PopFontSize();
     }
@@ -158,8 +160,7 @@ namespace LIBC_NAMESPACE_DECL
             return m_fConfirmed;
         }
         const auto message = Translation::Translate(messageKey.data());
-
-        ImGuiUtil::TextScale(message.c_str(), HintFontSize());
+        RenderMultilineMessage(message);
         RenderConfirmButtons();
         ImGui::EndPopup();
         return m_fConfirmed;

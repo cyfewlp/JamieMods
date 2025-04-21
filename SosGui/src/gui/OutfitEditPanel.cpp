@@ -1,9 +1,9 @@
 #include "gui/OutfitEditPanel.h"
-
 #include "SosDataType.h"
 #include "Translation.h"
 #include "common/config.h"
-#include "data/ArmorList.h"
+#include "data/ArmorGenerator.h"
+#include "data/ArmorView.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "gui/Popup.h"
@@ -11,18 +11,21 @@
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
 #include "util/PageUtil.h"
+#include "util/utils.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
-#include <RE/F/FormTypes.h>
-#include <RE/T/TESDataHandler.h>
+#include <RE/B/BipedObjects.h>
+#include <RE/P/PlayerCharacter.h>
 #include <RE/T/TESForm.h>
 #include <RE/T/TESObjectARMO.h>
 #include <array>
+#include <cassert>
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <format>
+#include <list>
 #include <mutex>
-#include <stdlib.h>
 #include <string>
 #include <unordered_set>
 
@@ -99,7 +102,6 @@ namespace LIBC_NAMESPACE_DECL
                 .Column(4).WidthFixed().NoSort().Setup();
             // clang-format on
             ImGui::TableHeadersRow();
-            auto slotPolicies = wantEdit.second->GetSlotPolicies();
             for (uint32_t slotIdx = 0; slotIdx < SLOT_COUNT; ++slotIdx)
             {
                 const auto &armor = wantEdit.second->GetArmorAt(slotIdx);
@@ -160,7 +162,7 @@ namespace LIBC_NAMESPACE_DECL
 
     void OutfitEditPanel::SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const
     {
-        auto        policyNameKey = wantEdit.second->GetSlotPolicies().at(slotIdx);
+        auto       &policyNameKey = wantEdit.second->GetSlotPolicies().at(slotIdx);
         std::string policyName;
 
         if (ImGui::BeginCombo("##SlotPolicy", Translation::Translate(policyNameKey).c_str()))
@@ -182,10 +184,7 @@ namespace LIBC_NAMESPACE_DECL
 
     void OutfitEditPanel::RenderEditPanel(const SosUiData::OutfitPair &wantEdit)
     {
-        if (RenderArmorSlotFilter())
-        {
-            UpdateArmorCandidatesBySlot(wantEdit, m_editContext.selectedFilterSlot.get());
-        }
+        RenderArmorSlotFilter(wantEdit);
 
         const ImGuiStyle &style     = ImGui::GetStyle();
         float             halfWidth = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) / 2;
@@ -213,41 +212,55 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    auto OutfitEditPanel::RenderArmorSlotFilter() -> bool
+    void OutfitEditPanel::RenderArmorSlotFilter(const SosUiData::OutfitPair &wantEdit)
     {
-        static bool                         prevCheckAllSlot = false;
         static std::unordered_set<uint32_t> selectedSlotPos;
 
         std::call_once(init_slot_name_flag, init_slot_name);
 
-        bool checked                = false;
-        m_editContext.newFilterSlot = SLOT_COUNT;
-        if (ImGuiUtil::BeginCombo("$SosGui_Combo_SlotFilter", nullptr))
         {
-            for (uint8_t idx = 0; idx < SLOT_COUNT; ++idx)
+            auto newEquipIndex = RE::BIPED_OBJECT::kNone;
+            if (ImGuiUtil::BeginCombo("$SosGui_Combo_SlotFilter", nullptr))
             {
-                ImGuiUtil::PushIdGuard idGuard(idx);
-                if (ImGui::Selectable(slotNames[idx].c_str(), false))
+                for (uint8_t idx = 0; idx < RE::BIPED_OBJECT::kEditorTotal; ++idx)
                 {
-                    selectedSlotPos.insert(idx);
-                    m_editContext.selectedFilterSlot.set(static_cast<Slot>(1 << idx));
-                    checked                     = true;
-                    m_editContext.checkSlotAll  = false;
-                    m_editContext.newFilterSlot = idx;
+                    ImGuiUtil::PushIdGuard idGuard(idx);
+                    if (ImGui::Selectable(slotNames[idx].c_str(), false))
+                    {
+                        selectedSlotPos.insert(idx);
+                        m_editContext.selectedFilterSlot.set(static_cast<Slot>(1 << idx));
+                        newEquipIndex = static_cast<RE::BIPED_OBJECT>(idx);
+                    }
                 }
+                ImGui::EndCombo();
             }
-            ImGui::EndCombo();
+            if (newEquipIndex != RE::BIPED_OBJECT::kNone)
+            {
+                if (m_editContext.checkSlotAll)
+                {
+                    m_editContext.checkSlotAll = false;
+                    m_editContext.armorView1.Clear();
+                }
+                view_add_armors_has_slot(newEquipIndex);
+                view_filter_reset(wantEdit.second);
+            }
         }
 
-        const auto  contentWidth = ImGui::GetContentRegionAvail().x;
-        auto        cursorPosX   = 0.0F;
-        std::string name =
-            std::format("All({}/{})##AllSlot", m_uiData.GetCandidateArmorCount(), m_uiData.GetAllArmorCount());
-        ImGui::Checkbox(name.c_str(), &m_editContext.checkSlotAll);
+        const auto contentWidth = ImGui::GetContentRegionAvail().x;
+        auto       cursorPosX   = 0.0F;
+        // const auto  armorCount   = RE::TESDataHandler::GetSingleton()->GetFormArray<Armor>().size();
+        const auto  armorCount = m_availableArmorCount;
+        std::string name       = std::format("All({}/{})##AllSlot", m_editContext.armorView2.Size(), armorCount);
+        if (ImGui::Checkbox(name.c_str(), &m_editContext.checkSlotAll) && m_editContext.checkSlotAll)
+        {
+            m_editContext.selectedFilterSlot.set(static_cast<Slot>(UINT32_MAX));
+            view_add_armors_by_policy(wantEdit.second);
+        }
         const auto &style = ImGui::GetStyle();
         cursorPosX += ImGui::GetItemRectSize().x + style.ItemSpacing.x;
         ImGui::SameLine();
 
+        auto beRemoveEquipIndex = RE::BIPED_OBJECT::kNone;
         for (auto itBegin = selectedSlotPos.begin(); itBegin != selectedSlotPos.end();)
         {
             const auto slot          = static_cast<Slot>(1 << *itBegin);
@@ -255,9 +268,9 @@ namespace LIBC_NAMESPACE_DECL
             name = std::format("{}({})", slotNames[*itBegin], m_editContext.slotArmorCounter[*itBegin]);
             if (ImGui::Checkbox(name.c_str(), &alwaysChecked))
             {
-                itBegin = selectedSlotPos.erase(itBegin);
+                beRemoveEquipIndex = static_cast<RE::BIPED_OBJECT>(*itBegin);
+                itBegin            = selectedSlotPos.erase(itBegin);
                 m_editContext.selectedFilterSlot.reset(slot);
-                checked = true;
             }
             else
             {
@@ -274,24 +287,19 @@ namespace LIBC_NAMESPACE_DECL
                 cursorPosX = 0.0F;
             }
         }
-        if (prevCheckAllSlot != m_editContext.checkSlotAll && m_editContext.checkSlotAll)
+        if (!m_editContext.checkSlotAll && beRemoveEquipIndex != RE::BIPED_OBJECT::kNone)
         {
-            m_editContext.selectedFilterSlot.set(static_cast<Slot>(UINT32_MAX));
-            checked = true;
+            view_remove_armors_has_slot(m_editContext.selectedFilterSlot.get(), beRemoveEquipIndex);
         }
-        prevCheckAllSlot = m_editContext.checkSlotAll;
         ImGui::NewLine();
-        return checked;
     }
 
     void OutfitEditPanel::RenderArmorCandidates(const SosUiData::OutfitPair &wantEdit)
     {
-        auto &armorCandidates = m_uiData.GetArmorCandidates();
-
-        if (armorCandidates.IsEmpty())
+        if (m_editContext.armorView2.IsEmpty())
         {
             ImGui::PushFontSize(HintFontSize());
-            ImGuiUtil::Text(armorCandidates.IsEmpty() ? "$SosGui_EmptyHint{$ARMOR}" : "");
+            ImGuiUtil::Text(m_editContext.armorView2.IsEmpty() ? "$SosGui_EmptyHint{$ARMOR}" : "");
             ImGui::PopFontSize();
             return;
         }
@@ -326,10 +334,9 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        int         count         = 0;
         static bool requireAdd    = false;
         static bool requireAddAll = false;
-        m_armorCandidatesPage.SetItemCount(armorCandidates.Size());
+        m_armorCandidatesPage.SetItemCount(m_editContext.armorView2.Size());
 
         // clang-format off
         auto *multiSelectionIo = m_editContext.candidateSelection
@@ -361,30 +368,25 @@ namespace LIBC_NAMESPACE_DECL
             }
 
             CandidateContextMenu(requireAddAll);
+            if (requireAddAll)
+            {
+                m_editContext.selectedArmor = armor;
+            }
 
             ImGui::TableNextColumn(); // formId column
             ImGui::Text("%s", std::format("{:#010X}", armor->GetFormID()).c_str());
 
             ImGui::TableNextColumn(); // mod name column
-            std::string_view modName = "";
-            if (const auto modFile = armor->GetFile(); modFile != nullptr)
-            {
-                modName = modFile->GetFilename();
-            }
-            ImGui::Text("%s", modName.data());
+            ImGui::Text("%s", util::GetArmorModFileName(armor).data());
 
             ImGui::TableNextColumn(); // Action
             if (ImGuiUtil::Button("$Add"))
             {
-                requireAdd = true;
-            }
-            if (requireAdd || requireAddAll)
-            {
+                requireAdd                  = true;
                 m_editContext.selectedArmor = armor;
             }
-            ++count;
         };
-        armorCandidates.for_each(m_armorCandidatesPage.IsAscend(), range.first, range.second, rowAction);
+        m_editContext.armorView2.for_each(m_armorCandidatesPage.IsAscend(), range.first, range.second, rowAction);
         ImGui::EndTable();
         multiSelectionIo = ImGui::EndMultiSelect();
         m_editContext.candidateSelection.ApplyRequests(multiSelectionIo);
@@ -424,12 +426,11 @@ namespace LIBC_NAMESPACE_DECL
 
     void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
     {
-        auto    &candidates = m_uiData.GetArmorCandidates();
-        auto     range      = m_armorCandidatesPage.PageRange();
-        uint16_t index      = 0;
+        auto     range = m_armorCandidatesPage.PageRange();
+        uint16_t index = 0;
 
         SlotEnumeration usedSlot;
-        candidates.for_each(range.first, range.second, [&](Armor *armor) {
+        m_editContext.armorView2.for_each(range.first, range.second, [&](Armor *armor) {
             if (m_editContext.candidateSelection.Contains(index) && usedSlot.none(armor->GetSlotMask()))
             {
                 usedSlot.set(armor->GetSlotMask());
@@ -478,7 +479,14 @@ namespace LIBC_NAMESPACE_DECL
 
         if (ImGuiUtil::CheckBox("$SkyOutSys_OEdit_AddFromList_Filter_Playable", &m_editContext.filterPlayable))
         {
-            shouldUpdateCandidates = true;
+            if (m_editContext.filterPlayable)
+            {
+                view_filter_remove();
+            }
+            else
+            {
+                view_filter_reset(wantEdit.second);
+            }
         }
         if (selectedPolicy == OutfitAddPolicy_AddByID)
         {
@@ -487,14 +495,27 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         // filter armor name and mod name
+        static bool empty = false;
         ImGuiUtil::InputText("$SkyOutSys_OEdit_AddFromList_Filter_Name", m_editContext.filterStringBuf);
+        if (ImGui::IsItemActivated() && ImGui::GetIO().WantTextInput)
+        {
+            empty = m_editContext.filterStringBuf[0] == '\0';
+        }
         if (ImGui::IsItemDeactivatedAfterEdit())
         {
-            shouldUpdateCandidates = true;
+            if (empty)
+            {
+                view_filter_remove();
+            }
+            else
+            {
+                view_filter_reset(wantEdit.second);
+            }
         }
+
         if (shouldUpdateCandidates)
         {
-            UpdateArmorCandidates(wantEdit, m_editContext.filterPlayable, selectedPolicy);
+            view_add_armors_by_policy(wantEdit.second);
         }
     }
 
@@ -524,103 +545,161 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::PopID();
     }
 
-    void OutfitEditPanel::UpdateArmorCandidates(const SosUiData::OutfitPair &wantEdit, const bool mustBePlayable,
-                                                const OutfitAddPolicy policy)
+    void OutfitEditPanel::view_add_armors_by_policy(const SosUiOutfit *outfit)
     {
+        m_editContext.checkSlotAll       = true;
+        m_editContext.selectedFilterSlot = Slot::kNone;
+        ArmorGenerator *generator        = nullptr;
+        GetArmorGeneratorFromPolicy(&generator);
+        if (generator)
+        {
+            view_add_armors_with_generator(*generator);
+            view_filter_reset(outfit);
+        }
+    }
+
+    void OutfitEditPanel::GetArmorGeneratorFromPolicy(ArmorGenerator **generator) const
+    {
+        auto policy = static_cast<OutfitAddPolicy>(m_editContext.armorAddPolicy);
         switch (policy)
         {
             case OutfitAddPolicy_AddFromCarried:
-                *this << m_outfitService.GetArmorsByCarried();
+                *generator = new CarriedArmorGenerator(RE::PlayerCharacter::GetSingleton());
                 break;
 
-            case OutfitAddPolicy_AddFromWorn:
-                *this << m_outfitService.GetArmorsByWorn();
+            case OutfitAddPolicy_AddFromInventory:
+                *generator = new InventoryArmorGenerator(RE::PlayerCharacter::GetSingleton());
                 break;
 
             case OutfitAddPolicy_AddByID:
                 break;
 
             case OutfitAddPolicy_AddAny:
-                UpdateArmorCandidatesForAny(wantEdit, mustBePlayable);
+                *generator = new BasicArmorGenerator();
                 break;
 
             default:
                 break;
         }
-        m_editContext.checkSlotAll       = true;
-        m_editContext.selectedFilterSlot = Slot::kNone;
     }
 
-    void OutfitEditPanel::UpdateArmorCandidatesForAny(const SosUiData::OutfitPair &wantEdit,
-                                                      const bool                   mustBePlayable) const
+    auto OutfitEditPanel::IsArmorCanDisplay(Armor *armor) const -> bool
     {
-        const auto data       = RE::TESDataHandler::GetSingleton();
-        auto      &list       = data->GetFormArray(RE::FormType::Armor);
-        auto      &candidates = m_uiData.GetArmorCandidates();
-        candidates.Clear();
-
-        for (const auto &form : list)
+        bool canDisplay = false;
+        if (armor != nullptr && armor->templateArmor == nullptr)
         {
-            if (form == nullptr)
+            if (std::string_view name = armor->GetName(); !name.empty())
             {
-                continue;
-            }
-            auto *armor = form->As<Armor>();
-            if (armor == nullptr || armor->templateArmor != nullptr)
-            {
-                continue;
-            }
-            if (std::string_view name = armor->GetName(); name.empty())
-            {
-                continue;
-            }
-            if (mustBePlayable && (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0)
-            {
-                continue;
-            }
-            if (!IsFilterArmor(m_editContext.filterStringBuf.data(), armor))
-            {
-                candidates.Insert(armor, true);
+                canDisplay = true;
             }
         }
-        for (size_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; slotPos++)
+
+        return canDisplay;
+    }
+
+    void OutfitEditPanel::view_add_armors_has_slot(RE::BIPED_OBJECT equipIndex)
+    {
+        ArmorGenerator *generator = nullptr;
+        GetArmorGeneratorFromPolicy(&generator);
+        if (generator != nullptr)
         {
-            auto *armor = wantEdit.second->GetArmorAt(slotPos);
-            candidates.Insert(armor, false);
+            generator->for_each([&](Armor *armor) {
+                if (util::IsArmorHasAnySlotOf(armor, ToSlot(equipIndex)))
+                {
+                    m_editContext.armorView1.Insert(armor);
+                }
+            });
         }
     }
 
-    void OutfitEditPanel::UpdateArmorCandidatesBySlot(const SosUiData::OutfitPair &wantEdit, Slot slot)
+    void OutfitEditPanel::view_remove_armors_has_slot(Slot selectedSlots, RE::BIPED_OBJECT equipIndex)
     {
-        auto &candidates = m_uiData.GetArmorCandidates();
-        candidates.RestoreUnusedArmors();
-
-        if (m_editContext.newFilterSlot != SLOT_COUNT)
+        for (auto itBegin = m_editContext.armorView1.begin(); itBegin != m_editContext.armorView1.end();)
         {
-            m_editContext.slotArmorCounter[m_editContext.newFilterSlot] = 0;
-        }
-
-        std::vector<ArmorList::ArmorWrap> filterArmors;
-        candidates.for_each([&](const ArmorList::ArmorWrap &armorWrap) {
-            if (!armorWrap.HasAnyPartOf(slot))
+            auto *armor = *itBegin;
+            if (armor->HasPartOf(ToSlot(equipIndex)) && util::IsArmorHasNoneSlotOf(armor, selectedSlots))
             {
-                filterArmors.push_back(armorWrap);
+                itBegin = m_editContext.armorView1.erase(itBegin);
+                m_editContext.armorView2.Remove(armor);
             }
-            if (armorWrap.HasAnyPartOf(ToSlot(m_editContext.newFilterSlot)))
+            else
             {
-                m_editContext.slotArmorCounter[m_editContext.newFilterSlot] += 1;
+                ++itBegin;
             }
-        });
-        candidates.Insert(filterArmors, false);
-        for (size_t slotPos = 0; slotPos < SosUiOutfit::SLOT_COUNT; slotPos++)
-        {
-            auto *armor = wantEdit.second->GetArmorAt(slotPos);
-            candidates.Insert(armor, false);
         }
     }
 
-    auto OutfitEditPanel::IsFilterArmor(const std::string_view &filterString, const Armor *armor) -> bool
+    void OutfitEditPanel::view_remove_armors_in_outfit(const SosUiOutfit *editingOutfit)
     {
+        // may multi armor use the same slot
+        for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; slotPos++)
+        {
+            auto *armor = editingOutfit->GetArmorAt(slotPos);
+            if (armor != nullptr && m_editContext.armorView2.Remove(armor))
+            {
+                m_editContext.slotArmorCounter[slotPos] -= 1;
+            }
+        }
+    }
+
+    void OutfitEditPanel::view_filter_remove()
+    {
+        auto &view2 = m_editContext.armorView2;
+
+        for (auto itBegin = view2.begin(); itBegin != view2.end();)
+        {
+            if (IsFilterArmor(*itBegin))
+            {
+                for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; ++slotPos)
+                {
+                    if ((*itBegin)->HasPartOf(ToSlot(slotPos)))
+                    {
+                        m_editContext.slotArmorCounter[slotPos] -= 1;
+                    }
+                }
+                itBegin = view2.erase(itBegin);
+            }
+            else
+            {
+                ++itBegin;
+            }
+        }
+    }
+
+    void OutfitEditPanel::view_filter_reset(const SosUiOutfit *editingOutfit)
+    {
+        auto &view2 = m_editContext.armorView2;
+        view2.Clear();
+        m_editContext.slotArmorCounter.fill(0);
+
+        for (auto itBegin = m_editContext.armorView1.begin(); itBegin != m_editContext.armorView1.end(); ++itBegin)
+        {
+            if (IsFilterArmor(*itBegin))
+            {
+                continue;
+            }
+            else
+            {
+                for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; ++slotPos)
+                {
+                    if ((*itBegin)->HasPartOf(ToSlot(slotPos)))
+                    {
+                        m_editContext.slotArmorCounter[slotPos] += 1;
+                    }
+                }
+                view2.Insert(*itBegin);
+            }
+        }
+        view_remove_armors_in_outfit(editingOutfit);
+    }
+
+    auto OutfitEditPanel::IsFilterArmor(const Armor *armor) -> bool
+    {
+        if (m_editContext.filterPlayable && (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0)
+        {
+            return true;
+        }
+        std::string filterString = m_editContext.filterStringBuf.data();
         if (filterString.empty())
         {
             return false;
@@ -658,7 +737,7 @@ namespace LIBC_NAMESPACE_DECL
         else
         {
             *this << m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
-            m_uiData.MarkArmorIsUnused(armor);
+            m_editContext.armorView2.Remove(armor);
         }
     }
 
@@ -669,7 +748,7 @@ namespace LIBC_NAMESPACE_DECL
         if (m_ConflictArmorPopup.Render(m_editContext.selectedArmor))
         {
             *this << m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), m_editContext.selectedArmor);
-            m_uiData.MarkArmorIsUnused(m_editContext.selectedArmor);
+            m_editContext.armorView2.Remove(m_editContext.selectedArmor);
         }
 
         if (m_DeleteArmorPopup.Render(m_editContext.selectedArmor))
