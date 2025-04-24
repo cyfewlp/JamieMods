@@ -1,11 +1,11 @@
 #include "SosGui.h"
 #include "common/config.h"
 #include "common/log.h"
-#include "coroutine.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "task.h"
 #include "util/ImGuiSettinsHandler.h"
 #include "util/ImGuiUtil.h"
 #include "util/ImThemeLoader.h"
@@ -148,35 +148,43 @@ namespace LIBC_NAMESPACE_DECL
     {
         log_debug("GetOutfitList thread-id {}", std::this_thread::get_id());
         DoRefresh();
-        m_fShowMainWindow = true;
+        m_fShowConfigWindows = true;
     }
 
-    auto SosGui::DoRefresh() -> CoroutinePromise
+    auto SosGui::DoRefresh() -> EagerTask
     {
         co_await m_dataCoordinator.Refresh();
         m_outfitListTable.Refresh();
     }
 
-    CoroutinePromise SosGui::operator<<(CoroutineTask &&task)
+    auto SosGui::DoRender() -> void
     {
-        co_await task;
+        ToolbarWindow();
+
+        if (!m_fShowConfigWindows)
+        {
+            return;
+        }
+
+        MainConfigWindow();
+        m_outfitListTable.Render(m_context);
     }
 
-    auto SosGui::DoRender() -> void
+    void SosGui::ToolbarWindow()
     {
         // clang-format off
         constexpr auto flags = ImGuiUtil::WindowFlag().AlwaysAutoResize()
                 .NoDecoration().NoDocking().NoNav().NoMove().flags;
         // clang-format on
         auto *mainViewPort = ImGui::GetMainViewport();
-        if (ImGui::Begin("Menu Window", nullptr, flags))
+        if (ImGui::Begin("ToolbarWindow", nullptr, flags))
         {
             auto contentSize = ImGui::GetContentRegionAvail();
             ImGui::SetWindowPos(ImVec2((mainViewPort->WorkSize.x - contentSize.x) * 0.5F, 0.0F));
 
             if (ImGui::Button("Show/Hide"))
             {
-                m_fShowMainWindow = !m_fShowMainWindow;
+                m_fShowConfigWindows = !m_fShowConfigWindows;
             }
             ImGui::SameLine();
             if (ImGui::Button("Close"))
@@ -186,19 +194,19 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
         ImGui::End();
+    }
 
-        if (!m_fShowMainWindow)
-        {
-            return;
-        }
-
-        ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav);
+    void SosGui::MainConfigWindow()
+    {
+        if (ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav))
         {
             ShowErrorMessages();
             bool fEnabled = m_uiData.IsEnabled();
             if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
             {
-                *this << m_dataCoordinator.RequestEnable(fEnabled);
+                +[&] {
+                    return m_dataCoordinator.RequestEnable(fEnabled);
+                };
             }
             ImGui::Indent(2);
             ImGui::SameLine();
@@ -221,12 +229,7 @@ namespace LIBC_NAMESPACE_DECL
             RenderExportOrImportSettings();
             RenderCharactersPanel();
 
-            auto  &style     = ImGui::GetStyle();
-            ImVec2 childSize = {(ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5F, 0.0F};
-            RenderLocationBasedAutoswitch(m_context.editingActor, childSize);
-            ImGui::SameLine();
-
-            m_outfitListTable.Render(m_context, childSize);
+            AutoSwitchPoliesTable(m_context.editingActor);
         }
         ImGui::End();
     }
@@ -259,10 +262,10 @@ namespace LIBC_NAMESPACE_DECL
         static ImVec4 RED_COLOR = ImColor(255, 0, 0, 255);
 
         auto &errorMessages = m_uiData.GetErrorMessages();
-        auto  remainning    = MAX_ERROR_SHOW_COUNT;
-        for (auto iter = errorMessages.begin(); remainning != 0 && iter != errorMessages.end(); --remainning)
+        auto  remaining     = MAX_ERROR_SHOW_COUNT;
+        for (auto iter = errorMessages.begin(); remaining != 0 && iter != errorMessages.end(); --remaining)
         {
-            ImGui::TextColored(RED_COLOR, "%s", (*iter).c_str());
+            ImGui::TextColored(RED_COLOR, "%s", iter->c_str());
             ImGui::SameLine();
             if (ImGui::Button("x"))
             {
@@ -289,24 +292,33 @@ namespace LIBC_NAMESPACE_DECL
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_EnableQuickslots");
     }
 
-    void SosGui::RenderExportOrImportSettings()
+    EagerTask waitImport(const SosDataCoordinator &dataCoordinator)
+    {
+        log_debug("wait import");
+        co_await dataCoordinator.RequestImportSettings();
+    }
+
+    void SosGui::RenderExportOrImportSettings() const
     {
         if (ImGuiUtil::Button("$SkyOutSys_Text_Export"))
         {
-            *this << m_dataCoordinator.RequestExportSettings();
+            +[&] {
+                return m_dataCoordinator.RequestExportSettings();
+            };
         }
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
 
         ImGui::SameLine();
         if (ImGuiUtil::Button("$SkyOutSys_Text_Import"))
         {
-            *this << m_dataCoordinator.RequestImportSettings();
-            Refresh();
+            +[&] {
+                return m_dataCoordinator.RequestImportSettings();
+            };
         }
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
     }
 
-    void SosGui::RefreshCurrentActorArmor()
+    void SosGui::RefreshCurrentActorArmor() const
     {
         if (m_context.editingActor != nullptr &&
             m_context.editingActor->GetActorRuntimeData().currentProcess != nullptr)

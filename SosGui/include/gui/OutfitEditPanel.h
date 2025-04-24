@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common/config.h"
-#include "coroutine.h"
 #include "data/ArmorGenerator.h"
 #include "data/ArmorView.h"
 #include "data/SosUiData.h"
@@ -50,7 +49,7 @@ namespace LIBC_NAMESPACE_DECL
             // be used on click add(candidate table)/delete(armor table)
             Armor *selectedArmor = nullptr;
             // candidate armor variables
-            MultiSelection  candidateSelection;
+            MultiSelection  armorMultiSelection;
             SlotEnumeration candidateSelectedSlot{}; // be used to highlight conflict armors
         } m_editContext = {};
 
@@ -81,17 +80,12 @@ namespace LIBC_NAMESPACE_DECL
         }
 
     private:
-        CoroutinePromise operator<<(CoroutineTask &&task) const
-        {
-            co_await task;
-        }
-
         void UpdateWindowTitle(const std::string &outfitName);
 
-        void RenderProperties(const SosUiData::OutfitPair &wantEdit);
+        void RenderProperties(const SosUiData::OutfitPair &wantEdit) const;
 
         void RenderArmorList(const SosUiData::OutfitPair &wantEdit);
-        void HighlightConflictArmor(Armor *armor) const;
+        void HighlightConflictArmor(const Armor *armor) const;
         void SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const;
 
         void RenderEditPanel(const SosUiData::OutfitPair &wantEdit);
@@ -106,7 +100,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit);
 
-        void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable);
+        void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable) const;
 
         void GetArmorGeneratorFromPolicy(ArmorGenerator **generator) const;
 
@@ -136,13 +130,13 @@ namespace LIBC_NAMESPACE_DECL
         void view_filter_remove();
         // reset view by filterer
         void view_filter_reset(const SosUiOutfit *editingOutfit);
-        auto IsFilterArmor(const Armor *armor) -> bool;
+        auto IsFilterArmor(const Armor *armor) const -> bool;
 
         void OnAddArmor(const SosUiData::OutfitPair &wantEdit, Armor *armor);
 
         void RenderPopups(const SosUiData::OutfitPair &wantEdit);
 
-        auto IsArmorCanDisplay(Armor *armor) const -> bool;
+        static auto IsArmorCanDisplay(const Armor *armor) -> bool;
 
         static auto ToSlot(uint32_t slotPos) -> Slot
         {

@@ -2,15 +2,13 @@
 
 #include "SosDataType.h"
 #include "common/config.h"
-#include "coroutine.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/id.h"
+#include "task.h"
 
-#include <RE/A/Actor.h>
 #include <RE/T/TESObjectARMO.h>
 #include <RE/V/Variable.h>
-#include <cstdint>
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -25,37 +23,38 @@ namespace LIBC_NAMESPACE_DECL
     public:
         OutfitService(SosUiData &uiData) : m_uiData(uiData), m_outfitList(m_uiData.GetOutfitList()) {}
 
-        auto CreateOutfit(std::string outfitName) const -> CoroutineTask;
+        auto CreateOutfit(std::string outfitName) const -> Task;
 
-        auto CreateOutfitFromWorn(std::string outfitName) const -> CoroutineTask;
+        auto CreateOutfitFromWorn(std::string outfitName) const -> Task;
 
-        auto GetOutfitList() const -> CoroutinePromise;
+        auto GetOutfitList() const -> Task;
 
-        auto RequestFavoriteOutfits() const -> CoroutinePromise;
+        auto RequestFavoriteOutfits() const -> Task;
 
-        auto SetActorOutfit(RE::Actor *actor, OutfitId id, std::string outfitName) const -> CoroutineTask;
+        auto SetActorOutfit(RE::Actor *actor, OutfitId id, std::string outfitName) const -> Task;
 
-        auto GetActorOutfit(RE::Actor *actor) const -> CoroutineTask;
+        auto GetActorOutfit(RE::Actor *actor) const -> Task;
 
-        auto RenameOutfit(OutfitId id, std::string outfitName, std::string newName) const -> CoroutineTask;
+        auto RenameOutfit(OutfitId id, std::string outfitName, std::string newName) const -> Task;
 
-        auto DeleteOutfit(OutfitId id, std::string outfitName) const -> CoroutineTask;
+        auto DeleteOutfit(OutfitId id, std::string outfitName) const -> Task;
 
-        auto AddArmor(OutfitId id, std::string outfitName, Armor *armor) const -> CoroutineTask;
+        auto AddArmor(OutfitId id, std::string outfitName, Armor *armor) const -> Task;
 
-        auto DeleteConflictArmors(std::string outfitName, Armor *armor) const -> CoroutineTask;
+        static auto DeleteConflictArmors(std::string outfitName, Armor *armor) -> Task;
 
-        auto DeleteArmor(OutfitId id, std::string outfitName, Armor *armor) const -> CoroutineTask;
+        auto DeleteArmor(OutfitId id, std::string outfitName, Armor *armor) const -> Task;
 
-        auto GetOutfitArmors(OutfitId id, std::string outfitName) const -> CoroutineTask;
+        auto GetOutfitArmors(OutfitId id, std::string outfitName) const -> Task;
 
-        auto SetSlotPolicy(OutfitId id, std::string outfitName, uint32_t slotPos, SlotPolicy policy) const
-            -> CoroutineTask;
+        auto SetSlotPolicy(OutfitId id, std::string outfitName, uint32_t slotPos, SlotPolicy policy) const -> Task;
 
-        auto GetSlotPolicy(OutfitId id, std::string outfitName) const -> CoroutineTask;
+        auto GetSlotPolicy(OutfitId id, std::string outfitName) const -> Task;
 
-        auto GetActorStateOutfit(RE::Actor *actor, StateType location) const -> CoroutineTask;
+        auto GetActorStateOutfit(RE::Actor *actor, uint32_t policyId) const -> Task;
 
-        auto SetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName) const -> CoroutineTask;
+        auto GetActorAllStateOutfit(RE::Actor *actor) const -> Task;
+
+        auto SetActorStateOutfit(RE::Actor *actor, uint32_t policyId, OutfitId outfitId) const -> Task;
     };
 }

@@ -23,12 +23,22 @@ namespace LIBC_NAMESPACE_DECL
         return m_outfitByName.rank(itByName);
     }
 
-    auto OutfitList::findByName(const std::string &outfitName) const -> OutfitId
+    auto OutfitList::TryFindIdByName(const std::string &outfitName) const -> boost::optional<OutfitId>
+    {
+        const auto itByName = m_outfitByName.find(outfitName);
+        if (itByName != m_outfitByName.end())
+        {
+            return itByName->GetId();
+        }
+        return boost::none;
+    }
+
+    auto OutfitList::findIdByName(const std::string &outfitName) const -> OutfitId
     {
         auto itByName = m_outfitByName.find(outfitName);
         if (itByName == m_outfitByName.end())
         {
-            return INVALID_ID;
+            return INVALID_OUTFIT_ID;
         }
         return itByName->GetId();
     }

@@ -75,10 +75,16 @@ namespace LIBC_NAMESPACE_DECL
 {
     void SosGuiMenu::RegisterMenu()
     {
-        if (auto *ui = RE::UI::GetSingleton(); ui != nullptr) { ui->Register(MENU_NAME, Creator); }
+        if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+        {
+            ui->Register(MENU_NAME, Creator);
+        }
     }
 
-    void SosGuiMenu::PostDisplay() { m_sosGui.Render(); }
+    void SosGuiMenu::PostDisplay()
+    {
+        m_sosGui.Render();
+    }
 
     void SosGuiMenu::OnShow()
     {
@@ -105,7 +111,7 @@ namespace LIBC_NAMESPACE_DECL
                 break;
             case RE::UI_MESSAGE_TYPE::kUserEvent: {
                 const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
-                //log_debug("SosGuiMenu::kUserEvent {}", data->fixedStr.c_str());
+                // log_debug("SosGuiMenu::kUserEvent {}", data->fixedStr.c_str());
                 if (data->fixedStr == "Cancel")
                 {
                     auto *messageQueue = RE::UIMessageQueue::GetSingleton();

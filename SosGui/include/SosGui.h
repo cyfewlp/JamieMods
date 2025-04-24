@@ -1,8 +1,6 @@
 #pragma once
 
 #include "GuiContext.h"
-#include "SosDataType.h"
-#include "coroutine.h"
 #include "data/SosUiData.h"
 #include "data/id.h"
 #include "gui/BaseGui.h"
@@ -10,6 +8,7 @@
 #include "gui/Table.h"
 #include "service/OutfitService.h"
 #include "service/SosDataCoordinator.h"
+#include "task.h"
 
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
@@ -30,26 +29,21 @@ namespace LIBC_NAMESPACE_DECL
         using Armor = RE::TESObjectARMO;
 
         GuiContext         m_context;
-        TableContext<2>    m_locationAutoSwitchTable;
         TableContext<3>    m_charactersTable;
         SosUiData          m_uiData;
         OutfitService      m_outfitService;
         SosDataCoordinator m_dataCoordinator;
         OutfitListTable    m_outfitListTable;
 
-        bool m_fShowNearNpc    = false;
-        bool m_fShowMainWindow = true;
+        bool m_fShowConfigWindows = true;
 
     public:
         SosGui()
-            : m_locationAutoSwitchTable(TableContext<2>::Create(
-                  "##AutoSwitchStateList", {"$SosGui_TableHeader_Location", "$SosGui_TableHeader_Location_State"})),
-              m_charactersTable(TableContext<3>::Create(
+            : m_charactersTable(TableContext<3>::Create(
                   "##CharactersTable", {"$Characters", "$Delete", "$SosGui_TableHeader_ActiveOutfit"})),
               m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService),
               m_outfitListTable(m_uiData, m_outfitService)
         {
-            m_locationAutoSwitchTable.Resizable().NoHostExtendX();
             m_charactersTable.Resizable().SizingStretchProp();
         }
 
@@ -57,31 +51,30 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Render() -> void;
 
-        virtual auto Refresh() -> void override;
+        auto Refresh() -> void override;
 
-        CoroutinePromise operator<<(CoroutineTask &&task);
-
-        virtual auto Close() -> void override
+        auto Close() -> void override
         {
-            m_context.editingActor = nullptr;
-            m_context.editingState = StateType::None;
-            m_fShowNearNpc         = false;
+            m_context.editingActor                = nullptr;
             m_outfitListTable.Close();
         }
 
     private:
-        auto DoRefresh() -> CoroutinePromise;
+        auto DoRefresh() -> EagerTask;
 
-        auto        DoRender() -> void;
+        auto DoRender() -> void;
+        void ToolbarWindow();
+        void MainConfigWindow();
+
         static auto ThemeCombo() -> void;
 
         void ShowErrorMessages();
 
         void RenderQuickSlotConfig();
 
-        void RenderExportOrImportSettings();
+        void RenderExportOrImportSettings() const;
 
-        void RefreshCurrentActorArmor();
+        void RefreshCurrentActorArmor() const;
 
         static void NewFrame();
 
@@ -89,13 +82,15 @@ namespace LIBC_NAMESPACE_DECL
 
         void RenderCharactersList();
 
-        void CharactersContextMenu(const OutfitId &outfitId);
+        void NearNpcCombo() const;
 
-        void RenderNearNpcList();
+        void AutoSwitchPoliesTable(RE::Actor *currentActor);
 
-        void RenderLocationBasedAutoswitch(RE::Actor *currentActor, ImVec2 &childSize);
+        void autoSwitch_column1_outfit(RE::FormID actorId, uint32_t policyId);
 
-        void ComboStateOutfitList(const StateType &state);
+        // draw outfit select popup
+        // return select outfit id or INVALID_OUTFIT_ID if not select.
+        auto outfit_select_popup(__out ImGuiID & popupId) -> boost::optional<OutfitId>;
 
         static void TrySetAllowTextInput();
 

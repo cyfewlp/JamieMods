@@ -52,7 +52,7 @@ namespace LIBC_NAMESPACE_DECL
                 pageIndex = index / pageSize;
             }
 
-            void SetAscendSort(bool ascend)
+            void SetAscendSort(const bool ascend)
             {
                 this->ascend = ascend;
             }

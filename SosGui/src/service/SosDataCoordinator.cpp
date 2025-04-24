@@ -3,23 +3,19 @@
 #include "SosDataType.h"
 #include "SosNativeCaller.h"
 #include "common/config.h"
-#include "coroutine.h"
 #include "data/SosUiData.h"
 #include "service/OutfitService.h"
 
 #include <RE/A/Actor.h>
-#include <RE/P/PackUnpack.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/S/SpellItem.h>
 #include <RE/T/TESForm.h>
 #include <RE/V/Variable.h>
-#include <queue>
-#include <type_traits>
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    auto SosDataCoordinator::RequestActorList() const -> CoroutinePromise
+    auto SosDataCoordinator::RequestActorList() const -> Task
     {
         const RE::BSScript::Variable actorListVar = co_await SosNativeCaller::ListActor();
         if (!actorListVar.IsObjectArray())
@@ -28,42 +24,44 @@ namespace LIBC_NAMESPACE_DECL
             co_return;
         }
         co_await m_uiData.await_execute_on_ui();
-        auto  array      = actorListVar.GetArray();
-        auto &actorsList = m_uiData.GetActors();
+        const auto array      = actorListVar.GetArray();
+        auto      &actorsList = m_uiData.GetActors();
         actorsList.clear();
-        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
-            const RE::BSScript::Variable var = *iter;
+            const RE::BSScript::Variable var   = *iter;
+            auto                        *actor = var.Unpack<RE::Actor *>();
             actorsList.emplace_back(var.Unpack<RE::Actor *>());
+            co_await m_outfitService.GetActorAllStateOutfit(actor);
         }
     }
 
-    auto SosDataCoordinator::RequestAddActor(RE::Actor *actor) const -> CoroutineTask
+    auto SosDataCoordinator::RequestAddActor(RE::Actor *actor) const -> Task
     {
         co_await SosNativeCaller::AddActor(actor);
         co_await m_uiData.await_execute_on_ui();
         m_uiData.AddActor(actor);
     }
 
-    auto SosDataCoordinator::RequestRemoveActor(RE::Actor *actor) const -> CoroutineTask
+    auto SosDataCoordinator::RequestRemoveActor(RE::Actor *actor) const -> Task
     {
         co_await SosNativeCaller::RemoveActor(actor);
         co_await m_uiData.await_execute_on_ui();
         m_uiData.RemoveActor(actor);
     }
 
-    auto SosDataCoordinator::RequestNearActorList() const -> CoroutineTask
+    auto SosDataCoordinator::RequestNearActorList() const -> Task
     {
-        Variable actorsVar = co_await SosNativeCaller::ActorNearPC();
+        const Variable actorsVar = co_await SosNativeCaller::ActorNearPC();
         if (!actorsVar.IsObjectArray())
         {
             m_uiData.PushErrorMessage("Can't get near actor list");
             co_return;
         }
         co_await m_uiData.await_execute_on_ui();
-        auto                     array = actorsVar.GetArray();
+        const auto               array = actorsVar.GetArray();
         std::vector<RE::Actor *> actorsList;
-        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
             actorsList.emplace_back(var.Unpack<RE::Actor *>());
@@ -71,30 +69,29 @@ namespace LIBC_NAMESPACE_DECL
         m_uiData.SetNearActors(actorsList);
     }
 
-    auto SosDataCoordinator::RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> CoroutinePromise
+    auto SosDataCoordinator::RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> Task
     {
-        RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsActorAutoSwitchEnabled(actor);
+        const RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsActorAutoSwitchEnabled(actor);
         if (!isEnabledVar.IsBool())
         {
             m_uiData.PushErrorMessage("Can't get actor auto-switch enabled state");
             co_return;
         }
         co_await m_uiData.await_execute_on_ui();
-        auto isEnabled = isEnabledVar.GetBool();
-        m_uiData.SetAutoSwitchEnabled(actor, isEnabled);
+        const auto isEnabled = isEnabledVar.GetBool();
+        m_uiData.SetAutoSwitchEnabled(actor->GetFormID(), isEnabled);
     }
 
-    auto SosDataCoordinator::RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> CoroutineTask
+    auto SosDataCoordinator::RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> Task
     {
         co_await SosNativeCaller::SetActorAutoSwitchEnabled(actor, enabled);
-        co_await m_uiData.await_execute_on_ui();
-        m_uiData.SetAutoSwitchEnabled(actor, enabled);
+        m_uiData.SetAutoSwitchEnabled(actor->GetFormID(), enabled);
     }
 
-    auto SosDataCoordinator::RequestImportSettings() -> CoroutineTask
+    auto SosDataCoordinator::RequestImportSettings() const -> Task
     {
-        RE::BSScript::Variable successVar = co_await SosNativeCaller::ImportSettings();
-        if (!successVar.IsBool() || !successVar.GetBool())
+        if (const auto successVar = co_await SosNativeCaller::ImportSettings();
+            !successVar.IsBool() || !successVar.GetBool())
         {
             m_uiData.PushErrorMessage("Can't import settings");
             co_return;
@@ -102,21 +99,21 @@ namespace LIBC_NAMESPACE_DECL
         co_await Refresh();
     }
 
-    auto SosDataCoordinator::RequestExportSettings() const -> CoroutineTask
+    auto SosDataCoordinator::RequestExportSettings() const -> Task
     {
-        RE::BSScript::Variable successVar = co_await SosNativeCaller::ExportSettings();
-        if (!successVar.IsBool() || !successVar.GetBool())
+        if (const RE::BSScript::Variable successVar = co_await SosNativeCaller::ExportSettings();
+            !successVar.IsBool() || !successVar.GetBool())
         {
             m_uiData.PushErrorMessage("Can't export settings");
             co_return;
         }
     }
 
-    auto SosDataCoordinator::RequestEnable(bool isEnabled) const -> CoroutineTask
+    auto SosDataCoordinator::RequestEnable(bool isEnabled) const -> Task
     {
         co_await SosNativeCaller::Enable(isEnabled);
-        RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled();
-        if (isEnabledVar.IsBool() && isEnabledVar.GetBool() != isEnabled)
+        if (RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled();
+            isEnabledVar.IsBool() && isEnabledVar.GetBool() != isEnabled)
         {
             m_uiData.PushErrorMessage("Can't set SkyrimOutfitSystem enabled state");
         }
@@ -127,9 +124,9 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    auto SosDataCoordinator::QueryIsEnable() const -> CoroutinePromise
+    auto SosDataCoordinator::QueryIsEnable() const -> Task
     {
-        RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled();
+        const RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled();
         if (!isEnabledVar.IsBool())
         {
             m_uiData.PushErrorMessage("Can't set SkyrimOutfitSystem enabled state");
@@ -139,37 +136,22 @@ namespace LIBC_NAMESPACE_DECL
         m_uiData.SetEnabled(isEnabledVar.GetBool());
     }
 
-    static void operator+=(std::queue<CoroutinePromise> &promiseQueue, CoroutinePromise &&promise)
+    auto SosDataCoordinator::Refresh() const -> Task
     {
-        promiseQueue.emplace(std::forward<CoroutinePromise>(promise));
-    }
-
-    auto SosDataCoordinator::Refresh() const -> CoroutineTask
-    {
-        auto toPromise = [](auto &&task) -> CoroutinePromise {
-            co_await task;
-        };
-        std::queue<CoroutinePromise> promiseQueue;
-        promiseQueue += RequestActorList();
-        promiseQueue += m_outfitService.GetOutfitList();
-        promiseQueue += QueryIsEnable();
-        promiseQueue += RequestUpdateActorAutoSwitchState(RE::PlayerCharacter::GetSingleton());
-        promiseQueue += toPromise(m_outfitService.GetActorOutfit(RE::PlayerCharacter::GetSingleton()));
-
+        log_debug("start refresh in thread: {}", std::this_thread::get_id());
+        co_await RequestActorList();
+        co_await m_outfitService.GetOutfitList();
+        co_await QueryIsEnable();
+        co_await RequestUpdateActorAutoSwitchState(RE::PlayerCharacter::GetSingleton());
+        co_await m_outfitService.GetActorOutfit(RE::PlayerCharacter::GetSingleton());
+        co_await RequestNearActorList();
         m_uiData.SetQuickSlotEnabled(HasQuickSlotSpell());
-
-        while (!promiseQueue.empty())
-        {
-            co_await promiseQueue.front();
-            promiseQueue.pop();
-        }
     }
 
     auto SosDataCoordinator::HasQuickSlotSpell() -> bool
     {
         const auto &player = RE::PlayerCharacter::GetSingleton();
-        auto       *spell  = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
-        if (spell != nullptr)
+        if (auto *spell = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID); spell != nullptr)
         {
             return player->HasSpell(spell);
         }

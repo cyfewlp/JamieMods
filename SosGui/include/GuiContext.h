@@ -8,7 +8,6 @@ namespace LIBC_NAMESPACE_DECL
 {
     struct GuiContext
     {
-        RE::Actor *editingActor = nullptr;
-        StateType  editingState = StateType::None;
+        RE::Actor *editingActor                = nullptr;
     };
 }

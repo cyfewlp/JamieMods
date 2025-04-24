@@ -9,10 +9,8 @@
 #include "gui/Table.h"
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
-#include "util/PageUtil.h"
 
 #include <RE/A/Actor.h>
-#include <SosDataType.h>
 #include <array>
 #include <string>
 #include <utility>
@@ -31,34 +29,44 @@ namespace LIBC_NAMESPACE_DECL
         m_wantEdit = DEFAULT_INVALID_PAIR;
     }
 
-    void OutfitListTable::Render(GuiContext &guiContext, ImVec2 childSize)
+    void OutfitListTable::Render(GuiContext &guiContext)
     {
-        constexpr auto flags = ImGuiChildFlags_None;
-        if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", childSize, flags))
+        std::string windowName;
+        if (m_wantEdit.second != nullptr)
         {
-            RenderChildContent(guiContext);
+            windowName = std::format("Editing Outfit: {}###OutfitEditor", m_wantEdit.second->GetName());
         }
-        // must out of BeginChild braces because when dock window, BeginChild will be return false;
-        if (IsValidOutfit(m_click) && DeletePopup(m_click))
+        else
         {
-            m_click = DEFAULT_INVALID_PAIR;
+            windowName = "Outfit Editor###OutfitEditor";
         }
-        if (IsValidOutfit(m_wantEdit) && EditingPanel(m_wantEdit))
+        ImGui::SetNextWindowSize({500, 300}, ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(windowName.c_str()))
         {
-            m_wantEdit = DEFAULT_INVALID_PAIR;
-        }
-        ImGui::EndChild();
-    }
+            constexpr auto flags = ImGuiUtil::ChildFlag().Borders().ResizeX().flags;
+            if (ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", ImVec2(300, 0), flags))
+            {
+                RenderChildContent(guiContext);
+            }
+            // must out of BeginChild braces because when dock window, BeginChild will be return false;
+            if (IsValidOutfit(m_click) && DeletePopup(m_click))
+            {
+                m_click = DEFAULT_INVALID_PAIR;
+            }
+            ImGui::EndChild();
 
-    void OutfitListTable::FocusOutfit(const OutfitId &id)
-    {
-        auto &outfitList = m_uiData.GetOutfitList();
-        auto  pos        = outfitList.Rank(id);
-        if (pos >= outfitList.size())
-        {
-            return;
+            if (IsValidOutfit(m_wantEdit))
+            {
+                ImGui::SameLine();
+                ImGui::BeginGroup();
+                if (EditingPanel(m_wantEdit))
+                {
+                    m_wantEdit = DEFAULT_INVALID_PAIR;
+                }
+                ImGui::EndGroup();
+            }
         }
-        m_outfitLisPage.TurnTo(pos);
+        ImGui::End();
     }
 
     void OutfitListTable::RenderChildContent(GuiContext &guiContext)
@@ -71,36 +79,56 @@ namespace LIBC_NAMESPACE_DECL
         ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
         {
-            *this << m_outfitService.CreateOutfit(outfitNameBuf.data());
+            +[&] {
+                return m_outfitService.CreateOutfit(outfitNameBuf.data());
+            };
         }
 
-        ImGui::SameLine();
         if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
         {
-            *this << m_outfitService.CreateOutfitFromWorn(outfitNameBuf.data());
+            +[&] {
+                return m_outfitService.CreateOutfitFromWorn(outfitNameBuf.data());
+            };
         }
         ImGui::EndDisabled();
 
         if (ImGuiUtil::Button("$SosGui_Refresh{$SkyOutSys_MCM_OutfitList}"))
         {
-            m_outfitService.GetOutfitList();
+            +[&] {
+                return m_outfitService.GetOutfitList();
+            };
         }
 
         //////////////////////////////////////////////////////////
         // Table Content
-        auto &outfits = m_uiData.GetOutfitList();
-        ImGui::SameLine();
+        auto       &outfits           = m_uiData.GetOutfitList();
         static bool onlyShowFavorites = false;
         if (ImGuiUtil::CheckBox("$SosGui_CheckBox_OnlyShowFavorites", &onlyShowFavorites))
         {
             outfits.OnlyFavoriteOutfits(onlyShowFavorites);
         }
-        static int selectedIdx = -1;
-
-        util::RenderPageWidgets(m_outfitLisPage);
-        if (!TableBuilder("##OutfitLists").Sortable().NoHostExtendX().Begin(3))
+        static size_t  selectedIdx = 0;
+        constexpr auto flags = TableFlags().Borders().Sortable().SizingStretchProp().ScrollY().NoHostExtendX().flags;
+        if (!ImGui::BeginTable("##OutfitLists", 3, flags))
         {
             return;
+        }
+
+        const auto activeOutfitOpt =                   //
+            m_uiData                                   //
+                .GetActorOutfitMap()                   //
+                .TryGetOutfit(guiContext.editingActor) //
+                .flat_map([&](auto &id) { return m_uiData.GetOutfitList().GetOutfit(id); });
+
+        ImGuiListClipper clipper;
+        // When current actor has active outfit: draw and freeze it on first row.
+        const int offset = activeOutfitOpt.has_value() ? 1 : 0;
+        clipper.Begin(outfits.size() + offset);
+        clipper.IncludeItemByIndex(selectedIdx + offset);
+        if (activeOutfitOpt.has_value())
+        {
+            ImGui::TableSetupScrollFreeze(1, 2);
+            clipper.IncludeItemByIndex(0);
         }
 
         // clang-format off
@@ -111,52 +139,39 @@ namespace LIBC_NAMESPACE_DECL
             .CommitHeadersRow();
         // clang-format on
 
-        if (auto *sortSpecs = ImGui::TableGetSortSpecs(); sortSpecs != nullptr)
-        {
-            if (sortSpecs->SpecsDirty)
-            {
-                const auto direction = sortSpecs->Specs[0].SortDirection;
-                m_outfitLisPage.SetAscendSort(direction == ImGuiSortDirection_Ascending);
-                sortSpecs->SpecsDirty = false;
-            }
-        }
+        static bool ascend = true;
+        ImGuiUtil::may_update_table_sort_dir(ascend);
 
-        m_outfitLisPage.SetItemCount(outfits.size());
         auto rowAction = [&](const auto &outfit, size_t index) {
             ImGuiUtil::PushIdGuard idGuard(index);
             ImGui::TableNextRow();
             ImGui::TableNextColumn(); // number column
             ImGui::Text("%zu", index + 1);
 
+            bool activeOutfitRow = m_uiData.GetActorOutfitMap().IsActorOutfit(guiContext.editingActor, outfit.GetId());
             const auto &outfitName = outfit.GetName();
-            ImGui::TableNextColumn(); // outfit name column
+            if (ImGui::TableNextColumn()) // outfit name column
             {
-                constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
-
-                bool const isSelected = static_cast<size_t>(selectedIdx) == index;
-                if (ImGui::Selectable(outfitName.data(), isSelected, flags))
+                constexpr auto selectableFlags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
+                bool const     isSelected      = activeOutfitRow || selectedIdx == index;
+                if (ImGui::Selectable(outfitName.data(), isSelected, selectableFlags))
                 {
-                    selectedIdx = isSelected ? -1 : index;
-                }
-
-                bool acceptEdit = false;
-                if (OpenContextMenu(guiContext, outfit, acceptEdit))
-                {
-                    m_click = std::make_pair(outfit.GetId(), &outfit);
-                }
-                if (acceptEdit)
-                {
-                    auto pair = std::make_pair(outfit.GetId(), &outfit);
+                    selectedIdx = index;
+                    auto pair   = std::make_pair(outfit.GetId(), &outfit);
                     OnAcceptEditOutfit(pair);
                     m_wantEdit = pair;
                 }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+                if (OpenContextMenu(guiContext, outfit))
+                {
+                    m_click = std::make_pair(outfit.GetId(), &outfit);
+                }
             }
 
-            ImGui::TableNextColumn(); // active outfit hint column
+            if (ImGui::TableNextColumn()) // active outfit hint column
             {
-                if (m_uiData.GetActorOutfitMap().IsActorOutfit(guiContext.editingActor, outfit.GetId()))
+                if (activeOutfitRow)
                 {
-                    ImGuiUtil::AddItemRectWithCol(ImGuiCol_HeaderActive, 2.5F);
                     ImGuiUtil::Text("$SkyOutSys_OutfitBrowser_ActiveMark");
                 }
                 else
@@ -171,12 +186,22 @@ namespace LIBC_NAMESPACE_DECL
             }
         };
 
-        auto pageRange = m_outfitLisPage.PageRange();
-        outfits.for_each(m_outfitLisPage.IsAscend(), pageRange.first, pageRange.second, rowAction);
+        if (activeOutfitOpt.has_value())
+        {
+            const auto             rank = m_uiData.GetOutfitList().Rank(activeOutfitOpt.value().GetId());
+            ImGuiUtil::PushIdGuard idGuard(-1);
+            rowAction(activeOutfitOpt.value(), rank);
+        }
+        while (clipper.Step())
+        {
+            int start = clipper.DisplayStart;
+            int end   = clipper.DisplayEnd;
+            outfits.for_each(ascend, start, end, rowAction);
+        }
         ImGui::EndTable();
     }
 
-    bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const SosUiOutfit &outfit, bool &acceptEdit)
+    bool OutfitListTable::OpenContextMenu(GuiContext &guiContext, const SosUiOutfit &outfit)
     {
         if (!ImGui::BeginPopupContextItem("##OutfitListContextMenu"))
         {
@@ -184,10 +209,6 @@ namespace LIBC_NAMESPACE_DECL
         }
         const auto &outfitName = outfit.GetName();
 
-        if (ImGui::MenuItem(Translation::Translate("$SosGui_OpenOutfitEditPanel", outfitName).c_str()))
-        {
-            acceptEdit = true;
-        }
         ImGui::Separator();
         bool noEditingActor = guiContext.editingActor == nullptr;
         ImGui::BeginDisabled(noEditingActor);
@@ -202,19 +223,12 @@ namespace LIBC_NAMESPACE_DECL
             {
                 if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
                 {
-                    OnAcceptActiveOutfit(guiContext.editingActor, INVALID_ID, "");
+                    OnAcceptActiveOutfit(guiContext.editingActor, INVALID_OUTFIT_ID, "");
                 }
             }
             if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
             {
                 OnAcceptActiveOutfit(guiContext.editingActor, outfit.GetId(), outfitName);
-            }
-            ImGui::BeginDisabled(guiContext.editingState == StateType::None);
-            {
-                if (ImGui::MenuItem("AutoSwitch: Use this outfit"))
-                {
-                    OnAcceptOutfitForState(guiContext, outfitName);
-                }
             }
             ImGui::EndDisabled();
         }
@@ -238,25 +252,29 @@ namespace LIBC_NAMESPACE_DECL
         bool justClosed      = m_DeleteOutfitPopup.Render(clicked.second->GetName(), isConfirmDelete);
         if (isConfirmDelete)
         {
-            *this << m_outfitService.DeleteOutfit(clicked.first, clicked.second->GetName());
+            +[&] {
+                return m_outfitService.DeleteOutfit(clicked.first, clicked.second->GetName());
+            };
         }
         return justClosed;
     }
 
     void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
     {
-        *this << m_outfitService.GetOutfitArmors(wantEdit.first, wantEdit.second->GetName());
-        *this << m_outfitService.GetSlotPolicy(wantEdit.first, wantEdit.second->GetName());
+        +[&] {
+            return m_outfitService.GetOutfitArmors(wantEdit.first, wantEdit.second->GetName());
+        };
+        +[&] {
+            return m_outfitService.GetSlotPolicy(wantEdit.first, wantEdit.second->GetName());
+        };
         m_editPanel.ShowWindow(wantEdit.second->GetName());
     }
 
-    void OutfitListTable::OnAcceptOutfitForState(GuiContext &guiContext, const std::string &outfitName)
+    void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const OutfitId id,
+                                               const std::string &outfitName)
     {
-        *this << m_outfitService.SetActorStateOutfit(guiContext.editingActor, guiContext.editingState, outfitName);
-    }
-
-    void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName)
-    {
-        *this << m_outfitService.SetActorOutfit(editingActor, id, outfitName);
+        +[&] {
+            return m_outfitService.SetActorOutfit(editingActor, id, outfitName);
+        };
     }
 }

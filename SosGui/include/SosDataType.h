@@ -75,27 +75,6 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr auto NotifyCombatStateChanged                  = "NotifyCombatStateChanged";
     };
 
-    enum class StateType : uint32_t
-    {
-        Combat  = 12,
-        World   = 0,
-        Town    = 1,
-        Dungeon = 2,
-        City    = 9,
-
-        WorldSnowy   = 3,
-        TownSnowy    = 4,
-        DungeonSnowy = 5,
-        CitySnowy    = 10,
-
-        WorldRainy   = 6,
-        TownRainy    = 7,
-        DungeonRainy = 8,
-        CityRainy    = 11,
-        Count        = 13,
-        None         = 14
-    };
-
     enum OutfitAddPolicy : int8_t
     {
         OutfitAddPolicy_AddFromCarried = 0,

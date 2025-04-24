@@ -5,6 +5,6 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    using OutfitId                       = std::uint32_t;
-    static constexpr OutfitId INVALID_ID = 0;
+    using OutfitId                              = std::uint32_t;
+    static constexpr OutfitId INVALID_OUTFIT_ID = 0;
 }

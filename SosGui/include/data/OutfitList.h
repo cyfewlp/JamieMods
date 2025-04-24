@@ -5,7 +5,6 @@
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "util/StringUtil.h"
-#include "util/utils.h"
 
 #if !defined(NDEBUG)
     #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
@@ -50,7 +49,7 @@ namespace LIBC_NAMESPACE_DECL
 
         struct favorite_outfit
         {
-            OutfitId    id = INVALID_ID;
+            OutfitId    id = INVALID_OUTFIT_ID;
             std::string name;
 
             constexpr auto GetId() const -> OutfitId
@@ -245,7 +244,8 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Rank(const OutfitId &id) const -> size_t;
 
-        auto findByName(const std::string &outfitName) const -> OutfitId;
+        auto TryFindIdByName(const std::string &outfitName) const -> boost::optional<OutfitId>;
+        auto findIdByName(const std::string &outfitName) const -> OutfitId;
 
         auto HasOutfit(const OutfitId &id) const -> bool
         {
@@ -257,7 +257,7 @@ namespace LIBC_NAMESPACE_DECL
             return m_onlyFavorite ? m_favorites.empty() : m_container.empty();
         }
 
-        [[nodiscard]] constexpr auto size() -> size_t
+        [[nodiscard]] constexpr auto size() const -> size_t
         {
             return m_onlyFavorite ? m_favorites.size() : m_container.size();
         }
@@ -265,6 +265,11 @@ namespace LIBC_NAMESPACE_DECL
         //////////////////////////////////////////////////////////////////////////
         // Iterator
         //////////////////////////////////////////////////////////////////////////
+
+        auto RankIndex() const ->  const OutfitByName&
+        {
+            return m_outfitByName;
+        }
 
         template <typename Func>
         void for_each(Func &&func)
@@ -287,7 +292,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         template <typename Func>
-        void for_each(bool ascend, size_t startPos, size_t endPos, Func &&func)
+        void for_each(bool ascend, size_t startPos, size_t endPos, Func &&func) const
         {
             if (empty())
             {
@@ -304,7 +309,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         template <typename Func>
-        void for_each(size_t startPos, size_t endPos, Func &&func)
+        void for_each(size_t startPos, size_t endPos, Func &&func) const
         {
             if (m_onlyFavorite)
             {
@@ -321,7 +326,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         template <typename Func>
-        void reverse_for_each(size_t startPos, size_t endPos, Func &&func)
+        void reverse_for_each(size_t startPos, size_t endPos, Func &&func) const
         {
             if (m_onlyFavorite)
             {

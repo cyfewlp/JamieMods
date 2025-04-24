@@ -1,14 +1,11 @@
 #pragma once
 
 #include "common/config.h"
-#include "coroutine.h"
 #include "data/SosUiData.h"
-#include "data/id.h"
 #include "service/OutfitService.h"
+#include "task.h"
 
-#include <RE/A/Actor.h>
 #include <functional>
-#include <string>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -27,20 +24,17 @@ namespace LIBC_NAMESPACE_DECL
         {
         }
 
-        auto RequestEnable(bool isEnabled) const -> CoroutineTask;
-        auto QueryIsEnable() const -> CoroutinePromise;
-        auto RequestImportSettings() -> CoroutineTask;
-        auto RequestExportSettings() const -> CoroutineTask;
-        auto RequestFavoriteOutfits() const -> CoroutinePromise;
-        auto RequestGetArmorsByCarried() const -> CoroutineTask;
-        auto RequestGetArmorsByWorn() const -> CoroutineTask;
-        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> CoroutinePromise;
-        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> CoroutineTask;
-        auto RequestActorList() const -> CoroutinePromise;
-        auto RequestAddActor(RE::Actor *actor) const -> CoroutineTask;
-        auto RequestRemoveActor(RE::Actor *actor) const -> CoroutineTask;
-        auto RequestNearActorList() const -> CoroutineTask;
-        auto Refresh() const -> CoroutineTask;
+        auto RequestEnable(bool isEnabled) const -> Task;
+        auto QueryIsEnable() const -> Task;
+        auto RequestImportSettings() const -> Task;
+        auto RequestExportSettings() const -> Task;
+        auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> Task;
+        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> Task;
+        auto RequestActorList() const -> Task;
+        auto RequestAddActor(RE::Actor *actor) const -> Task;
+        auto RequestRemoveActor(RE::Actor *actor) const -> Task;
+        auto RequestNearActorList() const -> Task;
+        auto Refresh() const -> Task;
 
         static auto HasQuickSlotSpell() -> bool;
     };

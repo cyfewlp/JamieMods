@@ -105,64 +105,80 @@ namespace LIBC_NAMESPACE_DECL
         }
     };
 
-    struct TableBuilder
+    struct TableFlags
     {
-        std::string_view name{};
-        ImGuiTableFlags  flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders;
+        ImGuiTableFlags flags = ImGuiTableFlags_None;
 
-        explicit TableBuilder(const char *name) : name(name) {}
+        constexpr auto RowBg() -> TableFlags &
+        {
+            flags |= ImGuiTableFlags_RowBg;
+            return *this;
+        }
 
-        constexpr auto Sortable() -> TableBuilder &
+        constexpr auto Borders() -> TableFlags &
+        {
+            flags |= ImGuiTableFlags_Borders;
+            return *this;
+        }
+
+        constexpr auto Sortable() -> TableFlags &
         {
             flags |= ImGuiTableFlags_Sortable;
             return *this;
         }
 
-        constexpr auto Hideable() -> TableBuilder &
+        constexpr auto Hideable() -> TableFlags &
         {
             flags |= ImGuiTableFlags_Hideable;
             return *this;
         }
 
-        constexpr auto Reorderable() -> TableBuilder &
+        constexpr auto Reorderable() -> TableFlags &
         {
             flags |= ImGuiTableFlags_Reorderable;
             return *this;
         }
 
-        constexpr auto Resizable() -> TableBuilder &
+        constexpr auto Resizable() -> TableFlags &
         {
             flags |= ImGuiTableFlags_Resizable;
             return *this;
         }
 
-        constexpr auto NoHostExtendX() -> TableBuilder &
+        constexpr auto NoHostExtendX() -> TableFlags &
         {
             flags |= ImGuiTableFlags_NoHostExtendX;
             return *this;
         }
 
-        constexpr auto NoHostExtendY() -> TableBuilder &
+        constexpr auto NoHostExtendY() -> TableFlags &
         {
             flags |= ImGuiTableFlags_NoHostExtendY;
             return *this;
         }
 
-        constexpr auto SizingStretchProp() -> TableBuilder &
+        constexpr auto SizingStretchProp() -> TableFlags &
         {
             flags |= ImGuiTableFlags_SizingStretchProp;
             return *this;
         }
 
-        constexpr auto SizingFixedFit() -> TableBuilder &
+        constexpr auto SizingFixedFit() -> TableFlags &
         {
             flags |= ImGuiTableFlags_SizingFixedFit;
             return *this;
         }
 
-        constexpr auto Begin(int columns) const -> bool
+        constexpr auto ScrollX() -> TableFlags &
         {
-            return ImGui::BeginTable(name.data(), columns, flags);
+            flags |= ImGuiTableFlags_ScrollX;
+            return *this;
+        }
+
+        constexpr auto ScrollY() -> TableFlags &
+        {
+            flags |= ImGuiTableFlags_ScrollY;
+            return *this;
         }
     };
 

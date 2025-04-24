@@ -151,18 +151,20 @@ namespace LIBC_NAMESPACE_DECL
             ImGui::OpenPopup(g_widgetName.c_str(), ImGuiPopupFlags_None);
         }
 
-        constexpr void AddItemRectWithCol(ImGuiCol colorIndex, float thickness = 1.0F)
+        constexpr void AddItemRectWithCol(const ImGuiCol colorIndex, const float thickness = 1.0F)
         {
-            auto *drawList = ImGui::GetWindowDrawList();
-            auto color = ImGui::GetColorU32(colorIndex);
+            auto      *drawList = ImGui::GetWindowDrawList();
+            const auto color    = ImGui::GetColorU32(colorIndex);
             drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
         }
 
-        constexpr void AddItemRect(ImColor color, float thickness = 1.0F)
+        constexpr void AddItemRect(const ImColor color, const float thickness = 1.0F)
         {
             auto *drawList = ImGui::GetWindowDrawList();
             drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
         }
+
+        void may_update_table_sort_dir(bool &ascend);
 
         struct SelectableFlag
         {
@@ -177,6 +179,70 @@ namespace LIBC_NAMESPACE_DECL
             constexpr auto SpanAllColumns() -> SelectableFlag &
             {
                 flags |= ImGuiSelectableFlags_SpanAllColumns;
+                return *this;
+            }
+        };
+
+        struct ChildFlag
+        {
+            ImGuiChildFlags flags = ImGuiChildFlags_None;
+
+            constexpr auto Borders() -> ChildFlag &
+            {
+                flags |= ImGuiChildFlags_Borders;
+                return *this;
+            }
+
+            constexpr auto ResizeX() -> ChildFlag &
+            {
+                flags |= ImGuiChildFlags_ResizeX;
+                return *this;
+            }
+
+            constexpr auto ResizeY() -> ChildFlag &
+            {
+                flags |= ImGuiChildFlags_ResizeY;
+                return *this;
+            }
+        };
+
+        struct WindowFlag
+        {
+            ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+
+            constexpr auto NoSavedSettings() -> WindowFlag &
+            {
+                flags |= ImGuiWindowFlags_NoSavedSettings;
+                return *this;
+            }
+
+            constexpr auto NoDecoration() -> WindowFlag &
+            {
+                flags |= ImGuiWindowFlags_NoDecoration;
+                return *this;
+            }
+
+            constexpr auto AlwaysAutoResize() -> WindowFlag &
+            {
+                flags |= ImGuiWindowFlags_AlwaysAutoResize;
+                return *this;
+            }
+
+            constexpr auto NoMove() -> WindowFlag &
+            {
+                flags |= ImGuiWindowFlags_NoMove;
+                return *this;
+            }
+
+            constexpr auto NoDocking() -> WindowFlag &
+            {
+                flags |= ImGuiWindowFlags_NoDocking;
+                return *this;
+            }
+
+            constexpr auto NoNav() -> WindowFlag &
+            {
+                flags |= ImGuiWindowFlags_NoNav;
                 return *this;
             }
         };

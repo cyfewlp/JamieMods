@@ -2,17 +2,15 @@
 #include "SosDataType.h"
 #include "SosNativeCaller.h"
 #include "common/config.h"
-#include "coroutine.h"
+#include "data/AutoSwitchPolicyView.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 
 #include <RE/A/Actor.h>
-#include <RE/P/PackUnpack.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/T/TESObjectARMO.h>
 #include <RE/V/Variable.h>
-#include <cstdint>
 #include <list>
 #include <string>
 #include <type_traits>
@@ -21,16 +19,16 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    auto OutfitService::CreateOutfit(std::string outfitName) const -> CoroutineTask
+    auto OutfitService::CreateOutfit(std::string outfitName) const -> Task
     {
-        Variable isAlreadyExist = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-        if (isAlreadyExist.IsBool() && isAlreadyExist.GetBool())
+        if (const Variable isAlreadyExist = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
+            isAlreadyExist.IsBool() && isAlreadyExist.GetBool())
         {
             co_return;
         }
         co_await SosNativeCaller::CreateOutfit(std::string(outfitName));
-        Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-        if (!existVar.IsBool() || !existVar.GetBool())
+        if (const Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
+            !existVar.IsBool() || !existVar.GetBool())
         {
             m_uiData.PushErrorMessage("Can't get outfit list");
         }
@@ -41,24 +39,24 @@ namespace LIBC_NAMESPACE_DECL
         }
     }
 
-    auto OutfitService::CreateOutfitFromWorn(std::string outfitName) const -> CoroutineTask
+    auto OutfitService::CreateOutfitFromWorn(std::string outfitName) const -> Task
     {
         std::string errorMessage("Can't create outfit from worn: ");
         if (auto *player = RE::PlayerCharacter::GetSingleton(); player != nullptr)
         {
-            Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
-            if (wornArmorsVar.IsObjectArray())
+            if (const Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
+                wornArmorsVar.IsObjectArray())
             {
-                auto                             array = wornArmorsVar.GetArray();
+                const auto                       array = wornArmorsVar.GetArray();
                 std::vector<RE::TESObjectARMO *> armors;
-                for (auto *iter = array->begin(); iter != array->end(); ++iter)
+                for (const auto *iter = array->begin(); iter != array->end(); ++iter)
                 {
                     const RE::BSScript::Variable var = *iter;
                     armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
                 }
                 co_await SosNativeCaller::OverwriteOutfit(std::string(outfitName), armors);
-                Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-                if (existVar.IsBool() && existVar.GetBool())
+                if (const Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
+                    existVar.IsBool() && existVar.GetBool())
                 {
                     co_await m_uiData.await_execute_on_ui();
                     m_outfitList.AddOutfit(std::move(outfitName));
@@ -79,7 +77,7 @@ namespace LIBC_NAMESPACE_DECL
         m_uiData.PushErrorMessage(std::move(errorMessage));
     }
 
-    auto OutfitService::GetOutfitList() const -> CoroutinePromise
+    auto OutfitService::GetOutfitList() const -> Task
     {
         const RE::BSScript::Variable outfitListVar = co_await SosNativeCaller::GetOutfitList();
         if (!outfitListVar.IsLiteralArray())
@@ -87,10 +85,10 @@ namespace LIBC_NAMESPACE_DECL
             m_uiData.PushErrorMessage("Can't get outfit list");
             co_return;
         }
-        auto array = outfitListVar.GetArray();
+        const auto array = outfitListVar.GetArray();
 
         m_outfitList.clear();
-        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
             // outfitNames.emplace_back(var.Unpack<std::string>());
@@ -99,7 +97,7 @@ namespace LIBC_NAMESPACE_DECL
         // co_await m_uiData.await_execute_on_ui();
     }
 
-    auto OutfitService::RequestFavoriteOutfits() const -> CoroutinePromise
+    auto OutfitService::RequestFavoriteOutfits() const -> Task
     {
         const RE::BSScript::Variable outfitListVar = co_await SosNativeCaller::GetOutfitList(true);
         if (!outfitListVar.IsLiteralArray())
@@ -107,42 +105,43 @@ namespace LIBC_NAMESPACE_DECL
             m_uiData.PushErrorMessage("Can't get outfit list");
             co_return;
         }
-        auto array = outfitListVar.GetArray();
+        const auto array = outfitListVar.GetArray();
 
         std::list<std::string> outfitNames;
-        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
-            const auto id = m_outfitList.findByName(iter->Unpack<std::string>());
+            const auto id = m_outfitList.findIdByName(iter->Unpack<std::string>());
             m_outfitList.SetFavoriteOutfit(id, true);
         }
     }
 
-    auto OutfitService::SetActorOutfit(RE::Actor *actor, OutfitId id, std::string outfitName) const -> CoroutineTask
+    auto OutfitService::SetActorOutfit(RE::Actor *actor, const OutfitId id, std::string outfitName) const -> Task
     {
         co_await SosNativeCaller::ActiveOutfit(actor, std::string(outfitName));
         co_await m_uiData.await_execute_on_ui();
         m_uiData.GetActorOutfitMap().SetOutfit(actor, id);
     }
 
-    auto OutfitService::GetActorOutfit(RE::Actor *actor) const -> CoroutineTask
+    auto OutfitService::GetActorOutfit(RE::Actor *actor) const -> Task
     {
-        Variable outfitNameVar = co_await SosNativeCaller::GetSelectedOutfit(actor);
+        const Variable outfitNameVar = co_await SosNativeCaller::GetSelectedOutfit(actor);
         if (!outfitNameVar.IsString())
         {
             m_uiData.PushErrorMessage("Can't get actor's active outfit");
         }
         co_await m_uiData.await_execute_on_ui();
         const auto outfitName = outfitNameVar.Unpack<std::string>();
-        if (const auto id = m_outfitList.findByName(outfitNameVar.Unpack<std::string>()); id != INVALID_ID)
+        if (const auto id = m_outfitList.findIdByName(outfitNameVar.Unpack<std::string>()); id != INVALID_OUTFIT_ID)
         {
             m_uiData.GetActorOutfitMap().SetOutfit(actor, id);
         }
     }
 
-    auto OutfitService::RenameOutfit(OutfitId id, std::string outfitName, std::string newName) const -> CoroutineTask
+    auto OutfitService::RenameOutfit(const OutfitId id, std::string outfitName, std::string newName) const -> Task
     {
-        Variable successVar = co_await SosNativeCaller::RenameOutfit(std::move(outfitName), std::string(newName));
-        if (!successVar.IsBool() || !successVar.GetBool())
+        if (const Variable successVar =
+                co_await SosNativeCaller::RenameOutfit(std::move(outfitName), std::string(newName));
+            !successVar.IsBool() || !successVar.GetBool())
         {
             m_uiData.PushErrorMessage("Can't rename outfit");
             co_return;
@@ -152,14 +151,14 @@ namespace LIBC_NAMESPACE_DECL
         m_outfitList.RenameOutfit(id, std::move(newName));
     }
 
-    auto OutfitService::DeleteOutfit(OutfitId id, std::string outfitName) const -> CoroutineTask
+    auto OutfitService::DeleteOutfit(const OutfitId id, std::string outfitName) const -> Task
     {
         co_await SosNativeCaller::DeleteOutfit(std::move(outfitName));
         co_await m_uiData.await_execute_on_ui();
         m_outfitList.DeleteOutfit(id);
     }
 
-    auto OutfitService::AddArmor(OutfitId id, std::string outfitName, Armor *armor) const -> CoroutineTask
+    auto OutfitService::AddArmor(const OutfitId id, std::string outfitName, Armor *armor) const -> Task
     {
         if (armor == nullptr)
         {
@@ -170,7 +169,7 @@ namespace LIBC_NAMESPACE_DECL
         m_outfitList.AddArmor(id, armor);
     }
 
-    auto OutfitService::DeleteConflictArmors(std::string outfitName, Armor *armor) const -> CoroutineTask
+    auto OutfitService::DeleteConflictArmors(std::string outfitName, Armor *armor) -> Task
     {
         if (armor == nullptr)
         {
@@ -180,7 +179,7 @@ namespace LIBC_NAMESPACE_DECL
         // We no need update UI data because we default directly override armor in slot
     }
 
-    auto OutfitService::DeleteArmor(OutfitId id, std::string outfitName, Armor *armor) const -> CoroutineTask
+    auto OutfitService::DeleteArmor(const OutfitId id, std::string outfitName, Armor *armor) const -> Task
     {
         if (armor == nullptr)
         {
@@ -191,18 +190,18 @@ namespace LIBC_NAMESPACE_DECL
         m_outfitList.DeleteArmor(id, armor);
     }
 
-    auto OutfitService::GetOutfitArmors(OutfitId id, std::string outfitName) const -> CoroutineTask
+    auto OutfitService::GetOutfitArmors(const OutfitId id, std::string outfitName) const -> Task
     {
         co_await SosNativeCaller::PrepOutfitBodySlotListing(std::move(outfitName));
-        Variable armorsVar = co_await SosNativeCaller::GetOutfitBodySlotListingArmorForms();
+        const Variable armorsVar = co_await SosNativeCaller::GetOutfitBodySlotListingArmorForms();
         if (!armorsVar.IsObjectArray())
         {
             m_uiData.PushErrorMessage("Can't get outfit armors");
             co_return;
         }
-        auto                 array = armorsVar.GetArray();
+        const auto           array = armorsVar.GetArray();
         std::vector<Armor *> armors;
-        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
             armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
@@ -211,8 +210,8 @@ namespace LIBC_NAMESPACE_DECL
         m_outfitList.AddArmors(id, std::move(armors));
     }
 
-    auto OutfitService::SetSlotPolicy(OutfitId id, std::string outfitName, uint32_t slotPos, SlotPolicy policy) const
-        -> CoroutineTask
+    auto OutfitService::SetSlotPolicy(const OutfitId id, std::string outfitName, const uint32_t slotPos,
+                                      const SlotPolicy policy) const -> Task
     {
         co_await SosNativeCaller::SetBodySlotPoliciesForOutfit(std::move(outfitName), slotPos,
                                                                SlotPolicyToCode(policy));
@@ -220,22 +219,22 @@ namespace LIBC_NAMESPACE_DECL
         m_outfitList.SetSlotPolicy(id, slotPos, SlotPolicyToUiString(policy));
     }
 
-    auto OutfitService::GetSlotPolicy(OutfitId id, std::string outfitName) const -> CoroutineTask
+    auto OutfitService::GetSlotPolicy(const OutfitId id, std::string outfitName) const -> Task
     {
-        Variable variable = co_await SosNativeCaller::BodySlotPolicyNamesForOutfit(std::move(outfitName));
+        const Variable variable = co_await SosNativeCaller::BodySlotPolicyNamesForOutfit(std::move(outfitName));
         if (!variable.IsLiteralArray())
         {
             m_uiData.PushErrorMessage("Can't get outfit slot policies");
             co_return;
         }
-        auto array = variable.GetArray();
+        const auto array = variable.GetArray();
         if (array->size() < SosUiOutfit::SLOT_COUNT)
         {
             m_uiData.PushErrorMessage("Invalid outfit slot policies: slot count incorrect.");
             co_return;
         }
         std::vector<std::string> slotPolicies;
-        for (auto *iter = array->begin(); iter != array->end(); ++iter)
+        for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
 
@@ -247,22 +246,61 @@ namespace LIBC_NAMESPACE_DECL
         m_outfitList.SetAllSlotPolicies(id, slotPolicies);
     }
 
-    auto OutfitService::GetActorStateOutfit(RE::Actor *actor, StateType location) const -> CoroutineTask
+    auto OutfitService::GetActorStateOutfit(RE::Actor *actor, uint32_t policyId) const -> Task
     {
-        Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, static_cast<uint32_t>(location));
+        const Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, std::move(policyId));
         if (!outfitVar.IsString())
         {
             m_uiData.PushErrorMessage("Can't get actor state outfit");
             co_return;
         }
-        co_await m_uiData.await_execute_on_ui();
-        m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::string(outfitVar.GetString())));
+
+        if (const auto opt = m_uiData.GetOutfitList().TryFindIdByName(outfitVar.Unpack<std::string>()); opt.has_value())
+        {
+            m_uiData.GetAutoSwitchPolicyView().emplace(actor->GetFormID(), policyId, opt.value());
+        }
     }
 
-    auto OutfitService::SetActorStateOutfit(RE::Actor *actor, StateType location, std::string outfitName) const
-        -> CoroutineTask
+    auto OutfitService::GetActorAllStateOutfit(RE::Actor *actor) const -> Task
     {
-        co_await SosNativeCaller::SetStateOutfit(actor, static_cast<uint32_t>(location), std::string(outfitName));
-        m_uiData.PutActorOutfitState(actor, std::make_pair(location, std::move(outfitName)));
+        auto       &view       = m_uiData.GetAutoSwitchPolicyView();
+        const auto &outfitList = m_uiData.GetOutfitList();
+        view.erase(actor->GetFormID());
+        for (uint32_t intState = 0; intState < RE::BIPED_OBJECT::kEditorTotal; ++intState)
+        {
+            Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, std::move(intState));
+            if (!outfitVar.IsString())
+            {
+                continue;
+            }
+            if (const auto outfitId = outfitList.findIdByName(outfitVar.Unpack<std::string>());
+                outfitId != INVALID_OUTFIT_ID)
+            {
+                view.emplace(actor->GetFormID(), intState, outfitId);
+            }
+        }
+    }
+
+    auto OutfitService::SetActorStateOutfit(RE::Actor *actor, uint32_t policyId, const OutfitId outfitId) const -> Task
+    {
+        if (policyId >= static_cast<uint32_t>(AutoSwitchPolicyView::Policy::Count))
+        {
+            m_uiData.PushErrorMessage(std::format("Invalid outfit policy: {}", policyId));
+            co_return;
+        }
+        auto &view = m_uiData.GetAutoSwitchPolicyView();
+        auto  outfitNameOpt =
+            m_uiData.GetOutfitList().GetOutfit(outfitId).map([](auto &outfit) { return outfit.GetName(); });
+        const auto actorId = actor->GetFormID();
+        if (!outfitNameOpt.has_value())
+        {
+            co_await SosNativeCaller::SetStateOutfit(actor, std::move(policyId), "");
+            view.erase(actorId, policyId);
+        }
+        else
+        {
+            co_await SosNativeCaller::SetStateOutfit(actor, std::move(policyId), outfitNameOpt.value().c_str());
+            view.emplace(actorId, policyId, outfitId);
+        }
     }
 }
