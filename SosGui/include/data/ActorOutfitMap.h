@@ -22,12 +22,12 @@ namespace LIBC_NAMESPACE_DECL
             m_container[actor] = outfitId;
         }
 
-        auto TryGetOutfit(RE::Actor *actor) const -> boost::optional<OutfitId>
+        auto TryGetOutfitId(RE::Actor *actor) const -> boost::optional<OutfitId>
         {
             return m_container.contains(actor) ? boost::optional<OutfitId>(m_container.at(actor)) : boost::none;
         }
 
-        auto GetOutfit(RE::Actor *actor) const -> OutfitId
+        auto GetOutfitId(RE::Actor *actor) const -> OutfitId
         {
             return m_container.contains(actor) ? m_container.at(actor) : INVALID_OUTFIT_ID;
         }

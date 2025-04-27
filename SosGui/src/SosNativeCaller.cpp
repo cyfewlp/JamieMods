@@ -149,6 +149,18 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::ListOutfits, args);
     }
 
+    auto SosNativeCaller::GetOutfitFavoriteStatus(std::string &&outfitName) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(outfitName));
+        return StaticCall(SosFunction::GetOutfitFavoriteStatus, args);
+    }
+
+    auto SosNativeCaller::SetOutfitFavoriteStatus(std::string &&outfitName, bool favoritesOnly) -> Awaitable
+    {
+        auto *args = RE::MakeFunctionArguments(std::move(outfitName), std::move(favoritesOnly));
+        return StaticCall(SosFunction::SetOutfitFavoriteStatus, args);
+    }
+
     auto SosNativeCaller::OverwriteOutfit(std::string &&outfitName, std::vector<RE::TESObjectARMO *> &armors)
         -> Awaitable
     {

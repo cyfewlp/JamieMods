@@ -29,7 +29,9 @@ namespace LIBC_NAMESPACE_DECL
 
         auto GetOutfitList() const -> Task;
 
-        auto RequestFavoriteOutfits() const -> Task;
+        auto GetAllFavoriteOutfits() const -> Task;
+
+        auto SetOutfitIsFavorite(OutfitId id, std::string outfitName, bool isFavorite) const -> Task;
 
         auto SetActorOutfit(RE::Actor *actor, OutfitId id, std::string outfitName) const -> Task;
 

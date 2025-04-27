@@ -97,4 +97,14 @@ namespace LIBC_NAMESPACE_DECL
             return m_slotPolicies;
         }
     };
+
+    constexpr auto GetOutfitId(const SosUiOutfit &outfit)
+    {
+        return outfit.GetId();
+    }
+
+    constexpr auto GetOutfitName(const SosUiOutfit &outfit)
+    {
+        return outfit.GetName();
+    }
 }

@@ -145,6 +145,7 @@ namespace LIBC_NAMESPACE_DECL
         co_await RequestUpdateActorAutoSwitchState(RE::PlayerCharacter::GetSingleton());
         co_await m_outfitService.GetActorOutfit(RE::PlayerCharacter::GetSingleton());
         co_await RequestNearActorList();
+        co_await m_outfitService.GetAllFavoriteOutfits();
         m_uiData.SetQuickSlotEnabled(HasQuickSlotSpell());
     }
 

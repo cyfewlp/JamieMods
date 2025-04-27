@@ -8,6 +8,7 @@
     "rapidcsv",
     "spdlog",
     "ms-gsl",
-    "freetype"
+    "freetype",
+    "gtest"
   ]
 }

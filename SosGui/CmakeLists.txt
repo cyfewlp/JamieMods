@@ -6,12 +6,22 @@ project(
 )
 
 configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/version.rc.in
-        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
-        @ONLY
+    ${CMAKE_SOURCE_DIR}/cmake/version.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+    @ONLY
 )
 
-set(EXTERN_LIBS ${CMAKE_SOURCE_DIR}/extern)
+## test set
+set(TEST_PROJ_NAME ${PROJECT_NAME}Test)
+enable_testing()
+find_package(GTest CONFIG REQUIRED)
+add_executable(
+    ${TEST_PROJ_NAME}
+    test/ClipperTest.cpp
+)
+add_test(AllTestsInMain ${TEST_PROJ_NAME})   
+target_link_libraries(${TEST_PROJ_NAME} PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+
 
 ## Set Output folder
 
@@ -61,8 +71,16 @@ target_link_libraries(
 	PRIVATE
 		spdlog::spdlog
 		imgui
+		CommonLibSSE
         ${DETOURS_LIBRARY}
 )
+
+#target_compile_options(${PROJECT_NAME}
+#  PRIVATE
+#    -Xclang -ast-print -fsyntax-only
+#    $<$<CONFIG:Debug>:-O0>
+#    $<$<CONFIG:Release>:-O3>
+#)
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)

@@ -23,14 +23,13 @@
 Language: Cpp
 TabWidth: '4'
 IndentWidth: '4'
-BasedOnStyle: Microsoft    
+BasedOnStyle: Microsoft
 AccessModifierOffset: -4
 ColumnLimit: 120
-NamespaceIndentation: All
 IndentPPDirectives: BeforeHash
 FixNamespaceComments: false
-AlignAfterOpenBracket: Align 
-AlignArrayOfStructures: Left 
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AlignConsecutiveAssignments:
   Enabled: true
@@ -44,7 +43,7 @@ AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
   AcrossComments: false
-AllowShortLambdasOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Inline
 AllowShortBlocksOnASingleLine : Empty
 AllowShortFunctionsOnASingleLine : Empty
 BinPackArguments: true

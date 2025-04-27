@@ -6,15 +6,21 @@
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
+#include "data/id.h"
+#include "task.h"
 
 #include <RE/A/Actor.h>
+#include <RE/B/BipedObjects.h>
+#include <RE/P/PackUnpack.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/T/TESObjectARMO.h>
 #include <RE/V/Variable.h>
+#include <boost/optional/detail/optional_reference_spec.hpp>
+#include <cstdint>
+#include <format>
 #include <list>
 #include <string>
 #include <type_traits>
-#include <utility>
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
@@ -97,7 +103,7 @@ namespace LIBC_NAMESPACE_DECL
         // co_await m_uiData.await_execute_on_ui();
     }
 
-    auto OutfitService::RequestFavoriteOutfits() const -> Task
+    auto OutfitService::GetAllFavoriteOutfits() const -> Task
     {
         const RE::BSScript::Variable outfitListVar = co_await SosNativeCaller::GetOutfitList(true);
         if (!outfitListVar.IsLiteralArray())
@@ -107,19 +113,33 @@ namespace LIBC_NAMESPACE_DECL
         }
         const auto array = outfitListVar.GetArray();
 
-        std::list<std::string> outfitNames;
+        auto &outfitList = m_uiData.GetOutfitList();
         for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
-            const auto id = m_outfitList.findIdByName(iter->Unpack<std::string>());
-            m_outfitList.SetFavoriteOutfit(id, true);
+            if (const auto result = outfitList.SetFavoriteOutfit(iter->Unpack<std::string>(), true);
+                !result.has_value())
+            {
+                m_uiData.PushErrorMessage(result.error().what());
+                co_return;
+            }
         }
+    }
+
+    auto OutfitService::SetOutfitIsFavorite(const OutfitId id, std::string outfitName, const bool isFavorite) const
+        -> Task
+    {
+        if (const auto result = m_uiData.GetOutfitList().SetFavoriteOutfit(id, isFavorite); !result.has_value())
+        {
+            m_uiData.PushErrorMessage(result.error().what());
+            co_return;
+        }
+        co_await SosNativeCaller::SetOutfitFavoriteStatus(std::string(outfitName), isFavorite);
     }
 
     auto OutfitService::SetActorOutfit(RE::Actor *actor, const OutfitId id, std::string outfitName) const -> Task
     {
-        co_await SosNativeCaller::ActiveOutfit(actor, std::string(outfitName));
-        co_await m_uiData.await_execute_on_ui();
         m_uiData.GetActorOutfitMap().SetOutfit(actor, id);
+        co_await SosNativeCaller::ActiveOutfit(actor, std::string(outfitName));
     }
 
     auto OutfitService::GetActorOutfit(RE::Actor *actor) const -> Task
@@ -290,7 +310,7 @@ namespace LIBC_NAMESPACE_DECL
         }
         auto &view = m_uiData.GetAutoSwitchPolicyView();
         auto  outfitNameOpt =
-            m_uiData.GetOutfitList().GetOutfit(outfitId).map([](auto &outfit) { return outfit.GetName(); });
+            m_uiData.GetOutfitList().GetOutfitById(outfitId).map([](auto &outfit) { return outfit.GetName(); });
         const auto actorId = actor->GetFormID();
         if (!outfitNameOpt.has_value())
         {

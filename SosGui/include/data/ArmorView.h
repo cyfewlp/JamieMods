@@ -5,8 +5,8 @@
 #include "util/StringUtil.h"
 
 #if !defined(NDEBUG)
-    #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
-    #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
+#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
 #endif
 
 #include <RE/B/BSCoreTypes.h>
@@ -19,130 +19,135 @@
 #include <boost/multi_index/tag.hpp>
 #include <boost/multi_index_container.hpp>
 #include <cstdint>
+#include <boost/optional/optional.hpp>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
-    using namespace boost::multi_index;
+using namespace boost::multi_index;
 
-    class ArmorView : BaseContainer
+class ArmorView : BaseContainer
+{
+    using Armor = RE::TESObjectARMO;
+
+    struct by_FormId {};
+
+    struct by_name {};
+
+public:
+    typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(RE::TESForm, RE::FormID, GetFormID) KeyByFormId;
+    typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(RE::TESForm, const char *, GetName) KeyByName;
+
+    struct ArmorViewIndex : indexed_by<ordered_unique<tag<by_FormId>, KeyByFormId>,
+                                       ranked_non_unique<tag<by_name>, KeyByName, util::StringCompactor>> {};
+
+    typedef boost::multi_index_container<Armor *, ArmorViewIndex> Container;
+
+    typedef index<Container, by_FormId>::type ContainerByFormId;
+    typedef index<Container, by_name>::type ContainerByName;
+
+private:
+    Container m_container{};
+    ContainerByFormId &m_indexByFormId = get<by_FormId>(m_container);
+    ContainerByName &m_indexByName = get<by_name>(m_container);
+
+public:
+    ArmorView() = default;
+    ~ArmorView() = default;
+
+    void Insert(Armor *armor);
+
+    auto Remove(Armor *armor) -> bool
     {
-        using Armor = RE::TESObjectARMO;
-
-        struct by_FormId
+        if (armor == nullptr)
         {
-        };
-
-        struct by_name
-        {
-        };
-
-    public:
-        typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(RE::TESForm, RE::FormID, GetFormID) KeyByFormId;
-        typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(RE::TESForm, const char *, GetName) KeyByName;
-
-        struct ArmorViewIndex : indexed_by<ordered_unique<tag<by_FormId>, KeyByFormId>,
-                                           ranked_non_unique<tag<by_name>, KeyByName, util::StringCompactor>>
-        {
-        };
-
-        typedef boost::multi_index_container<Armor *, ArmorViewIndex> Container;
-
-        typedef index<Container, by_FormId>::type ContainerByFormId;
-        typedef index<Container, by_name>::type   ContainerByName;
-
-    private:
-        Container          m_container{};
-        ContainerByFormId &m_indexByFormId = get<by_FormId>(m_container);
-        ContainerByName   &m_indexByName   = get<by_name>(m_container);
-
-    public:
-        ArmorView()  = default;
-        ~ArmorView() = default;
-
-        void Insert(Armor *armor);
-
-        auto Remove(Armor *armor) -> bool
-        {
-            if (armor == nullptr)
-            {
-                return false;
-            }
-            return m_indexByFormId.erase(armor->GetFormID()) > 0;
+            return false;
         }
+        return m_indexByFormId.erase(armor->GetFormID()) > 0;
+    }
 
-        void Clear()
+    auto GetByNameRank(size_t rank) -> std::optional<Armor *>
+    {
+        if (const auto foundId = m_indexByName.nth(rank); foundId != m_indexByName.end())
         {
-            m_container.clear();
+            return *foundId;
         }
+        return std::nullopt;
+    }
 
-        constexpr auto IsEmpty() const -> bool
+    void Clear()
+    {
+        m_container.clear();
+    }
+
+    constexpr auto IsEmpty() const -> bool
+    {
+        return m_container.empty();
+    }
+
+    constexpr auto Size() const -> size_t
+    {
+        return m_container.size();
+    }
+
+    auto GetAllArmorCount() const -> uint32_t
+    {
+        return m_container.size();
+    }
+
+    auto erase(Container::iterator where) -> Container::iterator
+    {
+        return m_container.erase(where);
+    }
+
+    auto begin() -> Container::iterator
+    {
+        return m_container.begin();
+    }
+
+    auto end() -> Container::iterator
+    {
+        return m_container.end();
+    }
+
+    /// Page Function
+
+    template <typename Func>
+    void for_each(Func &&func)
+    {
+        for (auto it = m_indexByName.begin(); it != m_indexByName.end(); ++it)
         {
-            return m_container.empty();
+            func(*it);
         }
+    }
 
-        constexpr auto Size() const -> size_t
+    template <typename Func>
+    void for_each(bool ascend, size_t startPos, size_t endPos, Func &&func)
+    {
+        if (ascend)
         {
-            return m_container.size();
+            for_each(startPos, endPos, func);
         }
-
-        auto GetAllArmorCount() const -> uint32_t
+        else
         {
-            return m_container.size();
+            reverse_for_each(startPos, endPos, func);
         }
+    }
 
-        auto erase(Container::iterator where) -> Container::iterator
-        {
-            return m_container.erase(where);
-        }
+    template <typename Func>
+    void for_each(size_t startPos, size_t endPos, Func &&func)
+    {
+        for_each_on(get<by_name>(m_container), startPos, endPos, [&](const auto &armor, size_t index) {
+            do_each(std::forward<Func>(func), armor, index);
+        });
+    }
 
-        auto begin() -> Container::iterator
-        {
-            return m_container.begin();
-        }
-
-        auto end() -> Container::iterator
-        {
-            return m_container.end();
-        }
-
-        /// Page Function
-
-        template <typename Func>
-        void for_each(Func &&func)
-        {
-            for (auto it = m_indexByName.begin(); it != m_indexByName.end(); ++it)
-            {
-                func(*it);
-            }
-        }
-
-        template <typename Func>
-        void for_each(bool ascend, size_t startPos, size_t endPos, Func &&func)
-        {
-            if (ascend)
-            {
-                for_each(startPos, endPos, func);
-            }
-            else
-            {
-                reverse_for_each(startPos, endPos, func);
-            }
-        }
-
-        template <typename Func>
-        void for_each(size_t startPos, size_t endPos, Func &&func)
-        {
-            for_each_on(get<by_name>(m_container), startPos, endPos, [&](const auto &armor, size_t index) {
-                do_each(std::forward<Func>(func), armor, index);
-            });
-        }
-
-        template <typename Func>
-        void reverse_for_each(size_t startPos, size_t endPos, Func &&func)
-        {
-            reverse_for_each_on(get<by_name>(m_container), startPos, endPos, [&](const auto &armor, size_t index) {
-                do_each(std::forward<Func>(func), armor, index);
-            });
-        }
-    };
+    template <typename Func>
+    void reverse_for_each(size_t startPos, size_t endPos, Func &&func)
+    {
+        reverse_for_each_on(get<by_name>(m_container), startPos, endPos, [&](const auto &armor, size_t index) {
+            do_each(std::forward<Func>(func), armor, index);
+        });
+    }
+};
 }

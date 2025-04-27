@@ -5,23 +5,29 @@
 #include <boost/iterator/reverse_iterator.hpp>
 #include <stdexcept>
 #include <type_traits>
+#include <format>
 
 namespace LIBC_NAMESPACE_DECL
 {
     class BaseContainer
     {
     protected:
-        template <typename RankedIndex>
-        static constexpr void validate_range(const RankedIndex &index, size_t startPos, size_t endPos)
+        static constexpr void validate_range(size_t elementCount, size_t startPos, size_t endPos)
         {
-            if (startPos >= index.size())
+            if (startPos >= elementCount)
             {
-                throw std::out_of_range(std::format("Invalid startPos: {} out of range {}", startPos, index.size()));
+                throw std::out_of_range(std::format("Invalid startPos: {} out of range {}", startPos, elementCount));
             }
             if (startPos > endPos)
             {
                 throw std::invalid_argument(std::format("startPos {} can't greater endPos {}", startPos, endPos));
             }
+        }
+
+        template <typename RankedIndex>
+        static constexpr void validate_range(const RankedIndex &index, size_t startPos, size_t endPos)
+        {
+            validate_range(index.size(), startPos, endPos);
         }
 
         template <typename RankedIndex, typename Func>
