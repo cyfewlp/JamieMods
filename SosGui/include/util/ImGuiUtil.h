@@ -184,6 +184,11 @@ struct debounce_input
 
     virtual ~debounce_input() = default;
 
+    bool PassFilter(const char *text) const
+    {
+        return filter.PassFilter(text);
+    }
+
     virtual void onInput()
     {
         filter.Build();
@@ -191,7 +196,9 @@ struct debounce_input
         dirty = true;
     }
 
-    bool draw();
+    virtual bool draw();
+
+    virtual void clear();
 };
 
 struct SelectableFlag

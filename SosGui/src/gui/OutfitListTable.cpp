@@ -37,6 +37,11 @@ void OutfitListTable::Close()
     m_editPanel.Close();
 }
 
+void OutfitListTable::OnSelectActor(const RE::Actor *actor)
+{
+    m_editPanel.OnSelectActor(actor, m_wantEdit.second);
+}
+
 void OutfitListTable::RefreshOutfitList()
 {
     m_click = DEFAULT_INVALID_PAIR;
@@ -204,7 +209,7 @@ void OutfitListTable::Sidebar(GuiContext &guiContext)
         ImGuiUtil::PushIdGuard idGuard(index);
         ImGui::TableNextRow();
         ImGui::TableNextColumn(); // number column
-        ImGui::Text("%zu", index + 1);
+        ImGui::Text("%.4zu", index + 1);
 
         ImGui::TableNextColumn(); // outfit name column
         {
@@ -219,7 +224,7 @@ void OutfitListTable::Sidebar(GuiContext &guiContext)
                 ImGui::Selectable(outfit.GetName().c_str(), isSelected, selectableFlags))
             {
                 auto pair = std::make_pair(outfit.GetId(), &outfit);
-                OnAcceptEditOutfit(pair);
+                OnAcceptEditOutfit(m_wantEdit.second, pair);
                 m_wantEdit = pair;
             }
             if (OpenContextMenu(guiContext, outfit))
@@ -364,7 +369,7 @@ bool OutfitListTable::DeletePopup(const SosUiData::OutfitPair &clicked)
     return justClosed;
 }
 
-void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
+void OutfitListTable::OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit)
 {
     +[&] {
         return m_outfitService.GetOutfitArmors(wantEdit.first, wantEdit.second->GetName());
@@ -372,7 +377,7 @@ void OutfitListTable::OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit)
     +[&] {
         return m_outfitService.GetSlotPolicy(wantEdit.first, wantEdit.second->GetName());
     };
-    m_editPanel.ShowWindow(wantEdit.second->GetName());
+    m_editPanel.OnSelectOutfit(lastEdit, wantEdit.second);
 }
 
 void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const OutfitId id, const std::string &outfitName)

@@ -114,7 +114,14 @@ void SosGui::RenderCharactersList()
     ImGui::EndTable();
     if (actors.empty()) return;
 
+    static int prevSelected = -1;
     m_context.editingActor = actors.at(selectedIdx);
+    if (prevSelected != selectedIdx)
+    {
+        m_outfitListTable.OnSelectActor(m_context.editingActor);
+    }
+    prevSelected = selectedIdx;
+
     if (const auto opt =
             outfit_select_popup(outfitPopupId).flat_map([&](auto &id) {
                 return get_outfit_name(m_uiData, id);

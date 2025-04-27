@@ -35,10 +35,10 @@ class OutfitListTable final : public BaseGui
 
         void onUpdate(const OutfitList &outfitList, bool onlyFavorites);
 
-        void clear()
+        void clear() override
         {
+            debounce_input::clear();
             outfitView.clear();
-            dirty = true;
         }
     };
 
@@ -60,6 +60,7 @@ public:
     void Render(GuiContext &guiContext);
     void Refresh() override;
     void Close() override;
+    void OnSelectActor(const RE::Actor*actor);
 
 private:
     using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
@@ -83,7 +84,7 @@ private:
 
     bool DeletePopup(const SosUiData::OutfitPair &clicked);
 
-    void OnAcceptEditOutfit(const SosUiData::OutfitPair &wantEdit);
+    void OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit);
     void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName);
     // check MultiSelection and set all selected outfit to favorite
     void OnAcceptSetFavoriteOutfits(bool toFavorite);

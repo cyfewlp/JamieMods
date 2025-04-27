@@ -6,6 +6,7 @@
 #include "data/ArmorView.h"
 #include "data/SosUiData.h"
 #include "gui/Popup.h"
+#include "util/ImGuiUtil.h"
 #include "service/OutfitService.h"
 #include "util/PageUtil.h"
 #include "widgets.h"
@@ -35,23 +36,42 @@ public:
 private:
     static void init_slot_name();
 
+    static bool IsArmorNonPlayable(const Armor *armor)
+    {
+        return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0;
+    }
+
+    struct ArmorFilter final : ImGuiUtil::debounce_input
+    {
+        bool mustPlayable = false;
+
+        ArmorFilter() : debounce_input("##ArmorFilter",
+                                       Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name")) {}
+
+        bool PassFilter(const Armor *armor) const;
+
+        bool draw() override;
+    };
+
     struct EditContext
     {
         int armorAddPolicy = 0;
         SlotEnumeration selectedFilterSlot = Slot::kNone;
         bool checkSlotAll = true; // default shows all armor slot
         bool prevCheckAllSlot = true;
-        std::array<char, MAX_FILTER_ARMOR_NAME> filterStringBuf;
-        ArmorView armorView1{};
-        ArmorView armorView2{}; // filter by armor name, mod name, playable
+        ArmorView armorView{};
+        std::vector<Armor *> armorViewData;
+        ArmorFilter armorFilter{};
         std::array<uint16_t, SLOT_COUNT> slotArmorCounter;
-        bool filterPlayable = false;
         bool showOutfitWindow = false;
         // be used on click add(candidate table)/delete(armor table)
         Armor *selectedArmor = nullptr;
         // candidate armor variables
         MultiSelection armorMultiSelection;
         SlotEnumeration candidateSelectedSlot{}; // be used to highlight conflict armors
+        bool dirty = true;
+
+        void Clear();
     } m_editContext = {};
 
     std::string m_windowTitle;
@@ -60,8 +80,7 @@ private:
     Popup::ConflictArmorPopup m_ConflictArmorPopup{};
     Popup::SlotPolicyHelp m_slotPolicyHelp{};
     Popup::BatchAddArmors m_batchAddArmorsPopUp{};
-    util::PageUtil m_armorCandidatesPage{};
-    UINT32 m_availableArmorCount;
+    UINT32 m_availableArmorCount = 0;
 
 public:
     explicit OutfitEditPanel(OutfitService &outfitService) : m_outfitService(outfitService) {}
@@ -82,8 +101,16 @@ public:
 
     void Refresh() override;
     void Close() override;
+    void OnSelectActor(const RE::Actor *actor, const SosUiOutfit *editingOutfit);
+    void OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const SosUiOutfit *editingOutfit);
 
 private:
+    enum class error : uint8_t
+    {
+        unassociated_armor,
+        armor_already_exists,
+    };
+
     void UpdateWindowTitle(const std::string &outfitName);
 
     void RenderProperties(const SosUiData::OutfitPair &wantEdit) const;
@@ -112,29 +139,19 @@ private:
     // View Functions
     //////////////////////////////////////////////////////////////////////////
 
-    void view_add_armors_by_policy(const SosUiOutfit *outfit);
+    // Add all can display armors to ArmorView.
+    void view_init();
+    void view_add_armors_by_policy();
     void view_add_armors_has_slot(RE::BIPED_OBJECT equipIndex);
-    void view_add_armor(Armor *armor);
-
-    template <typename Generator>
-    void view_add_armors_with_generator(Generator &&generator)
-    {
-        m_availableArmorCount = 0;
-        m_editContext.armorView1.Clear();
-        generator.for_each([&](Armor *armor) {
-            m_editContext.armorView1.Insert(armor);
-            m_availableArmorCount++;
-        });
-    }
-
+    [[nodiscard]] auto view_add_armor(Armor *armor) -> std::expected<void, error>;
     void view_remove_armors_has_slot(Slot selectedSlots, RE::BIPED_OBJECT equipIndex);
     // remove armors that already exists in outfit
+    void view_add_armors_in_outfit(const SosUiOutfit *editingOutfit);
     void view_remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
-    // remove armors from current view by filterer;
-    void view_filter_remove();
     // reset view by filterer
     void view_filter_reset(const SosUiOutfit *editingOutfit);
-    auto IsFilterArmor(const Armor *armor) const -> bool;
+    void slotCounterAdd(const Armor *armor);
+    void slotCounterRemove(const Armor *armor);
 
     void OnAddArmor(const SosUiData::OutfitPair &wantEdit, Armor *armor);
 
@@ -149,12 +166,14 @@ private:
 
     static auto ToSlot(const RE::BIPED_OBJECT equipIndex) -> Slot
     {
-        if (equipIndex >= RE::BIPED_OBJECT::kEditorTotal || equipIndex == RE::BIPED_OBJECT::kNone)
+        if (equipIndex >= RE::BIPED_OBJECT::kEditorTotal)
         {
             return Slot::kNone;
         }
         return static_cast<Slot>(1 << equipIndex);
     }
+
+    bool eraseArmor(const Armor *armor);
 };
 
 }

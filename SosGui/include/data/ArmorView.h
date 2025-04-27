@@ -18,7 +18,6 @@
 #include <boost/multi_index/ranked_index.hpp>
 #include <boost/multi_index/tag.hpp>
 #include <boost/multi_index_container.hpp>
-#include <cstdint>
 #include <boost/optional/optional.hpp>
 
 namespace
@@ -41,7 +40,7 @@ public:
     struct ArmorViewIndex : indexed_by<ordered_unique<tag<by_FormId>, KeyByFormId>,
                                        ranked_non_unique<tag<by_name>, KeyByName, util::StringCompactor>> {};
 
-    typedef boost::multi_index_container<Armor *, ArmorViewIndex> Container;
+    typedef multi_index_container<Armor *, ArmorViewIndex> Container;
 
     typedef index<Container, by_FormId>::type ContainerByFormId;
     typedef index<Container, by_name>::type ContainerByName;
@@ -57,22 +56,14 @@ public:
 
     void Insert(Armor *armor);
 
-    auto Remove(Armor *armor) -> bool
-    {
-        if (armor == nullptr)
-        {
-            return false;
-        }
-        return m_indexByFormId.erase(armor->GetFormID()) > 0;
-    }
+    auto Remove(Armor *armor) const -> bool;
 
-    auto GetByNameRank(size_t rank) -> std::optional<Armor *>
+    auto GetByNameRank(size_t rank) const -> std::optional<Armor *>;
+
+    auto GetRank(const RE::FormID armorFormId) const -> size_t
     {
-        if (const auto foundId = m_indexByName.nth(rank); foundId != m_indexByName.end())
-        {
-            return *foundId;
-        }
-        return std::nullopt;
+        auto itById = m_indexByFormId.find(armorFormId);
+        return m_indexByName.rank(project<by_name>(m_container, itById));
     }
 
     void Clear()

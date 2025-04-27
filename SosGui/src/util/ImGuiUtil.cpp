@@ -32,4 +32,10 @@ bool ImGuiUtil::debounce_input::draw()
            (dirty && std::chrono::system_clock::now() - prevEditTime > duration);
 }
 
+void ImGuiUtil::debounce_input::clear()
+{
+    dirty = true;
+    filter.Clear();
+}
+
 }

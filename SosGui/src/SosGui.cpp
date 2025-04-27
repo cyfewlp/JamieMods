@@ -29,7 +29,7 @@ LIBC_NAMESPACE_DECL
 
 inline void SosGui::outfit_debounce_input::clear()
 {
-    dirty = true;
+    debounce_input::clear();
     viewData.clear();
 }
 
