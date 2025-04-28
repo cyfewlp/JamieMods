@@ -180,7 +180,7 @@ auto SosGui::Refresh() -> void
     m_fShowConfigWindows = true;
     m_selectedActorIndex = 0;
     m_selectedNpcIndex = 0;
-    m_selectedPolicyId = static_cast<std::uint32_t>(AutoSwitchPolicyView::Policy::None);
+    m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
     m_outfitDebounceInput.clear();
 }
 
@@ -390,4 +390,5 @@ void SosGui::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
     static REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
     func(controlMap, allow);
 }
+
 }

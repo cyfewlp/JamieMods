@@ -25,7 +25,7 @@ LIBC_NAMESPACE_DECL
 {
 using namespace boost::multi_index;
 
-class ArmorView : BaseContainer
+class ArmorContainer : BaseContainer
 {
     using Armor = RE::TESObjectARMO;
 
@@ -51,8 +51,8 @@ private:
     ContainerByName &m_indexByName = get<by_name>(m_container);
 
 public:
-    ArmorView() = default;
-    ~ArmorView() = default;
+    ArmorContainer() = default;
+    ~ArmorContainer() = default;
 
     void Insert(Armor *armor);
 

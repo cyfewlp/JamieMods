@@ -3,24 +3,26 @@
 #include "GuiContext.h"
 #include "Translation.h"
 #include "common/config.h"
+#include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "gui/Table.h"
+#include "gui/widgets.h"
 #include "imgui.h"
-#include "util/FunctionUtils.h"
 #include "util/ImGuiUtil.h"
 
 #include <RE/A/Actor.h>
 #include <array>
+#include <boost/optional/detail/optional_reference_spec.hpp>
 #include <format>
 #include <functional>
+#include <ranges>
 #include <string>
 #include <utility>
-#include <ranges>
+#include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 void OutfitListTable::Refresh()
 {
@@ -30,7 +32,7 @@ void OutfitListTable::Refresh()
 
 void OutfitListTable::Close()
 {
-    m_click = DEFAULT_INVALID_PAIR;
+    m_click    = DEFAULT_INVALID_PAIR;
     m_wantEdit = DEFAULT_INVALID_PAIR;
     m_outfitMultiSelection.Clear();
     m_outfitFilterInput.outfitView.clear();
@@ -44,7 +46,7 @@ void OutfitListTable::OnSelectActor(const RE::Actor *actor)
 
 void OutfitListTable::RefreshOutfitList()
 {
-    m_click = DEFAULT_INVALID_PAIR;
+    m_click    = DEFAULT_INVALID_PAIR;
     m_wantEdit = DEFAULT_INVALID_PAIR;
     m_outfitMultiSelection.Clear();
     m_onlyShowFavorites = false;
@@ -106,20 +108,14 @@ void OutfitListTable::Render(GuiContext &guiContext)
             Sidebar(guiContext);
         }
         // must out of BeginChild braces because when dock window, BeginChild will be return false;
-        if (IsValidOutfit(m_click) && DeletePopup(m_click))
-        {
-            m_click = DEFAULT_INVALID_PAIR;
-        }
+        DrawDeletePopup();
         ImGui::EndChild();
 
         if (IsValidOutfit(m_wantEdit))
         {
             ImGui::SameLine();
             ImGui::BeginGroup();
-            if (EditingPanel(m_wantEdit))
-            {
-                m_wantEdit = DEFAULT_INVALID_PAIR;
-            }
+            m_editPanel.Render(m_wantEdit);
             ImGui::EndGroup();
         }
     }
@@ -167,7 +163,7 @@ void OutfitListTable::Sidebar(GuiContext &guiContext)
         m_outfitFilterInput.dirty = true;
     }
 
-    auto &outfitList = m_uiData.GetOutfitList();
+    auto         &outfitList     = m_uiData.GetOutfitList();
     static size_t prevOutfitSize = 0;
 
     if (m_outfitFilterInput.draw() || prevOutfitSize != outfitList.size())
@@ -179,17 +175,20 @@ void OutfitListTable::Sidebar(GuiContext &guiContext)
 
     //////////////////////////////////////////////////////////
     // Table Content
+    // clang-format off
     if (constexpr auto flags = TableFlags().Borders().Resizable().Hideable().Reorderable()
-                                           .Sortable().SizingFixedFit().ScrollY().NoHostExtendX()
-                                           .flags;
+                                   .Sortable().SizingFixedFit().ScrollY().NoHostExtendX()
+                                   .flags;
         !ImGui::BeginTable("##OutfitLists", 3, flags))
     {
         return;
     }
+    // clang-format on
 
-    const auto &actorOutfitMap = m_uiData.GetActorOutfitMap();
-    const auto activeOutfitOpt =
-        actorOutfitMap.TryGetOutfitId(guiContext.editingActor).flat_map(GetOutfitFromId(outfitList));
+    const auto &actorOutfitMap  = m_uiData.GetActorOutfitMap();
+    const auto  activeOutfitOpt = actorOutfitMap.TryGetOutfitId(guiContext.editingActor).flat_map([&](auto &outfitId) {
+        return outfitList.GetOutfitById(outfitId);
+    });
 
     // When the current actor has active outfit: draw and freeze it on the first row.
     const auto activeOutfitId = activeOutfitOpt.map(GetOutfitId).value_or(INVALID_OUTFIT_ID);
@@ -247,7 +246,7 @@ void OutfitListTable::Sidebar(GuiContext &guiContext)
 
     if (activeOutfitOpt.has_value())
     {
-        const auto rank = outfitList.GetNameRank(activeOutfitOpt.value().GetId());
+        const auto             rank = outfitList.GetNameRank(activeOutfitOpt.value().GetId());
         ImGuiUtil::PushIdGuard idGuard(-1);
         drawAction(activeOutfitOpt.value(), rank);
     }
@@ -292,8 +291,7 @@ void OutfitListTable::DrawOutfits(std::vector<const SosUiOutfit *> outfitView, c
         {
             using namespace std::views;
             size_t index = 0;
-            for (const auto &outfit : outfitView
-                                      | reverse | drop(clipper.DisplayStart) | take(itemCount))
+            for (const auto &outfit : outfitView | reverse | drop(clipper.DisplayStart) | take(itemCount))
             {
                 drawAction(*outfit, index++);
             }
@@ -344,6 +342,7 @@ bool OutfitListTable::OpenContextMenu(const GuiContext &guiContext, const SosUiO
     }
     if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
     {
+        m_DeleteOutfitPopup.wanDeleteOutfit = &outfit;
         m_DeleteOutfitPopup.Open();
     }
     if (ImGui::MenuItem("Close"))
@@ -354,18 +353,17 @@ bool OutfitListTable::OpenContextMenu(const GuiContext &guiContext, const SosUiO
     return true;
 }
 
-bool OutfitListTable::DeletePopup(const SosUiData::OutfitPair &clicked)
+void OutfitListTable::DrawDeletePopup()
 {
     bool isConfirmDelete = false;
-    bool justClosed = m_DeleteOutfitPopup.Render(clicked.second->GetName(), isConfirmDelete);
-
-    if (isConfirmDelete)
+    if (m_DeleteOutfitPopup.Render(isConfirmDelete); isConfirmDelete)
     {
         +[&] {
-            return m_outfitService.DeleteOutfit(clicked.first, clicked.second->GetName());
+            return m_outfitService.DeleteOutfit(m_DeleteOutfitPopup.wanDeleteOutfit->GetId(),
+                                                m_DeleteOutfitPopup.wanDeleteOutfit->GetName());
         };
+        m_DeleteOutfitPopup.wanDeleteOutfit = nullptr;
     }
-    return justClosed;
 }
 
 void OutfitListTable::OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit)
@@ -389,8 +387,8 @@ void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const Outfit
 void OutfitListTable::OnAcceptSetFavoriteOutfits(bool toFavorite)
 {
     const auto &outfitList = m_uiData.GetOutfitList();
-    void *it = nullptr;
-    ImGuiID selectedRank; // must be name rank;
+    void       *it         = nullptr;
+    ImGuiID     selectedRank; // must be name rank;
 
     while (m_outfitMultiSelection.GetNextSelectedItem(&it, &selectedRank))
     {

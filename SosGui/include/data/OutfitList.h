@@ -7,8 +7,8 @@
 #include "util/StringUtil.h"
 
 #if !defined(NDEBUG)
-#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
-#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+    #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
+    #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
 #endif
 
 #include <boost/multi_index/composite_key.hpp>
@@ -27,8 +27,7 @@
 #include <string>
 #include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 using namespace boost::multi_index;
 
@@ -37,54 +36,66 @@ class OutfitList : BaseContainer
     static inline OutfitId g_NextOutfitId = 1;
 
 public:
-    struct by_Id {};
+    struct by_Id
+    {
+    };
 
-    struct by_name {};
+    struct by_name
+    {
+    };
 
-    struct by_favorite {};
+    struct by_favorite
+    {
+    };
 
     struct favorite_name_key
         : composite_key<SosUiOutfit, BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, bool, IsFavorite),
-                        BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName)> {};
+                        BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName)>
+    {
+    };
 
     using favorite_name_compare = composite_key_compare<std::greater<bool>, util::StringCompactor>;
 
     typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, OutfitId, GetId) IdKey;
     typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName) NameKey;
 
-    struct outfit_index : indexed_by< //
-            ordered_unique<tag<by_Id>, IdKey>, //
-            ranked_non_unique<tag<by_name>, NameKey, util::StringCompactor>, //
-            ranked_non_unique<tag<by_favorite>, favorite_name_key, favorite_name_compare>> {};
+    struct outfit_index : indexed_by<                                                          //
+                              ordered_unique<tag<by_Id>, IdKey>,                               //
+                              ranked_non_unique<tag<by_name>, NameKey, util::StringCompactor>, //
+                              ranked_non_unique<tag<by_favorite>, favorite_name_key, favorite_name_compare>>
+    {
+    };
 
     typedef multi_index_container<SosUiOutfit, outfit_index> Container;
 
-    using Armor = RE::TESObjectARMO;
-    using OutfitById = index<Container, by_Id>::type;
-    using OutfitByName = index<Container, by_name>::type;
+    using Armor         = RE::TESObjectARMO;
+    using OutfitById    = index<Container, by_Id>::type;
+    using OutfitByName  = index<Container, by_name>::type;
     using FavoriteIndex = index<Container, by_favorite>::type;
 
 private:
-    Container m_container{};
-    OutfitById &m_outfitById = get<by_Id>(m_container);
-    OutfitByName &m_outfitByName = get<by_name>(m_container);
+    Container      m_container{};
+    OutfitById    &m_outfitById    = get<by_Id>(m_container);
+    OutfitByName  &m_outfitByName  = get<by_name>(m_container);
     FavoriteIndex &m_favoriteIndex = get<by_favorite>(m_container);
 
     struct unassociated_outfit_error : std::runtime_error
     {
         explicit unassociated_outfit_error()
             : std::runtime_error("WARNING: The specify outfit id is invalid or unassociate outfit. Try reopen or "
-                "refresh outfit list") {}
+                                 "refresh outfit list")
+        {
+        }
     };
 
 public:
-    OutfitList() = default;
+    OutfitList()  = default;
     ~OutfitList() = default;
 
-    OutfitList(const OutfitList &other) = delete;
+    OutfitList(const OutfitList &other)            = delete;
     OutfitList &operator=(const OutfitList &other) = delete;
-    OutfitList(OutfitList &&other) = delete;
-    OutfitList &operator=(OutfitList &&other) = delete;
+    OutfitList(OutfitList &&other)                 = delete;
+    OutfitList &operator=(OutfitList &&other)      = delete;
 
     //////////////////////////////////////////////////////////////////////////
     // Modifiers
@@ -142,9 +153,7 @@ public:
     {
         if (auto where = m_outfitById.find(id); where != m_outfitById.end())
         {
-            m_outfitById.modify(where, [&](auto &outfit) {
-                outfit.RemoveArmor(armor);
-            });
+            m_outfitById.modify(where, [&](auto &outfit) { outfit.RemoveArmor(armor); });
         }
     }
 
@@ -152,9 +161,7 @@ public:
     {
         if (auto where = m_outfitById.find(id); where != m_outfitById.end())
         {
-            m_outfitById.modify(where, [&](auto &outfit) {
-                outfit.SetSlotPolicies(slotPos, std::move(policyString));
-            });
+            m_outfitById.modify(where, [&](auto &outfit) { outfit.SetSlotPolicies(slotPos, std::move(policyString)); });
         }
     }
 

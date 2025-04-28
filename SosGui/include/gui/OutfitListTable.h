@@ -62,7 +62,7 @@ public:
     void Render(GuiContext &guiContext);
     void Refresh() override;
     void Close() override;
-    void OnSelectActor(const RE::Actor*actor);
+    void OnSelectActor(const RE::Actor *actor);
 
 private:
     using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
@@ -78,13 +78,7 @@ private:
      * @return true if the context menu is open.
      */
     bool OpenContextMenu(const GuiContext &guiContext, const SosUiOutfit &outfit);
-
-    bool EditingPanel(const SosUiData::OutfitPair &wantEdit)
-    {
-        return m_editPanel.Render(wantEdit);
-    }
-
-    bool DeletePopup(const SosUiData::OutfitPair &clicked);
+    void DrawDeletePopup();
 
     void OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit);
     void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName);
