@@ -65,13 +65,11 @@ void SosGui::RenderCharactersList()
     {
         return;
     }
-    TableHeadersBuilder()
-        .Column("$Characters")
-        .Column("$Delete")
-        .Column("$SosGui_TableHeader_ActiveOutfit")
-        .CommitHeadersRow();
+    TableHeadersBuilder().Column("$Characters")
+                         .Column("$Delete")
+                         .Column("$SosGui_TableHeader_ActiveOutfit")
+                         .CommitHeadersRow();
     static ImGuiID outfitPopupId = -1;
-    static int selectedIdx = 0;
     int idx = 0;
     for (const auto &actor : actors)
     {
@@ -79,11 +77,11 @@ void SosGui::RenderCharactersList()
 
         ImGui::TableNextColumn(); // character column
         {
-            const bool isSelected = selectedIdx == idx;
+            const bool isSelected = m_selectedActorIndex == idx;
             if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
                 ImGui::Selectable(actor->GetName(), isSelected, flags))
             {
-                selectedIdx = idx;
+                m_selectedActorIndex = idx;
             }
             if (isSelected)
             {
@@ -104,7 +102,7 @@ void SosGui::RenderCharactersList()
             auto outfitName = get_actor_outfit_name(m_uiData, actor);
             if (ImGui::Selectable(outfitName.c_str(), false))
             {
-                selectedIdx = idx;
+                m_selectedActorIndex = idx;
                 ImGui::OpenPopup(outfitPopupId);
             }
         }
@@ -115,12 +113,12 @@ void SosGui::RenderCharactersList()
     if (actors.empty()) return;
 
     static int prevSelected = -1;
-    m_context.editingActor = actors.at(selectedIdx);
-    if (prevSelected != selectedIdx)
+    m_context.editingActor = actors.at(m_selectedActorIndex);
+    if (prevSelected != m_selectedActorIndex)
     {
         m_outfitListTable.OnSelectActor(m_context.editingActor);
     }
-    prevSelected = selectedIdx;
+    prevSelected = m_selectedActorIndex;
 
     if (const auto opt =
             outfit_select_popup(outfitPopupId).flat_map([&](auto &id) {
@@ -134,24 +132,23 @@ void SosGui::RenderCharactersList()
     }
 }
 
-void SosGui::NearNpcCombo() const
+void SosGui::NearNpcCombo()
 {
-    static int selectedIdx = 0;
     const auto &nearActors = m_uiData.GetNearActors();
     if (!nearActors.empty() &&
-        ImGuiUtil::BeginCombo("$SkyOutSys_Text_AddActorSelection", nearActors.at(selectedIdx)->GetName()))
+        ImGuiUtil::BeginCombo("$SkyOutSys_Text_AddActorSelection", nearActors.at(m_selectedNpcIndex)->GetName()))
     {
         int idx = 0;
         for (const auto &nearActor : nearActors)
         {
-            if (ImGui::Selectable(nearActor->GetName(), idx == selectedIdx))
+            if (ImGui::Selectable(nearActor->GetName(), idx == m_selectedNpcIndex))
             {
-                selectedIdx = idx;
+                m_selectedNpcIndex = idx;
                 +[&] {
                     return m_dataCoordinator.RequestAddActor(nearActors.at(idx));
                 };
             }
-            if (selectedIdx == idx)
+            if (m_selectedNpcIndex == idx)
             {
                 ImGui::SetItemDefaultFocus();
             }
@@ -191,19 +188,19 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
         .Column("$SosGui_TableHeader_Location_State")
         .CommitHeadersRow();
     static ImGuiID outfitPopupId = -1;
-    static uint32_t selectedPolicyId = 14;
-    for (uint32_t policyId = 0; policyId < 13; ++policyId)
+    using Policy = AutoSwitchPolicyView::Policy;
+    for (uint32_t policyId = 0; policyId < static_cast<uint32_t>(Policy::Count); ++policyId)
     {
         ImGui::PushID(policyId);
         ImGui::TableNextRow();
         if (ImGui::TableNextColumn())
         {
             auto key = std::format("$SkyOutSys_Text_Autoswitch{}", policyId);
-            const bool isSelected = selectedPolicyId == policyId;
+            const bool isSelected = m_selectedPolicyId == policyId;
             if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
                 ImGuiUtil::Selectable(key.c_str(), isSelected, flags))
             {
-                selectedPolicyId = policyId;
+                m_selectedPolicyId = policyId;
                 ImGui::OpenPopup(outfitPopupId);
             }
             if (isSelected)
@@ -220,7 +217,7 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
     if (auto opt = outfit_select_popup(outfitPopupId); opt.has_value())
     {
         +[&] {
-            return m_outfitService.SetActorStateOutfit(currentActor, selectedPolicyId, opt.value());
+            return m_outfitService.SetActorStateOutfit(currentActor, m_selectedPolicyId, opt.value());
         };
     }
 }

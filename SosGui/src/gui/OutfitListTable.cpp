@@ -49,6 +49,7 @@ void OutfitListTable::RefreshOutfitList()
     m_outfitMultiSelection.Clear();
     m_onlyShowFavorites = false;
     m_outfitFilterInput.clear();
+    m_outfitNameBuf[0] = '\0';
 }
 
 void OutfitListTable::outfit_debounce_input::onUpdate(const OutfitList &outfitList, const bool onlyFavorites)
@@ -129,23 +130,21 @@ void OutfitListTable::Sidebar(GuiContext &guiContext)
 {
     //////////////////////////////////////////////////////////
     // Create Outfit widgets
-    static std::array<char, OUTFIT_NAME_MAX_BYTES> outfitNameBuf;
+    ImGui::InputText("##CreateNewInput", m_outfitNameBuf.data(), m_outfitNameBuf.size());
 
-    ImGui::InputText("##CreateNewInput", outfitNameBuf.data(), outfitNameBuf.size());
-
-    ImGui::BeginDisabled(outfitNameBuf[0] == '\0');
+    ImGui::BeginDisabled(m_outfitNameBuf[0] == '\0');
     {
         if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
         {
             +[&] {
-                return m_outfitService.CreateOutfit(outfitNameBuf.data());
+                return m_outfitService.CreateOutfit(m_outfitNameBuf.data());
             };
         }
 
         if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
         {
             +[&] {
-                return m_outfitService.CreateOutfitFromWorn(outfitNameBuf.data());
+                return m_outfitService.CreateOutfitFromWorn(m_outfitNameBuf.data());
             };
         }
     }

@@ -9,6 +9,7 @@
 #include "service/OutfitService.h"
 #include "service/SosDataCoordinator.h"
 #include "task.h"
+#include "data/AutoSwitchPolicyView.h"
 
 #include <RE/A/Actor.h>
 #include <RE/R/Renderer.h>
@@ -27,7 +28,7 @@ class SosGui : public BaseGui
 
     struct outfit_debounce_input final : ImGuiUtil::debounce_input
     {
-        std::vector<const SosUiOutfit *> viewData;
+        std::vector<const SosUiOutfit *> viewData{};
 
         outfit_debounce_input() : debounce_input("##filter", "filter outfit") {}
 
@@ -47,6 +48,10 @@ class SosGui : public BaseGui
     outfit_debounce_input m_outfitDebounceInput;
 
     bool m_fShowConfigWindows = true;
+    bool m_fWantTextInput = true; // previous frame WantTextInput state
+    int m_selectedActorIndex = 0;
+    int m_selectedNpcIndex = 0;
+    uint32_t m_selectedPolicyId = static_cast<uint32_t>(AutoSwitchPolicyView::Policy::None);
 
 public:
     SosGui()
@@ -88,7 +93,7 @@ private:
 
     void RenderCharactersList();
 
-    void NearNpcCombo() const;
+    void NearNpcCombo();
 
     void AutoSwitchPoliesTable(RE::Actor *currentActor);
 
@@ -98,7 +103,7 @@ private:
     // return select outfit id or INVALID_OUTFIT_ID if not select.
     auto outfit_select_popup(__out ImGuiID &popupId) -> boost::optional<OutfitId>;
 
-    static void TrySetAllowTextInput();
+    void TrySetAllowTextInput();
 
     static void AllowTextInput(bool allow);
 

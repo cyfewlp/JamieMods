@@ -18,6 +18,7 @@
 #include <array>
 #include <basetsd.h>
 #include <string>
+#include <unordered_set>
 
 namespace
 LIBC_NAMESPACE_DECL
@@ -34,7 +35,7 @@ public:
     static constexpr int SOS_SLOT_OFFSET = 30;
 
 private:
-    static void init_slot_name();
+    static auto get_slot_name_key(uint32_t slotPos) -> std::string;
 
     static bool IsArmorNonPlayable(const Armor *armor)
     {
@@ -56,9 +57,12 @@ private:
     struct EditContext
     {
         int armorAddPolicy = 0;
-        SlotEnumeration selectedFilterSlot = Slot::kNone;
+        std::bitset<RE::BIPED_OBJECT::kEditorTotal> selectedFilterSlot{};
         bool checkSlotAll = true; // default shows all armor slot
         bool prevCheckAllSlot = true;
+
+        bool armorListShowAllSlotArmors = false;
+
         ArmorView armorView{};
         std::vector<Armor *> armorViewData;
         ArmorFilter armorFilter{};
@@ -68,7 +72,7 @@ private:
         Armor *selectedArmor = nullptr;
         // candidate armor variables
         MultiSelection armorMultiSelection;
-        SlotEnumeration candidateSelectedSlot{}; // be used to highlight conflict armors
+        SlotEnumeration armorMultiSelectedSlot{}; // be used to highlight conflict armors
         bool dirty = true;
 
         void Clear();
@@ -144,7 +148,7 @@ private:
     void view_add_armors_by_policy();
     void view_add_armors_has_slot(RE::BIPED_OBJECT equipIndex);
     [[nodiscard]] auto view_add_armor(Armor *armor) -> std::expected<void, error>;
-    void view_remove_armors_has_slot(Slot selectedSlots, RE::BIPED_OBJECT equipIndex);
+    void view_remove_armors_has_slot(Slot selectedSlots, const Slot toRemoveSlot);
     // remove armors that already exists in outfit
     void view_add_armors_in_outfit(const SosUiOutfit *editingOutfit);
     void view_remove_armors_in_outfit(const SosUiOutfit *editingOutfit);

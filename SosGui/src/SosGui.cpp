@@ -160,18 +160,17 @@ auto SosGui::Render() -> void
 
 void SosGui::TrySetAllowTextInput()
 {
-    static bool fWantTextInput = false;
     const bool cWantTextInput = ImGui::GetIO().WantTextInput;
-    if (!fWantTextInput && cWantTextInput)
+    if (!m_fWantTextInput && cWantTextInput)
     {
         AllowTextInput(true);
     }
-    else if (fWantTextInput && !cWantTextInput)
+    else if (m_fWantTextInput && !cWantTextInput)
     {
         AllowTextInput(false);
     }
 
-    fWantTextInput = cWantTextInput;
+    m_fWantTextInput = cWantTextInput;
 }
 
 auto SosGui::Refresh() -> void
@@ -179,6 +178,9 @@ auto SosGui::Refresh() -> void
     log_debug("GetOutfitList thread-id {}", std::this_thread::get_id());
     DoRefresh();
     m_fShowConfigWindows = true;
+    m_selectedActorIndex = 0;
+    m_selectedNpcIndex = 0;
+    m_selectedPolicyId = static_cast<std::uint32_t>(AutoSwitchPolicyView::Policy::None);
     m_outfitDebounceInput.clear();
 }
 

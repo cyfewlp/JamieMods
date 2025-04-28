@@ -50,7 +50,9 @@ class OutfitListTable final : public BaseGui
     SosUiData::OutfitPair m_click = DEFAULT_INVALID_PAIR;
     MultiSelection m_outfitMultiSelection;
     OutfitEditPanel m_editPanel;
+
     bool m_onlyShowFavorites = false;
+    std::array<char, OUTFIT_NAME_MAX_BYTES> m_outfitNameBuf{};
     outfit_debounce_input m_outfitFilterInput{"##filter", "filter outfit"};
 
 public:
