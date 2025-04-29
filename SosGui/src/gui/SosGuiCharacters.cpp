@@ -18,13 +18,13 @@
 #include <RE/B/BSCoreTypes.h>
 #include <Translation.h>
 #include <boost/optional/detail/optional_reference_spec.hpp>
-#include <cstdint>
 #include <format>
 #include <functional>
 #include <specstrings.h>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 void SosGui::RenderCharactersPanel()
 {
@@ -39,14 +39,14 @@ void SosGui::RenderCharactersPanel()
 static auto get_actor_outfit_name(SosUiData &uiData, RE::Actor *actor) -> std::string
 {
     return uiData.GetActorOutfitMap()
-        .TryGetOutfitId(actor)
-        .flat_map([&](auto &id) {
-            return uiData.GetOutfitList().GetOutfitById(id);
-        })
-        .map([](const auto &outfit) {
-            return outfit.GetName();
-        })
-        .value_or("No outfit");
+                 .TryGetOutfitId(actor)
+                 .flat_map([&](auto &id) {
+                     return uiData.GetOutfitList().GetOutfitById(id);
+                 })
+                 .map([](const auto &outfit) {
+                     return outfit.GetName();
+                 })
+                 .value_or("No outfit");
 }
 
 void SosGui::RenderCharactersList()
@@ -70,7 +70,7 @@ void SosGui::RenderCharactersList()
         .Column("$SosGui_TableHeader_ActiveOutfit")
         .CommitHeadersRow();
     std::function<void()> onDeleteActor = [] {};
-    int                   idx           = 0;
+    int idx = 0;
     for (const auto &actor : actors)
     {
         ImGui::PushID(idx);
@@ -117,22 +117,21 @@ void SosGui::RenderCharactersList()
     onDeleteActor();
 
     static int prevSelected = -1;
-    m_context.editingActor  = actors.at(m_selectedActorIndex);
+    const auto selectedActor = actors.at(m_selectedActorIndex);
     if (prevSelected != m_selectedActorIndex)
     {
-        m_outfitListTable.OnSelectActor(m_context.editingActor);
+        m_outfitListTable.OnSelectActor(selectedActor);
     }
     prevSelected = m_selectedActorIndex;
 
-    OutfitId    selectId   = INVALID_OUTFIT_ID;
+    OutfitId selectId = INVALID_OUTFIT_ID;
     const auto &outfitList = m_uiData.GetOutfitList();
-    if (m_outfitSelectPopup.draw(outfitList, selectId); selectId != INVALID_OUTFIT_ID)
+    if (m_outfitSelectPopup.draw("Outfit List##OutfitSelectList", outfitList, selectId); selectId != INVALID_OUTFIT_ID)
     {
         if (auto opt = outfitList.GetOutfitById(selectId); opt.has_value())
         {
             +[&] {
-                return m_outfitService.SetActorOutfit(m_context.editingActor, opt.value().GetId(),
-                                                      opt.value().GetName());
+                return m_outfitService.SetActorOutfit(selectedActor, opt.value().GetId(), opt.value().GetName());
             };
         }
     }
@@ -202,7 +201,7 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
         ImGui::TableNextRow();
         if (ImGui::TableNextColumn())
         {
-            auto       key        = std::format("$SkyOutSys_Text_Autoswitch{}", policyId);
+            auto key = std::format("$SkyOutSys_Text_Autoswitch{}", policyId);
             const bool isSelected = m_autoSwitchOutfitSelectPopup.selectPolicyId == policyId;
             if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
                 ImGuiUtil::Selectable(key.c_str(), isSelected, flags))
@@ -222,7 +221,8 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
     ImGui::EndTable();
 
     OutfitId selectId = INVALID_OUTFIT_ID;
-    if (m_autoSwitchOutfitSelectPopup.draw(m_uiData.GetOutfitList(), selectId); selectId != INVALID_OUTFIT_ID)
+    if (m_autoSwitchOutfitSelectPopup.draw("Outfit List##AutoSwitch", m_uiData.GetOutfitList(),
+                                           selectId); selectId != INVALID_OUTFIT_ID)
     {
         +[&, selectId] {
             return m_outfitService.SetActorStateOutfit(currentActor, m_autoSwitchOutfitSelectPopup.selectPolicyId,
@@ -234,8 +234,8 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
 
 void SosGui::autoSwitch_column1_outfit(const RE::FormID actorId, const uint32_t policyId)
 {
-    const auto &view       = m_uiData.GetAutoSwitchPolicyView();
-    auto       &outfitList = m_uiData.GetOutfitList();
+    const auto &view = m_uiData.GetAutoSwitchPolicyView();
+    auto &outfitList = m_uiData.GetOutfitList();
 
     if (!ImGui::TableNextColumn())
     {
@@ -255,28 +255,16 @@ void SosGui::autoSwitch_column1_outfit(const RE::FormID actorId, const uint32_t 
     ImGui::Text("%s", name.c_str());
 }
 
-auto SosGui::outfit_select_popup::preDraw() -> bool
-{
-    popupId = ImGui::GetID("Outfit List##OutfitSelectList");
-    return ImGui::BeginPopup("Outfit List##OutfitSelectList");
-}
-
-auto SosGui::autoSwitch_outfit_select_popup::preDraw() -> bool
-{
-    popupId = ImGui::GetID("Outfit List##AutoSwitchOutfitSelectList");
-    return ImGui::BeginPopup("Outfit List##AutoSwitchOutfitSelectList");
-}
-
-void SosGui::outfit_select_popup::draw(const OutfitList &outfitList, __out OutfitId &selectId)
+void SosGui::outfit_select_popup::draw(const char *nameKey, const OutfitList &outfitList, __out OutfitId &selectId)
 {
     selectId = INVALID_OUTFIT_ID;
-    if (!preDraw())
+    if (!preDraw(nameKey))
     {
         return;
     }
     ImGui::BeginChild("##ChildRegion", ImVec2(0, 250), ImGuiChildFlags_AutoResizeX);
 
-    if (debounceInput.draw())
+    if (debounceInput.Draw("##filter", "filter outfit"))
     {
         debounceInput.updateView(outfitList);
     }

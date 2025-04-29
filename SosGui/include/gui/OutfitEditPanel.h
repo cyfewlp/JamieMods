@@ -16,9 +16,7 @@
 #include <RE/B/BipedObjects.h>
 #include <RE/T/TESObjectARMO.h>
 #include <array>
-#include <basetsd.h>
 #include <string>
-#include <unordered_set>
 
 namespace
 LIBC_NAMESPACE_DECL
@@ -42,16 +40,13 @@ private:
         return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0;
     }
 
-    struct ArmorFilter final : ImGuiUtil::debounce_input
+    struct ArmorFilter final : ImGuiUtil::DebounceInput
     {
         bool mustPlayable = false;
 
-        ArmorFilter() : debounce_input("##ArmorFilter",
-                                       Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name")) {}
-
         bool PassFilter(const Armor *armor) const;
 
-        bool draw() override;
+        bool Draw();
     };
 
     enum class error : uint8_t
@@ -82,10 +77,8 @@ private:
         void add_armors_has_slot(Slot newSlot);
         [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
         void remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);
-        // remove armors that already exists in outfit
         void add_armors_in_outfit(const SosUiOutfit *editingOutfit);
         void remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
-        // reset view by filterer
         void filter_reset(const SosUiOutfit *editingOutfit);
         void slot_counter_add(const Armor *armor);
         void slot_counter_remove(const Armor *armor);
@@ -120,10 +113,8 @@ public:
 private:
     void UpdateWindowTitle(const std::string &outfitName);
 
-    void RenderProperties(const SosUiData::OutfitPair &wantEdit) const;
-
-    void RenderArmorList(const SosUiData::OutfitPair &wantEdit);
-    void HighlightConflictArmor(const Armor *armor) const;
+    void DrawOutfitArmors(const SosUiData::OutfitPair &wantEdit);
+    void HighlightConflictSlot(Slot slot) const;
     void SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const;
 
     void RenderEditPanel(const SosUiData::OutfitPair &wantEdit);

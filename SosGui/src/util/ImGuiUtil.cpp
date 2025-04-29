@@ -4,6 +4,21 @@
 namespace
 LIBC_NAMESPACE_DECL
 {
+auto ImGuiUtil::TextScale(const char *content, float scale) -> void
+{
+    Translation::Translate(content, g_widgetName);
+    ImGui::PushFontSize(scale);
+    ImGui::Text("%s", g_widgetName.c_str());
+    ImGui::PopFontSize();
+}
+
+void ImGuiUtil::AddItemRectWithCol(const ImGuiCol colorIndex, const float thickness)
+{
+    auto *drawList = ImGui::GetWindowDrawList();
+    const auto color = ImGui::GetColorU32(colorIndex);
+    drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
+}
+
 void ImGuiUtil::may_update_table_sort_dir(bool &ascend)
 {
     if (auto *sortSpecs = ImGui::TableGetSortSpecs(); sortSpecs != nullptr)
@@ -17,22 +32,22 @@ void ImGuiUtil::may_update_table_sort_dir(bool &ascend)
     }
 }
 
-bool ImGuiUtil::debounce_input::draw()
+bool ImGuiUtil::DebounceInput::Draw(const char *label, const char *hintText)
 {
     ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F, ImGuiInputFlags_Tooltip);
     ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-    if (ImGui::InputTextWithHint(label.data(), hintText.data(), filter.InputBuf,
+    if (ImGui::InputTextWithHint(label, hintText, filter.InputBuf,
                                  IM_ARRAYSIZE(filter.InputBuf),
                                  ImGuiInputTextFlags_EscapeClearsAll))
     {
-        onInput();
+        OnInput();
     }
     ImGui::PopItemFlag();
     return ImGui::IsItemDeactivatedAfterEdit() || //
            (dirty && std::chrono::system_clock::now() - prevEditTime > duration);
 }
 
-void ImGuiUtil::debounce_input::clear()
+void ImGuiUtil::DebounceInput::clear()
 {
     dirty = true;
     filter.Clear();

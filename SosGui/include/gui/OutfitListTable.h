@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GuiContext.h"
 #include "common/config.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
@@ -18,27 +17,28 @@ LIBC_NAMESPACE_DECL
 {
 class OutfitListTable final : public BaseGui
 {
-    static constexpr int OUTFIT_NAME_MAX_BYTES = 256;
+    static constexpr int MAX_OUTFIT_NAME_BYTES = 256;
     static constexpr SosUiData::OutfitPair DEFAULT_INVALID_PAIR = {INVALID_OUTFIT_ID, nullptr};
+    using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
 
-    struct outfit_debounce_input final : ImGuiUtil::debounce_input
+    struct OutfitDebounceInput final : ImGuiUtil::DebounceInput
     {
-        std::vector<const SosUiOutfit *> outfitView;
+        std::vector<const SosUiOutfit *> viewData;
 
-        outfit_debounce_input(const char *label, const char *hintText) : debounce_input(label, hintText) {}
+        OutfitDebounceInput() = default;
 
-        void onInput() override
+        void OnInput() override
         {
-            outfitView.clear();
-            debounce_input::onInput();
+            viewData.clear();
+            DebounceInput::OnInput();
         }
 
-        void onUpdate(const OutfitList &outfitList, bool onlyFavorites);
+        void OnUpdate(const OutfitList &outfitList, bool onlyFavorites);
 
         void clear() override
         {
-            debounce_input::clear();
-            outfitView.clear();
+            DebounceInput::clear();
+            viewData.clear();
         }
     };
 
@@ -47,43 +47,43 @@ class OutfitListTable final : public BaseGui
 
     Popup::DeleteOutfitPopup m_DeleteOutfitPopup{};
     SosUiData::OutfitPair m_wantEdit = DEFAULT_INVALID_PAIR;
-    SosUiData::OutfitPair m_click = DEFAULT_INVALID_PAIR;
     MultiSelection m_outfitMultiSelection;
     OutfitEditPanel m_editPanel;
 
     bool m_onlyShowFavorites = false;
-    std::array<char, OUTFIT_NAME_MAX_BYTES> m_outfitNameBuf{};
-    outfit_debounce_input m_outfitFilterInput{"##filter", "filter outfit"};
+    std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
+    OutfitDebounceInput m_outfitFilterInput{};
 
 public:
     OutfitListTable(SosUiData &uiData, OutfitService &outfitService)
         : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_outfitService) {}
 
-    void Render(GuiContext &guiContext);
+    void Render(RE::Actor *editingActor);
     void Refresh() override;
     void Close() override;
     void OnSelectActor(const RE::Actor *actor);
 
 private:
-    using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
+    void OnRefreshOutfitList();
+    void DrawSidebar(RE::Actor *editingActor);
 
-    void RefreshOutfitList();
-    void Sidebar(GuiContext &guiContext);
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);
     static void PostDrawOutfits(MultiSelection &selection);
     void DrawOutfits(std::vector<const SosUiOutfit *> outfitView, bool ascend, const OutfitDrawAction &drawAction);
 
     /**
-     * open a context menu if user right-click current row
+     * open a context menu if user right-clicks current row
      * @return true if the context menu is open.
      */
-    bool OpenContextMenu(const GuiContext &guiContext, const SosUiOutfit &outfit);
+    void OpenContextMenu(uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
+                         __out bool &acceptRename);
     void DrawDeletePopup();
 
     void OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit);
-    void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName);
+    void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName) const;
     // check MultiSelection and set all selected outfit to favorite
     void OnAcceptSetFavoriteOutfits(bool toFavorite);
+    void OnAcceptDeleteOutfits();
 
     bool IsValidOutfit(const SosUiData::OutfitPair &pair) const
     {

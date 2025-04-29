@@ -14,62 +14,79 @@ class SosUiOutfit;
 
 namespace Popup
 {
-struct PopupContext
+
+struct BasicPopup
 {
     ImGuiID popupId = 0;
 
-    constexpr void Open(ImGuiPopupFlags flags = 0) const
+    constexpr void Open() const
     {
-        ImGui::OpenPopup(popupId, flags);
+        ImGui::OpenPopup(popupId);
+    }
+
+    auto preDraw(const char *nameKey, ImGuiWindowFlags flags = 0) -> bool
+    {
+        popupId = ImGui::GetID(nameKey);
+        return ImGui::BeginPopup(nameKey, flags);
+    }
+};
+
+struct ModalPopup
+{
+    bool showPopup = false;
+    ImGuiID popupId = 0;
+
+    constexpr void Open()
+    {
+        showPopup = true;
+        ImGui::OpenPopup(popupId);
     }
 
 protected:
-    static void RenderConfirmButtons(__out bool &confirmed);
+    auto BeginModal(const char *nameKey, ImGuiWindowFlags flags = ImGuiWindowFlags_None) -> bool;
 };
 
 using Armor = RE::TESObjectARMO;
 
-class MessagePopup : public PopupContext
+class MessagePopup : public ModalPopup
 {
 public:
     MessagePopup() = default;
-    ~MessagePopup() = default;
 
 protected:
-    auto PreRender(const char *nameKey) -> bool;
     static void RenderMultilineMessage(const std::string &message);
+    static void RenderConfirmButtons(__out bool &confirmed);
 };
 
-struct DeleteOutfitPopup : MessagePopup
+struct DeleteOutfitPopup final : MessagePopup
 {
     const SosUiOutfit *wanDeleteOutfit = nullptr;
 
-    // return true if this popup just closed;
-    void Render(bool &isConfirmed);
+    void Draw(bool &isConfirmed);
 };
 
-struct ConflictArmorPopup : MessagePopup
+struct ConflictArmorPopup final : MessagePopup
 {
     Armor *conflictedArmor = nullptr;
 
-    void Render(bool &confirmed);
+    void Draw(bool &confirmed);
 };
 
-struct DeleteArmorPopup : MessagePopup
+struct DeleteArmorPopup final : MessagePopup
 {
     Armor *wantDeleteArmor = nullptr;
 
-    void Render(bool &confirmed);
+    void Draw(bool &confirmed);
 };
 
-struct SlotPolicyHelp : MessagePopup
+struct SlotPolicyHelp final : MessagePopup
 {
-    void Render();
+    void Draw();
 };
 
-struct BatchAddArmors : MessagePopup
+struct BatchAddArmors final : MessagePopup
 {
-    void Render(__out bool &confirmed);
+    void Draw(__out bool &confirmed);
 };
 }
 }

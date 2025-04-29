@@ -13,7 +13,6 @@
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>
 #include <RE/M/MenuCursor.h>
-#include <RE/M/MiddleHighProcessData.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/R/Renderer.h>
 #include <RE/S/SpellItem.h>
@@ -27,19 +26,19 @@ namespace
 LIBC_NAMESPACE_DECL
 {
 
-inline void SosGui::outfit_debounce_input::clear()
+inline void SosGui::OutfitDebounceInput::clear()
 {
-    debounce_input::clear();
+    DebounceInput::clear();
     viewData.clear();
 }
 
-void SosGui::outfit_debounce_input::onInput()
+void SosGui::OutfitDebounceInput::OnInput()
 {
-    debounce_input::onInput();
+    DebounceInput::OnInput();
     viewData.clear();
 }
 
-void SosGui::outfit_debounce_input::updateView(const OutfitList &outfitList)
+void SosGui::OutfitDebounceInput::updateView(const OutfitList &outfitList)
 {
     dirty = false;
     viewData.clear();
@@ -175,13 +174,18 @@ void SosGui::TrySetAllowTextInput()
 
 auto SosGui::Refresh() -> void
 {
-    log_debug("GetOutfitList thread-id {}", std::this_thread::get_id());
     DoRefresh();
     m_fShowConfigWindows = true;
     m_selectedActorIndex = 0;
     m_selectedNpcIndex = 0;
     m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
     m_outfitDebounceInput.clear();
+}
+
+auto SosGui::Close() -> void
+{
+    m_outfitListTable.Close();
+    util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
 }
 
 auto SosGui::DoRefresh() -> EagerTask
@@ -201,7 +205,9 @@ auto SosGui::DoRender() -> void
     }
 
     MainConfigWindow();
-    m_outfitListTable.Render(m_context);
+
+    RE::Actor *selectedActor = GetSelectedActor();
+    m_outfitListTable.Render(selectedActor);
 }
 
 void SosGui::ToolbarWindow()
@@ -210,16 +216,22 @@ void SosGui::ToolbarWindow()
     constexpr auto flags = ImGuiUtil::WindowFlag().AlwaysAutoResize()
             .NoDecoration().NoDocking().NoNav().NoMove().flags;
     // clang-format on
-    auto *mainViewPort = ImGui::GetMainViewport();
+    const auto *mainViewPort = ImGui::GetMainViewport();
     if (ImGui::Begin("ToolbarWindow", nullptr, flags))
     {
-        auto contentSize = ImGui::GetContentRegionAvail();
+        const auto contentSize = ImGui::GetContentRegionAvail();
         ImGui::SetWindowPos(ImVec2((mainViewPort->WorkSize.x - contentSize.x) * 0.5F, 0.0F));
 
         if (ImGui::Button("Show/Hide"))
         {
             m_fShowConfigWindows = !m_fShowConfigWindows;
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Refresh Player Armor"))
+        {
+            util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
+        }
+
         ImGui::SameLine();
         if (ImGui::Button("Close"))
         {
@@ -244,8 +256,7 @@ void SosGui::MainConfigWindow()
         }
         ImGui::Indent(2);
         ImGui::SameLine();
-        auto key = Translation::Translate("$SosGui_Global_FontSize_Scale");
-
+        const auto key = Translation::Translate("$SosGui_Global_FontSize_Scale");
         if (ImGui::DragFloat(key.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F, Setting::UiSetting::FONT_SCALE_MIN,
                              Setting::UiSetting::FONT_SCALE_MAX))
         {
@@ -253,17 +264,19 @@ void SosGui::MainConfigWindow()
         }
         ThemeCombo();
 
+        RE::Actor *selectedActor = GetSelectedActor();
         if (ImGui::Button("Refresh Armor"))
         {
-            RefreshCurrentActorArmor();
+            util::RefreshActorArmor(selectedActor);
         }
 
         RenderQuickSlotConfig();
         ImGui::SameLine();
         RenderExportOrImportSettings();
+
         RenderCharactersPanel();
 
-        AutoSwitchPoliesTable(m_context.editingActor);
+        AutoSwitchPoliesTable(selectedActor);
     }
     ImGui::End();
 }
@@ -271,9 +284,9 @@ void SosGui::MainConfigWindow()
 auto SosGui::ThemeCombo() -> void
 {
     auto *settings = Setting::UiSetting::GetInstance();
-    int32_t themeIndex = settings->selectedThemeIndex;
+    const int32_t themeIndex = settings->selectedThemeIndex;
     using Loader = ImThemeLoader::Loader;
-    std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
+    const std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
     if (!ImGui::BeginCombo("Theme", preview.c_str()))
     {
         return;
@@ -354,24 +367,10 @@ void SosGui::RenderExportOrImportSettings()
     ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
 }
 
-void SosGui::RefreshCurrentActorArmor() const
-{
-    if (m_context.editingActor != nullptr && m_context.editingActor->GetActorRuntimeData().currentProcess != nullptr)
-    {
-        if (auto *currentProcess = m_context.editingActor->GetActorRuntimeData().currentProcess;
-            currentProcess != nullptr)
-        {
-            currentProcess->Set3DUpdateFlag(RE::RESET_3D_FLAGS::kModel);
-            m_context.editingActor->Update3DModel();
-        }
-    }
-}
-
-auto SosGui::EnableQuickslot(bool enable) -> bool
+auto SosGui::EnableQuickslot(const bool enable) -> bool
 {
     const auto &player = RE::PlayerCharacter::GetSingleton();
-    auto *spell = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID);
-    if (spell != nullptr)
+    if (auto *spell = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID); spell != nullptr)
     {
         enable ? player->AddSpell(spell) : player->RemoveSpell(spell);
         return true;
@@ -379,7 +378,7 @@ auto SosGui::EnableQuickslot(bool enable) -> bool
     return false;
 }
 
-void SosGui::AllowTextInput(bool allow)
+void SosGui::AllowTextInput(const bool allow)
 {
     AllowTextInput1(RE::ControlMap::GetSingleton(), allow);
 }

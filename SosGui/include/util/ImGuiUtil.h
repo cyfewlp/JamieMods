@@ -83,13 +83,7 @@ constexpr auto Text(const char *content) -> void
     ImGui::Text("%s", g_widgetName.c_str());
 }
 
-constexpr auto TextScale(const char *content, float scale = 1.0f) -> void
-{
-    Translation::Translate(content, g_widgetName);
-    ImGui::PushFontSize(scale);
-    ImGui::Text("%s", g_widgetName.c_str());
-    ImGui::PopFontSize();
-}
+auto TextScale(const char *content, float scale = 1.0f) -> void;
 
 constexpr auto Text(const std::string &&content) -> void
 {
@@ -152,12 +146,7 @@ constexpr void OpenPopup(const char *name)
     ImGui::OpenPopup(g_widgetName.c_str(), ImGuiPopupFlags_None);
 }
 
-constexpr void AddItemRectWithCol(const ImGuiCol colorIndex, const float thickness = 1.0F)
-{
-    auto *drawList = ImGui::GetWindowDrawList();
-    const auto color = ImGui::GetColorU32(colorIndex);
-    drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
-}
+void AddItemRectWithCol(ImGuiCol colorIndex, float thickness = 1.0F);
 
 constexpr void AddItemRect(const ImColor color, const float thickness = 1.0F)
 {
@@ -167,36 +156,30 @@ constexpr void AddItemRect(const ImColor color, const float thickness = 1.0F)
 
 void may_update_table_sort_dir(bool &ascend);
 
-struct debounce_input
+struct DebounceInput
 {
-    std::string_view label;
-    std::string hintText;
     std::chrono::time_point<std::chrono::system_clock> prevEditTime;
     ImGuiTextFilter filter;
     bool dirty = true;
     std::chrono::milliseconds duration = 300ms;
 
-    explicit debounce_input(const char *label, const char *hintText)
-        : label(label), hintText(hintText), prevEditTime(std::chrono::system_clock::now()) {}
+    explicit DebounceInput(): prevEditTime(std::chrono::system_clock::now()) {}
 
-    explicit debounce_input(const char *label, const std::string &&hintText)
-        : label(label), hintText(std::move(hintText)), prevEditTime(std::chrono::system_clock::now()) {}
-
-    virtual ~debounce_input() = default;
+    virtual ~DebounceInput() = default;
 
     bool PassFilter(const char *text) const
     {
         return filter.PassFilter(text);
     }
 
-    virtual void onInput()
+    virtual void OnInput()
     {
         filter.Build();
         prevEditTime = std::chrono::system_clock::now();
         dirty = true;
     }
 
-    virtual bool draw();
+    virtual bool Draw(const char *label, const char *hintText);
 
     virtual void clear();
 };
@@ -208,6 +191,12 @@ struct SelectableFlag
     constexpr auto AllowOverlap() -> SelectableFlag &
     {
         flags |= ImGuiSelectableFlags_AllowOverlap;
+        return *this;
+    }
+
+    constexpr auto AllowDoubleClick() -> SelectableFlag &
+    {
+        flags |= ImGuiSelectableFlags_AllowDoubleClick;
         return *this;
     }
 

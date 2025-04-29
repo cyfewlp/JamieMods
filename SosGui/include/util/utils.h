@@ -32,5 +32,7 @@ constexpr auto GetArmorModFileName(const RE::TESObjectARMO *armor) -> std::strin
     return "";
 }
 
+void RefreshActorArmor(RE::Actor *const selectedActor);
+
 }
 }

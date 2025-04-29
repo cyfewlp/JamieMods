@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "GuiContext.h"
 #include "SosDataType.h"
 #include "common/config.h"
 #include "common/log.h"
@@ -44,7 +43,6 @@ namespace LIBC_NAMESPACE_DECL
         static inline OutfitId   g_NextOutfitId    = 1;
 
     private:
-        GuiContext               m_context;
         std::vector<RE::Actor *> m_actors;
         std::vector<RE::Actor *> m_NearActors;
         bool                     m_enabled           = false;
@@ -59,15 +57,6 @@ namespace LIBC_NAMESPACE_DECL
         std::mutex                           m_mutex;
 
     public:
-        ////////////////////////////////////////////////////////////////////////////
-        // Context
-        ////////////////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] constexpr auto GetContext() -> GuiContext &
-        {
-            return m_context;
-        }
-
         ////////////////////////////////////////////////////////////////////////////
         // UI Tasks
         ////////////////////////////////////////////////////////////////////////////
