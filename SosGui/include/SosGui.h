@@ -62,7 +62,7 @@ class SosGui final : public BaseGui
     bool m_fShowConfigWindows = true;
     bool m_fWantTextInput = true; // previous frame WantTextInput state
     int m_selectedActorIndex = 0;
-    int m_selectedNpcIndex = 0;
+    RE::Actor*m_selectedActor = nullptr;
 
     OutfitDebounceInput m_outfitDebounceInput;
     outfit_select_popup m_outfitSelectPopup{m_outfitDebounceInput};
@@ -110,8 +110,6 @@ private:
     void RenderCharactersPanel();
 
     void RenderCharactersList();
-
-    void NearNpcCombo();
 
     void AutoSwitchPoliesTable(RE::Actor *currentActor);
 

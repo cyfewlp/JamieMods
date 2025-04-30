@@ -10,6 +10,7 @@
 #include "gui/Table.h"
 #include "gui/widgets.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "util/ImGuiUtil.h"
 #include "util/PageUtil.h"
 #include "util/utils.h"
@@ -35,6 +36,7 @@ constexpr auto SELECTABLE_SPAN_FLAGS = ImGuiSelectableFlags_AllowOverlap | ImGui
 void OutfitEditPanel::EditContext::Clear()
 {
     armorListShowAllSlotArmors = false;
+    armorGeneratorSelectedActor = nullptr;
     dirty = true;
 }
 
@@ -43,12 +45,14 @@ void OutfitEditPanel::Render(const SosUiData::OutfitPair &wantEdit)
     if (m_editContext.dirty)
     {
         m_editContext.dirty = false;
-        m_armorView.add_armors_by_policy();
+        AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
     }
     ImGui::PushID(this);
     RenderPopups(wantEdit);
     DrawOutfitArmors(wantEdit);
-    RenderEditPanel(wantEdit);
+    m_armorGeneratorTabBar.Draw(m_armorView, m_uiData);
+    DrawArmorViewSlotFilterer();
+    DrawArmorView(wantEdit);
     ImGui::PopID();
 }
 
@@ -70,7 +74,7 @@ void OutfitEditPanel::OnSelectActor(const RE::Actor *, const SosUiOutfit *editin
     {
         case OutfitAddPolicy_AddFromCarried:
         case OutfitAddPolicy_AddFromInventory: {
-            m_armorView.add_armors_by_policy();
+            AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
             m_armorView.remove_armors_in_outfit(editingOutfit);
             break;
         }
@@ -85,7 +89,7 @@ void OutfitEditPanel::OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const So
     if (lastEditOutfit == nullptr)
     {
         m_armorView.init();
-        m_armorView.add_armors_by_policy();
+        AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
         m_armorView.remove_armors_in_outfit(editingOutfit);
     }
     else
@@ -94,7 +98,7 @@ void OutfitEditPanel::OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const So
         {
             case OutfitAddPolicy_AddFromCarried:
             case OutfitAddPolicy_AddFromInventory: {
-                m_armorView.add_armors_by_policy();
+                AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
                 m_armorView.remove_armors_in_outfit(editingOutfit);
                 break;
             }
@@ -200,7 +204,7 @@ void OutfitEditPanel::DrawOutfitArmors(const SosUiData::OutfitPair &wantEdit)
     }
 }
 
-void OutfitEditPanel::HighlightConflictSlot(Slot slot) const
+void OutfitEditPanel::HighlightConflictSlot(const Slot slot) const
 {
     if (m_armorView.multiSelectedSlot.any(slot))
     {
@@ -232,27 +236,6 @@ void OutfitEditPanel::SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, con
             ImGuiUtil::SetItemTooltip(SlotPolicyToTooltipString(policy));
         }
         ImGui::EndCombo();
-    }
-}
-
-void OutfitEditPanel::RenderEditPanel(const SosUiData::OutfitPair &wantEdit)
-{
-    m_armorView.draw_slot_filterer();
-
-    {
-        const ImGuiStyle &style = ImGui::GetStyle();
-        float halfWidth = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) / 2;
-        constexpr auto flags = ImGuiChildFlags_ResizeX | ImGuiChildFlags_Borders;
-        ImGuiUtil::ChildGuard child("##RenderArmorCandidates", {halfWidth, 0.0F}, flags);
-        DrawArmorView(wantEdit);
-    }
-    const auto lastItemSize = ImGui::GetItemRectSize();
-    if (const auto contentSize = ImGui::GetContentRegionAvail(); lastItemSize.x < contentSize.x)
-    {
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-        RenderEditPanelPolicy(wantEdit);
-        ImGui::EndGroup();
     }
 }
 
@@ -307,70 +290,47 @@ void OutfitEditPanel::ArmorView::clear()
     addPolicy = 0;
 }
 
-void OutfitEditPanel::ArmorView::draw_slot_filterer()
+void OutfitEditPanel::ArmorView::clearViewData()
 {
-    if (ImGuiUtil::BeginCombo("$SosGui_Combo_SlotFilter", nullptr))
-    {
-        for (uint8_t idx = 0; idx < RE::BIPED_OBJECT::kEditorTotal; ++idx)
-        {
-            ImGuiUtil::PushIdGuard idGuard(idx);
-            if (ImGuiUtil::Selectable(get_slot_name_key(idx).c_str(), false))
-            {
-                selectedFilterSlot.set(idx);
-                if (checkAllSlot)
-                {
-                    viewData.clear();
-                    slotCounter.fill(0);
-                    checkAllSlot = false;
-                }
-                add_armors_has_slot(ToSlot(idx));
-            }
-        }
-        ImGui::EndCombo();
-    }
+    viewData.clear();
+    slotCounter.fill(0);
+}
 
-    const auto contentWidth = ImGui::GetContentRegionAvail().x;
-    auto cursorPosX = 0.0F;
-    std::string name = std::format("All({}/{})##AllSlot", viewData.size(), availableArmorCount);
-    if (ImGui::Checkbox(name.c_str(), &checkAllSlot) && checkAllSlot)
+void OutfitEditPanel::DrawArmorViewTableContent(const std::function<void(Armor *armor, size_t index)> &drawAction)
+{
+    static bool ascend = true;
+    ImGuiUtil::may_update_table_sort_dir(ascend);
+    ImGuiListClipper clipper;
+    // clang-format off
+    auto *msIO = m_armorView.multiSelection
+                            .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
+                            .Begin(m_armorView.viewData.size());
+    clipper.Begin(m_armorView.viewData.size());
+    m_armorView.multiSelection.ApplyRequests(msIO);
+    if (msIO->RangeSrcItem != -1)
+        clipper.IncludeItemByIndex(static_cast<int>(msIO->RangeSrcItem));
+    // clang-format on
+    while (clipper.Step())
     {
-        selectedFilterSlot = -1;
-        add_armors_by_policy();
-    }
-    const auto &style = ImGui::GetStyle();
-    cursorPosX += ImGui::GetItemRectSize().x + style.ItemSpacing.x;
-    ImGui::SameLine();
-
-    for (size_t idx = 0; idx < selectedFilterSlot.size(); ++idx)
-    {
-        if (!selectedFilterSlot.test(idx)) continue;
-
-        bool alwaysChecked = true;
-        name = std::format("{}({})", Translation::Translate(get_slot_name_key(idx)), slotCounter[idx]);
-        if (ImGui::Checkbox(name.c_str(), &alwaysChecked))
+        if (ascend)
         {
-            selectedFilterSlot.reset(idx);
-            if (!checkAllSlot && selectedFilterSlot == 0)
+            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
             {
-                add_armors_by_policy(); // will set checkAllSlot
+                drawAction(m_armorView.viewData.at(index), index);
             }
-            else
-            {
-                remove_armors_has_slot(ToSlot(selectedFilterSlot.to_ulong()), ToSlot(idx));
-            }
-        }
-        const auto itemX = ImGui::GetItemRectSize().x;
-        if (const auto nextPos = cursorPosX + itemX + style.ItemSpacing.x * 2.0F; nextPos <= contentWidth)
-        {
-            ImGui::SameLine();
-            cursorPosX = nextPos;
         }
         else
         {
-            cursorPosX = 0.0F;
+            using namespace std::views;
+            size_t index = static_cast<size_t>(clipper.DisplayStart);
+            for (int count = clipper.DisplayEnd - clipper.DisplayStart;
+                 const auto &armor : m_armorView.viewData | reverse | drop(clipper.DisplayStart) | take(count))
+            {
+                drawAction(armor, index++);
+            }
         }
     }
-    ImGui::NewLine();
+    m_armorView.multiSelection.ApplyRequests(ImGui::EndMultiSelect());
 }
 
 void OutfitEditPanel::DrawArmorView(const SosUiData::OutfitPair &wantEdit)
@@ -379,7 +339,8 @@ void OutfitEditPanel::DrawArmorView(const SosUiData::OutfitPair &wantEdit)
     if (m_armorView.armorFilter.Draw())
     {
         m_armorView.armorFilter.dirty = false;
-        m_armorView.filter_reset(wantEdit.second);
+        AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
+        m_armorView.remove_armors_in_outfit(wantEdit.second);
     }
 
     if (constexpr auto flags = TableFlags().Resizable().SizingFixedFit().Sortable().Hideable().Reorderable().flags;
@@ -398,8 +359,6 @@ void OutfitEditPanel::DrawArmorView(const SosUiData::OutfitPair &wantEdit)
         .CommitHeadersRow();
     // clang-format on
 
-    static bool ascend = true;
-    ImGuiUtil::may_update_table_sort_dir(ascend);
     std::function<void()> onRequireAddArmor = [] {};
 
     auto drawAction = [&](Armor *armor, const size_t index) {
@@ -472,40 +431,87 @@ void OutfitEditPanel::DrawArmorView(const SosUiData::OutfitPair &wantEdit)
         }
     };
 
-    ImGuiListClipper clipper;
-    // clang-format off
-    auto *msIO = m_armorView.multiSelection
-                 .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
-                 .Begin(m_armorView.viewData.size());
-    clipper.Begin(m_armorView.viewData.size());
-    m_armorView.multiSelection.ApplyRequests(msIO);
-    if (msIO->RangeSrcItem != -1)
-        clipper.IncludeItemByIndex(static_cast<int>(msIO->RangeSrcItem));
-    // clang-format on
-    while (clipper.Step())
+    DrawArmorViewTableContent(drawAction);
+    ImGui::EndTable();
+    onRequireAddArmor();
+}
+
+void OutfitEditPanel::DrawArmorViewSlotFilterer()
+{
+    if (ImGui::BeginCombo("##SlotFilter", Translation::Translate("$SosGui_Combo_SlotFilter").c_str(),
+                          ImGuiComboFlags_WidthFitPreview))
     {
-        if (ascend)
+        for (uint8_t idx = 0; idx < RE::BIPED_OBJECT::kEditorTotal; ++idx)
         {
-            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
+            ImGuiUtil::PushIdGuard idGuard(idx);
+            if (ImGuiUtil::Selectable(get_slot_name_key(idx).c_str(), false))
             {
-                drawAction(m_armorView.viewData.at(index), index);
+                m_armorView.selectedFilterSlot.set(idx);
+                if (m_armorView.checkAllSlot)
+                {
+                    m_armorView.clearViewData();
+                    m_armorView.checkAllSlot = false;
+                }
+                m_armorView.add_armors_has_slot(ToSlot(idx));
             }
+        }
+        ImGui::EndCombo();
+    }
+
+    const auto contentWidth = ImGui::GetContentRegionAvail().x;
+    auto cursorPosX = 0.0F;
+    std::string name = std::format("All({}/{})##AllSlot", m_armorView.viewData.size(), m_armorView.availableArmorCount);
+    if (ImGui::Checkbox(name.c_str(), &m_armorView.checkAllSlot) && m_armorView.checkAllSlot)
+    {
+        AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
+    }
+    const auto &style = ImGui::GetStyle();
+    cursorPosX += ImGui::GetItemRectSize().x + style.ItemSpacing.x;
+    ImGui::SameLine();
+
+    for (size_t idx = 0; idx < m_armorView.selectedFilterSlot.size(); ++idx)
+    {
+        if (!m_armorView.selectedFilterSlot.test(idx)) continue;
+
+        bool alwaysChecked = true;
+        name = std::format("{}({})", Translation::Translate(get_slot_name_key(idx)), m_armorView.slotCounter[idx]);
+        if (ImGui::Checkbox(name.c_str(), &alwaysChecked))
+        {
+            m_armorView.selectedFilterSlot.reset(idx);
+            if (!m_armorView.checkAllSlot && m_armorView.selectedFilterSlot == 0)
+            {
+                m_armorView.checkAllSlot = true;
+                AddArmorsToViewByGenerator(m_armorView, m_armorGeneratorTabBar.generator.get());
+            }
+            else
+            {
+                m_armorView.remove_armors_has_slot(ToSlot(m_armorView.selectedFilterSlot.to_ulong()), ToSlot(idx));
+            }
+        }
+        const auto itemX = ImGui::GetItemRectSize().x;
+        if (const auto nextPos = cursorPosX + itemX + style.ItemSpacing.x * 2.0F; nextPos <= contentWidth)
+        {
+            ImGui::SameLine();
+            cursorPosX = nextPos;
         }
         else
         {
-            using namespace std::views;
-            size_t index = static_cast<size_t>(clipper.DisplayStart);
-            for (int count = clipper.DisplayEnd - clipper.DisplayStart;
-                 const auto &armor : m_armorView.viewData | reverse | drop(clipper.DisplayStart) | take(count))
-            {
-                drawAction(armor, index++);
-            }
+            cursorPosX = 0.0F;
         }
     }
-    m_armorView.multiSelection.ApplyRequests(ImGui::EndMultiSelect());
-    ImGui::EndTable();
+    ImGui::NewLine();
+}
 
-    onRequireAddArmor();
+void OutfitEditPanel::AddArmorsToViewByGenerator(ArmorView &view, ArmorGenerator *generator)
+{
+    view.clearViewData();
+    generator->for_each([&](Armor *armor) {
+        if (view.armorFilter.PassFilter(armor))
+        {
+            view.viewData.emplace_back(armor);
+            view.slot_counter_add(armor);
+        }
+    });
 }
 
 void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
@@ -537,43 +543,8 @@ void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
     m_armorView.multiSelection.Clear();
 }
 
-void OutfitEditPanel::RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit)
-{
-    static std::array outfitPolicy{Translation::Translate("$SkyOutSys_OEdit_AddFromCarried"),
-                                   Translation::Translate("$SkyOutSys_OEdit_AddFromWorn"),
-                                   Translation::Translate("$SkyOutSys_OEdit_AddByID"),
-                                   Translation::Translate("$SkyOutSys_OEdit_AddFromList_Header")};
-    int idx = 0;
-    bool fSelected = false;
-
-    ImGui::NewLine();
-    for (const auto &policy : outfitPolicy)
-    {
-        ImGuiUtil::PushIdGuard idGuard(idx);
-
-        if (ImGui::RadioButton(policy.c_str(), idx == m_armorView.addPolicy))
-        {
-            fSelected = m_armorView.addPolicy != idx;
-            m_armorView.addPolicy = idx;
-        }
-        idx++;
-    }
-
-    const auto selectedPolicy = static_cast<OutfitAddPolicy>(m_armorView.addPolicy);
-    if (fSelected)
-    {
-        m_armorView.add_armors_by_policy();
-        m_armorView.remove_armors_in_outfit(wantEdit.second);
-    }
-
-    if (selectedPolicy == OutfitAddPolicy_AddByID)
-    {
-        RenderOutfitAddPolicyById(wantEdit, m_armorView.armorFilter.mustPlayable);
-    }
-}
-
-void OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
-                                                const bool &fFilterPlayable) const
+auto OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
+                                                const bool &fFilterPlayable) const -> void
 {
     static std::array<char, 32> formIdBuf;
     static char *pEnd{};
@@ -601,24 +572,24 @@ void OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wan
     ImGui::PopID();
 }
 
-void OutfitEditPanel::ArmorView::add_armors_by_policy()
-{
-    checkAllSlot = true;
-    selectedFilterSlot = 0;
-    ArmorGenerator *generator = nullptr;
-    GetArmorGeneratorFromPolicy(static_cast<OutfitAddPolicy>(addPolicy), &generator);
-    if (generator)
-    {
-        viewData.clear();
-        generator->for_each([&](Armor *armor) {
-            if (armorFilter.PassFilter(armor))
-            {
-                viewData.emplace_back(armor);
-                slot_counter_add(armor);
-            }
-        });
-    }
-}
+// void OutfitEditPanel::ArmorView::add_armors_by_policy()
+// {
+//     checkAllSlot = true;
+//     selectedFilterSlot = 0;
+//     ArmorGenerator *generator = nullptr;
+//     GetArmorGeneratorFromPolicy(static_cast<OutfitAddPolicy>(addPolicy), &generator);
+//     if (generator)
+//     {
+//         viewData.clear();
+//         generator->for_each([&](Armor *armor) {
+//             if (armorFilter.PassFilter(armor))
+//             {
+//                 viewData.emplace_back(armor);
+//                 slot_counter_add(armor);
+//             }
+//         });
+//     }
+// }
 
 void OutfitEditPanel::GetArmorGeneratorFromPolicy(const OutfitAddPolicy policy, ArmorGenerator **generator)
 {
@@ -684,6 +655,72 @@ bool OutfitEditPanel::ArmorView::eraseArmor(const Armor *armor)
         slot_counter_remove(armor);
     }
     return result;
+}
+
+void OutfitEditPanel::ArmorGeneratorTabBar::Draw(ArmorView &armorView, const SosUiData &uiData)
+{
+    using namespace ImGuiUtil;
+    if (ImGui::BeginTabBar("ArmorGeneratorTabBar"), TabBarFlags().DrawSelectedOverline().Reorderable().flags)
+    {
+        const auto *tabBar = ImGui::GetCurrentTabBar();
+        const auto nextTabId = tabBar->NextSelectedTabId;
+        const auto selectedId = tabBar->SelectedTabId;
+        auto isTabItemAppear = [&] {
+            const ImGuiTabItem *tabItem = ImGui::TabBarGetCurrentTab(ImGui::GetCurrentTabBar());
+            return selectedId != nextTabId && tabItem->ID == nextTabId;
+        };
+        auto *player = RE::PlayerCharacter::GetSingleton();
+        if (ImGui::BeginTabItem("From Actor Inventory"))
+        {
+            if (isTabItemAppear())
+            {
+                generator = std::make_unique<InventoryArmorGenerator>(selectedActor);
+                AddArmorsToViewByGenerator(armorView, generator.get());
+            }
+            Text("$SosGui_Actor_ArmorSource");
+            ImGui::SameLine();
+            if (widgets::DrawNearActorsCombo(uiData.GetNearActors(), &selectedActor, player))
+            {
+                generator = std::make_unique<InventoryArmorGenerator>(selectedActor);
+                AddArmorsToViewByGenerator(armorView, generator.get());
+            }
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("From Actor Carried Items"))
+        {
+            if (isTabItemAppear())
+            {
+                generator = std::make_unique<CarriedArmorGenerator>(selectedActor);
+                AddArmorsToViewByGenerator(armorView, generator.get());
+            }
+            Text("$SosGui_Actor_ArmorSource");
+            ImGui::SameLine();
+            if (widgets::DrawNearActorsCombo(uiData.GetNearActors(), &selectedActor, player))
+            {
+                generator = std::make_unique<CarriedArmorGenerator>(selectedActor);
+                AddArmorsToViewByGenerator(armorView, generator.get());
+            }
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("From form-id"))
+        {
+            // TODO
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("All Armors"))
+        {
+            if (isTabItemAppear())
+            {
+                generator = std::make_unique<BasicArmorGenerator>();
+                AddArmorsToViewByGenerator(armorView, generator.get());
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 }
 
 void OutfitEditPanel::ArmorView::add_armors_has_slot(const Slot newSlot)
@@ -777,13 +814,6 @@ void OutfitEditPanel::ArmorView::remove_armors_in_outfit(const SosUiOutfit *edit
             slotCounter[slotPos] -= 1;
         }
     }
-}
-
-void OutfitEditPanel::ArmorView::filter_reset(const SosUiOutfit *editingOutfit)
-{
-    slotCounter.fill(0);
-    add_armors_by_policy();
-    remove_armors_in_outfit(editingOutfit);
 }
 
 inline void OutfitEditPanel::ArmorView::slot_counter_add(const Armor *armor)

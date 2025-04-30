@@ -11,6 +11,7 @@
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "gui/Table.h"
+#include "gui/widgets.h"
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
 
@@ -30,7 +31,15 @@ void SosGui::RenderCharactersPanel()
 {
     if (ImGuiUtil::BeginChild("$SkyOutSys_Text_ActiveActorHeader", ImVec2(), ImGuiChildFlags_AutoResizeY))
     {
-        NearNpcCombo();
+        ImGuiUtil::Text("$SkyOutSys_Text_AddActorSelection");
+        ImGui::SameLine();
+        if (widgets::DrawNearActorsCombo(m_uiData.GetNearActors(), &m_selectedActor,
+                                         RE::PlayerCharacter::GetSingleton()))
+        {
+            +[&] {
+                return m_dataCoordinator.RequestAddActor(m_selectedActor);
+            };
+        }
         RenderCharactersList();
     }
     ImGui::EndChild();
@@ -134,33 +143,6 @@ void SosGui::RenderCharactersList()
                 return m_outfitService.SetActorOutfit(selectedActor, opt.value().GetId(), opt.value().GetName());
             };
         }
-    }
-}
-
-void SosGui::NearNpcCombo()
-{
-    const auto &nearActors = m_uiData.GetNearActors();
-
-    if (!nearActors.empty() &&
-        ImGuiUtil::BeginCombo("$SkyOutSys_Text_AddActorSelection", nearActors.at(m_selectedNpcIndex)->GetName()))
-    {
-        int idx = 0;
-        for (const auto &nearActor : nearActors)
-        {
-            if (ImGui::Selectable(nearActor->GetName(), idx == m_selectedNpcIndex))
-            {
-                m_selectedNpcIndex = idx;
-                +[&] {
-                    return m_dataCoordinator.RequestAddActor(nearActors.at(idx));
-                };
-            }
-            if (m_selectedNpcIndex == idx)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-            idx++;
-        }
-        ImGui::EndCombo();
     }
 }
 

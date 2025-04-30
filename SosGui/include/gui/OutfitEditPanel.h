@@ -67,33 +67,43 @@ private:
         SlotEnumeration multiSelectedSlot{}; // be used to highlight conflict armors
         uint32_t availableArmorCount = 0;
         int addPolicy = 0;
-
-        void draw_slot_filterer();
+        ArmorGenerator *armorGenerator;
 
         //////////////////////////////////
         void init();
         void clear();
-        void add_armors_by_policy();
+        void clearViewData();
+        // void add_armors_by_policy();
         void add_armors_has_slot(Slot newSlot);
         [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
         void remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);
         void add_armors_in_outfit(const SosUiOutfit *editingOutfit);
         void remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
-        void filter_reset(const SosUiOutfit *editingOutfit);
         void slot_counter_add(const Armor *armor);
         void slot_counter_remove(const Armor *armor);
         bool eraseArmor(const Armor *armor);
     } m_armorView = {};
 
+    struct ArmorGeneratorTabBar
+    {
+        std::unique_ptr<ArmorGenerator> generator = std::make_unique<BasicArmorGenerator>();
+        RE::Actor *selectedActor = nullptr;
+
+        void Draw(ArmorView &armorView, const SosUiData &uiData);
+    } m_armorGeneratorTabBar;
+
     struct EditContext
     {
         bool armorListShowAllSlotArmors = false;
+        RE::Actor *armorGeneratorSelectedActor = nullptr;
+        std::unique_ptr<ArmorGenerator> activeArmorGenerator = std::make_unique<BasicArmorGenerator>();
         // be used on click add(candidate table)/delete(armor table)
         bool dirty = true;
         void Clear();
     } m_editContext = {};
 
     std::string m_windowTitle;
+    SosUiData &m_uiData;
     OutfitService &m_outfitService;
     Popup::DeleteArmorPopup m_DeleteArmorPopup{};
     Popup::ConflictArmorPopup m_ConflictArmorPopup{};
@@ -101,9 +111,9 @@ private:
     Popup::BatchAddArmors m_batchAddArmorsPopUp{};
 
 public:
-    explicit OutfitEditPanel(OutfitService &outfitService) : m_outfitService(outfitService) {}
+    explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService) : m_uiData(uiData),
+        m_outfitService(outfitService) {}
 
-    // return true if edit window closed;
     void Render(const SosUiData::OutfitPair &wantEdit);
     void Refresh() override;
     void Close() override;
@@ -117,13 +127,12 @@ private:
     void HighlightConflictSlot(Slot slot) const;
     void SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const;
 
-    void RenderEditPanel(const SosUiData::OutfitPair &wantEdit);
-
+    void DrawArmorViewTableContent(const std::function<void(Armor *armor, size_t index)> &drawAction);
     void DrawArmorView(const SosUiData::OutfitPair &wantEdit);
+    void DrawArmorViewSlotFilterer();
+    static void AddArmorsToViewByGenerator(ArmorView &view, ArmorGenerator* generator);
 
     void BatchAddArmors(const SosUiData::OutfitPair &wantEdit);
-
-    void RenderEditPanelPolicy(const SosUiData::OutfitPair &wantEdit);
 
     void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable) const;
 

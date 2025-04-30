@@ -13,6 +13,7 @@
 #include <array>
 #include <string>
 
+// ImGui v1.92
 namespace
 LIBC_NAMESPACE_DECL
 {
@@ -267,6 +268,78 @@ struct WindowFlag
     constexpr auto NoNav() -> WindowFlag &
     {
         flags |= ImGuiWindowFlags_NoNav;
+        return *this;
+    }
+};
+
+
+struct TabBarFlags
+{
+    ImGuiTabBarFlags flags = ImGuiTabBarFlags_None;
+
+    constexpr auto Reorderable()
+    {
+        flags |= ImGuiTabBarFlags_Reorderable;
+        return *this;
+    }
+
+    constexpr auto DrawSelectedOverline()
+    {
+        flags |= ImGuiTabBarFlags_DrawSelectedOverline;
+        return *this;
+    }
+
+    constexpr auto AutoSelectNewTabs()
+    {
+        flags |= ImGuiTabBarFlags_AutoSelectNewTabs;
+        return *this;
+    }
+
+    constexpr auto TabListPopupButton()
+    {
+        flags |= ImGuiTabBarFlags_TabListPopupButton;
+        return *this;
+    }
+
+    constexpr auto NoCloseWithMiddleMouseButton()
+    {
+        flags |= ImGuiTabBarFlags_NoCloseWithMiddleMouseButton;
+        return *this;
+    }
+
+    constexpr auto NoTabListScrollingButtons()
+    {
+        flags |= ImGuiTabBarFlags_NoTabListScrollingButtons;
+        return *this;
+    }
+
+    constexpr auto NoTooltip()
+    {
+        flags |= ImGuiTabBarFlags_NoTooltip;
+        return *this;
+    }
+
+    constexpr auto FittingPolicyResizeDown()
+    {
+        flags |= ImGuiTabBarFlags_FittingPolicyResizeDown;
+        return *this;
+    }
+
+    constexpr auto FittingPolicyScroll()
+    {
+        flags |= ImGuiTabBarFlags_FittingPolicyScroll;
+        return *this;
+    }
+
+    constexpr auto FittingPolicyMask()
+    {
+        flags |= ImGuiTabBarFlags_FittingPolicyMask_;
+        return *this;
+    }
+
+    constexpr auto FittingPolicyDefault()
+    {
+        flags |= ImGuiTabBarFlags_FittingPolicyDefault_;
         return *this;
     }
 };

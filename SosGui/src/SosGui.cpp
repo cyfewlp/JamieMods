@@ -124,7 +124,8 @@ void SosGui::NewFrame()
         POINT cursorPos;
         if (ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
         {
-            auto *menuCursor = RE::MenuCursor::GetSingleton();
+            const auto *menuCursor = RE::MenuCursor::GetSingleton();
+            ImGui::GetIO().AddMouseSourceEvent(ImGuiMouseSource_Mouse);
             ImGui::GetIO().AddMousePosEvent(menuCursor->cursorPosX, menuCursor->cursorPosY);
         }
         else if (GetCursorPos(&cursorPos) != FALSE)
@@ -177,7 +178,6 @@ auto SosGui::Refresh() -> void
     DoRefresh();
     m_fShowConfigWindows = true;
     m_selectedActorIndex = 0;
-    m_selectedNpcIndex = 0;
     m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
     m_outfitDebounceInput.clear();
 }

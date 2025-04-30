@@ -56,7 +56,7 @@ class OutfitListTable final : public BaseGui
 
 public:
     OutfitListTable(SosUiData &uiData, OutfitService &outfitService)
-        : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_outfitService) {}
+        : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_uiData, m_outfitService) {}
 
     void Render(RE::Actor *editingActor);
     void Refresh() override;
