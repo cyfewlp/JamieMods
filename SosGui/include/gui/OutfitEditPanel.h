@@ -2,12 +2,12 @@
 
 #include "BaseGui.h"
 #include "common/config.h"
-#include "data/ArmorGenerator.h"
 #include "data/ArmorContainer.h"
+#include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
 #include "gui/Popup.h"
-#include "util/ImGuiUtil.h"
 #include "service/OutfitService.h"
+#include "util/ImGuiUtil.h"
 #include "util/PageUtil.h"
 #include "widgets.h"
 
@@ -16,21 +16,21 @@
 #include <RE/B/BipedObjects.h>
 #include <RE/T/TESObjectARMO.h>
 #include <array>
+#include <expected>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class OutfitEditPanel final : public BaseGui
 {
 public:
-    using Slot = RE::BIPED_MODEL::BipedObjectSlot;
-    using Armor = RE::TESObjectARMO;
+    using Slot            = RE::BIPED_MODEL::BipedObjectSlot;
+    using Armor           = RE::TESObjectARMO;
     using SlotEnumeration = SKSE::stl::enumeration<Slot, uint32_t>;
 
     static constexpr int MAX_FILTER_ARMOR_NAME = 256;
-    static constexpr int SLOT_COUNT = 32;
-    static constexpr int SOS_SLOT_OFFSET = 30;
+    static constexpr int SLOT_COUNT            = 32;
+    static constexpr int SOS_SLOT_OFFSET       = 30;
 
 private:
     static auto get_slot_name_key(uint32_t slotPos) -> std::string;
@@ -55,64 +55,80 @@ private:
         armor_already_exists,
     };
 
+    static auto ToErrorMessage(const error error) -> std::string
+    {
+        switch (error)
+        {
+            case error::unassociated_armor:
+                return "Unassociated Armor: Missing in container, try reopen menu to reslove.";
+            case error::armor_already_exists:
+                return "Armor already exists in view";
+            default:
+                return "Unknown error";
+        }
+    }
+
     struct ArmorView
     {
-        std::bitset<RE::BIPED_OBJECT::kEditorTotal> selectedFilterSlot{};
-        ArmorContainer armorContainer{};
-        std::vector<Armor *> viewData{};
-        ArmorFilter armorFilter{};
-        bool checkAllSlot = true; // default shows all armor slot
-        std::array<uint16_t, SLOT_COUNT> slotCounter{};
-        MultiSelection multiSelection{};
-        SlotEnumeration multiSelectedSlot{}; // be used to highlight conflict armors
-        uint32_t availableArmorCount = 0;
-        int addPolicy = 0;
-        ArmorGenerator *armorGenerator;
+        std::bitset<RE::BIPED_OBJECT::kEditorTotal>    selectedFilterSlot{};
+        ArmorContainer                                 armorContainer{};
+        std::vector<Armor *>                           viewData{};
+        std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
+        ArmorFilter                                    armorFilter{};
+        std::string_view                               modNameFilterer = "";
+        bool                                           checkAllSlot    = true; // default shows all armor slot
+        std::array<uint16_t, SLOT_COUNT>               slotCounter{};
+        MultiSelection                                 multiSelection{};
+        SlotEnumeration                                multiSelectedSlot{}; // be used to highlight conflict armors
+        uint32_t                                       availableArmorCount = 0;
+        ArmorGenerator                                *armorGenerator;
 
-        //////////////////////////////////
-        void init();
-        void clear();
-        void clearViewData();
-        // void add_armors_by_policy();
-        void add_armors_has_slot(Slot newSlot);
+        ////////////////////////////////////////////////////////////////////
+        // mod filterer -> slot-filterer -> armor-name filter
+        void               init();
+        void               clear();
+        void               clearViewData();
+        void               remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);
+        void               add_armors_in_outfit(const SosUiOutfit *editingOutfit);
+        void               remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
+        bool               filter(Armor *armor) const;
+        //void               on_add_armor(const Armor *armor);
+        void               on_remove_armor(const Armor *armor);
         [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
-        void remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);
-        void add_armors_in_outfit(const SosUiOutfit *editingOutfit);
-        void remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
-        void slot_counter_add(const Armor *armor);
-        void slot_counter_remove(const Armor *armor);
-        bool eraseArmor(const Armor *armor);
+        bool               remove_armor(const Armor *armor);
+        void               reset_counter();
+        void               reset_view(ArmorGenerator *generator);
     } m_armorView = {};
 
     struct ArmorGeneratorTabBar
     {
-        std::unique_ptr<ArmorGenerator> generator = std::make_unique<BasicArmorGenerator>();
-        RE::Actor *selectedActor = nullptr;
-
-        void Draw(ArmorView &armorView, const SosUiData &uiData);
+        std::unique_ptr<ArmorGenerator> generator     = std::make_unique<BasicArmorGenerator>();
+        RE::Actor                      *selectedActor = nullptr;
     } m_armorGeneratorTabBar;
 
     struct EditContext
     {
-        bool armorListShowAllSlotArmors = false;
-        RE::Actor *armorGeneratorSelectedActor = nullptr;
-        std::unique_ptr<ArmorGenerator> activeArmorGenerator = std::make_unique<BasicArmorGenerator>();
+        bool                            armorListShowAllSlotArmors  = false;
+        RE::Actor                      *armorGeneratorSelectedActor = nullptr;
+        std::unique_ptr<ArmorGenerator> activeArmorGenerator        = std::make_unique<BasicArmorGenerator>();
         // be used on click add(candidate table)/delete(armor table)
         bool dirty = true;
         void Clear();
     } m_editContext = {};
 
-    std::string m_windowTitle;
-    SosUiData &m_uiData;
-    OutfitService &m_outfitService;
-    Popup::DeleteArmorPopup m_DeleteArmorPopup{};
+    std::string               m_windowTitle;
+    SosUiData                &m_uiData;
+    OutfitService            &m_outfitService;
+    Popup::DeleteArmorPopup   m_DeleteArmorPopup{};
     Popup::ConflictArmorPopup m_ConflictArmorPopup{};
-    Popup::SlotPolicyHelp m_slotPolicyHelp{};
-    Popup::BatchAddArmors m_batchAddArmorsPopUp{};
+    Popup::SlotPolicyHelp     m_slotPolicyHelp{};
+    Popup::BatchAddArmors     m_batchAddArmorsPopUp{};
 
 public:
-    explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService) : m_uiData(uiData),
-        m_outfitService(outfitService) {}
+    explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService)
+        : m_uiData(uiData), m_outfitService(outfitService)
+    {
+    }
 
     void Render(const SosUiData::OutfitPair &wantEdit);
     void Refresh() override;
@@ -127,10 +143,18 @@ private:
     void HighlightConflictSlot(Slot slot) const;
     void SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const;
 
-    void DrawArmorViewTableContent(const std::function<void(Armor *armor, size_t index)> &drawAction);
-    void DrawArmorView(const SosUiData::OutfitPair &wantEdit);
-    void DrawArmorViewSlotFilterer();
-    static void AddArmorsToViewByGenerator(ArmorView &view, ArmorGenerator* generator);
+    auto GetGenerator() const -> ArmorGenerator *
+    {
+        return m_armorGeneratorTabBar.generator.get();
+    }
+
+    void DrawArmorGeneratorTabBar();
+    void DrawArmorViewTableContent(const std::vector<Armor *>                            &viewData,
+                                   const std::function<void(Armor *armor, size_t index)> &drawAction);
+    void DrawArmorViewFilter(const SosUiOutfit *outfit);
+    void DrawArmorView(const SosUiData::OutfitPair &wantEdit, const std::vector<Armor *> &viewData);
+    void DrawArmorViewModNameFilterer();
+    void DrawArmorViewSlotFilterer(const SosUiOutfit *outfit);
 
     void BatchAddArmors(const SosUiData::OutfitPair &wantEdit);
 
@@ -138,12 +162,7 @@ private:
 
     static void GetArmorGeneratorFromPolicy(OutfitAddPolicy policy, ArmorGenerator **generator);
 
-    //////////////////////////////////////////////////////////////////////////
-    // View Functions
-    //////////////////////////////////////////////////////////////////////////
-
-
-    void OnAddArmor(const SosUiData::OutfitPair &wantEdit, Armor *armor);
+    void OnAcceptAddArmorToOutfit(const SosUiData::OutfitPair &wantEdit, Armor *armor);
 
     void RenderPopups(const SosUiData::OutfitPair &wantEdit);
 

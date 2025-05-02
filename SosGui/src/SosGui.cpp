@@ -203,11 +203,17 @@ auto SosGui::DoRender() -> void
     {
         return;
     }
+    try
+    {
+        MainConfigWindow();
 
-    MainConfigWindow();
-
-    RE::Actor *selectedActor = GetSelectedActor();
-    m_outfitListTable.Render(selectedActor);
+        RE::Actor *selectedActor = GetSelectedActor();
+        m_outfitListTable.Render(selectedActor);
+    }
+    catch (const std::exception &e)
+    {
+        m_uiData.PushErrorMessage(e.what());
+    }
 }
 
 void SosGui::ToolbarWindow()

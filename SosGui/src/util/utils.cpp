@@ -8,6 +8,15 @@
 namespace
 LIBC_NAMESPACE_DECL
 {
+auto util::GetFormModFileName(const RE::TESForm *form) -> std::string_view
+{
+    if (const auto modFile = form->GetFile(); modFile != nullptr)
+    {
+        return modFile->GetFilename();
+    }
+    return "";
+}
+
 void util::RefreshActorArmor(RE::Actor *const selectedActor)
 {
     if (selectedActor != nullptr && selectedActor->GetActorRuntimeData().currentProcess != nullptr)

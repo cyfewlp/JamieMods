@@ -23,14 +23,7 @@ constexpr auto IsArmorHasNoneSlotOf(const RE::TESObjectARMO *armor, RE::BIPED_MO
     return armor->bipedModelData.bipedObjectSlots.none(slot);
 }
 
-constexpr auto GetArmorModFileName(const RE::TESObjectARMO *armor) -> std::string_view
-{
-    if (const auto modFile = armor->GetFile(); modFile != nullptr)
-    {
-        return modFile->GetFilename();
-    }
-    return "";
-}
+auto GetFormModFileName(const RE::TESForm *form) -> std::string_view;
 
 void RefreshActorArmor(RE::Actor *const selectedActor);
 

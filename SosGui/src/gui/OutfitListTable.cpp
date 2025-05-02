@@ -123,6 +123,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
 {
     //////////////////////////////////////////////////////////
     // Create Outfit widgets
+    ImGui::PushItemWidth(-FLT_MIN);
     ImGui::InputText("##CreateNewInput", m_outfitNameBuf.data(), m_outfitNameBuf.size());
 
     ImGui::BeginDisabled(m_outfitNameBuf[0] == '\0');
@@ -163,6 +164,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
     }
     static size_t prevOutfitSize = 0;
 
+    ImGui::PushItemWidth(-FLT_MIN);
     if (m_outfitFilterInput.Draw("##filter", "filter outfit") || prevOutfitSize != outfitList.size())
     {
         m_outfitFilterInput.OnUpdate(outfitList, m_onlyShowFavorites);

@@ -104,6 +104,13 @@ constexpr auto TextWrapped(const std::string &&content) -> void
     ImGui::TextWrapped("%s", g_widgetName.c_str());
 }
 
+template <typename ValueType>
+constexpr auto Value(const char* label, ValueType value) -> void
+{
+    Translation::Translate(label, g_widgetName);
+    ImGui::Value(g_widgetName.c_str(), value);
+}
+
 constexpr bool SliderInt(const char *nameKey, int *curPageSize, int min, int max)
 {
     Translation::Translate(nameKey, g_widgetName);

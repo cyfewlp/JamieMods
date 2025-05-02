@@ -33,12 +33,16 @@ class ArmorContainer : BaseContainer
 
     struct by_name {};
 
+    struct by_mod_name {};
+
 public:
     typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(RE::TESForm, RE::FormID, GetFormID) KeyByFormId;
     typedef BOOST_MULTI_INDEX_CONST_MEM_FUN(RE::TESForm, const char *, GetName) KeyByName;
 
-    struct ArmorViewIndex : indexed_by<ordered_unique<tag<by_FormId>, KeyByFormId>,
-                                       ranked_non_unique<tag<by_name>, KeyByName, util::StringCompactor>> {};
+    struct ArmorViewIndex : indexed_by<
+            ordered_unique<tag<by_FormId>, KeyByFormId>,
+            ranked_non_unique<tag<by_name>, KeyByName, util::StringCompactor>
+        > {};
 
     typedef multi_index_container<Armor *, ArmorViewIndex> Container;
 
@@ -86,7 +90,7 @@ public:
         return m_container.size();
     }
 
-    auto erase(Container::iterator where) -> Container::iterator
+    auto erase(const Container::iterator &where) -> Container::iterator
     {
         return m_container.erase(where);
     }
