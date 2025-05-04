@@ -391,7 +391,28 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar()
 
         if (ImGui::BeginTabItem("From form-id"))
         {
-            // TODO
+            if (isTabItemAppear())
+            {
+                m_armorGeneratorTabBar.generator = nullptr;
+                m_armorView.clearViewData();
+            }
+            ImGui::Text("0x");
+            ImGui::SameLine();
+            static std::array<char, 9> formIdBuf;
+            if (ImGui::InputText("##FormIdInput", formIdBuf.data(), formIdBuf.size(),
+                                 ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsHexadecimal))
+            {
+                m_armorView.clearViewData();
+                char          *pEnd{};
+                const uint32_t result = strtoul(formIdBuf.data(), &pEnd, 16);
+                if (pEnd != formIdBuf.data())
+                {
+                    if (auto foundArmor = RE::TESForm::LookupByID<Armor>(result); foundArmor != nullptr)
+                    {
+                        m_armorView.viewData.emplace_back(foundArmor);
+                    }
+                }
+            }
             ImGui::EndTabItem();
         }
 
