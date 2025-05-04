@@ -93,14 +93,13 @@ namespace LIBC_NAMESPACE_DECL
         }
         const auto array = outfitListVar.GetArray();
 
+        co_await m_uiData.await_execute_on_ui();
         m_outfitList.clear();
         for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {
             const RE::BSScript::Variable var = *iter;
-            // outfitNames.emplace_back(var.Unpack<std::string>());
             m_outfitList.AddOutfit(var.Unpack<std::string>());
         }
-        // co_await m_uiData.await_execute_on_ui();
     }
 
     auto OutfitService::GetAllFavoriteOutfits() const -> Task
@@ -113,6 +112,7 @@ namespace LIBC_NAMESPACE_DECL
         }
         const auto array = outfitListVar.GetArray();
 
+        co_await m_uiData.await_execute_on_ui();
         auto &outfitList = m_uiData.GetOutfitList();
         for (const auto *iter = array->begin(); iter != array->end(); ++iter)
         {

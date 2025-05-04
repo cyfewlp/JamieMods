@@ -14,12 +14,11 @@
 #include <string>
 
 // ImGui v1.92
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiUtil
 {
-static std::string g_widgetName;
+static std::string       g_widgetName;
 static constexpr ImColor RED_COLOR = ImColor(255, 0, 0, 255);
 
 static constexpr auto Button(const char *name, const ImVec2 &size = ImVec2(0, 0)) -> bool
@@ -105,7 +104,7 @@ constexpr auto TextWrapped(const std::string &&content) -> void
 }
 
 template <typename ValueType>
-constexpr auto Value(const char* label, ValueType value) -> void
+constexpr auto Value(const char *label, ValueType value) -> void
 {
     Translation::Translate(label, g_widgetName);
     ImGui::Value(g_widgetName.c_str(), value);
@@ -167,11 +166,11 @@ void may_update_table_sort_dir(bool &ascend);
 struct DebounceInput
 {
     std::chrono::time_point<std::chrono::system_clock> prevEditTime;
-    ImGuiTextFilter filter;
-    bool dirty = true;
-    std::chrono::milliseconds duration = 300ms;
+    ImGuiTextFilter                                    filter;
+    bool                                               dirty    = true;
+    std::chrono::milliseconds                          duration = 300ms;
 
-    explicit DebounceInput(): prevEditTime(std::chrono::system_clock::now()) {}
+    explicit DebounceInput() : prevEditTime(std::chrono::system_clock::now()) {}
 
     virtual ~DebounceInput() = default;
 
@@ -184,7 +183,7 @@ struct DebounceInput
     {
         filter.Build();
         prevEditTime = std::chrono::system_clock::now();
-        dirty = true;
+        dirty        = true;
     }
 
     virtual bool Draw(const char *label, const char *hintText);
@@ -231,6 +230,18 @@ struct ChildFlag
         return *this;
     }
 
+    constexpr auto AutoResizeX() -> ChildFlag &
+    {
+        flags |= ImGuiChildFlags_AutoResizeX;
+        return *this;
+    }
+
+    constexpr auto AutoResizeY() -> ChildFlag &
+    {
+        flags |= ImGuiChildFlags_AutoResizeY;
+        return *this;
+    }
+
     constexpr auto ResizeY() -> ChildFlag &
     {
         flags |= ImGuiChildFlags_ResizeY;
@@ -238,47 +249,164 @@ struct ChildFlag
     }
 };
 
-struct WindowFlag
+struct WindowFlags
 {
     ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 
-    constexpr auto NoSavedSettings() -> WindowFlag &
+    operator ImGuiWindowFlags() const
     {
-        flags |= ImGuiWindowFlags_NoSavedSettings;
+        return flags;
+    }
+
+    void operator|=(const WindowFlags &other)
+    {
+        flags |= other.flags;
+    }
+
+    WindowFlags &None()
+    {
+        flags = ImGuiWindowFlags_None;
         return *this;
     }
 
-    constexpr auto NoDecoration() -> WindowFlag &
+    WindowFlags &NoTitleBar()
     {
-        flags |= ImGuiWindowFlags_NoDecoration;
+        flags |= ImGuiWindowFlags_NoTitleBar;
         return *this;
     }
 
-    constexpr auto AlwaysAutoResize() -> WindowFlag &
+    WindowFlags &NoResize()
     {
-        flags |= ImGuiWindowFlags_AlwaysAutoResize;
+        flags |= ImGuiWindowFlags_NoResize;
         return *this;
     }
 
-    constexpr auto NoMove() -> WindowFlag &
+    WindowFlags &NoMove()
     {
         flags |= ImGuiWindowFlags_NoMove;
         return *this;
     }
 
-    constexpr auto NoDocking() -> WindowFlag &
+    WindowFlags &NoScrollbar()
+    {
+        flags |= ImGuiWindowFlags_NoScrollbar;
+        return *this;
+    }
+
+    WindowFlags &NoScrollWithMouse()
+    {
+        flags |= ImGuiWindowFlags_NoScrollWithMouse;
+        return *this;
+    }
+
+    WindowFlags &NoCollapse()
+    {
+        flags |= ImGuiWindowFlags_NoCollapse;
+        return *this;
+    }
+
+    WindowFlags &AlwaysAutoResize()
+    {
+        flags |= ImGuiWindowFlags_AlwaysAutoResize;
+        return *this;
+    }
+
+    WindowFlags &NoBackground()
+    {
+        flags |= ImGuiWindowFlags_NoBackground;
+        return *this;
+    }
+
+    WindowFlags &NoSavedSettings()
+    {
+        flags |= ImGuiWindowFlags_NoSavedSettings;
+        return *this;
+    }
+
+    WindowFlags &NoMouseInputs()
+    {
+        flags |= ImGuiWindowFlags_NoMouseInputs;
+        return *this;
+    }
+
+    WindowFlags &MenuBar()
+    {
+        flags |= ImGuiWindowFlags_MenuBar;
+        return *this;
+    }
+
+    WindowFlags &HorizontalScrollbar()
+    {
+        flags |= ImGuiWindowFlags_HorizontalScrollbar;
+        return *this;
+    }
+
+    WindowFlags &NoFocusOnAppearing()
+    {
+        flags |= ImGuiWindowFlags_NoFocusOnAppearing;
+        return *this;
+    }
+
+    WindowFlags &NoBringToFrontOnFocus()
+    {
+        flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+        return *this;
+    }
+
+    WindowFlags &AlwaysVerticalScrollbar()
+    {
+        flags |= ImGuiWindowFlags_AlwaysVerticalScrollbar;
+        return *this;
+    }
+
+    WindowFlags &AlwaysHorizontalScrollbar()
+    {
+        flags |= ImGuiWindowFlags_AlwaysHorizontalScrollbar;
+        return *this;
+    }
+
+    WindowFlags &AlwaysUseWindowPadding()
+    {
+        flags |= ImGuiWindowFlags_AlwaysUseWindowPadding;
+        return *this;
+    }
+
+    WindowFlags &NoNavInputs()
+    {
+        flags |= ImGuiWindowFlags_NoNavInputs;
+        return *this;
+    }
+
+    WindowFlags &NoNavFocus()
+    {
+        flags |= ImGuiWindowFlags_NoNavFocus;
+        return *this;
+    }
+
+    WindowFlags &UnsavedDocument()
+    {
+        flags |= ImGuiWindowFlags_UnsavedDocument;
+        return *this;
+    }
+
+    WindowFlags &NoDocking()
     {
         flags |= ImGuiWindowFlags_NoDocking;
         return *this;
     }
 
-    constexpr auto NoNav() -> WindowFlag &
+    WindowFlags &NoDecoration()
+    {
+        flags |= ImGuiWindowFlags_NoDecoration;
+        return *this;
+    }
+
+    WindowFlags &NoNav()
     {
         flags |= ImGuiWindowFlags_NoNav;
         return *this;
     }
 };
-
 
 struct TabBarFlags
 {

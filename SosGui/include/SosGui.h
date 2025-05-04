@@ -85,7 +85,8 @@ private:
     auto DoRefresh() -> EagerTask;
 
     auto DoRender() -> void;
-    void ToolbarWindow();
+    void DockSpaceToolBar();
+    void Toolbar();
     void MainConfigWindow();
 
     auto GetSelectedActor() -> RE::Actor *
@@ -98,8 +99,6 @@ private:
     }
 
     static auto ThemeCombo() -> void;
-
-    void ShowErrorMessages();
 
     void RenderQuickSlotConfig();
 

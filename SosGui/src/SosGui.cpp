@@ -22,8 +22,7 @@
 #include <SKSE/Impl/PCH.h>
 #include <windows.h>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 
 inline void SosGui::OutfitDebounceInput::clear()
@@ -52,7 +51,7 @@ void SosGui::OutfitDebounceInput::updateView(const OutfitList &outfitList)
 
 auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool
 {
-    auto *device = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
     log_info("Initializing ImGui...");
@@ -69,8 +68,8 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
         throw InitFail("ImGui initialization failed (DX11)");
     }
 
-    RECT rect = {0, 0, 0, 0};
-    ImGuiIO &io = ImGui::GetIO();
+    RECT     rect = {0, 0, 0, 0};
+    ImGuiIO &io   = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigNavMoveSetMousePos = false;
@@ -85,7 +84,7 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
 
     ImFontConfig fontConfig;
     fontConfig.OversampleH = fontConfig.OversampleV = 1;
-    fontConfig.GlyphExcludeRanges = io.Fonts->GetGlyphRangesDefault();
+    fontConfig.GlyphExcludeRanges                   = io.Fonts->GetGlyphRangesDefault();
     fontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
     io.Fonts->AddFontFromFileTTF(emojiFont, 14.0F, &fontConfig);
@@ -98,14 +97,14 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
-        style.WindowRounding = 0.0F;
+        style.WindowRounding              = 0.0F;
         style.Colors[ImGuiCol_WindowBg].w = 1.0F;
     }
 
     // add our setting handler
     ImGuiSettingsHandler ini_handler;
-    ini_handler.TypeName = SKSE::PluginDeclaration::GetSingleton()->GetName().data();
-    ini_handler.TypeHash = ImHashStr(ini_handler.TypeName);
+    ini_handler.TypeName   = SKSE::PluginDeclaration::GetSingleton()->GetName().data();
+    ini_handler.TypeHash   = ImHashStr(ini_handler.TypeName);
     ini_handler.ReadOpenFn = Setting::UiSettingReadOpenFn;
     ini_handler.ReadLineFn = Setting::UiSettingReadLineFn;
     ini_handler.WriteAllFn = Setting::UiSettingWriteAll;
@@ -176,8 +175,8 @@ void SosGui::TrySetAllowTextInput()
 auto SosGui::Refresh() -> void
 {
     DoRefresh();
-    m_fShowConfigWindows = true;
-    m_selectedActorIndex = 0;
+    m_fShowConfigWindows                         = true;
+    m_selectedActorIndex                         = 0;
     m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
     m_outfitDebounceInput.clear();
 }
@@ -196,8 +195,8 @@ auto SosGui::DoRefresh() -> EagerTask
 
 auto SosGui::DoRender() -> void
 {
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
-    ToolbarWindow();
+    DockSpaceToolBar();
+    m_uiData.GetErrorNotifier().show();
 
     if (!m_fShowConfigWindows)
     {
@@ -212,47 +211,60 @@ auto SosGui::DoRender() -> void
     }
     catch (const std::exception &e)
     {
+        LogStacktrace();
         m_uiData.PushErrorMessage(e.what());
     }
 }
 
-void SosGui::ToolbarWindow()
+void SosGui::DockSpaceToolBar()
 {
-    // clang-format off
-    constexpr auto flags = ImGuiUtil::WindowFlag().AlwaysAutoResize()
-            .NoDecoration().NoDocking().NoNav().NoMove().flags;
-    // clang-format on
-    const auto *mainViewPort = ImGui::GetMainViewport();
-    if (ImGui::Begin("ToolbarWindow", nullptr, flags))
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    auto windowFlags = ImGuiUtil::WindowFlags().MenuBar().NoDocking().NoTitleBar().NoCollapse().NoResize().NoMove();
+    windowFlags |= ImGuiUtil::WindowFlags().NoBringToFrontOnFocus().NoNavFocus().NoBackground();
+    ImGui::Begin("DockSpace Demo", nullptr, windowFlags);
+    ImGui::PopStyleVar(2);
+
+    // Submit the DockSpace
+    ImGuiIO &io = ImGui::GetIO();
+    assert(io.ConfigFlags & ImGuiConfigFlags_DockingEnable && "Must enable docking");
+    const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
+    ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    if (ImGui::BeginMenuBar())
     {
-        const auto contentSize = ImGui::GetContentRegionAvail();
-        ImGui::SetWindowPos(ImVec2((mainViewPort->WorkSize.x - contentSize.x) * 0.5F, 0.0F));
-
-        if (ImGui::Button("Show/Hide"))
-        {
-            m_fShowConfigWindows = !m_fShowConfigWindows;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Refresh Player Armor"))
-        {
-            util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Close"))
-        {
-            auto *messageQueue = RE::UIMessageQueue::GetSingleton();
-            messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
-        }
+        Toolbar();
+        ImGui::EndMenuBar();
     }
+
     ImGui::End();
+}
+
+void SosGui::Toolbar()
+{
+    if (ImGui::MenuItem("Show/Hide"))
+    {
+        m_fShowConfigWindows = !m_fShowConfigWindows;
+    }
+    if (ImGui::MenuItem("Refresh Player Armor"))
+    {
+        util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
+    }
+    if (ImGui::MenuItem("Close"))
+    {
+        auto *messageQueue = RE::UIMessageQueue::GetSingleton();
+        messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
+    }
 }
 
 void SosGui::MainConfigWindow()
 {
     if (ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav))
     {
-        ShowErrorMessages();
         bool fEnabled = m_uiData.IsEnabled();
         if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
         {
@@ -289,9 +301,9 @@ void SosGui::MainConfigWindow()
 
 auto SosGui::ThemeCombo() -> void
 {
-    auto *settings = Setting::UiSetting::GetInstance();
-    const int32_t themeIndex = settings->selectedThemeIndex;
-    using Loader = ImThemeLoader::Loader;
+    auto         *settings    = Setting::UiSetting::GetInstance();
+    const int32_t themeIndex  = settings->selectedThemeIndex;
+    using Loader              = ImThemeLoader::Loader;
     const std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
     if (!ImGui::BeginCombo("Theme", preview.c_str()))
     {
@@ -308,27 +320,6 @@ auto SosGui::ThemeCombo() -> void
         ++index;
     }
     ImGui::EndCombo();
-}
-
-void SosGui::ShowErrorMessages()
-{
-    static ImVec4 RED_COLOR = ImColor(255, 0, 0, 255);
-
-    auto &errorMessages = m_uiData.GetErrorMessages();
-    auto remaining = MAX_ERROR_SHOW_COUNT;
-    for (auto iter = errorMessages.begin(); remaining != 0 && iter != errorMessages.end(); --remaining)
-    {
-        ImGui::TextColored(RED_COLOR, "%s", iter->c_str());
-        ImGui::SameLine();
-        if (ImGui::Button("x"))
-        {
-            iter = errorMessages.erase(iter);
-        }
-        else
-        {
-            ++iter;
-        }
-    }
 }
 
 void SosGui::RenderQuickSlotConfig()

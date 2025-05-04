@@ -217,13 +217,6 @@ namespace LIBC_NAMESPACE_DECL
     constexpr std::string_view SOS_NATIVE_CLASS_NAME = "SkyrimOutfitSystemNativeFuncs";
     constexpr uint8_t          MAX_ERROR_COUNT       = 64;
     constexpr uint8_t          MAX_ERROR_SHOW_COUNT  = 5;
-
-    constexpr auto HintFontSize = [] {
-        return ImGui::GetFontSize() * 1.2F;
-    };
-    constexpr auto HeaderFontSize = [] {
-        return ImGui::GetFontSize() * 1.3F;
-    };
 }
 
 #endif // SOSDATATYPE_H

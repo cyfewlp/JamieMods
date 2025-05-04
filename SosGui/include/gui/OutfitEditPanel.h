@@ -91,13 +91,12 @@ private:
         void               remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);
         void               add_armors_in_outfit(const SosUiOutfit *editingOutfit);
         void               remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
-        bool               filter(Armor *armor) const;
-        //void               on_add_armor(const Armor *armor);
-        void               on_remove_armor(const Armor *armor);
+        bool               filter(const Armor *armor) const;
         [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
         bool               remove_armor(const Armor *armor);
         void               reset_counter();
         void               reset_view(ArmorGenerator *generator);
+        bool               no_select_any_slot() const;
     } m_armorView = {};
 
     struct ArmorGeneratorTabBar
@@ -137,6 +136,7 @@ public:
     void OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const SosUiOutfit *editingOutfit);
 
 private:
+    void DrawSideBar(const SosUiOutfit *outfit);
     void UpdateWindowTitle(const std::string &outfitName);
 
     void DrawOutfitArmors(const SosUiData::OutfitPair &wantEdit);

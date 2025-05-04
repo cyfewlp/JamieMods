@@ -22,8 +22,7 @@
 #include <utility>
 #include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 void OutfitListTable::Refresh()
 {
@@ -96,27 +95,27 @@ void OutfitListTable::Render(RE::Actor *editingActor)
     {
         windowName = "Outfit Editor###OutfitEditor";
     }
-    ImGui::SetNextWindowSize({500, 300}, ImGuiCond_FirstUseEver);
-    if (ImGui::Begin(windowName.c_str()))
+    if (constexpr auto flags = ImGuiUtil::WindowFlags().flags;
+        ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), nullptr, flags))
     {
-        if (constexpr auto flags = ImGuiUtil::ChildFlag().Borders().ResizeX().flags;
-            ImGuiUtil::BeginChild("$SkyOutSys_MCMHeader_OutfitList", ImVec2(300, 0), flags))
-        {
-            DrawSidebar(editingActor);
-        }
-        // must out of BeginChild braces because when dock window, BeginChild will be return false;
-        DrawDeletePopup();
-        ImGui::EndChild();
+        DrawSidebar(editingActor);
+    }
+    // must out of BeginChild braces because when dock window, BeginChild will be return false;
+    DrawDeletePopup();
+    ImGui::End();
 
-        if (IsValidOutfit(m_wantEdit))
+    if (IsValidOutfit(m_wantEdit))
+    {
+        ImGui::SetNextWindowSize({500, 300}, ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(windowName.c_str()))
         {
             ImGui::SameLine();
             ImGui::BeginGroup();
             m_editPanel.Render(m_wantEdit);
             ImGui::EndGroup();
         }
+        ImGui::End();
     }
-    ImGui::End();
 }
 
 void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
@@ -177,14 +176,14 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
     if (constexpr auto flags = TableFlags().Borders().Resizable().Hideable().Reorderable()
                                    .Sortable().SizingFixedFit().ScrollY().NoHostExtendX()
                                    .flags;
-        !ImGui::BeginTable("##OutfitLists", 3, flags))
+        !ImGui::BeginTable("##OutfitLists", 2, flags))
     {
         return;
     }
     // clang-format on
 
-    const auto &actorOutfitMap = m_uiData.GetActorOutfitMap();
-    const auto activeOutfitOpt = actorOutfitMap.TryGetOutfitId(editingActor).flat_map([&](auto &outfitId) {
+    const auto &actorOutfitMap  = m_uiData.GetActorOutfitMap();
+    const auto  activeOutfitOpt = actorOutfitMap.TryGetOutfitId(editingActor).flat_map([&](auto &outfitId) {
         return outfitList.GetOutfitById(outfitId);
     });
 
@@ -194,7 +193,6 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
     // clang-format off
    TableHeadersBuilder().Column("##Number").NoSort().WidthFixed().NoHide()
                         .Column("$SkyOutSys_MCM_OutfitList").DefaultSort()
-                        .Column("##ActiveMark").NoSort().WidthFixed()
                         .CommitHeadersRow();
     // clang-format on
 
@@ -214,7 +212,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
                 ImGui::Text("\xe2\xad\x90");
                 ImGui::SameLine();
             }
-            static ImGuiID editingInputId = 0;
+            static ImGuiID                                 editingInputId = 0;
             static std::array<char, MAX_OUTFIT_NAME_BYTES> renameBuf{};
             constexpr auto onRequestRename = [](const ImGuiID inputId, const std::string &outfitName) {
                 editingInputId = inputId;
@@ -237,7 +235,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
                                                                 std::string(renameBuf.data()));
                         };
                     }
-                    renameBuf[0] = '\0';
+                    renameBuf[0]   = '\0';
                     editingInputId = 0;
                 }
             }
@@ -245,9 +243,9 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
             {
                 bool const isSelected = m_outfitMultiSelection.Contains(static_cast<ImGuiID>(index));
                 ImGui::SetNextItemSelectionUserData(index);
-                if (ImGui::Selectable(outfit.GetName().c_str(), isSelected,
-                                      ImGuiUtil::SelectableFlag().AllowDoubleClick()
-                                                                 .AllowOverlap().SpanAllColumns().flags))
+                if (ImGui::Selectable(
+                        outfit.GetName().c_str(), isSelected,
+                        ImGuiUtil::SelectableFlag().AllowDoubleClick().AllowOverlap().SpanAllColumns().flags))
                 {
                     auto pair = std::make_pair(outfit.GetId(), &outfit);
                     OnAcceptEditOutfit(m_wantEdit.second, pair);
@@ -265,26 +263,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
                 }
             }
         }
-
-        if (ImGui::TableNextColumn()) // active outfit hint column
-        {
-            if (activeOutfitId == outfit.GetId())
-            {
-                ImGuiUtil::Text("$SkyOutSys_OutfitBrowser_ActiveMark");
-            }
-            else
-            {
-                ImGui::Text("");
-            }
-        }
     };
-
-    if (activeOutfitOpt.has_value())
-    {
-        const auto rank = outfitList.GetNameRank(activeOutfitOpt.value().GetId());
-        ImGuiUtil::PushIdGuard idGuard(-1);
-        drawAction(activeOutfitOpt.value(), rank);
-    }
 
     DrawOutfits(m_outfitFilterInput.viewData, ascend, drawAction);
     ImGui::EndTable();
@@ -336,8 +315,7 @@ void OutfitListTable::DrawOutfits(std::vector<const SosUiOutfit *> outfitView, c
 }
 
 void OutfitListTable::OpenContextMenu(const uint32_t selectedItemCount, RE::Actor *editingActor,
-                                      const SosUiOutfit &outfit,
-                                      __out bool &acceptRename)
+                                      const SosUiOutfit &outfit, __out bool &acceptRename)
 {
     if (!ImGui::BeginPopupContextItem("##OutfitListContextMenu"))
     {
@@ -439,8 +417,8 @@ void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const Outfit
 void OutfitListTable::OnAcceptSetFavoriteOutfits(const bool toFavorite)
 {
     const auto &outfitList = m_uiData.GetOutfitList();
-    void *it = nullptr;
-    ImGuiID selectedRank; // must be name rank;
+    void       *it         = nullptr;
+    ImGuiID     selectedRank; // must be name rank;
 
     while (m_outfitMultiSelection.GetNextSelectedItem(&it, &selectedRank))
     {
@@ -458,8 +436,8 @@ void OutfitListTable::OnAcceptSetFavoriteOutfits(const bool toFavorite)
 void OutfitListTable::OnAcceptDeleteOutfits()
 {
     const auto &outfitList = m_uiData.GetOutfitList();
-    void *it = nullptr;
-    ImGuiID selectedRank; // must be name rank;
+    void       *it         = nullptr;
+    ImGuiID     selectedRank; // must be name rank;
 
     while (m_outfitMultiSelection.GetNextSelectedItem(&it, &selectedRank))
     {
