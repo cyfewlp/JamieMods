@@ -50,7 +50,7 @@ void ErrorNotifier::show()
 
 void ErrorNotifier::renderMessage(const ErrorMsg &msg, int idx)
 {
-    ImGui::TextWrapped("[%s] %s", msg.time.c_str(), msg.text.c_str());
+    ImGui::Text("[%s] %s", msg.time.c_str(), msg.text.c_str());
     ImGui::SameLine();
     if (ImGui::Button(("OK##" + std::to_string(idx)).c_str()))
     {

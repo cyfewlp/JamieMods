@@ -52,7 +52,8 @@
 * [x] Bug fix: slot filter combo UI label untranslated;
 * [x] Bug fix: slot filter combo select slot, armors view is no refresh;
 * [x] form-id tab-item
-* [ ] bug fix: remove used armor in outfit
+* [x] bug fix: remove used armor in outfit
+* [x] bug fix: add armor by context menu will trigger vector out-of-range because multiselection reference removed armor.
 
 === ArmorView
 

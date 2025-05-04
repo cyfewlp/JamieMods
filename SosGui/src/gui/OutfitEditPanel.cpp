@@ -164,7 +164,7 @@ void OutfitEditPanel::OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const So
     {
         if (lastEditOutfit->GetId() != editingOutfit->GetId())
         {
-            m_armorView.add_armors_in_outfit(lastEditOutfit);
+            m_armorView.add_armors_in_outfit(m_uiData, lastEditOutfit);
             m_armorView.remove_armors_in_outfit(editingOutfit);
             m_armorView.multiSelection.Clear();
         }
@@ -675,31 +675,32 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *outfit)
 
 void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
 {
+    m_armorView.add_armors_in_outfit(m_uiData, wantEdit.second); // first, restore all removed armors in outfit
     SlotEnumeration usedSlot;
-    void           *it = nullptr;
-    ImGuiID         selectedRank; // must be name rank;
-    while (m_armorView.multiSelection.GetNextSelectedItem(&it, &selectedRank))
+    // We will remove all used armors in view;
+    std::vector<Armor *> newViewData;
+    newViewData.reserve(m_armorView.viewData.size());
+    for (size_t index = 0; index < m_armorView.viewData.size(); ++index)
     {
-        if (m_armorView.viewData.size() > selectedRank)
+        auto *armor = m_armorView.viewData.at(index);
+        if (!m_armorView.multiSelection.Contains(index) || usedSlot.all(armor->GetSlotMask()))
         {
-            auto *armor = m_armorView.viewData.at(selectedRank);
-            if (usedSlot.all(armor->GetSlotMask()))
-            {
-                continue;
-            }
-            usedSlot.set(armor->GetSlotMask());
-            if (wantEdit.second->IsConflictWith(armor))
-            {
-                +[&] {
-                    return m_outfitService.DeleteConflictArmors(wantEdit.second->GetName(), armor);
-                };
-            }
+            newViewData.emplace_back(armor);
+            continue;
+        }
+        usedSlot.set(armor->GetSlotMask());
+        if (wantEdit.second->IsConflictWith(armor))
+        {
             +[&] {
-                return m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
+                return m_outfitService.DeleteConflictArmors(wantEdit.second->GetName(), armor);
             };
         }
+        +[&] {
+            return m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
+        };
     }
     m_armorView.multiSelection.Clear();
+    m_armorView.viewData.swap(newViewData);
 }
 
 auto OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
@@ -809,7 +810,7 @@ void OutfitEditPanel::ArmorView::remove_armors_has_slot(const Slot selectedSlots
     }
 }
 
-void OutfitEditPanel::ArmorView::add_armors_in_outfit(const SosUiOutfit *editingOutfit)
+void OutfitEditPanel::ArmorView::add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editingOutfit)
 {
     for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; slotPos++)
     {
@@ -817,8 +818,13 @@ void OutfitEditPanel::ArmorView::add_armors_in_outfit(const SosUiOutfit *editing
         {
             if (auto result = add_armor(armor); !result.has_value())
             {
-                // TODO: push error message?
-                log_error("unexpected error: ", static_cast<uint8_t>(result.error()));
+                // this error is because some armor has multiple slots, just ignore it;
+                if (result.error() == error::armor_already_exists)
+                {
+                    continue;
+                }
+                uiData.PushErrorMessage(std::format("unexpected error when add_armors_in_outfit: {}", //
+                                                    ToErrorMessage(result.error())));
             }
         }
     }
@@ -831,10 +837,9 @@ void OutfitEditPanel::ArmorView::remove_armors_in_outfit(const SosUiOutfit *edit
     {
         if (const auto *armor = editingOutfit->GetArmorAt(slotPos); armor != nullptr)
         {
-            if (std::erase_if(viewData, [&](const Armor *a_armor) {
-                    return a_armor->formID == armor->formID;
-                }) > 0)
+            if (auto result = find_armor(armor); result.has_value())
             {
+                viewData.erase(viewData.begin() + result.value());
                 slotCounter[slotPos] -= 1;
             }
         }
@@ -914,9 +919,19 @@ auto OutfitEditPanel::ArmorView::add_armor(Armor *armor) -> std::expected<void, 
 
 bool OutfitEditPanel::ArmorView::remove_armor(const Armor *armor)
 {
-    return std::erase_if(viewData, [&](const Armor *a_armor) {
-        return a_armor->formID == armor->formID;
-    });
+    if (const auto result = find_armor(armor); result.has_value())
+    {
+        viewData.erase(viewData.begin() + result.value());
+        for (uint8_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; slotPos++)
+        {
+            if (armor->HasPartOf(ToSlot(slotPos)))
+            {
+                slotCounter[slotPos] -= 1;
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 void OutfitEditPanel::ArmorView::reset_counter()
@@ -955,6 +970,35 @@ void OutfitEditPanel::ArmorView::reset_view(ArmorGenerator *generator)
     }
 }
 
+auto OutfitEditPanel::ArmorView::find_armor(const Armor *armor) const -> std::expected<size_t, error>
+{
+    const auto armorRank = armorContainer.GetRank(armor->formID);
+    size_t     startPos  = 0;
+    size_t     endPos    = viewData.size();
+    while (endPos - startPos > 0)
+    {
+        const size_t middle = (endPos + startPos) / 2;
+        const auto   rank   = armorContainer.GetRank(viewData.at(middle)->formID);
+        if (rank >= armorContainer.Size())
+        {
+            return std::unexpected{error::unassociated_armor};
+        }
+        if (armorRank < rank)
+        {
+            endPos = middle;
+        }
+        else if (armorRank > rank)
+        {
+            startPos = middle + 1;
+        }
+        else
+        {
+            return middle;
+        }
+    }
+    return std::unexpected{error::armor_not_exist};
+}
+
 bool OutfitEditPanel::ArmorView::no_select_any_slot() const
 {
     return !checkAllSlot && selectedFilterSlot == 0;
@@ -973,6 +1017,7 @@ void OutfitEditPanel::OnAcceptAddArmorToOutfit(const SosUiData::OutfitPair &want
             return m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
         };
         m_armorView.remove_armor(armor);
+        m_armorView.multiSelection.Clear();
     }
 }
 

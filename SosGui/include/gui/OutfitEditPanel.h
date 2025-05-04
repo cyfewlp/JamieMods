@@ -53,6 +53,7 @@ private:
     {
         unassociated_armor,
         armor_already_exists,
+        armor_not_exist,
     };
 
     static auto ToErrorMessage(const error error) -> std::string
@@ -63,6 +64,8 @@ private:
                 return "Unassociated Armor: Missing in container, try reopen menu to reslove.";
             case error::armor_already_exists:
                 return "Armor already exists in view";
+            case error::armor_not_exist:
+                return "Armor not exist in view";
             default:
                 return "Unknown error";
         }
@@ -89,13 +92,14 @@ private:
         void               clear();
         void               clearViewData();
         void               remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);
-        void               add_armors_in_outfit(const SosUiOutfit *editingOutfit);
+        void               add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editingOutfit);
         void               remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
         bool               filter(const Armor *armor) const;
         [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
         bool               remove_armor(const Armor *armor);
         void               reset_counter();
         void               reset_view(ArmorGenerator *generator);
+        auto               find_armor(const Armor *armor) const -> std::expected<size_t, error>;
         bool               no_select_any_slot() const;
     } m_armorView = {};
 
