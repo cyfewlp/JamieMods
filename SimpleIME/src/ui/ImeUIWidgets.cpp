@@ -108,11 +108,11 @@ namespace LIBC_NAMESPACE_DECL
             return clicked;
         }
 
-        auto ImeUIWidgets::Begin(String windowName, bool *open, ImGuiWindowFlags flags) -> void
+        auto ImeUIWidgets::Begin(String windowName, bool *open, ImGuiWindowFlags flags) const -> bool
         {
             const auto *name = m_translation->Get(windowName);
-            ImGui::Begin(name, open, flags);
             m_translation->UseSection(std::string(windowName).erase(0, 1).c_str());
+            return ImGui::Begin(name, open, flags);
         }
 
         auto ImeUIWidgets::ComboApply(String label, const std::vector<std::string> &values,

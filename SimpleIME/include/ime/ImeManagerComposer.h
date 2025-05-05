@@ -14,7 +14,7 @@ namespace LIBC_NAMESPACE_DECL
             Temporary
         };
 
-        class ImeManagerComposer : public ImeManager
+        class ImeManagerComposer final : public ImeManager
         {
         public:
             ImeManagerComposer()           = default;
@@ -91,10 +91,6 @@ namespace LIBC_NAMESPACE_DECL
                     log_warn("Invalid call! Focus type stack is empty.");
                     return;
                 }
-                if (!m_FocusTypeStack.empty() && type != m_FocusTypeStack.top())
-                {
-                    m_fDirty = true;
-                }
                 PopType();
                 PushType(type, syncImeState);
             }
@@ -118,7 +114,7 @@ namespace LIBC_NAMESPACE_DECL
                 return m_ImeWindowPosUpdatePolicy;
             }
 
-            void SetDetectImeWindowPosByCaret(const auto policy)
+            void SetDetectImeWindowPosByCaret(const ImeWindowPosUpdatePolicy policy)
             {
                 m_ImeWindowPosUpdatePolicy = policy;
             }
@@ -231,6 +227,11 @@ namespace LIBC_NAMESPACE_DECL
                 return m_delegate->WaitEnableMod(enable);
             }
 
+            [[nodiscard]] auto IsInited() const -> bool
+            {
+                return m_fInited;
+            }
+
             static auto GetInstance() -> ImeManagerComposer *
             {
                 static ImeManagerComposer g_instance;
@@ -245,6 +246,7 @@ namespace LIBC_NAMESPACE_DECL
             bool                                      m_fKeepImeOpen        = false;
             bool                                      m_fEnableUnicodePaste = true;
             std::atomic_bool                          m_fSupportOtherMod    = false;
+            std::atomic_bool                          m_fInited             = false;
 
             // m_fKeepImeOpen, focus type
             bool m_fDirty = false;
@@ -256,9 +258,11 @@ namespace LIBC_NAMESPACE_DECL
             static void Init(ImeWnd *imwWnd, HWND hwndGame)
             {
                 auto *instance = GetInstance();
+                if (instance->m_fInited) return;
 
                 instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imwWnd, hwndGame);
                 instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imwWnd, hwndGame);
+                instance->m_fInited                  = true;
             }
         };
     }

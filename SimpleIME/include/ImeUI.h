@@ -10,6 +10,7 @@
 #include "ime/ITextService.h"
 #include "tsf/LangProfileUtil.h"
 #include "ui/ImeUIWidgets.h"
+#include "ui/UiSettings.h"
 
 #include "imgui.h"
 #include <vector>
@@ -40,6 +41,7 @@ namespace LIBC_NAMESPACE_DECL
             void RenderIme() const;
             void RenderToolWindow();
             void ShowToolWindow();
+            void ApplyUiSettings(const UiSettings *uiSettings);
 
         private:
             static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;

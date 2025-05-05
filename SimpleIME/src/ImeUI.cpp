@@ -228,6 +228,29 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        void ImeUI::ApplyUiSettings(const UiSettings *uiSettings)
+        {
+            auto *imeManager = ImeManagerComposer::GetInstance();
+            if (!imeManager->IsInited())
+            {
+                return;
+            }
+
+            m_fShowSettings = uiSettings->IsShowSettings();
+            if (uiSettings->IsEnableMod())
+            {
+                imeManager->NotifyEnableMod(true);
+            }
+            if (std::ranges::find(m_translateLanguages, uiSettings->GetUsedLanguage()) != m_translateLanguages.end())
+            {
+                m_translation.UseLanguage(uiSettings->GetUsedLanguage().c_str());
+            }
+            imeManager->PushType(uiSettings->GetFocusType(), true);
+            imeManager->SetDetectImeWindowPosByCaret(uiSettings->GetWindowPosUpdatePolicy());
+            imeManager->SetEnableUnicodePaste(uiSettings->IsEnableUnicodePaste());
+            imeManager->SetKeepImeOpen(uiSettings->IsKeepImeOpen());
+        }
+
         void ImeUI::RenderToolWindow()
         {
             if (!m_fShowToolWindow)
@@ -277,65 +300,63 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::RenderSettings()
         {
-            static bool isSettingsWindowOpen = false;
-            isSettingsWindowOpen             = m_fShowSettings;
-
             if (!m_fShowSettings)
             {
                 return;
             }
             auto *imeManager = ImeManagerComposer::GetInstance();
-            m_imeUIWidgets.Begin("$Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
-            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-            do
+            if (m_imeUIWidgets.Begin("$Settings", &m_fShowSettings, ImGuiWindowFlags_NoNav))
             {
-                bool fEnableMod = ImeManager::IsModEnabled();
-                m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
-                    return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
-                });
-
-                m_imeUIWidgets.ComboApply("$Languages", m_translateLanguages, [this](const std::string &lang) {
-                    m_translation.UseLanguage(lang.c_str());
-                    return true;
-                });
-
-                if (!fEnableMod)
+                ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
+                do
                 {
-                    break;
-                }
-                RenderSettingsState();
+                    bool fEnableMod = ImeManager::IsModEnabled();
+                    m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
+                        return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
+                    });
 
-                m_imeUIWidgets.SeparatorText("$Features");
+                    m_imeUIWidgets.ComboApply("$Languages", m_translateLanguages, [this](const std::string &lang) {
+                        m_translation.UseLanguage(lang.c_str());
+                        return true;
+                    });
 
-                RenderSettingsFocusManage();
-                if (!imeManager->IsSupportOtherMod())
-                {
-                    RenderSettingsImePosUpdatePolicy();
-                    bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
-                    if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
+                    if (!fEnableMod)
                     {
-                        imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
+                        break;
                     }
+                    RenderSettingsState();
 
-                    ImGui::SameLine();
-                    bool fKeepImeOpen = imeManager->IsKeepImeOpen();
-                    if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+                    m_imeUIWidgets.SeparatorText("$Features");
+
+                    RenderSettingsFocusManage();
+                    if (!imeManager->IsSupportOtherMod())
                     {
-                        imeManager->SetKeepImeOpen(fKeepImeOpen);
-                    }
-                }
-            } while (false);
-            ImGui::PopStyleVar();
+                        RenderSettingsImePosUpdatePolicy();
+                        bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
+                        if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
+                        {
+                            imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
+                        }
 
-            m_imeUIWidgets.ComboApply("$Themes", m_themeNames, [this](const std::string &name) {
-                return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
-            });
+                        ImGui::SameLine();
+                        bool fKeepImeOpen = imeManager->IsKeepImeOpen();
+                        if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+                        {
+                            imeManager->SetKeepImeOpen(fKeepImeOpen);
+                        }
+                    }
+                } while (false);
+                ImGui::PopStyleVar();
+
+                m_imeUIWidgets.ComboApply("$Themes", m_themeNames, [this](const std::string &name) {
+                    return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
+                });
+            }
             ImGui::End();
             if (State::GetInstance().Has(State::IME_DISABLED))
             {
                 imeManager->SyncImeStateIfDirty();
             }
-            m_fShowSettings = isSettingsWindowOpen;
         }
 
         void ImeUI::RenderSettingsState() const

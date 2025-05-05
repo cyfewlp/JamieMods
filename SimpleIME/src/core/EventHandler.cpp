@@ -175,7 +175,7 @@ namespace LIBC_NAMESPACE_DECL
             if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {
                 firstOpenMainMenu = false;
-                ImeManagerComposer::GetInstance()->NotifyEnableMod(true);
+                // ImeManagerComposer::GetInstance()->NotifyEnableMod(true);
             }
             else
             {

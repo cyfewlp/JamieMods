@@ -58,7 +58,7 @@ namespace LIBC_NAMESPACE_DECL
                 ImGui::SeparatorText(text);
             }
 
-            auto Begin(String windowName, bool *open, ImGuiWindowFlags flags) -> void;
+            auto Begin(String windowName, bool *open, ImGuiWindowFlags flags) const -> bool;
 
             auto SetUInt32Var(String name, uint32_t value) -> void;
             auto GetBoolVar(String name) -> bool;

@@ -238,6 +238,11 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 * [x] Try get current meun/ text entry position
 * [x] Disable Notify Enable IME from Game menu open/close hwne in support other mods.
 
+== 1.1.2
+
+* [ ] Support save UI config in `imgui.ini`
+* [ ] Add message notifiy window
+
 === Issues
 
 * [x] Fix `Enable Mod`
