@@ -49,6 +49,15 @@ private:
         bool Draw();
     };
 
+    struct ModFilterer
+    {
+        std::vector<std::pair<std::string_view, bool>> passModList;
+
+        bool PassFilter(const Armor *armor) const;
+
+        void Clear();
+    };
+
     enum class error : uint8_t
     {
         unassociated_armor,
@@ -78,8 +87,8 @@ private:
         std::vector<Armor *>                           viewData{};
         std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
         ArmorFilter                                    armorFilter{};
-        std::string_view                               modNameFilterer = "";
-        bool                                           checkAllSlot    = true; // default shows all armor slot
+        ModFilterer                                    modFilterer{};
+        bool                                           checkAllSlot = true; // default shows all armor slot
         std::array<uint16_t, SLOT_COUNT>               slotCounter{};
         MultiSelection                                 multiSelection{};
         SlotEnumeration                                multiSelectedSlot{}; // be used to highlight conflict armors
@@ -134,6 +143,7 @@ public:
     }
 
     void Render(const SosUiData::OutfitPair &wantEdit);
+    void DrawArmorInfo();
     void Refresh() override;
     void Close() override;
     void OnSelectActor(const RE::Actor *actor, const SosUiOutfit *editingOutfit);

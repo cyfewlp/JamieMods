@@ -67,42 +67,8 @@ void OutfitEditPanel::Render(const SosUiData::OutfitPair &wantEdit)
     ImGui::EndGroup();
 }
 
-void OutfitEditPanel::DrawSideBar(const SosUiOutfit *outfit)
+void OutfitEditPanel::DrawArmorInfo()
 {
-    ImGuiUtil::TextScale("$SosGui_ModList", FONT_SIZE_TITLE_3);
-    auto         itemHeight        = ImGui::GetTextLineHeight();
-    static int   maxChildItemCount = 10;
-    static float childHeight       = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
-
-    if (ImGui::BeginChild("##ModNameListChild", {0, childHeight}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY))
-    {
-        std::function<void()> OnClick = [] {};
-        for (const auto &[modName, count] : m_armorView.modRefCounter)
-        {
-            auto  label        = std::format("({}) {}", count, modName);
-            bool  isSelected   = m_armorView.modNameFilterer == modName;
-            float startCursorY = ImGui::GetCursorPosY();
-            if (ImGui::Selectable(label.c_str(), isSelected))
-            {
-                OnClick = [&, isSelected, modName] {
-                    m_armorView.modNameFilterer = isSelected ? "" : modName;
-                    m_armorView.reset_view(GetGenerator());
-                };
-            }
-            itemHeight = std::max(itemHeight, ImGui::GetCursorPosY() - startCursorY);
-        }
-        childHeight = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
-        OnClick();
-    }
-    ImGui::EndChild();
-
-    ImGuiUtil::TextScale("$SosGui_BodySlots", FONT_SIZE_TITLE_3);
-    if (ImGui::BeginChild("#SlotFilterChild", {0, childHeight}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY))
-    {
-        DrawArmorViewSlotFilterer(outfit);
-    }
-    ImGui::EndChild();
-
     if (m_armorView.multiSelection.Size == 1)
     {
         void   *it = nullptr;
@@ -115,7 +81,7 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *outfit)
             ImGui::BeginGroup();
             {
                 ImGui::Text("%s", armor->GetName());
-                ImGuiUtil::Value("FormID", armor->GetFormID());
+                ImGuiUtil::Value("FormID", std::format("{:#010X}", armor->GetFormID()).c_str());
                 ImGui::Text("%s", util::GetFormModFileName(armor).data());
                 ImGuiUtil::Value("$Armor Rating", armor->GetArmorRating());
                 ImGuiUtil::Value("$WEIGHT", armor->GetWeight());
@@ -133,6 +99,28 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *outfit)
             ImGui::EndGroup();
         }
     }
+}
+
+void OutfitEditPanel::DrawSideBar(const SosUiOutfit *outfit)
+{
+    ImGuiUtil::TextScale("$SosGui_ModList", FONT_SIZE_TITLE_3);
+    static int maxChildItemCount = 10;
+    auto       itemHeight        = ImGui::GetTextLineHeight();
+    float      childHeight       = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
+
+    if (ImGui::BeginChild("##ModNameListChild", {0, childHeight}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY))
+    {
+        DrawArmorViewModNameFilterer();
+    }
+    ImGui::EndChild();
+
+    ImGuiUtil::TextScale("$SosGui_BodySlots", FONT_SIZE_TITLE_3);
+    if (ImGui::BeginChild("#SlotFilterChild", {0, childHeight}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY))
+    {
+        DrawArmorViewSlotFilterer(outfit);
+    }
+    ImGui::EndChild();
+    DrawArmorInfo();
 }
 
 void OutfitEditPanel::Refresh() {}
@@ -336,6 +324,29 @@ bool OutfitEditPanel::ArmorFilter::Draw()
     return needUpdate;
 }
 
+bool OutfitEditPanel::ModFilterer::PassFilter(const Armor *armor) const
+{
+    bool result = true;
+    if (passModList.empty()) return result;
+    for (const auto &[modName, checked] : passModList)
+    {
+        if (checked)
+        {
+            result = false;
+            if (util::GetFormModFileName(armor) == modName)
+            {
+                return true;
+            }
+        }
+    }
+    return result;
+}
+
+inline void OutfitEditPanel::ModFilterer::Clear()
+{
+    passModList.clear();
+}
+
 void OutfitEditPanel::DrawArmorGeneratorTabBar()
 {
     using namespace ImGuiUtil;
@@ -348,8 +359,8 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar()
             const ImGuiTabItem *tabItem = ImGui::TabBarGetCurrentTab(ImGui::GetCurrentTabBar());
             return selectedId == 0 || (selectedId != nextTabId && tabItem->ID == nextTabId);
         };
-        auto UpdateView = [&]() {
-            m_armorView.modNameFilterer = "";
+        auto UpdateView = [&] {
+            m_armorView.modFilterer.Clear();
             m_armorView.reset_view(GetGenerator());
             m_armorView.reset_counter();
         };
@@ -394,7 +405,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar()
             if (isTabItemAppear())
             {
                 m_armorGeneratorTabBar.generator = nullptr;
-                m_armorView.clearViewData();
+                UpdateView();
             }
             ImGui::Text("0x");
             ImGui::SameLine();
@@ -578,36 +589,26 @@ void OutfitEditPanel::DrawArmorView(const SosUiData::OutfitPair &wantEdit, const
 
 void OutfitEditPanel::DrawArmorViewModNameFilterer()
 {
-    const auto hint    = Translation::Translate("$SosGui_Combo_ModNameFilter");
-    const auto preview = m_armorView.modNameFilterer;
-    if (!ImGui::BeginCombo("##ModNameFilter", preview.empty() ? hint.c_str() : preview.data(),
-                           ImGuiComboFlags_WidthFitPreview))
+    bool needResetView = false;
+    for (auto &modState : m_armorView.modFilterer.passModList)
     {
-        return;
-    }
-    if (ImGuiUtil::Selectable("$Cancel", false))
-    {
-        m_armorView.modNameFilterer = "";
-        if (!m_armorView.modNameFilterer.empty())
+        if (auto &modName = modState.first; m_armorView.modRefCounter.contains(modName))
         {
-            m_armorView.reset_view(GetGenerator());
+            auto label = std::format("({}) {}", m_armorView.modRefCounter[modName], modName);
+
+            bool tIsChecked = modState.second;
+            if (ImGui::Checkbox(label.c_str(), &tIsChecked))
+            {
+                std::pair newState(modName, tIsChecked);
+                modState.swap(newState);
+                needResetView = true;
+            }
         }
     }
-    std::function<void()> OnClick = [] {};
-    for (const auto &[modName, refCount] : m_armorView.modRefCounter)
+    if (needResetView)
     {
-        if (refCount == 0) continue;
-        auto label = std::format("{} ({})", modName, m_armorView.modRefCounter[modName]);
-        if (ImGui::Selectable(label.c_str(), false))
-        {
-            OnClick = [&, modName] {
-                m_armorView.modNameFilterer = modName;
-                m_armorView.reset_view(GetGenerator());
-            };
-        }
+        m_armorView.reset_view(GetGenerator());
     }
-    OnClick();
-    ImGui::EndCombo();
 }
 
 void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *outfit)
@@ -783,7 +784,7 @@ void OutfitEditPanel::ArmorView::clear()
     multiSelection.Clear();
     multiSelectedSlot = Slot::kNone;
     armorFilter.clear();
-    modNameFilterer = "";
+    modFilterer.Clear();
     modRefCounter.clear();
 }
 
@@ -849,12 +850,9 @@ void OutfitEditPanel::ArmorView::remove_armors_in_outfit(const SosUiOutfit *edit
 // true pass, false discard
 bool OutfitEditPanel::ArmorView::filter(const Armor *armor) const
 {
-    if (!modNameFilterer.empty())
+    if (!modFilterer.PassFilter(armor))
     {
-        if (util::GetFormModFileName(armor) != modNameFilterer)
-        {
-            return false;
-        }
+        return false;
     }
     // filter by slot: has any selected slot
     auto slot = static_cast<Slot>(selectedFilterSlot.to_ulong());
@@ -943,7 +941,7 @@ void OutfitEditPanel::ArmorView::reset_counter()
         modRefCounter.emplace(modName, 0);
         modRefCounter[modName] += 1;
 
-        auto slotMaskValue = static_cast<uint32_t>(armor->GetSlotMask());
+        const auto slotMaskValue = static_cast<uint32_t>(armor->GetSlotMask());
         for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; slotPos++)
         {
             uint32_t slotValue = 1 << slotPos;
@@ -953,6 +951,10 @@ void OutfitEditPanel::ArmorView::reset_counter()
                 slotCounter[slotPos]++;
             }
         }
+    }
+    for (const auto &modName : modRefCounter | std::views::keys)
+    {
+        modFilterer.passModList.emplace_back(modName, false);
     }
 }
 

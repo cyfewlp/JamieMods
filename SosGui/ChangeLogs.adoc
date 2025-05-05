@@ -54,6 +54,7 @@
 * [x] form-id tab-item
 * [x] bug fix: remove used armor in outfit
 * [x] bug fix: add armor by context menu will trigger vector out-of-range because multiselection reference removed armor.
+* [x] Support filter by multiple mod;
 
 === ArmorView
 
