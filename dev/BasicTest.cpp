@@ -1,228 +1,86 @@
 ﻿#include <algorithm>
-#include <coroutine>
+#include <bitset>
+#include <expected>
 #include <iostream>
-#include <optional>
+#include <random>
 #include <spdlog/spdlog.h>
 
-#include <coroutine>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/ranked_index.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index_container.hpp>
 #include <iostream>
-#include <stdexcept>
-#include <thread>
+#include <string>
 
-auto switch_to_new_thread(std::jthread &out)
+using namespace boost::multi_index;
+
+// 数据结构
+struct Record
 {
-    struct awaitable
-    {
-        std::jthread *p_out;
+    bool        flag;
+    int         id;
+    std::string name;
+};
 
-        bool await_ready()
-        {
-            std::cout << "await_ready " << '\n';
-            return false;
-        }
+// 标签
+struct by_rank
+{
+}; // 用于 ranked index
 
-        void await_suspend(std::coroutine_handle<> h)
-        {
-            std::cout << "await_suspend " << '\n';
-            std::jthread &out = *p_out;
-            if (out.joinable())
-                throw std::runtime_error("Output jthread parameter not empty");
-            out = std::jthread([h] {
-                if (!h.done())
-                {
-                    h.resume();
-                }
-            });
-            // Potential undefined behavior: accessing potentially destroyed *this
-            // std::cout << "New thread ID: " << p_out->get_id() << '\n';
-            std::cout << "New thread ID: " << out.get_id() << '\n'; // this is OK
-        }
+struct by_name
+{
+}; // 用于按名称排序
 
-        void await_resume()
-        {
-            std::cout << "await_resume " << '\n';
-        }
-    };
-    return awaitable{&out};
+// 多索引容器定义
+using RankedIndex =
+    ranked_non_unique<tag<by_rank>,
+                      composite_key<Record, member<Record, bool, &Record::flag>, member<Record, int, &Record::id>>,
+                      composite_key_compare<std::greater<bool>, std::less<int>>>;
+
+using NameIndex = ordered_non_unique<tag<by_name>, member<Record, std::string, &Record::name>>;
+
+using RecordSet = multi_index_container<Record, indexed_by<RankedIndex, NameIndex>>;
+
+std::string generate()
+{
+    return R"( student jamie("jamie");)";
 }
 
-template <typename T>
-struct task
+struct student
 {
-    struct promise_type;
-    using handle_type = std::coroutine_handle<promise_type>;
+    std::string_view name;
 
-    struct promise_type
+    student(const char *name) : name(std::move(name)) {}
+};
+
+struct teacher
+{
+    const student *m_student = nullptr;
+
+    teacher operator|=(const student &student) const
     {
-        T value_;
-
-        task get_return_object()
-        {
-            std::cout << "get_return_object " << '\n';
-            return task(handle_type::from_promise(*this));
-        }
-
-        std::suspend_never initial_suspend()
-        {
-            std::cout << "initial_suspend " << '\n';
-            return {};
-        }
-
-        std::suspend_never final_suspend() noexcept
-        {
-            std::cout << "final_suspend " << '\n';
-            return {};
-        }
-
-        void return_void()
-        {
-            std::cout << "return_void " << '\n';
-        }
-
-        void unhandled_exception()
-        {
-            std::cout << "unhandled_exception " << '\n';
-        }
-
-        template <std::convertible_to<T> From> // C++20 concept
-        std::suspend_always yield_value(From &&from)
-        {
-            value_ = std::forward<From>(from); // caching the result in promise
-            return {};
-        }
-    };
-
-    handle_type h_;
-
-    task(handle_type h) : h_(h)
-    {
-    }
-
-    ~task()
-    {
-        h_.destroy();
+        return teacher{&student};
     }
 };
 
-struct lazy_task
+enum error
 {
-    struct promise_type;
-    using handle_type = std::coroutine_handle<promise_type>;
-
-    struct promise_type
-    {
-        bool started = false;
-
-        lazy_task get_return_object()
-        {
-            spdlog::info("layz_task::promise_type: {}", __func__);
-            return lazy_task(handle_type::from_promise(*this));
-        }
-
-        struct initial_awaitable
-        {
-            promise_type *promise;
-
-            bool await_ready() const noexcept
-            {
-                spdlog::info("  initial_awaitable: {}", __func__);
-                return false;
-            }
-
-            void await_suspend(std::coroutine_handle<>)
-            {
-                spdlog::info("  initial_awaitable: {}", __func__);
-            }
-
-            void await_resume()
-            {
-                spdlog::info("  initial_awaitable: {}", __func__);
-                promise->started = true;
-            }
-        };
-
-        initial_awaitable initial_suspend()
-        {
-            spdlog::info("layz_task::promise_type: {}", __func__);
-            return initial_awaitable{this};
-        }
-
-        struct final_awaitable
-        {
-            promise_type *promise;
-
-            bool await_ready() const noexcept
-            {
-                spdlog::info("final_awaitable: {}", __func__);
-                return false;
-            }
-
-            auto await_suspend(std::coroutine_handle<promise_type> handle) noexcept
-            {
-                spdlog::info("final_awaitable: {}", __func__);
-                std::coroutine_handle<void> res = std::noop_coroutine();
-                return res;
-            }
-
-            void await_resume() noexcept
-            {
-                spdlog::info("final_awaitable: {}", __func__);
-            }
-        };
-
-        std::suspend_always final_suspend() noexcept
-        {
-            spdlog::info("layz_task::promise_type: {}", __func__);
-            return {};
-        }
-
-        void return_void()
-        {
-            spdlog::info("layz_task::promise_type: {}", __func__);
-        }
-
-        void unhandled_exception()
-        {
-            spdlog::info("layz_task::promise_type: {}", __func__);
-        }
-    };
-
-    handle_type h;
-
-    lazy_task(handle_type h) : h(h)
-    {
-
-    }
-
-    auto operator ()() const
-    {
-        return h();
-    }
+    no_error,
 };
 
-task<std::uint32_t> resuming_on_new_thread(std::jthread &out)
+std::string_view generateView()
 {
-    std::cout << "Coroutine started on thread: " << std::this_thread::get_id() << '\n';
-    co_await switch_to_new_thread(out);
-
-    std::cout << "Coroutine resumed on thread: " << std::this_thread::get_id() << '\n';
+    return "hello world";
 }
 
-lazy_task resuming_lazy_task(std::jthread &out)
+int main()
 {
-    std::cout << "Coroutine started on thread: " << std::this_thread::get_id() << '\n';
-    co_await switch_to_new_thread(out);
-
-    std::cout << "Coroutine resumed on thread: " << std::this_thread::get_id() << '\n';
-}
-
-std::function<void()> createLambda() {
-    int x = 42;
-    return [&]() { std::cout << x << std::endl; }; // 捕获局部变量 x 的引用
-}
-
-int main() {
-    auto lambda = createLambda(); // x 已被销毁
-    lambda(); // 未定义行为：访问悬空引用
+    std::bitset<32> slots = 1024 ;
+    slots |= 256;
+    std::cout << slots.to_ulong()  << " " << slots.count() << std::endl;
+    slots.set(20);
+    std::cout << slots.to_ulong()  << " " << slots.count() << std::endl;
     return 0;
 }

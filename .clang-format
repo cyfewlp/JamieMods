@@ -43,7 +43,7 @@ AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
   AcrossComments: false
-AllowShortLambdasOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Empty
 AllowShortBlocksOnASingleLine : Empty
 AllowShortFunctionsOnASingleLine : Empty
 BinPackArguments: true

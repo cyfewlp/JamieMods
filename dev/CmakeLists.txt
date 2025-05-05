@@ -19,12 +19,11 @@ target_link_libraries(
 		imgui
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 		spdlog::spdlog
-
 )
 target_include_directories(
     BasicTest PRIVATE
-    ${SIMPLEINI_INCLUDE_DIRS}
-    "D:/Program Files (x86)/boost_1_88_0/boost_1_88_0"
+	${CMAKE_SOURCE_DIR}
+		"D:/Program Files (x86)/boost_1_88_0/boost_1_88_0"
 )
 target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 
@@ -40,7 +39,8 @@ add_executable(DevTest
 target_include_directories(
     DevTest
     PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+		${CMAKE_SOURCE_DIR}
+    	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_precompile_headers(
