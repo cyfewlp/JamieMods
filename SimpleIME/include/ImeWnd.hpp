@@ -67,10 +67,10 @@ namespace LIBC_NAMESPACE_DECL
             /**
              * Focus to parent window to abort IME
              */
-            void                   AbortIme() const;
-            void                   RenderIme() const;
-            void                   ShowToolWindow() const;
-            std::unique_ptr<ImeUI> m_pImeUi = nullptr;
+            void AbortIme() const;
+            void RenderIme() const;
+            void ShowToolWindow() const;
+            void ApplyUiSettings() const;
 
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -87,12 +87,13 @@ namespace LIBC_NAMESPACE_DECL
             auto OnImeEnable(bool enable) -> bool;
             void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
+            std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
             std::unique_ptr<ITextService> m_pTextService = nullptr;
             CComPtr<LangProfileUtil>      m_pLangProfileUtil{};
-            bool                          m_fEnableTsf  = false;
-            bool                          m_fFocused    = false;
-            HWND                          m_hWnd        = nullptr;
-            HWND                          m_hWndParent  = nullptr;
+            bool                          m_fEnableTsf = false;
+            bool                          m_fFocused   = false;
+            HWND                          m_hWnd       = nullptr;
+            HWND                          m_hWndParent = nullptr;
             WNDCLASSEXW                   wc{};
         };
     } // namespace SimpleIME

@@ -182,6 +182,11 @@ namespace LIBC_NAMESPACE_DECL
             m_uiUint32Vars.emplace(name, value);
         }
 
+        auto ImeUIWidgets::GetUInt32Var(String name) -> std::optional<uint32_t>
+        {
+            return m_uiUint32Vars.contains(name) ? std::optional{m_uiUint32Vars.at(name)} : std::nullopt;
+        }
+
         auto ImeUIWidgets::GetBoolVar(String name) -> bool
         {
             return m_uiBoolVars.contains(name) ? m_uiBoolVars.at(name) : false;

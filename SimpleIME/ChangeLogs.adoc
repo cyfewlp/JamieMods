@@ -240,8 +240,11 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 
 == 1.1.2
 
-* [ ] Support save UI config in `imgui.ini`
-* [ ] Add message notifiy window
+* [x] Support save UI config
+* [x] Support read UI config
+** may need to call `SyncImeState` after read UI config;
+* [ ] Add message notify window
+* [ ] Modify `FocusType` to enum class
 
 === Issues
 

@@ -61,6 +61,7 @@ namespace LIBC_NAMESPACE_DECL
             auto Begin(String windowName, bool *open, ImGuiWindowFlags flags) const -> bool;
 
             auto SetUInt32Var(String name, uint32_t value) -> void;
+            auto GetUInt32Var(String name) -> std::optional<uint32_t>;
             auto GetBoolVar(String name) -> bool;
             auto TrySetItemTooltip(String label) const -> void;
 

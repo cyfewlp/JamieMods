@@ -1,12 +1,11 @@
 #include "core/EventHandler.h"
 
+#include "ImeApp.h"
 #include "ImeWnd.hpp"
 #include "Utils.h"
 #include "configs/AppConfig.h"
-#include "core/State.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
-#include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
@@ -175,7 +174,7 @@ namespace LIBC_NAMESPACE_DECL
             if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {
                 firstOpenMainMenu = false;
-                // ImeManagerComposer::GetInstance()->NotifyEnableMod(true);
+                ImeApp::GetInstance().GetImeWnd().ApplyUiSettings();
             }
             else
             {

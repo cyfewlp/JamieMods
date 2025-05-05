@@ -10,7 +10,6 @@
 #include "ime/ITextService.h"
 #include "tsf/LangProfileUtil.h"
 #include "ui/ImeUIWidgets.h"
-#include "ui/UiSettings.h"
 
 #include "imgui.h"
 #include <vector>
@@ -36,16 +35,15 @@ namespace LIBC_NAMESPACE_DECL
             ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
             bool Initialize(LangProfileUtil *pLangProfileUtil);
-            void SetTranslate();
             void SetTheme();
             void RenderIme() const;
             void RenderToolWindow();
             void ShowToolWindow();
-            void ApplyUiSettings(const UiSettings *uiSettings);
+            void ApplyUiSettings(const SettingsConfig &settingsConfig);
+            void SyncUiSettings(SettingsConfig &settingsConfig);
 
         private:
             static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;
-            static auto UpdateImeWindowPosByCursor() -> bool;
             static auto UpdateImeWindowPosByCaret() -> bool;
 
             void RenderSettings();

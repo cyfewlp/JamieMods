@@ -114,7 +114,7 @@ namespace LIBC_NAMESPACE_DECL
                 return m_ImeWindowPosUpdatePolicy;
             }
 
-            void SetDetectImeWindowPosByCaret(const ImeWindowPosUpdatePolicy policy)
+            void SetImeWindowPosUpdatePolicy(const ImeWindowPosUpdatePolicy policy)
             {
                 m_ImeWindowPosUpdatePolicy = policy;
             }

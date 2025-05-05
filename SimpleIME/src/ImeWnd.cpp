@@ -11,7 +11,6 @@
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeManagerComposer.h"
 #include "ime/ImeSupportUtils.h"
-#include "ui/UiSettings.h"
 
 #include <d3d11.h>
 #include <imgui.h>
@@ -183,6 +182,7 @@ namespace LIBC_NAMESPACE_DECL
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ImeManagerComposer::Init(this, m_hWndParent);
+            ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent, true);
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -288,7 +288,6 @@ namespace LIBC_NAMESPACE_DECL
                 style.WindowRounding              = 0.0F;
                 style.Colors[ImGuiCol_WindowBg].w = 1.0F;
             }
-            UiSettings::RegisterImGuiIniHandler(m_pImeUi.get());
 
             log_info("ImGui initialized!");
         }
@@ -338,6 +337,13 @@ namespace LIBC_NAMESPACE_DECL
         auto ImeWnd::OnDestroy() const -> LRESULT
         {
             log_info("Destroy IME Window");
+            auto & settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
+            m_pImeUi->SyncUiSettings(settingsConfig);
+
+            const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
+            auto        configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
+            AppConfig::SaveIni(configFilePath.c_str());
+
             UnInitialize();
             PostQuitMessage(0);
             return S_OK;
@@ -437,6 +443,12 @@ namespace LIBC_NAMESPACE_DECL
         void ImeWnd::ShowToolWindow() const
         {
             m_pImeUi->ShowToolWindow();
+        }
+
+        void ImeWnd::ApplyUiSettings() const
+        {
+            const auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
+            m_pImeUi->ApplyUiSettings(settingsConfig);
         }
 
         auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT

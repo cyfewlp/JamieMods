@@ -56,24 +56,58 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Failed load active ime");
                 return false;
             }
-            SetTranslate();
-            return true;
-        }
-
-        void ImeUI::SetTranslate()
-        {
-            if (!m_translation.GetTranslateLanguages(m_uiConfig.TranslationDir(), m_translateLanguages) ||
-                !m_translation.UseLanguage(m_uiConfig.DefaultLanguage().c_str()))
+            if (!m_translation.GetTranslateLanguages(m_uiConfig.TranslationDir(), m_translateLanguages))
             {
                 log_warn("Failed load translation languages.");
             }
-            else
+            return true;
+        }
+
+        void ImeUI::ApplyUiSettings(const SettingsConfig &settingsConfig)
+        {
+            m_fShowSettings = settingsConfig.showSettings.Value();
+            const auto lang = settingsConfig.language.Value();
+            if (const auto langIt = std::ranges::find(m_translateLanguages, lang); langIt != m_translateLanguages.end())
             {
-                const auto defaultLang = std::ranges::find(m_translateLanguages, m_uiConfig.DefaultLanguage());
-                size_t     index       = std::distance(m_translateLanguages.begin(), defaultLang);
-                index                  = std::min(index, m_translateLanguages.size() - 1);
+                m_translation.UseLanguage(lang.c_str());
+                size_t index = std::distance(m_translateLanguages.begin(), langIt);
+                index        = std::min(index, m_translateLanguages.size() - 1);
                 m_imeUIWidgets.SetUInt32Var("$Languages", index);
             }
+
+            auto *imeManager = ImeManagerComposer::GetInstance();
+            if (!imeManager->IsInited())
+            {
+                return;
+            }
+            imeManager->NotifyEnableMod(settingsConfig.enableMod.Value()); // TODO
+            imeManager->PushType(settingsConfig.focusType.Value(), true);
+            imeManager->SetImeWindowPosUpdatePolicy(settingsConfig.windowPosUpdatePolicy.Value());
+            imeManager->SetEnableUnicodePaste(settingsConfig.enableUnicodePaste.Value());
+            imeManager->SetKeepImeOpen(settingsConfig.keepImeOpen.Value());
+            imeManager->SyncImeStateIfDirty();
+        }
+
+        void ImeUI::SyncUiSettings(SettingsConfig &settingsConfig)
+        {
+            settingsConfig.showSettings.SetValue(m_fShowSettings);
+
+            if (auto opt = m_imeUIWidgets.GetUInt32Var("$Languages"); opt)
+            {
+                settingsConfig.language.SetValue(m_translateLanguages[opt.value()]);
+            }
+
+            const auto *imeManager = ImeManagerComposer::GetInstance();
+            if (!imeManager->IsInited())
+            {
+                return;
+            }
+
+            settingsConfig.enableMod.SetValue(imeManager->IsModEnabled());
+            settingsConfig.focusType.SetValue(imeManager->GetFocusManageType());
+            settingsConfig.windowPosUpdatePolicy.SetValue(imeManager->GetImeWindowPosUpdatePolicy());
+            settingsConfig.enableUnicodePaste.SetValue(imeManager->IsUnicodePasteEnabled());
+            settingsConfig.keepImeOpen.SetValue(imeManager->IsKeepImeOpen());
         }
 
         void ImeUI::SetTheme()
@@ -228,29 +262,6 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        void ImeUI::ApplyUiSettings(const UiSettings *uiSettings)
-        {
-            auto *imeManager = ImeManagerComposer::GetInstance();
-            if (!imeManager->IsInited())
-            {
-                return;
-            }
-
-            m_fShowSettings = uiSettings->IsShowSettings();
-            if (uiSettings->IsEnableMod())
-            {
-                imeManager->NotifyEnableMod(true);
-            }
-            if (std::ranges::find(m_translateLanguages, uiSettings->GetUsedLanguage()) != m_translateLanguages.end())
-            {
-                m_translation.UseLanguage(uiSettings->GetUsedLanguage().c_str());
-            }
-            imeManager->PushType(uiSettings->GetFocusType(), true);
-            imeManager->SetDetectImeWindowPosByCaret(uiSettings->GetWindowPosUpdatePolicy());
-            imeManager->SetEnableUnicodePaste(uiSettings->IsEnableUnicodePaste());
-            imeManager->SetKeepImeOpen(uiSettings->IsKeepImeOpen());
-        }
-
         void ImeUI::RenderToolWindow()
         {
             if (!m_fShowToolWindow)
@@ -400,7 +411,7 @@ namespace LIBC_NAMESPACE_DECL
                 m_imeUIWidgets.RadioButton("$Update_By_Caret", &policy, Policy::BASED_ON_CARET);
                 ImGui::SameLine();
                 m_imeUIWidgets.RadioButton("$Update_By_None", &policy, Policy::NONE);
-                ImeManagerComposer::GetInstance()->SetDetectImeWindowPosByCaret(policy);
+                ImeManagerComposer::GetInstance()->SetImeWindowPosUpdatePolicy(policy);
             }
             m_translation.UseSection("Settings");
         }
