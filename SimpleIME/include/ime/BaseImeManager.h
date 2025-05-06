@@ -4,6 +4,7 @@
 #include "context.h"
 #include "core/State.h"
 #include "ime/ImeManager.h"
+#include "ui/ErrorNotifier.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -21,6 +22,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
                 if (!IsModEnabled())
                 {
+                    ErrorNotifier::GetInstance().addError("Mod is disabled, EnableIme call failed.");
                     log_warn("Mod is disabled, operate failed");
                     return false;
                 }
@@ -43,6 +45,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
                 if (!IsModEnabled())
                 {
+                    ErrorNotifier::GetInstance().addError("Mod is disabled, NotifyEnableIme call failed.");
                     log_warn("Mod is disabled, operate failed");
                     return false;
                 }
@@ -54,6 +57,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
                 if (!IsModEnabled())
                 {
+                    ErrorNotifier::GetInstance().addError("Mod is disabled, WaitEnableIme call failed.");
                     log_warn("Mod is disabled, operate failed");
                     return false;
                 }
@@ -106,6 +110,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{}", __func__);
                 if (!IsModEnabled())
                 {
+                    ErrorNotifier::GetInstance().addError("Mod is disabled, ForceFocusIme call failed.");
                     log_warn("Mod is disabled, operate failed");
                     return false;
                 }
@@ -117,6 +122,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{}", __func__);
                 if (!IsModEnabled())
                 {
+                    ErrorNotifier::GetInstance().addError("Mod is disabled, SyncImeState call failed.");
                     log_warn("Mod is disabled, operate failed");
                     return false;
                 }
@@ -129,6 +135,7 @@ namespace LIBC_NAMESPACE_DECL
                 log_debug("BaseImeManager::{}", __func__);
                 if (!IsModEnabled())
                 {
+                    ErrorNotifier::GetInstance().addError("Mod is disabled, TryFocusIme call failed.");
                     log_warn("Mod is disabled, operate failed");
                     return false;
                 }

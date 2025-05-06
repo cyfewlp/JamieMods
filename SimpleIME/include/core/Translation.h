@@ -29,7 +29,7 @@ namespace LIBC_NAMESPACE_DECL
             void        LoadDefaultTranslate();
             auto        IndexTranslateLanguages(const std::filesystem::path &path) -> bool;
             CSimpleIniA m_ini{};
-            std::string m_selection = "Tool Window";
+            std::string m_section = "Tool Window";
 
             std::unordered_map<std::string, std::filesystem::path> m_translateFilePathCache;
         };

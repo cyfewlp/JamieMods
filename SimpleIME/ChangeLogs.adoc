@@ -243,8 +243,15 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 * [x] Support save UI config
 * [x] Support read UI config
 ** may need to call `SyncImeState` after read UI config;
-* [ ] Add message notify window
-* [ ] Modify `FocusType` to enum class
+* [x] Add message notify window
+* [x] Modify `FocusType` to enum class
+* [x] Bug Fix: Fix `PopAndPushType` duplicate call `WaitImeEnable(false)`;
+* [x] Bug Fix: Fix the judgment on whether the SendNotifyMessage and SendMessage function call is successful;
+
+== 1.2.0
+
+* [ ] remove other mod supports code;
+* [ ] Complete Support `ImThemes`;
 
 === Issues
 

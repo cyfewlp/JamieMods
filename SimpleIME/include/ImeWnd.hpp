@@ -53,10 +53,10 @@ namespace LIBC_NAMESPACE_DECL
              */
             void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false);
             auto Focus() const -> bool;
-            auto SetTsfFocus(bool focus) -> bool;
+            auto SetTsfFocus(bool focus) const -> bool;
             auto IsFocused() const -> bool;
-            auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> BOOL;
-            auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> BOOL;
+            auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
+            auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
             auto GetImeThreadId() const -> DWORD;
 
             constexpr auto GetHWND() const -> HWND

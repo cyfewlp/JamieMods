@@ -8,7 +8,7 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        enum FocusType
+        enum class FocusType : uint8_t
         {
             Permanent = 0,
             Temporary
@@ -21,17 +21,7 @@ namespace LIBC_NAMESPACE_DECL
             ~ImeManagerComposer() override = default;
 
         private:
-            auto Use(FocusType type)
-            {
-                if (FocusType::Permanent == type)
-                {
-                    m_delegate = m_PermanentFocusImeManager.get();
-                }
-                else
-                {
-                    m_delegate = m_temporaryFocusImeManager.get();
-                }
-            }
+            auto Use(FocusType type);
 
         public:
             enum class ImeWindowPosUpdatePolicy : uint8_t
@@ -41,66 +31,18 @@ namespace LIBC_NAMESPACE_DECL
                 BASED_ON_CARET,
             };
 
-            auto PushType(FocusType type, bool syncImeState = false)
-            {
-                bool diff = m_FocusTypeStack.empty() || type != m_FocusTypeStack.top();
-                if (diff)
-                {
-                    m_fDirty = true;
-                    m_delegate != nullptr && m_delegate->WaitEnableIme(false);
-                }
-                m_FocusTypeStack.push(type);
-                Use(type);
-                if (diff && syncImeState)
-                {
-                    m_delegate->SyncImeState();
-                }
-            }
+            void PushType(FocusType type, bool syncImeState = false);
 
-            auto PopType(bool syncImeState = false)
-            {
-                if (m_FocusTypeStack.empty())
-                {
-                    log_warn("Invalid call! Focus type stack is empty.");
-                    return;
-                }
-                auto prev = m_FocusTypeStack.top();
-                m_FocusTypeStack.pop();
-                if (m_FocusTypeStack.empty())
-                {
-                    /*log_warn("Current focus type stack is empty, set fall back type to Permanent");
-                    PushType(FocusType::Permanent);*/
-                    m_delegate = nullptr;
-                }
-                else if (prev != m_FocusTypeStack.top())
-                {
-                    m_fDirty = true;
-                    m_delegate->WaitEnableIme(false);
-                    Use(m_FocusTypeStack.top());
-                    if (syncImeState)
-                    {
-                        m_delegate->SyncImeState();
-                    }
-                }
-            }
+            void PopType(bool syncImeState = false);
 
-            auto PopAndPushType(FocusType type, bool syncImeState = false)
-            {
-                if (m_FocusTypeStack.empty())
-                {
-                    log_warn("Invalid call! Focus type stack is empty.");
-                    return;
-                }
-                PopType();
-                PushType(type, syncImeState);
-            }
+            void PopAndPushType(FocusType type, bool syncImeState = false);
 
             constexpr auto GetFocusManageType() const -> const FocusType &
             {
                 return m_FocusTypeStack.top();
             }
 
-            auto GetTemporaryFocusImeManager() -> TemporaryFocusImeManager *
+            auto GetTemporaryFocusImeManager() const -> TemporaryFocusImeManager *
             {
                 return m_temporaryFocusImeManager.get();
             }
@@ -136,7 +78,10 @@ namespace LIBC_NAMESPACE_DECL
 
             void SetKeepImeOpen(const bool fKeepImeOpen)
             {
-                m_fDirty       = true;
+                if (m_fKeepImeOpen != fKeepImeOpen)
+                {
+                    m_fDirty = true;
+                }
                 m_fKeepImeOpen = fKeepImeOpen;
             }
 
@@ -152,9 +97,9 @@ namespace LIBC_NAMESPACE_DECL
 
             void SyncImeStateIfDirty()
             {
-                if (m_fDirty)
+                if (m_fDirty && !SyncImeState())
                 {
-                    SyncImeState();
+                    ErrorNotifier::GetInstance().addError("Unexpected error: SyncImeState failed.");
                 }
             }
 
@@ -165,26 +110,9 @@ namespace LIBC_NAMESPACE_DECL
 
             //////////////////////////////////////////////////
 
-            auto EnableIme(bool enable) -> bool override
-            {
-                if (m_fSupportOtherMod)
-                {
-                    return m_delegate->EnableIme(enable);
-                }
-                return m_delegate->EnableIme(m_fKeepImeOpen || enable);
-            }
+            auto EnableIme(bool enable) -> bool override;
 
-            auto EnableMod(bool enable) -> bool override
-            {
-                const bool prev = IsModEnabled();
-                SetEnableMod(enable);
-                if (m_delegate->EnableMod(enable))
-                {
-                    return true;
-                }
-                SetEnableMod(prev);
-                return false;
-            }
+            auto EnableMod(bool enable) -> bool override;
 
             auto GiveUpFocus() const -> bool override
             {

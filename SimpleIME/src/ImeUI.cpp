@@ -78,9 +78,13 @@ namespace LIBC_NAMESPACE_DECL
             auto *imeManager = ImeManagerComposer::GetInstance();
             if (!imeManager->IsInited())
             {
+                m_errorNotifier.addError("Fatal error: IME manager is not initialized.");
                 return;
             }
-            imeManager->NotifyEnableMod(settingsConfig.enableMod.Value()); // TODO
+            if (!imeManager->NotifyEnableMod(settingsConfig.enableMod.Value()))
+            {
+                m_errorNotifier.addError("Unexcepted error: Can't enable mod");
+            }
             imeManager->PushType(settingsConfig.focusType.Value(), true);
             imeManager->SetImeWindowPosUpdatePolicy(settingsConfig.windowPosUpdatePolicy.Value());
             imeManager->SetEnableUnicodePaste(settingsConfig.enableUnicodePaste.Value());
@@ -186,7 +190,6 @@ namespace LIBC_NAMESPACE_DECL
                 case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CARET: {
                     if (!showIme || !updated)
                     {
-                        log_debug("BASED_ON_CARET");
                         FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
                         if (UpdateImeWindowPosByCaret())
                         {
@@ -315,9 +318,11 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return;
             }
-            auto *imeManager = ImeManagerComposer::GetInstance();
-            if (m_imeUIWidgets.Begin("$Settings", &m_fShowSettings, ImGuiWindowFlags_NoNav))
+            auto      *imeManager = ImeManagerComposer::GetInstance();
+            const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
+            if (ImGui::Begin(windowName.c_str(), &m_fShowSettings, ImGuiWindowFlags_NoNav))
             {
+                m_translation.UseSection("Settings");
                 ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
                 do
                 {
@@ -390,9 +395,9 @@ namespace LIBC_NAMESPACE_DECL
             m_imeUIWidgets.SeparatorText("$Focus_Manage");
 
             auto focusType = imeManager->GetFocusManageType();
-            bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, Permanent);
+            bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, FocusType::Permanent);
             ImGui::SameLine();
-            pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, Temporary);
+            pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, FocusType::Temporary);
             if (pressed)
             {
                 imeManager->PopAndPushType(focusType);

@@ -11,6 +11,7 @@
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeManagerComposer.h"
 #include "ime/ImeSupportUtils.h"
+#include "ui/ErrorNotifier.h"
 
 #include <d3d11.h>
 #include <imgui.h>
@@ -182,7 +183,9 @@ namespace LIBC_NAMESPACE_DECL
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ImeManagerComposer::Init(this, m_hWndParent);
-            ImeManagerComposer::GetInstance()->PushType(FocusType::Permanent, true);
+            auto *imeManager = ImeManagerComposer::GetInstance();
+            imeManager->PushType(FocusType::Permanent);
+            imeManager->EnableMod(true);
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -209,12 +212,10 @@ namespace LIBC_NAMESPACE_DECL
                     return pThis->OnDestroy();
                 }
                 case CM_IME_ENABLE: {
-                    ImeManagerComposer::GetInstance()->EnableIme(wParam != FALSE);
-                    return S_OK;
+                    return ImeManagerComposer::GetInstance()->EnableIme(wParam != FALSE) ? S_OK : S_FALSE;
                 }
                 case CM_MOD_ENABLE: {
-                    ImeManagerComposer::GetInstance()->EnableMod(wParam != FALSE);
-                    return S_OK;
+                    return ImeManagerComposer::GetInstance()->EnableMod(wParam != FALSE) ? S_OK : S_FALSE;
                 }
                 case CM_ACTIVATE_PROFILE: {
                     if (pThis == nullptr) break;
@@ -337,7 +338,7 @@ namespace LIBC_NAMESPACE_DECL
         auto ImeWnd::OnDestroy() const -> LRESULT
         {
             log_info("Destroy IME Window");
-            auto & settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
+            auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
             m_pImeUi->SyncUiSettings(settingsConfig);
 
             const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
@@ -358,7 +359,7 @@ namespace LIBC_NAMESPACE_DECL
             return IsFocused();
         }
 
-        auto ImeWnd::SetTsfFocus(bool focus) -> bool
+        auto ImeWnd::SetTsfFocus(bool focus) const -> bool
         {
             return m_pTextService->OnFocus(focus);
         }
@@ -368,22 +369,22 @@ namespace LIBC_NAMESPACE_DECL
             return m_fFocused;
         }
 
-        auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> BOOL
+        auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
         {
             if (m_hWnd == nullptr)
             {
-                return 0;
+                return false;
             }
-            return ::SendMessageW(m_hWnd, uMsg, wParam, lParam);
+            return ::SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
         }
 
-        auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> BOOL
+        auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
         {
             if (m_hWnd == nullptr)
             {
                 return 0;
             }
-            return ::SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam);
+            return ::SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
         }
 
         auto ImeWnd::GetImeThreadId() const -> DWORD
@@ -426,6 +427,7 @@ namespace LIBC_NAMESPACE_DECL
             NewFrame();
             ImGui::NewFrame();
 
+            ErrorNotifier::GetInstance().Show();
             m_pImeUi->RenderToolWindow();
             m_pImeUi->RenderIme();
 

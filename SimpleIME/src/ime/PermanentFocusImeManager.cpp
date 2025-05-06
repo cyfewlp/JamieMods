@@ -43,12 +43,12 @@ namespace LIBC_NAMESPACE_DECL
 
         auto PermanentFocusImeManager::DoNotifyEnableIme(bool enable) const -> bool
         {
-            return m_ImeWnd->SendNotifyMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+            return m_ImeWnd->SendNotifyMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0);
         }
 
         auto PermanentFocusImeManager::DoWaitEnableIme(bool enable) const -> bool
         {
-            return m_ImeWnd->SendMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+            return m_ImeWnd->SendMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0);
         }
 
         // must call on IME thread(by send message)
@@ -58,7 +58,7 @@ namespace LIBC_NAMESPACE_DECL
         // 3. Focus to IME/Game
         auto PermanentFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
         {
-            bool success = true;
+            bool success;
             if (!fEnableMod)
             {
                 success = EnableIme(false);
@@ -90,12 +90,12 @@ namespace LIBC_NAMESPACE_DECL
 
         auto PermanentFocusImeManager::DoNotifyEnableMod(bool enable) const -> bool
         {
-            return m_ImeWnd->SendNotifyMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+            return m_ImeWnd->SendNotifyMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0);
         }
 
         auto PermanentFocusImeManager::DoWaitEnableMod(bool enable) const -> bool
         {
-            return m_ImeWnd->SendMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+            return m_ImeWnd->SendMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0);
         }
 
         // Call on IME thread
