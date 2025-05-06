@@ -174,7 +174,7 @@ namespace LIBC_NAMESPACE_DECL
             if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
             {
                 firstOpenMainMenu = false;
-                ImeApp::GetInstance().GetImeWnd().ApplyUiSettings();
+                // ImeApp::GetInstance().GetImeWnd().ApplyUiSettings();
             }
             else
             {

@@ -174,7 +174,6 @@ namespace LIBC_NAMESPACE_DECL
                 Register(m_useClassicTheme);
                 Register(m_translationDir);
                 Register(m_themeDirectory);
-                Register(m_defaultTheme);
                 Register(m_highlightTextColor);
                 Register(m_eastAsiaFontFile);
                 Register(m_emojiFontFile);
@@ -217,11 +216,6 @@ namespace LIBC_NAMESPACE_DECL
                 return m_themeDirectory.Value();
             }
 
-            [[nodiscard]] auto DefaultTheme() const -> const std::string &
-            {
-                return m_defaultTheme.Value();
-            }
-
             [[nodiscard]] auto HighlightTextColor() const -> uint32_t
             {
                 return m_highlightTextColor.Value();
@@ -232,7 +226,6 @@ namespace LIBC_NAMESPACE_DECL
             Property<float>       m_fontSize{14.0F, "fontSize"};
             Property<bool>        m_useClassicTheme{false, "useClassicTheme"};
             Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "themesDirectory"};
-            Property<std::string> m_defaultTheme{"darcula", "defaultTheme"};
             Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "highlightTextColor"};
             Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "eastAsiaFontFile"};
             Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "emojiFontFile"};
@@ -255,11 +248,15 @@ namespace LIBC_NAMESPACE_DECL
 
         struct SettingsConfig final : BaseConfig<SettingsConfig>
         {
+            static constexpr float DEFAULT_FONT_SIZE_SCALE = 1.0F;
+            static constexpr float MIN_FONT_SIZE_SCALE     = 0.1F;
+            static constexpr float MAX_FONT_SIZE_SCALE     = 5.0F;
 
             SettingsConfig();
 
             void Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) const override;
 
+            Property<float>           fontSizeScale{1.0, "fontSizeScale"};
             Property<bool>            showSettings{false, "showSettings"};
             Property<bool>            enableMod{true, "enableMod"};
             Property<std::string>     language{"chinese", "language"};
@@ -267,6 +264,7 @@ namespace LIBC_NAMESPACE_DECL
             Property<WindowPosPolicy> windowPosUpdatePolicy{WindowPosPolicy::BASED_ON_CARET, "windowPosUpdatePolicy"};
             Property<bool>            enableUnicodePaste{true, "enableUnicodePaste"};
             Property<bool>            keepImeOpen{true, "keepImeOpen"};
+            Property<std::string>     theme{"darcula", "theme"};
         };
 
         class AppConfig : public BaseConfig<AppConfig>
@@ -344,7 +342,7 @@ namespace LIBC_NAMESPACE_DECL
 
         private:
             static void LoadIniConfig(const char *configFilePath, AppConfig &destAppConfig);
-            static void SaveIniConfig(const char *configFilePath, AppConfig &destAppConfig);
+            static void SaveIniConfig(const char *configFilePath, const AppConfig &destAppConfig);
         };
 
     } // namespace SimpleIME

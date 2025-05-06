@@ -2,6 +2,7 @@
 // Created by jamie on 2025/5/6.
 //
 #include "ime/ImeManagerComposer.h"
+#include "configs/AppConfig.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -19,6 +20,40 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
+        void ImeManagerComposer::ApplyUiSettings(const SettingsConfig &settingsConfig)
+        {
+            if (!IsInited())
+            {
+                ErrorNotifier::GetInstance().addError("Fatal error: IME manager is not initialized.");
+                return;
+            }
+            PushType(settingsConfig.focusType.Value());
+            SetImeWindowPosUpdatePolicy(settingsConfig.windowPosUpdatePolicy.Value());
+            SetEnableUnicodePaste(settingsConfig.enableUnicodePaste.Value());
+            SetKeepImeOpen(settingsConfig.keepImeOpen.Value());
+            if (!NotifyEnableMod(settingsConfig.enableMod.Value()))
+            {
+                ErrorNotifier::GetInstance().addError("Unexcepted error: Can't enable mod");
+            }
+            else if (settingsConfig.enableMod.Value())
+            {
+                SyncImeStateIfDirty();
+            }
+        }
+
+        void ImeManagerComposer::SyncUiSettings(SettingsConfig &settingsConfig) const
+        {
+            if (!IsInited())
+            {
+                return;
+            }
+            settingsConfig.enableMod.SetValue(IsModEnabled());
+            settingsConfig.focusType.SetValue(GetFocusManageType());
+            settingsConfig.windowPosUpdatePolicy.SetValue(m_ImeWindowPosUpdatePolicy);
+            settingsConfig.enableUnicodePaste.SetValue(m_fEnableUnicodePaste);
+            settingsConfig.keepImeOpen.SetValue(m_fKeepImeOpen);
+        }
+
         void ImeManagerComposer::PushType(FocusType type, bool syncImeState)
         {
             assert(!m_fDirty && "WARNING: Missing call SyncImeState?");
@@ -26,7 +61,7 @@ namespace LIBC_NAMESPACE_DECL
             if (diff)
             {
                 m_fDirty = true;
-                if (m_delegate != nullptr && !m_delegate->WaitEnableIme(false))
+                if (!dynamic_cast<DummyFocusImeManager *>(m_delegate) && !m_delegate->WaitEnableIme(false))
                 {
                     ErrorNotifier::GetInstance().addError("Unexpected error: WaitEnableIme(false) failed.");
                 }
@@ -107,18 +142,23 @@ namespace LIBC_NAMESPACE_DECL
             {
                 return m_delegate->EnableIme(enable);
             }
-            return m_delegate->EnableIme(m_fKeepImeOpen || enable);
+            if (!m_delegate->EnableIme(m_fKeepImeOpen || enable))
+            {
+                ErrorNotifier::GetInstance().addError(std::format("Unexpected error: EnableIme({}) failed.", enable));
+                return false;
+            }
+            return true;
         }
 
         auto ImeManagerComposer::EnableMod(bool enable) -> bool
         {
-            const bool prev = IsModEnabled();
-            SetEnableMod(enable);
+            if (IsModEnabled() == enable) return true;
             if (m_delegate->EnableMod(enable))
             {
+                SetEnableMod(enable);
                 return true;
             }
-            SetEnableMod(prev);
+            ErrorNotifier::GetInstance().addError(std::format("Unexpected error: EnableMod({}) failed.", enable));
             return false;
         }
     }

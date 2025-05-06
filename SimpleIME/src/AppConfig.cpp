@@ -12,12 +12,13 @@ namespace LIBC_NAMESPACE_DECL
     {
         AppConfig AppConfig::g_appConfig{};
 
-        void AppUiConfig::Save(CSimpleIniA &ini, const AppUiConfig &diskConfig) const
+        void AppUiConfig::Save(CSimpleIniA &/*ini*/, const AppUiConfig &/*diskConfig*/) const
         {
         }
 
         SettingsConfig::SettingsConfig() : BaseConfig("Settings")
         {
+            Register(fontSizeScale);
             Register(showSettings);
             Register(enableMod);
             Register(language);
@@ -25,6 +26,7 @@ namespace LIBC_NAMESPACE_DECL
             Register(windowPosUpdatePolicy);
             Register(enableUnicodePaste);
             Register(keepImeOpen);
+            Register(theme);
         }
 
         template <typename Type>
@@ -34,6 +36,10 @@ namespace LIBC_NAMESPACE_DECL
             if constexpr (std::is_same_v<Type, bool>)
             {
                 ini.SetBoolValue(section, property.ConfigName(), property.Value());
+            }
+            else if constexpr (std::is_same_v<Type, float>)
+            {
+                ini.SetDoubleValue(section, property.ConfigName(), property.Value());
             }
             else if constexpr (std::is_same_v<Type, std::string>)
             {
@@ -69,6 +75,9 @@ namespace LIBC_NAMESPACE_DECL
                     default:
                         break;
                 }
+            } else
+            {
+                assert(false && "Unknown Property type");
             }
         }
 
@@ -85,6 +94,7 @@ namespace LIBC_NAMESPACE_DECL
 
         void SettingsConfig::Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) const
         {
+            IniSetValueIfDiff(ini, SectionName(), fontSizeScale, diskConfig.fontSizeScale);
             IniSetValueIfDiff(ini, SectionName(), showSettings, diskConfig.showSettings);
             IniSetValueIfDiff(ini, SectionName(), enableMod, diskConfig.enableMod);
             IniSetValueIfDiff(ini, SectionName(), language, diskConfig.language);
@@ -92,6 +102,7 @@ namespace LIBC_NAMESPACE_DECL
             IniSetValueIfDiff(ini, SectionName(), windowPosUpdatePolicy, diskConfig.windowPosUpdatePolicy);
             IniSetValueIfDiff(ini, SectionName(), enableUnicodePaste, diskConfig.enableUnicodePaste);
             IniSetValueIfDiff(ini, SectionName(), keepImeOpen, diskConfig.keepImeOpen);
+            IniSetValueIfDiff(ini, SectionName(), theme, diskConfig.theme);
         }
 
         void AppConfig::Save(CSimpleIniA &ini, const AppConfig &diskConfig) const
@@ -140,9 +151,16 @@ namespace LIBC_NAMESPACE_DECL
             destAppConfig.Load(ini);
             destAppConfig.m_appUiConfig.Load(ini);
             destAppConfig.m_settingsConfig.Load(ini);
+
+            // validate
+            float fontSizeScale = destAppConfig.m_settingsConfig.fontSizeScale.Value();
+            if (fontSizeScale < SettingsConfig::MIN_FONT_SIZE_SCALE || fontSizeScale > SettingsConfig::MAX_FONT_SIZE_SCALE)
+            {
+                destAppConfig.m_settingsConfig.fontSizeScale.SetValue(SettingsConfig::DEFAULT_FONT_SIZE_SCALE);
+            }
         }
 
-        void AppConfig::SaveIniConfig(const char *configFilePath, AppConfig &destAppConfig)
+        void AppConfig::SaveIniConfig(const char *configFilePath, const AppConfig &destAppConfig)
         {
             CSimpleIniA ini(false, false, true);
             if (const SI_Error error = ini.LoadFile(configFilePath); error != SI_OK)

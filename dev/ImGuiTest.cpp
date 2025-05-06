@@ -295,15 +295,21 @@ int main(int, char **)
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
         {
-            static float f       = 0.0f;
-            static int   counter = 0;
-
             ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
             ImGui::Text("\xf0\x9f\x8d\x89 \xe2\x9c\x94\xef\xb8\x8f");
             ImGui::SameLine();
             ImGui::BeginGroup();
             ImGui::Checkbox("Demo Window", &show_demo_window);
             ImGui::Checkbox("Another Window", &show_another_window);
+
+            ImGui::SameLine();
+            auto & imGuiIo = ImGui::GetIO();
+            ImGui::Text("Font_Size_Scale");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            ImGui::DragFloat("##Font_Size_Scale", &imGuiIo.FontGlobalScale, 0.05,
+                                 0.1f, 5.0f,
+                                 "%.3f", ImGuiSliderFlags_NoInput);
             ImGui::EndGroup();
 
             static char buf[64] = "";

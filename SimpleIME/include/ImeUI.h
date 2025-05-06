@@ -9,7 +9,6 @@
 #include "core/Translation.h"
 #include "ime/ITextService.h"
 #include "tsf/LangProfileUtil.h"
-#include "ui/ErrorNotifier.h"
 #include "ui/ImeUIWidgets.h"
 
 #include "imgui.h"
@@ -61,15 +60,15 @@ namespace LIBC_NAMESPACE_DECL
             ITextService            *m_pTextService    = nullptr;
             ImeWnd                  *m_pImeWnd         = nullptr;
             ImGuiThemeLoader         m_uiThemeLoader{};
-            std::vector<std::string> m_themeNames;
+            std::vector<std::string> m_themeNames{};
             Translation              m_translation;
             ImeUIWidgets             m_imeUIWidgets{&m_translation};
             std::vector<std::string> m_translateLanguages;
-            ErrorNotifier            m_errorNotifier{};
 
-            bool m_fShowToolWindow = false;
-            bool m_fShowSettings   = false;
-            bool m_fPinToolWindow  = false;
+            bool  m_fShowToolWindow     = false;
+            bool  m_fShowSettings       = false;
+            bool  m_fPinToolWindow      = false;
+            float m_fontSizeScale = 1.0f;
 
             std::vector<std::string> m_errorMessages;
             int                      m_toolWindowFlags =

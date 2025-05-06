@@ -79,13 +79,13 @@ namespace LIBC_NAMESPACE_DECL
             static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
             static void OnCompositionResult(const std::wstring &compositionString);
 
-            void OnStart();
-            auto OnCreate() const -> LRESULT;
-            auto OnDestroy() const -> LRESULT;
-            void InitializeTextService(const AppConfig &pAppConfig);
-            auto IsImeWantMessage(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
-            auto OnImeEnable(bool enable) -> bool;
-            void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+            void        OnStart();
+            static auto OnCreate() -> LRESULT;
+            auto        OnDestroy() const -> LRESULT;
+            void        InitializeTextService(const AppConfig &pAppConfig);
+            static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
+            auto        OnImeEnable(bool enable) const -> bool;
+            void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
             std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
             std::unique_ptr<ITextService> m_pTextService = nullptr;

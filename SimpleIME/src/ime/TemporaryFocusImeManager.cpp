@@ -85,7 +85,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         // call on render thread
-        auto TemporaryFocusImeManager::DoSyncImeState() const -> bool
+        auto TemporaryFocusImeManager::DoSyncImeState() -> bool
         {
             const auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
             return NotifyEnableIme(enableIme);

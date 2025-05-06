@@ -4,7 +4,6 @@
 #include "context.h"
 #include "core/State.h"
 #include "ime/ImeManager.h"
-#include "ui/ErrorNotifier.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -17,69 +16,13 @@ namespace LIBC_NAMESPACE_DECL
             mutable bool m_fForceUpdate = false;
 
         public:
-            auto EnableIme(bool enable) -> bool override
-            {
-                log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-                if (!IsModEnabled())
-                {
-                    ErrorNotifier::GetInstance().addError("Mod is disabled, EnableIme call failed.");
-                    log_warn("Mod is disabled, operate failed");
-                    return false;
-                }
-                if (m_fForceUpdate)
-                {
-                    auto result    = DoEnableIme(enable);
-                    m_fForceUpdate = false;
-                    return result;
-                }
-                if ((State::GetInstance().Has(State::IME_DISABLED) && enable) ||
-                    (State::GetInstance().NotHas(State::IME_DISABLED) && !enable))
-                {
-                    return DoEnableIme(enable);
-                }
-                return true;
-            }
+            auto EnableIme(bool enable) -> bool override;
 
-            auto NotifyEnableIme(bool enable) const -> bool override
-            {
-                log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-                if (!IsModEnabled())
-                {
-                    ErrorNotifier::GetInstance().addError("Mod is disabled, NotifyEnableIme call failed.");
-                    log_warn("Mod is disabled, operate failed");
-                    return false;
-                }
-                return DoNotifyEnableIme(enable);
-            }
+            auto NotifyEnableIme(bool enable) const -> bool override;
 
-            auto WaitEnableIme(bool enable) const -> bool override
-            {
-                log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-                if (!IsModEnabled())
-                {
-                    ErrorNotifier::GetInstance().addError("Mod is disabled, WaitEnableIme call failed.");
-                    log_warn("Mod is disabled, operate failed");
-                    return false;
-                }
-                return DoWaitEnableIme(enable);
-            }
+            auto WaitEnableIme(bool enable) const -> bool override;
 
-            auto EnableMod(bool fEnableMod) -> bool override
-            {
-                log_debug("BaseImeManager::{} {}", __func__, fEnableMod ? "enable" : "disable");
-                if (m_fForceUpdate)
-                {
-                    auto result    = DoEnableMod(fEnableMod);
-                    m_fForceUpdate = false;
-                    return result;
-                }
-                if (IsModEnabled() == fEnableMod)
-                {
-                    return true;
-                }
-                log_debug("{} mod", fEnableMod ? "enable" : "disable");
-                return DoEnableMod(fEnableMod);
-            }
+            auto EnableMod(bool fEnableMod) -> bool override;
 
             auto NotifyEnableMod(bool enable) const -> bool override
             {
@@ -105,42 +48,11 @@ namespace LIBC_NAMESPACE_DECL
                 return false;
             }
 
-            auto ForceFocusIme() -> bool override
-            {
-                log_debug("BaseImeManager::{}", __func__);
-                if (!IsModEnabled())
-                {
-                    ErrorNotifier::GetInstance().addError("Mod is disabled, ForceFocusIme call failed.");
-                    log_warn("Mod is disabled, operate failed");
-                    return false;
-                }
-                return DoForceFocusIme();
-            }
+            auto ForceFocusIme() -> bool override;
 
-            auto SyncImeState() -> bool override
-            {
-                log_debug("BaseImeManager::{}", __func__);
-                if (!IsModEnabled())
-                {
-                    ErrorNotifier::GetInstance().addError("Mod is disabled, SyncImeState call failed.");
-                    log_warn("Mod is disabled, operate failed");
-                    return false;
-                }
-                m_fForceUpdate = true;
-                return DoSyncImeState();
-            }
+            auto SyncImeState() -> bool override;
 
-            auto TryFocusIme() -> bool override
-            {
-                log_debug("BaseImeManager::{}", __func__);
-                if (!IsModEnabled())
-                {
-                    ErrorNotifier::GetInstance().addError("Mod is disabled, TryFocusIme call failed.");
-                    log_warn("Mod is disabled, operate failed");
-                    return false;
-                }
-                return DoTryFocusIme();
-            }
+            auto TryFocusIme() -> bool override;
 
         protected:
             virtual auto DoEnableIme(bool enable) -> bool             = 0;
@@ -150,7 +62,7 @@ namespace LIBC_NAMESPACE_DECL
             virtual auto DoNotifyEnableMod(bool enable) const -> bool = 0;
             virtual auto DoWaitEnableMod(bool enable) const -> bool   = 0;
             virtual auto DoForceFocusIme() -> bool                    = 0;
-            virtual auto DoSyncImeState() const -> bool               = 0;
+            virtual auto DoSyncImeState() -> bool                     = 0;
             virtual auto DoTryFocusIme() -> bool                      = 0;
         };
     }

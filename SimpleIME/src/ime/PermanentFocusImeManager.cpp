@@ -65,14 +65,7 @@ namespace LIBC_NAMESPACE_DECL
             }
             else
             {
-                if (Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry())
-                {
-                    success = EnableIme(true);
-                }
-                else
-                {
-                    success = EnableIme(false);
-                }
+                success = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
             }
 
             if (success)
@@ -125,9 +118,12 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         // call on Render thread
-        auto PermanentFocusImeManager::DoSyncImeState() const -> bool
+        auto PermanentFocusImeManager::DoSyncImeState() -> bool
         {
-            return NotifyEnableMod(true);
+            bool success = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
+            success      = success && UnlockKeyboard();
+            success      = success && FocusImeOrGame(true);
+            return success;
         }
 
         // call on main thread

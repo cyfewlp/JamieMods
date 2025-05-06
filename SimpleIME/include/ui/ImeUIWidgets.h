@@ -35,9 +35,8 @@ namespace LIBC_NAMESPACE_DECL
             void Button(String label, OnClick onClick) const;
             void Checkbox(String label, bool &checked, const std::function<bool(bool isChecked)> &&onChecked) const;
             auto Checkbox(String label, bool &checked) const -> bool;
-            auto ComboApply(String label, const std::vector<std::string> &values,
+            auto Combo(String label, const std::vector<std::string> &values,
                             std::function<bool(const std::string &)> onApply) -> uint32_t;
-
             template <typename T>
             constexpr auto RadioButton(String label, T *pValue, T value) -> bool
             {
@@ -62,7 +61,7 @@ namespace LIBC_NAMESPACE_DECL
 
             auto SetUInt32Var(String name, uint32_t value) -> void;
             auto GetUInt32Var(String name) -> std::optional<uint32_t>;
-            auto GetBoolVar(String name) -> bool;
+            auto GetBoolVar(String name) const -> bool;
             auto TrySetItemTooltip(String label) const -> void;
 
         private:

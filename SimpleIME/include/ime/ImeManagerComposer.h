@@ -3,15 +3,74 @@
 #include "ime/ImeManager.h"
 #include "ime/PermanentFocusImeManager.h"
 #include "ime/TemporaryFocusImeManager.h"
+#include "ui/ErrorNotifier.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
+        struct SettingsConfig;
+
         enum class FocusType : uint8_t
         {
             Permanent = 0,
             Temporary
+        };
+
+        class DummyFocusImeManager final : public BaseImeManager
+        {
+        public:
+            static auto GetInstance() -> DummyFocusImeManager *
+            {
+                static DummyFocusImeManager instance;
+                return &instance;
+            }
+
+        protected:
+            auto DoEnableIme(bool) -> bool override
+            {
+                return false;
+            }
+
+            auto DoNotifyEnableIme(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoWaitEnableIme(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoEnableMod(bool) -> bool override
+            {
+                return false;
+            }
+
+            auto DoNotifyEnableMod(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoWaitEnableMod(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoForceFocusIme() -> bool override
+            {
+                return false;
+            }
+
+            auto DoSyncImeState() -> bool override
+            {
+                return false;
+            }
+
+            auto DoTryFocusIme() -> bool override
+            {
+                return false;
+            }
         };
 
         class ImeManagerComposer final : public ImeManager
@@ -30,6 +89,9 @@ namespace LIBC_NAMESPACE_DECL
                 BASED_ON_CURSOR,
                 BASED_ON_CARET,
             };
+
+            void ApplyUiSettings(const SettingsConfig &settingsConfig);
+            void SyncUiSettings(SettingsConfig &settingsConfig) const;
 
             void PushType(FocusType type, bool syncImeState = false);
 
@@ -169,7 +231,7 @@ namespace LIBC_NAMESPACE_DECL
         private:
             std::unique_ptr<PermanentFocusImeManager> m_PermanentFocusImeManager = nullptr;
             std::unique_ptr<TemporaryFocusImeManager> m_temporaryFocusImeManager = nullptr;
-            ImeManager                               *m_delegate                 = nullptr;
+            ImeManager                               *m_delegate                 = DummyFocusImeManager::GetInstance();
             std::stack<FocusType>                     m_FocusTypeStack{};
             bool                                      m_fKeepImeOpen        = false;
             bool                                      m_fEnableUnicodePaste = true;

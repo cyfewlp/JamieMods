@@ -99,7 +99,7 @@ namespace LIBC_NAMESPACE_DECL
             }
         }
 
-        auto ImeWnd::IsImeWantMessage(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
+        auto ImeWnd::IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
         {
             BOOL fEaten = FALSE;
             if (msg.message == WM_KEYDOWN)
@@ -183,9 +183,7 @@ namespace LIBC_NAMESPACE_DECL
             Context::GetInstance()->SetHwndIme(m_hWnd);
 
             ImeManagerComposer::Init(this, m_hWndParent);
-            auto *imeManager = ImeManagerComposer::GetInstance();
-            imeManager->PushType(FocusType::Permanent);
-            imeManager->EnableMod(true);
+            ApplyUiSettings();
         }
 
         auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -293,12 +291,12 @@ namespace LIBC_NAMESPACE_DECL
             log_info("ImGui initialized!");
         }
 
-        auto ImeWnd::OnCreate() const -> LRESULT
+        auto ImeWnd::OnCreate() -> LRESULT
         {
             return S_OK;
         }
 
-        auto ImeWnd::OnImeEnable(bool enable) -> bool
+        auto ImeWnd::OnImeEnable(bool enable) const -> bool
         {
             return m_pTextService->OnFocus(enable);
         }
@@ -337,14 +335,16 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeWnd::OnDestroy() const -> LRESULT
         {
-            log_info("Destroy IME Window");
+            log_info("Save ui settings...");
             auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
             m_pImeUi->SyncUiSettings(settingsConfig);
+            ImeManagerComposer::GetInstance()->SyncUiSettings(settingsConfig);
 
             const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
             auto        configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
             AppConfig::SaveIni(configFilePath.c_str());
 
+            log_info("Destroy IME Window");
             UnInitialize();
             PostQuitMessage(0);
             return S_OK;
@@ -382,7 +382,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             if (m_hWnd == nullptr)
             {
-                return 0;
+                return false;
             }
             return ::SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
         }
@@ -451,6 +451,7 @@ namespace LIBC_NAMESPACE_DECL
         {
             const auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
             m_pImeUi->ApplyUiSettings(settingsConfig);
+            ImeManagerComposer::GetInstance()->ApplyUiSettings(settingsConfig);
         }
 
         auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT

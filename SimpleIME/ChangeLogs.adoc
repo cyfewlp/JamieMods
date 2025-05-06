@@ -247,6 +247,11 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 * [x] Modify `FocusType` to enum class
 * [x] Bug Fix: Fix `PopAndPushType` duplicate call `WaitImeEnable(false)`;
 * [x] Bug Fix: Fix the judgment on whether the SendNotifyMessage and SendMessage function call is successful;
+* [x] Should not send "error message" when occur because mod is disabled.
+* [x] Support scale font size;
+* Deprecate config `UI#Default_Theme` and replaced by `Settings#Theme`
+* Deprecate config `UI#Default_Language` and replaced by `Settings#Language`
+* Deprecate config `General#Enable_Unicode_Paste`, replaced by Settings#Enable_Unicode_Paste
 
 == 1.2.0
 
