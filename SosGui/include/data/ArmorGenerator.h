@@ -33,6 +33,15 @@ protected:
     static auto IsArmorCanDisplay(RE::TESObjectARMO *armor) -> bool;
 };
 
+class FormIdArmorGenerator final : public ArmorGenerator
+{
+    RE::FormID armorFormId = 0;
+public:
+    explicit FormIdArmorGenerator(RE::FormID a_armorFormId) : armorFormId(a_armorFormId) {}
+
+    void for_each(std::function<void(RE::TESObjectARMO *armor)> &&action) override;
+};
+
 class InventoryArmorGenerator final : public ArmorGenerator
 {
     RE::Actor *actor = nullptr;

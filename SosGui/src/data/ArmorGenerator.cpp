@@ -36,6 +36,14 @@ namespace LIBC_NAMESPACE_DECL
         return canDisplay;
     }
 
+    void FormIdArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor)> &&action)
+    {
+        if (auto foundArmor = RE::TESForm::LookupByID<RE::TESObjectARMO>(armorFormId); foundArmor != nullptr)
+        {
+            action(foundArmor);
+        }
+    }
+
     void InventoryArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor)> &&action)
     {
         if (actor == nullptr)
