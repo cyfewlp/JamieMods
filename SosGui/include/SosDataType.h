@@ -75,15 +75,6 @@ namespace LIBC_NAMESPACE_DECL
         static constexpr auto NotifyCombatStateChanged                  = "NotifyCombatStateChanged";
     };
 
-    enum OutfitAddPolicy : int8_t
-    {
-        OutfitAddPolicy_AddFromCarried = 0,
-        OutfitAddPolicy_AddFromInventory,
-        OutfitAddPolicy_AddByID,
-        OutfitAddPolicy_AddAny,
-        OutfitAddPolicy_Count,
-    };
-
     static constexpr std::array ARMOR_SLOT_NAMES = {
         "None",
         "Head",

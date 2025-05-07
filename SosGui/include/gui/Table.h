@@ -19,6 +19,12 @@ struct TableFlags
         return *this;
     }
 
+    constexpr auto BordersInnerH() -> TableFlags &
+    {
+        flags |= ImGuiTableFlags_BordersInnerH;
+        return *this;
+    }
+
     constexpr auto Borders() -> TableFlags &
     {
         flags |= ImGuiTableFlags_Borders;

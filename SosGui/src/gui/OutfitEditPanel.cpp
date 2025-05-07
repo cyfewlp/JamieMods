@@ -21,8 +21,6 @@
 #include <RE/T/TESObjectARMO.h>
 #include <array>
 #include <cassert>
-#include <cstdint>
-#include <cstdlib>
 #include <expected>
 #include <format>
 #include <memory>
@@ -30,7 +28,8 @@
 #include <stdexcept>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 void OutfitEditPanel::EditContext::Clear()
 {
@@ -70,7 +69,7 @@ void OutfitEditPanel::DrawArmorInfo()
 {
     if (m_armorView.multiSelection.Size == 1)
     {
-        void   *it = nullptr;
+        void *  it = nullptr;
         ImGuiID selectedRank; // must be name rank;
         m_armorView.multiSelection.GetNextSelectedItem(&it, &selectedRank);
         auto *armor = m_armorView.viewData.at(selectedRank);
@@ -191,11 +190,11 @@ void OutfitEditPanel::DrawOutfitArmors(const SosUiData::OutfitPair &wantEdit)
     {
         // clang-format off
         TableHeadersBuilder().Column("##Number").NoHide()
-            .Column("$SosGui_TableHeader_Slot").NoSort()
-            .Column("$ARMOR").NoSort()
-            .Column("$SkyOutSys_OEdit_OutfitSettings_Header").WidthFixed().NoSort()
-            .Column("$Delete").WidthFixed().NoSort()
-            .CommitHeadersRow();
+        .Column("$SosGui_TableHeader_Slot").NoSort()
+        .Column("$ARMOR").NoSort()
+        .Column("$SkyOutSys_OEdit_OutfitSettings_Header").WidthFixed().NoSort()
+        .Column("$Delete").WidthFixed().NoSort()
+        .CommitHeadersRow();
         // clang-format on
 
         for (uint32_t slotIdx = 0; slotIdx < RE::BIPED_OBJECT::kEditorTotal; ++slotIdx)
@@ -260,7 +259,7 @@ void OutfitEditPanel::HighlightConflictSlot(const Slot slot) const
 
 void OutfitEditPanel::SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const
 {
-    auto       &policyNameKey = wantEdit.second->GetSlotPolicies().at(slotIdx);
+    auto &      policyNameKey = wantEdit.second->GetSlotPolicies().at(slotIdx);
     std::string policyName;
 
     if (ImGui::BeginCombo("##SlotPolicy", Translation::Translate(policyNameKey).c_str(),
@@ -300,7 +299,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
             const ImGuiTabItem *tabItem = ImGui::TabBarGetCurrentTab(ImGui::GetCurrentTabBar());
             return selectedId == 0 || (selectedId != nextTabId && tabItem->ID == nextTabId);
         };
-        auto  *player        = RE::PlayerCharacter::GetSingleton();
+        auto * player        = RE::PlayerCharacter::GetSingleton();
         auto *&selectedActor = m_armorGeneratorTabBar.selectedActor;
         if (ImGui::BeginTabItem("From Actor Inventory"))
         {
@@ -350,7 +349,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
                                  ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsHexadecimal))
             {
                 m_armorView.clearViewData();
-                char          *pEnd{};
+                char *         pEnd{};
                 const uint32_t result = strtoul(formIdBuf.data(), &pEnd, 16);
                 if (pEnd != formIdBuf.data())
                 {
@@ -374,7 +373,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<Armor *>                            &viewData,
+void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<Armor *> &                           viewData,
                                                 const std::function<void(Armor *armor, size_t index)> &drawAction)
 {
     static bool ascend = true;
@@ -382,8 +381,8 @@ void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<Armor *>      
     ImGuiListClipper clipper;
     // clang-format off
     auto *msIO = m_armorView.multiSelection
-                            .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
-                            .Begin(viewData.size());
+                 .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
+                 .Begin(viewData.size());
     clipper.Begin(viewData.size());
     m_armorView.multiSelection.ApplyRequests(msIO);
     if (msIO->RangeSrcItem != -1)
@@ -425,8 +424,8 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 
 void OutfitEditPanel::DrawArmorView(const SosUiData::OutfitPair &wantEdit, const std::vector<Armor *> &viewData)
 {
-    if (constexpr auto flags =
-            TableFlags().ScrollY().Resizable().SizingFixedFit().Sortable().Hideable().Reorderable().flags;
+    if (constexpr auto flags = TableFlags().RowBg().BordersInnerH().ScrollY().Resizable().SizingFixedFit()
+                                           .Sortable().Hideable().Reorderable().flags;
         viewData.empty() || !ImGui::BeginTable("##ArmorCandidates", 6, flags))
     {
         return;
@@ -559,16 +558,14 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
         }
     }
 
-    auto slotLabel = [this](uint8_t slotPos) {
-        return std::format("({}) {}", m_armorView.slotCounter[slotPos],
-                           Translation::Translate(get_slot_name_key(slotPos)));
-    };
     for (uint8_t idx = 0; idx < RE::BIPED_OBJECT::kEditorTotal; ++idx)
     {
         ImGuiUtil::PushIdGuard idGuard(idx);
 
+        auto slotLabel = std::format("({}) {}", m_armorView.slotCounter[idx],
+                                     Translation::Translate(get_slot_name_key(idx)));
         bool checked = m_armorView.slotFiltererSelected.test(idx);
-        if (ImGui::Checkbox(slotLabel(idx).c_str(), &checked))
+        if (ImGui::Checkbox(slotLabel.c_str(), &checked))
         {
             m_armorView.slotFiltererSelected.set(idx, checked);
             if (checked)
@@ -627,10 +624,10 @@ void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
 }
 
 auto OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit,
-                                                const bool                  &fFilterPlayable) const -> void
+                                                const bool &                 fFilterPlayable) const -> void
 {
     static std::array<char, 32> formIdBuf;
-    static char                *pEnd{};
+    static char *               pEnd{};
 
     ImGui::PushID("AddByFormId");
     ImGui::Text("0x");
@@ -655,33 +652,10 @@ auto OutfitEditPanel::RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wan
     ImGui::PopID();
 }
 
-void OutfitEditPanel::GetArmorGeneratorFromPolicy(const OutfitAddPolicy policy, ArmorGenerator **generator)
-{
-    switch (policy)
-    {
-        case OutfitAddPolicy_AddFromCarried:
-            *generator = new CarriedArmorGenerator(RE::PlayerCharacter::GetSingleton());
-            break;
-
-        case OutfitAddPolicy_AddFromInventory:
-            *generator = new InventoryArmorGenerator(RE::PlayerCharacter::GetSingleton());
-            break;
-
-        case OutfitAddPolicy_AddByID:
-            break;
-
-        case OutfitAddPolicy_AddAny:
-            *generator = new BasicArmorGenerator();
-            break;
-
-        default:
-            break;
-    }
-}
-
 auto OutfitEditPanel::IsArmorCanDisplay(const Armor *armor) -> bool
 {
     bool canDisplay = false;
+
     if (armor != nullptr && armor->templateArmor == nullptr)
     {
         if (const std::string_view name = armor->GetName(); !name.empty())

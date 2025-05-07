@@ -224,10 +224,11 @@ void SosGui::DockSpaceToolBar()
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     auto windowFlags = ImGuiUtil::WindowFlags().MenuBar().NoDocking().NoTitleBar().NoCollapse().NoResize().NoMove();
     windowFlags |= ImGuiUtil::WindowFlags().NoBringToFrontOnFocus().NoNavFocus().NoBackground();
     ImGui::Begin("DockSpace Demo", nullptr, windowFlags);
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar(3);
 
     // Submit the DockSpace
     ImGuiIO &io = ImGui::GetIO();

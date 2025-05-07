@@ -101,8 +101,6 @@ private:
 
     void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable) const;
 
-    static void GetArmorGeneratorFromPolicy(OutfitAddPolicy policy, ArmorGenerator **generator);
-
     void OnAcceptAddArmorToOutfit(const SosUiData::OutfitPair &wantEdit, Armor *armor);
 
     void RenderPopups(const SosUiData::OutfitPair &wantEdit);
