@@ -573,7 +573,6 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
             m_armorView.slotFiltererSelected.set(idx, checked);
             if (checked)
             {
-                m_armorView.multiSelection.Clear();
                 if (m_armorView.checkAllSlot)
                 {
                     m_armorView.clearViewData();
@@ -583,7 +582,6 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
             }
             else if (!m_armorView.checkAllSlot)
             {
-                m_armorView.multiSelection.Clear();
                 if (m_armorView.slotFiltererSelected == 0)
                 {
                     m_armorView.clearViewData();
@@ -724,6 +722,7 @@ void OutfitEditPanel::RenderPopups(const SosUiData::OutfitPair &wantEdit)
                                             m_ConflictArmorPopup.conflictedArmor);
         };
         m_armorView.remove_armor(m_ConflictArmorPopup.conflictedArmor);
+        m_armorView.multiSelection.Clear();
         m_ConflictArmorPopup.conflictedArmor = nullptr;
     }
 
