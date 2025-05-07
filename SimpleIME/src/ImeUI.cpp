@@ -56,23 +56,61 @@ namespace LIBC_NAMESPACE_DECL
                 log_error("Failed load active ime");
                 return false;
             }
-            SetTranslate();
-            return true;
-        }
-
-        void ImeUI::SetTranslate()
-        {
-            if (!m_translation.GetTranslateLanguages(m_uiConfig.TranslationDir(), m_translateLanguages) ||
-                !m_translation.UseLanguage(m_uiConfig.DefaultLanguage().c_str()))
+            if (!m_translation.GetTranslateLanguages(m_uiConfig.TranslationDir(), m_translateLanguages))
             {
                 log_warn("Failed load translation languages.");
             }
-            else
+            return true;
+        }
+
+        void ImeUI::ApplyUiSettings(const SettingsConfig &settingsConfig)
+        {
+            m_fontSizeScale = settingsConfig.fontSizeScale.Value();
+            ImGui::GetIO().FontGlobalScale = m_fontSizeScale;
+
+            m_fShowSettings = settingsConfig.showSettings.Value();
+            { // Apply language config
+                const auto lang = settingsConfig.language.Value();
+                m_imeUIWidgets.SetUInt32Var("$Languages", 0);
+                if (const auto langIt = std::ranges::find(m_translateLanguages, lang);
+                    langIt != m_translateLanguages.end())
+                {
+                    m_translation.UseLanguage(lang.c_str());
+                    size_t index = std::distance(m_translateLanguages.begin(), langIt);
+                    index        = std::min(index, m_translateLanguages.size() - 1);
+                    m_imeUIWidgets.SetUInt32Var("$Languages", index);
+                }
+            }
+
+            { // Apply theme config
+                m_imeUIWidgets.SetUInt32Var("$Themes", 0);
+                auto      &defaultTheme = settingsConfig.theme.Value();
+                const auto findIt       = std::ranges::find(m_themeNames, defaultTheme);
+                if (findIt == m_themeNames.end())
+                {
+                    ErrorNotifier::GetInstance().addError(
+                        std::format("Can't find theme {}, fallback to ImGui default theme.", defaultTheme));
+                    ImGui::StyleColorsDark();
+                    return;
+                }
+                m_imeUIWidgets.SetUInt32Var("$Themes", std::distance(m_themeNames.begin(), findIt));
+                auto &style = ImGui::GetStyle();
+                m_uiThemeLoader.LoadTheme(defaultTheme, style);
+            }
+        }
+
+        void ImeUI::SyncUiSettings(SettingsConfig &settingsConfig)
+        {
+            settingsConfig.fontSizeScale.SetValue(m_fontSizeScale);
+            settingsConfig.showSettings.SetValue(m_fShowSettings);
+
+            if (const auto opt = m_imeUIWidgets.GetUInt32Var("$Languages"); opt)
             {
-                const auto defaultLang = std::ranges::find(m_translateLanguages, m_uiConfig.DefaultLanguage());
-                size_t     index       = std::distance(m_translateLanguages.begin(), defaultLang);
-                index                  = std::min(index, m_translateLanguages.size() - 1);
-                m_imeUIWidgets.SetUInt32Var("$Languages", index);
+                settingsConfig.language.SetValue(m_translateLanguages[opt.value()]);
+            }
+            if (const auto opt = m_imeUIWidgets.GetUInt32Var("$Themes"); opt)
+            {
+                settingsConfig.theme.SetValue(m_themeNames[opt.value()]);
             }
         }
 
@@ -88,20 +126,7 @@ namespace LIBC_NAMESPACE_DECL
             {
                 log_warn("Failed get theme names, fallback to ImGui default theme.");
                 ImGui::StyleColorsDark();
-                return;
             }
-
-            auto      &defaultTheme = m_uiConfig.DefaultTheme();
-            const auto findIt       = std::ranges::find(m_themeNames, defaultTheme);
-            if (findIt == m_themeNames.end())
-            {
-                log_warn("Can't find default theme, fallback to ImGui default theme.");
-                ImGui::StyleColorsDark();
-                return;
-            }
-            m_imeUIWidgets.SetUInt32Var("$Themes", std::distance(m_themeNames.begin(), findIt));
-            auto &style = ImGui::GetStyle();
-            m_uiThemeLoader.LoadTheme(defaultTheme, style);
         }
 
         void ImeUI::RenderIme() const
@@ -152,7 +177,6 @@ namespace LIBC_NAMESPACE_DECL
                 case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CARET: {
                     if (!showIme || !updated)
                     {
-                        log_debug("BASED_ON_CARET");
                         FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
                         if (UpdateImeWindowPosByCaret())
                         {
@@ -277,65 +301,71 @@ namespace LIBC_NAMESPACE_DECL
 
         void ImeUI::RenderSettings()
         {
-            static bool isSettingsWindowOpen = false;
-            isSettingsWindowOpen             = m_fShowSettings;
-
             if (!m_fShowSettings)
             {
                 return;
             }
-            auto *imeManager = ImeManagerComposer::GetInstance();
-            m_imeUIWidgets.Begin("$Settings", &isSettingsWindowOpen, ImGuiWindowFlags_NoNav);
-            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-            do
+            auto      *imeManager = ImeManagerComposer::GetInstance();
+            const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
+            if (ImGui::Begin(windowName.c_str(), &m_fShowSettings, ImGuiWindowFlags_NoNav))
             {
-                bool fEnableMod = ImeManager::IsModEnabled();
-                m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
-                    return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
-                });
-
-                m_imeUIWidgets.ComboApply("$Languages", m_translateLanguages, [this](const std::string &lang) {
-                    m_translation.UseLanguage(lang.c_str());
-                    return true;
-                });
-
-                if (!fEnableMod)
+                m_translation.UseSection("Settings");
+                ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
+                do
                 {
-                    break;
-                }
-                RenderSettingsState();
-
-                m_imeUIWidgets.SeparatorText("$Features");
-
-                RenderSettingsFocusManage();
-                if (!imeManager->IsSupportOtherMod())
-                {
-                    RenderSettingsImePosUpdatePolicy();
-                    bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
-                    if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
-                    {
-                        imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
-                    }
+                    bool fEnableMod = ImeManager::IsModEnabled();
+                    m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
+                        return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
+                    });
 
                     ImGui::SameLine();
-                    bool fKeepImeOpen = imeManager->IsKeepImeOpen();
-                    if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+                    ImGui::Text("%s", m_translation.Get("$Font_Size_Scale"));
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    if (ImGui::DragFloat("##FontSizeScale", &m_fontSizeScale, 0.05, SettingsConfig::MIN_FONT_SIZE_SCALE,
+                                         SettingsConfig::MAX_FONT_SIZE_SCALE, "%.3f", ImGuiSliderFlags_NoInput))
                     {
-                        imeManager->SetKeepImeOpen(fKeepImeOpen);
+                        ImGui::GetIO().FontGlobalScale = m_fontSizeScale;
                     }
-                }
-            } while (false);
-            ImGui::PopStyleVar();
 
-            m_imeUIWidgets.ComboApply("$Themes", m_themeNames, [this](const std::string &name) {
-                return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
-            });
-            ImGui::End();
-            if (State::GetInstance().Has(State::IME_DISABLED))
-            {
-                imeManager->SyncImeStateIfDirty();
+                    m_imeUIWidgets.Combo("$Languages", m_translateLanguages, [this](const std::string &lang) {
+                        return m_translation.UseLanguage(lang.c_str());
+                    });
+
+                    if (!fEnableMod)
+                    {
+                        break;
+                    }
+                    RenderSettingsState();
+
+                    m_imeUIWidgets.SeparatorText("$Features");
+
+                    RenderSettingsFocusManage();
+                    if (!imeManager->IsSupportOtherMod())
+                    {
+                        RenderSettingsImePosUpdatePolicy();
+                        bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
+                        if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
+                        {
+                            imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
+                        }
+
+                        ImGui::SameLine();
+                        bool fKeepImeOpen = imeManager->IsKeepImeOpen();
+                        if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+                        {
+                            imeManager->SetKeepImeOpen(fKeepImeOpen);
+                        }
+                    }
+                } while (false);
+                ImGui::PopStyleVar();
+
+                m_imeUIWidgets.Combo("$Themes", m_themeNames, [this](const std::string &name) {
+                    return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
+                });
             }
-            m_fShowSettings = isSettingsWindowOpen;
+            ImGui::End();
+            imeManager->SyncImeStateIfDirty();
         }
 
         void ImeUI::RenderSettingsState() const
@@ -358,9 +388,9 @@ namespace LIBC_NAMESPACE_DECL
             m_imeUIWidgets.SeparatorText("$Focus_Manage");
 
             auto focusType = imeManager->GetFocusManageType();
-            bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, Permanent);
+            bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, FocusType::Permanent);
             ImGui::SameLine();
-            pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, Temporary);
+            pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, FocusType::Temporary);
             if (pressed)
             {
                 imeManager->PopAndPushType(focusType);
@@ -379,7 +409,7 @@ namespace LIBC_NAMESPACE_DECL
                 m_imeUIWidgets.RadioButton("$Update_By_Caret", &policy, Policy::BASED_ON_CARET);
                 ImGui::SameLine();
                 m_imeUIWidgets.RadioButton("$Update_By_None", &policy, Policy::NONE);
-                ImeManagerComposer::GetInstance()->SetDetectImeWindowPosByCaret(policy);
+                ImeManagerComposer::GetInstance()->SetImeWindowPosUpdatePolicy(policy);
             }
             m_translation.UseSection("Settings");
         }

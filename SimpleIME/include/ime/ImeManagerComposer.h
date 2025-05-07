@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/imgui/ErrorNotifier.h"
 #include "ime/ImeManager.h"
 #include "ime/PermanentFocusImeManager.h"
 #include "ime/TemporaryFocusImeManager.h"
@@ -8,30 +9,78 @@ namespace LIBC_NAMESPACE_DECL
 {
     namespace Ime
     {
-        enum FocusType
+        struct SettingsConfig;
+
+        enum class FocusType : uint8_t
         {
             Permanent = 0,
             Temporary
         };
 
-        class ImeManagerComposer : public ImeManager
+        class DummyFocusImeManager final : public BaseImeManager
+        {
+        public:
+            static auto GetInstance() -> DummyFocusImeManager *
+            {
+                static DummyFocusImeManager instance;
+                return &instance;
+            }
+
+        protected:
+            auto DoEnableIme(bool) -> bool override
+            {
+                return false;
+            }
+
+            auto DoNotifyEnableIme(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoWaitEnableIme(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoEnableMod(bool) -> bool override
+            {
+                return false;
+            }
+
+            auto DoNotifyEnableMod(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoWaitEnableMod(bool) const -> bool override
+            {
+                return false;
+            }
+
+            auto DoForceFocusIme() -> bool override
+            {
+                return false;
+            }
+
+            auto DoSyncImeState() -> bool override
+            {
+                return false;
+            }
+
+            auto DoTryFocusIme() -> bool override
+            {
+                return false;
+            }
+        };
+
+        class ImeManagerComposer final : public ImeManager
         {
         public:
             ImeManagerComposer()           = default;
             ~ImeManagerComposer() override = default;
 
         private:
-            auto Use(FocusType type)
-            {
-                if (FocusType::Permanent == type)
-                {
-                    m_delegate = m_PermanentFocusImeManager.get();
-                }
-                else
-                {
-                    m_delegate = m_temporaryFocusImeManager.get();
-                }
-            }
+            auto Use(FocusType type);
 
         public:
             enum class ImeWindowPosUpdatePolicy : uint8_t
@@ -41,70 +90,21 @@ namespace LIBC_NAMESPACE_DECL
                 BASED_ON_CARET,
             };
 
-            auto PushType(FocusType type, bool syncImeState = false)
-            {
-                bool diff = m_FocusTypeStack.empty() || type != m_FocusTypeStack.top();
-                if (diff)
-                {
-                    m_fDirty = true;
-                    m_delegate != nullptr && m_delegate->WaitEnableIme(false);
-                }
-                m_FocusTypeStack.push(type);
-                Use(type);
-                if (diff && syncImeState)
-                {
-                    m_delegate->SyncImeState();
-                }
-            }
+            void ApplyUiSettings(const SettingsConfig &settingsConfig);
+            void SyncUiSettings(SettingsConfig &settingsConfig) const;
 
-            auto PopType(bool syncImeState = false)
-            {
-                if (m_FocusTypeStack.empty())
-                {
-                    log_warn("Invalid call! Focus type stack is empty.");
-                    return;
-                }
-                auto prev = m_FocusTypeStack.top();
-                m_FocusTypeStack.pop();
-                if (m_FocusTypeStack.empty())
-                {
-                    /*log_warn("Current focus type stack is empty, set fall back type to Permanent");
-                    PushType(FocusType::Permanent);*/
-                    m_delegate = nullptr;
-                }
-                else if (prev != m_FocusTypeStack.top())
-                {
-                    m_fDirty = true;
-                    m_delegate->WaitEnableIme(false);
-                    Use(m_FocusTypeStack.top());
-                    if (syncImeState)
-                    {
-                        m_delegate->SyncImeState();
-                    }
-                }
-            }
+            void PushType(FocusType type, bool syncImeState = false);
 
-            auto PopAndPushType(FocusType type, bool syncImeState = false)
-            {
-                if (m_FocusTypeStack.empty())
-                {
-                    log_warn("Invalid call! Focus type stack is empty.");
-                    return;
-                }
-                if (!m_FocusTypeStack.empty() && type != m_FocusTypeStack.top())
-                {
-                    m_fDirty = true;
-                }
-                PopType();
-                PushType(type, syncImeState);
-            }
+            void PopType(bool syncImeState = false);
+
+            void PopAndPushType(FocusType type, bool syncImeState = false);
 
             constexpr auto GetFocusManageType() const -> const FocusType &
             {
                 return m_FocusTypeStack.top();
             }
 
-            auto GetTemporaryFocusImeManager() -> TemporaryFocusImeManager *
+            auto GetTemporaryFocusImeManager() const -> TemporaryFocusImeManager *
             {
                 return m_temporaryFocusImeManager.get();
             }
@@ -118,7 +118,7 @@ namespace LIBC_NAMESPACE_DECL
                 return m_ImeWindowPosUpdatePolicy;
             }
 
-            void SetDetectImeWindowPosByCaret(const auto policy)
+            void SetImeWindowPosUpdatePolicy(const ImeWindowPosUpdatePolicy policy)
             {
                 m_ImeWindowPosUpdatePolicy = policy;
             }
@@ -140,7 +140,10 @@ namespace LIBC_NAMESPACE_DECL
 
             void SetKeepImeOpen(const bool fKeepImeOpen)
             {
-                m_fDirty       = true;
+                if (m_fKeepImeOpen != fKeepImeOpen)
+                {
+                    m_fDirty = true;
+                }
                 m_fKeepImeOpen = fKeepImeOpen;
             }
 
@@ -156,9 +159,9 @@ namespace LIBC_NAMESPACE_DECL
 
             void SyncImeStateIfDirty()
             {
-                if (m_fDirty)
+                if (m_fDirty && !SyncImeState())
                 {
-                    SyncImeState();
+                    ErrorNotifier::GetInstance().addError("Unexpected error: SyncImeState failed.");
                 }
             }
 
@@ -169,26 +172,9 @@ namespace LIBC_NAMESPACE_DECL
 
             //////////////////////////////////////////////////
 
-            auto EnableIme(bool enable) -> bool override
-            {
-                if (m_fSupportOtherMod)
-                {
-                    return m_delegate->EnableIme(enable);
-                }
-                return m_delegate->EnableIme(m_fKeepImeOpen || enable);
-            }
+            auto EnableIme(bool enable) -> bool override;
 
-            auto EnableMod(bool enable) -> bool override
-            {
-                const bool prev = IsModEnabled();
-                SetEnableMod(enable);
-                if (m_delegate->EnableMod(enable))
-                {
-                    return true;
-                }
-                SetEnableMod(prev);
-                return false;
-            }
+            auto EnableMod(bool enable) -> bool override;
 
             auto GiveUpFocus() const -> bool override
             {
@@ -231,6 +217,11 @@ namespace LIBC_NAMESPACE_DECL
                 return m_delegate->WaitEnableMod(enable);
             }
 
+            [[nodiscard]] auto IsInited() const -> bool
+            {
+                return m_fInited;
+            }
+
             static auto GetInstance() -> ImeManagerComposer *
             {
                 static ImeManagerComposer g_instance;
@@ -240,11 +231,12 @@ namespace LIBC_NAMESPACE_DECL
         private:
             std::unique_ptr<PermanentFocusImeManager> m_PermanentFocusImeManager = nullptr;
             std::unique_ptr<TemporaryFocusImeManager> m_temporaryFocusImeManager = nullptr;
-            ImeManager                               *m_delegate                 = nullptr;
+            ImeManager                               *m_delegate                 = DummyFocusImeManager::GetInstance();
             std::stack<FocusType>                     m_FocusTypeStack{};
             bool                                      m_fKeepImeOpen        = false;
             bool                                      m_fEnableUnicodePaste = true;
             std::atomic_bool                          m_fSupportOtherMod    = false;
+            std::atomic_bool                          m_fInited             = false;
 
             // m_fKeepImeOpen, focus type
             bool m_fDirty = false;
@@ -256,9 +248,11 @@ namespace LIBC_NAMESPACE_DECL
             static void Init(ImeWnd *imwWnd, HWND hwndGame)
             {
                 auto *instance = GetInstance();
+                if (instance->m_fInited) return;
 
                 instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imwWnd, hwndGame);
                 instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imwWnd, hwndGame);
+                instance->m_fInited                  = true;
             }
         };
     }

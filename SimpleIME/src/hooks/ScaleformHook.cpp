@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#define HOOK_LOAD_MOVIE
+//#define HOOK_LOAD_MOVIE
 
 namespace LIBC_NAMESPACE_DECL
 {

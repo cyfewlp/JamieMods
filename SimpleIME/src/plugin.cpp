@@ -40,7 +40,6 @@ namespace LIBC_NAMESPACE_DECL
 
             const auto &pConfig = Ime::AppConfig::GetConfig();
             InitializeLogging(pConfig.GetLogLevel(), pConfig.GetFlushLevel());
-            Ime::ImeManagerComposer::GetInstance()->SetEnableUnicodePaste(pConfig.EnableUnicodePaste());
 
             Init(skse);
 

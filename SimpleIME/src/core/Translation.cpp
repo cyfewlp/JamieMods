@@ -50,17 +50,17 @@ namespace LIBC_NAMESPACE_DECL
 
         auto Translation::UseSection(const char *section) -> void
         {
-            m_selection.assign(section);
+            m_section.assign(section);
         }
 
         auto Translation::Get(const char *key) const -> const char *
         {
-            return m_ini.GetValue(m_selection.c_str(), key, key);
+            return m_ini.GetValue(m_section.c_str(), key, key);
         }
 
         auto Translation::Has(const char *key) const -> bool
         {
-            return m_ini.KeyExists(m_selection.c_str(), key);
+            return m_ini.KeyExists(m_section.c_str(), key);
         }
 
         auto Translation::LoadLanguage(const std::filesystem::path &path) -> bool

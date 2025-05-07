@@ -61,5 +61,91 @@ namespace LIBC_NAMESPACE_DECL
             }
             return SUCCEEDED(hr);
         }
+
+        auto BaseImeManager::EnableIme(bool enable) -> bool
+        {
+            log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
+            if (m_fForceUpdate)
+            {
+                auto result    = DoEnableIme(enable);
+                m_fForceUpdate = false;
+                return result;
+            }
+            if (!IsModEnabled())
+            {
+                log_warn("Mod is disabled, operate failed");
+                return false;
+            }
+            if ((State::GetInstance().Has(State::IME_DISABLED) && enable) ||
+                (State::GetInstance().NotHas(State::IME_DISABLED) && !enable))
+            {
+                return DoEnableIme(enable);
+            }
+            return true;
+        }
+
+        auto BaseImeManager::NotifyEnableIme(bool enable) const -> bool
+        {
+            log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
+            if (!IsModEnabled())
+            {
+                log_warn("Mod is disabled, operate failed");
+                return false;
+            }
+            return DoNotifyEnableIme(enable);
+        }
+
+        auto BaseImeManager::WaitEnableIme(bool enable) const -> bool
+        {
+            log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
+            if (!IsModEnabled())
+            {
+                log_warn("Mod is disabled, operate failed");
+                return false;
+            }
+            return DoWaitEnableIme(enable);
+        }
+
+        auto BaseImeManager::EnableMod(bool fEnableMod) -> bool
+        {
+            log_debug("BaseImeManager::{} {}", __func__, fEnableMod ? "enable" : "disable");
+            m_fForceUpdate = true;
+            return DoEnableMod(fEnableMod);
+        }
+
+        auto BaseImeManager::ForceFocusIme() -> bool
+        {
+            log_debug("BaseImeManager::{}", __func__);
+            if (!IsModEnabled())
+            {
+                log_warn("Mod is disabled, operate failed");
+                return false;
+            }
+            return DoForceFocusIme();
+        }
+
+        auto BaseImeManager::SyncImeState() -> bool
+        {
+            log_debug("BaseImeManager::{}", __func__);
+            if (!IsModEnabled())
+            {
+                log_warn("Mod is disabled, operate failed");
+                return false;
+            }
+            m_fForceUpdate = true;
+            return DoSyncImeState();
+        }
+
+        auto BaseImeManager::TryFocusIme() -> bool
+        {
+            log_debug("BaseImeManager::{}", __func__);
+            if (!IsModEnabled())
+            {
+                log_warn("Mod is disabled, operate failed");
+                return false;
+            }
+            return DoTryFocusIme();
+        }
+
     }
 }

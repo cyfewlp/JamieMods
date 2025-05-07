@@ -53,10 +53,10 @@ namespace LIBC_NAMESPACE_DECL
              */
             void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false);
             auto Focus() const -> bool;
-            auto SetTsfFocus(bool focus) -> bool;
+            auto SetTsfFocus(bool focus) const -> bool;
             auto IsFocused() const -> bool;
-            auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> BOOL;
-            auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> BOOL;
+            auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
+            auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
             auto GetImeThreadId() const -> DWORD;
 
             constexpr auto GetHWND() const -> HWND
@@ -67,10 +67,10 @@ namespace LIBC_NAMESPACE_DECL
             /**
              * Focus to parent window to abort IME
              */
-            void                   AbortIme() const;
-            void                   RenderIme() const;
-            void                   ShowToolWindow() const;
-            std::unique_ptr<ImeUI> m_pImeUi = nullptr;
+            void AbortIme() const;
+            void RenderIme() const;
+            void ShowToolWindow() const;
+            void ApplyUiSettings() const;
 
         private:
             static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -79,20 +79,21 @@ namespace LIBC_NAMESPACE_DECL
             static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
             static void OnCompositionResult(const std::wstring &compositionString);
 
-            void OnStart();
-            auto OnCreate() const -> LRESULT;
-            auto OnDestroy() const -> LRESULT;
-            void InitializeTextService(const AppConfig &pAppConfig);
-            auto IsImeWantMessage(MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
-            auto OnImeEnable(bool enable) -> bool;
-            void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+            void        OnStart();
+            static auto OnCreate() -> LRESULT;
+            auto        OnDestroy() const -> LRESULT;
+            void        InitializeTextService(const AppConfig &pAppConfig);
+            static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
+            auto        OnImeEnable(bool enable) const -> bool;
+            void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
+            std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
             std::unique_ptr<ITextService> m_pTextService = nullptr;
             CComPtr<LangProfileUtil>      m_pLangProfileUtil{};
-            bool                          m_fEnableTsf  = false;
-            bool                          m_fFocused    = false;
-            HWND                          m_hWnd        = nullptr;
-            HWND                          m_hWndParent  = nullptr;
+            bool                          m_fEnableTsf = false;
+            bool                          m_fFocused   = false;
+            HWND                          m_hWnd       = nullptr;
+            HWND                          m_hWndParent = nullptr;
             WNDCLASSEXW                   wc{};
         };
     } // namespace SimpleIME

@@ -108,20 +108,21 @@ namespace LIBC_NAMESPACE_DECL
             return clicked;
         }
 
-        auto ImeUIWidgets::Begin(String windowName, bool *open, ImGuiWindowFlags flags) -> void
+        auto ImeUIWidgets::Begin(String windowName, bool *open, ImGuiWindowFlags flags) const -> bool
         {
             const auto *name = m_translation->Get(windowName);
-            ImGui::Begin(name, open, flags);
             m_translation->UseSection(std::string(windowName).erase(0, 1).c_str());
+            return ImGui::Begin(name, open, flags);
         }
 
-        auto ImeUIWidgets::ComboApply(String label, const std::vector<std::string> &values,
-                                      std::function<bool(const std::string &)> onApply) -> uint32_t
+        auto ImeUIWidgets::Combo(String label, const std::vector<std::string> &values,
+                                 std::function<bool(const std::string &)> onApply) -> uint32_t
         {
             const auto *name     = m_translation->Get(label);
             uint32_t   &selected = m_uiUint32Vars.at(label);
             const auto *preview  = values.empty() ? "" : values[selected].c_str();
 
+            static bool fShowErrorMessage = false;
             ImGui::BeginGroup();
             if (ImGui::BeginCombo(name, preview))
             {
@@ -132,6 +133,10 @@ namespace LIBC_NAMESPACE_DECL
                     if (ImGui::Selectable(selectableName.c_str(), isSelected))
                     {
                         selected = idx;
+                        if (!isSelected && !onApply(selectableName))
+                        {
+                            fShowErrorMessage = true;
+                        }
                     }
                     if (isSelected)
                     {
@@ -140,17 +145,6 @@ namespace LIBC_NAMESPACE_DECL
                     idx++;
                 }
                 ImGui::EndCombo();
-            }
-            static bool fShowErrorMessage = false;
-            auto        buttonLabel       = std::format("{}_Apply", label);
-            const auto *buttonName        = m_translation->Get(buttonLabel.c_str());
-            if (ImGui::Button(std ::format("{}##{}", buttonName, buttonLabel).c_str()))
-            {
-                const auto &selectableName = values[selected];
-                if (!onApply(selectableName))
-                {
-                    fShowErrorMessage = true;
-                }
             }
             ImGui::EndGroup();
             TrySetItemTooltip(label);
@@ -179,10 +173,15 @@ namespace LIBC_NAMESPACE_DECL
 
         auto ImeUIWidgets::SetUInt32Var(String name, uint32_t value) -> void
         {
-            m_uiUint32Vars.emplace(name, value);
+            m_uiUint32Vars.insert_or_assign(name, value);
         }
 
-        auto ImeUIWidgets::GetBoolVar(String name) -> bool
+        auto ImeUIWidgets::GetUInt32Var(String name) -> std::optional<uint32_t>
+        {
+            return m_uiUint32Vars.contains(name) ? std::optional{m_uiUint32Vars.at(name)} : std::nullopt;
+        }
+
+        auto ImeUIWidgets::GetBoolVar(String name) const -> bool
         {
             return m_uiBoolVars.contains(name) ? m_uiBoolVars.at(name) : false;
         }

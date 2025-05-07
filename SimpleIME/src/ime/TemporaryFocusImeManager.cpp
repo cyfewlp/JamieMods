@@ -46,7 +46,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TemporaryFocusImeManager::DoWaitEnableIme(bool enable) const -> bool
         {
-            return ::SendMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+            return ::SendMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) == S_OK;
         }
 
         // On main thread
@@ -76,7 +76,7 @@ namespace LIBC_NAMESPACE_DECL
 
         auto TemporaryFocusImeManager::DoWaitEnableMod(bool enable) const -> bool
         {
-            return ::SendMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
+            return ::SendMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) == S_OK;
         }
 
         auto TemporaryFocusImeManager::DoForceFocusIme() -> bool
@@ -85,7 +85,7 @@ namespace LIBC_NAMESPACE_DECL
         }
 
         // call on render thread
-        auto TemporaryFocusImeManager::DoSyncImeState() const -> bool
+        auto TemporaryFocusImeManager::DoSyncImeState() -> bool
         {
             const auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
             return NotifyEnableIme(enableIme);

@@ -35,15 +35,15 @@ namespace LIBC_NAMESPACE_DECL
             ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
             bool Initialize(LangProfileUtil *pLangProfileUtil);
-            void SetTranslate();
             void SetTheme();
             void RenderIme() const;
             void RenderToolWindow();
             void ShowToolWindow();
+            void ApplyUiSettings(const SettingsConfig &settingsConfig);
+            void SyncUiSettings(SettingsConfig &settingsConfig);
 
         private:
             static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;
-            static auto UpdateImeWindowPosByCursor() -> bool;
             static auto UpdateImeWindowPosByCaret() -> bool;
 
             void RenderSettings();
@@ -60,14 +60,15 @@ namespace LIBC_NAMESPACE_DECL
             ITextService            *m_pTextService    = nullptr;
             ImeWnd                  *m_pImeWnd         = nullptr;
             ImGuiThemeLoader         m_uiThemeLoader{};
-            std::vector<std::string> m_themeNames;
+            std::vector<std::string> m_themeNames{};
             Translation              m_translation;
             ImeUIWidgets             m_imeUIWidgets{&m_translation};
             std::vector<std::string> m_translateLanguages;
 
-            bool m_fShowToolWindow = false;
-            bool m_fShowSettings   = false;
-            bool m_fPinToolWindow  = false;
+            bool  m_fShowToolWindow     = false;
+            bool  m_fShowSettings       = false;
+            bool  m_fPinToolWindow      = false;
+            float m_fontSizeScale = 1.0f;
 
             std::vector<std::string> m_errorMessages;
             int                      m_toolWindowFlags =

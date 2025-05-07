@@ -26,7 +26,7 @@ namespace LIBC_NAMESPACE_DECL
             auto DoNotifyEnableMod(bool enable) const -> bool override;
             auto DoWaitEnableMod(bool enable) const -> bool override;
             auto DoForceFocusIme() -> bool override;
-            auto DoSyncImeState() const -> bool override;
+            auto DoSyncImeState() -> bool override;
             auto DoTryFocusIme() -> bool override;
 
         private:
