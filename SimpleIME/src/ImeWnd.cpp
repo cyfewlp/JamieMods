@@ -1,5 +1,6 @@
 #include "ImeWnd.hpp"
 
+#include "common/imgui/ErrorNotifier.h"
 #include "ImeUI.h"
 #include "SimpleImeSupport.h"
 #include "Utils.h"
@@ -11,7 +12,6 @@
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeManagerComposer.h"
 #include "ime/ImeSupportUtils.h"
-#include "ui/ErrorNotifier.h"
 
 #include <d3d11.h>
 #include <imgui.h>

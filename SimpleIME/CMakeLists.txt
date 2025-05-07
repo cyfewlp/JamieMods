@@ -100,6 +100,7 @@ include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
 	${headers}
+    ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )

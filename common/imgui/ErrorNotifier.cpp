@@ -2,7 +2,7 @@
 // Created by jamie on 2025/5/5.
 //
 
-#include "ui/ErrorNotifier.h"
+#include "ErrorNotifier.h"
 #include "imgui.h"
 
 #include <ctime>
