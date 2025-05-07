@@ -621,14 +621,7 @@ void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
             return m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
         };
     }
-    for (const auto &armor : wantEdit.second->GetUniqueArmors())
-    {
-        if (auto expected = m_armorView.add_armor(armor); !expected.has_value())
-        {
-            m_uiData.PushErrorMessage(
-                std::format("Can't restore armor {} from outfit {}", armor->GetName(), wantEdit.second->GetName()));
-        }
-    }
+    m_armorView.add_armors_in_outfit(m_uiData, wantEdit.second);
     m_armorView.multiSelection.Clear();
     m_armorView.viewData.swap(newViewData);
 }

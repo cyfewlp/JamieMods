@@ -11,7 +11,7 @@ struct hash<RE::TESObjectARMO *>
 {
     _NODISCARD _STATIC_CALL_OPERATOR size_t operator()(const RE::TESObjectARMO *_Keyval) _CONST_CALL_OPERATOR noexcept
     {
-        return _Hash_representation(_Keyval->GetFormID()); // map -0 to 0
+        return _Hash_representation(_Keyval->GetFormID());
     }
 };
 }

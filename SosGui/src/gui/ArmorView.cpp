@@ -108,20 +108,12 @@ void ArmorView::remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot)
 
 void ArmorView::add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editingOutfit)
 {
-    for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; slotPos++)
+    for (const auto &armor : editingOutfit->GetUniqueArmors())
     {
-        if (auto *armor = editingOutfit->GetArmorAt(slotPos); armor != nullptr)
+        if (auto result = add_armor(armor); !result.has_value())
         {
-            if (auto result = add_armor(armor); !result.has_value())
-            {
-                // this error is because some armor has multiple slots, just ignore it;
-                if (result.error() == error::armor_already_exists)
-                {
-                    continue;
-                }
-                uiData.PushErrorMessage(std::format("unexpected error when add_armors_in_outfit: {}", //
-                                                    ToErrorMessage(result.error())));
-            }
+            uiData.PushErrorMessage(
+                std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName()));
         }
     }
 }

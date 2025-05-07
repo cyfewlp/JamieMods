@@ -267,9 +267,6 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 === Issues
 
 * [ ] when use `TemporaryFocusImeManager`, press any character key when IME active, will trigger `kTilde`(~) key event.
-* [ ] `SetFocus` is execute by async? In some case, IME will receive focus after `FocusImeOrGame` fail.
-+
-Just giveup this feature?
 * [ ] `GSysAllocPaged#ShutdownHeapEngine` crash
 +
 crash in `GMemoryHeapMH::destroyItself()`?
@@ -277,7 +274,7 @@ crash in `GMemoryHeapMH::destroyItself()`?
 
 === Code improve
 
-* [ ] AppConfig
+* [x] AppConfig
     - [x] section;
     - [x] add new key by register;
     - universal config name style
@@ -286,9 +283,9 @@ crash in `GMemoryHeapMH::destroyItself()`?
 
 * [ ] Call ActionScript method do copy/paste?
 * [ ] Support select candidate by mouse click
-* [ ] Mod Error hint
-* [ ] Support config `follow cursor` in `ini` file.
-* [ ] support change and save configs in `ToolWindow`
+* [x] Mod Error hint
+* [x] Support config `follow cursor` in `ini` file.
+* [x] support change and save configs in `ToolWindow`
 * [ ] GameProfileSwitch script optimize;
 * [ ] Manage GFXEvent memory alloc?
 * [ ] scale or change ImGui cursor

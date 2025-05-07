@@ -15,7 +15,7 @@ namespace LIBC_NAMESPACE_DECL
     class SosUiOutfit
     {
     public:
-        static constexpr int SLOT_COUNT = 32;
+        static constexpr int SLOT_COUNT = RE::BIPED_OBJECT::kEditorTotal;
         using Slot                      = RE::BIPED_MODEL::BipedObjectSlot;
         using Armor                     = RE::TESObjectARMO;
         using SlotPolicyArray           = std::array<std::string, SLOT_COUNT>;
