@@ -77,7 +77,7 @@ public:
     void OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const SosUiOutfit *editingOutfit);
 
 private:
-    void DrawSideBar(const SosUiOutfit *outfit);
+    void DrawSideBar(const SosUiOutfit *editingOutfit);
     void UpdateWindowTitle(const std::string &outfitName);
 
     void DrawOutfitArmors(const SosUiData::OutfitPair &wantEdit);
@@ -89,13 +89,13 @@ private:
         return m_armorGeneratorTabBar.generator.get();
     }
 
-    void DrawArmorGeneratorTabBar();
+    void DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit);
     void DrawArmorViewTableContent(const std::vector<Armor *>                            &viewData,
                                    const std::function<void(Armor *armor, size_t index)> &drawAction);
-    void DrawArmorViewFilter(const SosUiOutfit *outfit);
+    void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
     void DrawArmorView(const SosUiData::OutfitPair &wantEdit, const std::vector<Armor *> &viewData);
-    void DrawArmorViewModNameFilterer();
-    void DrawArmorViewSlotFilterer(const SosUiOutfit *outfit);
+    void DrawArmorViewModNameFilterer(const SosUiOutfit* editingOutfit);
+    void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 
     void BatchAddArmors(const SosUiData::OutfitPair &wantEdit);
 

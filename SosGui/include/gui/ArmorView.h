@@ -88,7 +88,7 @@ struct ArmorView final
 
     static constexpr uint32_t SLOT_COUNT = RE::BIPED_OBJECT::kEditorTotal;
 
-    std::bitset<SLOT_COUNT>                        selectedFilterSlot{};
+    std::bitset<SLOT_COUNT>                        slotFiltererSelected{};
     ArmorContainer                                 armorContainer{};
     std::vector<Armor *>                           viewData{};
     std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
@@ -135,7 +135,8 @@ public:
     [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
     bool               remove_armor(const Armor *armor);
     void               reset_counter();
-    void               reset_view(ArmorGenerator *generator);
+    void               update_view_data(ArmorGenerator *generator, const SosUiOutfit *editingOutfit);
+    void               reset_view(ArmorGenerator *generator, const SosUiOutfit *editingOutfit);
     auto               find_armor(const Armor *armor) const -> std::expected<size_t, error>;
     bool               no_select_any_slot() const;
 };

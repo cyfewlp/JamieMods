@@ -75,8 +75,8 @@ void ArmorView::clear()
     viewData.clear();
     modRefCounter.clear();
     slotCounter.fill(0);
-    selectedFilterSlot = 0;
-    checkAllSlot       = true;
+    slotFiltererSelected = 0;
+    checkAllSlot         = true;
     multiSelection.Clear();
     armorFilter.clear();
     modFilterer.Clear();
@@ -149,7 +149,7 @@ bool ArmorView::filter(const Armor *armor) const
         return false;
     }
     // filter by slot: has any selected slot
-    auto slot = static_cast<Slot>(selectedFilterSlot.to_ulong());
+    auto slot = static_cast<Slot>(slotFiltererSelected.to_ulong());
     if (!checkAllSlot && slot != Slot::kNone && util::IsArmorHasNoneSlotOf(armor, slot))
     {
         return false;
@@ -238,7 +238,7 @@ void ArmorView::reset_counter()
     }
 }
 
-void ArmorView::reset_view(ArmorGenerator *generator)
+void ArmorView::update_view_data(ArmorGenerator *generator, const SosUiOutfit *editingOutfit)
 {
     clearViewData();
     if (generator != nullptr)
@@ -257,7 +257,19 @@ void ArmorView::reset_view(ArmorGenerator *generator)
             // TODO: add error message to notifier?
             log_error("WARNING: Invalid armor generator: {}", e.what());
         }
+        remove_armors_in_outfit(editingOutfit);
     }
+}
+
+void ArmorView::reset_view(ArmorGenerator *generator, const SosUiOutfit *editingOutfit)
+{
+    modFilterer.Clear();
+    slotFiltererSelected     = 0;
+    armorFilter.mustPlayable = false;
+    armorFilter.filter.Clear();
+
+    update_view_data(generator, editingOutfit);
+    reset_counter();
 }
 
 auto ArmorView::find_armor(const Armor *armor) const -> std::expected<size_t, error>
@@ -291,6 +303,6 @@ auto ArmorView::find_armor(const Armor *armor) const -> std::expected<size_t, er
 
 bool ArmorView::no_select_any_slot() const
 {
-    return !checkAllSlot && selectedFilterSlot == 0;
+    return !checkAllSlot && slotFiltererSelected == 0;
 }
 }
