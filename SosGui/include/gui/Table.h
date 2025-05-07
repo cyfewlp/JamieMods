@@ -101,13 +101,20 @@ struct TableHeadersBuilder
     struct ColumnContext
     {
         std::string_view      name{};
-        ImGuiTableColumnFlags flags = ImGuiTableColumnFlags_None;
+        ImGuiTableColumnFlags flags             = ImGuiTableColumnFlags_None;
+        float                 initWidthOrWeight = 0.0F;
         TableHeadersBuilder  &tableBuilder;
 
         explicit ColumnContext(const char *name, TableHeadersBuilder &tableBuilder)
             : name(name), tableBuilder(tableBuilder)
         {
             flags = ImGuiTableColumnFlags_None;
+        }
+
+        constexpr auto WidthOrWeight(const float widthOrWeight) -> ColumnContext &
+        {
+            initWidthOrWeight = widthOrWeight;
+            return *this;
         }
 
         constexpr auto DefaultSort() -> ColumnContext &
@@ -140,10 +147,16 @@ struct TableHeadersBuilder
             return *this;
         }
 
-        auto Column(const char *name) -> ColumnContext
+        constexpr auto Setup() -> ColumnContext &
         {
             auto translated = Translation::Translate(this->name.data());
-            ImGui::TableSetupColumn(translated.c_str(), flags);
+            ImGui::TableSetupColumn(translated.c_str(), flags, initWidthOrWeight);
+            return *this;
+        }
+
+        auto Column(const char *name) -> ColumnContext
+        {
+            Setup();
             flags = ImGuiTableColumnFlags_None;
             return tableBuilder.Column(name);
         }

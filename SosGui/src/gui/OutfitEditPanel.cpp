@@ -960,9 +960,9 @@ void OutfitEditPanel::ArmorView::reset_counter()
 
 void OutfitEditPanel::ArmorView::reset_view(ArmorGenerator *generator)
 {
+    clearViewData();
     if (generator != nullptr)
     {
-        clearViewData();
         generator->for_each([&](Armor *armor) {
             if (const auto result = add_armor(armor); !result.has_value())
             {

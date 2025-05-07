@@ -95,6 +95,8 @@ void OutfitListTable::Render(RE::Actor *editingActor)
     {
         windowName = "Outfit Editor###OutfitEditor";
     }
+    ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_LIST_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH_SMALL, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
     if (constexpr auto flags = ImGuiUtil::WindowFlags().flags;
         ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), nullptr, flags))
     {
@@ -106,7 +108,8 @@ void OutfitListTable::Render(RE::Actor *editingActor)
 
     if (IsValidOutfit(m_wantEdit))
     {
-        ImGui::SetNextWindowSize({500, 300}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_EDIT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT}, ImGuiCond_FirstUseEver);
         if (ImGui::Begin(windowName.c_str()))
         {
             ImGui::SameLine();
@@ -174,7 +177,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
     // Table Content
     // clang-format off
     if (constexpr auto flags = TableFlags().Borders().Resizable().Hideable().Reorderable()
-                                   .Sortable().SizingFixedFit().ScrollY().NoHostExtendX()
+                                   .Sortable().SizingStretchProp().ScrollY().NoHostExtendX()
                                    .flags;
         !ImGui::BeginTable("##OutfitLists", 2, flags))
     {
@@ -191,7 +194,7 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
     const auto activeOutfitId = activeOutfitOpt.map(GetOutfitId).value_or(INVALID_OUTFIT_ID);
 
     // clang-format off
-   TableHeadersBuilder().Column("##Number").NoSort().WidthFixed().NoHide()
+   TableHeadersBuilder().Column("##Number").WidthOrWeight(64 /*16 * 4*/).NoSort().WidthFixed().NoHide()
                         .Column("$SkyOutSys_MCM_OutfitList").DefaultSort()
                         .CommitHeadersRow();
     // clang-format on

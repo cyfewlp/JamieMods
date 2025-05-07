@@ -263,6 +263,8 @@ void SosGui::Toolbar()
 
 void SosGui::MainConfigWindow()
 {
+    ImGui::SetNextWindowPos(ImVec2(DEFAULT_MAIN_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav))
     {
         bool fEnabled = m_uiData.IsEnabled();
