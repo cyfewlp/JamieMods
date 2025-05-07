@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -96,6 +97,8 @@ namespace LIBC_NAMESPACE_DECL
         {
             return m_slotPolicies;
         }
+
+        auto GetUniqueArmors() const -> std::unordered_set<Armor *>;
     };
 
     constexpr auto GetOutfitId(const SosUiOutfit &outfit)

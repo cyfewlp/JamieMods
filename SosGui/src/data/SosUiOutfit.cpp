@@ -4,60 +4,85 @@
 #include <RE/B/BGSBipedObjectForm.h>
 #include <cstdint>
 
+namespace std
+{
+template <>
+struct hash<RE::TESObjectARMO *>
+{
+    _NODISCARD _STATIC_CALL_OPERATOR size_t operator()(const RE::TESObjectARMO *_Keyval) _CONST_CALL_OPERATOR noexcept
+    {
+        return _Hash_representation(_Keyval->GetFormID()); // map -0 to 0
+    }
+};
+}
+
 namespace LIBC_NAMESPACE_DECL
 {
-    void SosUiOutfit::AddArmor(Armor *armor)
+void SosUiOutfit::AddArmor(Armor *armor)
+{
+    if (armor == nullptr)
     {
-        if (armor == nullptr)
-        {
-            return;
-        }
-        auto slot = armor->GetSlotMask();
-        if (slot == Slot::kNone)
-        {
-            return;
-        }
-        for (uint32_t idx = 0; idx < SLOT_COUNT; ++idx)
-        {
-            if (armor->HasPartOf(static_cast<Slot>(1 << idx)))
-            {
-                m_armors[idx] = armor;
-            }
-        }
-        m_slotMask.set(slot);
+        return;
     }
+    auto slot = armor->GetSlotMask();
+    if (slot == Slot::kNone)
+    {
+        return;
+    }
+    for (uint32_t idx = 0; idx < SLOT_COUNT; ++idx)
+    {
+        if (armor->HasPartOf(static_cast<Slot>(1 << idx)))
+        {
+            m_armors[idx] = armor;
+        }
+    }
+    m_slotMask.set(slot);
+}
 
-    void SosUiOutfit::RemoveArmor(const Armor *armor)
+void SosUiOutfit::RemoveArmor(const Armor *armor)
+{
+    if (armor == nullptr)
     {
-        if (armor == nullptr)
+        return;
+    }
+    auto slot = armor->GetSlotMask();
+    if (slot == Slot::kNone)
+    {
+        return;
+    }
+    for (uint32_t idx = 0; idx < SLOT_COUNT; ++idx)
+    {
+        if (armor->HasPartOf(static_cast<Slot>(1 << idx)))
         {
-            return;
-        }
-        auto slot = armor->GetSlotMask();
-        if (slot == Slot::kNone)
-        {
-            return;
-        }
-        for (uint32_t idx = 0; idx < SLOT_COUNT; ++idx)
-        {
-            if (armor->HasPartOf(static_cast<Slot>(1 << idx)))
+            if (m_armors[idx] != armor)
             {
-                if (m_armors[idx] != armor)
-                {
-                    return;
-                }
-                m_armors[idx] = nullptr;
+                return;
             }
+            m_armors[idx] = nullptr;
         }
-        m_slotMask.reset(slot);
     }
+    m_slotMask.reset(slot);
+}
 
-    auto SosUiOutfit::GetArmorAt(uint32_t slotPos) const -> Armor *
+auto SosUiOutfit::GetArmorAt(uint32_t slotPos) const -> Armor *
+{
+    if (slotPos == 0 || slotPos >= SLOT_COUNT)
     {
-        if (slotPos == 0 || slotPos >= SLOT_COUNT)
-        {
-            return nullptr;
-        }
-        return m_armors.at(slotPos);
+        return nullptr;
     }
+    return m_armors.at(slotPos);
+}
+
+auto SosUiOutfit::GetUniqueArmors() const -> std::unordered_set<Armor *>
+{
+    std::unordered_set<Armor *> ret;
+    for (uint32_t idx = 0; idx < m_armors.size(); ++idx)
+    {
+        if (m_armors[idx] != nullptr)
+        {
+            ret.insert(m_armors[idx]);
+        }
+    }
+    return ret;
+}
 }

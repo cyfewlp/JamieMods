@@ -598,7 +598,6 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
 
 void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
 {
-    m_armorView.add_armors_in_outfit(m_uiData, wantEdit.second); // first, restore all removed armors in outfit
     SlotEnumeration usedSlot;
     // We will remove all used armors in view;
     std::vector<Armor *> newViewData;
@@ -621,6 +620,14 @@ void OutfitEditPanel::BatchAddArmors(const SosUiData::OutfitPair &wantEdit)
         +[&] {
             return m_outfitService.AddArmor(wantEdit.first, wantEdit.second->GetName(), armor);
         };
+    }
+    for (const auto &armor : wantEdit.second->GetUniqueArmors())
+    {
+        if (auto expected = m_armorView.add_armor(armor); !expected.has_value())
+        {
+            m_uiData.PushErrorMessage(
+                std::format("Can't restore armor {} from outfit {}", armor->GetName(), wantEdit.second->GetName()));
+        }
     }
     m_armorView.multiSelection.Clear();
     m_armorView.viewData.swap(newViewData);
