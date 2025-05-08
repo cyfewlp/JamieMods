@@ -17,9 +17,9 @@ LIBC_NAMESPACE_DECL
 {
 class OutfitListTable final : public BaseGui
 {
-    static constexpr int MAX_OUTFIT_NAME_BYTES = 256;
-    static constexpr SosUiData::OutfitPair DEFAULT_INVALID_PAIR = {INVALID_OUTFIT_ID, nullptr};
-    using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
+    static constexpr int                   MAX_OUTFIT_NAME_BYTES = 256;
+    static constexpr SosUiData::OutfitPair DEFAULT_INVALID_PAIR  = {INVALID_OUTFIT_ID, nullptr};
+    using OutfitDrawAction                                       = std::function<void(const SosUiOutfit &, size_t)>;
 
     struct OutfitDebounceInput final : ImGuiUtil::DebounceInput
     {
@@ -42,26 +42,29 @@ class OutfitListTable final : public BaseGui
         }
     };
 
-    SosUiData &m_uiData;
-    OutfitService &m_outfitService;
-
-    Popup::DeleteOutfitPopup m_DeleteOutfitPopup{};
-    SosUiData::OutfitPair m_wantEdit = DEFAULT_INVALID_PAIR;
-    MultiSelection m_outfitMultiSelection;
-    OutfitEditPanel m_editPanel;
-
-    bool m_onlyShowFavorites = false;
+    SosUiData &                             m_uiData;
+    OutfitService &                         m_outfitService;
+    Popup::DeleteOutfitPopup                m_DeleteOutfitPopup{};
+    SosUiData::OutfitPair                   m_wantEdit = DEFAULT_INVALID_PAIR;
+    MultiSelection                          m_outfitMultiSelection;
+    OutfitEditPanel &                       m_editPanel;
+    bool                                    m_onlyShowFavorites = false;
     std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
-    OutfitDebounceInput m_outfitFilterInput{};
+    OutfitDebounceInput                     m_outfitFilterInput{};
 
 public:
-    OutfitListTable(SosUiData &uiData, OutfitService &outfitService)
-        : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(m_uiData, m_outfitService) {}
+    OutfitListTable(SosUiData &uiData, OutfitService &outfitService, OutfitEditPanel &editPanel)
+        : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(editPanel) {}
 
-    void Render(RE::Actor *editingActor);
+    void Draw(RE::Actor *editingActor);
     void Refresh() override;
     void Close() override;
     void OnSelectActor(const RE::Actor *actor);
+
+    auto GetEditingOutfit() const -> SosUiData::OutfitPair
+    {
+        return m_wantEdit;
+    }
 
 private:
     void OnRefreshOutfitList();
@@ -75,7 +78,7 @@ private:
      * open a context menu if user right-clicks current row
      * @return true if the context menu is open.
      */
-    void OpenContextMenu(uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
+    void OpenContextMenu(uint32_t    selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
                          __out bool &acceptRename);
     void DrawDeletePopup();
 

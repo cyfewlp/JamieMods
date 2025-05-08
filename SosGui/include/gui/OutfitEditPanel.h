@@ -17,7 +17,8 @@
 #include <expected>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 class OutfitEditPanel final : public BaseGui
 {
@@ -27,8 +28,7 @@ public:
     using SlotEnumeration = SKSE::stl::enumeration<Slot, uint32_t>;
 
     static constexpr int MAX_FILTER_ARMOR_NAME = 256;
-    // static constexpr int SLOT_COUNT            = 32;
-    static constexpr int SOS_SLOT_OFFSET       = 30;
+    static constexpr int SOS_SLOT_OFFSET = 30;
 
 private:
     static auto get_slot_name_key(uint32_t slotPos) -> std::string;
@@ -41,13 +41,13 @@ private:
     struct ArmorGeneratorTabBar
     {
         std::unique_ptr<ArmorGenerator> generator     = std::make_unique<BasicArmorGenerator>();
-        RE::Actor                      *selectedActor = nullptr;
+        RE::Actor *                     selectedActor = nullptr;
     } m_armorGeneratorTabBar;
 
     struct EditContext
     {
         bool                            armorListShowAllSlotArmors  = false;
-        RE::Actor                      *armorGeneratorSelectedActor = nullptr;
+        RE::Actor *                     armorGeneratorSelectedActor = nullptr;
         std::unique_ptr<ArmorGenerator> activeArmorGenerator        = std::make_unique<BasicArmorGenerator>();
         // be used on click add(candidate table)/delete(armor table)
         bool dirty = true;
@@ -56,8 +56,8 @@ private:
 
     ArmorView                 m_armorView{};
     std::string               m_windowTitle;
-    SosUiData                &m_uiData;
-    OutfitService            &m_outfitService;
+    SosUiData &               m_uiData;
+    OutfitService &           m_outfitService;
     Popup::DeleteArmorPopup   m_DeleteArmorPopup{};
     Popup::ConflictArmorPopup m_ConflictArmorPopup{};
     Popup::SlotPolicyHelp     m_slotPolicyHelp{};
@@ -65,11 +65,9 @@ private:
 
 public:
     explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService)
-        : m_uiData(uiData), m_outfitService(outfitService)
-    {
-    }
+        : m_uiData(uiData), m_outfitService(outfitService) {}
 
-    void Render(const SosUiData::OutfitPair &wantEdit);
+    void Draw(const SosUiData::OutfitPair &wantEdit);
     void DrawArmorInfo();
     void Refresh() override;
     void Close() override;
@@ -77,6 +75,7 @@ public:
     void OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const SosUiOutfit *editingOutfit);
 
 private:
+    void DoDraw(const SosUiData::OutfitPair &wantEdit);
     void DrawSideBar(const SosUiOutfit *editingOutfit);
     void UpdateWindowTitle(const std::string &outfitName);
 
@@ -90,11 +89,11 @@ private:
     }
 
     void DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit);
-    void DrawArmorViewTableContent(const std::vector<Armor *>                            &viewData,
+    void DrawArmorViewTableContent(const std::vector<Armor *> &                           viewData,
                                    const std::function<void(Armor *armor, size_t index)> &drawAction);
     void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
     void DrawArmorView(const SosUiData::OutfitPair &wantEdit, const std::vector<Armor *> &viewData);
-    void DrawArmorViewModNameFilterer(const SosUiOutfit* editingOutfit);
+    void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 
     void BatchAddArmors(const SosUiData::OutfitPair &wantEdit);

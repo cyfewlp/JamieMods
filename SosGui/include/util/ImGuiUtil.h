@@ -122,10 +122,16 @@ constexpr auto Selectable(const std::string &string, bool isSelected, ImGuiSelec
     return ImGui::Selectable(g_widgetName.c_str(), isSelected, flags);
 }
 
-constexpr auto MenuItem(const std::string_view &nameKey) -> bool
+constexpr auto BeginMenu(const char *nameKey) -> bool
+{
+    Translation::Translate(nameKey, g_widgetName);
+    return ImGui::BeginMenu(g_widgetName.c_str());
+}
+
+constexpr auto MenuItem(const std::string_view &nameKey, const char* shortcut = nullptr, bool selected = false) -> bool
 {
     Translation::Translate(nameKey.data(), g_widgetName);
-    return ImGui::MenuItem(g_widgetName.c_str());
+    return ImGui::MenuItem(g_widgetName.c_str(), shortcut, selected);
 }
 
 constexpr auto BeginChild(const char *windowId, const ImVec2 &size = ImVec2(0, 0),

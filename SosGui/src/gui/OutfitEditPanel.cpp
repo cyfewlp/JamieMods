@@ -38,7 +38,30 @@ void OutfitEditPanel::EditContext::Clear()
     dirty                       = true;
 }
 
-void OutfitEditPanel::Render(const SosUiData::OutfitPair &wantEdit)
+void OutfitEditPanel::Draw(const SosUiData::OutfitPair &wantEdit)
+{
+    if (!IsShowing())
+    {
+        return;
+    }
+    auto        outfitName = wantEdit.second ? wantEdit.second->GetName().c_str() : "Untitled";
+    std::string windowName = std::format("Editing Outfit: {}###OutfitEditor", outfitName);
+    ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_EDIT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize({DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT}, ImGuiCond_FirstUseEver);
+    if (ImGui::Begin(windowName.c_str(), &m_show))
+    {
+        ImGui::SameLine();
+        ImGui::BeginGroup();
+        if (m_uiData.GetOutfitList().HasOutfit(wantEdit.first))
+        {
+            DoDraw(wantEdit);
+        }
+        ImGui::EndGroup();
+    }
+    ImGui::End();
+}
+
+void OutfitEditPanel::DoDraw(const SosUiData::OutfitPair &wantEdit)
 {
     if (m_editContext.dirty)
     {

@@ -51,27 +51,29 @@ class SosGui final : public BaseGui
             : outfit_select_popup(debounceInput) {}
     };
 
-    using Slot = RE::BIPED_MODEL::BipedObjectSlot;
+    using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
     using Armor = RE::TESObjectARMO;
 
-    SosUiData m_uiData;
-    OutfitService m_outfitService;
+    SosUiData          m_uiData;
+    OutfitService      m_outfitService;
     SosDataCoordinator m_dataCoordinator;
-    OutfitListTable m_outfitListTable;
+    OutfitEditPanel    m_outfitEditPanel;
+    OutfitListTable    m_outfitListTable;
 
-    bool m_fShowConfigWindows = true;
-    bool m_fWantTextInput = true; // previous frame WantTextInput state
-    int m_selectedActorIndex = 0;
-    RE::Actor*m_selectedActor = nullptr;
+    bool       m_fShowConfigWindows = true;
+    bool       m_fWantTextInput     = true; // previous frame WantTextInput state
+    int        m_selectedActorIndex = 0;
+    RE::Actor *m_selectedActor      = nullptr;
 
-    OutfitDebounceInput m_outfitDebounceInput;
-    outfit_select_popup m_outfitSelectPopup{m_outfitDebounceInput};
+    OutfitDebounceInput            m_outfitDebounceInput;
+    outfit_select_popup            m_outfitSelectPopup{m_outfitDebounceInput};
     autoSwitch_outfit_select_popup m_autoSwitchOutfitSelectPopup{m_outfitDebounceInput};
 
 public:
     SosGui()
         : m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService),
-          m_outfitListTable(m_uiData, m_outfitService) {}
+          m_outfitEditPanel(m_uiData, m_outfitService),
+          m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel) {}
 
     static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
 

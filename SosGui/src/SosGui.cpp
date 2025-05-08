@@ -22,7 +22,8 @@
 #include <SKSE/Impl/PCH.h>
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 
 inline void SosGui::OutfitDebounceInput::clear()
@@ -77,14 +78,14 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
     ImGui::StyleColorsDark();
-    constexpr auto mainFont = R"(C:\Windows\Fonts\simsun.ttc)";
+    constexpr auto mainFont           = R"(C:\Windows\Fonts\simsun.ttc)";
     constexpr auto MonaspaceXenonFont =
         R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-Regular.ttf)";
     constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
 
     ImFontConfig fontConfig;
-    fontConfig.OversampleH = fontConfig.OversampleV = 1;
-    fontConfig.GlyphExcludeRanges                   = io.Fonts->GetGlyphRangesDefault();
+    fontConfig.OversampleH        = fontConfig.OversampleV = 1;
+    fontConfig.GlyphExcludeRanges = io.Fonts->GetGlyphRangesDefault();
     fontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
     io.Fonts->AddFontFromFileTTF(emojiFont, 14.0F, &fontConfig);
@@ -204,10 +205,16 @@ auto SosGui::DoRender() -> void
     }
     try
     {
-        MainConfigWindow();
+        if (IsShowing())
+        {
+            MainConfigWindow();
+        }
 
         RE::Actor *selectedActor = GetSelectedActor();
-        m_outfitListTable.Render(selectedActor);
+        m_outfitListTable.Draw(selectedActor);
+
+        const auto &editingOutfit = m_outfitListTable.GetEditingOutfit();
+        m_outfitEditPanel.Draw(editingOutfit);
     }
     catch (const std::exception &e)
     {
@@ -247,15 +254,28 @@ void SosGui::DockSpaceToolBar()
 
 void SosGui::Toolbar()
 {
-    if (ImGui::MenuItem("Show/Hide"))
+    if (ImGuiUtil::MenuItem("$SosGui_ToolBar_ShowOrHide"))
     {
         m_fShowConfigWindows = !m_fShowConfigWindows;
     }
-    if (ImGui::MenuItem("Refresh Player Armor"))
+    if (ImGuiUtil::BeginMenu("$SosGui_ToolBar_Views"))
+    {
+        constexpr auto ViewMenuItem = [](BaseGui &gui, const char *const name) {
+            if (ImGuiUtil::MenuItem(name, nullptr, gui.IsShowing()))
+            {
+                gui.IsShowing() ? gui.Hide() : gui.Show();
+            }
+        };
+        ViewMenuItem(*this, "$SosGui_ToolBar_Views_MainWindow");
+        ViewMenuItem(m_outfitListTable, "$SosGui_ToolBar_Views_OutfitList");
+        ViewMenuItem(m_outfitEditPanel, "$SosGui_ToolBar_Views_OutfitEditPanel");
+        ImGui::EndMenu();
+    }
+    if (ImGuiUtil::MenuItem("$SosGui_ToolBar_RefreshPlayerArmor"))
     {
         util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
     }
-    if (ImGui::MenuItem("Close"))
+    if (ImGuiUtil::MenuItem("$SosGui_ToolBar_Close"))
     {
         auto *messageQueue = RE::UIMessageQueue::GetSingleton();
         messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
@@ -266,7 +286,7 @@ void SosGui::MainConfigWindow()
 {
     ImGui::SetNextWindowPos(ImVec2(DEFAULT_MAIN_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("SosGuiOptions", nullptr, ImGuiWindowFlags_NoNav))
+    if (ImGui::Begin("SosGuiOptions", &m_show, ImGuiWindowFlags_NoNav))
     {
         bool fEnabled = m_uiData.IsEnabled();
         if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
@@ -304,7 +324,7 @@ void SosGui::MainConfigWindow()
 
 auto SosGui::ThemeCombo() -> void
 {
-    auto         *settings    = Setting::UiSetting::GetInstance();
+    auto *        settings    = Setting::UiSetting::GetInstance();
     const int32_t themeIndex  = settings->selectedThemeIndex;
     using Loader              = ImThemeLoader::Loader;
     const std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
