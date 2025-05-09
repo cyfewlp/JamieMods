@@ -22,7 +22,7 @@ public:
 
     virtual ~BaseGui() = default;
 
-    void Show()
+    virtual void Show()
     {
         m_show = true;
     }

@@ -21,7 +21,6 @@
 #include <boost/optional.hpp>
 #include <boost/optional/detail/optional_reference_spec.hpp>
 #include <boost/range/adaptor/indexed.hpp>
-#include <cstdint>
 #include <expected>
 #include <stdexcept>
 #include <string>
@@ -128,7 +127,7 @@ public:
 
     void RenameOutfit(const OutfitId id, const std::string &&newName);
 
-    void AddArmor(const OutfitId id, Armor *armor);
+    void AddArmor(const OutfitId id, const Armor* armor);
 
     template <typename Container>
     void AddArmors(const OutfitId id, const Container &armors)

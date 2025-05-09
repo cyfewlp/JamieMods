@@ -33,16 +33,19 @@ struct BasicPopup
 
 struct ModalPopup
 {
-    bool showPopup = false;
-    ImGuiID popupId = 0;
+    bool    showPopup = false;
+    ImGuiID popupId   = 0;
 
-    constexpr void Open()
+    constexpr void Open(ImGuiPopupFlags flags = 0)
     {
+        if (showPopup)
+        {
+            return;
+        }
         showPopup = true;
-        ImGui::OpenPopup(popupId);
+        ImGui::OpenPopup(popupId, flags);
     }
 
-protected:
     auto BeginModal(const char *nameKey, ImGuiWindowFlags flags = ImGuiWindowFlags_None) -> bool;
 };
 
@@ -67,14 +70,14 @@ struct DeleteOutfitPopup final : MessagePopup
 
 struct ConflictArmorPopup final : MessagePopup
 {
-    Armor *conflictedArmor = nullptr;
+    const Armor *conflictedArmor = nullptr;
 
     void Draw(bool &confirmed);
 };
 
 struct DeleteArmorPopup final : MessagePopup
 {
-    Armor *wantDeleteArmor = nullptr;
+    const Armor *wantDeleteArmor = nullptr;
 
     void Draw(bool &confirmed);
 };

@@ -97,19 +97,19 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::DeleteOutfit, args);
     }
 
-    auto SosNativeCaller::AddArmorToOutfit(std::string &&outfitName, Armor *armor) -> Awaitable
+    auto SosNativeCaller::AddArmorToOutfit(std::string &&outfitName, const Armor *armor) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName), std::move(armor));
         return StaticCall(SosFunction::AddArmorToOutfit, args);
     }
 
-    auto SosNativeCaller::RemoveArmorFromOutfit(std::string &&outfitName, Armor *armor) -> Awaitable
+    auto SosNativeCaller::RemoveArmorFromOutfit(std::string &&outfitName, const Armor *armor) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::forward<std::string>(outfitName), std::move(armor));
         return StaticCall(SosFunction::RemoveArmorFromOutfit, args);
     }
 
-    auto SosNativeCaller::RemoveConflictingArmorsFrom(Armor *armor, std::string &&outfitName) -> Awaitable
+    auto SosNativeCaller::RemoveConflictingArmorsFrom(const Armor *armor, std::string &&outfitName) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::move(armor), std::forward<std::string>(outfitName));
         return StaticCall(SosFunction::RemoveConflictingArmorsFrom, args);

@@ -92,20 +92,21 @@ void SosGuiMenu::RegisterMenu()
 
 void SosGuiMenu::PostDisplay()
 {
-    m_sosGui.Render();
+    m_sosGui->Render();
 }
 
 void SosGuiMenu::OnShow()
 {
     m_fShow = true;
     log_debug("SosGuiMenu::kShow");
-    m_sosGui.Refresh();
+    m_sosGui = std::make_unique<SosGui>();
+    m_sosGui->Refresh();
 }
 
 void SosGuiMenu::OnHide()
 {
     m_fShow = false;
-    m_sosGui.Close();
+    m_sosGui = nullptr;
     log_debug("SosGuiMenu::kHide");
     auto &io = ImGui::GetIO();
     io.ClearInputKeys();

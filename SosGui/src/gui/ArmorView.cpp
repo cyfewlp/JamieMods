@@ -7,7 +7,8 @@
 
 #include <ranges>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 bool ArmorView::ArmorFilter::PassFilter(const Armor *armor) const
 {
@@ -55,10 +56,13 @@ bool ArmorView::ModFilterer::PassFilter(const Armor *armor) const
 
 void ArmorView::init()
 {
-    auto       *dataHandler = RE::TESDataHandler::GetSingleton();
+    if (availableArmorCount != 0)
+    {
+        return;
+    }
+    auto *      dataHandler = RE::TESDataHandler::GetSingleton();
     const auto &armorArray  = dataHandler->GetFormArray<RE::TESObjectARMO>();
 
-    availableArmorCount = 0;
     for (const auto &armor : armorArray)
     {
         if (IsArmorCanDisplay(armor))
@@ -71,6 +75,7 @@ void ArmorView::init()
 
 void ArmorView::clear()
 {
+    availableArmorCount = 0;
     armorContainer.Clear();
     viewData.clear();
     modRefCounter.clear();
@@ -154,7 +159,7 @@ bool ArmorView::filter(const Armor *armor) const
     return true;
 }
 
-auto ArmorView::add_armor(Armor *armor) -> std::expected<void, error>
+auto ArmorView::add_armor(const Armor *armor) -> std::expected<void, error>
 {
     if (filter(armor))
     {
@@ -237,7 +242,7 @@ void ArmorView::update_view_data(ArmorGenerator *generator, const SosUiOutfit *e
     {
         try
         {
-            generator->for_each([&](Armor *armor) {
+            generator->for_each([&](const Armor *armor) {
                 if (const auto result = add_armor(armor); !result.has_value())
                 {
                     throw std::runtime_error(ToErrorMessage(result.error()));

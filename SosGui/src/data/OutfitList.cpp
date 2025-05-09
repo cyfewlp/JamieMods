@@ -58,7 +58,7 @@ void OutfitList::RenameOutfit(const OutfitId id, const std::string &&newName)
     }
 }
 
-void OutfitList::AddArmor(const OutfitId id, Armor *armor)
+void OutfitList::AddArmor(const OutfitId id, const Armor* armor)
 {
     if (auto where = m_outfitById.find(id); where != m_outfitById.end())
     {

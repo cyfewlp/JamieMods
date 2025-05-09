@@ -2,7 +2,6 @@
 
 #include "BaseGui.h"
 #include "common/config.h"
-#include "data/ArmorContainer.h"
 #include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
@@ -13,8 +12,6 @@
 #include <RE/B/BGSBipedObjectForm.h>
 #include <RE/B/BipedObjects.h>
 #include <RE/T/TESObjectARMO.h>
-#include <array>
-#include <expected>
 #include <string>
 
 namespace
@@ -28,7 +25,7 @@ public:
     using SlotEnumeration = SKSE::stl::enumeration<Slot, uint32_t>;
 
     static constexpr int MAX_FILTER_ARMOR_NAME = 256;
-    static constexpr int SOS_SLOT_OFFSET = 30;
+    static constexpr int SOS_SLOT_OFFSET       = 30;
 
 private:
     static auto get_slot_name_key(uint32_t slotPos) -> std::string;
@@ -67,21 +64,28 @@ public:
     explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService)
         : m_uiData(uiData), m_outfitService(outfitService) {}
 
-    void Draw(const SosUiData::OutfitPair &wantEdit);
+    void Show() override
+    {
+        BaseGui::Show();
+        m_armorView.init();
+    }
+
+    void Draw(const EditingOutfit &editingOutfit);
+    void DrawOutfitTabBarView(const EditingOutfit &editingOutfit);
     void DrawArmorInfo();
     void Refresh() override;
     void Close() override;
-    void OnSelectActor(const RE::Actor *actor, const SosUiOutfit *editingOutfit);
-    void OnSelectOutfit(const SosUiOutfit *lastEditOutfit, const SosUiOutfit *editingOutfit);
+    void OnSelectActor(const RE::Actor *actor, const EditingOutfit &editingOutfit);
+    void OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing);
 
 private:
-    void DoDraw(const SosUiData::OutfitPair &wantEdit);
+    void DoDraw(const EditingOutfit &editingOutfit);
     void DrawSideBar(const SosUiOutfit *editingOutfit);
     void UpdateWindowTitle(const std::string &outfitName);
 
-    void DrawOutfitArmors(const SosUiData::OutfitPair &wantEdit);
+    void DrawOutfitArmors(const EditingOutfit& editingOutfit);
     void HighlightConflictSlot(Slot slot) const;
-    void SlotPolicyCombo(const SosUiData::OutfitPair &wantEdit, const uint32_t &slotIdx) const;
+    void SlotPolicyCombo(const EditingOutfit& editingOutfit, const uint32_t &slotIdx) const;
 
     auto GetGenerator() const -> ArmorGenerator *
     {
@@ -89,20 +93,19 @@ private:
     }
 
     void DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit);
-    void DrawArmorViewTableContent(const std::vector<Armor *> &                           viewData,
-                                   const std::function<void(Armor *armor, size_t index)> &drawAction);
+    void DrawArmorViewTableContent(const std::vector<const Armor *> &                           viewData,
+                                   const std::function<void(const Armor *armor, size_t index)> &drawAction);
     void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
-    void DrawArmorView(const SosUiData::OutfitPair &wantEdit, const std::vector<Armor *> &viewData);
+    void DrawArmorView(const EditingOutfit& editingOutfit, const std::vector<const Armor *> &viewData);
     void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 
-    void BatchAddArmors(const SosUiData::OutfitPair &wantEdit);
+    void BatchAddArmors(const EditingOutfit &editingOutfit);
+    void AddArmorToOutfit(const EditingOutfit &editingOutfit, const Armor *armor) const;
 
-    void RenderOutfitAddPolicyById(const SosUiData::OutfitPair &wantEdit, const bool &fFilterPlayable) const;
+    void OnAcceptAddArmorToOutfit(const EditingOutfit& editingOutfit, const Armor *armor);
 
-    void OnAcceptAddArmorToOutfit(const SosUiData::OutfitPair &wantEdit, Armor *armor);
-
-    void RenderPopups(const SosUiData::OutfitPair &wantEdit);
+    void RenderPopups(const EditingOutfit &editingOutfit);
 
     static auto IsArmorCanDisplay(const Armor *armor) -> bool;
 

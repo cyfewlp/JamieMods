@@ -12,7 +12,8 @@
 #include "util/ImGuiUtil.h"
 #include "widgets.h"
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 struct ArmorView final
 {
@@ -90,7 +91,7 @@ struct ArmorView final
 
     std::bitset<SLOT_COUNT>                        slotFiltererSelected{};
     ArmorContainer                                 armorContainer{};
-    std::vector<Armor *>                           viewData{};
+    std::vector<const Armor *>                     viewData{};
     std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
     ArmorFilter                                    armorFilter{};
     ModFilterer                                    modFilterer{};
@@ -98,7 +99,7 @@ struct ArmorView final
     std::array<uint16_t, SLOT_COUNT>               slotCounter{};
     ArmorMultiSelection                            multiSelection{};
     uint32_t                                       availableArmorCount = 0;
-    ArmorGenerator                                *armorGenerator      = nullptr;
+    ArmorGenerator *                               armorGenerator      = nullptr;
 
 public:
     enum class error : uint8_t
@@ -132,7 +133,7 @@ public:
     void               add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editingOutfit);
     void               remove_armors_in_outfit(const SosUiOutfit *editingOutfit);
     bool               filter(const Armor *armor) const;
-    [[nodiscard]] auto add_armor(Armor *armor) -> std::expected<void, error>;
+    [[nodiscard]] auto add_armor(const Armor *armor) -> std::expected<void, error>;
     bool               remove_armor(const Armor *armor);
     void               reset_counter();
     void               update_view_data(ArmorGenerator *generator, const SosUiOutfit *editingOutfit);

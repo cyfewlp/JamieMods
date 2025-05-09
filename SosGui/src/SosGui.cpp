@@ -180,6 +180,9 @@ auto SosGui::Refresh() -> void
     m_selectedActorIndex                         = 0;
     m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
     m_outfitDebounceInput.clear();
+    Show();
+    m_outfitListTable.Show();
+    m_outfitEditPanel.Show();
 }
 
 auto SosGui::Close() -> void

@@ -74,6 +74,7 @@
 * [x] OutfitList as a separate window;
 * [x] Bug fix: when click `Import Setting`, may have reference released outfit;
 * [x] Bug fix: click mod name filter: throw exception: `invalid vector subscript`
+* [ ] Support edit empty outfit?
 
 == Features
 

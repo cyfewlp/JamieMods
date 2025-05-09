@@ -15,7 +15,6 @@
 #include <RE/A/Actor.h>
 #include <array>
 #include <boost/optional/detail/optional_reference_spec.hpp>
-#include <format>
 #include <functional>
 #include <ranges>
 #include <string>
@@ -33,20 +32,20 @@ void OutfitListTable::Refresh()
 
 void OutfitListTable::Close()
 {
-    m_wantEdit = DEFAULT_INVALID_PAIR;
+    m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
     m_outfitFilterInput.viewData.clear();
     m_editPanel.Close();
 }
 
-void OutfitListTable::OnSelectActor(const RE::Actor *actor)
+void OutfitListTable::OnSelectActor(const RE::Actor *actor) const
 {
-    m_editPanel.OnSelectActor(actor, m_wantEdit.second);
+    m_editPanel.OnSelectActor(actor, m_wantEdit);
 }
 
 void OutfitListTable::OnRefreshOutfitList()
 {
-    m_wantEdit = DEFAULT_INVALID_PAIR;
+    m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
     m_onlyShowFavorites = false;
     m_outfitFilterInput.clear();
@@ -86,9 +85,10 @@ void OutfitListTable::Draw(RE::Actor *editingActor)
     {
         return;
     }
-    if (!IsValidOutfit(m_wantEdit))
+    if (!m_uiData.GetOutfitList().HasOutfit(m_wantEdit.GetId()))
     {
-        m_wantEdit = DEFAULT_INVALID_PAIR;
+        // TODO: only check on outfit list change?
+        m_wantEdit = UNTITLED_OUTFIT;
     }
 
     ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_LIST_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
@@ -96,14 +96,14 @@ void OutfitListTable::Draw(RE::Actor *editingActor)
     if (constexpr auto flags = ImGuiUtil::WindowFlags().flags;
         ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), &m_show, flags))
     {
-        DrawSidebar(editingActor);
+        DoDraw(editingActor);
     }
     // must out of BeginChild braces because when dock window, BeginChild will be return false;
     DrawDeletePopup();
     ImGui::End();
 }
 
-void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
+void OutfitListTable::DoDraw(RE::Actor *editingActor)
 {
     //////////////////////////////////////////////////////////
     // Create Outfit widgets
@@ -232,9 +232,9 @@ void OutfitListTable::DrawSidebar(RE::Actor *editingActor)
                     outfit.GetName().c_str(), isSelected,
                     ImGuiUtil::SelectableFlag().AllowDoubleClick().AllowOverlap().SpanAllColumns().flags))
                 {
-                    auto pair = std::make_pair(outfit.GetId(), &outfit);
-                    OnAcceptEditOutfit(m_wantEdit.second, pair);
-                    m_wantEdit = pair;
+                    const EditingOutfit currentEditing(outfit);
+                    OnAcceptEditOutfit(m_wantEdit, currentEditing);
+                    m_wantEdit = currentEditing;
                     if (ImGui::IsMouseDoubleClicked(0))
                     {
                         onRequestRename(thisInputId, outfit.GetName());
@@ -377,15 +377,15 @@ void OutfitListTable::DrawDeletePopup()
     }
 }
 
-void OutfitListTable::OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit)
+void OutfitListTable::OnAcceptEditOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editingOutfit) const
 {
     +[&] {
-        return m_outfitService.GetOutfitArmors(wantEdit.first, wantEdit.second->GetName());
+        return m_outfitService.GetOutfitArmors(editingOutfit.GetId(), editingOutfit.GetName());
     };
     +[&] {
-        return m_outfitService.GetSlotPolicy(wantEdit.first, wantEdit.second->GetName());
+        return m_outfitService.GetSlotPolicy(editingOutfit.GetId(), editingOutfit.GetName());
     };
-    m_editPanel.OnSelectOutfit(lastEdit, wantEdit.second);
+    m_editPanel.OnSelectOutfit(lastEdit, editingOutfit);
 }
 
 // ReSharper disable once CppDFAUnreachableFunctionCall

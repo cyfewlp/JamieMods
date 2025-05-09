@@ -33,11 +33,11 @@
 using namespace std::literals;
 
 // Data
-static ID3D11Device           *g_pd3dDevice        = nullptr;
-static ID3D11DeviceContext    *g_pd3dDeviceContext = nullptr;
-static IDXGISwapChain         *g_pSwapChain        = nullptr;
-static bool                    g_SwapChainOccluded = false;
-static UINT                    g_ResizeWidth = 0, g_ResizeHeight = 0;
+static ID3D11Device *          g_pd3dDevice           = nullptr;
+static ID3D11DeviceContext *   g_pd3dDeviceContext    = nullptr;
+static IDXGISwapChain *        g_pSwapChain           = nullptr;
+static bool                    g_SwapChainOccluded    = false;
+static UINT                    g_ResizeWidth          = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView *g_mainRenderTargetView = nullptr;
 // compsition varibles
 static LPDIRECTINPUT8       g_pDirectInput    = nullptr;
@@ -96,8 +96,8 @@ int main(int, char **)
 
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();
-    WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc,          0L,     0L, GetModuleHandle(nullptr), nullptr, nullptr,
-                      nullptr,    nullptr,    L"ImGui Example", nullptr};
+    WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr,
+                      nullptr, nullptr, L"ImGui Example", nullptr};
     ::RegisterClassExW(&wc);
     //    ::RegisterClassExW(&wchild);
     winst     = wc.hInstance;
@@ -142,8 +142,8 @@ int main(int, char **)
     const ImWchar emojiRange[] = {
         0x1F600, 0x1F64F, // Emoticons
         0x1F300, 0x1F5FF, // Symbols & Pictographs
-        0x2600,  0x26FF,  // Miscellaneous Symbols
-        0x2700,  0x27BF,  // Dingbats
+        0x2600, 0x26FF,   // Miscellaneous Symbols
+        0x2700, 0x27BF,   // Dingbats
         0                 // 终止符
     };
     ImWchar ascii_ranges[] = {
@@ -213,118 +213,128 @@ int main(int, char **)
                 ImGui::SetItemTooltip("A unicode string");
             }
 
-            if (ImGui::Begin("Data", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            if (show_another_window)
             {
-                ImGui::Text("0x");
-                ImGui::SameLine();
-                static std::array<char, 8> formIdBuf;
-                ImGui::InputText("##FormIdInput", formIdBuf.data(), formIdBuf.size(), ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsHexadecimal);
-
-                if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_RootWindow))
+                if (ImGui::Begin("##Data", &show_another_window, ImGuiWindowFlags_AlwaysAutoResize
+                    | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_UnsavedDocument))
                 {
-                    static int selectedIndex = -1;
-                    ImGuiID    popupId       = 0;
-                    if (ImGui::BeginChild("Sidebar", {300, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
+                    if (!show_another_window)
                     {
-                        static std::array<char, 256> armorNameBuf;
-                        ImGui::SetNextItemWidth(-FLT_MIN);
-                        ImGui::InputTextWithHint("##ArmorNameFilter", "Filter Armor Name", armorNameBuf.data(),
-                                                 armorNameBuf.size());
-                        if (ImGui::BeginTable("Mod Name", 1, ImGuiTableFlags_BordersOuter))
-                        {
-                            ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            ImGui::Selectable("Skyrim", false);
-                            ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            ImGui::Selectable("CC", false);
-                            ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            ImGui::Selectable("ArmorPack", false);
-                            ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            ImGui::Selectable("Dragonborn", false);
-                            ImGui::EndTable();
-                        }
-                        ImGui::Button("Clear all filter");
-                        ImGui::Separator();
-                        popupId = ImGui::GetID("Popup Armor info");
-                        if (ImGui::BeginPopup("Popup Armor info"))
-                        {
-                            ImGui::PushFontSize(24);
-                            ImGui::Text("Armor");
-                            ImGui::PopFontSize();
-                            ImGui::Indent();
-                            ImGui::Text("Basss & %d", selectedIndex);
-                            ImGui::Text("Mod: Skyrim");
-                            ImGui::Text("SlotMask: %d", 17782);
-                            ImGui::EndPopup();
-                        }
+                        printf("Click close");
                     }
-                    ImGui::EndChild();
-
+                    ImGui::Text("0x");
                     ImGui::SameLine();
-                    ImGui::BeginGroup();
+                    static std::array<char, 8> formIdBuf;
+                    ImGui::InputText("##FormIdInput", formIdBuf.data(), formIdBuf.size(),
+                                     ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsHexadecimal);
+
+                    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_RootWindow))
                     {
-                        bool        checked   = false;
-                        const auto &screenPos = ImGui::GetCursorScreenPos();
-                        ImGui::Checkbox("Head", &checked);
-                        ImGui::SameLine();
-                        ImGui::Checkbox("Body", &checked);
-                        ImGui::SameLine();
-                        ImGui::Checkbox("hands", &checked);
-                        ImGui::PushFontSize(36);
-                        ImGui::Text("Armor Name");
-                        ImGui::PopFontSize();
-                        static auto flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable |
-                                            ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders;
-                        ImGui::CheckboxFlags("NoHostExtendX", &flags, ImGuiTableFlags_NoHostExtendX);
-                        ImGui::CheckboxFlags("ScrollY", &flags, ImGuiTableFlags_ScrollY);
-                        if (ImGui::BeginTable("Armor Name", 3, flags))
+                        static int selectedIndex = -1;
+                        ImGuiID    popupId       = 0;
+                        if (ImGui::BeginChild("Sidebar", {300, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
                         {
-                            ImGui::TableSetupScrollFreeze(1, 1);
-                            ImGui::TableSetupColumn("#Number");
-                            ImGui::TableSetupColumn("Armor Name");
-                            ImGui::TableSetupColumn("Mod Name");
-                            ImGui::TableHeadersRow();
-                            ImGuiListClipper clipper;
-                            clipper.Begin(100);
-                            while (clipper.Step())
+                            static std::array<char, 256> armorNameBuf;
+                            ImGui::SetNextItemWidth(-FLT_MIN);
+                            ImGui::InputTextWithHint("##ArmorNameFilter", "Filter Armor Name", armorNameBuf.data(),
+                                                     armorNameBuf.size());
+                            if (ImGui::BeginTable("Mod Name", 1, ImGuiTableFlags_BordersOuter))
                             {
-                                for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
-                                {
-                                    ImGui::TableNextRow();
-                                    ImGui::TableNextColumn();
-                                    ImGui::Value("#", index);
-
-                                    ImGui::TableNextColumn();
-                                    bool isSelected = selectedIndex == index;
-                                    if (ImGui::Selectable(std::format("Armor {}", index).c_str(), isSelected,
-                                                          ImGuiSelectableFlags_SpanAllColumns |
-                                                              ImGuiSelectableFlags_AllowOverlap))
-                                    {
-                                        selectedIndex = isSelected ? -1 : index;
-                                        if (!isSelected)
-                                        {
-                                            ImGui::OpenPopup(popupId);
-                                        }
-                                    }
-
-                                    ImGui::TableNextColumn();
-                                    ImGui::Value("ModName", index);
-                                }
+                                ImGui::TableNextRow();
+                                ImGui::TableNextColumn();
+                                ImGui::Selectable("Skyrim", false);
+                                ImGui::TableNextRow();
+                                ImGui::TableNextColumn();
+                                ImGui::Selectable("CC", false);
+                                ImGui::TableNextRow();
+                                ImGui::TableNextColumn();
+                                ImGui::Selectable("ArmorPack", false);
+                                ImGui::TableNextRow();
+                                ImGui::TableNextColumn();
+                                ImGui::Selectable("Dragonborn", false);
+                                ImGui::EndTable();
                             }
-                            ImGui::EndTable();
+                            ImGui::Button("Clear all filter");
+                            ImGui::Separator();
+                            popupId = ImGui::GetID("Popup Armor info");
+                            if (ImGui::BeginPopup("Popup Armor info"))
+                            {
+                                ImGui::PushFontSize(24);
+                                ImGui::Text("Armor");
+                                ImGui::PopFontSize();
+                                ImGui::Indent();
+                                ImGui::Text("Basss & %d", selectedIndex);
+                                ImGui::Text("Mod: Skyrim");
+                                ImGui::Text("SlotMask: %d", 17782);
+                                ImGui::EndPopup();
+                            }
                         }
+                        ImGui::EndChild();
+
+                        ImGui::SameLine();
+                        ImGui::BeginGroup();
+                        {
+                            bool        checked   = false;
+                            const auto &screenPos = ImGui::GetCursorScreenPos();
+                            ImGui::Checkbox("Head", &checked);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Body", &checked);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("hands", &checked);
+                            ImGui::PushFontSize(36);
+                            ImGui::Text("Armor Name");
+                            ImGui::PopFontSize();
+                            static auto flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable |
+                                                ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders;
+                            ImGui::CheckboxFlags("NoHostExtendX", &flags, ImGuiTableFlags_NoHostExtendX);
+                            ImGui::CheckboxFlags("ScrollY", &flags, ImGuiTableFlags_ScrollY);
+                            if (ImGui::BeginTable("Armor Name", 3, flags))
+                            {
+                                ImGui::TableSetupScrollFreeze(1, 1);
+                                ImGui::TableSetupColumn("#Number");
+                                ImGui::TableSetupColumn("Armor Name");
+                                ImGui::TableSetupColumn("Mod Name");
+                                ImGui::TableHeadersRow();
+                                ImGuiListClipper clipper;
+                                clipper.Begin(100);
+                                while (clipper.Step())
+                                {
+                                    for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
+                                    {
+                                        ImGui::TableNextRow();
+                                        ImGui::TableNextColumn();
+                                        ImGui::Value("#", index);
+
+                                        ImGui::TableNextColumn();
+                                        bool isSelected = selectedIndex == index;
+                                        if (ImGui::Selectable(std::format("Armor {}", index).c_str(), isSelected,
+                                                              ImGuiSelectableFlags_SpanAllColumns |
+                                                              ImGuiSelectableFlags_AllowOverlap))
+                                        {
+                                            selectedIndex = isSelected ? -1 : index;
+                                            if (!isSelected)
+                                            {
+                                                ImGui::OpenPopup(popupId);
+                                            }
+                                        }
+
+                                        ImGui::TableNextColumn();
+                                        ImGui::Value("ModName", index);
+                                    }
+                                }
+                                ImGui::EndTable();
+                            }
+                        }
+                        ImGui::EndGroup();
                     }
-                    ImGui::EndGroup();
+                    else
+                    {
+                        ImGui::Text("Please hover");
+                    }
                 }
-                else
-                {
-                    ImGui::Text("Please hover");
-                }
+                ImGui::End();
+
             }
-            ImGui::End();
 
             ImGui::SameLine();
             ImGui::BeginGroup();
@@ -353,13 +363,13 @@ int main(int, char **)
             ImGui::Checkbox("Another Window", &show_another_window);
 
             ImGui::SameLine();
-            auto & imGuiIo = ImGui::GetIO();
+            auto &imGuiIo = ImGui::GetIO();
             ImGui::Text("Font_Size_Scale");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(-FLT_MIN);
             ImGui::DragFloat("##Font_Size_Scale", &imGuiIo.FontGlobalScale, 0.05,
-                                 0.1f, 5.0f,
-                                 "%.3f", ImGuiSliderFlags_NoInput);
+                             0.1f, 5.0f,
+                             "%.3f", ImGuiSliderFlags_NoInput);
             ImGui::EndGroup();
 
             ImGui::SameLine();
@@ -515,8 +525,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return S_OK;
             }
             return S_FALSE;
-            HANDLE_MSG(hWnd, WM_SIZE, OnStatusbarSize);
-            HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
+        HANDLE_MSG(hWnd, WM_SIZE, OnStatusbarSize);
+        HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
         case WM_SYSCOMMAND: {
             if ((wParam & 0xfff0) == SC_KEYMENU)
             {
@@ -608,7 +618,7 @@ bool TagTabButton(const char *label, bool *p_open, bool selected, const ImVec2 &
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return false;
 
-    ImGuiContext     &g          = *GImGui;
+    ImGuiContext &    g          = *GImGui;
     const ImGuiStyle &style      = g.Style;
     const ImGuiID     id         = window->GetID(label);
     const ImVec2      label_size = ImGui::CalcTextSize(label, NULL, true);
@@ -827,7 +837,7 @@ void ShowToolWindow()
 bool InitDirectInput() noexcept
 {
     if (FAILED(DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
-                                  reinterpret_cast<void **>(&g_pDirectInput), nullptr)))
+        reinterpret_cast<void **>(&g_pDirectInput), nullptr)))
     {
         return false;
     }
@@ -854,7 +864,7 @@ static void GetFloatValue(const char *value, float *target)
 {
     if (std::string strValue(value); !strValue.empty())
     {
-        char       *pEnd{};
+        char *      pEnd{};
         const float result = std::strtof(value, &pEnd);
         if (*pEnd == 0)
         {
@@ -908,7 +918,7 @@ void GetIntValue(const char *value, uint8_t *target)
 {
     if (value != nullptr)
     {
-        char    *pEnd{};
+        char *   pEnd{};
         uint32_t result = std::strtoul(value, &pEnd, 10);
 
         if (*pEnd != 0 || result > 255)
@@ -946,9 +956,7 @@ void themeColorSetup(const char *colorString, ImVec4 &color)
             spdlog::info("Color {} ==> {}, {}, {}, {}", strValue, color.x, color.y, color.z, color.w);
         }
     }
-    else
-    {
-    }
+    else {}
 }
 
 std::vector<std::string> LoadAllThemes()
@@ -956,7 +964,7 @@ std::vector<std::string> LoadAllThemes()
     auto config = toml::parse_file(R"(D:\repo\JamieMods\common\themes.toml.txt)");
 
     // get key-value pairs
-    const auto              &themesArray = config["themes"].as_array();
+    const auto &             themesArray = config["themes"].as_array();
     std::vector<std::string> themes;
     for (const toml::node &themeNode : *themesArray)
     {
@@ -1119,7 +1127,7 @@ void ShowDockSpace()
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
         window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                        ImGuiWindowFlags_NoMove;
+            ImGuiWindowFlags_NoMove;
         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
     }
     else

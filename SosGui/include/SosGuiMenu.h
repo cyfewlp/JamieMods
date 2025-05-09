@@ -17,12 +17,12 @@ LIBC_NAMESPACE_DECL
 
 class SosGuiMenu : public RE::IMenu
 {
-    bool m_fShow = false;
-    SosGui m_sosGui;
+    bool                    m_fShow  = false;
+    std::unique_ptr<SosGui> m_sosGui = nullptr;
 
 public:
     static constexpr std::string_view MENU_NAME = "SosGuiMenu";
-    static void RegisterMenu();
+    static void                       RegisterMenu();
 
     void PostDisplay() override;
     void OnShow();

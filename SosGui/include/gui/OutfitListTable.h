@@ -17,9 +17,10 @@ LIBC_NAMESPACE_DECL
 {
 class OutfitListTable final : public BaseGui
 {
-    static constexpr int                   MAX_OUTFIT_NAME_BYTES = 256;
-    static constexpr SosUiData::OutfitPair DEFAULT_INVALID_PAIR  = {INVALID_OUTFIT_ID, nullptr};
-    using OutfitDrawAction                                       = std::function<void(const SosUiOutfit &, size_t)>;
+    static constexpr int        MAX_OUTFIT_NAME_BYTES = 256;
+    static inline SosUiOutfit   OUTFIT                = SosUiOutfit(UNTITLED_OUTFIT_ID, "Untitled");
+    static inline EditingOutfit UNTITLED_OUTFIT{OUTFIT};
+    using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
 
     struct OutfitDebounceInput final : ImGuiUtil::DebounceInput
     {
@@ -45,7 +46,7 @@ class OutfitListTable final : public BaseGui
     SosUiData &                             m_uiData;
     OutfitService &                         m_outfitService;
     Popup::DeleteOutfitPopup                m_DeleteOutfitPopup{};
-    SosUiData::OutfitPair                   m_wantEdit = DEFAULT_INVALID_PAIR;
+    EditingOutfit                           m_wantEdit = UNTITLED_OUTFIT;
     MultiSelection                          m_outfitMultiSelection;
     OutfitEditPanel &                       m_editPanel;
     bool                                    m_onlyShowFavorites = false;
@@ -59,16 +60,16 @@ public:
     void Draw(RE::Actor *editingActor);
     void Refresh() override;
     void Close() override;
-    void OnSelectActor(const RE::Actor *actor);
+    void OnSelectActor(const RE::Actor *actor) const;
 
-    auto GetEditingOutfit() const -> SosUiData::OutfitPair
+    auto GetEditingOutfit() -> EditingOutfit &
     {
         return m_wantEdit;
     }
 
 private:
     void OnRefreshOutfitList();
-    void DrawSidebar(RE::Actor *editingActor);
+    void DoDraw(RE::Actor *editingActor);
 
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);
     static void PostDrawOutfits(MultiSelection &selection);
@@ -82,15 +83,10 @@ private:
                          __out bool &acceptRename);
     void DrawDeletePopup();
 
-    void OnAcceptEditOutfit(const SosUiOutfit *lastEdit, const SosUiData::OutfitPair &wantEdit);
+    void OnAcceptEditOutfit(const EditingOutfit& lastEdit, const EditingOutfit &editingOutfit) const;
     void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName) const;
     // check MultiSelection and set all selected outfit to favorite
     void OnAcceptSetFavoriteOutfits(bool toFavorite);
     void OnAcceptDeleteOutfits();
-
-    bool IsValidOutfit(const SosUiData::OutfitPair &pair) const
-    {
-        return m_uiData.GetOutfitList().HasOutfit(pair.first);
-    }
 };
 }

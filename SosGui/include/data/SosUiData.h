@@ -37,7 +37,6 @@ public:
     using Armor         = RE::TESObjectARMO;
     using BodySlot      = int32_t;
     using BodySlotArmor = std::pair<BodySlot, Armor *>;
-    using OutfitPair    = std::pair<OutfitId, const SosUiOutfit *>;
 
     static constexpr uint8_t DEFAULT_PAGE_SIZE = 20;
     static inline OutfitId   g_NextOutfitId    = 1;

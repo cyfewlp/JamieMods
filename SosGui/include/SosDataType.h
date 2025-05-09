@@ -187,7 +187,7 @@ namespace LIBC_NAMESPACE_DECL
     }
 
     // used for SkyrimOutfitSystem
-    inline auto SlotPolicyToCode(SlotPolicy policy) -> std::string
+    inline auto SlotPolicyToCode(const SlotPolicy policy) -> std::string
     {
         switch (policy)
         {
