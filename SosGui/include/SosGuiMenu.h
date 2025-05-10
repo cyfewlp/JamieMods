@@ -39,7 +39,7 @@ public:
 private:
     static auto Creator() -> IMenu *;
 
-    static void ProcessScaleformEvent(RE::BSUIScaleformData *data);
+    static void ProcessScaleformEvent(const RE::BSUIScaleformData *data);
     static void OnMouseEvent(RE::GFxEvent *event, bool down);
     static void OnMouseWheelEvent(RE::GFxEvent *event);
     static void OnKeyEvent(RE::GFxEvent *event, bool down);

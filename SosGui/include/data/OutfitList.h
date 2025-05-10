@@ -143,7 +143,7 @@ public:
         }
     }
 
-    void DeleteOutfit(const OutfitId id)
+    void DeleteOutfit(const OutfitId id) const
     {
         m_outfitById.erase(id);
     }

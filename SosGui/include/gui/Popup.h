@@ -2,6 +2,7 @@
 
 #include "common/config.h"
 #include "imgui.h"
+#include "data/id.h"
 
 #include <RE/T/TESObjectARMO.h>
 #include <string>
@@ -9,6 +10,7 @@
 namespace
 LIBC_NAMESPACE_DECL
 {
+class SosUiData;
 
 class SosUiOutfit;
 
@@ -33,63 +35,44 @@ struct BasicPopup
 
 struct ModalPopup
 {
-    bool    showPopup = false;
-    ImGuiID popupId   = 0;
+    bool             showPopup = true;
+    bool             wantOpen  = true;
+    std::string_view nameKey;
+    ImGuiPopupFlags  popupFlags = 0;
 
-    constexpr void Open(ImGuiPopupFlags flags = 0)
+    explicit ModalPopup(const std::string_view &nameKey) : nameKey(nameKey) {}
+
+    virtual ~ModalPopup() = default;
+
+    constexpr void Open(ImGuiPopupFlags popupFlags = ImGuiPopupFlags_None)
     {
-        if (showPopup)
-        {
-            return;
-        }
-        showPopup = true;
-        ImGui::OpenPopup(popupId, flags);
+        wantOpen         = true;
+        this->popupFlags = popupFlags;
     }
 
-    auto BeginModal(const char *nameKey, ImGuiWindowFlags flags = ImGuiWindowFlags_None) -> bool;
+    // The returen value indicates whether this popup has been closed
+    virtual bool Draw(SosUiData &uiData, bool &confirmed, ImGuiWindowFlags flags = 0);
+
+    static void RenderMultilineMessage(const std::string &message);
+    static void RenderConfirmButtons(__out bool &confirmed);
+
+protected:
+    virtual void DoDraw(SosUiData &uiData, bool &confirmed) = 0;
 };
 
 using Armor = RE::TESObjectARMO;
 
-class MessagePopup : public ModalPopup
+struct DeleteOutfitPopup final : ModalPopup
 {
-public:
-    MessagePopup() = default;
+    OutfitId    wanDeleteOutfitId;
+    std::string wanDeleteOutfitName;
+
+    DeleteOutfitPopup(const OutfitId wanDeleteOutfitId, const std::string &wanDeleteOutfitName)
+        : ModalPopup("$SosGui_PopupName_ConfirmDeleteOutfit"), wanDeleteOutfitId(wanDeleteOutfitId),
+          wanDeleteOutfitName(wanDeleteOutfitName) {}
 
 protected:
-    static void RenderMultilineMessage(const std::string &message);
-    static void RenderConfirmButtons(__out bool &confirmed);
-};
-
-struct DeleteOutfitPopup final : MessagePopup
-{
-    const SosUiOutfit *wanDeleteOutfit = nullptr;
-
-    void Draw(bool &isConfirmed);
-};
-
-struct ConflictArmorPopup final : MessagePopup
-{
-    const Armor *conflictedArmor = nullptr;
-
-    void Draw(bool &confirmed);
-};
-
-struct DeleteArmorPopup final : MessagePopup
-{
-    const Armor *wantDeleteArmor = nullptr;
-
-    void Draw(bool &confirmed);
-};
-
-struct SlotPolicyHelp final : MessagePopup
-{
-    void Draw();
-};
-
-struct BatchAddArmors final : MessagePopup
-{
-    void Draw(__out bool &confirmed);
+    void DoDraw(SosUiData &uiData, bool &confirmed) override;
 };
 }
 }

@@ -3,7 +3,6 @@
 #include "Translation.h"
 #include "common/config.h"
 #include "imgui.h"
-#include "data/SosUiOutfit.h"
 #include "util/ImGuiUtil.h"
 
 #include <ranges>
@@ -13,17 +12,28 @@ namespace
 LIBC_NAMESPACE_DECL
 {
 
-inline auto Popup::ModalPopup::BeginModal(const char *nameKey, const ImGuiWindowFlags flags) -> bool
+bool Popup::ModalPopup::Draw(SosUiData &uiData, bool & confirmed, ImGuiWindowFlags flags)
 {
-    const auto name = Translation::Translate(nameKey);
-    popupId = ImGui::GetID(name.c_str());
-    return ImGui::BeginPopupModal(name.c_str(), &showPopup, flags);
+    confirmed       = false;
+    const auto name = Translation::Translate(nameKey.data());
+    if (wantOpen)
+    {
+        wantOpen = false;
+        ImGui::OpenPopup(name.c_str(), popupFlags);
+    }
+    if (!ImGui::BeginPopupModal(name.c_str(), &showPopup, flags))
+    {
+        return showPopup;
+    }
+    DoDraw(uiData, confirmed);
+    ImGui::EndPopup();
+    return showPopup;
 }
 
-void Popup::MessagePopup::RenderMultilineMessage(const std::string &message)
+void Popup::ModalPopup::RenderMultilineMessage(const std::string &message)
 {
-    constexpr auto delim = "\\n"sv;
-    const auto *viewport = ImGui::GetMainViewport();
+    constexpr auto delim    = "\\n"sv;
+    const auto *   viewport = ImGui::GetMainViewport();
     ImGui::PushTextWrapPos(ImGui::GetCursorScreenPos().x + viewport->WorkSize.x * 0.5F);
     const auto &contentWidth = ImGui::GetContentRegionAvail().x;
     for (const auto &lineView : std::views::split(message, delim))
@@ -43,10 +53,10 @@ void Popup::MessagePopup::RenderMultilineMessage(const std::string &message)
     ImGui::PopTextWrapPos();
 }
 
-void Popup::MessagePopup::RenderConfirmButtons(__out bool &confirmed)
+void Popup::ModalPopup::RenderConfirmButtons(__out bool &confirmed)
 {
     const float contentWidth = ImGui::GetContentRegionAvail().x;
-    const auto quarterWidth = contentWidth * 0.25F;
+    const auto  quarterWidth = contentWidth * 0.25F;
     ImGui::SetCursorPosX(quarterWidth * 0.5F);
     if (ImGuiUtil::Button("$Yes", ImVec2(quarterWidth, 0.0F)))
     {
@@ -62,98 +72,11 @@ void Popup::MessagePopup::RenderConfirmButtons(__out bool &confirmed)
     }
 }
 
-void Popup::DeleteOutfitPopup::Draw(bool &isConfirmed)
+void Popup::DeleteOutfitPopup::DoDraw(SosUiData &uiData, bool &confirmed)
 {
-    isConfirmed = false;
-    if (!BeginModal("$SosGui_PopupName_ConfirmDeleteOutfit", ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        return;
-    }
-    if (wanDeleteOutfit == nullptr)
-    {
-        ImGui::EndPopup();
-        return;
-    }
-
-    const auto message = Translation::Translate("$SkyOutSys_Confirm_Delete_Text{}", true, wanDeleteOutfit->GetName());
-    ImGui::Text("%s", message.c_str());
-    RenderConfirmButtons(isConfirmed);
-    ImGui::EndPopup();
-}
-
-void Popup::ConflictArmorPopup::Draw(bool &confirmed)
-{
-    confirmed = false;
-    if (!BeginModal("$SosGui_Confirm_ArmorConflict", ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        return;
-    }
-    if (conflictedArmor == nullptr)
-    {
-        ImGui::EndPopup();
-        return;
-    }
-    const auto message = Translation::Translate("$SkyOutSys_Confirm_BodySlotConflict_Text");
-    RenderMultilineMessage(message);
-    RenderConfirmButtons(confirmed);
-    ImGui::EndPopup();
-}
-
-void Popup::DeleteArmorPopup::Draw(bool &confirmed)
-{
-    confirmed = false;
-    if (!BeginModal("$SosGui_Confirm_ArmorDelete", ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        return;
-    }
-    if (wantDeleteArmor == nullptr)
-    {
-        ImGui::EndPopup();
-        return;
-    }
-    const auto message = Translation::Translate("$SkyOutSys_Confirm_RemoveArmor_Text{}", true,
-                                                wantDeleteArmor->GetName());
+    const auto message = Translation::Translate("$SkyOutSys_Confirm_Delete_Text{}", true, wanDeleteOutfitName);
     ImGui::Text("%s", message.c_str());
     RenderConfirmButtons(confirmed);
-    ImGui::EndPopup();
-}
-
-void Popup::SlotPolicyHelp::Draw()
-{
-    const auto mainViewPort = ImGui::GetMainViewport();
-    const auto maxSize = ImVec2(mainViewPort->WorkSize.x * 0.5, mainViewPort->WorkSize.y * 0.5);
-    ImGui::SetNextWindowSize(maxSize, ImGuiCond_Appearing);
-    ImGui::SetNextWindowPos(ImVec2(maxSize.x * 0.5, maxSize.y * 0.5), ImGuiCond_Appearing);
-    if (!BeginModal("$SkyOutSys_OEdit_SlotPolicyHelp"))
-    {
-        return;
-    }
-    auto DrawEscaped = [](std::string &&str) {
-        size_t pos = 0;
-        while ((pos = str.find("\\n", pos)) != std::string::npos)
-        {
-            str.replace(pos, 2, "\n");
-            pos += 1;
-        }
-        ImGui::TextWrapped("%s", str.c_str());
-    };
-    DrawEscaped(Translation::Translate("$SkyOutSys_OEdit_SlotPolicy_HelpText1"));
-    DrawEscaped(Translation::Translate("$SkyOutSys_OEdit_SlotPolicy_HelpText2"));
-    DrawEscaped(Translation::Translate("$SkyOutSys_OEdit_SlotPolicy_HelpText3"));
-    ImGui::EndPopup();
-}
-
-void Popup::BatchAddArmors::Draw(__out bool &confirmed)
-{
-    confirmed = false;
-    if (!BeginModal("$SosGui_BatchAddArmors", ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        return;
-    }
-    const auto message = Translation::Translate("$SosGui_BatchAddArmors_Message");
-    RenderMultilineMessage(message);
-    RenderConfirmButtons(confirmed);
-    ImGui::EndPopup();
 }
 
 }

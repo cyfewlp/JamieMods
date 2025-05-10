@@ -353,8 +353,7 @@ void OutfitListTable::OpenContextMenu(const uint32_t     selectedItemCount, RE::
     {
         if (selectedItemCount == 1)
         {
-            m_DeleteOutfitPopup.wanDeleteOutfit = &outfit;
-            m_DeleteOutfitPopup.Open();
+            m_deleteOutfitPopup = std::make_unique<Popup::DeleteOutfitPopup>(outfit.GetId(), outfit.GetName());
         }
         else
         {
@@ -366,14 +365,21 @@ void OutfitListTable::OpenContextMenu(const uint32_t     selectedItemCount, RE::
 
 void OutfitListTable::DrawDeletePopup()
 {
-    bool isConfirmDelete = false;
-    if (m_DeleteOutfitPopup.Draw(isConfirmDelete); isConfirmDelete)
+    if (m_deleteOutfitPopup)
     {
-        +[&] {
-            return m_outfitService.DeleteOutfit(m_DeleteOutfitPopup.wanDeleteOutfit->GetId(),
-                                                m_DeleteOutfitPopup.wanDeleteOutfit->GetName());
-        };
-        m_DeleteOutfitPopup.wanDeleteOutfit = nullptr;
+        bool       isConfirmDelete = false;
+        const bool isHided         = !m_deleteOutfitPopup->Draw(m_uiData, isConfirmDelete);
+        if (isConfirmDelete)
+        {
+            +[&] {
+                return m_outfitService.DeleteOutfit(m_deleteOutfitPopup->wanDeleteOutfitId,
+                                                    m_deleteOutfitPopup->wanDeleteOutfitName);
+            };
+        }
+        if (isHided)
+        {
+            m_deleteOutfitPopup = nullptr;
+        }
     }
 }
 

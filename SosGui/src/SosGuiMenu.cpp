@@ -20,7 +20,7 @@ public:
         : GFxEvent(EventType::kCharEvent), wcharCode(a_wcharCode), keyboardIndex(a_keyboardIndex) {}
 
     // @members
-    std::uint32_t wcharCode{}; // 04
+    std::uint32_t wcharCode{};     // 04
     std::uint32_t keyboardIndex{}; // 08
 };
 
@@ -30,7 +30,7 @@ static_assert(sizeof(GFxCharEvent) == 0x0C);
 struct
 {
     RE::GFxKey::Code gfxCode;
-    ImGuiKey imGuiKey;
+    ImGuiKey         imGuiKey;
 } GFxCodeToImGuiKeyTable[] = {
     {RE::GFxKey::kAlt, ImGuiKey_ModAlt},
     {RE::GFxKey::kControl, ImGuiKey_ModCtrl},
@@ -105,7 +105,7 @@ void SosGuiMenu::OnShow()
 
 void SosGuiMenu::OnHide()
 {
-    m_fShow = false;
+    m_fShow  = false;
     m_sosGui = nullptr;
     log_debug("SosGuiMenu::kHide");
     auto &io = ImGui::GetIO();
@@ -151,8 +151,8 @@ RE::UI_MESSAGE_RESULTS SosGuiMenu::ProcessMessage(RE::UIMessage &a_message)
 
 void SosGuiMenu::ToggleShow()
 {
-    m_fShow = !m_fShow;
-    auto type = m_fShow ? RE::UI_MESSAGE_TYPE::kShow : RE::UI_MESSAGE_TYPE::kHide;
+    m_fShow            = !m_fShow;
+    auto  type         = m_fShow ? RE::UI_MESSAGE_TYPE::kShow : RE::UI_MESSAGE_TYPE::kHide;
     auto *messageQueue = RE::UIMessageQueue::GetSingleton();
     messageQueue->AddMessage(MENU_NAME, type, nullptr);
 }
@@ -160,7 +160,7 @@ void SosGuiMenu::ToggleShow()
 auto SosGuiMenu::Creator() -> IMenu *
 {
     using Flags = RE::UI_MENU_FLAGS;
-    auto *menu = new SosGuiMenu();
+    auto *menu  = new SosGuiMenu();
     menu->menuFlags.set(Flags::kPausesGame);
     menu->menuFlags.set(Flags::kUpdateUsesCursor, Flags::kUsesCursor);
     menu->menuFlags.set(Flags::kCustomRendering);
@@ -171,7 +171,7 @@ auto SosGuiMenu::Creator() -> IMenu *
     return menu;
 }
 
-void SosGuiMenu::ProcessScaleformEvent(RE::BSUIScaleformData *data)
+void SosGuiMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data)
 {
     switch (const auto &fxEvent = data->scaleformEvent; fxEvent->type.get())
     {
@@ -201,8 +201,8 @@ void SosGuiMenu::ProcessScaleformEvent(RE::BSUIScaleformData *data)
 void SosGuiMenu::OnMouseEvent(RE::GFxEvent *event, const bool down)
 {
     const auto &mouseSource = ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo();
-    const auto *mouseEvent = reinterpret_cast<RE::GFxMouseEvent *>(event);
-    auto &io = ImGui::GetIO();
+    const auto *mouseEvent  = reinterpret_cast<RE::GFxMouseEvent *>(event);
+    auto &      io          = ImGui::GetIO();
     io.AddMouseSourceEvent(mouseSource);
     io.AddMouseButtonEvent(static_cast<int>(mouseEvent->button), down);
 }
@@ -213,7 +213,7 @@ void SosGuiMenu::OnMouseWheelEvent(RE::GFxEvent *event)
     ImGui::GetIO().AddMouseWheelEvent(0, mouseEvent->scrollDelta);
 }
 
-void SosGuiMenu::OnKeyEvent(RE::GFxEvent *event, bool down)
+void SosGuiMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
 {
     const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
     const auto imguiKey = GFxKeyToImGuiKey(keyEvent->keyCode);
@@ -226,7 +226,7 @@ void SosGuiMenu::OnCharEvent(RE::GFxEvent *event)
     ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
 }
 
-auto SosGuiMenu::GFxKeyToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey
+auto SosGuiMenu::GFxKeyToImGuiKey(const RE::GFxKey::Code keyCode) -> ImGuiKey
 {
     ImGuiKey imguiKey = ImGuiKey_None;
 

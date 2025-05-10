@@ -181,9 +181,8 @@ auto OutfitService::DeleteOutfit(const OutfitId id, std::string outfitName) cons
     {
         co_return;
     }
-    co_await SosNativeCaller::DeleteOutfit(std::move(outfitName));
-    co_await m_uiData.await_execute_on_ui();
     m_outfitList.DeleteOutfit(id);
+    co_await SosNativeCaller::DeleteOutfit(std::move(outfitName));
 }
 
 auto OutfitService::AddArmor(const OutfitId id, std::string outfitName, const Armor *armor) const -> Task

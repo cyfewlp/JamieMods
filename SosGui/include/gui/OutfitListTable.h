@@ -45,13 +45,14 @@ class OutfitListTable final : public BaseGui
 
     SosUiData &                             m_uiData;
     OutfitService &                         m_outfitService;
-    Popup::DeleteOutfitPopup                m_DeleteOutfitPopup{};
     EditingOutfit                           m_wantEdit = UNTITLED_OUTFIT;
     MultiSelection                          m_outfitMultiSelection;
     OutfitEditPanel &                       m_editPanel;
     bool                                    m_onlyShowFavorites = false;
     std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
     OutfitDebounceInput                     m_outfitFilterInput{};
+
+    std::unique_ptr<Popup::DeleteOutfitPopup> m_deleteOutfitPopup = nullptr;
 
 public:
     OutfitListTable(SosUiData &uiData, OutfitService &outfitService, OutfitEditPanel &editPanel)
@@ -83,7 +84,7 @@ private:
                          __out bool &acceptRename);
     void DrawDeletePopup();
 
-    void OnAcceptEditOutfit(const EditingOutfit& lastEdit, const EditingOutfit &editingOutfit) const;
+    void OnAcceptEditOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editingOutfit) const;
     void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName) const;
     // check MultiSelection and set all selected outfit to favorite
     void OnAcceptSetFavoriteOutfits(bool toFavorite);

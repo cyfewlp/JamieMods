@@ -51,14 +51,73 @@ private:
         void Clear();
     } m_editContext = {};
 
-    ArmorView                 m_armorView{};
-    std::string               m_windowTitle;
-    SosUiData &               m_uiData;
-    OutfitService &           m_outfitService;
-    Popup::DeleteArmorPopup   m_DeleteArmorPopup{};
-    Popup::ConflictArmorPopup m_ConflictArmorPopup{};
-    Popup::SlotPolicyHelp     m_slotPolicyHelp{};
-    Popup::BatchAddArmors     m_batchAddArmorsPopUp{};
+    struct OutfitModifyRequest : Popup::ModalPopup
+    {
+        OutfitId id;
+
+        explicit OutfitModifyRequest(const char *const nameKey, const OutfitId id)
+            : ModalPopup(nameKey), id(id) {}
+
+        virtual void OnConfirm([[maybe_unused]] OutfitEditPanel *editPanel) {};
+    };
+
+    class DeleteRequest final : public OutfitModifyRequest
+    {
+    public:
+        const Armor *armor;
+
+        DeleteRequest(const OutfitId id, const Armor *const armor)
+            : OutfitModifyRequest("$SosGui_Popup_DeleteArmor", id), armor(armor) {}
+
+        void OnConfirm(OutfitEditPanel *editPanel) override;
+
+    protected:
+        void DoDraw(SosUiData &uiData, bool &confirmed) override;
+    };
+
+    class OverrideArmorRequest final : public OutfitModifyRequest
+    {
+    public:
+        const Armor *armor;
+
+        explicit OverrideArmorRequest(const OutfitId id, const Armor *const armor)
+            : OutfitModifyRequest("$SosGui_Popup_OverrideArmor", id), armor(armor) {}
+
+        void OnConfirm(OutfitEditPanel *editPanel) override;
+
+    protected:
+        void DoDraw(SosUiData &uiData, bool &confirmed) override;
+    };
+
+    class BatchAddArmorsRequest final : public OutfitModifyRequest
+    {
+    public:
+        explicit BatchAddArmorsRequest(const OutfitId id) :
+            OutfitModifyRequest("$SosGui_Popup_BatchAddArmors", id) {}
+
+        void OnConfirm(OutfitEditPanel *editPanel) override;
+
+    protected:
+        void DoDraw(SosUiData &uiData, bool &confirmed) override;
+    };
+
+    class SlotPolicyHelp final : public Popup::ModalPopup
+    {
+    public:
+        explicit SlotPolicyHelp() : ModalPopup("$SkyOutSys_OEdit_SlotPolicyHelp") {}
+
+        bool Draw(SosUiData &uiData, bool &confirmed, ImGuiWindowFlags flags = 0) override;
+
+    protected:
+        void DoDraw(SosUiData &uiData, bool &confirmed) override;
+    };
+
+    ArmorView      m_armorView{};
+    std::string    m_windowTitle;
+    SosUiData &    m_uiData;
+    OutfitService &m_outfitService;
+
+    std::list<std::unique_ptr<Popup::ModalPopup>> m_popupList;
 
 public:
     explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService)
@@ -79,13 +138,21 @@ public:
     void OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing);
 
 private:
+    enum class Error
+    {
+        delete_armor_from_unknown_outfit_id,
+        add_armor_to_unknown_outfit_id,
+    };
+
+    static void PushError(SosUiData &uiData, Error error);
+
     void DoDraw(const EditingOutfit &editingOutfit);
     void DrawSideBar(const SosUiOutfit *editingOutfit);
     void UpdateWindowTitle(const std::string &outfitName);
 
-    void DrawOutfitArmors(const EditingOutfit& editingOutfit);
+    void DrawOutfitArmors(const EditingOutfit &editingOutfit);
     void HighlightConflictSlot(Slot slot) const;
-    void SlotPolicyCombo(const EditingOutfit& editingOutfit, const uint32_t &slotIdx) const;
+    void SlotPolicyCombo(const EditingOutfit &editingOutfit, const uint32_t &slotIdx) const;
 
     auto GetGenerator() const -> ArmorGenerator *
     {
@@ -96,16 +163,14 @@ private:
     void DrawArmorViewTableContent(const std::vector<const Armor *> &                           viewData,
                                    const std::function<void(const Armor *armor, size_t index)> &drawAction);
     void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
-    void DrawArmorView(const EditingOutfit& editingOutfit, const std::vector<const Armor *> &viewData);
+    void DrawArmorView(const EditingOutfit &editingOutfit, const std::vector<const Armor *> &viewData);
     void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 
-    void BatchAddArmors(const EditingOutfit &editingOutfit);
-    void AddArmorToOutfit(const EditingOutfit &editingOutfit, const Armor *armor) const;
+    void DrawTopVisualRequest();
 
-    void OnAcceptAddArmorToOutfit(const EditingOutfit& editingOutfit, const Armor *armor);
-
-    void RenderPopups(const EditingOutfit &editingOutfit);
+    void OnAcceptDeleteArmor(const EditingOutfit &editingOutfit, const RE::TESObjectARMO *armor);
+    void OnAcceptAddArmorToOutfit(const EditingOutfit &editingOutfit, const Armor *armor);
 
     static auto IsArmorCanDisplay(const Armor *armor) -> bool;
 
