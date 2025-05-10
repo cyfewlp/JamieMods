@@ -1,11 +1,12 @@
 #pragma once
 
+#include "Cleanable.h"
 #include "common/config.h"
 
 namespace
 LIBC_NAMESPACE_DECL
 {
-class BaseGui
+class BaseGui : public Cleanable
 {
 public:
     static constexpr float DEFAULT_WINDOW_POS_X = 100;
@@ -36,9 +37,6 @@ public:
     {
         return m_show;
     }
-
-    virtual void Refresh() = 0;
-    virtual void Close() = 0;
 
 protected:
     bool m_show = false;

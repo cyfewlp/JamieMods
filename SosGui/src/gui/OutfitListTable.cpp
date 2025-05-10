@@ -24,32 +24,19 @@
 namespace
 LIBC_NAMESPACE_DECL
 {
-void OutfitListTable::Refresh()
-{
-    OnRefreshOutfitList();
-    m_editPanel.Refresh();
-}
-
-void OutfitListTable::Close()
+void OutfitListTable::Cleanup()
 {
     m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
-    m_outfitFilterInput.viewData.clear();
-    m_editPanel.Close();
+    m_onlyShowFavorites = false;
+    m_outfitNameBuf[0] = '\0';
+    m_outfitFilterInput.clear();
+    m_deleteOutfitPopup = nullptr;
 }
 
 void OutfitListTable::OnSelectActor(const RE::Actor *actor) const
 {
     m_editPanel.OnSelectActor(actor, m_wantEdit);
-}
-
-void OutfitListTable::OnRefreshOutfitList()
-{
-    m_wantEdit = UNTITLED_OUTFIT;
-    m_outfitMultiSelection.Clear();
-    m_onlyShowFavorites = false;
-    m_outfitFilterInput.clear();
-    m_outfitNameBuf[0] = '\0';
 }
 
 void OutfitListTable::OutfitDebounceInput::OnUpdate(const OutfitList &outfitList, const bool onlyFavorites)
@@ -131,7 +118,7 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
     auto &outfitList = m_uiData.GetOutfitList();
     if (ImGuiUtil::Button("$SosGui_Refresh"))
     {
-        OnRefreshOutfitList();
+        Cleanup();
         outfitList.clear();
         +[&] {
             return m_outfitService.GetOutfitList();

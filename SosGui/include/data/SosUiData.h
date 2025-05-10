@@ -15,6 +15,7 @@
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "gui/ErrorNotifier.h"
+#include "Cleanable.h"
 
 #include <RE/A/Actor.h>
 #include <RE/T/TESObjectARMO.h>
@@ -31,7 +32,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-class SosUiData
+class SosUiData : public Cleanable
 {
 public:
     using Armor         = RE::TESObjectARMO;
@@ -49,7 +50,6 @@ private:
     ActorOutfitMap           m_actorOutfitMap;
     OutfitList               m_outfitList{};
     AutoSwitchPolicyView     m_autoSwitchPolicyView;
-    std::list<std::string>   m_errorMessages;
     ErrorNotifier            m_errorNotifier;
 
     std::unordered_map<RE::FormID, bool> m_autoSwitchEnabled;
@@ -57,6 +57,22 @@ private:
     std::mutex                           m_mutex;
 
 public:
+    void Cleanup() override
+    {
+        if (!m_resumeQueue.empty())
+        {
+            ExecuteUiTasks();
+        }
+        m_actors.clear();
+        m_NearActors.clear();
+        m_enabled           = false;
+        m_fQuickSlotEnabled = false;
+        m_actorOutfitMap.Clear();
+        m_outfitList.clear();
+        m_autoSwitchPolicyView.Clear();
+        m_autoSwitchEnabled.clear();
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // UI Tasks
     ////////////////////////////////////////////////////////////////////////////

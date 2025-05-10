@@ -77,15 +77,19 @@ public:
 
     static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
 
+    void Show() override
+    {
+        BaseGui::Show();
+        m_outfitListTable.Show();
+        m_outfitEditPanel.Show();
+    }
+
+    auto Refresh() const -> EagerTask;
     auto Render() -> void;
 
-    auto Refresh() -> void override;
-
-    auto Close() -> void override;
+    void Cleanup() override;
 
 private:
-    auto DoRefresh() -> EagerTask;
-
     auto DoRender() -> void;
     void DockSpaceToolBar();
     void Toolbar();
@@ -104,7 +108,7 @@ private:
 
     void RenderQuickSlotConfig();
 
-    void RenderExportOrImportSettings();
+    void DrawExportOrImportSettings();
 
     static void NewFrame();
 

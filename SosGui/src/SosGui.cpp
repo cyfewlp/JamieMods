@@ -117,6 +117,22 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     return true;
 }
 
+auto SosGui::Cleanup() -> void
+{
+    m_outfitListTable.Cleanup();
+    m_outfitEditPanel.Cleanup();
+    m_outfitDebounceInput.clear();
+    m_fShowConfigWindows                         = true;
+    m_selectedActorIndex                         = 0;
+    m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
+    m_outfitDebounceInput.clear();
+}
+
+auto SosGui::Refresh() const -> EagerTask
+{
+    co_await m_dataCoordinator.Refresh();
+}
+
 void SosGui::NewFrame()
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
@@ -171,30 +187,6 @@ void SosGui::TrySetAllowTextInput()
     }
 
     m_fWantTextInput = cWantTextInput;
-}
-
-auto SosGui::Refresh() -> void
-{
-    DoRefresh();
-    m_fShowConfigWindows                         = true;
-    m_selectedActorIndex                         = 0;
-    m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
-    m_outfitDebounceInput.clear();
-    Show();
-    m_outfitListTable.Show();
-    m_outfitEditPanel.Show();
-}
-
-auto SosGui::Close() -> void
-{
-    m_outfitListTable.Close();
-    util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
-}
-
-auto SosGui::DoRefresh() -> EagerTask
-{
-    co_await m_dataCoordinator.Refresh();
-    m_outfitListTable.Refresh();
 }
 
 auto SosGui::DoRender() -> void
@@ -316,7 +308,7 @@ void SosGui::MainConfigWindow()
 
         RenderQuickSlotConfig();
         ImGui::SameLine();
-        RenderExportOrImportSettings();
+        DrawExportOrImportSettings();
 
         RenderCharactersPanel();
 
@@ -368,7 +360,7 @@ EagerTask waitImport(const SosDataCoordinator &dataCoordinator)
     co_await dataCoordinator.RequestImportSettings();
 }
 
-void SosGui::RenderExportOrImportSettings()
+void SosGui::DrawExportOrImportSettings()
 {
     if (ImGuiUtil::Button("$SkyOutSys_Text_Export"))
     {
@@ -381,8 +373,7 @@ void SosGui::RenderExportOrImportSettings()
     ImGui::SameLine();
     if (ImGuiUtil::Button("$SkyOutSys_Text_Import"))
     {
-        m_outfitListTable.Refresh();
-        m_outfitDebounceInput.clear();
+        Cleanup();
         +[&] {
             return m_dataCoordinator.RequestImportSettings();
         };

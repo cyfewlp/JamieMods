@@ -45,9 +45,9 @@ class OutfitListTable final : public BaseGui
 
     SosUiData &                             m_uiData;
     OutfitService &                         m_outfitService;
+    OutfitEditPanel &                       m_editPanel;
     EditingOutfit                           m_wantEdit = UNTITLED_OUTFIT;
     MultiSelection                          m_outfitMultiSelection;
-    OutfitEditPanel &                       m_editPanel;
     bool                                    m_onlyShowFavorites = false;
     std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
     OutfitDebounceInput                     m_outfitFilterInput{};
@@ -58,9 +58,9 @@ public:
     OutfitListTable(SosUiData &uiData, OutfitService &outfitService, OutfitEditPanel &editPanel)
         : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(editPanel) {}
 
+    void Cleanup() override;
+
     void Draw(RE::Actor *editingActor);
-    void Refresh() override;
-    void Close() override;
     void OnSelectActor(const RE::Actor *actor) const;
 
     auto GetEditingOutfit() -> EditingOutfit &
@@ -69,7 +69,6 @@ public:
     }
 
 private:
-    void OnRefreshOutfitList();
     void DoDraw(RE::Actor *editingActor);
 
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);

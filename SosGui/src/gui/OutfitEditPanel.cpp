@@ -33,17 +33,15 @@ LIBC_NAMESPACE_DECL
 {
 void OutfitEditPanel::EditContext::Clear()
 {
-    armorListShowAllSlotArmors  = false;
-    armorGeneratorSelectedActor = nullptr;
-    dirty                       = true;
+    ShowAllSlotOutfitArmors = false;
+    dirty                   = true;
 }
 
-void OutfitEditPanel::Refresh() {}
-
-void OutfitEditPanel::Close()
+void OutfitEditPanel::Cleanup()
 {
     m_editContext.Clear();
     m_armorView.clear();
+    m_popupList.clear();
 }
 
 void OutfitEditPanel::OnSelectActor(const RE::Actor *, const EditingOutfit &editingOutfit)
@@ -74,9 +72,10 @@ void OutfitEditPanel::PushError(SosUiData &uiData, const Error error)
     switch (error)
     {
         case Error::delete_armor_from_unknown_outfit_id:
-            uiData.PushErrorMessage("Can't delete a invalid or removed outfit.");
+            uiData.PushErrorMessage("Can't delete a invalid or has been removed outfit.");
             break;
-        default:
+        case Error::add_armor_to_unknown_outfit_id:
+            uiData.PushErrorMessage("Can't add armor to a invalid or has been removed outfit.");
             break;
     }
 }
@@ -93,10 +92,8 @@ void OutfitEditPanel::Draw(const EditingOutfit &editingOutfit)
     ImGuiWindowFlags flags = ImGuiWindowFlags_None;
     if (ImGui::Begin(windowName.c_str(), &m_show, flags))
     {
-        ImGui::SameLine();
-        ImGui::BeginGroup();
+        DrawTopModalPopup();
         DoDraw(editingOutfit);
-        ImGui::EndGroup();
     }
     ImGui::End();
 }
@@ -118,7 +115,6 @@ void OutfitEditPanel::DoDraw(const EditingOutfit &editingOutfit)
     ImGui::BeginGroup();
     {
         ImGui::PushID(this);
-        DrawTopVisualRequest();
         DrawOutfitTabBarView(editingOutfit);
         DrawArmorGeneratorTabBar(editingOutfit.GetSourceOutfit());
         DrawArmorViewFilter(editingOutfit.GetSourceOutfit());
@@ -128,7 +124,7 @@ void OutfitEditPanel::DoDraw(const EditingOutfit &editingOutfit)
     ImGui::EndGroup();
 }
 
-void OutfitEditPanel::DrawTopVisualRequest()
+void OutfitEditPanel::DrawTopModalPopup()
 {
     if (m_popupList.empty())
     {
@@ -247,7 +243,7 @@ void OutfitEditPanel::DrawOutfitArmors(const EditingOutfit &editingOutfit)
         return;
     }
 
-    ImGuiUtil::CheckBox("$SosGui_CheckBox_SlotFilter", &m_editContext.armorListShowAllSlotArmors);
+    ImGuiUtil::CheckBox("$SosGui_CheckBox_SlotFilter", &m_editContext.ShowAllSlotOutfitArmors);
     ImGui::SameLine();
     if (ImGuiUtil::Button("$SkyOutSys_OEdit_SlotPolicyHelp"))
     {
@@ -270,7 +266,7 @@ void OutfitEditPanel::DrawOutfitArmors(const EditingOutfit &editingOutfit)
         for (uint32_t slotIdx = 0; slotIdx < RE::BIPED_OBJECT::kEditorTotal; ++slotIdx)
         {
             const auto *armor = editingOutfit.GetArmorAt(slotIdx);
-            if (!m_editContext.armorListShowAllSlotArmors && armor == nullptr)
+            if (!m_editContext.ShowAllSlotOutfitArmors && armor == nullptr)
             {
                 continue;
             }
@@ -704,6 +700,7 @@ void OutfitEditPanel::OnAcceptAddArmorToOutfit(const EditingOutfit &editingOutfi
         m_armorView.multiSelection.Clear();
     }
 }
+
 void OutfitEditPanel::DeleteRequest::OnConfirm(OutfitEditPanel *editPanel)
 {
     if (const auto opt = editPanel->m_uiData.GetOutfitList().GetOutfitById(id); opt.has_value())

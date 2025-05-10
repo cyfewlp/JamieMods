@@ -43,11 +43,9 @@ private:
 
     struct EditContext
     {
-        bool                            armorListShowAllSlotArmors  = false;
-        RE::Actor *                     armorGeneratorSelectedActor = nullptr;
-        std::unique_ptr<ArmorGenerator> activeArmorGenerator        = std::make_unique<BasicArmorGenerator>();
-        // be used on click add(candidate table)/delete(armor table)
-        bool dirty = true;
+        bool ShowAllSlotOutfitArmors = false;
+        bool dirty                   = true;
+
         void Clear();
     } m_editContext = {};
 
@@ -129,11 +127,11 @@ public:
         m_armorView.init();
     }
 
+    void Cleanup() override;
+
     void Draw(const EditingOutfit &editingOutfit);
     void DrawOutfitTabBarView(const EditingOutfit &editingOutfit);
     void DrawArmorInfo();
-    void Refresh() override;
-    void Close() override;
     void OnSelectActor(const RE::Actor *actor, const EditingOutfit &editingOutfit);
     void OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing);
 
@@ -167,7 +165,8 @@ private:
     void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 
-    void DrawTopVisualRequest();
+    // Only one modal popup can be render in the same time.
+    void DrawTopModalPopup();
 
     void OnAcceptDeleteArmor(const EditingOutfit &editingOutfit, const RE::TESObjectARMO *armor);
     void OnAcceptAddArmorToOutfit(const EditingOutfit &editingOutfit, const Armor *armor);

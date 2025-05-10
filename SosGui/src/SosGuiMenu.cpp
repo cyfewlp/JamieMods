@@ -101,6 +101,7 @@ void SosGuiMenu::OnShow()
     log_debug("SosGuiMenu::kShow");
     m_sosGui = std::make_unique<SosGui>();
     m_sosGui->Refresh();
+    m_sosGui->Show();
 }
 
 void SosGuiMenu::OnHide()
