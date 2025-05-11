@@ -113,6 +113,11 @@ public:
         return m_sourceOutfit;
     }
 
+    auto operator->() const -> const SosUiOutfit *
+    {
+        return m_sourceOutfit;
+    }
+
     auto GetId() const -> OutfitId
     {
         return m_sourceOutfit->GetId();

@@ -486,39 +486,6 @@ struct TabBarFlags
     }
 };
 
-struct PushIdGuard
-{
-    template <typename ID>
-    PushIdGuard(ID id)
-    {
-        ImGui::PushID(id);
-    }
-
-    ~PushIdGuard()
-    {
-        ImGui::PopID();
-    }
-};
-
-struct ChildGuard
-{
-    bool isBegin;
-
-    explicit ChildGuard(const char *name, const ImVec2 &size, ImGuiChildFlags flags = 0)
-    {
-        isBegin = ImGui::BeginChild(name, size, flags);
-    }
-
-    explicit operator bool() const
-    {
-        return isBegin;
-    }
-
-    ~ChildGuard()
-    {
-        ImGui::EndChild();
-    }
-};
 }
 }
 

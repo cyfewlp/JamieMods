@@ -11,6 +11,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "util/ImGuiUtil.h"
+#include "common/imgui/ImGuiScop.h"
 
 #include <RE/A/Actor.h>
 #include <array>
@@ -29,7 +30,7 @@ void OutfitListTable::Cleanup()
     m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
     m_onlyShowFavorites = false;
-    m_outfitNameBuf[0] = '\0';
+    m_outfitNameBuf[0]  = '\0';
     m_outfitFilterInput.clear();
     m_deleteOutfitPopup = nullptr;
 }
@@ -94,11 +95,11 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
 {
     //////////////////////////////////////////////////////////
     // Create Outfit widgets
-    ImGui::PushItemWidth(-FLT_MIN);
+    ImGuiScope::ItemWidth fltMinItemWidth(-FLT_MIN);
     ImGui::InputText("##CreateNewInput", m_outfitNameBuf.data(), m_outfitNameBuf.size());
 
-    ImGui::BeginDisabled(m_outfitNameBuf[0] == '\0');
     {
+        ImGuiScope::Disabled disabled(m_outfitNameBuf[0] == '\0');
         if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
         {
             +[&] {
@@ -113,7 +114,6 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
             };
         }
     }
-    ImGui::EndDisabled();
 
     auto &outfitList = m_uiData.GetOutfitList();
     if (ImGuiUtil::Button("$SosGui_Refresh"))
@@ -135,7 +135,6 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
     }
     static size_t prevOutfitSize = 0;
 
-    ImGui::PushItemWidth(-FLT_MIN);
     if (m_outfitFilterInput.Draw("##filter", "filter outfit") || prevOutfitSize != outfitList.size())
     {
         m_outfitFilterInput.OnUpdate(outfitList, m_onlyShowFavorites);
@@ -144,15 +143,14 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
 
     //////////////////////////////////////////////////////////
     // Table Content
-    // clang-format off
-    if (constexpr auto flags = TableFlags().Borders().Resizable().Hideable().Reorderable()
-                                   .Sortable().SizingStretchProp().ScrollY().NoHostExtendX()
-                                   .flags;
-        !ImGui::BeginTable("##OutfitLists", 2, flags))
+    constexpr auto flags = TableFlags().Borders().Resizable().Hideable().Reorderable()
+                                       .Sortable().SizingStretchProp().ScrollY().NoHostExtendX()
+                                       .flags;
+    ImGuiScope::Table outfitListTable("##OutfitLists", 2, flags);
+    if (!outfitListTable)
     {
         return;
     }
-    // clang-format on
 
     const auto &actorOutfitMap  = m_uiData.GetActorOutfitMap();
     const auto  activeOutfitOpt = actorOutfitMap.TryGetOutfitId(editingActor).flat_map([&](auto &outfitId) {
@@ -163,7 +161,7 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
     const auto activeOutfitId = activeOutfitOpt.map(GetOutfitId).value_or(INVALID_OUTFIT_ID);
 
     // clang-format off
-   TableHeadersBuilder().Column("##Number").WidthOrWeight(64 /*16 * 4*/).NoSort().WidthFixed().NoHide()
+    TableHeadersBuilder().Column("##Number").WidthOrWeight(64 /*16 * 4*/).NoSort().WidthFixed().NoHide()
                         .Column("$SkyOutSys_MCM_OutfitList").DefaultSort()
                         .CommitHeadersRow();
     // clang-format on
@@ -172,7 +170,7 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
     ImGuiUtil::may_update_table_sort_dir(ascend);
 
     auto drawAction = [&](const auto &outfit, const size_t index) {
-        ImGuiUtil::PushIdGuard idGuard(index);
+        ImGuiScope::PushId pushId(index);
         ImGui::TableNextRow();
         ImGui::TableNextColumn(); // number column
         ImGui::Text("%.4zu", index + 1);
@@ -238,7 +236,6 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
     };
 
     DrawOutfits(m_outfitFilterInput.viewData, ascend, drawAction);
-    ImGui::EndTable();
 }
 
 void OutfitListTable::PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection)
@@ -289,7 +286,8 @@ void OutfitListTable::DrawOutfits(std::vector<const SosUiOutfit *> outfitView, c
 void OutfitListTable::OpenContextMenu(const uint32_t     selectedItemCount, RE::Actor *editingActor,
                                       const SosUiOutfit &outfit, __out bool &          acceptRename)
 {
-    if (!ImGui::BeginPopupContextItem("##OutfitListContextMenu"))
+    ImGuiScope::PopupContextItem popUp("##OutfitListContextMenu");
+    if (!popUp)
     {
         return;
     }
@@ -300,31 +298,28 @@ void OutfitListTable::OpenContextMenu(const uint32_t     selectedItemCount, RE::
 
     if (selectedItemCount == 1)
     {
-        ImGui::BeginDisabled(noEditingActor);
+        ImGuiScope::Disabled disabled(noEditingActor);
+        if (noEditingActor)
         {
-            if (noEditingActor)
+            ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
+        }
+        const auto *actorName = noEditingActor ? "" : editingActor->GetName();
+        ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
+        if (m_uiData.GetActorOutfitMap().IsActorOutfit(editingActor, outfit.GetId()))
+        {
+            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
             {
-                ImGuiUtil::Text("$SosGui_SelectHint{$Characters}");
-            }
-            const auto *actorName = noEditingActor ? "" : editingActor->GetName();
-            ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
-            if (m_uiData.GetActorOutfitMap().IsActorOutfit(editingActor, outfit.GetId()))
-            {
-                if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
-                {
-                    OnAcceptActiveOutfit(editingActor, INVALID_OUTFIT_ID, "");
-                }
-            }
-            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
-            {
-                OnAcceptActiveOutfit(editingActor, outfit.GetId(), outfitName);
-            }
-            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Rename"))
-            {
-                acceptRename = true;
+                OnAcceptActiveOutfit(editingActor, INVALID_OUTFIT_ID, "");
             }
         }
-        ImGui::EndDisabled();
+        if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
+        {
+            OnAcceptActiveOutfit(editingActor, outfit.GetId(), outfitName);
+        }
+        if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Rename"))
+        {
+            acceptRename = true;
+        }
     }
 
     ImGui::Separator();
@@ -347,7 +342,6 @@ void OutfitListTable::OpenContextMenu(const uint32_t     selectedItemCount, RE::
             OnAcceptDeleteOutfits();
         }
     }
-    ImGui::EndPopup();
 }
 
 void OutfitListTable::DrawDeletePopup()

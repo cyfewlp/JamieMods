@@ -131,7 +131,6 @@ public:
 
     void Draw(const EditingOutfit &editingOutfit);
     void DrawOutfitPanel(const EditingOutfit &editingOutfit);
-    void DrawArmorInfo();
     void OnSelectActor(const RE::Actor *actor, const EditingOutfit &editingOutfit);
     void OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing);
 

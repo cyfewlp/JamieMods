@@ -42,10 +42,6 @@ void NearObjectsInventoryArmorGenerator::for_each(std::function<void(RE::TESObje
     }
     for (const auto &entry : nearObjects[wantVisitIndex]->GetInventory())
     {
-        log_info("{}: Name: {}, Count {}, type: {}", nearObjects[wantVisitIndex]->formID,
-                 entry.second.second->GetDisplayName(), entry.second.first,
-                 entry.first->formType.underlying());
-
         if (const auto armor = skyrim_cast<RE::TESObjectARMO *>(entry.first);
             armor != nullptr)
         {

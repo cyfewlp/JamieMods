@@ -1,6 +1,7 @@
 #include "SosGui.h"
 #include "common/config.h"
 #include "common/log.h"
+#include "common/imgui/ImGuiScop.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
@@ -238,10 +239,9 @@ void SosGui::DockSpaceToolBar()
     const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 
-    if (ImGui::BeginMenuBar())
+    if (auto menuBar = ImGuiScope::MenuBar())
     {
         Toolbar();
-        ImGui::EndMenuBar();
     }
 
     ImGui::End();
@@ -292,19 +292,13 @@ void SosGui::MainConfigWindow()
         }
         ImGui::Indent(2);
         ImGui::SameLine();
-        const auto key = Translation::Translate("$SosGui_Global_FontSize_Scale");
-        if (ImGui::DragFloat(key.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F, Setting::UiSetting::FONT_SCALE_MIN,
+        if (ImGui::DragFloat("$SosGui_Global_FontSize_Scale"_T.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F,
+                             Setting::UiSetting::FONT_SCALE_MIN,
                              Setting::UiSetting::FONT_SCALE_MAX))
         {
             Setting::UiSetting::GetInstance()->globalFontScale = ImGui::GetIO().FontGlobalScale;
         }
         ThemeCombo();
-
-        RE::Actor *selectedActor = GetSelectedActor();
-        if (ImGui::Button("Refresh Armor"))
-        {
-            util::RefreshActorArmor(selectedActor);
-        }
 
         RenderQuickSlotConfig();
         ImGui::SameLine();
@@ -312,6 +306,7 @@ void SosGui::MainConfigWindow()
 
         RenderCharactersPanel();
 
+        RE::Actor *selectedActor = GetSelectedActor();
         AutoSwitchPoliesTable(selectedActor);
     }
     ImGui::End();
@@ -323,7 +318,8 @@ auto SosGui::ThemeCombo() -> void
     const int32_t themeIndex  = settings->selectedThemeIndex;
     using Loader              = ImThemeLoader::Loader;
     const std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
-    if (!ImGui::BeginCombo("Theme", preview.c_str()))
+    ImGuiScope::Combo combo("Theme", preview.c_str());
+    if (!combo)
     {
         return;
     }
@@ -337,13 +333,12 @@ auto SosGui::ThemeCombo() -> void
         }
         ++index;
     }
-    ImGui::EndCombo();
 }
 
 void SosGui::RenderQuickSlotConfig()
 {
     bool quickSlotEnabled = m_uiData.IsQuickSlotEnabled();
-    if (ImGuiUtil::CheckBox("$SkyOutSys_MCMHeader_Quickslots", &quickSlotEnabled))
+    if (ImGui::Checkbox("$SkyOutSys_MCMHeader_Quickslots"_T.c_str(), &quickSlotEnabled))
     {
         if (!EnableQuickslot(quickSlotEnabled))
         {
@@ -351,7 +346,7 @@ void SosGui::RenderQuickSlotConfig()
         }
     }
 
-    ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_EnableQuickslots");
+    ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_EnableQuickslots"_T.c_str());
 }
 
 EagerTask waitImport(const SosDataCoordinator &dataCoordinator)
@@ -362,7 +357,7 @@ EagerTask waitImport(const SosDataCoordinator &dataCoordinator)
 
 void SosGui::DrawExportOrImportSettings()
 {
-    if (ImGuiUtil::Button("$SkyOutSys_Text_Export"))
+    if (ImGui::Button("$SkyOutSys_Text_Export"_T.c_str()))
     {
         +[&] {
             return m_dataCoordinator.RequestExportSettings();
@@ -371,14 +366,14 @@ void SosGui::DrawExportOrImportSettings()
     ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
 
     ImGui::SameLine();
-    if (ImGuiUtil::Button("$SkyOutSys_Text_Import"))
+    if (ImGui::Button("$SkyOutSys_Text_Import"_T.c_str()))
     {
         Cleanup();
         +[&] {
             return m_dataCoordinator.RequestImportSettings();
         };
     }
-    ImGuiUtil::SetItemTooltip("$SkyOutSys_Desc_Import");
+    ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_Import"_T.c_str());
 }
 
 auto SosGui::EnableQuickslot(const bool enable) -> bool

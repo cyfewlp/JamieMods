@@ -31,6 +31,8 @@ public:
 
     void Insert(Armor *armor);
 
+    // init container: sort all registered armor by name
+    void Init();
 
     /**
      * The formId be used ensure the expected armor

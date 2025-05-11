@@ -5,6 +5,7 @@
 #include "SosGui.h"
 
 #include "common/config.h"
+#include "common/imgui/ImGuiScop.h"
 #include "data/AutoSwitchPolicyView.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
@@ -68,8 +69,8 @@ void SosGui::RenderCharactersList()
             return m_dataCoordinator.RequestActorList();
         };
     }
-    if (constexpr auto flags = TableFlags().Resizable().SizingStretchProp().flags;
-        !ImGui::BeginTable("##CharactersTable", 3, flags))
+    ImGuiScope::Table charactersTable("##CharactersTable", 3, TableFlags().Resizable().SizingStretchProp().flags);
+    if (!charactersTable)
     {
         return;
     }
@@ -79,10 +80,10 @@ void SosGui::RenderCharactersList()
         .Column("$SosGui_TableHeader_ActiveOutfit")
         .CommitHeadersRow();
     std::function<void()> onDeleteActor = [] {};
-    int idx = 0;
+    int                   idx           = 0;
     for (const auto &actor : actors)
     {
-        ImGui::PushID(idx);
+        ImGuiScope::PushId pushId(idx);
 
         ImGui::TableNextColumn(); // character column
         {
@@ -118,14 +119,12 @@ void SosGui::RenderCharactersList()
             }
         }
         idx++;
-        ImGui::PopID();
     }
-    ImGui::EndTable();
     if (actors.empty()) return;
 
     onDeleteActor();
 
-    static int prevSelected = -1;
+    static int prevSelected  = -1;
     const auto selectedActor = actors.at(m_selectedActorIndex);
     if (prevSelected != m_selectedActorIndex)
     {
@@ -133,7 +132,7 @@ void SosGui::RenderCharactersList()
     }
     prevSelected = m_selectedActorIndex;
 
-    OutfitId selectId = INVALID_OUTFIT_ID;
+    OutfitId    selectId   = INVALID_OUTFIT_ID;
     const auto &outfitList = m_uiData.GetOutfitList();
     if (m_outfitSelectPopup.draw("Outfit List##OutfitSelectList", outfitList, selectId); selectId != INVALID_OUTFIT_ID)
     {
@@ -148,7 +147,7 @@ void SosGui::RenderCharactersList()
 
 void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
 {
-    ImGuiUtil::ChildGuard child("##LocationAutoSwitch", {0, 0}, ImGuiChildFlags_AutoResizeY);
+    ImGuiScope::Child child("##LocationAutoSwitch", {0, 0}, ImGuiChildFlags_AutoResizeY);
 
     if (currentActor == nullptr)
     {
@@ -167,40 +166,37 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
     {
         return;
     }
-    if (constexpr auto tableFLags = TableFlags().Resizable().SizingStretchProp().RowBg().Borders().flags;
-        !ImGui::BeginTable("##AutoSwitchStateList", 2, tableFLags))
+    if (ImGuiScope::Table table("##AutoSwitchStateList", 2,
+                                TableFlags().Resizable().SizingStretchProp().RowBg().Borders().flags); table)
     {
-        return;
-    }
-    TableHeadersBuilder()
-        .Column("$SosGui_TableHeader_Location")
-        .Column("$SosGui_TableHeader_Location_State")
-        .CommitHeadersRow();
-    using Policy = AutoSwitchPolicyView::Policy;
-    for (uint32_t policyId = 0; policyId < static_cast<uint32_t>(Policy::Count); ++policyId)
-    {
-        ImGui::PushID(policyId);
-        ImGui::TableNextRow();
-        if (ImGui::TableNextColumn())
+        TableHeadersBuilder()
+            .Column("$SosGui_TableHeader_Location")
+            .Column("$SosGui_TableHeader_Location_State")
+            .CommitHeadersRow();
+        using Policy = AutoSwitchPolicyView::Policy;
+        for (uint32_t policyId = 0; policyId < static_cast<uint32_t>(Policy::Count); ++policyId)
         {
-            auto key = std::format("$SkyOutSys_Text_Autoswitch{}", policyId);
-            const bool isSelected = m_autoSwitchOutfitSelectPopup.selectPolicyId == policyId;
-            if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
-                ImGuiUtil::Selectable(key.c_str(), isSelected, flags))
+            ImGuiScope::PushId pushId(policyId);
+            ImGui::TableNextRow();
+            if (ImGui::TableNextColumn())
             {
-                m_autoSwitchOutfitSelectPopup.selectPolicyId = policyId;
-                m_autoSwitchOutfitSelectPopup.Open();
+                auto       key        = std::format("$SkyOutSys_Text_Autoswitch{}", policyId);
+                const bool isSelected = m_autoSwitchOutfitSelectPopup.selectPolicyId == policyId;
+                if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
+                    ImGuiUtil::Selectable(key.c_str(), isSelected, flags))
+                {
+                    m_autoSwitchOutfitSelectPopup.selectPolicyId = policyId;
+                    m_autoSwitchOutfitSelectPopup.Open();
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
             }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
 
-        autoSwitch_column1_outfit(currentActor->GetFormID(), policyId);
-        ImGui::PopID();
+            autoSwitch_column1_outfit(currentActor->GetFormID(), policyId);
+        }
     }
-    ImGui::EndTable();
 
     OutfitId selectId = INVALID_OUTFIT_ID;
     if (m_autoSwitchOutfitSelectPopup.draw("Outfit List##AutoSwitch", m_uiData.GetOutfitList(),
@@ -216,8 +212,8 @@ void SosGui::AutoSwitchPoliesTable(RE::Actor *currentActor)
 
 void SosGui::autoSwitch_column1_outfit(const RE::FormID actorId, const uint32_t policyId)
 {
-    const auto &view = m_uiData.GetAutoSwitchPolicyView();
-    auto &outfitList = m_uiData.GetOutfitList();
+    const auto &view       = m_uiData.GetAutoSwitchPolicyView();
+    auto &      outfitList = m_uiData.GetOutfitList();
 
     if (!ImGui::TableNextColumn())
     {
@@ -257,14 +253,13 @@ void SosGui::outfit_select_popup::draw(const char *nameKey, const OutfitList &ou
     {
         for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
         {
-            const auto &outfit = *debounceInput.viewData.at(index);
-            ImGui::PushID(index);
+            const auto &       outfit = *debounceInput.viewData.at(index);
+            ImGuiScope::PushId pushId(index);
             if (ImGui::Selectable(outfit.GetName().c_str(), false))
             {
                 selectId = outfit.GetId();
                 ImGui::CloseCurrentPopup();
             }
-            ImGui::PopID();
         }
     }
 

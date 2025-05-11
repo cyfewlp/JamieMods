@@ -60,17 +60,8 @@ void ArmorView::init()
     {
         return;
     }
-    auto *      dataHandler = RE::TESDataHandler::GetSingleton();
-    const auto &armorArray  = dataHandler->GetFormArray<RE::TESObjectARMO>();
-
-    for (const auto &armor : armorArray)
-    {
-        if (util::IsArmorCanDisplay(armor))
-        {
-            armorContainer.Insert(armor);
-            availableArmorCount++;
-        }
-    }
+    armorContainer.Init();
+    availableArmorCount = armorContainer.Size();
 }
 
 void ArmorView::clear()
@@ -243,7 +234,6 @@ void ArmorView::update_view_data(ArmorGenerator *generator, const SosUiOutfit *e
         try
         {
             generator->for_each([&](const Armor *armor) {
-                log_debug("Add armor: {}, {}", armor->GetName(), armor->formID);
                 if (const auto result = add_armor(armor); !result.has_value())
                 {
                     throw std::runtime_error(ToErrorMessage(result.error()));

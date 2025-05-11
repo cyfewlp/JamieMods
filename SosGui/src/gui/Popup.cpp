@@ -72,7 +72,7 @@ void Popup::ModalPopup::RenderConfirmButtons(__out bool &confirmed)
     }
 }
 
-void Popup::DeleteOutfitPopup::DoDraw(SosUiData &uiData, bool &confirmed)
+void Popup::DeleteOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
 {
     const auto message = Translation::Translate("$SkyOutSys_Confirm_Delete_Text{}", true, wanDeleteOutfitName);
     ImGui::Text("%s", message.c_str());

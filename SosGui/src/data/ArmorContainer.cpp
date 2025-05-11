@@ -14,6 +14,23 @@ void ArmorContainer::Insert(Armor *armor)
     m_container.insert(it, armor);
 }
 
+void ArmorContainer::Init()
+{
+    auto *      dataHandler = RE::TESDataHandler::GetSingleton();
+    const auto &armorArray  = dataHandler->GetFormArray<RE::TESObjectARMO>();
+
+    auto        comparator = NameComparator();
+    m_container.reserve(armorArray.size());
+    for (const auto &armor : armorArray)
+    {
+        if (util::IsArmorCanDisplay(armor))
+        {
+            const auto it = std::ranges::lower_bound(m_container, armor, comparator);
+            m_container.insert(it, armor);
+        }
+    }
+}
+
 auto ArmorContainer::GetRank(const char *armorName, RE::FormID formId) const -> size_t
 {
     if (armorName == nullptr)
