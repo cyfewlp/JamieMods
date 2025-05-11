@@ -4,10 +4,10 @@
 #include "common/config.h"
 #include "imgui.h"
 
-#include <array>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 struct TableFlags
 {
@@ -109,7 +109,7 @@ struct TableHeadersBuilder
         std::string_view      name{};
         ImGuiTableColumnFlags flags             = ImGuiTableColumnFlags_None;
         float                 initWidthOrWeight = 0.0F;
-        TableHeadersBuilder  &tableBuilder;
+        TableHeadersBuilder & tableBuilder;
 
         explicit ColumnContext(const char *name, TableHeadersBuilder &tableBuilder)
             : name(name), tableBuilder(tableBuilder)
@@ -167,7 +167,7 @@ struct TableHeadersBuilder
             return tableBuilder.Column(name);
         }
 
-        constexpr void CommitHeadersRow()
+        static constexpr void CommitHeadersRow()
         {
             return ImGui::TableHeadersRow();
         }

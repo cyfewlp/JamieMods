@@ -19,7 +19,7 @@ void ArmorContainer::Init()
     auto *      dataHandler = RE::TESDataHandler::GetSingleton();
     const auto &armorArray  = dataHandler->GetFormArray<RE::TESObjectARMO>();
 
-    auto        comparator = NameComparator();
+    auto comparator = NameComparator();
     m_container.reserve(armorArray.size());
     for (const auto &armor : armorArray)
     {
