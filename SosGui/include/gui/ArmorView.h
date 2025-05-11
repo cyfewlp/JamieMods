@@ -75,22 +75,40 @@ struct ArmorView final
 
     static constexpr uint32_t SLOT_COUNT = RE::BIPED_OBJECT::kEditorTotal;
 
-    struct RankedArmor
+    // A wrap class. Be used to cache armor rank(sort by name).
+    class RankedArmor
     {
         const Armor *armor;
         size_t       rank = -1;
+
+    public:
+        explicit RankedArmor(const Armor *const armor, const size_t rank)
+            : armor(armor), rank(rank) {}
+
+        [[nodiscard]] auto Rank() const -> size_t
+        {
+            return rank;
+        }
 
         auto operator->() const -> const Armor *
         {
             return armor;
         }
+
+        operator const Armor *() const
+        {
+            return armor;
+        }
     };
 
+private:
+    std::vector<RankedArmor> viewData{};
+
+public:
     std::bitset<SLOT_COUNT>                        slotFiltererSelected{};
     uint32_t                                       availableArmorCount = 0;
     ArmorGenerator *                               armorGenerator      = nullptr;
     std::array<uint16_t, SLOT_COUNT>               slotCounter{};
-    std::vector<const Armor *>                     viewData{};
     ArmorContainer                                 armorContainer{};
     std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
     ArmorFilter                                    armorFilter{};
@@ -136,6 +154,16 @@ struct ArmorView final
     void               reset_view(ArmorGenerator *generator, const SosUiOutfit *editingOutfit);
     auto               find_armor(const Armor *armor) const -> std::expected<size_t, error>;
     bool               no_select_any_slot() const;
+
+    [[nodiscard]] auto ViewData() const -> const std::vector<RankedArmor> &
+    {
+        return viewData;
+    }
+
+    auto SwapViewData(std::vector<RankedArmor> &other) -> void
+    {
+        viewData.swap(other);
+    }
 };
 }
 

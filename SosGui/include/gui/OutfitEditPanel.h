@@ -158,10 +158,10 @@ private:
     }
 
     void DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit);
-    void DrawArmorViewTableContent(const std::vector<const Armor *> &                           viewData,
-                                   const std::function<void(const Armor *armor, size_t index)> &drawAction);
+    void DrawArmorViewTableContent(const std::vector<ArmorView::RankedArmor>&                  viewData,
+                                   const std::function<void(const Armor *armor, size_t index)>&drawAction);
     void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
-    void DrawArmorView(const EditingOutfit &editingOutfit, const std::vector<const Armor *> &viewData);
+    void DrawArmorView(const EditingOutfit& editingOutfit, const std::vector<ArmorView::RankedArmor>& viewData);
     void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 

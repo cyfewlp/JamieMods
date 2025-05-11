@@ -118,7 +118,7 @@ void OutfitEditPanel::DoDraw(const EditingOutfit &editingOutfit)
         DrawOutfitPanel(editingOutfit);
         DrawArmorGeneratorTabBar(editingOutfit.GetSourceOutfit());
         DrawArmorViewFilter(editingOutfit.GetSourceOutfit());
-        DrawArmorView(editingOutfit, m_armorView.viewData);
+        DrawArmorView(editingOutfit, m_armorView.ViewData());
         ImGui::PopID();
     }
     ImGui::EndGroup();
@@ -184,22 +184,23 @@ void OutfitEditPanel::DrawArmorInfo()
         void *  it = nullptr;
         ImGuiID selectedRank; // must be name rank;
         m_armorView.multiSelection.GetNextSelectedItem(&it, &selectedRank);
-        const auto *armor = m_armorView.viewData.at(selectedRank);
+        const auto &rankedArmor = m_armorView.ViewData().at(selectedRank);
         ImGuiUtil::TextScale("Armor Info", Config::FONT_SIZE_TITLE_3);
         {
             ImGui::Indent();
             ImGui::BeginGroup();
             {
-                ImGui::Text("%s", armor->GetName());
-                ImGuiUtil::Value("FormID", std::format("{:#010X}", armor->GetFormID()).c_str());
-                ImGui::Text("%s", util::GetFormModFileName(armor).data());
-                ImGuiUtil::Value("$Armor Rating", static_cast<float>(armor->armorRating) / static_cast<float>(100.0));
-                ImGuiUtil::Value("$WEIGHT", armor->GetWeight());
-                ImGui::Text("%sPlayable", IsArmorNonPlayable(armor) ? "Non" : "");
+                ImGui::Text("%s", rankedArmor->GetName());
+                ImGuiUtil::Value("FormID", std::format("{:#010X}", rankedArmor->GetFormID()).c_str());
+                ImGui::Text("%s", util::GetFormModFileName(rankedArmor).data());
+                ImGuiUtil::Value("$Armor Rating",
+                                 static_cast<float>(rankedArmor->armorRating) / static_cast<float>(100.0));
+                ImGuiUtil::Value("$WEIGHT", rankedArmor->GetWeight());
+                ImGui::Text("%sPlayable", IsArmorNonPlayable(rankedArmor) ? "Non" : "");
                 ImGui::BeginGroup();
                 for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; ++slotPos)
                 {
-                    if (armor->HasPartOf(ToSlot(slotPos)))
+                    if (rankedArmor->HasPartOf(ToSlot(slotPos)))
                     {
                         ImGuiUtil::Button(Translation::Translate(get_slot_name_key(slotPos)).c_str());
                     }
@@ -395,7 +396,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
             }
             auto *      generator   = dynamic_cast<NearObjectsInventoryArmorGenerator *>(armorGenerator.get());
             const auto &nearObjects = generator->NearObjects();
-            auto *wantVisit = nearObjects[generator->WantVisitIndex()];
+            auto *      wantVisit   = nearObjects[generator->WantVisitIndex()];
             if (ImGui::BeginCombo("NearObjects", wantVisit->GetDisplayFullName()))
             {
                 for (size_t index = 0; index < nearObjects.size(); ++index)
@@ -468,7 +469,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<const Armor *> &                           viewData,
+void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<ArmorView::RankedArmor> &                  viewData,
                                                 const std::function<void(const Armor *armor, size_t index)> &drawAction)
 {
     static bool ascend = true;
@@ -510,7 +511,10 @@ void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<const Armor *>
 void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 {
     // check is include template armor
-    ImGuiUtil::CheckBox("$SosGui_CheckBox_TemplateArmor", &Config::INCLUDE_TEMPLATE_ARMOR);
+    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_TemplateArmor", &Config::INCLUDE_TEMPLATE_ARMOR))
+    {
+        m_armorView.update_view_data(GetGenerator(), editingOutfit);
+    }
     ImGui::SameLine();
     // filter armor name and mod name
     if (m_armorView.armorFilter.Draw())
@@ -520,7 +524,8 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorView(const EditingOutfit &editingOutfit, const std::vector<const Armor *> &viewData)
+void OutfitEditPanel::DrawArmorView(const EditingOutfit &                      editingOutfit,
+                                    const std::vector<ArmorView::RankedArmor> &viewData)
 {
     if (constexpr auto flags = TableFlags().RowBg().BordersInnerH().ScrollY().Resizable().SizingFixedFit()
                                            .Sortable().Hideable().Reorderable().flags;
@@ -569,9 +574,6 @@ void OutfitEditPanel::DrawArmorView(const EditingOutfit &editingOutfit, const st
                 }
                 ImGui::EndPopup();
             }
-            RE::BSString file;
-            auto result = armor->inventoryIcons[1].GetAsNormalFile(file);
-            ImGui::Text("%s file %s", result, file.c_str());
         }
 
         if (ImGui::TableNextColumn()) // armor name column
@@ -640,7 +642,8 @@ void OutfitEditPanel::DrawArmorViewModNameFilterer(const SosUiOutfit *editingOut
 
 void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
 {
-    std::string name = std::format("All({}/{})##AllSlot", m_armorView.viewData.size(), m_armorView.availableArmorCount);
+    std::string name = std::format("All({}/{})##AllSlot", m_armorView.ViewData().size(),
+                                   m_armorView.availableArmorCount);
     if (ImGui::Checkbox(name.c_str(), &m_armorView.checkAllSlot))
     {
         if (!m_armorView.checkAllSlot)
@@ -785,12 +788,12 @@ void OutfitEditPanel::BatchAddArmorsRequest::OnConfirm(OutfitEditPanel *editPane
     // We will remove all used armors in view;
     auto &editingOutfit = outfitList.GetOutfitById(id).value();
 
-    auto                       prevArmors = editingOutfit.GetUniqueArmors();
-    std::vector<const Armor *> newViewData;
-    newViewData.reserve(editPanel->m_armorView.viewData.size());
-    for (size_t index = 0; index < editPanel->m_armorView.viewData.size(); ++index)
+    auto                                prevArmors = editingOutfit.GetUniqueArmors();
+    std::vector<ArmorView::RankedArmor> newViewData;
+    newViewData.reserve(editPanel->m_armorView.ViewData().size());
+    for (size_t index = 0; index < editPanel->m_armorView.ViewData().size(); ++index)
     {
-        auto *armor = editPanel->m_armorView.viewData.at(index);
+        const auto &armor = editPanel->m_armorView.ViewData().at(index);
         if (!editPanel->m_armorView.multiSelection.Contains(index) || usedSlot.all(armor->GetSlotMask()))
         {
             newViewData.emplace_back(armor);
@@ -808,7 +811,7 @@ void OutfitEditPanel::BatchAddArmorsRequest::OnConfirm(OutfitEditPanel *editPane
         };
     }
     editPanel->m_armorView.multiSelection.Clear();
-    editPanel->m_armorView.viewData.swap(newViewData);
+    editPanel->m_armorView.SwapViewData(newViewData);
 
     const auto &armors = editingOutfit.GetUniqueArmors();
     std::erase_if(prevArmors, [&armors](const Armor *armor) {

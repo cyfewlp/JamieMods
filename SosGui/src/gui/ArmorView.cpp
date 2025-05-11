@@ -99,8 +99,8 @@ void ArmorView::remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot)
     multiSelection.Clear();
     for (auto itBegin = viewData.begin(); itBegin != viewData.end();)
     {
-        if (const auto *armor = *itBegin;
-            armor->HasPartOf(toRemoveSlot) && util::IsArmorHasNoneSlotOf(armor, selectedSlots))
+        if (const auto &rankedArmor = *itBegin;
+            rankedArmor->HasPartOf(toRemoveSlot) && util::IsArmorHasNoneSlotOf(rankedArmor, selectedSlots))
         {
             itBegin = viewData.erase(itBegin);
         }
@@ -169,7 +169,7 @@ auto ArmorView::add_armor(const Armor *armor) -> std::expected<void, error>
         while (endPos - startPos > 0)
         {
             const size_t middle = startPos + (endPos - startPos) / 2;
-            const auto   rank   = armorContainer.GetRank(viewData.at(middle)->GetName(), armor->formID);
+            const auto   rank   = viewData.at(middle).Rank();
             if (rank >= armorContainer.Size())
             {
                 return std::unexpected{error::unassociated_armor};
@@ -187,7 +187,7 @@ auto ArmorView::add_armor(const Armor *armor) -> std::expected<void, error>
                 return std::unexpected{error::armor_already_exists};
             }
         }
-        viewData.insert(viewData.begin() + startPos, armor);
+        viewData.insert(viewData.begin() + startPos, RankedArmor(armor, armorRank));
     }
     return {};
 }
@@ -212,13 +212,13 @@ bool ArmorView::remove_armor(const Armor *armor)
 void ArmorView::reset_counter()
 {
     modRefCounter.clear();
-    for (const auto &armor : viewData)
+    for (const auto &rankedArmor : viewData)
     {
-        std::string_view modName = util::GetFormModFileName(armor);
+        std::string_view modName = util::GetFormModFileName(rankedArmor);
         modRefCounter.emplace(modName, 0);
         modRefCounter[modName] += 1;
 
-        const auto slotMaskValue = static_cast<uint32_t>(armor->GetSlotMask());
+        const auto slotMaskValue = static_cast<uint32_t>(rankedArmor->GetSlotMask());
         for (uint32_t slotPos = 0; slotPos < RE::BIPED_OBJECT::kEditorTotal; slotPos++)
         {
             uint32_t slotValue = 1 << slotPos;
@@ -278,7 +278,7 @@ auto ArmorView::find_armor(const Armor *armor) const -> std::expected<size_t, er
     while (endPos - startPos > 0)
     {
         const size_t middle = (endPos + startPos) / 2;
-        const auto   rank   = armorContainer.GetRank(viewData.at(middle)->GetName(), armor->formID);
+        const auto   rank   = viewData.at(middle).Rank();
         if (rank >= armorContainer.Size())
         {
             return std::unexpected{error::unassociated_armor};
