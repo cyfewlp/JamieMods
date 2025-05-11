@@ -65,7 +65,7 @@ void ArmorView::init()
 
     for (const auto &armor : armorArray)
     {
-        if (IsArmorCanDisplay(armor))
+        if (util::IsArmorCanDisplay(armor))
         {
             armorContainer.Insert(armor);
             availableArmorCount++;
@@ -163,13 +163,13 @@ auto ArmorView::add_armor(const Armor *armor) -> std::expected<void, error>
 {
     if (filter(armor))
     {
-        const auto armorRank = armorContainer.GetRank(armor->formID);
+        const auto armorRank = armorContainer.GetRank(armor->GetName(), armor->formID);
         size_t     startPos  = 0;
         size_t     endPos    = viewData.size();
         while (endPos - startPos > 0)
         {
             const size_t middle = startPos + (endPos - startPos) / 2;
-            const auto   rank   = armorContainer.GetRank(viewData.at(middle)->formID);
+            const auto   rank   = armorContainer.GetRank(viewData.at(middle)->GetName(), armor->formID);
             if (rank >= armorContainer.Size())
             {
                 return std::unexpected{error::unassociated_armor};
@@ -243,6 +243,7 @@ void ArmorView::update_view_data(ArmorGenerator *generator, const SosUiOutfit *e
         try
         {
             generator->for_each([&](const Armor *armor) {
+                log_debug("Add armor: {}, {}", armor->GetName(), armor->formID);
                 if (const auto result = add_armor(armor); !result.has_value())
                 {
                     throw std::runtime_error(ToErrorMessage(result.error()));
@@ -271,13 +272,13 @@ void ArmorView::reset_view(ArmorGenerator *generator, const SosUiOutfit *editing
 
 auto ArmorView::find_armor(const Armor *armor) const -> std::expected<size_t, error>
 {
-    const auto armorRank = armorContainer.GetRank(armor->formID);
+    const auto armorRank = armorContainer.GetRank(armor->GetName(), armor->formID);
     size_t     startPos  = 0;
     size_t     endPos    = viewData.size();
     while (endPos - startPos > 0)
     {
         const size_t middle = (endPos + startPos) / 2;
-        const auto   rank   = armorContainer.GetRank(viewData.at(middle)->formID);
+        const auto   rank   = armorContainer.GetRank(viewData.at(middle)->GetName(), armor->formID);
         if (rank >= armorContainer.Size())
         {
             return std::unexpected{error::unassociated_armor};

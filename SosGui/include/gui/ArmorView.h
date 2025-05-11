@@ -26,20 +26,6 @@ struct ArmorView final
         return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0;
     }
 
-    static auto IsArmorCanDisplay(const Armor *armor) -> bool
-    {
-        bool canDisplay = false;
-        if (armor != nullptr && armor->templateArmor == nullptr)
-        {
-            if (const std::string_view name = armor->GetName(); !name.empty())
-            {
-                canDisplay = true;
-            }
-        }
-
-        return canDisplay;
-    }
-
     struct ArmorFilter final : ImGuiUtil::DebounceInput
     {
         bool mustPlayable = false;
@@ -89,19 +75,29 @@ struct ArmorView final
 
     static constexpr uint32_t SLOT_COUNT = RE::BIPED_OBJECT::kEditorTotal;
 
+    struct RankedArmor
+    {
+        const Armor *armor;
+        size_t       rank = -1;
+
+        auto operator->() const -> const Armor *
+        {
+            return armor;
+        }
+    };
+
     std::bitset<SLOT_COUNT>                        slotFiltererSelected{};
-    ArmorContainer                                 armorContainer{};
+    uint32_t                                       availableArmorCount = 0;
+    ArmorGenerator *                               armorGenerator      = nullptr;
+    std::array<uint16_t, SLOT_COUNT>               slotCounter{};
     std::vector<const Armor *>                     viewData{};
+    ArmorContainer                                 armorContainer{};
     std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
     ArmorFilter                                    armorFilter{};
     ModFilterer                                    modFilterer{};
-    bool                                           checkAllSlot = true; // default shows all armor slot
-    std::array<uint16_t, SLOT_COUNT>               slotCounter{};
     ArmorMultiSelection                            multiSelection{};
-    uint32_t                                       availableArmorCount = 0;
-    ArmorGenerator *                               armorGenerator      = nullptr;
+    bool                                           checkAllSlot = true; // default shows all armor slot
 
-public:
     enum class error : uint8_t
     {
         unassociated_armor,

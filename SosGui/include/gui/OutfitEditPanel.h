@@ -130,7 +130,7 @@ public:
     void Cleanup() override;
 
     void Draw(const EditingOutfit &editingOutfit);
-    void DrawOutfitTabBarView(const EditingOutfit &editingOutfit);
+    void DrawOutfitPanel(const EditingOutfit &editingOutfit);
     void DrawArmorInfo();
     void OnSelectActor(const RE::Actor *actor, const EditingOutfit &editingOutfit);
     void OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing);
@@ -170,8 +170,6 @@ private:
 
     void OnAcceptDeleteArmor(const EditingOutfit &editingOutfit, const RE::TESObjectARMO *armor);
     void OnAcceptAddArmorToOutfit(const EditingOutfit &editingOutfit, const Armor *armor);
-
-    static auto IsArmorCanDisplay(const Armor *armor) -> bool;
 
     static auto ToSlot(uint32_t slotPos) -> Slot
     {

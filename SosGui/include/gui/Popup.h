@@ -35,10 +35,10 @@ struct BasicPopup
 
 struct ModalPopup
 {
+    ImGuiPopupFlags  popupFlags = 0;
     bool             showPopup = true;
     bool             wantOpen  = true;
     std::string_view nameKey;
-    ImGuiPopupFlags  popupFlags = 0;
 
     explicit ModalPopup(const std::string_view &nameKey) : nameKey(nameKey) {}
 

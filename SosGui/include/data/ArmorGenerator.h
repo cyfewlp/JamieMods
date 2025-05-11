@@ -26,20 +26,44 @@ struct ArmorItemVisitor final : RE::InventoryChanges::IItemChangeVisitor
 class ArmorGenerator
 {
 public:
-    virtual ~ArmorGenerator() = default;
+    virtual      ~ArmorGenerator() = default;
     virtual void for_each(std::function<void(RE::TESObjectARMO *armor)> &&action) = 0;
-
-protected:
-    static auto IsArmorCanDisplay(RE::TESObjectARMO *armor) -> bool;
 };
 
 class FormIdArmorGenerator final : public ArmorGenerator
 {
     RE::FormID armorFormId = 0;
+
 public:
     explicit FormIdArmorGenerator(RE::FormID a_armorFormId) : armorFormId(a_armorFormId) {}
 
     void for_each(std::function<void(RE::TESObjectARMO *armor)> &&action) override;
+};
+
+class NearObjectsInventoryArmorGenerator final : public ArmorGenerator
+{
+    std::vector<RE::TESObjectREFR *> nearObjects{};
+    size_t                           wantVisitIndex = 0;
+
+public:
+    void for_each(std::function<void(RE::TESObjectARMO *armor)> &&action) override;
+
+    void Update();
+
+    [[nodiscard]] auto NearObjects() const -> const std::vector<RE::TESObjectREFR *> &
+    {
+        return nearObjects;
+    }
+
+    void SetWantVisitIndex(const size_t index)
+    {
+        wantVisitIndex = index;
+    }
+
+    [[nodiscard]] constexpr auto WantVisitIndex() const -> size_t
+    {
+        return wantVisitIndex;
+    }
 };
 
 class InventoryArmorGenerator final : public ArmorGenerator

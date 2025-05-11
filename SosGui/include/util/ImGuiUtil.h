@@ -14,7 +14,8 @@
 #include <string>
 
 // ImGui v1.92
-namespace LIBC_NAMESPACE_DECL
+namespace
+LIBC_NAMESPACE_DECL
 {
 namespace ImGuiUtil
 {
@@ -52,10 +53,10 @@ constexpr bool BeginCombo(const char *nameKey, const char *previeValue)
     return ImGui::BeginCombo(g_widgetName.c_str(), previeValue);
 }
 
-constexpr auto BeginTabItem(const std::string &nameKey) -> bool
+constexpr auto BeginTabItem(const std::string &nameKey, bool *open = nullptr, ImGuiTabItemFlags flags = 0) -> bool
 {
     Translation::Translate(nameKey.c_str(), g_widgetName);
-    return ImGui::BeginTabItem(g_widgetName.c_str());
+    return ImGui::BeginTabItem(g_widgetName.c_str(), open, flags);
 }
 
 constexpr auto SetItemTooltip(const char *content) -> void
@@ -128,14 +129,14 @@ constexpr auto BeginMenu(const char *nameKey) -> bool
     return ImGui::BeginMenu(g_widgetName.c_str());
 }
 
-constexpr auto MenuItem(const std::string_view &nameKey, const char* shortcut = nullptr, bool selected = false) -> bool
+constexpr auto MenuItem(const std::string_view &nameKey, const char *shortcut = nullptr, bool selected = false) -> bool
 {
     Translation::Translate(nameKey.data(), g_widgetName);
     return ImGui::MenuItem(g_widgetName.c_str(), shortcut, selected);
 }
 
-constexpr auto BeginChild(const char *windowId, const ImVec2 &size = ImVec2(0, 0),
-                          ImGuiChildFlags chiildFlags = ImGuiChildFlags_None) -> bool
+constexpr auto BeginChild(const char *    windowId, const ImVec2 &size = ImVec2(0, 0),
+                          ImGuiChildFlags chiildFlags                  = ImGuiChildFlags_None) -> bool
 {
     Translation::Translate(windowId, g_widgetName);
     return ImGui::BeginChild(g_widgetName.c_str(), size, chiildFlags);
