@@ -73,8 +73,7 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
 
     RECT     rect = {0, 0, 0, 0};
     ImGuiIO &io   = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiUtil::ConfigFlags().NavEnableKeyboard().DockingEnable();
     io.ConfigNavMoveSetMousePos = false;
     ::GetClientRect(hWnd, &rect);
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
@@ -296,8 +295,13 @@ void SosGui::MainConfigWindow()
         }
         ImGui::Indent(2);
         ImGui::SameLine();
-        if (ImGui::DragFloat("$SosGui_Global_FontSize_Scale"_T.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F,
-                             Setting::UiSetting::FONT_SCALE_MIN, Setting::UiSetting::FONT_SCALE_MAX))
+        if (ImGui::DragFloat(
+                "$SosGui_Global_FontSize_Scale"_T.c_str(),
+                &ImGui::GetIO().FontGlobalScale,
+                0.05F,
+                Setting::UiSetting::FONT_SCALE_MIN,
+                Setting::UiSetting::FONT_SCALE_MAX
+            ))
         {
             Setting::UiSetting::GetInstance()->globalFontScale = ImGui::GetIO().FontGlobalScale;
         }

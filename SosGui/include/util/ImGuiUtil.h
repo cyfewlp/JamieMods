@@ -14,8 +14,7 @@
 #include <string>
 
 // ImGui v1.92
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiUtil
 {
@@ -135,8 +134,9 @@ constexpr auto MenuItem(const std::string_view &nameKey, const char *shortcut = 
     return ImGui::MenuItem(g_widgetName.c_str(), shortcut, selected);
 }
 
-constexpr auto BeginChild(const char *    windowId, const ImVec2 &size = ImVec2(0, 0),
-                          ImGuiChildFlags chiildFlags                  = ImGuiChildFlags_None) -> bool
+constexpr auto BeginChild(
+    const char *windowId, const ImVec2 &size = ImVec2(0, 0), ImGuiChildFlags chiildFlags = ImGuiChildFlags_None
+) -> bool
 {
     Translation::Translate(windowId, g_widgetName);
     return ImGui::BeginChild(g_widgetName.c_str(), size, chiildFlags);
@@ -202,22 +202,154 @@ struct SelectableFlag
 {
     ImGuiSelectableFlags flags = ImGuiSelectableFlags_None;
 
-    constexpr auto AllowOverlap() -> SelectableFlag &
+    consteval auto AllowOverlap() -> SelectableFlag
     {
-        flags |= ImGuiSelectableFlags_AllowOverlap;
-        return *this;
+        return SelectableFlag{flags |= ImGuiSelectableFlags_AllowOverlap};
     }
 
-    constexpr auto AllowDoubleClick() -> SelectableFlag &
+    consteval auto AllowDoubleClick() -> SelectableFlag
     {
-        flags |= ImGuiSelectableFlags_AllowDoubleClick;
-        return *this;
+        return SelectableFlag{flags |= ImGuiSelectableFlags_AllowDoubleClick};
     }
 
-    constexpr auto SpanAllColumns() -> SelectableFlag &
+    consteval auto SpanAllColumns() -> SelectableFlag
     {
-        flags |= ImGuiSelectableFlags_SpanAllColumns;
-        return *this;
+        return SelectableFlag{flags |= ImGuiSelectableFlags_SpanAllColumns};
+    }
+};
+
+struct InputTextFlags
+{
+    ImGuiInputFlags flags = ImGuiInputFlags_None;
+
+    consteval operator ImGuiInputFlags() const
+    {
+        return flags;
+    }
+
+    consteval auto None() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_None};
+    }
+
+    consteval auto CharsDecimal() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CharsDecimal};
+    }
+
+    consteval auto CharsHexadecimal() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CharsHexadecimal};
+    }
+
+    consteval auto CharsScientific() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CharsScientific};
+    }
+
+    consteval auto CharsUppercase() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CharsUppercase};
+    }
+
+    consteval auto CharsNoBlank() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CharsNoBlank};
+    }
+
+    consteval auto AllowTabInput() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_AllowTabInput};
+    }
+
+    consteval auto EnterReturnsTrue() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_EnterReturnsTrue};
+    }
+
+    consteval auto EscapeClearsAll() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_EscapeClearsAll};
+    }
+
+    consteval auto CtrlEnterForNewLine() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CtrlEnterForNewLine};
+    }
+
+    consteval auto ReadOnly() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_ReadOnly};
+    }
+
+    consteval auto Password() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_Password};
+    }
+
+    consteval auto AlwaysOverwrite() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_AlwaysOverwrite};
+    }
+
+    consteval auto AutoSelectAll() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_AutoSelectAll};
+    }
+
+    consteval auto ParseEmptyRefVal() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_ParseEmptyRefVal};
+    }
+
+    consteval auto DisplayEmptyRefVal() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_DisplayEmptyRefVal};
+    }
+
+    consteval auto NoHorizontalScroll() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_NoHorizontalScroll};
+    }
+
+    consteval auto NoUndoRedo() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_NoUndoRedo};
+    }
+
+    consteval auto ElideLeft() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_ElideLeft};
+    }
+
+    consteval auto CallbackCompletion() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CallbackCompletion};
+    }
+
+    consteval auto CallbackHistory() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CallbackHistory};
+    }
+
+    consteval auto CallbackAlways() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CallbackAlways};
+    }
+
+    consteval auto CallbackCharFilter() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CallbackCharFilter};
+    }
+
+    consteval auto CallbackResize() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CallbackResize};
+    }
+
+    consteval auto CallbackEdit() const
+    {
+        return InputTextFlags{ImGuiInputTextFlags_CallbackEdit};
     }
 };
 
@@ -225,34 +357,34 @@ struct ChildFlag
 {
     ImGuiChildFlags flags = ImGuiChildFlags_None;
 
-    constexpr auto Borders() -> ChildFlag &
+    consteval operator ImGuiChildFlags() const
     {
-        flags |= ImGuiChildFlags_Borders;
-        return *this;
+        return flags;
     }
 
-    constexpr auto ResizeX() -> ChildFlag &
+    consteval auto Borders() -> ChildFlag
     {
-        flags |= ImGuiChildFlags_ResizeX;
-        return *this;
+        return ChildFlag{flags |= ImGuiChildFlags_Borders};
     }
 
-    constexpr auto AutoResizeX() -> ChildFlag &
+    consteval auto ResizeX() -> ChildFlag
     {
-        flags |= ImGuiChildFlags_AutoResizeX;
-        return *this;
+        return ChildFlag{flags |= ImGuiChildFlags_ResizeX};
     }
 
-    constexpr auto AutoResizeY() -> ChildFlag &
+    consteval auto AutoResizeX() -> ChildFlag
     {
-        flags |= ImGuiChildFlags_AutoResizeY;
-        return *this;
+        return ChildFlag{flags |= ImGuiChildFlags_AutoResizeX};
     }
 
-    constexpr auto ResizeY() -> ChildFlag &
+    consteval auto AutoResizeY() -> ChildFlag
     {
-        flags |= ImGuiChildFlags_ResizeY;
-        return *this;
+        return ChildFlag{flags |= ImGuiChildFlags_AutoResizeY};
+    }
+
+    consteval auto ResizeY() -> ChildFlag
+    {
+        return ChildFlag{flags |= ImGuiChildFlags_ResizeY};
     }
 };
 
@@ -260,7 +392,7 @@ struct WindowFlags
 {
     ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 
-    operator ImGuiWindowFlags() const
+    constexpr operator ImGuiWindowFlags() const
     {
         return flags;
     }
@@ -270,148 +402,124 @@ struct WindowFlags
         flags |= other.flags;
     }
 
-    WindowFlags &None()
+    consteval WindowFlags None()
     {
-        flags = ImGuiWindowFlags_None;
-        return *this;
+        return WindowFlags{flags = ImGuiWindowFlags_None};
     }
 
-    WindowFlags &NoTitleBar()
+    consteval WindowFlags NoTitleBar()
     {
-        flags |= ImGuiWindowFlags_NoTitleBar;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoTitleBar};
     }
 
-    WindowFlags &NoResize()
+    consteval WindowFlags NoResize()
     {
-        flags |= ImGuiWindowFlags_NoResize;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoResize};
     }
 
-    WindowFlags &NoMove()
+    consteval WindowFlags NoMove()
     {
-        flags |= ImGuiWindowFlags_NoMove;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoMove};
     }
 
-    WindowFlags &NoScrollbar()
+    consteval WindowFlags NoScrollbar()
     {
-        flags |= ImGuiWindowFlags_NoScrollbar;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoScrollbar};
     }
 
-    WindowFlags &NoScrollWithMouse()
+    consteval WindowFlags NoScrollWithMouse()
     {
-        flags |= ImGuiWindowFlags_NoScrollWithMouse;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoScrollWithMouse};
     }
 
-    WindowFlags &NoCollapse()
+    consteval WindowFlags NoCollapse()
     {
-        flags |= ImGuiWindowFlags_NoCollapse;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoCollapse};
     }
 
-    WindowFlags &AlwaysAutoResize()
+    consteval WindowFlags AlwaysAutoResize()
     {
-        flags |= ImGuiWindowFlags_AlwaysAutoResize;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_AlwaysAutoResize};
     }
 
-    WindowFlags &NoBackground()
+    consteval WindowFlags NoBackground()
     {
-        flags |= ImGuiWindowFlags_NoBackground;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoBackground};
     }
 
-    WindowFlags &NoSavedSettings()
+    consteval WindowFlags NoSavedSettings()
     {
-        flags |= ImGuiWindowFlags_NoSavedSettings;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoSavedSettings};
     }
 
-    WindowFlags &NoMouseInputs()
+    consteval WindowFlags NoMouseInputs()
     {
-        flags |= ImGuiWindowFlags_NoMouseInputs;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoMouseInputs};
     }
 
-    WindowFlags &MenuBar()
+    consteval WindowFlags MenuBar()
     {
-        flags |= ImGuiWindowFlags_MenuBar;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_MenuBar};
     }
 
-    WindowFlags &HorizontalScrollbar()
+    consteval WindowFlags HorizontalScrollbar()
     {
-        flags |= ImGuiWindowFlags_HorizontalScrollbar;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_HorizontalScrollbar};
     }
 
-    WindowFlags &NoFocusOnAppearing()
+    consteval WindowFlags NoFocusOnAppearing()
     {
-        flags |= ImGuiWindowFlags_NoFocusOnAppearing;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoFocusOnAppearing};
     }
 
-    WindowFlags &NoBringToFrontOnFocus()
+    consteval WindowFlags NoBringToFrontOnFocus()
     {
-        flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoBringToFrontOnFocus};
     }
 
-    WindowFlags &AlwaysVerticalScrollbar()
+    consteval WindowFlags AlwaysVerticalScrollbar()
     {
-        flags |= ImGuiWindowFlags_AlwaysVerticalScrollbar;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_AlwaysVerticalScrollbar};
     }
 
-    WindowFlags &AlwaysHorizontalScrollbar()
+    consteval WindowFlags AlwaysHorizontalScrollbar()
     {
-        flags |= ImGuiWindowFlags_AlwaysHorizontalScrollbar;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_AlwaysHorizontalScrollbar};
     }
 
-    WindowFlags &AlwaysUseWindowPadding()
+    consteval WindowFlags AlwaysUseWindowPadding()
     {
-        flags |= ImGuiWindowFlags_AlwaysUseWindowPadding;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_AlwaysUseWindowPadding};
     }
 
-    WindowFlags &NoNavInputs()
+    consteval WindowFlags NoNavInputs()
     {
-        flags |= ImGuiWindowFlags_NoNavInputs;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoNavInputs};
     }
 
-    WindowFlags &NoNavFocus()
+    consteval WindowFlags NoNavFocus()
     {
-        flags |= ImGuiWindowFlags_NoNavFocus;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoNavFocus};
     }
 
-    WindowFlags &UnsavedDocument()
+    consteval WindowFlags UnsavedDocument()
     {
-        flags |= ImGuiWindowFlags_UnsavedDocument;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_UnsavedDocument};
     }
 
-    WindowFlags &NoDocking()
+    consteval WindowFlags NoDocking()
     {
-        flags |= ImGuiWindowFlags_NoDocking;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoDocking};
     }
 
-    WindowFlags &NoDecoration()
+    consteval WindowFlags NoDecoration()
     {
-        flags |= ImGuiWindowFlags_NoDecoration;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoDecoration};
     }
 
-    WindowFlags &NoNav()
+    consteval WindowFlags NoNav()
     {
-        flags |= ImGuiWindowFlags_NoNav;
-        return *this;
+        return WindowFlags{flags |= ImGuiWindowFlags_NoNav};
     }
 };
 
@@ -419,73 +527,137 @@ struct TabBarFlags
 {
     ImGuiTabBarFlags flags = ImGuiTabBarFlags_None;
 
-    constexpr auto Reorderable()
+    consteval auto Reorderable()
     {
-        flags |= ImGuiTabBarFlags_Reorderable;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_Reorderable};
     }
 
-    constexpr auto DrawSelectedOverline()
+    consteval auto DrawSelectedOverline()
     {
-        flags |= ImGuiTabBarFlags_DrawSelectedOverline;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_DrawSelectedOverline};
     }
 
-    constexpr auto AutoSelectNewTabs()
+    consteval auto AutoSelectNewTabs()
     {
-        flags |= ImGuiTabBarFlags_AutoSelectNewTabs;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_AutoSelectNewTabs};
     }
 
-    constexpr auto TabListPopupButton()
+    consteval auto TabListPopupButton()
     {
-        flags |= ImGuiTabBarFlags_TabListPopupButton;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_TabListPopupButton};
     }
 
-    constexpr auto NoCloseWithMiddleMouseButton()
+    consteval auto NoCloseWithMiddleMouseButton()
     {
-        flags |= ImGuiTabBarFlags_NoCloseWithMiddleMouseButton;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_NoCloseWithMiddleMouseButton};
     }
 
-    constexpr auto NoTabListScrollingButtons()
+    consteval auto NoTabListScrollingButtons()
     {
-        flags |= ImGuiTabBarFlags_NoTabListScrollingButtons;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_NoTabListScrollingButtons};
     }
 
-    constexpr auto NoTooltip()
+    consteval auto NoTooltip()
     {
-        flags |= ImGuiTabBarFlags_NoTooltip;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_NoTooltip};
     }
 
-    constexpr auto FittingPolicyResizeDown()
+    consteval auto FittingPolicyResizeDown()
     {
-        flags |= ImGuiTabBarFlags_FittingPolicyResizeDown;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_FittingPolicyResizeDown};
     }
 
-    constexpr auto FittingPolicyScroll()
+    consteval auto FittingPolicyScroll()
     {
-        flags |= ImGuiTabBarFlags_FittingPolicyScroll;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_FittingPolicyScroll};
     }
 
-    constexpr auto FittingPolicyMask()
+    consteval auto FittingPolicyMask()
     {
-        flags |= ImGuiTabBarFlags_FittingPolicyMask_;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_FittingPolicyMask_};
     }
 
-    constexpr auto FittingPolicyDefault()
+    consteval auto FittingPolicyDefault()
     {
-        flags |= ImGuiTabBarFlags_FittingPolicyDefault_;
-        return *this;
+        return TabBarFlags{flags |= ImGuiTabBarFlags_FittingPolicyDefault_};
     }
 };
 
+struct ConfigFlags
+{
+    ImGuiConfigFlags flags = ImGuiConfigFlags_None;
+
+    constexpr operator ImGuiConfigFlags() const
+    {
+        return flags;
+    }
+
+    constexpr ConfigFlags operator|(const ConfigFlags &other) const
+    {
+        return ConfigFlags{(flags | other.flags)};
+    }
+
+    constexpr ConfigFlags &operator|=(const ConfigFlags &other)
+    {
+        flags = (flags | other.flags);
+        return *this;
+    }
+
+    consteval auto NavEnableKeyboard() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_NavEnableKeyboard};
+    }
+
+    consteval auto NavEnableGamepad() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_NavEnableGamepad};
+    }
+
+    consteval auto NoMouse() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_NoMouse};
+    }
+
+    consteval auto NoMouseCursorChange() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_NoMouseCursorChange};
+    }
+
+    consteval auto NoKeyboard() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_NoKeyboard};
+    }
+
+    consteval auto DockingEnable() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_DockingEnable};
+    }
+
+    consteval auto ViewportsEnable() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_ViewportsEnable};
+    }
+
+    consteval auto DpiEnableScaleViewports() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_DpiEnableScaleViewports};
+    }
+
+    consteval auto DpiEnableScaleFonts() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_DpiEnableScaleFonts};
+    }
+
+    consteval auto IsSRGB() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_IsSRGB};
+    }
+
+    consteval auto IsTouchScreen() const
+    {
+        return ConfigFlags{flags | ImGuiConfigFlags_IsTouchScreen};
+    }
+};
 }
 }
 

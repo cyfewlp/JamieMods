@@ -6,6 +6,7 @@
 # IDE / text editor profile files
 .idea
 .vs
+.obsidian
 .vscode/settings.json
 
 # Possible C++ build output directories and files

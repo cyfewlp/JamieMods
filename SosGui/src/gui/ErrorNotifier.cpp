@@ -3,7 +3,9 @@
 //
 
 #include "gui/ErrorNotifier.h"
+
 #include "imgui.h"
+#include "util/ImGuiUtil.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -17,9 +19,11 @@ void ErrorNotifier::show()
     auto displaySize = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos({displaySize.x - 320, displaySize.y - 250}, ImGuiCond_Always);
 
-    if (!ImGui::Begin("ErrorNotifier", nullptr,
-                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing))
+    if (!ImGui::Begin(
+            "ErrorNotifier",
+            nullptr,
+            ImGuiUtil::WindowFlags().NoDecoration().AlwaysAutoResize().NoMove().NoSavedSettings().NoFocusOnAppearing()
+        ))
     {
         ImGui::End();
         return;
