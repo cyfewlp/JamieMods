@@ -15,8 +15,7 @@
 #include <stdexcept>
 #include <windows.h>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class SosGui final : public BaseGui
 {
@@ -47,8 +46,9 @@ class SosGui final : public BaseGui
     {
         uint32_t selectPolicyId = -1;
 
-        explicit autoSwitch_outfit_select_popup(OutfitDebounceInput &debounceInput)
-            : outfit_select_popup(debounceInput) {}
+        explicit autoSwitch_outfit_select_popup(OutfitDebounceInput &debounceInput) : outfit_select_popup(debounceInput)
+        {
+        }
     };
 
     using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
@@ -65,6 +65,7 @@ class SosGui final : public BaseGui
     int        m_selectedActorIndex = 0;
     RE::Actor *m_selectedActor      = nullptr;
 
+    Context                        m_context;
     OutfitDebounceInput            m_outfitDebounceInput;
     outfit_select_popup            m_outfitSelectPopup{m_outfitDebounceInput};
     autoSwitch_outfit_select_popup m_autoSwitchOutfitSelectPopup{m_outfitDebounceInput};
@@ -72,8 +73,9 @@ class SosGui final : public BaseGui
 public:
     SosGui()
         : m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService),
-          m_outfitEditPanel(m_uiData, m_outfitService),
-          m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel) {}
+          m_outfitEditPanel(m_uiData, m_outfitService), m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel)
+    {
+    }
 
     static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
 
@@ -90,6 +92,7 @@ public:
     void Cleanup() override;
 
 private:
+    void DrawTopModalPopup();
     auto DoRender() -> void;
     void DockSpaceToolBar();
     void Toolbar();

@@ -67,9 +67,7 @@ void ArmorView::init()
 void ArmorView::clear()
 {
     availableArmorCount = 0;
-    armorContainer.Clear();
     viewData.clear();
-    modRefCounter.clear();
     slotCounter.fill(0);
     slotFiltererSelected = 0;
     checkAllSlot         = true;

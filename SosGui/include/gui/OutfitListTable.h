@@ -42,15 +42,42 @@ class OutfitListTable final : public BaseGui
         }
     };
 
-    SosUiData                              &m_uiData;
-    OutfitService                          &m_outfitService;
-    OutfitEditPanel                        &m_editPanel;
-    EditingOutfit                           m_wantEdit = UNTITLED_OUTFIT;
-    MultiSelection                          m_outfitMultiSelection;
-    std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
-    OutfitDebounceInput                     m_outfitFilterInput{};
+    class CreateOutfitPopup final : public Popup::ModalPopup
+    {
+    public:
+        enum class Flags : std::uint8_t
+        {
+            NONE = 0,
+            CREATE_EMPTY,
+            CREATE_FROM_WORN
+        };
 
-    std::unique_ptr<Popup::DeleteOutfitPopup> m_deleteOutfitPopup = nullptr;
+        explicit CreateOutfitPopup() : ModalPopup("$SosGui_CreateOutfit") {}
+
+        [[nodiscard]] auto GetFlags() const -> Flags
+        {
+            return m_flags;
+        }
+
+        auto GetOutfitName() const -> std::string
+        {
+            return std::string(m_outfitNameBuf.data(), m_outfitNameBuf.size());
+        }
+
+    protected:
+        void DoDraw(SosUiData &uiData, bool &confirmed) override;
+
+    private:
+        std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
+        Flags                                   m_flags = Flags::NONE;
+    };
+
+    SosUiData          &m_uiData;
+    OutfitService      &m_outfitService;
+    OutfitEditPanel    &m_editPanel;
+    EditingOutfit       m_wantEdit = UNTITLED_OUTFIT;
+    MultiSelection      m_outfitMultiSelection;
+    OutfitDebounceInput m_outfitFilterInput{};
 
 public:
     OutfitListTable(SosUiData &uiData, OutfitService &outfitService, OutfitEditPanel &editPanel)
@@ -60,8 +87,10 @@ public:
 
     void Cleanup() override;
 
-    void Draw(RE::Actor *editingActor);
+    void Draw(Context &context, RE::Actor *editingActor);
     void OnSelectActor(const RE::Actor *actor) const;
+    // Only one modal popup can be rendered in the same time.
+    bool OnModalPopupConfirmed(Popup::ModalPopup *modalPopup) const;
 
     auto GetEditingOutfit() -> EditingOutfit &
     {
@@ -69,7 +98,7 @@ public:
     }
 
 private:
-    void DoDraw(RE::Actor *editingActor);
+    void DoDraw(Context &context, RE::Actor *editingActor);
 
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);
     static void PostDrawOutfits(MultiSelection &selection);
@@ -79,9 +108,10 @@ private:
      * open a context menu if user right-clicks current row
      * @return true if the context menu is open.
      */
-    void OpenContextMenu(uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
-                         __out bool &acceptRename);
-    void DrawDeletePopup();
+    void OpenContextMenu(
+        Context &context, uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
+        __out bool &acceptRename
+    );
 
     void OnAcceptEditOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editingOutfit) const;
     void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName) const;

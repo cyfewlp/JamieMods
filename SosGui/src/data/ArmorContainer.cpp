@@ -1,8 +1,8 @@
 #include "data/ArmorContainer.h"
+
 #include "common/config.h"
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 void ArmorContainer::Insert(Armor *armor)
 {
@@ -16,7 +16,8 @@ void ArmorContainer::Insert(Armor *armor)
 
 void ArmorContainer::Init()
 {
-    auto *      dataHandler = RE::TESDataHandler::GetSingleton();
+    Clear();
+    auto       *dataHandler = RE::TESDataHandler::GetSingleton();
     const auto &armorArray  = dataHandler->GetFormArray<RE::TESObjectARMO>();
 
     auto comparator = NameComparator();
@@ -38,12 +39,13 @@ auto ArmorContainer::GetRank(const char *armorName, RE::FormID formId) const -> 
         return m_container.size();
     }
     auto foundIt = std::lower_bound(
-        m_container.begin(), m_container.end(),
+        m_container.begin(),
+        m_container.end(),
         armorName,
         [](const Armor *armor, const char *searchName) {
             return util::StringCompactor()(armor->GetName(), searchName);
         }
-        );
+    );
 
     if (foundIt == m_container.end() || (*foundIt)->formID == formId)
     {

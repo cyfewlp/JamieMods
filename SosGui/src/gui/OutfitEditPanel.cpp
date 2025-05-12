@@ -42,7 +42,6 @@ void OutfitEditPanel::Cleanup()
 {
     m_editContext.Clear();
     m_armorView.clear();
-    m_popupList.clear();
 }
 
 void OutfitEditPanel::OnSelectActor(const RE::Actor *, const EditingOutfit &editingOutfit)
@@ -81,7 +80,7 @@ void OutfitEditPanel::PushError(SosUiData &uiData, const Error error)
     }
 }
 
-void OutfitEditPanel::Draw(const EditingOutfit &editingOutfit)
+void OutfitEditPanel::Draw(Context &context, const EditingOutfit &editingOutfit)
 {
     if (!IsShowing())
     {
@@ -93,13 +92,12 @@ void OutfitEditPanel::Draw(const EditingOutfit &editingOutfit)
     ImGuiWindowFlags flags = ImGuiWindowFlags_None;
     if (ImGui::Begin(windowName.c_str(), &m_show, flags))
     {
-        DrawTopModalPopup();
-        DoDraw(editingOutfit);
+        DoDraw(context, editingOutfit);
     }
     ImGui::End();
 }
 
-void OutfitEditPanel::DoDraw(const EditingOutfit &editingOutfit)
+void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfit)
 {
     if (m_editContext.dirty)
     {
@@ -116,51 +114,35 @@ void OutfitEditPanel::DoDraw(const EditingOutfit &editingOutfit)
         ImGui::SameLine();
         ImGuiScope::Group  group;
         ImGuiScope::PushId pushId(this);
-        DrawOutfitPanel(editingOutfit);
+        DrawOutfitPanel(context, editingOutfit);
         DrawArmorGeneratorTabBar(editingOutfit.GetSourceOutfit());
         DrawArmorViewFilter(editingOutfit.GetSourceOutfit());
-        DrawArmorView(editingOutfit, m_armorView.ViewData());
+        DrawArmorView(context, editingOutfit, m_armorView.ViewData());
     }
 }
 
-void OutfitEditPanel::DrawTopModalPopup()
+bool OutfitEditPanel::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup)
 {
-    if (m_popupList.empty())
+    if (auto *modifyRequest = dynamic_cast<OutfitModifyRequest *>(modalPopup); modifyRequest)
     {
-        return;
+        modifyRequest->OnConfirm(this);
+        return true;
     }
-
-    ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
-    ImGuiScope::FontSize fontSize4(Config::FONT_SIZE_TITLE_4);
-    const auto          &request   = m_popupList.front();
-    bool                 confirmed = false;
-    const bool           toErase   = !request->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
-    if (confirmed) // toErase will be set true in the next frame
-    {
-        if (auto *modifyRequest = dynamic_cast<OutfitModifyRequest *>(request.get()); modifyRequest)
-        {
-            modifyRequest->OnConfirm(this);
-        }
-    }
-    if (toErase)
-    {
-        m_popupList.pop_front();
-    }
-    ImGui::PopStyleVar();
+    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Outfit Panel
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void OutfitEditPanel::DrawOutfitPanel(const EditingOutfit &editingOutfit)
+void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &editingOutfit)
 {
     ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Config::FONT_SIZE_TITLE_3);
     if (auto tabBar = ImGuiScope::TabBar("##OutfitTabBarView"))
     {
         if (auto tabItem = ImGuiScope::TabItem("$Armor", nullptr, ImGuiTabItemFlags_Leading))
         {
-            DrawOutfitArmors(editingOutfit);
+            DrawOutfitArmors(context, editingOutfit);
         }
     }
 }
@@ -195,7 +177,7 @@ void OutfitEditPanel::UpdateWindowTitle(const std::string &outfitName)
     }
 }
 
-void OutfitEditPanel::DrawOutfitArmors(const EditingOutfit &editingOutfit)
+void OutfitEditPanel::DrawOutfitArmors(Context &context, const EditingOutfit &editingOutfit)
 {
     if (editingOutfit.IsUntitled())
     {
@@ -212,19 +194,19 @@ void OutfitEditPanel::DrawOutfitArmors(const EditingOutfit &editingOutfit)
     ImGui::SameLine();
     if (ImGui::Button("$SkyOutSys_OEdit_SlotPolicyHelp"_T.c_str()))
     {
-        m_popupList.push_back(std::make_unique<SlotPolicyHelp>());
+        context.popupList.push_back(std::make_unique<SlotPolicyHelp>());
     }
 
     static int selectedIdx = -1;
     if (auto table = ImGuiScope::Table("##OutfitArmors", 5, TableFlags().Resizable().SizingStretchProp().flags))
     {
         // clang-format off
-        TableHeadersBuilder().Column("##Number").NoHide()
-        .Column("$SosGui_TableHeader_Slot").NoSort()
-        .Column("$ARMOR").NoSort()
-        .Column("$SkyOutSys_OEdit_OutfitSettings_Header").WidthFixed().NoSort()
-        .Column("$Delete").WidthFixed().NoSort()
-        .CommitHeadersRow();
+        TableHeadersBuilder().Column("##Number").Flags(TableColumnFlags().NoHide())
+            .Column("$SosGui_TableHeader_Slot").Flags(TableColumnFlags().NoSort())
+            .Column("$ARMOR").Flags(TableColumnFlags().NoSort())
+            .Column("$SkyOutSys_OEdit_OutfitSettings_Header").Flags(TableColumnFlags().WidthFixed().NoSort())
+            .Column("$Delete").Flags(TableColumnFlags().WidthFixed().NoSort())
+            .CommitHeadersRow();
         // clang-format on
 
         for (uint32_t slotIdx = 0; slotIdx < RE::BIPED_OBJECT::kEditorTotal; ++slotIdx)
@@ -268,7 +250,7 @@ void OutfitEditPanel::DrawOutfitArmors(const EditingOutfit &editingOutfit)
                 ImGuiScope::Disabled disabled(armor == nullptr);
                 if (ImGui::Button("$Delete"_T.c_str()))
                 {
-                    OnAcceptDeleteArmor(editingOutfit, armor);
+                    context.popupList.emplace_back(std::make_unique<DeleteRequest>(editingOutfit.GetId(), armor));
                 }
             }
         }
@@ -480,7 +462,7 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 }
 
 void OutfitEditPanel::DrawArmorView(
-    const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
+    Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
 )
 {
     constexpr auto flags = TableFlags()
@@ -501,12 +483,12 @@ void OutfitEditPanel::DrawArmorView(
 
     ImGui::TableSetupScrollFreeze(1, 1);
     // clang-format off
-    TableHeadersBuilder().Column("##Number").NoSort()
-        .Column("$ARMOR").DefaultSort().NoHide()
-        .Column("FormID").NoSort()
-        .Column("ModName").NoSort()
-        .Column("Playable").NoSort()
-        .Column("$Add").WidthFixed().NoSort()
+    TableHeadersBuilder().Column("##Number").Flags(TableColumnFlags().NoSort())
+        .Column("$ARMOR").Flags(TableColumnFlags().DefaultSort().NoHide())
+        .Column("FormID").Flags(TableColumnFlags().NoSort())
+        .Column("ModName").Flags(TableColumnFlags().NoSort())
+        .Column("Playable").Flags(TableColumnFlags().NoSort())
+        .Column("$Add").Flags(TableColumnFlags().WidthFixed().NoSort())
         .CommitHeadersRow();
     // clang-format on
 
@@ -532,12 +514,12 @@ void OutfitEditPanel::DrawArmorView(
                     if (m_armorView.multiSelection.Size == 1)
                     {
                         onRequireAddArmor = [&, armor] {
-                            OnAcceptAddArmorToOutfit(editingOutfit, armor);
+                            OnAcceptAddArmorToOutfit(context, editingOutfit, armor);
                         };
                     }
                     else if (m_armorView.multiSelection.Size > 1)
                     {
-                        m_popupList.emplace_back(std::make_unique<BatchAddArmorsRequest>(editingOutfit.GetId()));
+                        context.popupList.emplace_back(std::make_unique<BatchAddArmorsRequest>(editingOutfit.GetId()));
                     }
                 }
             }
@@ -570,7 +552,7 @@ void OutfitEditPanel::DrawArmorView(
         if (ImGui::TableNextColumn() && ImGuiUtil::Button("$Add")) // column Action
         {
             onRequireAddArmor = [&, armor] {
-                OnAcceptAddArmorToOutfit(editingOutfit, armor);
+                OnAcceptAddArmorToOutfit(context, editingOutfit, armor);
             };
         }
     };
@@ -666,16 +648,11 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
     }
 }
 
-inline void OutfitEditPanel::OnAcceptDeleteArmor(const EditingOutfit &editingOutfit, const RE::TESObjectARMO *armor)
-{
-    m_popupList.emplace_back(std::make_unique<DeleteRequest>(editingOutfit.GetId(), armor));
-}
-
-void OutfitEditPanel::OnAcceptAddArmorToOutfit(const EditingOutfit &editingOutfit, const Armor *armor)
+void OutfitEditPanel::OnAcceptAddArmorToOutfit(Context &context, const EditingOutfit &editingOutfit, const Armor *armor)
 {
     if (editingOutfit.IsConflictWith(armor))
     {
-        m_popupList.emplace_back(std::make_unique<OverrideArmorRequest>(editingOutfit.GetId(), armor));
+        context.popupList.emplace_back(std::make_unique<OverrideArmorRequest>(editingOutfit.GetId(), armor));
     }
     else
     {

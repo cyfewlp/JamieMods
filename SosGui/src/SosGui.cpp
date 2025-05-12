@@ -97,7 +97,9 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, 14.0F, &fontConfig1);
     io.Fonts->AddFontFromFileTTF(mainFont, 14.0F, &fontConfig1);
     io.Fonts->Build();
-    io.IniFilename = std::format(Config::IMGUI_INI_FILE_TEMPLATE, pluginName.data()).c_str();
+    static std::string IniFileName;
+    IniFileName    = std::format(Config::IMGUI_INI_FILE_TEMPLATE, pluginName.data());
+    io.IniFilename = IniFileName.c_str();
 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -130,6 +132,29 @@ auto SosGui::Cleanup() -> void
     m_selectedActorIndex                         = 0;
     m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
     m_outfitDebounceInput.clear();
+}
+
+void SosGui::DrawTopModalPopup()
+{
+    if (m_context.popupList.empty())
+    {
+        return;
+    }
+
+    ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
+    ImGuiScope::FontSize fontSize4(Config::FONT_SIZE_TITLE_4);
+    const auto          &modalPopup = m_context.popupList.front();
+    bool                 confirmed  = false;
+    const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
+    if (confirmed && !m_outfitListTable.OnModalPopupConfirmed(modalPopup.get()))
+    {
+        m_outfitEditPanel.OnModalPopupConfirmed(modalPopup.get());
+    }
+    if (toErase)
+    {
+        m_context.popupList.pop_front();
+    }
+    ImGui::PopStyleVar();
 }
 
 auto SosGui::Refresh() const -> EagerTask
@@ -209,11 +234,13 @@ auto SosGui::DoRender() -> void
             MainConfigWindow();
         }
 
+        DrawTopModalPopup();
+
         RE::Actor *selectedActor = GetSelectedActor();
-        m_outfitListTable.Draw(selectedActor);
+        m_outfitListTable.Draw(m_context, selectedActor);
 
         const auto &editingOutfit = m_outfitListTable.GetEditingOutfit();
-        m_outfitEditPanel.Draw(editingOutfit);
+        m_outfitEditPanel.Draw(m_context, editingOutfit);
     }
     catch (const std::exception &e)
     {

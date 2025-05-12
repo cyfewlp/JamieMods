@@ -1,5 +1,12 @@
 # ImGui for SkyrimOutfitSystemSE (SosGui)
 
+Main Window:
+
+![[main_window.png]]
+
+Outfit Edit Panel
+
+![[outfit_edit_panel.png]]
 ## Features
 
 * Armor candidates

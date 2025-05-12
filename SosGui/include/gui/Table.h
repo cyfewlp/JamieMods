@@ -6,89 +6,210 @@
 
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 struct TableFlags
 {
     ImGuiTableFlags flags = ImGuiTableFlags_None;
 
-    constexpr auto RowBg() -> TableFlags &
+    consteval auto RowBg() -> TableFlags
     {
-        flags |= ImGuiTableFlags_RowBg;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_RowBg};
     }
 
-    constexpr auto BordersInnerH() -> TableFlags &
+    consteval auto BordersInnerH() -> TableFlags
     {
-        flags |= ImGuiTableFlags_BordersInnerH;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_BordersInnerH};
     }
 
-    constexpr auto Borders() -> TableFlags &
+    consteval auto ContextMenuInBody() -> TableFlags
     {
-        flags |= ImGuiTableFlags_Borders;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_ContextMenuInBody};
     }
 
-    constexpr auto Sortable() -> TableFlags &
+    consteval auto Borders() -> TableFlags
     {
-        flags |= ImGuiTableFlags_Sortable;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_Borders};
     }
 
-    constexpr auto Hideable() -> TableFlags &
+    consteval auto Sortable() -> TableFlags
     {
-        flags |= ImGuiTableFlags_Hideable;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_Sortable};
     }
 
-    constexpr auto Reorderable() -> TableFlags &
+    consteval auto Hideable() -> TableFlags
     {
-        flags |= ImGuiTableFlags_Reorderable;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_Hideable};
     }
 
-    constexpr auto Resizable() -> TableFlags &
+    consteval auto Reorderable() -> TableFlags
     {
-        flags |= ImGuiTableFlags_Resizable;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_Reorderable};
     }
 
-    constexpr auto NoHostExtendX() -> TableFlags &
+    consteval auto Resizable() -> TableFlags
     {
-        flags |= ImGuiTableFlags_NoHostExtendX;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_Resizable};
     }
 
-    constexpr auto NoHostExtendY() -> TableFlags &
+    consteval auto NoHostExtendX() -> TableFlags
     {
-        flags |= ImGuiTableFlags_NoHostExtendY;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_NoHostExtendX};
     }
 
-    constexpr auto SizingStretchProp() -> TableFlags &
+    consteval auto NoHostExtendY() -> TableFlags
     {
-        flags |= ImGuiTableFlags_SizingStretchProp;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_NoHostExtendY};
     }
 
-    constexpr auto SizingFixedFit() -> TableFlags &
+    consteval auto SizingStretchProp() -> TableFlags
     {
-        flags |= ImGuiTableFlags_SizingFixedFit;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_SizingStretchProp};
     }
 
-    constexpr auto ScrollX() -> TableFlags &
+    consteval auto SizingFixedFit() -> TableFlags
     {
-        flags |= ImGuiTableFlags_ScrollX;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_SizingFixedFit};
     }
 
-    constexpr auto ScrollY() -> TableFlags &
+    consteval auto ScrollX() -> TableFlags
     {
-        flags |= ImGuiTableFlags_ScrollY;
-        return *this;
+        return TableFlags{flags |= ImGuiTableFlags_ScrollX};
+    }
+
+    consteval auto ScrollY() -> TableFlags
+    {
+        return TableFlags{flags |= ImGuiTableFlags_ScrollY};
+    }
+};
+
+struct TableColumnFlags
+{
+    ImGuiTableColumnFlags flags = ImGuiTableColumnFlags_None;
+
+    constexpr operator ImGuiTableColumnFlags() const noexcept
+    {
+        return flags;
+    }
+
+    consteval auto None() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_None};
+    }
+
+    consteval auto Disabled() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_Disabled};
+    }
+
+    consteval auto DefaultHide() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_DefaultHide};
+    }
+
+    consteval auto DefaultSort() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_DefaultSort};
+    }
+
+    consteval auto WidthStretch() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_WidthStretch};
+    }
+
+    consteval auto WidthFixed() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_WidthFixed};
+    }
+
+    consteval auto NoResize() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoResize};
+    }
+
+    consteval auto NoReorder() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoReorder};
+    }
+
+    consteval auto NoHide() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoHide};
+    }
+
+    consteval auto NoClip() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoClip};
+    }
+
+    consteval auto NoSort() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoSort};
+    }
+
+    consteval auto NoSortAscending() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoSortAscending};
+    }
+
+    consteval auto NoSortDescending() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoSortDescending};
+    }
+
+    consteval auto NoHeaderLabel() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoHeaderLabel};
+    }
+
+    consteval auto NoHeaderWidth() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_NoHeaderWidth};
+    }
+
+    consteval auto PreferSortAscending() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_PreferSortAscending};
+    }
+
+    consteval auto PreferSortDescending() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_PreferSortDescending};
+    }
+
+    consteval auto IndentEnable() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_IndentEnable};
+    }
+
+    consteval auto IndentDisable() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_IndentDisable};
+    }
+
+    consteval auto AngledHeader() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_AngledHeader};
+    }
+
+    consteval auto IsEnabled() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_IsEnabled};
+    }
+
+    consteval auto IsVisible() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_IsVisible};
+    }
+
+    consteval auto IsSorted() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_IsSorted};
+    }
+
+    consteval auto IsHovered() const -> TableColumnFlags
+    {
+        return TableColumnFlags{flags | ImGuiTableColumnFlags_IsHovered};
     }
 };
 
@@ -109,12 +230,11 @@ struct TableHeadersBuilder
         std::string_view      name{};
         ImGuiTableColumnFlags flags             = ImGuiTableColumnFlags_None;
         float                 initWidthOrWeight = 0.0F;
-        TableHeadersBuilder & tableBuilder;
+        TableHeadersBuilder  &tableBuilder;
 
         explicit ColumnContext(const char *name, TableHeadersBuilder &tableBuilder)
             : name(name), tableBuilder(tableBuilder)
         {
-            flags = ImGuiTableColumnFlags_None;
         }
 
         constexpr auto WidthOrWeight(const float widthOrWeight) -> ColumnContext &
@@ -123,33 +243,9 @@ struct TableHeadersBuilder
             return *this;
         }
 
-        constexpr auto DefaultSort() -> ColumnContext &
+        constexpr auto Flags(TableColumnFlags flags) -> ColumnContext &
         {
-            flags |= ImGuiTableColumnFlags_DefaultSort;
-            return *this;
-        }
-
-        constexpr auto NoHide() -> ColumnContext &
-        {
-            flags |= ImGuiTableColumnFlags_NoHide;
-            return *this;
-        }
-
-        constexpr auto NoSort() -> ColumnContext &
-        {
-            flags |= ImGuiTableColumnFlags_NoSort;
-            return *this;
-        }
-
-        constexpr auto WidthFixed() -> ColumnContext &
-        {
-            flags |= ImGuiTableColumnFlags_WidthFixed;
-            return *this;
-        }
-
-        constexpr auto WidthStretch() -> ColumnContext &
-        {
-            flags |= ImGuiTableColumnFlags_WidthStretch;
+            this->flags = flags;
             return *this;
         }
 

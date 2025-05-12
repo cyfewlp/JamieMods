@@ -8,11 +8,10 @@
 #include <ranges>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 
-bool Popup::ModalPopup::Draw(SosUiData &uiData, bool & confirmed, ImGuiWindowFlags flags)
+bool Popup::ModalPopup::Draw(SosUiData &uiData, bool &confirmed, ImGuiWindowFlags flags)
 {
     confirmed       = false;
     const auto name = Translation::Translate(nameKey.data());
@@ -33,7 +32,7 @@ bool Popup::ModalPopup::Draw(SosUiData &uiData, bool & confirmed, ImGuiWindowFla
 void Popup::ModalPopup::RenderMultilineMessage(const std::string &message)
 {
     constexpr auto delim    = "\\n"sv;
-    const auto *   viewport = ImGui::GetMainViewport();
+    const auto    *viewport = ImGui::GetMainViewport();
     ImGui::PushTextWrapPos(ImGui::GetCursorScreenPos().x + viewport->WorkSize.x * 0.5F);
     const auto &contentWidth = ImGui::GetContentRegionAvail().x;
     for (const auto &lineView : std::views::split(message, delim))
@@ -60,8 +59,7 @@ void Popup::ModalPopup::RenderConfirmButtons(__out bool &confirmed)
     ImGui::SetCursorPosX(quarterWidth * 0.5F);
     if (ImGuiUtil::Button("$Yes", ImVec2(quarterWidth, 0.0F)))
     {
-        confirmed = true;
-        ImGui::CloseCurrentPopup();
+        ConfirmAndClose(confirmed);
     }
     ImGui::SameLine();
 

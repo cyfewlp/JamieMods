@@ -11,3 +11,8 @@
 * [ ] [[improvement]] Font: monaspace
 * [ ] [[improvement]] how to handle current actor active outfit?
 * [x] [[improvement]] Use `consteval` optimize `ImGuiUtil`  flags wrap class
+* [ ] [[Bug Fix]] `ImGui` assert fail when scroll [[OutfitListView]].
+* [x] [[Bug Fix]] Can't found armor in `ArmorContainer`  after `Import Settings`
+	* `ArmorContainer` 
+* [x] [[improvement]] setup our `imgui.ini`: `Data\interface\SosGui\imgui.ini`;
+* [ ] [[improvement]] Add `Context` class: hold `popupList` field: All GUI share this `popupList`.

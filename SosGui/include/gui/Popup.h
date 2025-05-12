@@ -58,6 +58,12 @@ struct ModalPopup
 
 protected:
     virtual void DoDraw(SosUiData &uiData, bool &confirmed) = 0;
+
+    static void ConfirmAndClose(bool &confirmed)
+    {
+        confirmed = true;
+        ImGui::CloseCurrentPopup();
+    }
 };
 
 using Armor = RE::TESObjectARMO;

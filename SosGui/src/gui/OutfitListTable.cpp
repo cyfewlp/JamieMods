@@ -29,14 +29,44 @@ void OutfitListTable::Cleanup()
 {
     m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
-    m_outfitNameBuf[0] = '\0';
     m_outfitFilterInput.clear();
-    m_deleteOutfitPopup = nullptr;
 }
 
 void OutfitListTable::OnSelectActor(const RE::Actor *actor) const
 {
     m_editPanel.OnSelectActor(actor, m_wantEdit);
+}
+
+bool OutfitListTable::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup) const
+{
+    if (auto *deleteOutfitPopup = dynamic_cast<Popup::DeleteOutfitPopup *>(modalPopup); deleteOutfitPopup)
+    {
+        +[&] {
+            return m_outfitService.DeleteOutfit(
+                deleteOutfitPopup->wanDeleteOutfitId, deleteOutfitPopup->wanDeleteOutfitName
+            );
+        };
+        return true;
+    }
+
+    if (auto *createOutfitPopup = dynamic_cast<CreateOutfitPopup *>(modalPopup); createOutfitPopup)
+    {
+        switch (createOutfitPopup->GetFlags())
+        {
+            case CreateOutfitPopup::Flags::CREATE_EMPTY:
+                +[&] {
+                    return m_outfitService.CreateOutfit(createOutfitPopup->GetOutfitName());
+                };
+                return true;
+            case CreateOutfitPopup::Flags::CREATE_FROM_WORN:
+                +[&] {
+                    return m_outfitService.CreateOutfitFromWorn(createOutfitPopup->GetOutfitName());
+                };
+                return true;
+            default:;
+        }
+    }
+    return false;
 }
 
 void OutfitListTable::OutfitDebounceInput::OnUpdate(const OutfitList &outfitList, const bool onlyFavorites)
@@ -66,7 +96,29 @@ void OutfitListTable::OutfitDebounceInput::OnUpdate(const OutfitList &outfitList
     dirty = false;
 }
 
-void OutfitListTable::Draw(RE::Actor *editingActor)
+void OutfitListTable::CreateOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
+{
+    ImGui::PushItemWidth(-FLT_MIN);
+    ImGui::InputTextWithHint(
+        "##CreateNewInput", "$SosGui_Hint_CreateOutfit"_T.c_str(), m_outfitNameBuf.data(), m_outfitNameBuf.size()
+    );
+    ImGui::PopItemWidth();
+
+    ImGuiScope::Disabled disabled(m_outfitNameBuf[0] == '\0');
+    if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
+    {
+        ConfirmAndClose(confirmed);
+        m_flags = Flags::CREATE_EMPTY;
+    }
+
+    if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
+    {
+        ConfirmAndClose(confirmed);
+        m_flags = Flags::CREATE_FROM_WORN;
+    }
+}
+
+void OutfitListTable::Draw(Context &context, RE::Actor *editingActor)
 {
     if (!IsShowing())
     {
@@ -83,38 +135,14 @@ void OutfitListTable::Draw(RE::Actor *editingActor)
     if (constexpr auto flags = ImGuiUtil::WindowFlags().flags;
         ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), &m_show, flags))
     {
-        DoDraw(editingActor);
+        DoDraw(context, editingActor);
     }
-    // must out of BeginChild braces because when dock window, BeginChild will be return false;
-    DrawDeletePopup();
     ImGui::End();
 }
 
-void OutfitListTable::DoDraw(RE::Actor *editingActor)
+void OutfitListTable::DoDraw(Context &context, RE::Actor *editingActor)
 {
-    //////////////////////////////////////////////////////////
-    // Create Outfit widgets
     ImGuiScope::ItemWidth fltMinItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint(
-        "##CreateNewInput", "$SosGui_Hint_CreateOutfit"_T.c_str(), m_outfitNameBuf.data(), m_outfitNameBuf.size()
-    );
-
-    {
-        ImGuiScope::Disabled disabled(m_outfitNameBuf[0] == '\0');
-        if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
-        {
-            +[&] {
-                return m_outfitService.CreateOutfit(m_outfitNameBuf.data());
-            };
-        }
-
-        if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
-        {
-            +[&] {
-                return m_outfitService.CreateOutfitFromWorn(m_outfitNameBuf.data());
-            };
-        }
-    }
 
     auto &outfitList = m_uiData.GetOutfitList();
     if (ImGuiUtil::Button("$SosGui_Refresh"))
@@ -157,6 +185,7 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
             .SizingStretchProp()
             .ScrollY()
             .NoHostExtendX()
+            .ContextMenuInBody()
             .flags
     );
     if (!outfitListTable)
@@ -174,10 +203,27 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
 
     ImGui::TableSetupScrollFreeze(1, 1);
     // clang-format off
-    TableHeadersBuilder().Column("##Number").WidthOrWeight(56 /*14 * 4*/).NoSort().WidthFixed()
-                         .Column("$SkyOutSys_MCM_OutfitList").DefaultSort()
-                         .CommitHeadersRow();
+    TableHeadersBuilder().Column("##Number").WidthOrWeight(56 /*14 * 4*/).Flags(TableColumnFlags().NoSort().WidthFixed())
+                         .Column("$SkyOutSys_MCM_OutfitList").Flags(TableColumnFlags().DefaultSort()).Setup();
     // clang-format on
+
+    // Render our custom table header
+    ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+    ImGui::TableNextColumn();
+    ImGui::TableHeader(ImGui::TableGetColumnName(0));
+
+    ImGui::TableNextColumn();
+    ImGui::PushFontSize(Config::FONT_SIZE_TITLE_3);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+    if (ImGui::Button("＋"))
+    {
+        context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
+    }
+    ImGui::PopStyleVar();
+    ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit"_T.c_str());
+    ImGui::SameLine();
+    ImGui::TableHeader(ImGui::TableGetColumnName(1));
+    ImGui::PopFontSize();
 
     static bool ascend = true;
     ImGuiUtil::may_update_table_sort_dir(ascend);
@@ -242,7 +288,7 @@ void OutfitListTable::DoDraw(RE::Actor *editingActor)
                     }
                 }
                 bool acceptRename = false;
-                OpenContextMenu(m_outfitMultiSelection.Size, editingActor, outfit, acceptRename);
+                OpenContextMenu(context, m_outfitMultiSelection.Size, editingActor, outfit, acceptRename);
                 if (acceptRename)
                 {
                     onRequestRename(thisInputId, outfit.GetName());
@@ -301,7 +347,8 @@ void OutfitListTable::DrawOutfits(
 }
 
 void OutfitListTable::OpenContextMenu(
-    const uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit, __out bool &acceptRename
+    Context &context, const uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
+    __out bool &acceptRename
 )
 {
     ImGuiScope::PopupContextItem popUp("##OutfitListContextMenu");
@@ -341,6 +388,10 @@ void OutfitListTable::OpenContextMenu(
     }
 
     ImGui::Separator();
+    if (ImGuiUtil::MenuItem("$SosGui_CreateOutfit"))
+    {
+        context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
+    }
     if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleFavoriteOn"))
     {
         OnAcceptSetFavoriteOutfits(true);
@@ -353,32 +404,11 @@ void OutfitListTable::OpenContextMenu(
     {
         if (selectedItemCount == 1)
         {
-            m_deleteOutfitPopup = std::make_unique<Popup::DeleteOutfitPopup>(outfit.GetId(), outfit.GetName());
+            context.popupList.push_back(std::make_unique<Popup::DeleteOutfitPopup>(outfit.GetId(), outfit.GetName()));
         }
         else
         {
             OnAcceptDeleteOutfits();
-        }
-    }
-}
-
-void OutfitListTable::DrawDeletePopup()
-{
-    if (m_deleteOutfitPopup)
-    {
-        bool       isConfirmDelete = false;
-        const bool isHided         = !m_deleteOutfitPopup->Draw(m_uiData, isConfirmDelete);
-        if (isConfirmDelete)
-        {
-            +[&] {
-                return m_outfitService.DeleteOutfit(
-                    m_deleteOutfitPopup->wanDeleteOutfitId, m_deleteOutfitPopup->wanDeleteOutfitName
-                );
-            };
-        }
-        if (isHided)
-        {
-            m_deleteOutfitPopup = nullptr;
         }
     }
 }
