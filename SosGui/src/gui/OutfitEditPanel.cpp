@@ -508,6 +508,7 @@ void OutfitEditPanel::DrawArmorView(
 
             if (auto popup = ImGuiScope::PopupContextItem("Context"))
             {
+                ImGuiScope::Disabled disabled(editingOutfit.IsUntitled());
                 if (MenuItem("$SosGui_ContextMenu_AddAllArmor"))
                 {
                     if (m_armorView.multiSelection.Size == 1)
@@ -548,6 +549,7 @@ void OutfitEditPanel::DrawArmorView(
             ImGui::Text("%s", IsArmorNonPlayable(armor) ? "\xe2\x9d\x8c" : "\xe2\x9c\x85");
         }
 
+        ImGuiScope::Disabled disabled(editingOutfit.IsUntitled());
         if (ImGui::TableNextColumn() && Button("$Add")) // column Action
         {
             onRequireAddArmor = [&, armor] {

@@ -16,3 +16,4 @@
 	* `ArmorContainer` 
 * [x] [[improvement]] setup our `imgui.ini`: `Data\interface\SosGui\imgui.ini`;
 * [x] [[improvement]] Add `Context` class: hold `popupList` field: All GUI share this `popupList`.
+* [x] [[improvement]] Disable interactive with armor view when outfit is `Untitled`;
