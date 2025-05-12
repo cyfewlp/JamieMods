@@ -2,6 +2,7 @@
 
 #include "common/config.h"
 #include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiFlags.h"
 #include "common/log.h"
 #include "gui/Config.h"
 #include "imgui.h"

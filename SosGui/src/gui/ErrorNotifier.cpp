@@ -3,6 +3,7 @@
 //
 
 #include "gui/ErrorNotifier.h"
+#include "common/imgui/ImGuiFlags.h"
 
 #include "imgui.h"
 #include "util/ImGuiUtil.h"

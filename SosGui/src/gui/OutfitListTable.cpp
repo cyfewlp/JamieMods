@@ -2,6 +2,7 @@
 
 #include "Translation.h"
 #include "common/config.h"
+#include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScop.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
@@ -176,7 +177,7 @@ void OutfitListTable::DoDraw(Context &context, RE::Actor *editingActor)
     ImGuiScope::Table outfitListTable(
         "##OutfitLists",
         2,
-        TableFlags()
+        ImGuiUtil::TableFlags()
             .Borders()
             .Resizable()
             .Hideable()
@@ -203,8 +204,8 @@ void OutfitListTable::DoDraw(Context &context, RE::Actor *editingActor)
 
     ImGui::TableSetupScrollFreeze(1, 1);
     // clang-format off
-    TableHeadersBuilder().Column("##Number").WidthOrWeight(56 /*14 * 4*/).Flags(TableColumnFlags().NoSort().WidthFixed())
-                         .Column("$SkyOutSys_MCM_OutfitList").Flags(TableColumnFlags().DefaultSort()).Setup();
+    TableHeadersBuilder().Column("##Number").WidthOrWeight(56 /*14 * 4*/).Flags(ImGuiUtil::TableColumnFlags().NoSort().WidthFixed())
+                         .Column("$SkyOutSys_MCM_OutfitList").Flags(ImGuiUtil::TableColumnFlags().DefaultSort()).Setup();
     // clang-format on
 
     // Render our custom table header

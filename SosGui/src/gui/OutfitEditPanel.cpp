@@ -3,6 +3,7 @@
 #include "SosDataType.h"
 #include "Translation.h"
 #include "common/config.h"
+#include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScop.h"
 #include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
@@ -89,8 +90,7 @@ void OutfitEditPanel::Draw(Context &context, const EditingOutfit &editingOutfit)
     const std::string windowName = std::format("Editing Outfit: {}###OutfitEditor", editingOutfit.GetName());
     ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_EDIT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize({DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT}, ImGuiCond_FirstUseEver);
-    ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-    if (ImGui::Begin(windowName.c_str(), &m_show, flags))
+    if (ImGui::Begin(windowName.c_str(), &m_show))
     {
         DoDraw(context, editingOutfit);
     }
@@ -151,7 +151,7 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
 {
     ImGuiUtil::TextScale("$SosGui_ModList", Config::FONT_SIZE_TITLE_3);
     static int maxChildItemCount = 10;
-    auto       itemHeight        = ImGui::GetTextLineHeight();
+    const auto itemHeight        = ImGui::GetTextLineHeight();
     float      childHeight       = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
 
     if (ImGui::BeginChild("##ModNameListChild", {0, childHeight}, ImGuiUtil::ChildFlag().Borders().ResizeY()))
@@ -198,14 +198,15 @@ void OutfitEditPanel::DrawOutfitArmors(Context &context, const EditingOutfit &ed
     }
 
     static int selectedIdx = -1;
-    if (auto table = ImGuiScope::Table("##OutfitArmors", 5, TableFlags().Resizable().SizingStretchProp().flags))
+    if (auto table =
+            ImGuiScope::Table("##OutfitArmors", 5, ImGuiUtil::TableFlags().Resizable().SizingStretchProp().flags))
     {
         // clang-format off
-        TableHeadersBuilder().Column("##Number").Flags(TableColumnFlags().NoHide())
-            .Column("$SosGui_TableHeader_Slot").Flags(TableColumnFlags().NoSort())
-            .Column("$ARMOR").Flags(TableColumnFlags().NoSort())
-            .Column("$SkyOutSys_OEdit_OutfitSettings_Header").Flags(TableColumnFlags().WidthFixed().NoSort())
-            .Column("$Delete").Flags(TableColumnFlags().WidthFixed().NoSort())
+        TableHeadersBuilder().Column("##Number").Flags(ImGuiUtil::TableColumnFlags().NoHide())
+            .Column("$SosGui_TableHeader_Slot").Flags(ImGuiUtil::TableColumnFlags().NoSort())
+            .Column("$ARMOR").Flags(ImGuiUtil::TableColumnFlags().NoSort())
+            .Column("$SkyOutSys_OEdit_OutfitSettings_Header").Flags(ImGuiUtil::TableColumnFlags().WidthFixed().NoSort())
+            .Column("$Delete").Flags(ImGuiUtil::TableColumnFlags().WidthFixed().NoSort())
             .CommitHeadersRow();
         // clang-format on
 
@@ -465,6 +466,7 @@ void OutfitEditPanel::DrawArmorView(
     Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
 )
 {
+    using namespace ImGuiUtil;
     constexpr auto flags = TableFlags()
                                .RowBg()
                                .BordersInnerH()
@@ -475,8 +477,7 @@ void OutfitEditPanel::DrawArmorView(
                                .Hideable()
                                .Reorderable()
                                .flags;
-    ImGuiScope::Table armorViewTable("##ArmorCandidates", 6, flags);
-    if (viewData.empty() || !armorViewTable)
+    if (const ImGuiScope::Table armorViewTable("##ArmorCandidates", 6, flags); viewData.empty() || !armorViewTable)
     {
         return;
     }
@@ -502,14 +503,12 @@ void OutfitEditPanel::DrawArmorView(
             const bool isSelected = m_armorView.multiSelection.UpdateSelected(armor, index);
             ImGui::SetNextItemSelectionUserData(index);
             ImGui::Selectable(
-                std::format("{}", index + 1).c_str(),
-                isSelected,
-                ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags
+                std::format("{}", index + 1).c_str(), isSelected, SelectableFlag().AllowOverlap().SpanAllColumns().flags
             );
 
             if (auto popup = ImGuiScope::PopupContextItem("Context"))
             {
-                if (ImGuiUtil::MenuItem("$SosGui_ContextMenu_AddAllArmor"))
+                if (MenuItem("$SosGui_ContextMenu_AddAllArmor"))
                 {
                     if (m_armorView.multiSelection.Size == 1)
                     {
@@ -549,7 +548,7 @@ void OutfitEditPanel::DrawArmorView(
             ImGui::Text("%s", IsArmorNonPlayable(armor) ? "\xe2\x9d\x8c" : "\xe2\x9c\x85");
         }
 
-        if (ImGui::TableNextColumn() && ImGuiUtil::Button("$Add")) // column Action
+        if (ImGui::TableNextColumn() && Button("$Add")) // column Action
         {
             onRequireAddArmor = [&, armor] {
                 OnAcceptAddArmorToOutfit(context, editingOutfit, armor);
@@ -590,7 +589,7 @@ void OutfitEditPanel::DrawArmorViewModNameFilterer(const SosUiOutfit *editingOut
 
 void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
 {
-    std::string name =
+    const std::string name =
         std::format("All({}/{})##AllSlot", m_armorView.ViewData().size(), m_armorView.availableArmorCount);
     if (ImGui::Checkbox(name.c_str(), &m_armorView.checkAllSlot))
     {
@@ -778,7 +777,7 @@ void OutfitEditPanel::BatchAddArmorsRequest::DoDraw(SosUiData &, bool &confirmed
     RenderConfirmButtons(confirmed);
 }
 
-bool OutfitEditPanel::SlotPolicyHelp::Draw(SosUiData &uiData, bool &confirmed, ImGuiWindowFlags flags)
+bool OutfitEditPanel::SlotPolicyHelp::Draw(SosUiData &uiData, bool &confirmed, const ImGuiWindowFlags flags)
 {
     const auto mainViewPort = ImGui::GetMainViewport();
     const auto maxSize      = ImVec2(mainViewPort->WorkSize.x * 0.5, mainViewPort->WorkSize.y * 0.5);
