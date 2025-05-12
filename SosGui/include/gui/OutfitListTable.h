@@ -12,8 +12,7 @@
 
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class OutfitListTable final : public BaseGui
 {
@@ -43,12 +42,11 @@ class OutfitListTable final : public BaseGui
         }
     };
 
-    SosUiData &                             m_uiData;
-    OutfitService &                         m_outfitService;
-    OutfitEditPanel &                       m_editPanel;
+    SosUiData                              &m_uiData;
+    OutfitService                          &m_outfitService;
+    OutfitEditPanel                        &m_editPanel;
     EditingOutfit                           m_wantEdit = UNTITLED_OUTFIT;
     MultiSelection                          m_outfitMultiSelection;
-    bool                                    m_onlyShowFavorites = false;
     std::array<char, MAX_OUTFIT_NAME_BYTES> m_outfitNameBuf{};
     OutfitDebounceInput                     m_outfitFilterInput{};
 
@@ -56,7 +54,9 @@ class OutfitListTable final : public BaseGui
 
 public:
     OutfitListTable(SosUiData &uiData, OutfitService &outfitService, OutfitEditPanel &editPanel)
-        : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(editPanel) {}
+        : m_uiData(uiData), m_outfitService(outfitService), m_editPanel(editPanel)
+    {
+    }
 
     void Cleanup() override;
 
@@ -79,7 +79,7 @@ private:
      * open a context menu if user right-clicks current row
      * @return true if the context menu is open.
      */
-    void OpenContextMenu(uint32_t    selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
+    void OpenContextMenu(uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
                          __out bool &acceptRename);
     void DrawDeletePopup();
 

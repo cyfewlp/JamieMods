@@ -1,7 +1,9 @@
 #include "SosGui.h"
+
 #include "common/config.h"
-#include "common/log.h"
 #include "common/imgui/ImGuiScop.h"
+#include "common/log.h"
+#include "gui/Config.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
@@ -23,8 +25,7 @@
 #include <SKSE/Impl/PCH.h>
 #include <windows.h>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 
 inline void SosGui::OutfitDebounceInput::clear()
@@ -79,15 +80,17 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
     ImGui::StyleColorsDark();
-    constexpr auto mainFont           = R"(C:\Windows\Fonts\simsun.ttc)";
+    constexpr auto mainFont = R"(C:\Windows\Fonts\simsun.ttc)";
     constexpr auto MonaspaceXenonFont =
         R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-Regular.ttf)";
     constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
 
     ImFontConfig fontConfig;
-    fontConfig.OversampleH        = fontConfig.OversampleV = 1;
-    fontConfig.GlyphExcludeRanges = io.Fonts->GetGlyphRangesDefault();
+    fontConfig.OversampleH = fontConfig.OversampleV = 1;
+    fontConfig.GlyphExcludeRanges                   = io.Fonts->GetGlyphRangesDefault();
     fontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+
+    const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
 
     io.Fonts->AddFontFromFileTTF(emojiFont, 14.0F, &fontConfig);
     ImFontConfig fontConfig1;
@@ -95,6 +98,7 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, 14.0F, &fontConfig1);
     io.Fonts->AddFontFromFileTTF(mainFont, 14.0F, &fontConfig1);
     io.Fonts->Build();
+    io.IniFilename = std::format(Config::IMGUI_INI_FILE_TEMPLATE, pluginName.data()).c_str();
 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -293,8 +297,7 @@ void SosGui::MainConfigWindow()
         ImGui::Indent(2);
         ImGui::SameLine();
         if (ImGui::DragFloat("$SosGui_Global_FontSize_Scale"_T.c_str(), &ImGui::GetIO().FontGlobalScale, 0.05F,
-                             Setting::UiSetting::FONT_SCALE_MIN,
-                             Setting::UiSetting::FONT_SCALE_MAX))
+                             Setting::UiSetting::FONT_SCALE_MIN, Setting::UiSetting::FONT_SCALE_MAX))
         {
             Setting::UiSetting::GetInstance()->globalFontScale = ImGui::GetIO().FontGlobalScale;
         }
@@ -314,7 +317,7 @@ void SosGui::MainConfigWindow()
 
 auto SosGui::ThemeCombo() -> void
 {
-    auto *        settings    = Setting::UiSetting::GetInstance();
+    auto         *settings    = Setting::UiSetting::GetInstance();
     const int32_t themeIndex  = settings->selectedThemeIndex;
     using Loader              = ImThemeLoader::Loader;
     const std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";

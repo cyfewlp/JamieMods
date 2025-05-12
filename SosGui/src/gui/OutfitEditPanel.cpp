@@ -1,8 +1,9 @@
 #include "gui/OutfitEditPanel.h"
+
 #include "SosDataType.h"
 #include "Translation.h"
 #include "common/config.h"
-#include "util/ImGuiUtil.h"
+#include "common/imgui/ImGuiScop.h"
 #include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
@@ -12,7 +13,7 @@
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "common/imgui/ImGuiScop.h"
+#include "util/ImGuiUtil.h"
 #include "util/utils.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
@@ -29,8 +30,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 void OutfitEditPanel::EditContext::Clear()
 {
@@ -132,7 +132,7 @@ void OutfitEditPanel::DrawTopModalPopup()
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
     ImGuiScope::FontSize fontSize4(Config::FONT_SIZE_TITLE_4);
-    const auto &         request   = m_popupList.front();
+    const auto          &request   = m_popupList.front();
     bool                 confirmed = false;
     const bool           toErase   = !request->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
     if (confirmed) // toErase will be set true in the next frame
@@ -199,12 +199,12 @@ void OutfitEditPanel::DrawOutfitArmors(const EditingOutfit &editingOutfit)
 {
     if (editingOutfit.IsUntitled())
     {
-        ImGuiUtil::TextScale("$SosGui_SelectHint{$SosGui_Outfit}", Config::FONT_SIZE_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Config::FONT_SIZE_TITLE_3);
         return;
     }
     if (editingOutfit.IsEmpty())
     {
-        ImGuiUtil::TextScale("$SosGui_EmptyHint{$ARMOR}", Config::FONT_SIZE_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Config::FONT_SIZE_TITLE_3);
         return;
     }
 
@@ -286,7 +286,7 @@ void OutfitEditPanel::HighlightConflictSlot(const Slot slot) const
 
 void OutfitEditPanel::SlotPolicyCombo(const EditingOutfit &editingOutfit, const uint32_t &slotIdx) const
 {
-    auto &      policyNameKey = editingOutfit.GetSlotPolicies().at(slotIdx);
+    auto       &policyNameKey = editingOutfit.GetSlotPolicies().at(slotIdx);
     std::string policyName;
 
     if (auto combo = ImGuiScope::Combo("##SlotPolicy", Translation::Translate(policyNameKey).c_str(),
@@ -321,8 +321,8 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
     using namespace ImGuiUtil;
     ImGui::Separator();
     TextScale("$SosGui_ArmorGenerator", Config::FONT_SIZE_TITLE_3);
-    if (auto tabBarW = ImGuiScope::TabBar("ArmorGeneratorTabBar",
-                                          TabBarFlags().DrawSelectedOverline().Reorderable().flags))
+    if (auto tabBarW =
+            ImGuiScope::TabBar("ArmorGeneratorTabBar", TabBarFlags().DrawSelectedOverline().Reorderable().flags))
     {
         const auto *tabBar          = ImGui::GetCurrentTabBar();
         const auto  nextTabId       = tabBar->NextSelectedTabId;
@@ -331,9 +331,9 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
             const ImGuiTabItem *tabItem = ImGui::TabBarGetCurrentTab(ImGui::GetCurrentTabBar());
             return selectedId == 0 || (selectedId != nextTabId && tabItem->ID == nextTabId);
         };
-        auto * player         = RE::PlayerCharacter::GetSingleton();
+        auto  *player         = RE::PlayerCharacter::GetSingleton();
         auto *&selectedActor  = m_armorGeneratorTabBar.selectedActor;
-        auto & armorGenerator = m_armorGeneratorTabBar.generator;
+        auto  &armorGenerator = m_armorGeneratorTabBar.generator;
         if (auto tabItem = ImGuiScope::TabItem("$SosGui_ArmorGenerator_NearObjectInventory"_T))
         {
             auto *generator = dynamic_cast<NearObjectsInventoryArmorGenerator *>(armorGenerator.get());
@@ -346,7 +346,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
             }
 
             const auto &nearObjects = generator->NearObjects();
-            auto *      wantVisit   = nearObjects[generator->WantVisitIndex()];
+            auto       *wantVisit   = nearObjects[generator->WantVisitIndex()];
 
             if (auto combo = ImGuiScope::Combo("$SosGui_NearObjects"_T, wantVisit->GetDisplayFullName()))
             {
@@ -392,7 +392,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
                                  ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsHexadecimal))
             {
                 m_armorView.clearViewData();
-                char *         pEnd{};
+                char          *pEnd{};
                 const uint32_t result = strtoul(formIdBuf.data(), &pEnd, 16);
                 if (pEnd != formIdBuf.data())
                 {
@@ -413,7 +413,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<ArmorView::RankedArmor> &                  viewData,
+void OutfitEditPanel::DrawArmorViewTableContent(const std::vector<ArmorView::RankedArmor>                   &viewData,
                                                 const std::function<void(const Armor *armor, size_t index)> &drawAction)
 {
     static bool ascend = true;
@@ -468,11 +468,19 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorView(const EditingOutfit &                      editingOutfit,
+void OutfitEditPanel::DrawArmorView(const EditingOutfit                       &editingOutfit,
                                     const std::vector<ArmorView::RankedArmor> &viewData)
 {
-    constexpr auto flags = TableFlags().RowBg().BordersInnerH().ScrollY().Resizable().SizingFixedFit()
-                                       .Sortable().Hideable().Reorderable().flags;
+    constexpr auto flags = TableFlags()
+                               .RowBg()
+                               .BordersInnerH()
+                               .ScrollY()
+                               .Resizable()
+                               .SizingFixedFit()
+                               .Sortable()
+                               .Hideable()
+                               .Reorderable()
+                               .flags;
     ImGuiScope::Table armorViewTable("##ArmorCandidates", 6, flags);
     if (viewData.empty() || !armorViewTable)
     {
@@ -585,8 +593,8 @@ void OutfitEditPanel::DrawArmorViewModNameFilterer(const SosUiOutfit *editingOut
 
 void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
 {
-    std::string name = std::format("All({}/{})##AllSlot", m_armorView.ViewData().size(),
-                                   m_armorView.availableArmorCount);
+    std::string name =
+        std::format("All({}/{})##AllSlot", m_armorView.ViewData().size(), m_armorView.availableArmorCount);
     if (ImGui::Checkbox(name.c_str(), &m_armorView.checkAllSlot))
     {
         if (!m_armorView.checkAllSlot)
@@ -611,8 +619,8 @@ void OutfitEditPanel::DrawArmorViewSlotFilterer(const SosUiOutfit *editing)
     {
         ImGuiScope::PushId pushId(idx);
 
-        auto slotLabel = std::format("({}) {}", m_armorView.slotCounter[idx],
-                                     Translation::Translate(get_slot_name_key(idx)));
+        auto slotLabel =
+            std::format("({}) {}", m_armorView.slotCounter[idx], Translation::Translate(get_slot_name_key(idx)));
         bool checked = m_armorView.slotFiltererSelected.test(idx);
         if (ImGui::Checkbox(slotLabel.c_str(), &checked))
         {
@@ -685,8 +693,7 @@ void OutfitEditPanel::DeleteRequest::DoDraw(SosUiData &uiData, bool &confirmed)
         PushError(uiData, Error::delete_armor_from_unknown_outfit_id);
         return;
     }
-    const auto message = Translation::Translate("$SkyOutSys_Confirm_RemoveArmor_Text{}", true,
-                                                armor->GetName());
+    const auto message = Translation::Translate("$SkyOutSys_Confirm_RemoveArmor_Text{}", true, armor->GetName());
     ImGui::Text("%s", message.c_str());
     RenderConfirmButtons(confirmed);
 }
