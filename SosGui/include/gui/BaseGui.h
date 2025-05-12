@@ -33,6 +33,11 @@ public:
         m_show = false;
     }
 
+    void ToggleShow()
+    {
+        m_show = !m_show;
+    }
+
     bool IsShowing() const
     {
         return m_show;

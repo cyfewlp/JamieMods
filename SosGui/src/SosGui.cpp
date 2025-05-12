@@ -220,7 +220,7 @@ void SosGui::TrySetAllowTextInput()
 
 auto SosGui::DoRender() -> void
 {
-    DockSpaceToolBar();
+    DockSpace();
     m_uiData.GetErrorNotifier().show();
 
     if (!m_fShowConfigWindows)
@@ -249,10 +249,56 @@ auto SosGui::DoRender() -> void
     }
 }
 
-void SosGui::DockSpaceToolBar()
+auto SosGui::DrawSidebar() -> float
 {
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowPos({0, viewport->WorkPos.y});
+    ImGui::SetNextWindowSize({0, viewport->WorkSize.y});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {5.0f, 10.0f});
+
+    const float &fontSize = ImGui::GetFontSize();
+    const float  offsetY  = viewport->WorkSize.y * 0.25;
+
+    float width = 0.0;
+    if (ImGui::Begin(
+            "##MainSidebar", nullptr, ImGuiUtil::WindowFlags().AlwaysAutoResize().NoDecoration().NoDocking().NoMove()
+        ))
+    {
+        width = ImGui::GetWindowWidth();
+        ImGui::SetCursorPosY(offsetY);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        if (ImGui::Button("🥼"))
+        {
+            m_outfitListTable.ToggleShow();
+        }
+        ImGui::SetItemTooltip("$SosGui_Outfit");
+
+        ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
+        if (ImGui::Button("⚙"))
+        {
+            ToggleShow();
+        }
+        ImGui::SetItemTooltip("$SkyOutSys_MCM_Options");
+
+        ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
+        if (ImGui::Button("📝"))
+        {
+            m_outfitEditPanel.ToggleShow();
+        }
+        ImGui::SetItemTooltip("$SosGui_EditOutfit");
+        ImGui::PopStyleColor();
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+    return width;
+}
+
+void SosGui::DockSpace()
+{
+    float sideBarWidth = DrawSidebar();
+
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos({sideBarWidth, viewport->WorkPos.y});
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -279,22 +325,10 @@ void SosGui::DockSpaceToolBar()
 
 void SosGui::Toolbar()
 {
+    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 20);
     if (ImGuiUtil::MenuItem("$SosGui_ToolBar_ShowOrHide"))
     {
         m_fShowConfigWindows = !m_fShowConfigWindows;
-    }
-    if (ImGuiUtil::BeginMenu("$SosGui_ToolBar_Views"))
-    {
-        constexpr auto ViewMenuItem = [](BaseGui &gui, const char *const name) {
-            if (ImGuiUtil::MenuItem(name, nullptr, gui.IsShowing()))
-            {
-                gui.IsShowing() ? gui.Hide() : gui.Show();
-            }
-        };
-        ViewMenuItem(*this, "$SosGui_ToolBar_Views_MainWindow");
-        ViewMenuItem(m_outfitListTable, "$SosGui_ToolBar_Views_OutfitList");
-        ViewMenuItem(m_outfitEditPanel, "$SosGui_ToolBar_Views_OutfitEditPanel");
-        ImGui::EndMenu();
     }
     if (ImGuiUtil::MenuItem("$SosGui_ToolBar_RefreshPlayerArmor"))
     {
@@ -305,6 +339,7 @@ void SosGui::Toolbar()
         auto *messageQueue = RE::UIMessageQueue::GetSingleton();
         messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
     }
+    ImGui::PopStyleVar();
 }
 
 void SosGui::MainConfigWindow()

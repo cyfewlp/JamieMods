@@ -94,7 +94,8 @@ public:
 private:
     void DrawTopModalPopup();
     auto DoRender() -> void;
-    void DockSpaceToolBar();
+    auto DrawSidebar() -> float;
+    void DockSpace();
     void Toolbar();
     void MainConfigWindow();
 

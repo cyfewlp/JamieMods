@@ -15,4 +15,4 @@
 * [x] [[Bug Fix]] Can't found armor in `ArmorContainer`  after `Import Settings`
 	* `ArmorContainer` 
 * [x] [[improvement]] setup our `imgui.ini`: `Data\interface\SosGui\imgui.ini`;
-* [ ] [[improvement]] Add `Context` class: hold `popupList` field: All GUI share this `popupList`.
+* [x] [[improvement]] Add `Context` class: hold `popupList` field: All GUI share this `popupList`.
