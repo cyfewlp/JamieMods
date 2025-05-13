@@ -1,8 +1,8 @@
 #include "SosGui.h"
 
 #include "common/config.h"
-#include "common/imgui/ImGuiScop.h"
 #include "common/imgui/ImGuiFlags.h"
+#include "common/imgui/ImGuiScop.h"
 #include "common/log.h"
 #include "gui/Config.h"
 #include "imgui.h"
@@ -80,27 +80,33 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
     ImGui::StyleColorsDark();
-    constexpr auto mainFont = R"(C:\Windows\Fonts\simsun.ttc)";
+    static std::string IniFileName;
+
+    const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+
+    constexpr auto mainFontName = R"(C:\Windows\Fonts\simsun.ttc)";
+    const auto     iconFontName = std::format("Data/interface/{}/{}", pluginName.data(), Config::ICON_FONT);
     constexpr auto MonaspaceXenonFont =
         R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-Regular.ttf)";
     constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
 
     ImFontConfig fontConfig;
+    ImFontConfig mergeableConfig;
+    mergeableConfig.MergeMode = true;
+
     fontConfig.OversampleH = fontConfig.OversampleV = 1;
     fontConfig.GlyphExcludeRanges                   = io.Fonts->GetGlyphRangesDefault();
     fontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
-    const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-
-    io.Fonts->AddFontFromFileTTF(emojiFont, 14.0F, &fontConfig);
-    ImFontConfig fontConfig1;
-    fontConfig1.MergeMode = true;
-    io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, 14.0F, &fontConfig1);
-    io.Fonts->AddFontFromFileTTF(mainFont, 14.0F, &fontConfig1);
+    io.Fonts->AddFontFromFileTTF(emojiFont, Config::FONT_SIZE_TEXT, &fontConfig);
+    io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, Config::FONT_SIZE_TEXT, &mergeableConfig);
+    io.Fonts->AddFontFromFileTTF(mainFontName, Config::FONT_SIZE_TEXT, &mergeableConfig);
+    auto *iconFont = io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Config::FONT_SIZE_TEXT, &mergeableConfig);
     io.Fonts->Build();
-    static std::string IniFileName;
-    IniFileName    = std::format(Config::IMGUI_INI_FILE_TEMPLATE, pluginName.data());
+    IniFileName    = std::format("Data/interface/{}/{}", pluginName.data(), io.IniFilename);
     io.IniFilename = IniFileName.c_str();
+
+    Context::GetInstance().SetIconFont(iconFont);
 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -124,11 +130,19 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     return true;
 }
 
+void SosGui::OnRefresh()
+{
+    m_outfitListTable.OnRefresh();
+    m_outfitEditPanel.OnRefresh();
+    m_outfitDebounceInput.clear();
+    m_selectedActorIndex                         = 0;
+    m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
+}
+
 auto SosGui::Cleanup() -> void
 {
     m_outfitListTable.Cleanup();
     m_outfitEditPanel.Cleanup();
-    m_outfitDebounceInput.clear();
     m_fShowConfigWindows                         = true;
     m_selectedActorIndex                         = 0;
     m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
@@ -268,25 +282,29 @@ auto SosGui::DrawSidebar() -> float
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        if (ImGui::Button("🥼"))
+        constexpr auto IconButton = [](const char *iconClass, const char *tooltip) {
+            ImGui::PushFont(Context::GetInstance().GetIconFont());
+            auto isClick = ImGui::Button(iconClass);
+            ImGui::PopFont();
+            ImGui::SetItemTooltip("%s", tooltip);
+            return isClick;
+        };
+        if (IconButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str()))
         {
             m_outfitListTable.ToggleShow();
         }
-        ImGui::SetItemTooltip("$SosGui_Outfit");
 
         ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
-        if (ImGui::Button("⚙"))
+        if (IconButton(NF_OCT_GEAR, "$SkyOutSys_MCM_Options"_T.c_str()))
         {
             ToggleShow();
         }
-        ImGui::SetItemTooltip("$SkyOutSys_MCM_Options");
 
         ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
-        if (ImGui::Button("📝"))
+        if (IconButton(NF_FA_EDIT, "$SosGui_EditOutfit"_T.c_str()))
         {
             m_outfitEditPanel.ToggleShow();
         }
-        ImGui::SetItemTooltip("$SosGui_EditOutfit");
         ImGui::PopStyleColor();
     }
     ImGui::End();
@@ -438,7 +456,7 @@ void SosGui::DrawExportOrImportSettings()
     ImGui::SameLine();
     if (ImGui::Button("$SkyOutSys_Text_Import"_T.c_str()))
     {
-        Cleanup();
+        OnRefresh();
         +[&] {
             return m_dataCoordinator.RequestImportSettings();
         };

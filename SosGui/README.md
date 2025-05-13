@@ -18,6 +18,7 @@ Outfit Edit Panel
     * Store in `imgui.ini` with custom ini handlers
     * Support dynamic scale global font size by `imgui fetature/dynamic-fonts` branch;
 
+
 ## Requirements
 
 * CMAKE
@@ -30,7 +31,18 @@ Outfit Edit Panel
   > Dear ImGui style browser and editor written in Nim
 
   This mod will load `ImThemes/themes.toml` and parse all available themes.
+## Environment Varibles
 
+`MO2_MODS_PATH`: The `ModOrganizer2` mods folder. The `dll`, `pdb` and other required filed will auto copy to `MO2_MODS_PATH/{PLUGIN_NAME}` folder when build successful if seup this env varible;
+## Build
+
+```shell
+```shell
+cmake --preset debug-clangcl-ninjia-vcpkg
+cmake --build build\debug-clangcl-ninjia-vcpkg --target SosGui
+cd build\debug-clangcl-ninjia-vcpkg
+cpack
+```
 ## Document
 
 Use [Obsidian](https://obsidian.md/) as document manage tool: `Wikilink` and `Backlink`

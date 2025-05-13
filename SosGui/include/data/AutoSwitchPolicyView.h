@@ -114,6 +114,24 @@ public:
         m_container.emplace(actorId, policy, outfitId);
     }
 
+    void emplace_or_replace(RE::FormID actorId, uint32_t policyId, OutfitId outfitId)
+    {
+        auto policy = static_cast<Policy>(policyId);
+        if (policy >= Policy::Count)
+        {
+            throw std::invalid_argument(std::format("Invalid policy id: {}", policyId));
+        }
+        auto it = m_container.find(boost::make_tuple(actorId, policy));
+        if (it == m_container.end())
+        {
+            m_container.emplace(actorId, policy, outfitId);
+        }
+        else
+        {
+            m_container.replace(it, PolicyEntry{actorId, policy, outfitId});
+        }
+    }
+
     void Clear()
     {
         m_container.clear();

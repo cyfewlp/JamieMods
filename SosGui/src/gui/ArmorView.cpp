@@ -64,9 +64,8 @@ void ArmorView::init()
     availableArmorCount = armorContainer.Size();
 }
 
-void ArmorView::clear()
+void ArmorView::on_refresh()
 {
-    availableArmorCount = 0;
     viewData.clear();
     slotCounter.fill(0);
     slotFiltererSelected = 0;
@@ -75,6 +74,13 @@ void ArmorView::clear()
     armorFilter.clear();
     modFilterer.Clear();
     modRefCounter.clear();
+}
+
+void ArmorView::clear()
+{
+    on_refresh();
+    armorContainer.Clear();
+    availableArmorCount = 0;
 }
 
 void ArmorView::clearViewData()

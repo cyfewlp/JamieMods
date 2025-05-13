@@ -29,5 +29,6 @@ auto GetFormModFileName(const RE::TESForm *form) -> std::string_view;
 
 void RefreshActorArmor(RE::Actor *const selectedActor);
 
+auto CreateTextureFromPng(const char *filename, int *width, int *height) -> REX::W32::ID3D11ShaderResourceView *;
 }
 }

@@ -17,3 +17,14 @@
 * [x] [[improvement]] setup our `imgui.ini`: `Data\interface\SosGui\imgui.ini`;
 * [x] [[improvement]] Add `Context` class: hold `popupList` field: All GUI share this `popupList`.
 * [x] [[improvement]] Disable interactive with armor view when outfit is `Untitled`;
+* [x] [[improvement]] Add [NerdFont](https://github.com/ryanoasis/nerd-fonts) and use the `SymbolsNerdFontMono-Regular` font as icon font;
+	* add `stb_image.h` to #CommonModule
+	* add `iconFont` field to `Context` class: setup in initialize `ImGui`;
+* [x] [[Bug Fix]] Other Actor not setup active outfit when reopen GUI;
+* [x] [[Bug Fix]] Missing call `EndChild`: trigegr when click delete actor
+* [x] [[Bug Fix]] `OutfitService#GetActorAllStateOutfit`;
+* [ ] [[improvement]] Refactor `m_autoSwitchOutfitSelectPopup`, `m_outfitSelectPopup`: Use `Context#popupList`;
+* [x] Test `AutoSwitchPolicyView` emplace;
+	* Add function `emplace_or_replace` to support replace existed key-value;
+* [ ] [[improvement]] Sort Themes; Support select `ImGui` Default theme: classic, dark, light
+* [ ] [[improvement]] Optimize wait_execute_on_ui?

@@ -86,10 +86,11 @@ public:
         m_outfitEditPanel.Show();
     }
 
+    void OnRefresh() override;
+    void Cleanup() override;
+
     auto Refresh() const -> EagerTask;
     auto Render() -> void;
-
-    void Cleanup() override;
 
 private:
     void DrawTopModalPopup();

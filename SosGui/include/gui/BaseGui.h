@@ -28,6 +28,11 @@ public:
         m_show = true;
     }
 
+    virtual void OnRefresh()
+    {
+
+    }
+
     void Hide()
     {
         m_show = false;

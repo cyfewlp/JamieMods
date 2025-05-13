@@ -10,7 +10,6 @@
 #include "task.h"
 
 #include <RE/A/Actor.h>
-#include <RE/B/BipedObjects.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/T/TESObjectARMO.h>
 #include <RE/V/Variable.h>
@@ -109,7 +108,6 @@ auto OutfitService::GetAllFavoriteOutfits() const -> Task
     }
     const auto array = outfitListVar.GetArray();
 
-    co_await m_uiData.await_execute_on_ui();
     auto &outfitList = m_uiData.GetOutfitList();
     for (const auto *iter = array->begin(); iter != array->end(); ++iter)
     {
@@ -150,9 +148,8 @@ auto OutfitService::GetActorOutfit(RE::Actor *actor) const -> Task
     {
         m_uiData.PushErrorMessage("Can't get actor's active outfit");
     }
-    co_await m_uiData.await_execute_on_ui();
     const auto outfitName = outfitNameVar.Unpack<std::string>();
-    if (const auto id = m_outfitList.findIdByName(outfitNameVar.Unpack<std::string>()); id != INVALID_OUTFIT_ID)
+    if (const auto id = m_outfitList.findIdByName(outfitName); id != INVALID_OUTFIT_ID)
     {
         m_uiData.GetActorOutfitMap().SetOutfit(actor, id);
     }
@@ -310,9 +307,10 @@ auto OutfitService::GetActorAllStateOutfit(RE::Actor *actor) const -> Task
     auto &      view       = m_uiData.GetAutoSwitchPolicyView();
     const auto &outfitList = m_uiData.GetOutfitList();
     view.erase(actor->GetFormID());
-    for (uint32_t intState = 0; intState < RE::BIPED_OBJECT::kEditorTotal; ++intState)
+    using Policy = AutoSwitchPolicyView::Policy;
+    for (uint32_t policyId = 0; policyId < static_cast<uint32_t>(Policy::Count); ++policyId)
     {
-        Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, std::move(intState));
+        Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, std::move(policyId));
         if (!outfitVar.IsString())
         {
             continue;
@@ -320,7 +318,7 @@ auto OutfitService::GetActorAllStateOutfit(RE::Actor *actor) const -> Task
         if (const auto outfitId = outfitList.findIdByName(outfitVar.Unpack<std::string>());
             outfitId != INVALID_OUTFIT_ID)
         {
-            view.emplace(actor->GetFormID(), intState, outfitId);
+            view.emplace(actor->GetFormID(), policyId, outfitId);
         }
     }
 }
@@ -346,7 +344,7 @@ auto OutfitService::SetActorStateOutfit(RE::Actor *actor, uint32_t policyId, con
     else
     {
         co_await SosNativeCaller::SetStateOutfit(actor, std::move(policyId), outfitNameOpt.value().c_str());
-        view.emplace(actorId, policyId, outfitId);
+        view.emplace_or_replace(actorId, policyId, outfitId);
     }
 }
 }

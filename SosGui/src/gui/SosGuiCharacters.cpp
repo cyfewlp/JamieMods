@@ -63,12 +63,18 @@ void SosGui::RenderCharactersList()
 {
     const auto &actors = m_uiData.GetActors();
 
-    if (ImGuiUtil::Button("$SosGui_Refresh"))
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+    ImGui::PushFont(Context::GetInstance().GetIconFont());
+    if (ImGui::Button(NF_MD_REFRESH))
     {
         +[&] {
             return m_dataCoordinator.RequestActorList();
         };
     }
+    ImGui::PopFont();
+    ImGui::PopStyleColor();
+    ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$Characters}"_T.c_str());
+
     const ImGuiScope::Table charactersTable(
         "##CharactersTable", 3, ImGuiUtil::TableFlags().Resizable().SizingStretchProp().flags
     );
@@ -81,8 +87,9 @@ void SosGui::RenderCharactersList()
         .Column("$Delete")
         .Column("$SosGui_TableHeader_ActiveOutfit")
         .CommitHeadersRow();
-    std::function<void()> onDeleteActor = [] {};
-    int                   idx           = 0;
+
+    int wantDeleteActorIndex = -1;
+    int idx                  = 0;
     for (const auto &actor : actors)
     {
         ImGuiScope::PushId pushId(idx);
@@ -104,11 +111,7 @@ void SosGui::RenderCharactersList()
         ImGui::TableNextColumn(); // remove character column
         if (ImGuiUtil::Button("$Delete"))
         {
-            onDeleteActor = [&, actor] {
-                +[&, actor] {
-                    return m_dataCoordinator.RequestRemoveActor(actor);
-                };
-            };
+            wantDeleteActorIndex = idx;
         }
 
         ImGui::TableNextColumn(); // active outfit column
@@ -124,7 +127,13 @@ void SosGui::RenderCharactersList()
     }
     if (actors.empty()) return;
 
-    onDeleteActor();
+    if (wantDeleteActorIndex != -1)
+    {
+        auto actor = actors[wantDeleteActorIndex];
+        +[&, actor] {
+            return m_dataCoordinator.RequestRemoveActor(actor);
+        };
+    }
 
     static int prevSelected  = -1;
     const auto selectedActor = actors.at(m_selectedActorIndex);
@@ -143,6 +152,7 @@ void SosGui::RenderCharactersList()
             +[&] {
                 return m_outfitService.SetActorOutfit(selectedActor, opt.value().GetId(), opt.value().GetName());
             };
+            util::RefreshActorArmor(selectedActor);
         }
     }
 }

@@ -12,8 +12,7 @@
 #include "util/ImGuiUtil.h"
 #include "widgets.h"
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 struct ArmorView final
 {
@@ -82,8 +81,7 @@ struct ArmorView final
         size_t       rank = -1;
 
     public:
-        explicit RankedArmor(const Armor *const armor, const size_t rank)
-            : armor(armor), rank(rank) {}
+        explicit RankedArmor(const Armor *const armor, const size_t rank) : armor(armor), rank(rank) {}
 
         [[nodiscard]] auto Rank() const -> size_t
         {
@@ -107,7 +105,7 @@ private:
 public:
     std::bitset<SLOT_COUNT>                        slotFiltererSelected{};
     uint32_t                                       availableArmorCount = 0;
-    ArmorGenerator *                               armorGenerator      = nullptr;
+    ArmorGenerator                                *armorGenerator      = nullptr;
     std::array<uint16_t, SLOT_COUNT>               slotCounter{};
     ArmorContainer                                 armorContainer{};
     std::unordered_map<std::string_view, uint32_t> modRefCounter; // only update when generator update
@@ -141,6 +139,7 @@ public:
     ////////////////////////////////////////////////////////////////////
     // mod filterer -> slot-filterer -> armor-name filter
     void               init();
+    void               on_refresh();
     void               clear();
     void               clearViewData();
     void               remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot);

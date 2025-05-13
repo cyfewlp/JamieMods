@@ -129,6 +129,7 @@ public:
         m_armorView.init();
     }
 
+    void OnRefresh() override;
     void Cleanup() override;
 
     void Draw(Context &context, const EditingOutfit &editingOutfit);
@@ -161,14 +162,15 @@ private:
         return m_armorGeneratorTabBar.generator.get();
     }
 
+    using DrawArmorEntry = std::function<void(const Armor *armor, size_t index)>;
     void DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit);
-    void DrawArmorViewTableContent(
-        const std::vector<ArmorView::RankedArmor>                   &viewData,
-        const std::function<void(const Armor *armor, size_t index)> &drawAction
-    );
     void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
-    void DrawArmorView(
+    void DrawArmorView(Context &context, const EditingOutfit &editingOutfit);
+    void DrawArmorViewContent(
         Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
+    );
+    void DrawArmorViewTableContent(
+        const std::vector<ArmorView::RankedArmor> &viewData, const DrawArmorEntry &drawArmorEntry
     );
     void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);

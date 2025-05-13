@@ -19,7 +19,7 @@ class OutfitListTable final : public BaseGui
     static constexpr int        MAX_OUTFIT_NAME_BYTES = 256;
     static inline SosUiOutfit   OUTFIT                = SosUiOutfit(UNTITLED_OUTFIT_ID, "Untitled");
     static inline EditingOutfit UNTITLED_OUTFIT{OUTFIT};
-    using OutfitDrawAction = std::function<void(const SosUiOutfit &, size_t)>;
+    using DrawOutfitEntry = std::function<void(const SosUiOutfit &, size_t)>;
 
     struct OutfitDebounceInput final : ImGuiUtil::DebounceInput
     {
@@ -85,6 +85,8 @@ public:
     {
     }
 
+    void Show() override;
+    void OnRefresh() override;
     void Cleanup() override;
 
     void Draw(Context &context, RE::Actor *editingActor);
@@ -98,11 +100,14 @@ public:
     }
 
 private:
-    void DoDraw(Context &context, RE::Actor *editingActor);
+    // refresh, filterer, favorite checkbox...
+    void DrawToolWidgets();
+    void DrawOutfitTable(Context &context, RE::Actor *editingActor);
+    void DrawOutfitTableContent(Context &context, RE::Actor *editingActor);
 
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);
     static void PostDrawOutfits(MultiSelection &selection);
-    void DrawOutfits(std::vector<const SosUiOutfit *> outfitView, bool ascend, const OutfitDrawAction &drawAction);
+    void DrawOutfitTableContent(std::vector<const SosUiOutfit *> outfitView, bool ascend, const DrawOutfitEntry &drawOutfitEntry);
 
     /**
      * open a context menu if user right-clicks current row

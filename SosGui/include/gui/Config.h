@@ -20,6 +20,7 @@ struct Config
     static constexpr const char *DEFAULT_FONT            = R"(C:\Windows\Fonts\simsun.ttc)";
     static constexpr const char *DEFAULT_EMOJI_FONT      = R"(C:\Windows\Fonts\seguiemj.ttf)";
     static constexpr const char *IMGUI_INI_FILE_TEMPLATE = R"(Data\interface\{}\imgui.ini)";
+    static constexpr const char *ICON_FONT               = "SymbolsNerdFontMono-Regular.ttf";
 
     static inline bool INCLUDE_TEMPLATE_ARMOR = true;
     static inline bool SHOW_FAVORITE_OUTFITS  = false;

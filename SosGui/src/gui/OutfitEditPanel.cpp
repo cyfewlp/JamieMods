@@ -39,6 +39,12 @@ void OutfitEditPanel::EditContext::Clear()
     dirty                   = true;
 }
 
+void OutfitEditPanel::OnRefresh()
+{
+    m_editContext.Clear();
+    m_armorView.on_refresh();
+}
+
 void OutfitEditPanel::Cleanup()
 {
     m_editContext.Clear();
@@ -117,7 +123,7 @@ void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfi
         DrawOutfitPanel(context, editingOutfit);
         DrawArmorGeneratorTabBar(editingOutfit.GetSourceOutfit());
         DrawArmorViewFilter(editingOutfit.GetSourceOutfit());
-        DrawArmorView(context, editingOutfit, m_armorView.ViewData());
+        DrawArmorView(context, editingOutfit);
     }
 }
 
@@ -405,47 +411,6 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorViewTableContent(
-    const std::vector<ArmorView::RankedArmor>                   &viewData,
-    const std::function<void(const Armor *armor, size_t index)> &drawAction
-)
-{
-    static bool ascend = true;
-    ImGuiUtil::may_update_table_sort_dir(ascend);
-    ImGuiListClipper clipper;
-    // clang-format off
-    auto *msIO = m_armorView.multiSelection
-                 .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
-                 .Begin(viewData.size());
-    clipper.Begin(viewData.size());
-    m_armorView.multiSelection.ApplyRequests(msIO);
-    if (msIO->RangeSrcItem != -1)
-        clipper.IncludeItemByIndex(static_cast<int>(msIO->RangeSrcItem));
-
-    // clang-format on
-    while (clipper.Step())
-    {
-        if (ascend)
-        {
-            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
-            {
-                drawAction(viewData.at(index), index);
-            }
-        }
-        else
-        {
-            using namespace std::views;
-            size_t index = static_cast<size_t>(clipper.DisplayStart);
-            for (int         count = clipper.DisplayEnd - clipper.DisplayStart;
-                 const auto &armor : viewData | reverse | drop(clipper.DisplayStart) | take(count))
-            {
-                drawAction(armor, index++);
-            }
-        }
-    }
-    m_armorView.multiSelection.ApplyRequests(ImGui::EndMultiSelect());
-}
-
 void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 {
     // check is include template armor
@@ -462,12 +427,13 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
     }
 }
 
-void OutfitEditPanel::DrawArmorView(
-    Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
-)
+void OutfitEditPanel::DrawArmorView(Context &context, const EditingOutfit &editingOutfit)
 {
-    using namespace ImGuiUtil;
-    constexpr auto flags = TableFlags()
+    if (m_armorView.ViewData().empty())
+    {
+        return;
+    }
+    constexpr auto flags = ImGuiUtil::TableFlags()
                                .RowBg()
                                .BordersInnerH()
                                .ScrollY()
@@ -477,11 +443,19 @@ void OutfitEditPanel::DrawArmorView(
                                .Hideable()
                                .Reorderable()
                                .flags;
-    if (const ImGuiScope::Table armorViewTable("##ArmorCandidates", 6, flags); viewData.empty() || !armorViewTable)
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 5));
+    if (const auto armorViewTable = ImGuiScope::Table("##ArmorCandidates", 6, flags))
     {
-        return;
+        DrawArmorViewContent(context, editingOutfit, m_armorView.ViewData());
     }
+    ImGui::PopStyleVar();
+}
 
+void OutfitEditPanel::DrawArmorViewContent(
+    Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
+)
+{
+    using namespace ImGuiUtil;
     ImGui::TableSetupScrollFreeze(1, 1);
     // clang-format off
     TableHeadersBuilder().Column("##Number").Flags(TableColumnFlags().NoSort())
@@ -495,7 +469,7 @@ void OutfitEditPanel::DrawArmorView(
 
     std::function<void()> onRequireAddArmor = [] {};
 
-    auto drawAction = [&](const Armor *armor, const size_t index) {
+    auto drawArmorEntry = [&](const Armor *armor, const size_t index) {
         ImGuiScope::PushId pushId(index);
         ImGui::TableNextRow();
         ImGui::TableNextColumn(); // number column
@@ -558,11 +532,51 @@ void OutfitEditPanel::DrawArmorView(
         }
     };
 
-    DrawArmorViewTableContent(viewData, drawAction);
+    DrawArmorViewTableContent(viewData, drawArmorEntry);
     if (!editingOutfit.IsUntitled())
     {
         onRequireAddArmor();
     }
+}
+
+void OutfitEditPanel::DrawArmorViewTableContent(
+    const std::vector<ArmorView::RankedArmor> &viewData, const DrawArmorEntry &drawArmorEntry
+)
+{
+    static bool ascend = true;
+    ImGuiUtil::may_update_table_sort_dir(ascend);
+    ImGuiListClipper clipper;
+    // clang-format off
+    auto *msIO = m_armorView.multiSelection
+                 .NoSelectAll().BoxSelect1d().ClearOnEscape().ClearOnClickVoid()
+                 .Begin(viewData.size());
+    clipper.Begin(viewData.size());
+    m_armorView.multiSelection.ApplyRequests(msIO);
+    if (msIO->RangeSrcItem != -1)
+        clipper.IncludeItemByIndex(static_cast<int>(msIO->RangeSrcItem));
+
+    // clang-format on
+    while (clipper.Step())
+    {
+        if (ascend)
+        {
+            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
+            {
+                drawArmorEntry(viewData.at(index), index);
+            }
+        }
+        else
+        {
+            using namespace std::views;
+            size_t index = static_cast<size_t>(clipper.DisplayStart);
+            for (int         count = clipper.DisplayEnd - clipper.DisplayStart;
+                 const auto &armor : viewData | reverse | drop(clipper.DisplayStart) | take(count))
+            {
+                drawArmorEntry(armor, index++);
+            }
+        }
+    }
+    m_armorView.multiSelection.ApplyRequests(ImGui::EndMultiSelect());
 }
 
 void OutfitEditPanel::DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit)
