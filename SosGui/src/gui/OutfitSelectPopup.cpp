@@ -5,6 +5,7 @@
 
 #include "common/imgui/ImGuiScop.h"
 #include "data/OutfitList.h"
+#include "gui/icon.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -41,6 +42,9 @@ bool OutfitSelectPopup::Draw(const char *nameKey, const OutfitList &outfitList, 
     }
     ImGui::BeginChild("##ChildRegion", ImVec2(0, 250), ImGuiChildFlags_AutoResizeX);
 
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text(NF_OCT_SEARCH);
+    ImGui::SameLine(0, 5);
     if (debounceInput.Draw("##filter", "filter outfit"))
     {
         debounceInput.UpdateView(outfitList);

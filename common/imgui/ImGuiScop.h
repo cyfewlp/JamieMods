@@ -162,6 +162,22 @@ struct PushId : ScopeObject
     }
 };
 
+struct Popup : ScopeObject
+{
+    Popup(const char *str_id = nullptr, ImGuiPopupFlags popup_flags = 1)
+    {
+        state = ImGui::BeginPopup(str_id, popup_flags);
+    }
+
+    ~Popup()
+    {
+        if (state)
+        {
+            ImGui::EndPopup();
+        }
+    }
+};
+
 struct PopupContextItem : ScopeObject
 {
     PopupContextItem(const char *str_id = nullptr, ImGuiPopupFlags popup_flags = 1)

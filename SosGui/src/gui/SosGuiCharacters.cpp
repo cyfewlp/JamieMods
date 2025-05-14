@@ -1,9 +1,8 @@
 //
 // Created by jamie on 2025/4/7.
 //
-
-#include "../../include/autoswitch/ActorPolicyContainer.h"
 #include "SosGui.h"
+#include "autoswitch/ActorPolicyContainer.h"
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScop.h"
@@ -12,6 +11,7 @@
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "gui/Table.h"
+#include "gui/icon.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
@@ -20,9 +20,6 @@
 #include <RE/B/BSCoreTypes.h>
 #include <Translation.h>
 #include <boost/optional/detail/optional_reference_spec.hpp>
-#include <format>
-#include <functional>
-#include <specstrings.h>
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -121,6 +118,7 @@ void SosGui::RenderCharactersList()
             {
                 m_selectedActorIndex = idx;
                 m_outfitSelectPopup  = std::make_unique<OutfitSelectPopup>();
+                m_outfitSelectPopup->UpdateView(m_uiData.GetOutfitList());
             }
         }
         idx++;
@@ -150,7 +148,7 @@ void SosGui::RenderCharactersList()
     {
         return;
     }
-    auto isHided = m_outfitSelectPopup->Draw("Outfit List##OutfitSelectList", outfitList, selectId);
+    auto isHided = !m_outfitSelectPopup->Draw("Outfit List##OutfitSelectList", outfitList, selectId);
     if (selectId != INVALID_OUTFIT_ID)
     {
         if (const auto opt = outfitList.GetOutfitById(selectId); opt.has_value())

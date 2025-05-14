@@ -11,6 +11,7 @@
 #include "gui/Popup.h"
 #include "gui/Table.h"
 #include "gui/UiSetting.h"
+#include "gui/icon.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -118,7 +119,7 @@ void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfi
 
     {
         ImGui::SameLine();
-        ImGuiScope::Group  group;
+        ImGuiScope::Group group;
         DrawOutfitPanel(context, editingOutfit);
         DrawArmorGeneratorTabBar(editingOutfit.GetSourceOutfit());
         DrawArmorViewFilter(editingOutfit.GetSourceOutfit());
@@ -340,7 +341,9 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
             const auto &nearObjects = generator->NearObjects();
             auto       *wantVisit   = nearObjects[generator->WantVisitIndex()];
 
-            if (auto combo = ImGuiScope::Combo("$SosGui_NearObjects"_T, wantVisit->GetDisplayFullName()))
+            if (auto combo = ImGuiScope::Combo(
+                    "$SosGui_NearObjects"_T, wantVisit->GetDisplayFullName(), ImGuiComboFlags_WidthFitPreview
+                ))
             {
                 for (size_t index = 0; index < nearObjects.size(); ++index)
                 {
@@ -412,17 +415,30 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
 
 void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 {
-    // check is include template armor
-    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_TemplateArmor", &Setting::UiSetting::GetInstance()->includeTemplateArmor))
-    {
-        m_armorView.update_view_data(GetGenerator(), editingOutfit);
-    }
-    ImGui::SameLine();
-    // filter armor name and mod name
     if (m_armorView.armorFilter.Draw())
     {
         m_armorView.armorFilter.dirty = false;
         m_armorView.update_view_data(GetGenerator(), editingOutfit);
+    }
+    ImGui::SameLine(0, 20);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {5.0f, 5.0f});
+    if (ImGui::Button(NF_OCT_FILTER))
+    {
+        ImGui::OpenPopup("Filters");
+        ImGui::SetNextWindowPos({ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().x});
+    }
+    ImGui::PopStyleVar();
+    if (auto popup = ImGuiScope::Popup("Filters"))
+    {
+        bool needUpdate =
+            ImGuiUtil::CheckBox("$SkyOutSys_OEdit_AddFromList_Filter_Playable", &m_armorView.armorFilter.mustPlayable);
+        needUpdate |= ImGuiUtil::CheckBox(
+            "$SosGui_CheckBox_TemplateArmor", &Setting::UiSetting::GetInstance()->includeTemplateArmor
+        );
+        if (needUpdate)
+        {
+            m_armorView.update_view_data(GetGenerator(), editingOutfit);
+        }
     }
 }
 
@@ -437,7 +453,7 @@ void OutfitEditPanel::DrawArmorView(Context &context, const EditingOutfit &editi
                                .BordersInnerH()
                                .ScrollY()
                                .Resizable()
-                               .SizingFixedFit()
+                               .SizingStretchProp()
                                .Sortable()
                                .Hideable()
                                .Reorderable()

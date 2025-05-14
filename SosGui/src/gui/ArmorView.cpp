@@ -3,12 +3,13 @@
 //
 
 #include "gui/ArmorView.h"
+
+#include "gui/icon.h"
 #include "imgui.h"
 
 #include <ranges>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 bool ArmorView::ArmorFilter::PassFilter(const Armor *armor) const
 {
@@ -29,10 +30,13 @@ bool ArmorView::ArmorFilter::PassFilter(const Armor *armor) const
 
 bool ArmorView::ArmorFilter::Draw()
 {
-    bool needUpdate = ImGuiUtil::CheckBox("$SkyOutSys_OEdit_AddFromList_Filter_Playable", &mustPlayable);
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text(NF_OCT_SEARCH);
+
     ImGui::SameLine();
-    needUpdate |= DebounceInput::Draw("##ArmorFilter",
-                                      Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name").c_str());
+    bool needUpdate = DebounceInput::Draw(
+        "##ArmorFilter", Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name").c_str()
+    );
     return needUpdate;
 }
 
@@ -113,7 +117,8 @@ void ArmorView::add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editi
         if (auto result = add_armor(armor); !result.has_value())
         {
             uiData.PushErrorMessage(
-                std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName()));
+                std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName())
+            );
         }
     }
 }

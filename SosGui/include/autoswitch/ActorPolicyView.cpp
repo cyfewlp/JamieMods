@@ -63,6 +63,7 @@ void ActorPolicyView::Draw(
                     selectedPolicyId = policyId;
 
                     outfitSelectPopup = std::make_unique<Popup>(currentActor, policyId);
+                    outfitSelectPopup->UpdateView(uiData.GetOutfitList());
                 }
                 if (isSelected)
                 {
@@ -77,7 +78,7 @@ void ActorPolicyView::Draw(
     OutfitId selectId = INVALID_OUTFIT_ID;
     if (outfitSelectPopup)
     {
-        bool isHided = outfitSelectPopup->Draw("Outfit List##AutoSwitch", uiData.GetOutfitList(), selectId);
+        bool isHided = !outfitSelectPopup->Draw("Outfit List##AutoSwitch", uiData.GetOutfitList(), selectId);
         if (selectId != INVALID_OUTFIT_ID)
         {
             +[&, selectId] {

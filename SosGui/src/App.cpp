@@ -52,7 +52,7 @@ auto App::MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRES
         default:
             break;
     }
-    return ::DefWindowProc(hWnd, msg, wParam, lParam);
+    return RealWndProc(hWnd, msg, wParam, lParam);
 }
 
 void App::D3DInit()

@@ -678,6 +678,61 @@ struct ConfigFlags
         return ConfigFlags{flags | ImGuiConfigFlags_IsTouchScreen};
     }
 };
+
+struct ComboFlags
+{
+    ImGuiComboFlags flags = ImGuiComboFlags_None;
+
+    constexpr operator ImGuiComboFlags() const
+    {
+        return flags;
+    }
+
+    consteval auto None() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_None};
+    }
+
+    consteval auto PopupAlignLeft() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_PopupAlignLeft};
+    }
+
+    consteval auto HeightSmall() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_HeightSmall};
+    }
+
+    consteval auto HeightRegular() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_HeightRegular};
+    }
+
+    consteval auto HeightLarge() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_HeightLarge};
+    }
+
+    consteval auto HeightLargest() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_HeightLargest};
+    }
+
+    consteval auto NoArrowButton() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_NoArrowButton};
+    }
+
+    consteval auto NoPreview() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_NoPreview};
+    }
+
+    consteval auto WidthFitPreview() const
+    {
+        return ComboFlags{flags | ImGuiComboFlags_WidthFitPreview};
+    }
+};
 }
 }
 

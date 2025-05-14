@@ -10,6 +10,7 @@
 #include "data/id.h"
 #include "gui/Table.h"
 #include "gui/UiSetting.h"
+#include "gui/icon.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -185,8 +186,11 @@ void OutfitListTable::DrawToolWidgets()
     }
     static size_t prevOutfitSize = 0;
 
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text(NF_OCT_SEARCH);
+    ImGui::SameLine(0, 5);
     ImGuiScope::ItemWidth fltMinItemWidth(-FLT_MIN);
-    if (m_outfitFilterInput.Draw("##filter", "$$SosGui_Hint_FilterOutfit"_T.c_str()) ||
+    if (m_outfitFilterInput.Draw("##filter", "$SosGui_Hint_FilterOutfit"_T.c_str()) ||
         prevOutfitSize != outfitList.size())
     {
         m_outfitFilterInput.OnUpdate(outfitList, uiSetting->showFavoriteOutfits);
@@ -274,8 +278,8 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertFloat4ToU32(ImColor(234, 51, 35)));
                 clicked = ImGui::Button(NF_OCT_HEART_FILL);
-                ImGui::SetItemTooltip("%s", "$SkyOutSys_OContext_ToggleFavoriteOff"_T.c_str());
                 ImGui::PopStyleColor();
+                ImGui::SetItemTooltip("%s", "$SkyOutSys_OContext_ToggleFavoriteOff"_T.c_str());
             }
             else
             {

@@ -37,3 +37,7 @@
 - [x] [[improvement]] cleanup `ImGui` when game quit
 	- ✅hook `WndProc` and process `WM_DESTROY` message?
 	- ❔Is game provided quit event?
+- [x] [[Bug Fix]] Game can't quit: Is Introduced by `ImGui#Shutdown` by `WM_DESTORY` ?
+- [x] [[improvement]] search icon for all search input widgets;
+- [x] [[improvement]] Add filters icon:
+	- Click will open a popup: show all filters checkbox

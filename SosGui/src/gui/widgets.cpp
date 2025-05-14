@@ -3,10 +3,12 @@
 //
 #include "gui/widgets.h"
 
+#include "common/imgui/ImGuiFlags.h"
+#include "common/imgui/ImGuiScop.h"
+
 #include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 namespace widgets
 {
@@ -21,8 +23,7 @@ bool DrawNearActorsCombo(const std::vector<RE::Actor *> &nearActors, RE::Actor *
 
     bool clicked = false;
     if (const char *previewActor = (*selectedActor)->GetName();
-        ImGui::BeginCombo("##NearActors", previewActor,
-                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightRegular))
+        ImGui::BeginCombo("##NearActors", previewActor, ImGuiUtil::ComboFlags().WidthFitPreview().HeightRegular()))
     {
         for (const auto &nearActor : nearActors)
         {
@@ -30,7 +31,7 @@ bool DrawNearActorsCombo(const std::vector<RE::Actor *> &nearActors, RE::Actor *
             if (ImGui::Selectable(nearActor->GetName(), selectedFormID == nearActor->GetFormID()))
             {
                 *selectedActor = nearActor;
-                clicked = true;
+                clicked        = true;
             }
             ImGui::PopID();
         }

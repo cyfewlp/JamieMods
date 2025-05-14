@@ -7,6 +7,7 @@
 #include "common/log.h"
 #include "gui/Table.h"
 #include "gui/UiSetting.h"
+#include "gui/icon.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
