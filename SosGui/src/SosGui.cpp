@@ -5,8 +5,8 @@
 #include "common/imgui/ImGuiScop.h"
 #include "common/imgui/ImThemeLoader.h"
 #include "common/log.h"
-#include "gui/Config.h"
 #include "gui/Table.h"
+#include "gui/UiSetting.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
@@ -84,7 +84,7 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     static std::string IniFileName;
 
     constexpr auto mainFontName = R"(C:\Windows\Fonts\simsun.ttc)";
-    const auto     iconFontName = util::GetInterfaceFile(Config::ICON_FONT);
+    const auto     iconFontName = util::GetInterfaceFile(Setting::UiSetting::ICON_FONT);
     constexpr auto MonaspaceXenonFont =
         R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-Regular.ttf)";
     constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
@@ -97,10 +97,10 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     fontConfig.GlyphExcludeRanges                   = io.Fonts->GetGlyphRangesDefault();
     fontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
-    io.Fonts->AddFontFromFileTTF(emojiFont, Config::FONT_SIZE_TEXT, &fontConfig);
-    io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, Config::FONT_SIZE_TEXT, &mergeableConfig);
-    io.Fonts->AddFontFromFileTTF(mainFontName, Config::FONT_SIZE_TEXT, &mergeableConfig);
-    auto *iconFont = io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Config::FONT_SIZE_TEXT, &mergeableConfig);
+    io.Fonts->AddFontFromFileTTF(emojiFont, Setting::UiSetting::FONT_SIZE_TEXT, &fontConfig);
+    io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
+    io.Fonts->AddFontFromFileTTF(mainFontName, Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
+    auto *iconFont = io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
     io.Fonts->Build();
     IniFileName    = util::GetInterfaceFile(io.IniFilename);
     io.IniFilename = IniFileName.c_str();
@@ -153,7 +153,7 @@ void SosGui::DrawTopModalPopup()
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
-    ImGuiScope::FontSize fontSize4(Config::FONT_SIZE_TITLE_4);
+    ImGuiScope::FontSize fontSize4(Setting::UiSetting::FONT_SIZE_TITLE_4);
     const auto          &modalPopup = context.popupList.front();
     bool                 confirmed  = false;
     const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);

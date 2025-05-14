@@ -30,7 +30,7 @@
 	* `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all `await_execute_on_ui` calls ;
 * [ ] [[improvement]] Optimize data class: ensure **DONOT** modify `DATA` class on UI thread;
 	* ~~consider use read/write lock~~
-* [ ] [[improvement]] `UiSetting`: be used hold the persist settings. May merge `Config` class to `Setting`
+* [x] [[improvement]] `UiSetting`: be used hold the persist settings. May merge `Config` class to `Setting`
 	* Add `UiSettings#DefaultThemeIndex` to support select `ImGui` provide default theme;
 	* Call `ImGui#MarkIniSettingsDirty` when select a theme;
 * [x] [[improvement]] Sort Themes; Support select `ImGui` Default theme: classic, dark, light

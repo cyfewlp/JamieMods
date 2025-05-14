@@ -8,9 +8,9 @@
 #include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
-#include "gui/Config.h"
 #include "gui/Popup.h"
 #include "gui/Table.h"
+#include "gui/UiSetting.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -143,7 +143,7 @@ bool OutfitEditPanel::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup)
 
 void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &editingOutfit)
 {
-    ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Config::FONT_SIZE_TITLE_3);
+    ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Setting::UiSetting::FONT_SIZE_TITLE_3);
     if (auto tabBar = ImGuiScope::TabBar("##OutfitTabBarView"))
     {
         if (auto tabItem = ImGuiScope::TabItem("$Armor", nullptr, ImGuiTabItemFlags_Leading))
@@ -155,7 +155,7 @@ void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &edi
 
 void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
 {
-    ImGuiUtil::TextScale("$SosGui_ModList", Config::FONT_SIZE_TITLE_3);
+    ImGuiUtil::TextScale("$SosGui_ModList", Setting::UiSetting::FONT_SIZE_TITLE_3);
     static int maxChildItemCount = 10;
     const auto itemHeight        = ImGui::GetTextLineHeight();
     float      childHeight       = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
@@ -166,7 +166,7 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
     }
     ImGui::EndChild();
 
-    ImGuiUtil::TextScale("$SosGui_BodySlots", Config::FONT_SIZE_TITLE_3);
+    ImGuiUtil::TextScale("$SosGui_BodySlots", Setting::UiSetting::FONT_SIZE_TITLE_3);
     if (ImGui::BeginChild("#SlotFilterChild", {0, childHeight}, ImGuiUtil::ChildFlag().Borders().ResizeY()))
     {
         DrawArmorViewSlotFilterer(editingOutfit);
@@ -187,12 +187,12 @@ void OutfitEditPanel::DrawOutfitArmors(Context &context, const EditingOutfit &ed
 {
     if (editingOutfit.IsUntitled())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Config::FONT_SIZE_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Setting::UiSetting::FONT_SIZE_TITLE_3);
         return;
     }
     if (editingOutfit.IsEmpty())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Config::FONT_SIZE_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Setting::UiSetting::FONT_SIZE_TITLE_3);
         return;
     }
 
@@ -313,7 +313,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
 {
     using namespace ImGuiUtil;
     ImGui::Separator();
-    TextScale("$SosGui_ArmorGenerator", Config::FONT_SIZE_TITLE_3);
+    TextScale("$SosGui_ArmorGenerator", Setting::UiSetting::FONT_SIZE_TITLE_3);
     if (auto tabBarW =
             ImGuiScope::TabBar("ArmorGeneratorTabBar", TabBarFlags().DrawSelectedOverline().Reorderable().flags))
     {
@@ -414,7 +414,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
 void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 {
     // check is include template armor
-    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_TemplateArmor", &Config::INCLUDE_TEMPLATE_ARMOR))
+    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_TemplateArmor", &Setting::UiSetting::GetInstance()->includeTemplateArmor))
     {
         m_armorView.update_view_data(GetGenerator(), editingOutfit);
     }

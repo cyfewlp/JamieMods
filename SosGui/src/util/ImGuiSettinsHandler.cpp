@@ -3,11 +3,11 @@
 #include "common/config.h"
 #include "common/imgui/ImThemeLoader.h"
 #include "common/log.h"
+#include "gui/UiSetting.h"
 #include "imgui_internal.h"
 #include "util/utils.h"
 
 #include <cstdint>
-#include <cstdio>
 #include <imgui.h>
 
 namespace LIBC_NAMESPACE_DECL

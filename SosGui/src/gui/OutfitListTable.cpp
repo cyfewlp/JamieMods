@@ -8,8 +8,8 @@
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
-#include "gui/Config.h"
 #include "gui/Table.h"
+#include "gui/UiSetting.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -177,8 +177,9 @@ void OutfitListTable::DrawToolWidgets()
     ImGui::PopStyleColor();
     ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$SosGui_Outfit}"_T.c_str());
 
+    auto *uiSetting = Setting::UiSetting::GetInstance();
     ImGui::SameLine();
-    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_OnlyShowFavorites", &Config::SHOW_FAVORITE_OUTFITS))
+    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_OnlyShowFavorites", &uiSetting->showFavoriteOutfits))
     {
         m_outfitFilterInput.dirty = true;
     }
@@ -188,7 +189,7 @@ void OutfitListTable::DrawToolWidgets()
     if (m_outfitFilterInput.Draw("##filter", "$$SosGui_Hint_FilterOutfit"_T.c_str()) ||
         prevOutfitSize != outfitList.size())
     {
-        m_outfitFilterInput.OnUpdate(outfitList, Config::SHOW_FAVORITE_OUTFITS);
+        m_outfitFilterInput.OnUpdate(outfitList, uiSetting->showFavoriteOutfits);
         prevOutfitSize = outfitList.size();
     }
 }
@@ -243,7 +244,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
     ImGui::TableHeader(ImGui::TableGetColumnName(0));
 
     ImGui::TableNextColumn();
-    ImGui::PushFontSize(Config::FONT_SIZE_TITLE_3);
+    ImGui::PushFontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
     if (ImGui::Button("＋"))
     {

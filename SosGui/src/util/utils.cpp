@@ -5,7 +5,7 @@
 #include "util/utils.h"
 
 #include "common/config.h"
-#include "gui/Config.h"
+#include "gui/UiSetting.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "common/stb_image.h"
@@ -17,7 +17,7 @@ auto util::IsArmorCanDisplay(const RE::TESObjectARMO *armor) -> bool
     bool canDisplay = false;
     if (armor != nullptr)
     {
-        if (!Config::INCLUDE_TEMPLATE_ARMOR && armor->templateArmor != nullptr)
+        if (!Setting::UiSetting::GetInstance()->includeTemplateArmor && armor->templateArmor != nullptr)
         {
             return canDisplay;
         }
@@ -63,8 +63,7 @@ auto util::CreateTextureFromPng(const char *filename, int *width, int *height) -
     auto *device = RE::BSGraphics::Renderer::GetDevice();
     // ID3D11DeviceContext *context = reinterpret_cast<ID3D11DeviceContext *>(rendererData.context);
 
-    REX::W32::D3D11_TEXTURE2D_DESC desc;
-    std::memset(&desc, 0, sizeof(desc));
+    REX::W32::D3D11_TEXTURE2D_DESC desc = {};
     desc.width            = *width;
     desc.height           = *height;
     desc.mipLevels        = 1;
