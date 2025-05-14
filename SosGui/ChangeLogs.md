@@ -11,7 +11,7 @@
 * [ ] [[improvement]] Font: monaspace
 * [ ] [[improvement]] how to handle current actor active outfit?
 * [x] [[improvement]] Use `consteval` optimize `ImGuiUtil`  flags wrap class
-* [ ] [[Bug Fix]] `ImGui` assert fail when scroll [[OutfitListView]].
+* [x] [[Bug Fix]] `ImGui` assert fail when scroll [[OutfitListView]].
 * [x] [[Bug Fix]] Can't found armor in `ArmorContainer`  after `Import Settings`
 	* `ArmorContainer` 
 * [x] [[improvement]] setup our `imgui.ini`: `Data\interface\SosGui\imgui.ini`;
@@ -28,3 +28,7 @@
 	* Add function `emplace_or_replace` to support replace existed key-value;
 * [ ] [[improvement]] Sort Themes; Support select `ImGui` Default theme: classic, dark, light
 * [ ] [[improvement]] Optimize wait_execute_on_ui?
+* [ ] [[improvement]] Optimize data class: ensure **DONOT** modify `DATA` class on UI thread;
+	* ~~consider use read/write lock~~
+	* `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all `await_execute_on_ui` calls ;
+	* 

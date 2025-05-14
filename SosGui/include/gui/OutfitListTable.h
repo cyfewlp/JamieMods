@@ -35,9 +35,9 @@ class OutfitListTable final : public BaseGui
 
         void OnUpdate(const OutfitList &outfitList, bool onlyFavorites);
 
-        void clear() override
+        void Clear() override
         {
-            DebounceInput::clear();
+            DebounceInput::Clear();
             viewData.clear();
         }
     };

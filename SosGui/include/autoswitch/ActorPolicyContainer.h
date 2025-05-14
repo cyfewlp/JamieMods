@@ -20,16 +20,38 @@
 #include <boost/none.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/tuple/detail/tuple_basic.hpp>
-#include <cstdint>
 #include <format>
 #include <stdexcept>
 
 namespace LIBC_NAMESPACE_DECL
 {
+namespace AutoSwitch
+{
 
 using namespace boost::multi_index;
 
-class AutoSwitchPolicyView : BaseContainer
+enum class Policy : uint32_t
+{
+    Combat  = 12,
+    World   = 0,
+    Town    = 1,
+    Dungeon = 2,
+    City    = 9,
+
+    WorldSnowy   = 3,
+    TownSnowy    = 4,
+    DungeonSnowy = 5,
+    CitySnowy    = 10,
+
+    WorldRainy   = 6,
+    TownRainy    = 7,
+    DungeonRainy = 8,
+    CityRainy    = 11,
+    Count        = 13,
+    None         = 14
+};
+
+class ActorPolicyContainer : BaseContainer
 {
     using Actor = RE::Actor;
 
@@ -42,27 +64,6 @@ class AutoSwitchPolicyView : BaseContainer
     };
 
 public:
-    enum class Policy : uint32_t
-    {
-        Combat  = 12,
-        World   = 0,
-        Town    = 1,
-        Dungeon = 2,
-        City    = 9,
-
-        WorldSnowy   = 3,
-        TownSnowy    = 4,
-        DungeonSnowy = 5,
-        CitySnowy    = 10,
-
-        WorldRainy   = 6,
-        TownRainy    = 7,
-        DungeonRainy = 8,
-        CityRainy    = 11,
-        Count        = 13,
-        None         = 14
-    };
-
     struct PolicyEntry
     {
         RE::FormID actorId;
@@ -95,8 +96,8 @@ private:
     Container m_container{};
 
 public:
-    AutoSwitchPolicyView()  = default;
-    ~AutoSwitchPolicyView() = default;
+    ActorPolicyContainer()  = default;
+    ~ActorPolicyContainer() = default;
 
     template <typename Entry>
     void Insert(Entry &&entry)
@@ -234,4 +235,5 @@ public:
         }
     }
 };
+}
 }

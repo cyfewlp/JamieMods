@@ -7,21 +7,20 @@
 
 #pragma once
 
+#include "Cleanable.h"
+#include "autoswitch/ActorPolicyContainer.h"
 #include "common/config.h"
 #include "common/log.h"
 #include "data/ActorOutfitMap.h"
-#include "data/AutoSwitchPolicyView.h"
 #include "data/OutfitList.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "gui/ErrorNotifier.h"
-#include "Cleanable.h"
 
 #include <RE/A/Actor.h>
 #include <RE/T/TESObjectARMO.h>
 #include <coroutine>
 #include <exception>
-#include <list>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -43,14 +42,14 @@ public:
     static inline OutfitId   g_NextOutfitId    = 1;
 
 private:
-    std::vector<RE::Actor *> m_actors;
-    std::vector<RE::Actor *> m_NearActors;
-    bool                     m_enabled           = false;
-    bool                     m_fQuickSlotEnabled = false;
-    ActorOutfitMap           m_actorOutfitMap;
-    OutfitList               m_outfitList{};
-    AutoSwitchPolicyView     m_autoSwitchPolicyView;
-    ErrorNotifier            m_errorNotifier;
+    std::vector<RE::Actor *>         m_actors;
+    std::vector<RE::Actor *>         m_NearActors;
+    bool                             m_enabled           = false;
+    bool                             m_fQuickSlotEnabled = false;
+    ActorOutfitMap                   m_actorOutfitMap;
+    OutfitList                       m_outfitList{};
+    AutoSwitch::ActorPolicyContainer m_autoSwitchPolicyContainer;
+    ErrorNotifier                    m_errorNotifier;
 
     std::unordered_map<RE::FormID, bool> m_autoSwitchEnabled;
     std::queue<std::coroutine_handle<>>  m_resumeQueue;
@@ -69,7 +68,7 @@ public:
         m_fQuickSlotEnabled = false;
         m_actorOutfitMap.Clear();
         m_outfitList.clear();
-        m_autoSwitchPolicyView.Clear();
+        m_autoSwitchPolicyContainer.Clear();
         m_autoSwitchEnabled.clear();
     }
 
@@ -203,14 +202,14 @@ public:
         m_autoSwitchEnabled[actorId] = autoSwitchEnabled;
     }
 
-    auto GetAutoSwitchPolicyView() const -> const AutoSwitchPolicyView &
+    auto GetAutoSwitchPolicyContainer() const -> const AutoSwitch::ActorPolicyContainer &
     {
-        return m_autoSwitchPolicyView;
+        return m_autoSwitchPolicyContainer;
     }
 
-    auto GetAutoSwitchPolicyView() -> AutoSwitchPolicyView &
+    auto GetAutoSwitchPolicyContainer() -> AutoSwitch::ActorPolicyContainer &
     {
-        return m_autoSwitchPolicyView;
+        return m_autoSwitchPolicyContainer;
     }
 
     ////////////////////////////////////////////////////////////////////////////

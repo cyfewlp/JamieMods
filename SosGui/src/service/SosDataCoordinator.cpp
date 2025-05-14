@@ -46,14 +46,12 @@ auto SosDataCoordinator::RequestActorList() const -> Task
 auto SosDataCoordinator::RequestAddActor(RE::Actor *actor) const -> Task
 {
     co_await SosNativeCaller::AddActor(actor);
-    co_await m_uiData.await_execute_on_ui();
     m_uiData.AddActor(actor);
 }
 
 auto SosDataCoordinator::RequestRemoveActor(RE::Actor *actor) const -> Task
 {
     co_await SosNativeCaller::RemoveActor(actor);
-    co_await m_uiData.await_execute_on_ui();
     m_uiData.RemoveActor(actor);
 }
 
@@ -88,7 +86,7 @@ auto SosDataCoordinator::RequestUpdateActorAutoSwitchState(RE::Actor *actor) con
     m_uiData.SetAutoSwitchEnabled(actor->GetFormID(), isEnabled);
 }
 
-auto SosDataCoordinator::RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> Task
+auto SosDataCoordinator::RequestSetActorAutoSwitchState(const RE::Actor *actor, bool enabled) const -> Task
 {
     co_await SosNativeCaller::SetActorAutoSwitchEnabled(actor, enabled);
     m_uiData.SetAutoSwitchEnabled(actor->GetFormID(), enabled);
@@ -125,7 +123,6 @@ auto SosDataCoordinator::RequestEnable(bool isEnabled) const -> Task
     }
     else
     {
-        co_await m_uiData.await_execute_on_ui();
         m_uiData.SetEnabled(isEnabled);
     }
 }
@@ -138,7 +135,6 @@ auto SosDataCoordinator::QueryIsEnable() const -> Task
         m_uiData.PushErrorMessage("Can't set SkyrimOutfitSystem enabled state");
         co_return;
     }
-    co_await m_uiData.await_execute_on_ui();
     m_uiData.SetEnabled(isEnabledVar.GetBool());
 }
 
@@ -146,8 +142,8 @@ auto SosDataCoordinator::Refresh() const -> Task
 {
     log_debug("start refresh in thread: {}", std::this_thread::get_id());
     auto start = std::chrono::high_resolution_clock::now();
-    co_await QueryIsEnable();
     co_await m_outfitService.GetOutfitList();
+    co_await QueryIsEnable();
     co_await RequestActorList();
     co_await RequestUpdateActorAutoSwitchState(RE::PlayerCharacter::GetSingleton());
     co_await m_outfitService.GetActorOutfit(RE::PlayerCharacter::GetSingleton());

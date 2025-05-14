@@ -195,7 +195,7 @@ struct DebounceInput
 
     virtual bool Draw(const char *label, const char *hintText);
 
-    virtual void clear();
+    virtual void Clear();
 };
 
 }

@@ -185,13 +185,14 @@ namespace LIBC_NAMESPACE_DECL
         return StaticCall(SosFunction::GetLocationBasedAutoSwitchEnabled, args);
     }
 
-    auto SosNativeCaller::SetActorAutoSwitchEnabled(RE::Actor *actor, bool &enabled) -> Awaitable
+    auto SosNativeCaller::SetActorAutoSwitchEnabled(const RE::Actor *actor, bool &enabled) -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::move(actor), std::move(enabled));
         return StaticCall(SosFunction::SetLocationBasedAutoSwitchEnabled, args);
     }
 
-    auto SosNativeCaller::SetStateOutfit(RE::Actor *actor, uint32_t &&location, std::string &&outfitName) -> Awaitable
+    auto SosNativeCaller::SetStateOutfit(const RE::Actor *actor, uint32_t &&location, std::string &&outfitName)
+        -> Awaitable
     {
         auto *args = RE::MakeFunctionArguments(std::move(actor), std::move(location), std::move(outfitName));
         return StaticCall(SosFunction::SetStateOutfit, args);

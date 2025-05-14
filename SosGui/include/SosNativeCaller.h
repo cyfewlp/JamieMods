@@ -84,8 +84,8 @@ namespace LIBC_NAMESPACE_DECL
 
         // auto-switch
         static auto IsActorAutoSwitchEnabled(RE::Actor *actor) -> Awaitable;
-        static auto SetActorAutoSwitchEnabled(RE::Actor *actor, bool &enabled) -> Awaitable;
-        static auto SetStateOutfit(RE::Actor *actor, uint32_t &&location, std::string&& outfitName) -> Awaitable;
+        static auto SetActorAutoSwitchEnabled(const RE::Actor *actor, bool &enabled) -> Awaitable;
+        static auto SetStateOutfit(const RE::Actor *actor, uint32_t &&location, std::string &&outfitName) -> Awaitable;
         static auto GetStateOutfit(RE::Actor *actor, uint32_t &&location) -> Awaitable;
 
         // Enable SkyrimOutfitSystem?

@@ -38,14 +38,14 @@ void OutfitListTable::OnRefresh()
 {
     m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
-    m_outfitFilterInput.clear();
+    m_outfitFilterInput.Clear();
 }
 
 void OutfitListTable::Cleanup()
 {
     m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
-    m_outfitFilterInput.clear();
+    m_outfitFilterInput.Clear();
 }
 
 void OutfitListTable::OnSelectActor(const RE::Actor *actor) const

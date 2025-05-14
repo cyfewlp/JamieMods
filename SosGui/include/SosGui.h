@@ -1,11 +1,10 @@
 #pragma once
 
-#include "data/AutoSwitchPolicyView.h"
+#include "autoswitch/ActorPolicyView.h"
 #include "data/SosUiData.h"
-#include "data/id.h"
 #include "gui/BaseGui.h"
 #include "gui/OutfitListTable.h"
-#include "gui/Popup.h"
+#include "gui/OutfitSelectPopup.h"
 #include "service/OutfitService.h"
 #include "service/SosDataCoordinator.h"
 #include "task.h"
@@ -28,27 +27,9 @@ class SosGui final : public BaseGui
     {
         std::vector<const SosUiOutfit *> viewData{};
 
-        void clear() override;
+        void Clear() override;
         void OnInput() override;
         void updateView(const OutfitList &outfitList);
-    };
-
-    struct outfit_select_popup : Popup::BasicPopup
-    {
-        OutfitDebounceInput &debounceInput;
-
-        explicit outfit_select_popup(OutfitDebounceInput &debounceInput) : debounceInput(debounceInput) {}
-
-        void draw(const char *nameKey, const OutfitList &outfitList, __out OutfitId &selectId);
-    };
-
-    struct autoSwitch_outfit_select_popup : outfit_select_popup
-    {
-        uint32_t selectPolicyId = -1;
-
-        explicit autoSwitch_outfit_select_popup(OutfitDebounceInput &debounceInput) : outfit_select_popup(debounceInput)
-        {
-        }
     };
 
     using Slot  = RE::BIPED_MODEL::BipedObjectSlot;
@@ -65,10 +46,8 @@ class SosGui final : public BaseGui
     int        m_selectedActorIndex = 0;
     RE::Actor *m_selectedActor      = nullptr;
 
-    Context                        m_context;
-    OutfitDebounceInput            m_outfitDebounceInput;
-    outfit_select_popup            m_outfitSelectPopup{m_outfitDebounceInput};
-    autoSwitch_outfit_select_popup m_autoSwitchOutfitSelectPopup{m_outfitDebounceInput};
+    AutoSwitch::ActorPolicyView        m_autoSwitchOutfitView{};
+    std::unique_ptr<OutfitSelectPopup> m_outfitSelectPopup = nullptr;
 
 public:
     SosGui()
@@ -120,8 +99,6 @@ private:
     void RenderCharactersPanel();
 
     void RenderCharactersList();
-
-    void AutoSwitchPoliesTable(RE::Actor *currentActor);
 
     void autoSwitch_column1_outfit(RE::FormID actorId, uint32_t policyId);
 

@@ -1,8 +1,9 @@
 #include "service/OutfitService.h"
+
+#include "autoswitch/ActorPolicyContainer.h"
 #include "SosDataType.h"
 #include "SosNativeCaller.h"
 #include "common/config.h"
-#include "data/AutoSwitchPolicyView.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
@@ -18,8 +19,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 auto OutfitService::CreateOutfit(std::string outfitName) const -> Task
 {
@@ -36,7 +36,6 @@ auto OutfitService::CreateOutfit(std::string outfitName) const -> Task
     }
     else
     {
-        co_await m_uiData.await_execute_on_ui();
         m_outfitList.AddOutfit(std::move(outfitName));
     }
 }
@@ -60,7 +59,6 @@ auto OutfitService::CreateOutfitFromWorn(std::string outfitName) const -> Task
             if (const Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
                 existVar.IsBool() && existVar.GetBool())
             {
-                co_await m_uiData.await_execute_on_ui();
                 m_outfitList.AddOutfit(std::move(outfitName));
                 co_return;
             }
@@ -89,7 +87,6 @@ auto OutfitService::GetOutfitList() const -> Task
     }
     const auto array = outfitListVar.GetArray();
 
-    co_await m_uiData.await_execute_on_ui();
     m_outfitList.clear();
     for (const auto *iter = array->begin(); iter != array->end(); ++iter)
     {
@@ -111,8 +108,7 @@ auto OutfitService::GetAllFavoriteOutfits() const -> Task
     auto &outfitList = m_uiData.GetOutfitList();
     for (const auto *iter = array->begin(); iter != array->end(); ++iter)
     {
-        if (const auto result = outfitList.SetFavoriteOutfit(iter->Unpack<std::string>(), true);
-            !result.has_value())
+        if (const auto result = outfitList.SetFavoriteOutfit(iter->Unpack<std::string>(), true); !result.has_value())
         {
             m_uiData.PushErrorMessage(result.error().what());
             co_return;
@@ -120,8 +116,7 @@ auto OutfitService::GetAllFavoriteOutfits() const -> Task
     }
 }
 
-auto OutfitService::SetOutfitIsFavorite(const OutfitId id, std::string outfitName, const bool isFavorite) const
-    -> Task
+auto OutfitService::SetOutfitIsFavorite(const OutfitId id, std::string outfitName, const bool isFavorite) const -> Task
 {
     if (const auto result = m_uiData.GetOutfitList().SetFavoriteOutfit(id, isFavorite); !result.has_value())
     {
@@ -168,7 +163,6 @@ auto OutfitService::RenameOutfit(const OutfitId id, std::string outfitName, std:
         co_return;
     }
 
-    co_await m_uiData.await_execute_on_ui();
     m_outfitList.RenameOutfit(id, std::move(newName));
 }
 
@@ -240,20 +234,19 @@ auto OutfitService::GetOutfitArmors(const OutfitId id, std::string outfitName) c
         const RE::BSScript::Variable var = *iter;
         armors.emplace_back(var.Unpack<RE::TESObjectARMO *>());
     }
-    co_await m_uiData.await_execute_on_ui();
     m_outfitList.AddArmors(id, std::move(armors));
 }
 
-auto OutfitService::SetSlotPolicy(const OutfitId   id, std::string outfitName, const uint32_t slotPos,
-                                  const SlotPolicy policy) const -> Task
+auto OutfitService::SetSlotPolicy(
+    const OutfitId id, std::string outfitName, const uint32_t slotPos, const SlotPolicy policy
+) const -> Task
 {
     if (!m_outfitList.HasOutfit(id))
     {
         co_return;
     }
     m_outfitList.SetSlotPolicy(id, slotPos, SlotPolicyToUiString(policy));
-    co_await SosNativeCaller::SetBodySlotPoliciesForOutfit(std::move(outfitName), slotPos,
-                                                           SlotPolicyToCode(policy));
+    co_await SosNativeCaller::SetBodySlotPoliciesForOutfit(std::move(outfitName), slotPos, SlotPolicyToCode(policy));
 }
 
 auto OutfitService::GetSlotPolicy(const OutfitId id, std::string outfitName) const -> Task
@@ -282,8 +275,6 @@ auto OutfitService::GetSlotPolicy(const OutfitId id, std::string outfitName) con
         slotPolicies.emplace_back(var.GetString());
     }
 
-    co_await m_uiData.await_execute_on_ui();
-
     m_outfitList.SetAllSlotPolicies(id, slotPolicies);
 }
 
@@ -298,16 +289,16 @@ auto OutfitService::GetActorStateOutfit(RE::Actor *actor, uint32_t policyId) con
 
     if (const auto opt = m_uiData.GetOutfitList().TryFindIdByName(outfitVar.Unpack<std::string>()); opt.has_value())
     {
-        m_uiData.GetAutoSwitchPolicyView().emplace(actor->GetFormID(), policyId, opt.value());
+        m_uiData.GetAutoSwitchPolicyContainer().emplace(actor->GetFormID(), policyId, opt.value());
     }
 }
 
 auto OutfitService::GetActorAllStateOutfit(RE::Actor *actor) const -> Task
 {
-    auto &      view       = m_uiData.GetAutoSwitchPolicyView();
+    auto       &view       = m_uiData.GetAutoSwitchPolicyContainer();
     const auto &outfitList = m_uiData.GetOutfitList();
     view.erase(actor->GetFormID());
-    using Policy = AutoSwitchPolicyView::Policy;
+    using Policy = AutoSwitch::Policy;
     for (uint32_t policyId = 0; policyId < static_cast<uint32_t>(Policy::Count); ++policyId)
     {
         Variable outfitVar = co_await SosNativeCaller::GetStateOutfit(actor, std::move(policyId));
@@ -323,19 +314,19 @@ auto OutfitService::GetActorAllStateOutfit(RE::Actor *actor) const -> Task
     }
 }
 
-auto OutfitService::SetActorStateOutfit(RE::Actor *actor, uint32_t policyId, const OutfitId outfitId) const -> Task
+auto OutfitService::SetActorStateOutfit(const RE::Actor *actor, uint32_t policyId, const OutfitId outfitId) const
+    -> Task
 {
-    if (policyId >= static_cast<uint32_t>(AutoSwitchPolicyView::Policy::Count))
+    if (policyId >= static_cast<uint32_t>(AutoSwitch::Policy::Count))
     {
         m_uiData.PushErrorMessage(std::format("Invalid outfit policy: {}", policyId));
         co_return;
     }
-    auto &view          = m_uiData.GetAutoSwitchPolicyView();
-    auto  outfitNameOpt =
-        m_uiData.GetOutfitList().GetOutfitById(outfitId).map([](auto &outfit) {
-            return outfit.GetName();
-        });
-    const auto actorId = actor->GetFormID();
+    auto      &view          = m_uiData.GetAutoSwitchPolicyContainer();
+    auto       outfitNameOpt = m_uiData.GetOutfitList().GetOutfitById(outfitId).map([](auto &outfit) {
+        return outfit.GetName();
+    });
+    const auto actorId       = actor->GetFormID();
     if (!outfitNameOpt.has_value())
     {
         co_await SosNativeCaller::SetStateOutfit(actor, std::move(policyId), "");

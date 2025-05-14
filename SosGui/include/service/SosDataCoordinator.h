@@ -29,7 +29,7 @@ namespace LIBC_NAMESPACE_DECL
         auto RequestImportSettings() const -> Task;
         auto RequestExportSettings() const -> Task;
         auto RequestUpdateActorAutoSwitchState(RE::Actor *actor) const -> Task;
-        auto RequestSetActorAutoSwitchState(RE::Actor *actor, bool enabled) const -> Task;
+        auto RequestSetActorAutoSwitchState(const RE::Actor *actor, bool enabled) const -> Task;
         auto RequestActorList() const -> Task;
         auto RequestAddActor(RE::Actor *actor) const -> Task;
         auto RequestRemoveActor(RE::Actor *actor) const -> Task;

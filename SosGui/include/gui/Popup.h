@@ -1,14 +1,13 @@
 #pragma once
 
 #include "common/config.h"
-#include "imgui.h"
 #include "data/id.h"
+#include "imgui.h"
 
 #include <RE/T/TESObjectARMO.h>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class SosUiData;
 
@@ -19,16 +18,22 @@ namespace Popup
 
 struct BasicPopup
 {
-    ImGuiID popupId = 0;
+    bool            wantOpen   = true;
+    ImGuiPopupFlags popupFlags = 0;
 
-    constexpr void Open() const
+    constexpr void Open(ImGuiPopupFlags flags = 0)
     {
-        ImGui::OpenPopup(popupId);
+        wantOpen         = true;
+        this->popupFlags = flags;
     }
 
-    auto preDraw(const char *nameKey, ImGuiWindowFlags flags = 0) -> bool
+    auto Begin(const char *nameKey, ImGuiWindowFlags flags = 0) -> bool
     {
-        popupId = ImGui::GetID(nameKey);
+        if (wantOpen)
+        {
+            wantOpen = false;
+            ImGui::OpenPopup(nameKey, popupFlags);
+        }
         return ImGui::BeginPopup(nameKey, flags);
     }
 };
@@ -36,8 +41,8 @@ struct BasicPopup
 struct ModalPopup
 {
     ImGuiPopupFlags  popupFlags = 0;
-    bool             showPopup = true;
-    bool             wantOpen  = true;
+    bool             showPopup  = true;
+    bool             wantOpen   = true;
     std::string_view nameKey;
 
     explicit ModalPopup(const std::string_view &nameKey) : nameKey(nameKey) {}
@@ -75,7 +80,9 @@ struct DeleteOutfitPopup final : ModalPopup
 
     DeleteOutfitPopup(const OutfitId wanDeleteOutfitId, const std::string &wanDeleteOutfitName)
         : ModalPopup("$SosGui_PopupName_ConfirmDeleteOutfit"), wanDeleteOutfitId(wanDeleteOutfitId),
-          wanDeleteOutfitName(wanDeleteOutfitName) {}
+          wanDeleteOutfitName(wanDeleteOutfitName)
+    {
+    }
 
 protected:
     void DoDraw(SosUiData &uiData, bool &confirmed) override;

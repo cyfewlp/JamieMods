@@ -35,7 +35,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 
-file(GLOB_RECURSE headers include/*.h)
+file(GLOB_RECURSE headers include/*.h include/*.cpp)
 file(GLOB_RECURSE sources src/*.cpp)
 
 source_group(

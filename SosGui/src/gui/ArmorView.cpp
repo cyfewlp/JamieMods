@@ -71,7 +71,7 @@ void ArmorView::on_refresh()
     slotFiltererSelected = 0;
     checkAllSlot         = true;
     multiSelection.Clear();
-    armorFilter.clear();
+    armorFilter.Clear();
     modFilterer.Clear();
     modRefCounter.clear();
 }

@@ -47,7 +47,7 @@ bool ImGuiUtil::DebounceInput::Draw(const char *label, const char *hintText)
            (dirty && std::chrono::system_clock::now() - prevEditTime > duration);
 }
 
-void ImGuiUtil::DebounceInput::clear()
+void ImGuiUtil::DebounceInput::Clear()
 {
     dirty = true;
     filter.Clear();

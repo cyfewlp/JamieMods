@@ -5,6 +5,7 @@
 #include "common/imgui/ImGuiScop.h"
 #include "common/log.h"
 #include "gui/Config.h"
+#include "gui/Table.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
@@ -29,9 +30,9 @@
 namespace LIBC_NAMESPACE_DECL
 {
 
-inline void SosGui::OutfitDebounceInput::clear()
+inline void SosGui::OutfitDebounceInput::Clear()
 {
-    DebounceInput::clear();
+    DebounceInput::Clear();
     viewData.clear();
 }
 
@@ -134,31 +135,28 @@ void SosGui::OnRefresh()
 {
     m_outfitListTable.OnRefresh();
     m_outfitEditPanel.OnRefresh();
-    m_outfitDebounceInput.clear();
-    m_selectedActorIndex                         = 0;
-    m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
+    m_selectedActorIndex = 0;
 }
 
 auto SosGui::Cleanup() -> void
 {
     m_outfitListTable.Cleanup();
     m_outfitEditPanel.Cleanup();
-    m_fShowConfigWindows                         = true;
-    m_selectedActorIndex                         = 0;
-    m_autoSwitchOutfitSelectPopup.selectPolicyId = -1;
-    m_outfitDebounceInput.clear();
+    m_fShowConfigWindows = true;
+    m_selectedActorIndex = 0;
 }
 
 void SosGui::DrawTopModalPopup()
 {
-    if (m_context.popupList.empty())
+    auto &context = Context::GetInstance();
+    if (context.popupList.empty())
     {
         return;
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
     ImGuiScope::FontSize fontSize4(Config::FONT_SIZE_TITLE_4);
-    const auto          &modalPopup = m_context.popupList.front();
+    const auto          &modalPopup = context.popupList.front();
     bool                 confirmed  = false;
     const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
     if (confirmed && !m_outfitListTable.OnModalPopupConfirmed(modalPopup.get()))
@@ -167,7 +165,7 @@ void SosGui::DrawTopModalPopup()
     }
     if (toErase)
     {
-        m_context.popupList.pop_front();
+        context.popupList.pop_front();
     }
     ImGui::PopStyleVar();
 }
@@ -252,10 +250,11 @@ auto SosGui::DoRender() -> void
         DrawTopModalPopup();
 
         RE::Actor *selectedActor = GetSelectedActor();
-        m_outfitListTable.Draw(m_context, selectedActor);
+        auto      &context       = Context::GetInstance();
+        m_outfitListTable.Draw(context, selectedActor);
 
         const auto &editingOutfit = m_outfitListTable.GetEditingOutfit();
-        m_outfitEditPanel.Draw(m_context, editingOutfit);
+        m_outfitEditPanel.Draw(context, editingOutfit);
     }
     catch (const std::exception &e)
     {
@@ -394,8 +393,8 @@ void SosGui::MainConfigWindow()
 
         RenderCharactersPanel();
 
-        RE::Actor *selectedActor = GetSelectedActor();
-        AutoSwitchPoliesTable(selectedActor);
+        const RE::Actor *selectedActor = GetSelectedActor();
+        m_autoSwitchOutfitView.Draw(selectedActor, m_uiData, m_dataCoordinator, m_outfitService);
     }
     ImGui::End();
 }
