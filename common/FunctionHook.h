@@ -7,10 +7,11 @@
 
 #include "common/config.h"
 #include "common/log.h"
-#include "detours/detours.h"
 
-#include <processthreadsapi.h>
 #include <windows.h>
+#include <processthreadsapi.h>
+
+#include "detours/detours.h"
 
 namespace LIBC_NAMESPACE_DECL
 {

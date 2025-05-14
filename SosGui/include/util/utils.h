@@ -1,7 +1,6 @@
 #pragma once
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 namespace util
 {
@@ -21,6 +20,17 @@ constexpr auto IsArmorHasAnySlotOf(const RE::TESObjectARMO *armor, RE::BIPED_MOD
 constexpr auto IsArmorHasNoneSlotOf(const RE::TESObjectARMO *armor, RE::BIPED_MODEL::BipedObjectSlot slot)
 {
     return armor->bipedModelData.bipedObjectSlots.none(slot);
+}
+
+constexpr auto GetInterfaceFile(const char *fileName) -> std::string
+{
+    static const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+    return std::format("Data/Interface/{}/{}", pluginName, fileName);
+}
+
+constexpr auto GetInterfaceFile(const std::string_view &fileName) -> std::string
+{
+    return GetInterfaceFile(fileName.data());
 }
 
 auto IsArmorCanDisplay(const RE::TESObjectARMO *armor) -> bool;

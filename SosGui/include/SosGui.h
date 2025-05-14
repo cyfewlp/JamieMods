@@ -88,7 +88,7 @@ private:
         return nullptr;
     }
 
-    static auto ThemeCombo() -> void;
+    auto ThemeCombo() -> void;
 
     void RenderQuickSlotConfig();
 

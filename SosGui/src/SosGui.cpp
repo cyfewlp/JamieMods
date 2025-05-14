@@ -3,6 +3,7 @@
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImThemeLoader.h"
 #include "common/log.h"
 #include "gui/Config.h"
 #include "gui/Table.h"
@@ -13,7 +14,6 @@
 #include "task.h"
 #include "util/ImGuiSettinsHandler.h"
 #include "util/ImGuiUtil.h"
-#include "util/ImThemeLoader.h"
 
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>
@@ -83,10 +83,8 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     ImGui::StyleColorsDark();
     static std::string IniFileName;
 
-    const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-
     constexpr auto mainFontName = R"(C:\Windows\Fonts\simsun.ttc)";
-    const auto     iconFontName = std::format("Data/interface/{}/{}", pluginName.data(), Config::ICON_FONT);
+    const auto     iconFontName = util::GetInterfaceFile(Config::ICON_FONT);
     constexpr auto MonaspaceXenonFont =
         R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-Regular.ttf)";
     constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
@@ -104,7 +102,7 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.Fonts->AddFontFromFileTTF(mainFontName, Config::FONT_SIZE_TEXT, &mergeableConfig);
     auto *iconFont = io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Config::FONT_SIZE_TEXT, &mergeableConfig);
     io.Fonts->Build();
-    IniFileName    = std::format("Data/interface/{}/{}", pluginName.data(), io.IniFilename);
+    IniFileName    = util::GetInterfaceFile(io.IniFilename);
     io.IniFilename = IniFileName.c_str();
 
     Context::GetInstance().SetIconFont(iconFont);
@@ -401,24 +399,78 @@ void SosGui::MainConfigWindow()
 
 auto SosGui::ThemeCombo() -> void
 {
-    auto         *settings    = Setting::UiSetting::GetInstance();
-    const int32_t themeIndex  = settings->selectedThemeIndex;
-    using Loader              = ImThemeLoader::Loader;
-    const std::string preview = Loader::IsIndexInRange(themeIndex) ? Loader::g_availableThemes[themeIndex] : "";
+    auto         &loader     = ImTheme::Loader::GetInstance();
+    auto         *settings   = Setting::UiSetting::GetInstance();
+    const int32_t themeIndex = settings->selectedThemeIndex;
+    std::string   preview    = "";
+    const auto   &themes     = loader.GetAvailableThemes();
+    if (themeIndex > Setting::UiSetting::DefaultThemeIndex_Invalid)
+    {
+        switch (themeIndex)
+        {
+            case Setting::UiSetting::DefaultThemeIndex_Classic:
+                preview = "Default: Classic";
+                break;
+            case Setting::UiSetting::DefaultThemeIndex_Dark:
+                preview = "Default: Dark";
+                break;
+            case Setting::UiSetting::DefaultThemeIndex_Light:
+                preview = "Default: Light";
+                break;
+            default: {
+                if (loader.IsIndexInRange(themeIndex))
+                {
+                    preview = themes[themeIndex].name;
+                }
+                break;
+            }
+        }
+    }
     ImGuiScope::Combo combo("Theme", preview.c_str());
     if (!combo)
     {
         return;
     }
-    size_t index = 0;
-    for (const auto &themeName : Loader::g_availableThemes)
+
+    if (ImGui::Selectable("Default: Classic", false))
     {
-        if (ImGui::Selectable(themeName.c_str(), false))
+        ImGui::StyleColorsClassic();
+        settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Classic;
+    }
+
+    if (ImGui::Selectable("Default: Dark", false))
+    {
+        ImGui::StyleColorsDark();
+        settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Dark;
+    }
+
+    if (ImGui::Selectable("Default: Light", false))
+    {
+        ImGui::StyleColorsLight();
+        settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Light;
+    }
+
+    for (size_t index = 0; index < themes.size(); ++index)
+    {
+        const auto &theme = themes[index];
+        if (ImGui::Selectable(theme.name.c_str(), false))
         {
-            Loader::UseTheme(index);
-            settings->selectedThemeIndex = index;
+            try
+            {
+                loader.UseTheme(index, util::GetInterfaceFile(ImTheme::THEME_FILE_NAME));
+                settings->selectedThemeIndex = index;
+            }
+            catch (ImTheme::Loader::Error &e)
+            {
+                m_uiData.PushErrorMessage(std::format("Can't use theme {}: {}", theme.name, e.what()));
+                settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Invalid;
+            }
         }
-        ++index;
+    }
+
+    if (themeIndex != settings->selectedThemeIndex)
+    {
+        ImGui::MarkIniSettingsDirty();
     }
 }
 

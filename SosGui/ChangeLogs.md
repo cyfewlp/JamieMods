@@ -23,12 +23,17 @@
 * [x] [[Bug Fix]] Other Actor not setup active outfit when reopen GUI;
 * [x] [[Bug Fix]] Missing call `EndChild`: trigegr when click delete actor
 * [x] [[Bug Fix]] `OutfitService#GetActorAllStateOutfit`;
-* [ ] [[improvement]] Refactor `m_autoSwitchOutfitSelectPopup`, `m_outfitSelectPopup`: Use `Context#popupList`;
+* [x] [[improvement]] Refactor `m_autoSwitchOutfitSelectPopup`, `m_outfitSelectPopup`: Use `Context#popupList`;
 * [x] Test `AutoSwitchPolicyView` emplace;
 	* Add function `emplace_or_replace` to support replace existed key-value;
-* [ ] [[improvement]] Sort Themes; Support select `ImGui` Default theme: classic, dark, light
-* [ ] [[improvement]] Optimize wait_execute_on_ui?
+* [x] [[improvement]] Optimize wait_execute_on_ui?
+	* `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all `await_execute_on_ui` calls ;
 * [ ] [[improvement]] Optimize data class: ensure **DONOT** modify `DATA` class on UI thread;
 	* ~~consider use read/write lock~~
-	* `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all `await_execute_on_ui` calls ;
-	* 
+* [ ] [[improvement]] `UiSetting`: be used hold the persist settings. May merge `Config` class to `Setting`
+	* Add `UiSettings#DefaultThemeIndex` to support select `ImGui` provide default theme;
+	* Call `ImGui#MarkIniSettingsDirty` when select a theme;
+* [x] [[improvement]] Sort Themes; Support select `ImGui` Default theme: classic, dark, light
+- [x] [[improvement]] cleanup `ImGui` when game quit
+	- ✅hook `WndProc` and process `WM_DESTROY` message?
+	- ❔Is game provided quit event?
