@@ -100,7 +100,8 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.Fonts->AddFontFromFileTTF(emojiFont, Setting::UiSetting::FONT_SIZE_TEXT, &fontConfig);
     io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
     io.Fonts->AddFontFromFileTTF(mainFontName, Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
-    auto *iconFont = io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
+    auto *iconFont =
+        io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
     io.Fonts->Build();
     IniFileName    = util::GetInterfaceFile(io.IniFilename);
     io.IniFilename = IniFileName.c_str();
@@ -268,8 +269,7 @@ auto SosGui::DrawSidebar() -> float
     ImGui::SetNextWindowSize({0, viewport->WorkSize.y});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {5.0f, 10.0f});
 
-    const float &fontSize = ImGui::GetFontSize();
-    const float  offsetY  = viewport->WorkSize.y * 0.25;
+    const float offsetY = viewport->WorkSize.y * 0.25;
 
     float width = 0.0;
     if (ImGui::Begin(
@@ -278,7 +278,9 @@ auto SosGui::DrawSidebar() -> float
     {
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
+        ImGuiScope::FontSize fontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {0, 0});
         constexpr auto IconButton = [](const char *iconClass, const char *tooltip) {
             ImGui::PushFont(Context::GetInstance().GetIconFont());
             auto isClick = ImGui::Button(iconClass);
@@ -302,6 +304,7 @@ auto SosGui::DrawSidebar() -> float
         {
             m_outfitEditPanel.ToggleShow();
         }
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
     }
     ImGui::End();

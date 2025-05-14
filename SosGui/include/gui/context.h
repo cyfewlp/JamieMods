@@ -21,6 +21,7 @@ constexpr auto *NF_MD_HEART_REMOVE = "\xf3\xb1\x90\xb0"; //\udb85\udc30
 constexpr auto *NF_OCT_GEAR        = "\xef\x90\xa3";     // nf-oct-heart \uf423
 constexpr auto *NF_FA_EDIT         = "\xef\x81\x84";     //\uf044
 constexpr auto *NF_FA_SHIRT        = "\xee\xb8\x9c";     //\uee1c
+constexpr auto *NF_OCT_DIFF_ADDED  = "\xee\xb8\x9c";     //\uf457
 
 struct Context
 {

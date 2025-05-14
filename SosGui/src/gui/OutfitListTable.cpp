@@ -246,10 +246,12 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
     ImGui::TableNextColumn();
     ImGui::PushFontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    if (ImGui::Button("＋"))
+    ImGui::PushFont(Context::GetInstance().GetIconFont());
+    if (ImGui::Button(NF_OCT_DIFF_ADDED))
     {
         context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
     }
+    ImGui::PopFont();
     ImGui::PopStyleVar();
     ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit"_T.c_str());
     ImGui::SameLine();
