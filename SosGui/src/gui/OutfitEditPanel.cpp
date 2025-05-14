@@ -119,7 +119,6 @@ void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfi
     {
         ImGui::SameLine();
         ImGuiScope::Group  group;
-        ImGuiScope::PushId pushId(this);
         DrawOutfitPanel(context, editingOutfit);
         DrawArmorGeneratorTabBar(editingOutfit.GetSourceOutfit());
         DrawArmorViewFilter(editingOutfit.GetSourceOutfit());
