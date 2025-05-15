@@ -22,6 +22,7 @@ constexpr auto *NF_OCT_DIFF_ADDED  = "\xef\x91\x97";     //\uf457
 constexpr auto *NF_OCT_SEARCH      = "\xef\x90\xa2";     //\uf422
 constexpr auto *NF_OCT_FILTER      = "\xef\x93\x97";     //\uf4d7
 constexpr auto *NF_MD_CLOSE        = "\xf3\xb0\x85\x96"; //\udb80\udd56
+constexpr auto *NF_MD_HELP         = "\xf3\xb0\x8b\x96"; //\udb80\uded6
 
 }
 

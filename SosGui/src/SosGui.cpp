@@ -8,6 +8,7 @@
 #include "gui/Table.h"
 #include "gui/UiSetting.h"
 #include "gui/icon.h"
+#include "gui/popup/AboutPopup.h"
 #include "gui/popup/SettingsPopup.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
@@ -346,7 +347,7 @@ void SosGui::Toolbar()
 {
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 15);
     ImGuiScope::StyleVar::FramePadding({3, 3});
-    if (ImGui::BeginMenu(std::format("{} {}", NF_OCT_FILE, "$SosGui_ToolBar_File"_T.c_str()).c_str()))
+    if (ImGui::BeginMenu(std::format("{} {}", NF_OCT_FILE, "$SosGui_ToolBar_File"_T).c_str()))
     {
         if (ImGui::MenuItem("$SkyOutSys_Text_Import"_T.c_str()))
         {
@@ -378,10 +379,14 @@ void SosGui::Toolbar()
     {
         Context::GetInstance().popupList.push_back(std::make_unique<Popup::SettingsPopup>("$SosGui_ToolBar_Settings"));
     }
-    if (ImGui::MenuItem(std::format("{} {}", NF_MD_CLOSE, "$SosGui_ToolBar_Close"_T.c_str()).c_str()))
+    if (ImGui::MenuItem(std::format("{} {}", NF_MD_CLOSE, "$SosGui_ToolBar_Close"_T).c_str()))
     {
         auto *messageQueue = RE::UIMessageQueue::GetSingleton();
         messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
+    }
+    if (ImGui::MenuItem("$SosGui_About"_T.c_str()))
+    {
+        Context::GetInstance().popupList.push_back(std::make_unique<Popup::AboutPopup>("$SosGui_About"));
     }
     ImGui::PopStyleVar();
 }
