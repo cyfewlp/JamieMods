@@ -3,7 +3,7 @@
 //
 #include "gui/OutfitSelectPopup.h"
 
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 #include "data/OutfitList.h"
 #include "gui/icon.h"
 

@@ -4,7 +4,7 @@
 #include "Translation.h"
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 #include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
@@ -146,7 +146,7 @@ void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &edi
     ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Setting::UiSetting::FONT_SIZE_TITLE_3);
     if (auto tabBar = ImGuiScope::TabBar("##OutfitTabBarView"))
     {
-        if (auto tabItem = ImGuiScope::TabItem("$Armor", nullptr, ImGuiTabItemFlags_Leading))
+        if (auto tabItem = ImGuiScope::TabItem("$Armor"_T.c_str(), nullptr, ImGuiTabItemFlags_Leading))
         {
             DrawOutfitArmors(context, editingOutfit);
         }
@@ -415,19 +415,16 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
 
 void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 {
-    if (m_armorView.armorFilter.Draw())
     {
-        m_armorView.armorFilter.dirty = false;
-        m_armorView.update_view_data(GetGenerator(), editingOutfit);
+        auto framePadding = ImGuiScope::StyleVar::FramePadding({5.0f, 5.0f});
+        auto buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
+        if (ImGui::Button(NF_OCT_FILTER))
+        {
+            ImGui::OpenPopup("Filters");
+        }
+        ImGui::SetItemTooltip("%s", "$SosGui_Filterers"_T.c_str());
     }
-    ImGui::SameLine(0, 20);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {5.0f, 5.0f});
-    if (ImGui::Button(NF_OCT_FILTER))
-    {
-        ImGui::OpenPopup("Filters");
-        ImGui::SetNextWindowPos({ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().x});
-    }
-    ImGui::PopStyleVar();
+    ImGui::SetNextWindowPos({ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y});
     if (auto popup = ImGuiScope::Popup("Filters"))
     {
         bool needUpdate =
@@ -439,6 +436,13 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
         {
             m_armorView.update_view_data(GetGenerator(), editingOutfit);
         }
+    }
+
+    ImGui::SameLine(0, 20);
+    if (m_armorView.armorFilter.Draw())
+    {
+        m_armorView.armorFilter.dirty = false;
+        m_armorView.update_view_data(GetGenerator(), editingOutfit);
     }
 }
 
@@ -458,12 +462,11 @@ void OutfitEditPanel::DrawArmorView(Context &context, const EditingOutfit &editi
                                .Hideable()
                                .Reorderable()
                                .flags;
-    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 5));
+    auto framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::TABLE_ROW_PADDING);
     if (const auto armorViewTable = ImGuiScope::Table("##ArmorCandidates", 6, flags))
     {
         DrawArmorViewContent(context, editingOutfit, m_armorView.ViewData());
     }
-    ImGui::PopStyleVar();
 }
 
 void OutfitEditPanel::DrawArmorViewContent(
@@ -473,14 +476,20 @@ void OutfitEditPanel::DrawArmorViewContent(
     using namespace ImGuiUtil;
     ImGui::TableSetupScrollFreeze(1, 1);
     // clang-format off
-    TableHeadersBuilder().Column("##Number").Flags(TableColumnFlags().NoSort())
+    TableHeadersBuilder().Column("##Number").Flags(TableColumnFlags().NoSort().WidthFixed())
         .Column("$ARMOR").Flags(TableColumnFlags().DefaultSort().NoHide())
         .Column("FormID").Flags(TableColumnFlags().NoSort())
         .Column("ModName").Flags(TableColumnFlags().NoSort())
         .Column("Playable").Flags(TableColumnFlags().NoSort())
-        .Column("$Add").Flags(TableColumnFlags().WidthFixed().NoSort())
-        .CommitHeadersRow();
+        .Column("$Add").Flags(TableColumnFlags().WidthFixed().NoSort());
     // clang-format on
+    ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+    for (int colIndex = 0; colIndex < 6; ++colIndex)
+    {
+        ImGui::TableSetColumnIndex(colIndex);
+        ImGuiScope::FontSize fontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
+        ImGui::TableHeader(ImGui::TableGetColumnName(colIndex));
+    }
 
     std::function<void()> onRequireAddArmor = [] {};
 

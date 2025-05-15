@@ -13,16 +13,18 @@ namespace Setting
 {
 struct UiSetting
 {
-    static constexpr std::string_view SETTING_NAME         = "UiSetting";
-    static constexpr float            FONT_SCALE_MIN       = 0.5F;
-    static constexpr float            FONT_SCALE_MAX       = 5.0F;
-    static constexpr float            FONT_SIZE_TEXT_SMALL = 12.0F;
-    static constexpr float            FONT_SIZE_TEXT       = 14.0F;
-    static constexpr float            FONT_SIZE_TITLE_1    = 36.0F;
-    static constexpr float            FONT_SIZE_TITLE_2    = 24.0F;
-    static constexpr float            FONT_SIZE_TITLE_3    = 18.0F;
-    static constexpr float            FONT_SIZE_TITLE_4    = 16.0F;
-    static constexpr const char      *ICON_FONT            = "SymbolsNerdFontMono-Regular.ttf";
+    static constexpr std::string_view     SETTING_NAME         = "UiSetting";
+    static constexpr float                FONT_SCALE_MIN       = 0.5F;
+    static constexpr float                FONT_SCALE_MAX       = 5.0F;
+    static constexpr float                FONT_SIZE_TEXT_SMALL = 12.0F;
+    static constexpr float                FONT_SIZE_TEXT       = 14.0F;
+    static constexpr float                FONT_SIZE_TITLE_1    = 36.0F;
+    static constexpr float                FONT_SIZE_TITLE_2    = 24.0F;
+    static constexpr float                FONT_SIZE_TITLE_3    = 18.0F;
+    static constexpr float                FONT_SIZE_TITLE_4    = 16.0F;
+    static constexpr std::array<float, 2> ICON_PADDING         = {5.0F, 5.0F};
+    static constexpr std::array<float, 2> TABLE_ROW_PADDING    = {3.0F, 3.0F};
+    static constexpr const char          *ICON_FONT            = "SymbolsNerdFontMono-Regular.ttf";
 
     enum DefaultThemeIndex
     {

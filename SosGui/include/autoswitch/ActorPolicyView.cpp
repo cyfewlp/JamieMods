@@ -5,7 +5,7 @@
 #include "autoswitch/ActorPolicyView.h"
 
 #include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 #include "data/SosUiData.h"
 #include "gui/Table.h"
 #include "service/SosDataCoordinator.h"

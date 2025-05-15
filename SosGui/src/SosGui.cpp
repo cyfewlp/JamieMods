@@ -2,7 +2,7 @@
 
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 #include "common/imgui/ImThemeLoader.h"
 #include "common/log.h"
 #include "gui/Table.h"
@@ -279,10 +279,10 @@ auto SosGui::DrawSidebar() -> float
     {
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
-        ImGuiScope::FontSize fontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {0, 0});
-        constexpr auto IconButton = [](const char *iconClass, const char *tooltip) {
+        auto           framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::ICON_PADDING);
+        auto           buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
+        auto           fontSize     = ImGuiScope::FontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
+        constexpr auto IconButton   = [](const char *iconClass, const char *tooltip) {
             ImGui::PushFont(Context::GetInstance().GetIconFont());
             auto isClick = ImGui::Button(iconClass);
             ImGui::PopFont();
@@ -305,8 +305,6 @@ auto SosGui::DrawSidebar() -> float
         {
             m_outfitEditPanel.ToggleShow();
         }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
     }
     ImGui::End();
     ImGui::PopStyleVar();

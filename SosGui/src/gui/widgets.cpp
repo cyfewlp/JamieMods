@@ -4,7 +4,7 @@
 #include "gui/widgets.h"
 
 #include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 
 #include <vector>
 

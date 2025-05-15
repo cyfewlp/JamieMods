@@ -41,3 +41,5 @@
 - [x] [[improvement]] search icon for all search input widgets;
 - [x] [[improvement]] Add filters icon:
 	- Click will open a popup: show all filters checkbox
+- [ ] [[improvement]] Bold font: bold font for table header;
+- [ ] [[improvement]] Move font scale, Theme config to Settings menu item;

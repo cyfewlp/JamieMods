@@ -8,14 +8,13 @@
 #include "common/config.h"
 #include "imgui.h"
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiScope
 {
 struct ScopeObject
 {
-    bool state = false;
+    bool state                                  = false;
     ScopeObject()                               = default;
     ScopeObject(const ScopeObject &)            = delete;
     ScopeObject &operator=(const ScopeObject &) = delete;
@@ -102,8 +101,10 @@ struct MenuBar : ScopeObject
 
 struct Table : ScopeObject
 {
-    Table(const char *str_id, int columns, ImGuiTableFlags flags = 0, const ImVec2 &outer_size = ImVec2(0.0f, 0.0f),
-          float       inner_width                                = 0.0f)
+    Table(
+        const char *str_id, int columns, ImGuiTableFlags flags = 0, const ImVec2 &outer_size = ImVec2(0.0f, 0.0f),
+        float inner_width = 0.0f
+    )
     {
         state = ImGui::BeginTable(str_id, columns, flags, outer_size, inner_width);
     }
@@ -130,6 +131,19 @@ struct ItemWidth : ScopeObject
     }
 };
 
+struct Font : ScopeObject
+{
+    Font(ImFont *font, float fontSize = -1)
+    {
+        ImGui::PushFont(font, fontSize);
+    }
+
+    ~Font()
+    {
+        ImGui::PopFont();
+    }
+};
+
 struct FontSize : ScopeObject
 {
     FontSize(float fontSize)
@@ -142,7 +156,6 @@ struct FontSize : ScopeObject
         ImGui::PopFontSize();
     }
 };
-
 
 struct PushId : ScopeObject
 {
@@ -222,8 +235,10 @@ struct Group : ScopeObject
 
 struct Child : ScopeObject
 {
-    Child(const char *     str_id, const ImVec2 &size = ImVec2(0, 0), const ImGuiChildFlags child_flags = 0,
-          ImGuiWindowFlags window_flags               = 0)
+    Child(
+        const char *str_id, const ImVec2 &size = ImVec2(0, 0), const ImGuiChildFlags child_flags = 0,
+        ImGuiWindowFlags window_flags = 0
+    )
     {
         state = ImGui::BeginChild(str_id, size, child_flags, window_flags);
     }
@@ -233,7 +248,63 @@ struct Child : ScopeObject
         ImGui::EndChild();
     }
 };
+
+struct StyleColor : ScopeObject
+{
+    StyleColor(ImGuiCol idx, ImU32 color)
+    {
+        state = true;
+        ImGui::PushStyleColor(idx, color);
+    }
+
+    StyleColor(ImGuiCol idx, const ImVec4 &color)
+    {
+        state = true;
+        ImGui::PushStyleColor(idx, color);
+    }
+
+    static constexpr auto Button(const ImVec4 &color) -> StyleColor
+    {
+        return StyleColor(ImGuiCol_Button, color);
+    }
+
+    ~StyleColor()
+    {
+        ImGui::PopStyleColor();
+    }
+};
+
+struct StyleVar : ScopeObject
+{
+    StyleVar(ImGuiStyleVar styleVar, float val)
+    {
+        state = true;
+        ImGui::PushStyleVar(styleVar, val);
+    }
+
+    StyleVar(ImGuiStyleVar styleVar, const ImVec2 &val)
+    {
+        state = true;
+        ImGui::PushStyleVar(styleVar, val);
+    }
+
+    StyleVar(ImGuiStyleVar styleVar, const std::array<float, 2> &array)
+    {
+        state = true;
+        ImGui::PushStyleVar(styleVar, {array[0], array[1]});
+    }
+
+    static constexpr auto FramePadding(const std::array<float, 2> &array) -> StyleVar
+    {
+        return StyleVar(ImGuiStyleVar_FramePadding, array);
+    }
+
+    ~StyleVar()
+    {
+        ImGui::PopStyleVar();
+    }
+};
 }
 }
 
-#endif //IMGUISCOP_H
+#endif // IMGUISCOP_H

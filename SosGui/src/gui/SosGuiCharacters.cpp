@@ -5,7 +5,7 @@
 #include "autoswitch/ActorPolicyContainer.h"
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"

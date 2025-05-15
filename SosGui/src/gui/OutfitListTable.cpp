@@ -3,7 +3,7 @@
 #include "Translation.h"
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScop.h"
+#include "common/imgui/ImGuiScope.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
@@ -248,19 +248,21 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
     ImGui::TableHeader(ImGui::TableGetColumnName(0));
 
     ImGui::TableNextColumn();
-    ImGui::PushFontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::PushFont(Context::GetInstance().GetIconFont());
-    if (ImGui::Button(NF_OCT_DIFF_ADDED))
     {
-        context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
+        auto fontSize     = ImGuiScope::FontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
+        auto framePadding = ImGuiScope::StyleVar::FramePadding({0, 0});
+        {
+            auto buttonColor = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
+            auto iconFont    = ImGuiScope::Font(Context::GetInstance().GetIconFont());
+            if (ImGui::Button(NF_OCT_DIFF_ADDED))
+            {
+                context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
+            }
+        }
+        ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit"_T.c_str());
+        ImGui::SameLine();
+        ImGui::TableHeader(ImGui::TableGetColumnName(1));
     }
-    ImGui::PopFont();
-    ImGui::PopStyleVar();
-    ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit"_T.c_str());
-    ImGui::SameLine();
-    ImGui::TableHeader(ImGui::TableGetColumnName(1));
-    ImGui::PopFontSize();
 
     static bool ascend = true;
     ImGuiUtil::may_update_table_sort_dir(ascend);
@@ -270,10 +272,10 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         ImGui::TableNextRow();
         ImGui::TableNextColumn(); // number column
         {
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-            ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0});
-            ImGui::PushFont(Context::GetInstance().GetIconFont());
-            bool clicked = false;
+            auto framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::ICON_PADDING);
+            auto buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
+            auto iconFont     = ImGuiScope::Font(Context::GetInstance().GetIconFont());
+            bool clicked      = false;
             if (outfit.IsFavorite())
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertFloat4ToU32(ImColor(234, 51, 35)));
@@ -293,9 +295,6 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
                 };
             }
 
-            ImGui::PopFont();
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar();
             ImGui::SameLine(0, 10);
             ImGui::Text("%zu", index + 1);
         }
@@ -356,6 +355,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         }
     };
 
+    auto framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::TABLE_ROW_PADDING);
     DrawOutfitTableContent(m_outfitFilterInput.viewData, ascend, drawOutfitEntry);
 }
 
