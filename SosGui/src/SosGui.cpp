@@ -399,8 +399,8 @@ void SosGui::MainConfigWindow()
                 return m_dataCoordinator.RequestEnable(fEnabled);
             };
         }
-        RenderQuickSlotConfig();
-        RenderCharactersPanel();
+        DrawQuickSlotConfig();
+        DrawCharactersPanel();
 
         const RE::Actor *selectedActor = GetSelectedActor();
         m_autoSwitchOutfitView.Draw(selectedActor, m_uiData, m_dataCoordinator, m_outfitService);
@@ -408,7 +408,7 @@ void SosGui::MainConfigWindow()
     ImGui::End();
 }
 
-void SosGui::RenderQuickSlotConfig()
+void SosGui::DrawQuickSlotConfig()
 {
     bool quickSlotEnabled = m_uiData.IsQuickSlotEnabled();
     if (ImGui::Checkbox("$SkyOutSys_MCMHeader_Quickslots"_T.c_str(), &quickSlotEnabled))

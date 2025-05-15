@@ -24,10 +24,24 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-void SosGui::RenderCharactersPanel()
+void SosGui::DrawCharactersPanel()
 {
     if (ImGuiUtil::BeginChild("$SkyOutSys_Text_ActiveActorHeader", ImVec2(), ImGuiChildFlags_AutoResizeY))
     {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushFont(Context::GetInstance().GetIconFont());
+        if (ImGui::Button(NF_MD_REFRESH))
+        {
+            +[&] {
+                return m_dataCoordinator.RequestActorList();
+            };
+        }
+        ImGui::PopFont();
+        ImGui::PopStyleColor();
+        ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$Characters}"_T.c_str());
+
+        ImGui::SameLine(0, 20);
+
         ImGuiUtil::Text("$SkyOutSys_Text_AddActorSelection");
         ImGui::SameLine();
         if (widgets::DrawNearActorsCombo(
@@ -38,7 +52,8 @@ void SosGui::RenderCharactersPanel()
                 return m_dataCoordinator.RequestAddActor(m_selectedActor);
             };
         }
-        RenderCharactersList();
+
+        DrawCharactersList();
     }
     ImGui::EndChild();
 }
@@ -56,21 +71,9 @@ static auto get_actor_outfit_name(SosUiData &uiData, RE::Actor *actor) -> std::s
         .value_or("No outfit");
 }
 
-void SosGui::RenderCharactersList()
+void SosGui::DrawCharactersList()
 {
     const auto &actors = m_uiData.GetActors();
-
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-    ImGui::PushFont(Context::GetInstance().GetIconFont());
-    if (ImGui::Button(NF_MD_REFRESH))
-    {
-        +[&] {
-            return m_dataCoordinator.RequestActorList();
-        };
-    }
-    ImGui::PopFont();
-    ImGui::PopStyleColor();
-    ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$Characters}"_T.c_str());
 
     const ImGuiScope::Table charactersTable(
         "##CharactersTable", 3, ImGuiUtil::TableFlags().Resizable().SizingStretchProp().flags
@@ -81,8 +84,8 @@ void SosGui::RenderCharactersList()
     }
     TableHeadersBuilder()
         .Column("$Characters")
-        .Column("$Delete")
         .Column("$SosGui_TableHeader_ActiveOutfit")
+        .Column("$Delete")
         .CommitHeadersRow();
 
     int wantDeleteActorIndex = -1;
@@ -105,12 +108,6 @@ void SosGui::RenderCharactersList()
             }
         }
 
-        ImGui::TableNextColumn(); // remove character column
-        if (ImGuiUtil::Button("$Delete"))
-        {
-            wantDeleteActorIndex = idx;
-        }
-
         ImGui::TableNextColumn(); // active outfit column
         {
             auto outfitName = get_actor_outfit_name(m_uiData, actor);
@@ -120,6 +117,12 @@ void SosGui::RenderCharactersList()
                 m_outfitSelectPopup  = std::make_unique<OutfitSelectPopup>();
                 m_outfitSelectPopup->UpdateView(m_uiData.GetOutfitList());
             }
+        }
+
+        ImGui::TableNextColumn(); // remove character column
+        if (ImGuiUtil::Button("$Delete"))
+        {
+            wantDeleteActorIndex = idx;
         }
         idx++;
     }

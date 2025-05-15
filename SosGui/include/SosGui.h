@@ -88,13 +88,13 @@ private:
         return nullptr;
     }
 
-    void RenderQuickSlotConfig();
+    void DrawQuickSlotConfig();
 
     static void NewFrame();
 
-    void RenderCharactersPanel();
+    void DrawCharactersPanel();
 
-    void RenderCharactersList();
+    void DrawCharactersList();
 
     void autoSwitch_column1_outfit(RE::FormID actorId, uint32_t policyId);
 

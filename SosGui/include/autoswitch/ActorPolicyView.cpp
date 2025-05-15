@@ -48,9 +48,23 @@ void ActorPolicyView::Draw(
             .Column("$SosGui_TableHeader_Location")
             .Column("$SosGui_TableHeader_Location_State")
             .CommitHeadersRow();
-        using Policy = AutoSwitch::Policy;
-        for (uint32_t policyId = 0; policyId < static_cast<uint32_t>(Policy::Count); ++policyId)
+        for (Policy policy :
+             {Policy::Combat,
+              Policy::World,
+              Policy::WorldSnowy,
+              Policy::WorldRainy,
+              Policy::City,
+              Policy::CitySnowy,
+              Policy::CityRainy,
+              Policy::Town,
+              Policy::TownSnowy,
+              Policy::TownRainy,
+              Policy::Dungeon,
+              Policy::DungeonSnowy,
+              Policy::DungeonRainy})
         {
+            uint32_t policyId = static_cast<uint32_t>(policy);
+
             ImGuiScope::PushId pushId(policyId);
             ImGui::TableNextRow();
             if (ImGui::TableNextColumn())

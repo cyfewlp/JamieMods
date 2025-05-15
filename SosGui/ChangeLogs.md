@@ -47,3 +47,5 @@
 - [x] [[Bug Fix]] Mod refrence counter incorrect;
 - [ ] [[Bug Fix]] `SosNativeCaller` may resume on other thread;
 - [ ] [[improvement]] when Click `Sidebar`: Focus the associate window if it's not focused 
+- [ ] [[improvement]] About popup
+- [ ] [[improvement]] shadow border for popup
