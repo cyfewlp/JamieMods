@@ -6,7 +6,7 @@
 #define CONTEXT_H
 
 #include "common/config.h"
-#include "gui/Popup.h"
+#include "popup/Popup.h"
 
 #include <list>
 #include <memory>

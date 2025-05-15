@@ -64,17 +64,36 @@ void Setting::UiSettingApplyAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler * /
     auto *setting                  = UiSetting::GetInstance();
     ImGui::GetIO().FontGlobalScale = setting->globalFontScale;
     auto &loader                   = ImTheme::Loader::GetInstance();
-    if (loader.IsIndexInRange(setting->selectedThemeIndex))
+
+    if (setting->selectedThemeIndex > UiSetting::DefaultThemeIndex_Invalid)
     {
-        const auto &themeFilePath = util::GetInterfaceFile(ImTheme::THEME_FILE_NAME);
-        try
+        switch (setting->selectedThemeIndex)
         {
-            loader.UseTheme(setting->selectedThemeIndex, themeFilePath);
-        }
-        catch (ImTheme::Loader::Error &e)
-        {
-            log_error("Failed to load theme file {}: {}", themeFilePath.c_str(), e.what());
-            setting->selectedThemeIndex = UiSetting::DefaultThemeIndex_Invalid;
+            case UiSetting::DefaultThemeIndex_Classic:
+                ImGui::StyleColorsClassic();
+                break;
+            case UiSetting::DefaultThemeIndex_Dark:
+                ImGui::StyleColorsDark();
+                break;
+            case UiSetting::DefaultThemeIndex_Light:
+                ImGui::StyleColorsLight();
+                break;
+            default: {
+                if (loader.IsIndexInRange(setting->selectedThemeIndex))
+                {
+                    const auto &themeFilePath = util::GetInterfaceFile(ImTheme::THEME_FILE_NAME);
+                    try
+                    {
+                        loader.UseTheme(setting->selectedThemeIndex, themeFilePath);
+                    }
+                    catch (ImTheme::Loader::Error &e)
+                    {
+                        log_error("Failed to load theme file {}: {}", themeFilePath.c_str(), e.what());
+                        setting->selectedThemeIndex = UiSetting::DefaultThemeIndex_Invalid;
+                    }
+                }
+                break;
+            }
         }
     }
 }

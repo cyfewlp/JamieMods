@@ -1,4 +1,4 @@
-#include "gui/Popup.h"
+#include "gui/popup/Popup.h"
 
 #include "Translation.h"
 #include "common/config.h"

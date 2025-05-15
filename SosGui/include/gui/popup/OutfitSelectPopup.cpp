@@ -1,7 +1,7 @@
 //
 // Created by jamie on 2025/5/14.
 //
-#include "gui/OutfitSelectPopup.h"
+#include "OutfitSelectPopup.h"
 
 #include "common/imgui/ImGuiScope.h"
 #include "data/OutfitList.h"

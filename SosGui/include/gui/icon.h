@@ -17,9 +17,12 @@ constexpr auto *NF_MD_HEART_REMOVE = "\xf3\xb1\x90\xb0"; //\udb85\udc30
 constexpr auto *NF_OCT_GEAR        = "\xef\x90\xa3";     // nf-oct-heart \uf423
 constexpr auto *NF_FA_EDIT         = "\xef\x81\x84";     //\uf044
 constexpr auto *NF_FA_SHIRT        = "\xee\xb8\x9c";     //\uee1c
+constexpr auto *NF_OCT_FILE        = "\xf3\xb0\x88\x94"; //\udb80\ude14
 constexpr auto *NF_OCT_DIFF_ADDED  = "\xef\x91\x97";     //\uf457
 constexpr auto *NF_OCT_SEARCH      = "\xef\x90\xa2";     //\uf422
-constexpr auto *NF_OCT_FILTER      = "\xef\x93\x97";     //\\uf4d7
+constexpr auto *NF_OCT_FILTER      = "\xef\x93\x97";     //\uf4d7
+constexpr auto *NF_MD_CLOSE        = "\xf3\xb0\x85\x96"; //\udb80\udd56
+
 }
 
-#endif //ICON_H
+#endif // ICON_H

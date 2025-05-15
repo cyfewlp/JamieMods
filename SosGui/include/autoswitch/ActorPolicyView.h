@@ -5,8 +5,8 @@
 #ifndef AUTOSWITCHOUTFITVIEW_H
 #define AUTOSWITCHOUTFITVIEW_H
 
+#include "gui/popup/OutfitSelectPopup.h"
 #include "common/config.h"
-#include "gui/OutfitSelectPopup.h"
 
 #include <memory>
 

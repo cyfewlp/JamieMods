@@ -2,7 +2,7 @@
 // Created by jamie on 2025/5/14.
 //
 
-#include "autoswitch/ActorPolicyView.h"
+#include "ActorPolicyView.h"
 
 #include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScope.h"

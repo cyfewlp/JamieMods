@@ -132,9 +132,19 @@ struct Theme
         return *this;
     }
 
-    friend bool operator<(const Theme &lhs,  const Theme &other)
+    friend bool operator<(const Theme &lhs, const Theme &other)
     {
-        return lhs.name < other.name;
+        std::string lower1;
+        lower1.resize(lhs.name.size());
+        std::string lower2{};
+        lower2.resize(other.name.size());
+        std::ranges::transform(lhs.name, lower1.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        std::ranges::transform(other.name, lower2.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        return lower1 < lower2;
     }
 };
 

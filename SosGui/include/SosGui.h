@@ -4,7 +4,7 @@
 #include "data/SosUiData.h"
 #include "gui/BaseGui.h"
 #include "gui/OutfitListTable.h"
-#include "gui/OutfitSelectPopup.h"
+#include "gui/popup/OutfitSelectPopup.h"
 #include "service/OutfitService.h"
 #include "service/SosDataCoordinator.h"
 #include "task.h"
@@ -88,11 +88,7 @@ private:
         return nullptr;
     }
 
-    auto ThemeCombo() -> void;
-
     void RenderQuickSlotConfig();
-
-    void DrawExportOrImportSettings();
 
     static void NewFrame();
 

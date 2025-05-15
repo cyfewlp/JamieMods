@@ -6,7 +6,7 @@
 #include "data/id.h"
 #include "gui/BaseGui.h"
 #include "gui/OutfitEditPanel.h"
-#include "gui/Popup.h"
+#include "popup/Popup.h"
 #include "service/OutfitService.h"
 #include "util/ImGuiUtil.h"
 

@@ -8,10 +8,10 @@
 #include "data/ArmorGenerator.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
-#include "gui/Popup.h"
 #include "gui/Table.h"
 #include "gui/UiSetting.h"
 #include "gui/icon.h"
+#include "gui/popup/Popup.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -109,7 +109,7 @@ void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfi
     if (m_editContext.dirty)
     {
         m_editContext.dirty = false;
-        m_armorView.update_view_data(GetGenerator(), editingOutfit.GetSourceOutfit());
+        m_armorView.reset_view(GetGenerator(), editingOutfit.GetSourceOutfit());
     }
     if (ImGui::BeginChild("##OutfitEditPanelSideBar", {200, 0}, ImGuiUtil::ChildFlag().Borders().ResizeX().flags))
     {

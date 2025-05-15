@@ -42,4 +42,8 @@
 - [x] [[improvement]] Add filters icon:
 	- Click will open a popup: show all filters checkbox
 - [ ] [[improvement]] Bold font: bold font for table header;
-- [ ] [[improvement]] Move font scale, Theme config to Settings menu item;
+- [x] [[improvement]] Move font scale, Theme config to Settings menu item;
+- [x] [[Bug Fix]] Theme was not applied correctly if theme index was set to `DefaultThemeIndex`;
+- [x] [[Bug Fix]] Mod refrence counter incorrect;
+- [ ] [[Bug Fix]] `SosNativeCaller` may resume on other thread;
+- [ ] [[improvement]] when Click `Sidebar`: Focus the associate window if it's not focused 

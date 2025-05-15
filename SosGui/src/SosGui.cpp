@@ -8,6 +8,7 @@
 #include "gui/Table.h"
 #include "gui/UiSetting.h"
 #include "gui/icon.h"
+#include "gui/popup/SettingsPopup.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
@@ -343,7 +344,28 @@ void SosGui::DockSpace()
 
 void SosGui::Toolbar()
 {
-    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 20);
+    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 15);
+    ImGuiScope::StyleVar::FramePadding({3, 3});
+    if (ImGui::BeginMenu(std::format("{} {}", NF_OCT_FILE, "$SosGui_ToolBar_File"_T.c_str()).c_str()))
+    {
+        if (ImGui::MenuItem("$SkyOutSys_Text_Import"_T.c_str()))
+        {
+            OnRefresh();
+            +[&] {
+                return m_dataCoordinator.RequestImportSettings();
+            };
+        }
+        ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_Import"_T.c_str());
+
+        if (ImGui::MenuItem("$SkyOutSys_Text_Export"_T.c_str()))
+        {
+            +[&] {
+                return m_dataCoordinator.RequestExportSettings();
+            };
+        }
+        ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
+        ImGui::EndMenu();
+    }
     if (ImGuiUtil::MenuItem("$SosGui_ToolBar_ShowOrHide"))
     {
         m_fShowConfigWindows = !m_fShowConfigWindows;
@@ -352,7 +374,11 @@ void SosGui::Toolbar()
     {
         util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
     }
-    if (ImGuiUtil::MenuItem("$SosGui_ToolBar_Close"))
+    if (ImGui::MenuItem(std::format("{} {}", NF_OCT_GEAR, "$SosGui_ToolBar_Settings"_T).c_str()))
+    {
+        Context::GetInstance().popupList.push_back(std::make_unique<Popup::SettingsPopup>("$SosGui_ToolBar_Settings"));
+    }
+    if (ImGui::MenuItem(std::format("{} {}", NF_MD_CLOSE, "$SosGui_ToolBar_Close"_T.c_str()).c_str()))
     {
         auto *messageQueue = RE::UIMessageQueue::GetSingleton();
         messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
@@ -373,107 +399,13 @@ void SosGui::MainConfigWindow()
                 return m_dataCoordinator.RequestEnable(fEnabled);
             };
         }
-        ImGui::Indent(2);
-        ImGui::SameLine();
-        if (ImGui::DragFloat(
-                "$SosGui_Global_FontSize_Scale"_T.c_str(),
-                &ImGui::GetIO().FontGlobalScale,
-                0.05F,
-                Setting::UiSetting::FONT_SCALE_MIN,
-                Setting::UiSetting::FONT_SCALE_MAX
-            ))
-        {
-            Setting::UiSetting::GetInstance()->globalFontScale = ImGui::GetIO().FontGlobalScale;
-        }
-        ThemeCombo();
-
         RenderQuickSlotConfig();
-        ImGui::SameLine();
-        DrawExportOrImportSettings();
-
         RenderCharactersPanel();
 
         const RE::Actor *selectedActor = GetSelectedActor();
         m_autoSwitchOutfitView.Draw(selectedActor, m_uiData, m_dataCoordinator, m_outfitService);
     }
     ImGui::End();
-}
-
-auto SosGui::ThemeCombo() -> void
-{
-    auto         &loader     = ImTheme::Loader::GetInstance();
-    auto         *settings   = Setting::UiSetting::GetInstance();
-    const int32_t themeIndex = settings->selectedThemeIndex;
-    std::string   preview    = "";
-    const auto   &themes     = loader.GetAvailableThemes();
-    if (themeIndex > Setting::UiSetting::DefaultThemeIndex_Invalid)
-    {
-        switch (themeIndex)
-        {
-            case Setting::UiSetting::DefaultThemeIndex_Classic:
-                preview = "Default: Classic";
-                break;
-            case Setting::UiSetting::DefaultThemeIndex_Dark:
-                preview = "Default: Dark";
-                break;
-            case Setting::UiSetting::DefaultThemeIndex_Light:
-                preview = "Default: Light";
-                break;
-            default: {
-                if (loader.IsIndexInRange(themeIndex))
-                {
-                    preview = themes[themeIndex].name;
-                }
-                break;
-            }
-        }
-    }
-    ImGuiScope::Combo combo("Theme", preview.c_str());
-    if (!combo)
-    {
-        return;
-    }
-
-    if (ImGui::Selectable("Default: Classic", false))
-    {
-        ImGui::StyleColorsClassic();
-        settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Classic;
-    }
-
-    if (ImGui::Selectable("Default: Dark", false))
-    {
-        ImGui::StyleColorsDark();
-        settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Dark;
-    }
-
-    if (ImGui::Selectable("Default: Light", false))
-    {
-        ImGui::StyleColorsLight();
-        settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Light;
-    }
-
-    for (size_t index = 0; index < themes.size(); ++index)
-    {
-        const auto &theme = themes[index];
-        if (ImGui::Selectable(theme.name.c_str(), false))
-        {
-            try
-            {
-                loader.UseTheme(index, util::GetInterfaceFile(ImTheme::THEME_FILE_NAME));
-                settings->selectedThemeIndex = index;
-            }
-            catch (ImTheme::Loader::Error &e)
-            {
-                m_uiData.PushErrorMessage(std::format("Can't use theme {}: {}", theme.name, e.what()));
-                settings->selectedThemeIndex = Setting::UiSetting::DefaultThemeIndex_Invalid;
-            }
-        }
-    }
-
-    if (themeIndex != settings->selectedThemeIndex)
-    {
-        ImGui::MarkIniSettingsDirty();
-    }
 }
 
 void SosGui::RenderQuickSlotConfig()
@@ -494,27 +426,6 @@ EagerTask waitImport(const SosDataCoordinator &dataCoordinator)
 {
     log_debug("wait import");
     co_await dataCoordinator.RequestImportSettings();
-}
-
-void SosGui::DrawExportOrImportSettings()
-{
-    if (ImGui::Button("$SkyOutSys_Text_Export"_T.c_str()))
-    {
-        +[&] {
-            return m_dataCoordinator.RequestExportSettings();
-        };
-    }
-    ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
-
-    ImGui::SameLine();
-    if (ImGui::Button("$SkyOutSys_Text_Import"_T.c_str()))
-    {
-        OnRefresh();
-        +[&] {
-            return m_dataCoordinator.RequestImportSettings();
-        };
-    }
-    ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_Import"_T.c_str());
 }
 
 auto SosGui::EnableQuickslot(const bool enable) -> bool

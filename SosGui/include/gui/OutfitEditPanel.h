@@ -6,8 +6,8 @@
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "gui/ArmorView.h"
-#include "gui/Popup.h"
 #include "gui/context.h"
+#include "popup/Popup.h"
 #include "service/OutfitService.h"
 
 #include <RE/B/BGSBipedObjectForm.h>

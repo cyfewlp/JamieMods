@@ -5,8 +5,8 @@
 #ifndef OUTFITSELECTPOPUP_H
 #define OUTFITSELECTPOPUP_H
 
+#include "Popup.h"
 #include "common/config.h"
-#include "gui/Popup.h"
 #include "util/ImGuiUtil.h"
 
 #include <vector>
