@@ -1,5 +1,6 @@
 #include "SosGui.h"
 
+#include "../include/gui/font/FontManager.h"
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScope.h"
@@ -11,7 +12,6 @@
 #include "gui/popup/AboutPopup.h"
 #include "gui/popup/SettingsPopup.h"
 #include "imgui.h"
-#include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "task.h"
@@ -86,30 +86,10 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     ImGui::StyleColorsDark();
     static std::string IniFileName;
 
-    constexpr auto mainFontName = R"(C:\Windows\Fonts\simsun.ttc)";
-    const auto     iconFontName = util::GetInterfaceFile(Setting::UiSetting::ICON_FONT);
-    constexpr auto MonaspaceXenonFont =
-        R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-Regular.ttf)";
-    constexpr auto emojiFont = R"(C:\Windows\Fonts\seguiemj.ttf)";
+    FontManager::GetInstance().Initialize();
 
-    ImFontConfig fontConfig;
-    ImFontConfig mergeableConfig;
-    mergeableConfig.MergeMode = true;
-
-    fontConfig.OversampleH = fontConfig.OversampleV = 1;
-    fontConfig.GlyphExcludeRanges                   = io.Fonts->GetGlyphRangesDefault();
-    fontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-
-    io.Fonts->AddFontFromFileTTF(emojiFont, Setting::UiSetting::FONT_SIZE_TEXT, &fontConfig);
-    io.Fonts->AddFontFromFileTTF(MonaspaceXenonFont, Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
-    io.Fonts->AddFontFromFileTTF(mainFontName, Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
-    auto *iconFont =
-        io.Fonts->AddFontFromFileTTF(iconFontName.c_str(), Setting::UiSetting::FONT_SIZE_TEXT, &mergeableConfig);
-    io.Fonts->Build();
     IniFileName    = util::GetInterfaceFile(io.IniFilename);
     io.IniFilename = IniFileName.c_str();
-
-    Context::GetInstance().SetIconFont(iconFont);
 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -157,7 +137,7 @@ void SosGui::DrawTopModalPopup()
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
-    ImGuiScope::FontSize fontSize4(Setting::UiSetting::FONT_SIZE_TITLE_4);
+    ImGuiScope::FontSize fontSize4(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_4);
     const auto          &modalPopup = context.popupList.front();
     bool                 confirmed  = false;
     const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
@@ -283,11 +263,9 @@ auto SosGui::DrawSidebar() -> float
         ImGui::SetCursorPosY(offsetY);
         auto           framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::ICON_PADDING);
         auto           buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-        auto           fontSize     = ImGuiScope::FontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
+        auto           fontSize     = ImGuiScope::FontSize(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
         constexpr auto IconButton   = [](const char *iconClass, const char *tooltip) {
-            ImGui::PushFont(Context::GetInstance().GetIconFont());
             auto isClick = ImGui::Button(iconClass);
-            ImGui::PopFont();
             ImGui::SetItemTooltip("%s", tooltip);
             return isClick;
         };

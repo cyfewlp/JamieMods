@@ -4,6 +4,7 @@
 
 #include "SettingsPopup.h"
 
+#include "../font/FontManager.h"
 #include "Translation.h"
 #include "common/imgui/ImGuiScope.h"
 #include "common/imgui/ImThemeLoader.h"
@@ -16,6 +17,8 @@ namespace LIBC_NAMESPACE_DECL
 {
 void Popup::SettingsPopup::DoDraw(SosUiData &uiData, bool &)
 {
+    FontManager::GetInstance().DrawPanel();
+
     if (ImGui::DragFloat(
             "$SosGui_Global_FontSize_Scale"_T.c_str(),
             &ImGui::GetIO().FontGlobalScale,

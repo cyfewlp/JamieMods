@@ -29,14 +29,12 @@ void SosGui::DrawCharactersPanel()
     if (ImGuiUtil::BeginChild("$SkyOutSys_Text_ActiveActorHeader", ImVec2(), ImGuiChildFlags_AutoResizeY))
     {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        ImGui::PushFont(Context::GetInstance().GetIconFont());
         if (ImGui::Button(NF_MD_REFRESH))
         {
             +[&] {
                 return m_dataCoordinator.RequestActorList();
             };
         }
-        ImGui::PopFont();
         ImGui::PopStyleColor();
         ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$Characters}"_T.c_str());
 

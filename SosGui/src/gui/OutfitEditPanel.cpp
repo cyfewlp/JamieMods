@@ -143,7 +143,7 @@ bool OutfitEditPanel::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup)
 
 void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &editingOutfit)
 {
-    ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Setting::UiSetting::FONT_SIZE_TITLE_3);
+    ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
     if (auto tabBar = ImGuiScope::TabBar("##OutfitTabBarView"))
     {
         if (auto tabItem = ImGuiScope::TabItem("$Armor"_T.c_str(), nullptr, ImGuiTabItemFlags_Leading))
@@ -155,7 +155,7 @@ void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &edi
 
 void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
 {
-    ImGuiUtil::TextScale("$SosGui_ModList", Setting::UiSetting::FONT_SIZE_TITLE_3);
+    ImGuiUtil::TextScale("$SosGui_ModList", Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
     static int maxChildItemCount = 10;
     const auto itemHeight        = ImGui::GetTextLineHeight();
     float      childHeight       = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
@@ -166,7 +166,7 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
     }
     ImGui::EndChild();
 
-    ImGuiUtil::TextScale("$SosGui_BodySlots", Setting::UiSetting::FONT_SIZE_TITLE_3);
+    ImGuiUtil::TextScale("$SosGui_BodySlots", Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
     if (ImGui::BeginChild("#SlotFilterChild", {0, childHeight}, ImGuiUtil::ChildFlag().Borders().ResizeY()))
     {
         DrawArmorViewSlotFilterer(editingOutfit);
@@ -187,12 +187,12 @@ void OutfitEditPanel::DrawOutfitArmors(Context &context, const EditingOutfit &ed
 {
     if (editingOutfit.IsUntitled())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Setting::UiSetting::FONT_SIZE_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
         return;
     }
     if (editingOutfit.IsEmpty())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Setting::UiSetting::FONT_SIZE_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
         return;
     }
 
@@ -313,7 +313,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
 {
     using namespace ImGuiUtil;
     ImGui::Separator();
-    TextScale("$SosGui_ArmorGenerator", Setting::UiSetting::FONT_SIZE_TITLE_3);
+    TextScale("$SosGui_ArmorGenerator", Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
     if (auto tabBarW =
             ImGuiScope::TabBar("ArmorGeneratorTabBar", TabBarFlags().DrawSelectedOverline().Reorderable().flags))
     {
@@ -481,13 +481,13 @@ void OutfitEditPanel::DrawArmorViewContent(
         .Column("FormID").Flags(TableColumnFlags().NoSort())
         .Column("ModName").Flags(TableColumnFlags().NoSort())
         .Column("Playable").Flags(TableColumnFlags().NoSort())
-        .Column("$Add").Flags(TableColumnFlags().WidthFixed().NoSort());
+        .Column("$Add").Flags(TableColumnFlags().NoSort());
     // clang-format on
     ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
     for (int colIndex = 0; colIndex < 6; ++colIndex)
     {
         ImGui::TableSetColumnIndex(colIndex);
-        ImGuiScope::FontSize fontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
+        ImGuiScope::FontSize fontSize(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
         ImGui::TableHeader(ImGui::TableGetColumnName(colIndex));
     }
 
@@ -544,7 +544,14 @@ void OutfitEditPanel::DrawArmorViewContent(
 
         if (ImGui::TableNextColumn()) // column playable
         {
-            ImGui::Text("%s", IsArmorNonPlayable(armor) ? "\xe2\x9d\x8c" : "\xe2\x9c\x85");
+            if (IsArmorNonPlayable(armor))
+            {
+                ImGui::TextColored(ImColor(237, 28, 36), "%s", NF_OCT_X);
+            }
+            else
+            {
+                ImGui::TextColored(ImColor(34, 177, 76), "%s", NF_OCT_CHECK);
+            }
         }
 
         ImGuiScope::Disabled disabled(editingOutfit.IsUntitled());

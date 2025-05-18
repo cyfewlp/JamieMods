@@ -49,3 +49,10 @@
 - [ ] [[improvement]] when Click `Sidebar`: Focus the associate window if it's not focused 
 - [ ] [[improvement]] About popup
 - [ ] [[improvement]] shadow border for popup
+- [ ] [[improvement]] Support select all installed fonts;
+	- ~~persist font path, style, face index;~~;
+	- persist font family and font index;
+	- read system default font: family, faceIndex;
+	- Always use system default font as fallback font;
+	- ❔clear font altas cached data when replaced default font?
+- [ ] ensure safe skip SVG font

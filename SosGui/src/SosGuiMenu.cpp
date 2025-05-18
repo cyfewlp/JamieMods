@@ -34,9 +34,9 @@ struct
     RE::GFxKey::Code gfxCode;
     ImGuiKey         imGuiKey;
 } GFxCodeToImGuiKeyTable[] = {
-    {RE::GFxKey::kAlt,          ImGuiKey_ModAlt        },
-    {RE::GFxKey::kControl,      ImGuiKey_ModCtrl       },
-    {RE::GFxKey::kShift,        ImGuiKey_ModShift      },
+    {RE::GFxKey::kAlt,          ImGuiMod_Alt        },
+    {RE::GFxKey::kControl,      ImGuiMod_Ctrl       },
+    {RE::GFxKey::kShift,        ImGuiMod_Shift      },
     {RE::GFxKey::kCapsLock,     ImGuiKey_CapsLock      },
     // {RE::GFxKey::kTab,          ImGuiKey_Tab           }, // Don't sent tab key: bug when use tab close menu
     {RE::GFxKey::kHome,         ImGuiKey_Home          },
@@ -111,7 +111,6 @@ void SosGuiMenu::OnHide()
     log_debug("SosGuiMenu::kHide");
     auto &io = ImGui::GetIO();
     io.ClearInputKeys();
-    io.ClearInputCharacters();
 }
 
 RE::UI_MESSAGE_RESULTS SosGuiMenu::ProcessMessage(RE::UIMessage &a_message)

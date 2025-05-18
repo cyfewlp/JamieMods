@@ -42,127 +42,127 @@ struct InputTextFlags
         return flags;
     }
 
-    consteval auto None() const
+    static consteval auto None()
     {
         return InputTextFlags{ImGuiInputTextFlags_None};
     }
 
-    consteval auto CharsDecimal() const
+    static consteval auto CharsDecimal()
     {
         return InputTextFlags{ImGuiInputTextFlags_CharsDecimal};
     }
 
-    consteval auto CharsHexadecimal() const
+    static consteval auto CharsHexadecimal()
     {
         return InputTextFlags{ImGuiInputTextFlags_CharsHexadecimal};
     }
 
-    consteval auto CharsScientific() const
+    static consteval auto CharsScientific()
     {
         return InputTextFlags{ImGuiInputTextFlags_CharsScientific};
     }
 
-    consteval auto CharsUppercase() const
+    static consteval auto CharsUppercase()
     {
         return InputTextFlags{ImGuiInputTextFlags_CharsUppercase};
     }
 
-    consteval auto CharsNoBlank() const
+    static consteval auto CharsNoBlank()
     {
         return InputTextFlags{ImGuiInputTextFlags_CharsNoBlank};
     }
 
-    consteval auto AllowTabInput() const
+    static consteval auto AllowTabInput()
     {
         return InputTextFlags{ImGuiInputTextFlags_AllowTabInput};
     }
 
-    consteval auto EnterReturnsTrue() const
+    static consteval auto EnterReturnsTrue()
     {
         return InputTextFlags{ImGuiInputTextFlags_EnterReturnsTrue};
     }
 
-    consteval auto EscapeClearsAll() const
+    static consteval auto EscapeClearsAll()
     {
         return InputTextFlags{ImGuiInputTextFlags_EscapeClearsAll};
     }
 
-    consteval auto CtrlEnterForNewLine() const
+    static consteval auto CtrlEnterForNewLine()
     {
         return InputTextFlags{ImGuiInputTextFlags_CtrlEnterForNewLine};
     }
 
-    consteval auto ReadOnly() const
+    static consteval auto ReadOnly()
     {
         return InputTextFlags{ImGuiInputTextFlags_ReadOnly};
     }
 
-    consteval auto Password() const
+    static consteval auto Password()
     {
         return InputTextFlags{ImGuiInputTextFlags_Password};
     }
 
-    consteval auto AlwaysOverwrite() const
+    static consteval auto AlwaysOverwrite()
     {
         return InputTextFlags{ImGuiInputTextFlags_AlwaysOverwrite};
     }
 
-    consteval auto AutoSelectAll() const
+    static consteval auto AutoSelectAll()
     {
         return InputTextFlags{ImGuiInputTextFlags_AutoSelectAll};
     }
 
-    consteval auto ParseEmptyRefVal() const
+    static consteval auto ParseEmptyRefVal()
     {
         return InputTextFlags{ImGuiInputTextFlags_ParseEmptyRefVal};
     }
 
-    consteval auto DisplayEmptyRefVal() const
+    static consteval auto DisplayEmptyRefVal()
     {
         return InputTextFlags{ImGuiInputTextFlags_DisplayEmptyRefVal};
     }
 
-    consteval auto NoHorizontalScroll() const
+    static consteval auto NoHorizontalScroll()
     {
         return InputTextFlags{ImGuiInputTextFlags_NoHorizontalScroll};
     }
 
-    consteval auto NoUndoRedo() const
+    static consteval auto NoUndoRedo()
     {
         return InputTextFlags{ImGuiInputTextFlags_NoUndoRedo};
     }
 
-    consteval auto ElideLeft() const
+    static consteval auto ElideLeft()
     {
         return InputTextFlags{ImGuiInputTextFlags_ElideLeft};
     }
 
-    consteval auto CallbackCompletion() const
+    static consteval auto CallbackCompletion()
     {
         return InputTextFlags{ImGuiInputTextFlags_CallbackCompletion};
     }
 
-    consteval auto CallbackHistory() const
+    static consteval auto CallbackHistory()
     {
         return InputTextFlags{ImGuiInputTextFlags_CallbackHistory};
     }
 
-    consteval auto CallbackAlways() const
+    static consteval auto CallbackAlways()
     {
         return InputTextFlags{ImGuiInputTextFlags_CallbackAlways};
     }
 
-    consteval auto CallbackCharFilter() const
+    static consteval auto CallbackCharFilter()
     {
         return InputTextFlags{ImGuiInputTextFlags_CallbackCharFilter};
     }
 
-    consteval auto CallbackResize() const
+    static consteval auto CallbackResize()
     {
         return InputTextFlags{ImGuiInputTextFlags_CallbackResize};
     }
 
-    consteval auto CallbackEdit() const
+    static consteval auto CallbackEdit()
     {
         return InputTextFlags{ImGuiInputTextFlags_CallbackEdit};
     }
@@ -505,11 +505,6 @@ struct WindowFlags
     consteval WindowFlags AlwaysHorizontalScrollbar()
     {
         return WindowFlags{flags |= ImGuiWindowFlags_AlwaysHorizontalScrollbar};
-    }
-
-    consteval WindowFlags AlwaysUseWindowPadding()
-    {
-        return WindowFlags{flags |= ImGuiWindowFlags_AlwaysUseWindowPadding};
     }
 
     consteval WindowFlags NoNavInputs()

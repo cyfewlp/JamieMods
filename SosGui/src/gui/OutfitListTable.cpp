@@ -162,7 +162,6 @@ void OutfitListTable::DrawToolWidgets()
 {
     auto &outfitList = m_uiData.GetOutfitList();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-    ImGui::PushFont(Context::GetInstance().GetIconFont());
     if (ImGui::Button(NF_MD_REFRESH))
     {
         OnRefresh();
@@ -174,7 +173,6 @@ void OutfitListTable::DrawToolWidgets()
             return m_outfitService.GetAllFavoriteOutfits();
         };
     }
-    ImGui::PopFont();
     ImGui::PopStyleColor();
     ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$SosGui_Outfit}"_T.c_str());
 
@@ -249,11 +247,10 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
 
     ImGui::TableNextColumn();
     {
-        auto fontSize     = ImGuiScope::FontSize(Setting::UiSetting::FONT_SIZE_TITLE_3);
+        auto fontSize     = ImGuiScope::FontSize(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
         auto framePadding = ImGuiScope::StyleVar::FramePadding({0, 0});
         {
             auto buttonColor = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-            auto iconFont    = ImGuiScope::Font(Context::GetInstance().GetIconFont());
             if (ImGui::Button(NF_OCT_DIFF_ADDED))
             {
                 context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
@@ -274,7 +271,6 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         {
             auto framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::ICON_PADDING);
             auto buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-            auto iconFont     = ImGuiScope::Font(Context::GetInstance().GetIconFont());
             bool clicked      = false;
             if (outfit.IsFavorite())
             {
