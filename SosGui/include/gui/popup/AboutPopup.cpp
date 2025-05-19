@@ -15,11 +15,11 @@ void AboutPopup::DoDraw(SosUiData &, bool &)
 {
     const auto *plugin = SKSE::PluginDeclaration::GetSingleton();
     {
-        auto        fontSize = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_2);
+        auto        fontSize = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title2PxSize());
         const auto &version  = plugin->GetVersion();
         ImGui::Text("%s v%u.%u.%u", plugin->GetName().data(), version.major(), version.minor(), version.patch());
     }
-    ImGui::PushFontSize(Settings::UiSettings::GetInstance()->FONT_PX_TEXT_SMALL);
+    ImGui::PushFontSize(Settings::UiSettings::GetInstance()->TextSmallPxSize());
     ImGui::Text("A Extra GUI for SkyrimOutfitSystemRE");
     ImGui::PopFontSize();
 

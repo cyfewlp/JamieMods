@@ -13,13 +13,13 @@ namespace LIBC_NAMESPACE_DECL
 {
 struct FontInfo
 {
-    std::string filePath;
-    std::string familyName;
-    int32_t     familyIndex = -1; // the font family index in SystemFontCollection;
-    int32_t     fontIndex   = -1; // font index in family
-    uint32_t    faceIndex   = 0;
-    bool        bold        = false;
-    bool        oblique     = false;
+    std::string      filePath;
+    std::string      familyName;
+    int32_t          familyIndex = -1; // the font family index in SystemFontCollection;
+    int32_t          fontIndex   = -1; // font index in family
+    uint32_t         faceIndex   = 0;
+    bool             bold        = false;
+    bool             oblique     = false;
 
     FontInfo() = default;
 

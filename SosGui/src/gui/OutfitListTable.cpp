@@ -247,7 +247,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
 
     ImGui::TableNextColumn();
     {
-        auto fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+        auto fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
         auto framePadding = ImGuiScope::StyleVar::FramePadding({0, 0});
         {
             auto buttonColor = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));

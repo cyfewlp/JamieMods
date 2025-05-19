@@ -45,80 +45,73 @@ void FontManager::Initialize()
         log_warn("FontManager already initialized, ignore call.");
         return;
     }
-    try
+    ComPtr<IDWriteFactory> pDWriteFactory = nullptr;
+    if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), &pDWriteFactory)))
     {
-        ComPtr<IDWriteFactory> pDWriteFactory = nullptr;
-        if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), &pDWriteFactory)))
-        {
-            log_warn("Can't create DWrite factory!.");
-            return;
-        }
-        DWriteFindAllInstalledFonts(pDWriteFactory.Get());
-
-        auto &io = ImGui::GetIO();
-
-        const auto *settings = Settings::UiSettings::GetInstance();
-
-        ComPtr<IDWriteFont> pDefaultFont;
-        GetDefaultFont(pDWriteFactory, &pDefaultFont);
-        if (!pDefaultFont)
-        {
-            log_error("Can't get system default font, back to ImGui default font.");
-            return;
-        }
-
-        SetupFontInfo(m_defaultFontInfo, pDefaultFont.Get());
-        if (m_defaultFontInfo.IsInValid())
-        {
-            log_warn("Can't find system default font information, back to ImGui default font.");
-            io.Fonts->AddFontDefault();
-            return;
-        }
-
-        ImFontConfig config;
-        config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-        config.MergeMode          = true;
-        const auto  iconFontPath  = util::GetInterfaceFile(Settings::UiSettings::ICON_FONT);
-        const float pixelFontSize = Settings::UiSettings::GetInstance()->FONT_PX_TEXT;
-
-        CreateFontInfoFrom(pDWriteFactory.Get(), settings->fontInfo, m_fontInfo);
-        if (m_fontInfo.IsValid())
-        {
-            io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
-
-            SetupFontConfig(config, m_fontInfo);
-            io.Fonts->AddFontFromFileTTF(m_fontInfo.filePath.c_str(), pixelFontSize, &config);
-
-            ImFontConfig config1;
-            config1.MergeMode = true;
-            SetupFontConfig(config1, pDefaultFont.Get());
-            m_font = io.Fonts->AddFontFromFileTTF(m_defaultFontInfo.filePath.c_str(), pixelFontSize, &config1);
-        }
-        else // setup ImGui font from default system font;
-        {
-            m_fontInfo = m_defaultFontInfo;
-
-            io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
-            m_font = io.Fonts->AddFontFromFileTTF(m_defaultFontInfo.filePath.c_str(), pixelFontSize, &config);
-        }
-
-        if (m_font)
-        {
-            io.FontDefault = m_font;
-        }
-        else
-        {
-            m_fontInfo.MarkInvalid();
-            m_font = nullptr;
-            io.Fonts->Clear();
-            io.Fonts->AddFontDefault();
-        }
-        initialized = true;
+        log_warn("Can't create DWrite factory!.");
+        return;
     }
-    catch (const Error &e)
+    DWriteFindAllInstalledFonts(pDWriteFactory.Get());
+
+    auto &io = ImGui::GetIO();
+
+    const auto *settings = Settings::UiSettings::GetInstance();
+
+    ComPtr<IDWriteFont> pDefaultFont;
+    GetDefaultFont(pDWriteFactory, &pDefaultFont);
+    if (!pDefaultFont)
     {
-        log_error("Failed initializing FontManger: {}", e.what());
+        log_error("Can't get system default font, back to ImGui default font.");
+        return;
     }
+
+    SetupFontInfo(m_defaultFontInfo, pDefaultFont.Get());
+    if (m_defaultFontInfo.IsInValid())
+    {
+        log_warn("Can't find system default font information, back to ImGui default font.");
+        io.Fonts->AddFontDefault();
+        return;
+    }
+
+    ImFontConfig config;
+    config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+    config.MergeMode          = true;
+    const auto  iconFontPath  = util::GetInterfaceFile(Settings::UiSettings::ICON_FONT);
+    const float pixelFontSize = Settings::UiSettings::GetInstance()->TextPxSize();
+
+    CreateFontInfoFrom(pDWriteFactory.Get(), settings->fontInfo, m_fontInfo);
+    if (m_fontInfo.IsValid())
+    {
+        io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
+
+        SetupFontConfig(config, m_fontInfo);
+        io.Fonts->AddFontFromFileTTF(m_fontInfo.filePath.c_str(), pixelFontSize, &config);
+
+        ImFontConfig config1;
+        config1.MergeMode = true;
+        SetupFontConfig(config1, pDefaultFont.Get());
+        m_font = io.Fonts->AddFontFromFileTTF(m_defaultFontInfo.filePath.c_str(), pixelFontSize, &config1);
+    }
+    else // setup ImGui font from default system font;
+    {
+        m_fontInfo = m_defaultFontInfo;
+
+        io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
+        m_font = io.Fonts->AddFontFromFileTTF(m_defaultFontInfo.filePath.c_str(), pixelFontSize, &config);
+    }
+
+    if (m_font)
+    {
+        io.FontDefault = m_font;
+    }
+    else
+    {
+        m_fontInfo.MarkInvalid();
+        m_font = nullptr;
+        io.Fonts->Clear();
+        io.Fonts->AddFontDefault();
+    }
+    initialized = true;
 }
 
 constexpr auto weightToString = [](const DWRITE_FONT_WEIGHT a_weight) {
@@ -202,10 +195,11 @@ void FontManager::RebuildPreviewFont(const ComPtr<IDWriteFont> &pFont)
 
     const auto iconFontPath = util::GetInterfaceFile(Settings::UiSettings::ICON_FONT);
 
-    const float pixelFontSize = Settings::UiSettings::GetInstance()->FONT_PX_TEXT;
+    const float pixelFontSize = Settings::UiSettings::GetInstance()->TextPxSize();
     m_previewFont             = io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
 
-    const std::string utf8Path = GetFontFilePath(pFont.Get());
+    std::string utf8Path;
+    GetFontFilePath(pFont.Get(), utf8Path);
     if (m_previewFont && utf8Path.size() > 0)
     {
         SetupFontConfig(config, pFont.Get());
@@ -220,120 +214,61 @@ void FontManager::RebuildPreviewFont(const ComPtr<IDWriteFont> &pFont)
     }
 }
 
+inline void FontManager::RebuildPreviewFont()
+{
+    const auto &fontFamily = m_fontFamilies[m_fontInfo.familyIndex];
+    if (ComPtr<IDWriteFont> pFont; SUCCEEDED(fontFamily.FontFamily()->GetFont(m_fontInfo.fontIndex, &pFont)))
+    {
+        RebuildPreviewFont(pFont.Get());
+    }
+}
+
+void FontManager::DrawFontsCombo(bool &rebuildFont)
+{
+    const std::string &previewFont = m_fontFullNames[m_fontInfo.fontIndex];
+    if (ImGui::BeginCombo("Typography", previewFont.c_str(), ImGuiComboFlags_HeightLarge))
+    {
+        for (size_t index = 0; index < m_fontFullNames.size(); index++)
+        {
+            ImGuiScope::PushId pushId(index);
+            std::string       &label    = m_fontFullNames[index];
+            const bool         selected = static_cast<size_t>(m_fontInfo.fontIndex) == index;
+            if (ImGui::Selectable(label.c_str(), selected) && !selected)
+            {
+                m_fontInfo.fontIndex = index;
+                rebuildFont          = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+}
+
 void FontManager::DrawPanel()
 {
-    auto preview = "";
-    if (m_fontInfo.familyIndex >= 0 && static_cast<size_t>(m_fontInfo.familyIndex) < m_fontFamilies.size())
+    bool apply       = false;
+    bool rebuildFont = false;
     {
-        preview = m_fontFamilies[m_fontInfo.familyIndex].familyName.c_str();
-    }
+        auto group = ImGuiScope::Group();
 
-    bool apply = false;
-    {
-        bool rebuildFont = false;
-        auto group       = ImGuiScope::Group();
-        if (ImGui::BeginCombo("$SosGui_Font"_T.c_str(), preview))
+        DrawFontFamilyCombo(rebuildFont);
+        if (m_fontInfo.familyIndex >= 0 && m_fontFullNames.empty())
         {
-            for (size_t index = 0; index < m_fontFamilies.size(); index++)
-            {
-                const bool selected = static_cast<size_t>(m_fontInfo.familyIndex) == index;
-                if (ImGui::Selectable(m_fontFamilies[index].familyName.c_str(), selected) && !selected)
-                {
-                    m_fontInfo.familyIndex = index;
-                    m_fontInfo.fontIndex   = 0;
-                    rebuildFont            = true;
-                }
-                if (selected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
+            const auto &fontFamily = m_fontFamilies[m_fontInfo.familyIndex];
+            GetAllFontFullName(fontFamily.FontFamily().Get(), m_fontFullNames);
         }
-
-        auto labelFromFont = [](IDWriteFont *pFont) {
-            ComPtr<IDWriteLocalizedStrings> pInformation;
-            BOOL                            exists = FALSE;
-            std::string                     fullname;
-            if (SUCCEEDED(pFont->GetInformationalStrings(DWRITE_INFORMATIONAL_STRING_FULL_NAME, &pInformation, &exists)
-                ) &&
-                exists)
-            {
-                if (auto information = GetLocalizedString(pInformation.Get()); information.size() > 0)
-                {
-                    fullname = std::move(information);
-                }
-            }
-            else
-                return std::string("Unknown");
-            return std::format(
-                "{} ({} / {} / {})",
-                fullname,
-                weightToString(pFont->GetWeight()),
-                styleToString(pFont->GetStyle()),
-                stretchToString(pFont->GetStretch())
-            );
-        };
-        if (m_fontInfo.familyIndex >= 0)
+        if (m_fontFullNames.size() > 0)
         {
-            const auto         &fontFamily = m_fontFamilies[m_fontInfo.familyIndex];
-            ComPtr<IDWriteFont> pPreviewFont;
-            std::string         previewFont;
-            if (SUCCEEDED(fontFamily.pFontFamily->GetFont(m_fontInfo.fontIndex, &pPreviewFont)))
-            {
-                previewFont = labelFromFont(pPreviewFont.Get());
-            }
-            if (ImGui::BeginCombo("Typography", previewFont.c_str(), ImGuiComboFlags_HeightLarge))
-            {
-                for (size_t index = 0; index < fontFamily.pFontFamily->GetFontCount(); index++)
-                {
-                    ImGuiScope::PushId pushId(index);
-                    std::string        label;
-                    if (ComPtr<IDWriteFont> pFont; SUCCEEDED(fontFamily.pFontFamily->GetFont(index, &pFont)))
-                    {
-                        label = labelFromFont(pFont.Get());
-                    }
-                    const bool selected = static_cast<size_t>(m_fontInfo.fontIndex) == index;
-                    if (ImGui::Selectable(label.c_str(), selected) && !selected)
-                    {
-                        m_fontInfo.fontIndex = index;
-                        rebuildFont          = true;
-                    }
-                    if (selected) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-            if (rebuildFont)
-            {
-                if (ComPtr<IDWriteFont> pFont; SUCCEEDED(fontFamily.pFontFamily->GetFont(m_fontInfo.fontIndex, &pFont)))
-                {
-                    RebuildPreviewFont(pFont.Get());
-                }
-            }
+            DrawFontsCombo(rebuildFont);
         }
         apply = ImGui::Button("$SosGui_Apply"_T.c_str());
     }
-
-    // preview
+    if (rebuildFont)
     {
-        ImGui::SameLine();
-        auto group = ImGuiScope::Group();
-        if (m_previewFont) ImGui::PushFont(m_previewFont);
-        ImGui::Text("%s", R"(abcdefghijklmnopqrstuvwxyz
-ABCDEFGHIJKLMNOPQRSTUVWXYZ
-0123456789 (){}[]
-+ - * / = .,;:!? #&$%@|^)");
-        ImGui::Text("The quick brown fox jumps over the lazy dog");
-
-        ImGui::Text(
-            "Emoji: "
-            "🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍"
-        );
-        ImGui::Text("Chinese: 快速的棕色狐狸跳过了懒惰的狗");
-        ImGui::Text("Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます");
-        ImGui::Text("Korean: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다");
-        if (m_previewFont) ImGui::PopFont();
+        RebuildPreviewFont();
     }
+
+    DrawPreviewText();
 
     if (apply && m_previewFont)
     {
@@ -345,12 +280,18 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
         m_previewFont  = nullptr;
     }
 
-    // TODO ImGui::Text("$SosGui_Font_Size"_T.c_str());
-    // ImGui::SameLine();
+    ImGui::DragFloat(
+        "$SosGui_Global_FontSize_Scale"_T.c_str(),
+        &ImGui::GetIO().FontGlobalScale,
+        0.05F,
+        Settings::UiSettings::FONT_SCALE_MIN,
+        Settings::UiSettings::FONT_SCALE_MAX
+    );
 }
 
 void FontManager::SyncSettings(Settings::UiSettings *uiSetting) const noexcept
 {
+    uiSetting->globalFontScale      = ImGui::GetIO().FontGlobalScale;
     uiSetting->fontInfo.filePath    = m_fontInfo.filePath;
     uiSetting->fontInfo.familyName  = m_fontInfo.familyName;
     uiSetting->fontInfo.familyIndex = m_fontInfo.familyIndex;
@@ -358,6 +299,56 @@ void FontManager::SyncSettings(Settings::UiSettings *uiSetting) const noexcept
     uiSetting->fontInfo.faceIndex   = m_fontInfo.faceIndex;
     uiSetting->fontInfo.bold        = m_fontInfo.bold;
     uiSetting->fontInfo.oblique     = m_fontInfo.oblique;
+}
+
+void FontManager::DrawFontFamilyCombo(bool &rebuildPreviewFont) noexcept
+{
+    std::string_view preview = "";
+    if (m_fontInfo.familyIndex >= 0 && static_cast<size_t>(m_fontInfo.familyIndex) < m_fontFamilies.size())
+    {
+        preview = m_fontFamilies[m_fontInfo.familyIndex].FamilyName();
+    }
+    if (ImGui::BeginCombo("$SosGui_Font"_T.c_str(), preview.data()))
+    {
+        for (size_t index = 0; index < m_fontFamilies.size(); index++)
+        {
+            const bool selected = static_cast<size_t>(m_fontInfo.familyIndex) == index;
+            if (const auto &fontFamily = m_fontFamilies[index];
+                ImGui::Selectable(fontFamily.FamilyName().data(), selected) && !selected)
+            {
+                m_fontInfo.familyIndex = index;
+                m_fontInfo.fontIndex   = 0;
+                rebuildPreviewFont     = true;
+                m_fontFullNames.clear();
+                GetAllFontFullName(fontFamily.FontFamily().Get(), m_fontFullNames);
+            }
+            if (selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+}
+
+void FontManager::DrawPreviewText() const noexcept
+{
+    ImGui::SameLine();
+    auto group = ImGuiScope::Group();
+    if (m_previewFont) ImGui::PushFont(m_previewFont);
+    ImGui::Text("%s", R"(abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789 (){}[]
++ - * / = .,;:!? #&$%@|^)");
+    ImGui::Text("The quick brown fox jumps over the lazy dog");
+
+    ImGui::Text("Emoji: "
+                "🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍"
+    );
+    ImGui::Text("Chinese: 快速的棕色狐狸跳过了懒惰的狗");
+    ImGui::Text("Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます");
+    ImGui::Text("Korean: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다");
+    if (m_previewFont) ImGui::PopFont();
 }
 
 void FontManager::DWriteFindAllInstalledFonts(IDWriteFactory *pDWriteFactory) noexcept
@@ -391,17 +382,18 @@ void FontManager::DWriteFindAllInstalledFonts(IDWriteFactory *pDWriteFactory) no
                 continue;
             }
 
-            auto name = GetLocalizedString(pFamilyNames.Get());
-            if (name.empty())
+            std::string familyName;
+            GetLocalizedString(pFamilyNames.Get(), familyName);
+            if (familyName.empty())
             {
                 continue;
             }
-            m_fontFamilies.emplace_back(name, pFontFamily);
+            m_fontFamilies.emplace_back(std::move(familyName), pFontFamily);
         }
     }
 }
 
-auto FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::string
+auto FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result) -> void
 {
     HRESULT hr     = S_OK;
     UINT32  index  = 0;
@@ -431,39 +423,39 @@ auto FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::
     {
         hr = pStrings->GetStringLength(index, &length);
     }
-    std::wstring stdString;
-    stdString.resize(length + 1);
+    std::unique_ptr<wchar_t[]> wstring(new wchar_t[length + 1]);
     // Get the family name.
     if (SUCCEEDED(hr))
     {
-        hr = pStrings->GetString(index, stdString.data(), length + 1);
+        hr = pStrings->GetString(index, wstring.get(), length + 1);
     }
     if (SUCCEEDED(hr))
     {
-        return WCharUtils::ToString(stdString.c_str(), static_cast<int>(length));
+        if (!WCharUtils::ToString(std::wstring_view(wstring.get(), length), result))
+        {
+            result.clear();
+        }
     }
-    return std::string();
 }
 
-auto FontManager::GetFontFilePath(IDWriteFont *pFont) -> std::string
+auto FontManager::GetFontFilePath(IDWriteFont *pFont, std::string &result) -> void
 {
-    std::string             result;
     ComPtr<IDWriteFontFace> pFontFace = nullptr;
     if (FAILED(pFont->CreateFontFace(&pFontFace)))
     {
-        return result;
+        return;
     }
 
     UINT32 numFiles = 0;
     if (FAILED(pFontFace->GetFiles(&numFiles, nullptr)))
     {
-        return result;
+        return;
     }
 
     std::vector<IDWriteFontFile *> fontFiles(numFiles);
     if (FAILED(pFontFace->GetFiles(&numFiles, fontFiles.data())))
     {
-        return result;
+        return;
     }
 
     IDWriteFontFile *fontFile         = fontFiles[0];
@@ -471,59 +463,71 @@ auto FontManager::GetFontFilePath(IDWriteFont *pFont) -> std::string
     UINT32           referenceKeySize = 0;
     if (FAILED(fontFile->GetReferenceKey(&referenceKey, &referenceKeySize)))
     {
-        return result;
+        return;
     }
 
     ComPtr<IDWriteFontFileLoader> baseLoader;
     if (FAILED(fontFile->GetLoader(&baseLoader)))
     {
-        return result;
+        return;
     }
 
     ComPtr<IDWriteLocalFontFileLoader> localLoader;
     if (FAILED(baseLoader.As(&localLoader)))
     {
-        return result;
+        return;
     }
 
     UINT32 pathLength = 0;
     if (SUCCEEDED(localLoader->GetFilePathLengthFromKey(referenceKey, referenceKeySize, &pathLength)))
     {
-        std::wstring pathBuffer(pathLength + 1, '\0');
-        if (SUCCEEDED(localLoader->GetFilePathFromKey(referenceKey, referenceKeySize, pathBuffer.data(), pathLength + 1)
-            ))
+        const std::unique_ptr<wchar_t[]> path(new wchar_t[pathLength + 1]);
+        if (SUCCEEDED(localLoader->GetFilePathFromKey(referenceKey, referenceKeySize, path.get(), pathLength + 1)))
         {
-            result = SKSE::stl::utf16_to_utf8(pathBuffer).value_or("");
+            if (!WCharUtils::ToString(std::wstring_view(path.get(), pathLength), result))
+            {
+                result.clear();
+            }
         }
     }
 
     std::ranges::for_each(fontFiles, [&](IDWriteFontFile *pFontFile) {
         pFontFile->Release();
     });
-    return result;
 }
 
-auto FontManager::GetFontFamily(
-    IDWriteFactory *pDWriteFactory, const std::string &familyName, IDWriteFontFamily **ppFontFamily
-) -> bool
+void FontManager::GetAllFontFullName(IDWriteFontFamily *pFontFamily, std::vector<std::string> &result)
 {
-    *ppFontFamily         = nullptr;
-    const auto &utf16Name = SKSE::stl::utf8_to_utf16(familyName).value_or(L"");
-    if (utf16Name.empty())
+    const auto count = pFontFamily->GetFontCount();
+    result.reserve(count);
+    for (size_t index = 0; index < count; index++)
     {
-        return false;
-    }
-    if (ComPtr<IDWriteFontCollection> pFontCollection = nullptr;
-        SUCCEEDED(pDWriteFactory->GetSystemFontCollection(&pFontCollection)))
-    {
-        uint32_t index  = 0;
-        BOOL     exists = FALSE;
-        if (SUCCEEDED(pFontCollection->FindFamilyName(utf16Name.c_str(), &index, &exists)) && exists)
+        ImGuiScope::PushId pushId(index);
+        if (ComPtr<IDWriteFont> pFont; SUCCEEDED(pFontFamily->GetFont(index, &pFont)))
         {
-            return SUCCEEDED(pFontCollection->GetFontFamily(index, ppFontFamily));
+            ComPtr<IDWriteLocalizedStrings> pInformation;
+            BOOL                            exists = FALSE;
+            if (SUCCEEDED(pFont->GetInformationalStrings(DWRITE_INFORMATIONAL_STRING_FULL_NAME, &pInformation, &exists)
+                ) &&
+                exists)
+            {
+                std::string information;
+                GetLocalizedString(pInformation.Get(), information);
+                if (information.size() > 0)
+                {
+                    result.push_back(std::format(
+                        "{} ({} / {} / {})",
+                        information,
+                        weightToString(pFont->GetWeight()),
+                        styleToString(pFont->GetStyle()),
+                        stretchToString(pFont->GetStretch())
+                    ));
+                    continue;
+                }
+            }
         }
+        result.emplace_back("Unknown");
     }
-    return false;
 }
 
 void FontManager::CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &source, FontInfo &dest)
@@ -533,16 +537,38 @@ void FontManager::CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &s
     {
         return;
     }
-    ComPtr<IDWriteFontFamily> pFontFamily;
-    if (GetFontFamily(pFactory, source.familyName, &pFontFamily) && pFontFamily)
+    ComPtr<IDWriteFontFamily>     pFontFamily;
+    ComPtr<IDWriteFontCollection> pFontCollection;
+    if (FAILED(pFactory->GetSystemFontCollection(&pFontCollection)))
     {
-        // check font index is valid;
-        if (static_cast<uint32_t>(source.fontIndex) >= pFontFamily->GetFontCount())
+        return;
+    }
+    if (source.familyIndex >= 0)
+    {
+        if (source.familyIndex < pFontCollection->GetFontFamilyCount() &&
+            SUCCEEDED(pFontCollection->GetFontFamily(source.familyIndex, &pFontFamily)))
         {
-            return;
+            ComPtr<IDWriteLocalizedStrings> pFontFamilyNames;
+            if (SUCCEEDED(pFontFamily->GetFamilyNames(&pFontFamilyNames)))
+            {
+                std::string familyName;
+                GetLocalizedString(pFontFamilyNames.Get(), familyName);
+                if (familyName == source.familyName)
+                {
+                    dest = source;
+                    return;
+                }
+            }
         }
-
-        dest = source;
+    }
+    const auto &utf16Name = SKSE::stl::utf8_to_utf16(source.familyName).value_or(L"");
+    if (utf16Name.empty()) return;
+    uint32_t index  = 0;
+    BOOL     exists = FALSE;
+    if (SUCCEEDED(pFontCollection->FindFamilyName(utf16Name.c_str(), &index, &exists)) && exists && index != UINT_MAX)
+    {
+        dest             = source;
+        dest.familyIndex = index;
     }
 }
 
@@ -578,15 +604,15 @@ void FontManager::SetupFontConfig(ImFontConfig &config, const FontInfo &fontInfo
 
 void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont) const
 {
-    fontInfo.filePath = GetFontFilePath(pFont);
+    GetFontFilePath(pFont, fontInfo.filePath);
     if (ComPtr<IDWriteFontFamily> pDefaultFontFamily; SUCCEEDED(pFont->GetFontFamily(&pDefaultFontFamily)))
     {
         if (ComPtr<IDWriteLocalizedStrings> pFamilyNames; SUCCEEDED(pDefaultFontFamily->GetFamilyNames(&pFamilyNames)))
         {
-            fontInfo.familyName = GetLocalizedString(pFamilyNames.Get());
+            GetLocalizedString(pFamilyNames.Get(), fontInfo.familyName);
             for (size_t index = 0; index < m_fontFamilies.size(); index++)
             {
-                if (fontInfo.familyName == m_fontFamilies[index].familyName)
+                if (fontInfo.familyName == m_fontFamilies[index].FamilyName())
                 {
                     fontInfo.familyIndex = index;
                     break;
@@ -624,15 +650,20 @@ void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont) const
 
 Settings::UiSettings::UiSettings()
 {
+    UpdateFontSize();
+}
+
+void Settings::UiSettings::UpdateFontSize()
+{
     const HDC hdc  = GetDC(nullptr);
     const int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
     ReleaseDC(nullptr, hdc);
 
-    FONT_PX_TEXT_SMALL = MulDiv(FONT_PT_TEXT_SMALL, dpiY, 72);
-    FONT_PX_TEXT       = MulDiv(FONT_PT_TEXT, dpiY, 72);
-    FONT_PX_TITLE_1    = MulDiv(FONT_PT_TITLE_1, dpiY, 72);
-    FONT_PX_TITLE_2    = MulDiv(FONT_PT_TITLE_2, dpiY, 72);
-    FONT_PX_TITLE_3    = MulDiv(FONT_PT_TITLE_3, dpiY, 72);
-    FONT_PX_TITLE_4    = MulDiv(FONT_PT_TITLE_4, dpiY, 72);
+    m_TextSmallPxSize = MulDiv(TEXT_SMALL_PT_SIZE, dpiY, 72);
+    m_TextPxSize      = MulDiv(TEXT_PT_SIZE, dpiY, 72);
+    m_Title1PxSize    = MulDiv(TITLE_1_PT_SIZE, dpiY, 72);
+    m_Title2PxSize    = MulDiv(TITLE_2_PT_SIZE, dpiY, 72);
+    m_Title3PxSize    = MulDiv(TITLE_3_PT_SIZE, dpiY, 72);
+    m_Title4PxSize    = MulDiv(TITLE_4_PT_SIZE, dpiY, 72);
 }
 }

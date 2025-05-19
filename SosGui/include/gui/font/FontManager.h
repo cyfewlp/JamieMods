@@ -24,14 +24,27 @@ using Microsoft::WRL::ComPtr;
 // Use MergeMode: icon font + ascii font + fallback font
 class FontManager
 {
-    struct SystemFontFamily
+    class SystemFontFamily
     {
-        std::string               familyName;
+        std::unique_ptr<char[]>   familyName;
         ComPtr<IDWriteFontFamily> pFontFamily = nullptr;
 
-        SystemFontFamily(const std::string &familyName, const ComPtr<IDWriteFontFamily> &pFontFamily)
-            : familyName(familyName), pFontFamily(pFontFamily)
+    public:
+        SystemFontFamily(const std::string &&familyName, const ComPtr<IDWriteFontFamily> &pFontFamily)
+            : pFontFamily(pFontFamily)
         {
+            this->familyName = std::make_unique<char[]>(familyName.size() + 1);
+            familyName.copy(this->familyName.get(), familyName.length());
+        }
+
+        [[nodiscard]] constexpr auto FamilyName() const -> std::string_view
+        {
+            return familyName.get();
+        }
+
+        [[nodiscard]] constexpr auto FontFamily() const -> const ComPtr<IDWriteFontFamily> &
+        {
+            return pFontFamily;
         }
     };
 
@@ -41,6 +54,7 @@ class FontManager
     FontInfo m_fontInfo{}; // active FontInfo
 
     std::vector<SystemFontFamily> m_fontFamilies;
+    std::vector<std::string>      m_fontFullNames; // a cache for selected font family
 
 public:
     struct Error final : std::runtime_error
@@ -59,18 +73,21 @@ public:
     }
 
 private:
+    void DrawFontFamilyCombo(bool &rebuildPreviewFont) noexcept;
+    void DrawPreviewText() const noexcept;
+
     void        DWriteFindAllInstalledFonts(IDWriteFactory *pDWriteFactory) noexcept;
-    static auto GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::string;
-    static auto GetFontFilePath(IDWriteFont *pFont) -> std::string;
-    static auto GetFontFamily(
-        IDWriteFactory *pDWriteFactory, const std::string &familyName, IDWriteFontFamily **ppFontFamily
-    ) -> bool;
+    static auto GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result) -> void;
+    static auto GetFontFilePath(IDWriteFont *pFont, std::string &result) -> void;
+    static void GetAllFontFullName(IDWriteFontFamily *pFontFamily, std::vector<std::string> &result);
     static void CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &source, FontInfo &dest);
     static void SetupFontConfig(ImFontConfig &config, IDWriteFont *pFont);
     static void SetupFontConfig(ImFontConfig &config, const FontInfo &fontInfo);
     void        SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont) const;
     static void GetDefaultFont(const ComPtr<IDWriteFactory> &pDWriteFactory, IDWriteFont **ppFont);
     void        RebuildPreviewFont(const ComPtr<IDWriteFont> &pFont);
+    void        RebuildPreviewFont();
+    void        DrawFontsCombo(bool &rebuildFont);
 };
 }
 

@@ -19,22 +19,12 @@ void Popup::SettingsPopup::DoDraw(SosUiData &uiData, bool &)
 {
     FontManager::GetInstance().DrawPanel();
 
-    if (ImGui::DragFloat(
-            "$SosGui_Global_FontSize_Scale"_T.c_str(),
-            &ImGui::GetIO().FontGlobalScale,
-            0.05F,
-            Settings::UiSettings::FONT_SCALE_MIN,
-            Settings::UiSettings::FONT_SCALE_MAX
-        ))
-    {
-        Settings::UiSettings::GetInstance()->globalFontScale = ImGui::GetIO().FontGlobalScale;
-    }
     ThemeCombo(uiData);
 }
 
 void Popup::SettingsPopup::ThemeCombo(SosUiData &uiData)
 {
-    auto         &loader     = ImTheme::Loader::GetInstance();
+    const auto   &loader     = ImTheme::Loader::GetInstance();
     auto         *settings   = Settings::UiSettings::GetInstance();
     const int32_t themeIndex = settings->selectedThemeIndex;
     std::string   preview    = "";

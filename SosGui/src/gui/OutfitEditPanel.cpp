@@ -143,7 +143,7 @@ bool OutfitEditPanel::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup)
 
 void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &editingOutfit)
 {
-    ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+    ImGuiUtil::TextScale(editingOutfit.GetName().c_str(), Settings::UiSettings::GetInstance()->Title3PxSize());
     if (auto tabBar = ImGuiScope::TabBar("##OutfitTabBarView"))
     {
         if (auto tabItem = ImGuiScope::TabItem("$Armor"_T.c_str(), nullptr, ImGuiTabItemFlags_Leading))
@@ -155,7 +155,7 @@ void OutfitEditPanel::DrawOutfitPanel(Context &context, const EditingOutfit &edi
 
 void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
 {
-    ImGuiUtil::TextScale("$SosGui_ModList", Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+    ImGuiUtil::TextScale("$SosGui_ModList", Settings::UiSettings::GetInstance()->Title3PxSize());
     static int maxChildItemCount = 10;
     const auto itemHeight        = ImGui::GetTextLineHeight();
     float      childHeight       = (itemHeight + ImGui::GetStyle().ItemInnerSpacing.y) * maxChildItemCount;
@@ -166,7 +166,7 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
     }
     ImGui::EndChild();
 
-    ImGuiUtil::TextScale("$SosGui_BodySlots", Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+    ImGuiUtil::TextScale("$SosGui_BodySlots", Settings::UiSettings::GetInstance()->Title3PxSize());
     if (ImGui::BeginChild("#SlotFilterChild", {0, childHeight}, ImGuiUtil::ChildFlag().Borders().ResizeY()))
     {
         DrawArmorViewSlotFilterer(editingOutfit);
@@ -187,12 +187,12 @@ void OutfitEditPanel::DrawOutfitArmors(Context &context, const EditingOutfit &ed
 {
     if (editingOutfit.IsUntitled())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Settings::UiSettings::GetInstance()->Title3PxSize());
         return;
     }
     if (editingOutfit.IsEmpty())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+        ImGuiUtil::TextScale("$SosGui_Hint_Empty{$ARMOR}", Settings::UiSettings::GetInstance()->Title3PxSize());
         return;
     }
 
@@ -313,7 +313,7 @@ void OutfitEditPanel::DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit)
 {
     using namespace ImGuiUtil;
     ImGui::Separator();
-    TextScale("$SosGui_ArmorGenerator", Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+    TextScale("$SosGui_ArmorGenerator", Settings::UiSettings::GetInstance()->Title3PxSize());
     if (auto tabBarW =
             ImGuiScope::TabBar("ArmorGeneratorTabBar", TabBarFlags().DrawSelectedOverline().Reorderable().flags))
     {
@@ -487,7 +487,7 @@ void OutfitEditPanel::DrawArmorViewContent(
     for (int colIndex = 0; colIndex < 6; ++colIndex)
     {
         ImGui::TableSetColumnIndex(colIndex);
-        ImGuiScope::FontSize fontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+        ImGuiScope::FontSize fontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
         ImGui::TableHeader(ImGui::TableGetColumnName(colIndex));
     }
 

@@ -139,7 +139,7 @@ void SosGui::DrawTopModalPopup()
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
-    ImGuiScope::FontSize fontSize4(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_4);
+    ImGuiScope::FontSize fontSize4(Settings::UiSettings::GetInstance()->Title4PxSize());
     const auto          &modalPopup = context.popupList.front();
     bool                 confirmed  = false;
     const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
@@ -265,7 +265,7 @@ auto SosGui::DrawSidebar() -> float
         ImGui::SetCursorPosY(offsetY);
         auto           framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
         auto           buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-        auto           fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
+        auto           fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
         constexpr auto IconButton   = [](const char *iconClass, const char *tooltip) {
             auto isClick = ImGui::Button(iconClass);
             ImGui::SetItemTooltip("%s", tooltip);
@@ -311,8 +311,6 @@ void SosGui::DockSpace()
     ImGui::PopStyleVar(4);
 
     // Submit the DockSpace
-    ImGuiIO &io = ImGui::GetIO();
-    assert(io.ConfigFlags & ImGuiConfigFlags_DockingEnable && "Must enable docking");
     const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 
