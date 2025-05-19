@@ -8,7 +8,8 @@
 * [ ] [[improvement]] Refactor error message system.
 * [x] [[Bug Fix]]: The `viewData` is not cleared correctly when click `Import Settings` for the second time.
 * [x] Support adds armor from near all objects has inventory;
-* [ ] [[improvement]] Font: monaspace
+* [x] ~~[[improvement]] Font: monaspace~~;#
+	* not need; Implement a system font selector; #DWrite
 * [ ] [[improvement]] how to handle current actor active outfit?
 * [x] [[improvement]] Use `consteval` optimize `ImGuiUtil`  flags wrap class
 * [x] [[Bug Fix]] `ImGui` assert fail when scroll [[OutfitListView]].
@@ -28,7 +29,7 @@
 	* Add function `emplace_or_replace` to support replace existed key-value;
 * [x] [[improvement]] Optimize wait_execute_on_ui?
 	* `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all `await_execute_on_ui` calls ;
-* [ ] [[improvement]] Optimize data class: ensure **DONOT** modify `DATA` class on UI thread;
+* [x] [[improvement]] Optimize data class: ensure **DONOT** modify `DATA` class on UI thread;
 	* ~~consider use read/write lock~~
 * [x] [[improvement]] `UiSetting`: be used hold the persist settings. May merge `Config` class to `Setting`
 	* Add `UiSettings#DefaultThemeIndex` to support select `ImGui` provide default theme;
@@ -41,18 +42,22 @@
 - [x] [[improvement]] search icon for all search input widgets;
 - [x] [[improvement]] Add filters icon:
 	- Click will open a popup: show all filters checkbox
-- [ ] [[improvement]] Bold font: bold font for table header;
+- [x] ~~[[improvement]] Bold font: bold font for table header;~~;
+	- Uneccary, just zoom out font size;
 - [x] [[improvement]] Move font scale, Theme config to Settings menu item;
 - [x] [[Bug Fix]] Theme was not applied correctly if theme index was set to `DefaultThemeIndex`;
 - [x] [[Bug Fix]] Mod refrence counter incorrect;
 - [ ] [[Bug Fix]] `SosNativeCaller` may resume on other thread;
 - [ ] [[improvement]] when Click `Sidebar`: Focus the associate window if it's not focused 
-- [ ] [[improvement]] About popup
+- [x] [[improvement]] About popup
 - [ ] [[improvement]] shadow border for popup
-- [ ] [[improvement]] Support select all installed fonts;
+- [x] [[improvement]] Support select all installed fonts;
 	- ~~persist font path, style, face index;~~;
 	- persist font family and font index;
 	- read system default font: family, faceIndex;
 	- Always use system default font as fallback font;
 	- ❔clear font altas cached data when replaced default font?
 - [ ] ensure safe skip SVG font
+	- enable SVG support or just warning user DONOT use SVG font ?
+	- `Noto Color Emoji` can't work with plutosvg + freetype.. This feature need delay, rollback SVG support ;
+- [ ] [[improvement]] Add vertical padding for Menubar ;

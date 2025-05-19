@@ -5,7 +5,11 @@ This repository is my mods collection;
 - [SimpleIME](SimpleIME/README.md): Make SkyrimSE/AE support IME.
 - [SosGui](SosGui/README.md); A extern GUI for `SkyrimOutfitSystemSE` mod;
 
----
+## Clone
+
+```shell
+git clone --recursive https://github.com/cyfewlp/JamieMods
+```
 
 - [CommonLibSSE NG](#commonlibsse-ng)
 - [Requirements](#requirements)

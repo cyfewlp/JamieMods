@@ -304,8 +304,9 @@ void SosGui::DockSpace()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     auto windowFlags = ImGuiUtil::WindowFlags().MenuBar().NoDocking().NoTitleBar().NoCollapse().NoResize().NoMove();
     windowFlags |= ImGuiUtil::WindowFlags().NoBringToFrontOnFocus().NoNavFocus().NoBackground();
+    ImGui::PushStyleVarY(ImGuiStyleVar_FramePadding, ImGui::GetFontSize() * 0.3f); // padding menu bar
     ImGui::Begin("DockSpace Demo", nullptr, windowFlags);
-    ImGui::PopStyleVar(3);
+    ImGui::PopStyleVar(4);
 
     // Submit the DockSpace
     ImGuiIO &io = ImGui::GetIO();

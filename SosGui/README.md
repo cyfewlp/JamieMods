@@ -17,7 +17,13 @@ Outfit Edit Panel
 * UiSettings
     * Store in `imgui.ini` with custom ini handlers
     * Support dynamic scale global font size by `imgui fetature/dynamic-fonts` branch;
-
+    * Support seletc system font; #DWrite 
+	    * By default, Mod use the system default font;
+		    ```c++
+		    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+			```
+		 - And user can by change it in `Settings` panel;
+		 - ❗**NOT** support SVG font(like `Noto Color emoji`);
 
 ## Requirements
 
@@ -29,6 +35,8 @@ Outfit Edit Panel
   > Dear ImGui: Bloat-free Graphical User interface for C++ with minimal dependencies
 * [ImThemes](https://github.com/Patitotective/ImThemes)
   > Dear ImGui style browser and editor written in Nim
+* [plutosvg](https://github.com/sammycage/plutosvg)
+  > Enable freetype SVG support
 
   This mod will load `ImThemes/themes.toml` and parse all available themes.
 ## Environment Varibles

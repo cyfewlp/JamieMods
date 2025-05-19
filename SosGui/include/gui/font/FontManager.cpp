@@ -11,7 +11,7 @@
 #include "common/imgui/ImGuiScope.h"
 #include "common/log.h"
 #include "imgui.h"
-#include "imgui_freetype.h"
+#include "misc/freetype/imgui_freetype.h"
 
 #include <dwrite_3.h>
 #include <windows.h>
@@ -325,9 +325,10 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 + - * / = .,;:!? #&$%@|^)");
         ImGui::Text("The quick brown fox jumps over the lazy dog");
 
-        ImGui::Text("中文: 快速的棕色狐狸跳过了懒惰的狗");
-        ImGui::Text("日本語: 速い茶色のキツネが怠惰な犬を飛び越えます");
-        ImGui::Text("한국어: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다");
+        ImGui::Text("Emoji: 🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍↕︎🕊︎🏆😻🌟🧿🍀🎨🍜");
+        ImGui::Text("Chinese: 快速的棕色狐狸跳过了懒惰的狗");
+        ImGui::Text("Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます");
+        ImGui::Text("Korean: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다");
         if (m_previewFont) ImGui::PopFont();
     }
 
