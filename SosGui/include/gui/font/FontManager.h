@@ -8,6 +8,7 @@
 #include "App.h"
 #include "FontInfo.h"
 #include "common/config.h"
+#include "gui/UiSettings.h"
 
 #include <dwrite.h>
 #include <wrl/client.h>
@@ -34,16 +35,10 @@ class FontManager
         }
     };
 
-    struct UiData
-    {
-        int fontFamilyIndex = -1;
-        int fontIndex       = -1;
-    } m_uiData{};
-
     ImFont  *m_previewFont = nullptr;
     ImFont  *m_font        = nullptr;
     FontInfo m_defaultFontInfo{};
-    FontInfo m_FontInfo{}; // active FontInfo
+    FontInfo m_fontInfo{}; // active FontInfo
 
     std::vector<SystemFontFamily> m_fontFamilies;
 
@@ -55,6 +50,7 @@ public:
 
     void Initialize() noexcept(false);
     void DrawPanel() noexcept(false);
+    void SyncSettings(Settings::UiSettings *uiSetting) const noexcept;
 
     static auto GetInstance() -> FontManager &
     {
@@ -64,16 +60,15 @@ public:
 
 private:
     void        DWriteFindAllInstalledFonts(IDWriteFactory *pDWriteFactory) noexcept;
-    bool        SetupUiIndexFromFontInfo(const FontInfo &fontInfo);
     static auto GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::string;
     static auto GetFontFilePath(IDWriteFont *pFont) -> std::string;
     static auto GetFontFamily(
         IDWriteFactory *pDWriteFactory, const std::string &familyName, IDWriteFontFamily **ppFontFamily
-    ) -> void;
+    ) -> bool;
     static void CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &source, FontInfo &dest);
     static void SetupFontConfig(ImFontConfig &config, IDWriteFont *pFont);
     static void SetupFontConfig(ImFontConfig &config, const FontInfo &fontInfo);
-    static void SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont);
+    void        SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont) const;
     static void GetDefaultFont(const ComPtr<IDWriteFactory> &pDWriteFactory, IDWriteFont **ppFont);
     void        RebuildPreviewFont(const ComPtr<IDWriteFont> &pFont);
 };

@@ -11,8 +11,7 @@
 
 enum ImGuiKey : int;
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 
 class SosGuiMenu : public RE::IMenu
@@ -22,7 +21,13 @@ class SosGuiMenu : public RE::IMenu
 
 public:
     static constexpr std::string_view MENU_NAME = "SosGuiMenu";
-    static void                       RegisterMenu();
+
+    static void RegisterMenu();
+
+    static void ShutDown()
+    {
+        SosGui::ShutDown();
+    }
 
     void PostDisplay() override;
     void OnShow();

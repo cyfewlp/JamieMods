@@ -57,7 +57,9 @@
 	- read system default font: family, faceIndex;
 	- Always use system default font as fallback font;
 	- ❔clear font altas cached data when replaced default font?
+	- [ ] Support save `FontInfo`;
+	- [ ] Test `FontManger`?
 - [ ] ensure safe skip SVG font
 	- enable SVG support or just warning user DONOT use SVG font ?
 	- `Noto Color Emoji` can't work with plutosvg + freetype.. This feature need delay, rollback SVG support ;
-- [ ] [[improvement]] Add vertical padding for Menubar ;
+- [x] [[improvement]] Add vertical padding for Menubar ;

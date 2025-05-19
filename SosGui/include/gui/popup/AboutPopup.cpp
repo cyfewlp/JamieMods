@@ -4,7 +4,7 @@
 
 #include "AboutPopup.h"
 
-#include "../UiSetting.h"
+#include "../UiSettings.h"
 #include "common/imgui/ImGuiScope.h"
 
 namespace LIBC_NAMESPACE_DECL
@@ -15,11 +15,11 @@ void AboutPopup::DoDraw(SosUiData &, bool &)
 {
     const auto *plugin = SKSE::PluginDeclaration::GetSingleton();
     {
-        auto        fontSize = ImGuiScope::FontSize(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_2);
+        auto        fontSize = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_2);
         const auto &version  = plugin->GetVersion();
         ImGui::Text("%s v%u.%u.%u", plugin->GetName().data(), version.major(), version.minor(), version.patch());
     }
-    ImGui::PushFontSize(Setting::UiSetting::GetInstance()->FONT_PX_TEXT_SMALL);
+    ImGui::PushFontSize(Settings::UiSettings::GetInstance()->FONT_PX_TEXT_SMALL);
     ImGui::Text("A Extra GUI for SkyrimOutfitSystemRE");
     ImGui::PopFontSize();
 

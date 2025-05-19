@@ -1,13 +1,13 @@
 #include "SosGui.h"
 
-#include "../include/gui/font/FontManager.h"
 #include "common/config.h"
 #include "common/imgui/ImGuiFlags.h"
 #include "common/imgui/ImGuiScope.h"
 #include "common/imgui/ImThemeLoader.h"
 #include "common/log.h"
 #include "gui/Table.h"
-#include "gui/UiSetting.h"
+#include "gui/UiSettings.h"
+#include "gui/font/FontManager.h"
 #include "gui/icon.h"
 #include "gui/popup/AboutPopup.h"
 #include "gui/popup/SettingsPopup.h"
@@ -15,8 +15,8 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "task.h"
-#include "util/ImGuiSettinsHandler.h"
 #include "util/ImGuiUtil.h"
+#include "util/UiSettingsLoader.h"
 
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>
@@ -59,10 +59,13 @@ void SosGui::OutfitDebounceInput::updateView(const OutfitList &outfitList)
 
 auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool
 {
-    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
-    auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
-
+    auto *device    = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+    auto *context   = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
+    auto *uiSetting = Settings::UiSettings::GetInstance();
     log_info("Initializing ImGui...");
+
+    Settings::UiSettingsLoader::Load(*uiSetting);
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -81,7 +84,8 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
     io.ConfigFlags |= ImGuiUtil::ConfigFlags().NavEnableKeyboard().DockingEnable();
     io.ConfigNavMoveSetMousePos = false;
     ::GetClientRect(hWnd, &rect);
-    io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
+    io.DisplaySize     = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
+    io.FontGlobalScale = uiSetting->globalFontScale;
 
     ImGui::StyleColorsDark();
     static std::string IniFileName;
@@ -97,20 +101,18 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> 
         style.WindowRounding              = 0.0F;
         style.Colors[ImGuiCol_WindowBg].w = 1.0F;
     }
-
-    // add our setting handler
-    ImGuiSettingsHandler ini_handler;
-    ini_handler.TypeName   = SKSE::PluginDeclaration::GetSingleton()->GetName().data();
-    ini_handler.TypeHash   = ImHashStr(ini_handler.TypeName);
-    ini_handler.ReadOpenFn = Setting::UiSettingReadOpenFn;
-    ini_handler.ReadLineFn = Setting::UiSettingReadLineFn;
-    ini_handler.WriteAllFn = Setting::UiSettingWriteAll;
-    ini_handler.ClearAllFn = Setting::UiSettingClearAll;
-    ini_handler.ApplyAllFn = Setting::UiSettingApplyAll;
-    ImGui::AddSettingsHandler(&ini_handler);
-
     log_info("ImGui initialized!");
     return true;
+}
+
+auto SosGui::ShutDown() -> void
+{
+    auto *uiSetting = Settings::UiSettings::GetInstance();
+    FontManager::GetInstance().SyncSettings(uiSetting);
+    Settings::UiSettingsLoader::Save(*uiSetting);
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void SosGui::OnRefresh()
@@ -137,7 +139,7 @@ void SosGui::DrawTopModalPopup()
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
-    ImGuiScope::FontSize fontSize4(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_4);
+    ImGuiScope::FontSize fontSize4(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_4);
     const auto          &modalPopup = context.popupList.front();
     bool                 confirmed  = false;
     const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
@@ -261,9 +263,9 @@ auto SosGui::DrawSidebar() -> float
     {
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
-        auto           framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::ICON_PADDING);
+        auto           framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
         auto           buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-        auto           fontSize     = ImGuiScope::FontSize(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
+        auto           fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
         constexpr auto IconButton   = [](const char *iconClass, const char *tooltip) {
             auto isClick = ImGui::Button(iconClass);
             ImGui::SetItemTooltip("%s", tooltip);

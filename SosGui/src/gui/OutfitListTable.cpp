@@ -9,7 +9,7 @@
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
 #include "gui/Table.h"
-#include "gui/UiSetting.h"
+#include "gui/UiSettings.h"
 #include "gui/icon.h"
 #include "gui/widgets.h"
 #include "imgui.h"
@@ -176,7 +176,7 @@ void OutfitListTable::DrawToolWidgets()
     ImGui::PopStyleColor();
     ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$SosGui_Outfit}"_T.c_str());
 
-    auto *uiSetting = Setting::UiSetting::GetInstance();
+    auto *uiSetting = Settings::UiSettings::GetInstance();
     ImGui::SameLine();
     if (ImGuiUtil::CheckBox("$SosGui_CheckBox_OnlyShowFavorites", &uiSetting->showFavoriteOutfits))
     {
@@ -247,7 +247,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
 
     ImGui::TableNextColumn();
     {
-        auto fontSize     = ImGuiScope::FontSize(Setting::UiSetting::GetInstance()->FONT_PX_TITLE_3);
+        auto fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->FONT_PX_TITLE_3);
         auto framePadding = ImGuiScope::StyleVar::FramePadding({0, 0});
         {
             auto buttonColor = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
@@ -269,7 +269,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         ImGui::TableNextRow();
         ImGui::TableNextColumn(); // number column
         {
-            auto framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::ICON_PADDING);
+            auto framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
             auto buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
             bool clicked      = false;
             if (outfit.IsFavorite())
@@ -351,7 +351,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         }
     };
 
-    auto framePadding = ImGuiScope::StyleVar::FramePadding(Setting::UiSetting::TABLE_ROW_PADDING);
+    auto framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::TABLE_ROW_PADDING);
     DrawOutfitTableContent(m_outfitFilterInput.viewData, ascend, drawOutfitEntry);
 }
 

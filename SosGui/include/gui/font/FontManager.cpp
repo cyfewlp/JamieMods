@@ -4,7 +4,7 @@
 
 #include "FontManager.h"
 
-#include "../UiSetting.h"
+#include "../UiSettings.h"
 #include "FontInfo.h"
 #include "Translation.h"
 #include "common/WCharUtils.h"
@@ -57,7 +57,7 @@ void FontManager::Initialize()
 
         auto &io = ImGui::GetIO();
 
-        const auto *settings = Setting::UiSetting::GetInstance();
+        const auto *settings = Settings::UiSettings::GetInstance();
 
         ComPtr<IDWriteFont> pDefaultFont;
         GetDefaultFont(pDWriteFactory, &pDefaultFont);
@@ -78,16 +78,16 @@ void FontManager::Initialize()
         ImFontConfig config;
         config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
         config.MergeMode          = true;
-        const auto  iconFontPath  = util::GetInterfaceFile(Setting::UiSetting::ICON_FONT);
-        const float pixelFontSize = Setting::UiSetting::GetInstance()->FONT_PX_TEXT;
+        const auto  iconFontPath  = util::GetInterfaceFile(Settings::UiSettings::ICON_FONT);
+        const float pixelFontSize = Settings::UiSettings::GetInstance()->FONT_PX_TEXT;
 
-        CreateFontInfoFrom(pDWriteFactory.Get(), settings->fontInfo, m_FontInfo);
-        if (m_FontInfo.IsValid())
+        CreateFontInfoFrom(pDWriteFactory.Get(), settings->fontInfo, m_fontInfo);
+        if (m_fontInfo.IsValid())
         {
             io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
 
-            SetupFontConfig(config, m_FontInfo);
-            io.Fonts->AddFontFromFileTTF(m_FontInfo.filePath.c_str(), pixelFontSize, &config);
+            SetupFontConfig(config, m_fontInfo);
+            io.Fonts->AddFontFromFileTTF(m_fontInfo.filePath.c_str(), pixelFontSize, &config);
 
             ImFontConfig config1;
             config1.MergeMode = true;
@@ -96,19 +96,19 @@ void FontManager::Initialize()
         }
         else // setup ImGui font from default system font;
         {
-            m_FontInfo = m_defaultFontInfo;
+            m_fontInfo = m_defaultFontInfo;
 
             io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
             m_font = io.Fonts->AddFontFromFileTTF(m_defaultFontInfo.filePath.c_str(), pixelFontSize, &config);
         }
 
-        if (SetupUiIndexFromFontInfo(m_FontInfo) && m_font)
+        if (m_font)
         {
             io.FontDefault = m_font;
         }
         else
         {
-            m_FontInfo.MarkInvalid();
+            m_fontInfo.MarkInvalid();
             m_font = nullptr;
             io.Fonts->Clear();
             io.Fonts->AddFontDefault();
@@ -127,11 +127,11 @@ constexpr auto weightToString = [](const DWRITE_FONT_WEIGHT a_weight) {
         case DWRITE_FONT_WEIGHT_THIN:
             return "Thin";
         case DWRITE_FONT_WEIGHT_EXTRA_LIGHT: // DWRITE_FONT_WEIGHT_ULTRA_LIGHT
-            return "Extra light";
+            return "ExtraLight";
         case DWRITE_FONT_WEIGHT_LIGHT:
             return "Light";
         case DWRITE_FONT_WEIGHT_SEMI_LIGHT:
-            return "Semi-light";
+            return "SemiLight";
         case DWRITE_FONT_WEIGHT_NORMAL: // DWRITE_FONT_WEIGHT_REGULAR
             return "Normal";
         case DWRITE_FONT_WEIGHT_MEDIUM:
@@ -141,11 +141,11 @@ constexpr auto weightToString = [](const DWRITE_FONT_WEIGHT a_weight) {
         case DWRITE_FONT_WEIGHT_BOLD:
             return "Bold";
         case DWRITE_FONT_WEIGHT_EXTRA_BOLD: // DWRITE_FONT_WEIGHT_ULTRA_BOLD
-            return "Extra bold";
+            return "ExtraBold";
         case DWRITE_FONT_WEIGHT_BLACK: // DWRITE_FONT_WEIGHT_HEAVY
             return "Black";
         case DWRITE_FONT_WEIGHT_EXTRA_BLACK: // DWRITE_FONT_WEIGHT_ULTRA_BLACK
-            return "Extra black";
+            return "ExtraBlack";
     };
     return "Unknown";
 };
@@ -167,23 +167,23 @@ constexpr auto stretchToString = [](const DWRITE_FONT_STRETCH aStretch) {
         case DWRITE_FONT_STRETCH_UNDEFINED:
             return "Undefined";
         case DWRITE_FONT_STRETCH_ULTRA_CONDENSED:
-            return "Ultra-condensed";
+            return "UltraCondensed";
         case DWRITE_FONT_STRETCH_EXTRA_CONDENSED:
-            return "Extra-condensed";
+            return "ExtraCondensed";
         case DWRITE_FONT_STRETCH_CONDENSED:
             return "Condensed";
         case DWRITE_FONT_STRETCH_SEMI_CONDENSED:
-            return "Semi-condensed";
+            return "SemiCondensed";
         case DWRITE_FONT_STRETCH_NORMAL:
             return "Normal";
         case DWRITE_FONT_STRETCH_SEMI_EXPANDED:
-            return "Semi-expanded";
+            return "SemiExpanded";
         case DWRITE_FONT_STRETCH_EXPANDED:
             return "Expanded";
         case DWRITE_FONT_STRETCH_EXTRA_EXPANDED:
-            return "Extra-expanded";
+            return "ExtraExpanded";
         case DWRITE_FONT_STRETCH_ULTRA_EXPANDED:
-            return "Ultra-expanded";
+            return "UltraExpanded";
     }
     return "Unknown";
 };
@@ -200,9 +200,9 @@ void FontManager::RebuildPreviewFont(const ComPtr<IDWriteFont> &pFont)
     config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
     config.MergeMode = true;
 
-    const auto iconFontPath = util::GetInterfaceFile(Setting::UiSetting::ICON_FONT);
+    const auto iconFontPath = util::GetInterfaceFile(Settings::UiSettings::ICON_FONT);
 
-    const float pixelFontSize = Setting::UiSetting::GetInstance()->FONT_PX_TEXT;
+    const float pixelFontSize = Settings::UiSettings::GetInstance()->FONT_PX_TEXT;
     m_previewFont             = io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(), pixelFontSize);
 
     const std::string utf8Path = GetFontFilePath(pFont.Get());
@@ -223,9 +223,9 @@ void FontManager::RebuildPreviewFont(const ComPtr<IDWriteFont> &pFont)
 void FontManager::DrawPanel()
 {
     auto preview = "";
-    if (m_uiData.fontFamilyIndex >= 0 && static_cast<size_t>(m_uiData.fontFamilyIndex) < m_fontFamilies.size())
+    if (m_fontInfo.familyIndex >= 0 && static_cast<size_t>(m_fontInfo.familyIndex) < m_fontFamilies.size())
     {
-        preview = m_fontFamilies[m_uiData.fontFamilyIndex].familyName.c_str();
+        preview = m_fontFamilies[m_fontInfo.familyIndex].familyName.c_str();
     }
 
     bool apply = false;
@@ -236,12 +236,12 @@ void FontManager::DrawPanel()
         {
             for (size_t index = 0; index < m_fontFamilies.size(); index++)
             {
-                const bool selected = static_cast<size_t>(m_uiData.fontFamilyIndex) == index;
+                const bool selected = static_cast<size_t>(m_fontInfo.familyIndex) == index;
                 if (ImGui::Selectable(m_fontFamilies[index].familyName.c_str(), selected) && !selected)
                 {
-                    m_uiData.fontFamilyIndex = index;
-                    m_uiData.fontIndex       = 0;
-                    rebuildFont              = true;
+                    m_fontInfo.familyIndex = index;
+                    m_fontInfo.fontIndex   = 0;
+                    rebuildFont            = true;
                 }
                 if (selected)
                 {
@@ -274,12 +274,12 @@ void FontManager::DrawPanel()
                 stretchToString(pFont->GetStretch())
             );
         };
-        if (m_uiData.fontFamilyIndex >= 0)
+        if (m_fontInfo.familyIndex >= 0)
         {
-            const auto         &fontFamily = m_fontFamilies[m_uiData.fontFamilyIndex];
+            const auto         &fontFamily = m_fontFamilies[m_fontInfo.familyIndex];
             ComPtr<IDWriteFont> pPreviewFont;
             std::string         previewFont;
-            if (SUCCEEDED(fontFamily.pFontFamily->GetFont(m_uiData.fontIndex, &pPreviewFont)))
+            if (SUCCEEDED(fontFamily.pFontFamily->GetFont(m_fontInfo.fontIndex, &pPreviewFont)))
             {
                 previewFont = labelFromFont(pPreviewFont.Get());
             }
@@ -293,11 +293,11 @@ void FontManager::DrawPanel()
                     {
                         label = labelFromFont(pFont.Get());
                     }
-                    const bool selected = static_cast<size_t>(m_uiData.fontIndex) == index;
+                    const bool selected = static_cast<size_t>(m_fontInfo.fontIndex) == index;
                     if (ImGui::Selectable(label.c_str(), selected) && !selected)
                     {
-                        m_uiData.fontIndex = index;
-                        rebuildFont        = true;
+                        m_fontInfo.fontIndex = index;
+                        rebuildFont          = true;
                     }
                     if (selected) ImGui::SetItemDefaultFocus();
                 }
@@ -305,7 +305,7 @@ void FontManager::DrawPanel()
             }
             if (rebuildFont)
             {
-                if (ComPtr<IDWriteFont> pFont; SUCCEEDED(fontFamily.pFontFamily->GetFont(m_uiData.fontIndex, &pFont)))
+                if (ComPtr<IDWriteFont> pFont; SUCCEEDED(fontFamily.pFontFamily->GetFont(m_fontInfo.fontIndex, &pFont)))
                 {
                     RebuildPreviewFont(pFont.Get());
                 }
@@ -325,7 +325,10 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 + - * / = .,;:!? #&$%@|^)");
         ImGui::Text("The quick brown fox jumps over the lazy dog");
 
-        ImGui::Text("Emoji: 🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍↕︎🕊︎🏆😻🌟🧿🍀🎨🍜");
+        ImGui::Text(
+            "Emoji: "
+            "🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍"
+        );
         ImGui::Text("Chinese: 快速的棕色狐狸跳过了懒惰的狗");
         ImGui::Text("Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます");
         ImGui::Text("Korean: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다");
@@ -344,6 +347,17 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 
     // TODO ImGui::Text("$SosGui_Font_Size"_T.c_str());
     // ImGui::SameLine();
+}
+
+void FontManager::SyncSettings(Settings::UiSettings *uiSetting) const noexcept
+{
+    uiSetting->fontInfo.filePath    = m_fontInfo.filePath;
+    uiSetting->fontInfo.familyName  = m_fontInfo.familyName;
+    uiSetting->fontInfo.familyIndex = m_fontInfo.familyIndex;
+    uiSetting->fontInfo.fontIndex   = m_fontInfo.fontIndex;
+    uiSetting->fontInfo.faceIndex   = m_fontInfo.faceIndex;
+    uiSetting->fontInfo.bold        = m_fontInfo.bold;
+    uiSetting->fontInfo.oblique     = m_fontInfo.oblique;
 }
 
 void FontManager::DWriteFindAllInstalledFonts(IDWriteFactory *pDWriteFactory) noexcept
@@ -385,28 +399,6 @@ void FontManager::DWriteFindAllInstalledFonts(IDWriteFactory *pDWriteFactory) no
             m_fontFamilies.emplace_back(name, pFontFamily);
         }
     }
-}
-
-bool FontManager::SetupUiIndexFromFontInfo(const FontInfo &fontInfo)
-{
-    const auto familyName = fontInfo.familyName;
-    for (size_t index = 0; index < m_fontFamilies.size(); ++index)
-    {
-        if (familyName == m_fontFamilies[index].familyName)
-        {
-            m_uiData.fontFamilyIndex = index;
-
-            if (const auto &pFontFamily1 = m_fontFamilies[index].pFontFamily;
-                static_cast<UINT32>(fontInfo.fontIndex) >= pFontFamily1->GetFontCount())
-            {
-                break;
-            }
-            m_uiData.fontIndex = fontInfo.fontIndex;
-            return true;
-        }
-    }
-    m_uiData.fontFamilyIndex = -1;
-    return false;
 }
 
 auto FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::string
@@ -513,13 +505,13 @@ auto FontManager::GetFontFilePath(IDWriteFont *pFont) -> std::string
 
 auto FontManager::GetFontFamily(
     IDWriteFactory *pDWriteFactory, const std::string &familyName, IDWriteFontFamily **ppFontFamily
-) -> void
+) -> bool
 {
     *ppFontFamily         = nullptr;
     const auto &utf16Name = SKSE::stl::utf8_to_utf16(familyName).value_or(L"");
     if (utf16Name.empty())
     {
-        return;
+        return false;
     }
     if (ComPtr<IDWriteFontCollection> pFontCollection = nullptr;
         SUCCEEDED(pDWriteFactory->GetSystemFontCollection(&pFontCollection)))
@@ -528,12 +520,10 @@ auto FontManager::GetFontFamily(
         BOOL     exists = FALSE;
         if (SUCCEEDED(pFontCollection->FindFamilyName(utf16Name.c_str(), &index, &exists)) && exists)
         {
-            if (FAILED(pFontCollection->GetFontFamily(index, ppFontFamily)))
-            {
-                *ppFontFamily = nullptr;
-            }
+            return SUCCEEDED(pFontCollection->GetFontFamily(index, ppFontFamily));
         }
     }
+    return false;
 }
 
 void FontManager::CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &source, FontInfo &dest)
@@ -544,8 +534,7 @@ void FontManager::CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &s
         return;
     }
     ComPtr<IDWriteFontFamily> pFontFamily;
-    GetFontFamily(pFactory, source.familyName, &pFontFamily);
-    if (pFontFamily)
+    if (GetFontFamily(pFactory, source.familyName, &pFontFamily) && pFontFamily)
     {
         // check font index is valid;
         if (static_cast<uint32_t>(source.fontIndex) >= pFontFamily->GetFontCount())
@@ -553,11 +542,7 @@ void FontManager::CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &s
             return;
         }
 
-        if (ComPtr<IDWriteFont> pFont = nullptr; SUCCEEDED(pFontFamily->GetFont(source.fontIndex, &pFont)))
-        {
-            const auto path = GetFontFilePath(pFont.Get());
-            dest            = source;
-        }
+        dest = source;
     }
 }
 
@@ -591,7 +576,7 @@ void FontManager::SetupFontConfig(ImFontConfig &config, const FontInfo &fontInfo
     }
 }
 
-void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont)
+void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont) const
 {
     fontInfo.filePath = GetFontFilePath(pFont);
     if (ComPtr<IDWriteFontFamily> pDefaultFontFamily; SUCCEEDED(pFont->GetFontFamily(&pDefaultFontFamily)))
@@ -599,6 +584,14 @@ void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont)
         if (ComPtr<IDWriteLocalizedStrings> pFamilyNames; SUCCEEDED(pDefaultFontFamily->GetFamilyNames(&pFamilyNames)))
         {
             fontInfo.familyName = GetLocalizedString(pFamilyNames.Get());
+            for (size_t index = 0; index < m_fontFamilies.size(); index++)
+            {
+                if (fontInfo.familyName == m_fontFamilies[index].familyName)
+                {
+                    fontInfo.familyIndex = index;
+                    break;
+                }
+            }
             if (ComPtr<IDWriteFontFace> pFontFace; SUCCEEDED(pFont->CreateFontFace(&pFontFace)))
             {
                 fontInfo.bold = pFont->GetWeight() >= DWRITE_FONT_WEIGHT_BOLD ||
@@ -629,7 +622,7 @@ void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont)
     fontInfo.MarkInvalid();
 }
 
-Setting::UiSetting::UiSetting()
+Settings::UiSettings::UiSettings()
 {
     const HDC hdc  = GetDC(nullptr);
     const int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);

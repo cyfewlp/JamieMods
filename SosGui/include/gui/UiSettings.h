@@ -10,9 +10,9 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-namespace Setting
+namespace Settings
 {
-struct UiSetting
+struct UiSettings
 {
     static constexpr std::string_view     SETTING_NAME       = "UiSetting";
     static constexpr int                  FONT_POINT_SIZE    = 14;
@@ -29,7 +29,7 @@ struct UiSetting
     static constexpr const char          *ICON_FONT          = "SymbolsNerdFontMono-Regular.ttf";
 
 private:
-    UiSetting();
+    UiSettings();
 
 public:
     enum DefaultThemeIndex
@@ -51,7 +51,7 @@ public:
     float    globalFontScale      = 1.0F;                      // setting key: globalFontScale
     bool     includeTemplateArmor = true;
     bool     showFavoriteOutfits  = false;
-    FontInfo fontInfo;
+    FontInfo fontInfo; // setting key: start with fontinfo_
 
     // std::string asciiFontName    = ""; // for ascii + latin character;
 
@@ -63,7 +63,11 @@ public:
         showFavoriteOutfits  = false;
     }
 
-    static auto GetInstance() -> UiSetting *;
+    static auto GetInstance() -> UiSettings *
+    {
+        static UiSettings g_instance;
+        return &g_instance;
+    }
 };
 }
 }

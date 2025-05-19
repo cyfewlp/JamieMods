@@ -57,6 +57,7 @@ public:
     }
 
     static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
+    static auto ShutDown() -> void;
 
     void Show() override
     {

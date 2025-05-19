@@ -5,8 +5,8 @@
 #include "common/common.h"
 #include "common/imgui/ImThemeLoader.h"
 #include "common/log.h"
-#include "imgui_impl_dx11.h"
-#include "imgui_impl_win32.h"
+#include "gui/UiSettings.h"
+#include "util/UiSettingsLoader.h"
 
 #include <exception>
 #include <memory>
@@ -25,7 +25,7 @@ auto PluginInit() -> bool
     });
     SKSE::GetPapyrusInterface()->Register(PapyrusFunctions::Register);
 
-    auto themeFilePath = util::GetInterfaceFile(ImTheme::THEME_FILE_NAME);
+    const auto themeFilePath = util::GetInterfaceFile(ImTheme::THEME_FILE_NAME);
     ImTheme::Loader::GetInstance().LoadThemes(themeFilePath);
     App::GetInstance().Init();
     return true;
@@ -44,9 +44,7 @@ auto App::MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRES
     switch (msg)
     {
         case WM_DESTROY: {
-            ImGui_ImplDX11_Shutdown();
-            ImGui_ImplWin32_Shutdown();
-            ImGui::DestroyContext();
+            SosGuiMenu::ShutDown();
             break;
         }
         default:

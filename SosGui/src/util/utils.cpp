@@ -5,7 +5,7 @@
 #include "util/utils.h"
 
 #include "common/config.h"
-#include "gui/UiSetting.h"
+#include "gui/UiSettings.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "common/stb_image.h"
@@ -17,7 +17,7 @@ auto util::IsArmorCanDisplay(const RE::TESObjectARMO *armor) -> bool
     bool canDisplay = false;
     if (armor != nullptr)
     {
-        if (!Setting::UiSetting::GetInstance()->includeTemplateArmor && armor->templateArmor != nullptr)
+        if (!Settings::UiSettings::GetInstance()->includeTemplateArmor && armor->templateArmor != nullptr)
         {
             return canDisplay;
         }
