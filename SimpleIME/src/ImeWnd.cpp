@@ -124,20 +124,8 @@ auto ImeWnd::IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
 void ImeWnd::Start(HWND hWndParent)
 {
     log_info("Start ImeWnd Thread...");
-    m_hWnd = ::CreateWindowExW(
-        0,
-        g_tMainClassName,
-        L"Hide",
-        WS_CHILD,
-        0,
-        0,
-        0,
-        0,
-        hWndParent,
-        nullptr,
-        wc.hInstance,
-        this
-    );
+    m_hWnd =
+        ::CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, wc.hInstance, this);
     if (m_hWnd == nullptr)
     {
         throw SimpleIMEException("Create ImeWnd failed");
@@ -253,6 +241,14 @@ auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
     return reinterpret_cast<ImeWnd *>(ptr);
 }
 
+auto GetDpiY()
+{
+    const HDC hdc  = GetDC(nullptr);
+    const int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+    ReleaseDC(nullptr, hdc);
+    return dpiY;
+}
+
 void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
 {
     log_info("Initializing ImGui...");
@@ -277,19 +273,20 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     GetClientRect(m_hWndParent, &rect);
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-    const auto &uiConfig = AppConfig::GetConfig().GetAppUiConfig();
-    io.Fonts->AddFontFromFileTTF(
-        uiConfig.EastAsiaFontFile().c_str(), uiConfig.FontSize(), nullptr, io.Fonts->GetGlyphRangesChineseFull()
-    );
+    const auto  dpiY       = GetDpiY();
+    const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
+    const auto  pxFontSize = MulDiv(uiConfig.FontSize(), dpiY, 72);
+    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), pxFontSize))
+    {
+        io.Fonts->AddFontDefault();
+    }
 
     // config font
     static ImFontConfig cfg;
     cfg.OversampleH = cfg.OversampleV = 1;
     cfg.MergeMode                     = true;
     cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    static constexpr ImWchar icons_ranges[] = {0x1, 0x1FFFF, 0}; // Will not be copied
-    io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), uiConfig.FontSize(), &cfg, icons_ranges);
-    io.Fonts->Build();
+    io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), pxFontSize, &cfg);
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {

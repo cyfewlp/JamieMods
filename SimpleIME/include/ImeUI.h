@@ -40,15 +40,18 @@ public:
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
     void SetTheme();
-    void Draw() const;
+    void Draw();
     void RenderToolWindow();
     void ShowToolWindow();
     void ApplyUiSettings(const SettingsConfig &settingsConfig);
     void SyncUiSettings(SettingsConfig &settingsConfig);
 
 private:
-    static auto UpdateImeWindowPos() -> void;
-    static auto UpdateImeWindowPosByCaret() -> bool;
+    auto UpdateImeWindowPos(ImVec2 &windowPos) const -> bool;
+    auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) const -> bool;
+    // Calculate ime window size by candidate string & composition string.
+    // Because we need to place IME window in screen according to the IME window size;
+    void CalculateWindowSize();
 
     void DrawSettings();
     void DrawSettingsContent(ImeManagerComposer *imeManager);
@@ -56,7 +59,7 @@ private:
     void RenderSettingsFocusManage();
     void RenderSettingsImePosUpdatePolicy();
     void RenderCompWindow() const;
-    void RenderCandidateWindows() const;
+    void DrawCandidateWindows() const;
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
@@ -69,6 +72,7 @@ private:
     Translation              m_translation;
     ImeUIWidgets             m_imeUIWidgets{&m_translation};
     std::vector<std::string> m_translateLanguages;
+    ImVec2                   m_imeWindowSize = ImVec2(0, 0);
 
     bool  m_fShowToolWindow = false;
     bool  m_fShowSettings   = false;

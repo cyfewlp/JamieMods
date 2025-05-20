@@ -181,6 +181,47 @@ void AppConfig::SaveIniConfig(const char *configFilePath, const AppConfig &destA
     }
 }
 
+constexpr auto ConvertCamelCaseToUnderscore(const std::string_view &input) -> std::string
+{
+    if (input.empty())
+    {
+        return {};
+    }
+
+    std::string output;
+    output.reserve(input.size() * 2);
+
+    char first = input[0];
+    if (std::isupper(static_cast<unsigned char>(first)) == 0)
+    {
+        first = static_cast<char>(std::toupper(static_cast<unsigned char>(first)));
+    }
+    output.push_back(first);
+    bool       toUpper   = false;
+    const auto lastIndex = input.size() - 1;
+    for (size_t i = 1; i < input.size(); ++i)
+    {
+        char      c     = input[i];
+        const int iChar = static_cast<unsigned char>(c);
+        if (toUpper)
+        {
+            c       = static_cast<char>(std::toupper(iChar));
+            toUpper = false;
+        }
+        else if (std::isupper(iChar) && (i < lastIndex && std::islower(input[i + 1])))
+        {
+            output.push_back('_');
+        }
+        if (c == '_')
+        {
+            toUpper = true;
+        }
+        output.push_back(c);
+    }
+
+    return output;
+}
+
 constexpr auto converter<FocusType>::convert(const char *value, FocusType aDefault) -> FocusType
 {
     if (value == nullptr) return aDefault;

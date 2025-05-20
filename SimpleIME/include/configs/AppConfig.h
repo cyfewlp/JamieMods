@@ -15,53 +15,13 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-constexpr auto ConvertCamelCaseToUnderscore(const std::string &input) -> std::string
-{
-    if (input.empty())
-    {
-        return {};
-    }
-
-    std::string output;
-    output.reserve(input.size() * 2);
-
-    char first = input[0];
-    if (std::isupper(static_cast<unsigned char>(first)) == 0)
-    {
-        first = static_cast<char>(std::toupper(static_cast<unsigned char>(first)));
-    }
-    output.push_back(first);
-    bool       toUpper   = false;
-    const auto lastIndex = input.size() - 1;
-    for (size_t i = 1; i < input.size(); ++i)
-    {
-        char      c     = input[i];
-        const int iChar = static_cast<unsigned char>(c);
-        if (toUpper)
-        {
-            c       = static_cast<char>(std::toupper(iChar));
-            toUpper = false;
-        }
-        else if (std::isupper(iChar) && (i < lastIndex && std::islower(input[i + 1])))
-        {
-            output.push_back('_');
-        }
-        if (c == '_')
-        {
-            toUpper = true;
-        }
-        output.push_back(c);
-    }
-
-    return output;
-}
 
 template <typename Type>
 struct Property
 {
-    explicit constexpr Property(Type value, const std::string &varName) : m_value(std::move(value))
+    explicit constexpr Property(Type value, const std::string_view configName)
+        : m_value(std::move(value)), m_configName(configName)
     {
-        m_configName = ConvertCamelCaseToUnderscore(varName);
     }
 
     [[nodiscard]] constexpr const Type &Value() const
@@ -71,7 +31,7 @@ struct Property
 
     [[nodiscard]] constexpr const char *ConfigName() const
     {
-        return m_configName.c_str();
+        return m_configName.data();
     }
 
     constexpr void SetValue(const Type &value)
@@ -85,8 +45,8 @@ struct Property
     }
 
 private:
-    Type        m_value;
-    std::string m_configName{};
+    Type             m_value;
+    std::string_view m_configName{};
 };
 
 class IniSection
@@ -192,7 +152,7 @@ public:
         return m_emojiFontFile.Value();
     }
 
-    [[nodiscard]] constexpr const float &FontSize() const
+    [[nodiscard]] constexpr auto FontSize() const -> float
     {
         return m_fontSize.Value();
     }
@@ -219,13 +179,13 @@ public:
 
 private:
     friend class AppConfig;
-    Property<float>       m_fontSize{14.0F, "fontSize"};
-    Property<bool>        m_useClassicTheme{false, "useClassicTheme"};
-    Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "themesDirectory"};
-    Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "highlightTextColor"};
-    Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "eastAsiaFontFile"};
-    Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "emojiFontFile"};
-    Property<std::string> m_translationDir{R"(Data\interface\SimpleIME)", "translationDir"};
+    Property<int>       m_fontSize{14, "Font_Size"};
+    Property<bool>        m_useClassicTheme{false, "Use_Classic_Theme"};
+    Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "Themes_Directory"};
+    Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "Highlight_Text_Color"};
+    Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "East_Asia_Font_File"};
+    Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "Emoji_Font_File"};
+    Property<std::string> m_translationDir{R"(Data\interface\SimpleIME)", "Translation_Dir"};
 };
 
 using WindowPosPolicy = ImeManagerComposer::ImeWindowPosUpdatePolicy;
@@ -252,18 +212,18 @@ struct SettingsConfig final : BaseConfig<SettingsConfig>
 
     void Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) const override;
 
-    Property<float>           fontSizeScale{1.0, "fontSizeScale"};
-    Property<bool>            showSettings{false, "showSettings"};
-    Property<bool>            enableMod{true, "enableMod"};
-    Property<std::string>     language{"chinese", "language"};
-    Property<FocusType>       focusType{FocusType::Permanent, "focusType"};
-    Property<WindowPosPolicy> windowPosUpdatePolicy{WindowPosPolicy::BASED_ON_CARET, "windowPosUpdatePolicy"};
-    Property<bool>            enableUnicodePaste{true, "enableUnicodePaste"};
-    Property<bool>            keepImeOpen{true, "keepImeOpen"};
-    Property<std::string>     theme{"darcula", "theme"};
+    Property<float>           fontSizeScale{1.0, "Font_Size_Scale"};
+    Property<bool>            showSettings{false, "Show_Settings"};
+    Property<bool>            enableMod{true, "Enable_Mod"};
+    Property<std::string>     language{"chinese", "Language"};
+    Property<FocusType>       focusType{FocusType::Permanent, "Focus_Type"};
+    Property<WindowPosPolicy> windowPosUpdatePolicy{WindowPosPolicy::BASED_ON_CARET, "Window_Pos_Update_Policy"};
+    Property<bool>            enableUnicodePaste{true, "Enable_Unicode_Paste"};
+    Property<bool>            keepImeOpen{true, "Keep_Ime_Open"};
+    Property<std::string>     theme{"darcula", "Theme"};
 };
 
-class AppConfig : public BaseConfig<AppConfig>
+class AppConfig final : public BaseConfig<AppConfig>
 {
 public:
     static constexpr auto DEFAULT_LOG_LEVEL   = spdlog::level::info;
@@ -271,10 +231,10 @@ public:
     static constexpr char ENUM_DIK_F2         = 0x3C; // DIK_F2
 
 private:
-    Property<uint32_t>                  m_toolWindowShortcutKey{ENUM_DIK_F2, "toolWindowShortcutKey"};
-    Property<spdlog::level::level_enum> m_logLevel{DEFAULT_LOG_LEVEL, "logLevel"};
-    Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "flushLevel"};
-    Property<bool>                      m_enableTsf{true, "enableTsf"};
+    Property<uint32_t>                  m_toolWindowShortcutKey{ENUM_DIK_F2, "Tool_Window_Shortcut_Key"};
+    Property<spdlog::level::level_enum> m_logLevel{DEFAULT_LOG_LEVEL, "Log_Level"};
+    Property<spdlog::level::level_enum> m_flushLevel{DEFAULT_FLUSH_LEVEL, "Flush_Level"};
+    Property<bool>                      m_enableTsf{true, "Enable_Tsf"};
 
     AppUiConfig      m_appUiConfig;
     SettingsConfig   m_settingsConfig;
