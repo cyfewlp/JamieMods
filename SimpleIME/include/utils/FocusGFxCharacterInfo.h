@@ -72,11 +72,12 @@ public:
     auto UpdateCaretCharBoundaries() -> void;
 
 private:
-    std::list<std::string> m_menuStack;
+    std::list<std::string> m_menuStack{};
 
     void Reset();
     auto UpdateBounds(RE::GFxMovieView *movieView, const char *path, const RE::GFxValue &character) -> void;
     auto UpdateTextMetrics(const RE::GFxValue &character) -> void;
+    void UpdateCaretCharBoundaries(float hScroll, const RE::GFxValue &charBoundaries);
 };
 }
 }

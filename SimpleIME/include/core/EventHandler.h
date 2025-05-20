@@ -24,7 +24,7 @@ private:
     ImeWnd *m_imeWnd;
 
     void ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent);
-    void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent);
+    void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const;
 };
 
 class MenuOpenCloseEventSink final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>

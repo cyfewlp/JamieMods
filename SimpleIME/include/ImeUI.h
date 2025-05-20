@@ -40,14 +40,14 @@ public:
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
     void SetTheme();
-    void RenderIme() const;
+    void Draw() const;
     void RenderToolWindow();
     void ShowToolWindow();
     void ApplyUiSettings(const SettingsConfig &settingsConfig);
     void SyncUiSettings(SettingsConfig &settingsConfig);
 
 private:
-    static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;
+    static auto UpdateImeWindowPos() -> void;
     static auto UpdateImeWindowPosByCaret() -> bool;
 
     void DrawSettings();

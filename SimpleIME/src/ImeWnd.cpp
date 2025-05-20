@@ -438,7 +438,7 @@ void ImeWnd::RenderIme() const
 
     ErrorNotifier::GetInstance().Show();
     m_pImeUi->RenderToolWindow();
-    m_pImeUi->RenderIme();
+    m_pImeUi->Draw();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

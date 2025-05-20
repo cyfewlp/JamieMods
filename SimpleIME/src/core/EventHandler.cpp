@@ -147,10 +147,10 @@ void InputEventSink::ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent)
     }
 }
 
-void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent)
+void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
 {
-    auto keyCode = btnEvent->GetIDCode();
-    if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
+    if (const auto keyCode = btnEvent->GetIDCode();
+        keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
     {
         m_imeWnd->ShowToolWindow();
     }

@@ -16,9 +16,6 @@
 #include "ui/ImeUIWidgets.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
-#include <clocale>
-#include <tchar.h>
-
 namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
@@ -76,8 +73,8 @@ void ImeUI::ApplyUiSettings(const SettingsConfig &settingsConfig)
 
     { // Apply theme config
         m_imeUIWidgets.SetUInt32Var("$Themes", 0);
-        auto      &defaultTheme = settingsConfig.theme.Value();
-        const auto findIt       = std::ranges::find(m_themeNames, defaultTheme);
+        const auto &defaultTheme = settingsConfig.theme.Value();
+        const auto  findIt       = std::ranges::find(m_themeNames, defaultTheme);
         if (findIt == m_themeNames.end())
         {
             ErrorNotifier::GetInstance().addError(
@@ -122,56 +119,51 @@ void ImeUI::SetTheme()
     }
 }
 
-void ImeUI::RenderIme() const
+void ImeUI::Draw() const
 {
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
     windowFlags |= ImGuiWindowFlags_NoDecoration;
     windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-    static bool g_fShowImeWindow = false, g_fImeWindowPosUpdated = false;
-    auto       &state = State::GetInstance();
+    static bool prevFrameIsShowing = false;
+    const auto &state              = State::GetInstance();
     if (state.Has(State::IME_DISABLED) || state.NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
     {
-        g_fShowImeWindow = false;
+        prevFrameIsShowing = false;
         return;
     }
-    UpdateImeWindowPos(g_fShowImeWindow, g_fImeWindowPosUpdated);
-    g_fShowImeWindow = true;
-
-    ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags);
-
-    ImGui::SameLine();
-    ImGui::BeginGroup();
-    RenderCompWindow();
-
-    ImGui::Separator();
-    // render ime status window: language,
-    if (state.Has(State::IN_CAND_CHOOSING))
+    if (!prevFrameIsShowing)
     {
-        RenderCandidateWindows();
+        UpdateImeWindowPos();
     }
-    ImGui::EndGroup();
+    prevFrameIsShowing = true;
+
+    if (ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags))
+    {
+        RenderCompWindow();
+
+        ImGui::Separator();
+        // render ime status window: language,
+        if (state.Has(State::IN_CAND_CHOOSING))
+        {
+            RenderCandidateWindows();
+        }
+    }
     ImGui::End();
 }
 
-auto ImeUI::UpdateImeWindowPos(bool showIme, bool &updated) -> void
+auto ImeUI::UpdateImeWindowPos() -> void
 {
     switch (ImeManagerComposer::GetInstance()->GetImeWindowPosUpdatePolicy())
     {
         case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CURSOR:
             if (auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
             {
-                ImGui::SetNextWindowPos({cursor->cursorPosX, cursor->cursorPosY}, ImGuiCond_Appearing);
+                ImGui::SetNextWindowPos({cursor->cursorPosX, cursor->cursorPosY});
             }
             break;
         case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CARET: {
-            if (!showIme || !updated)
-            {
-                FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
-                if (UpdateImeWindowPosByCaret())
-                {
-                    updated = true;
-                }
-            }
+            FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
+            UpdateImeWindowPosByCaret();
             break;
         }
         default:;
@@ -180,24 +172,18 @@ auto ImeUI::UpdateImeWindowPos(bool showIme, bool &updated) -> void
 
 auto ImeUI::UpdateImeWindowPosByCaret() -> bool
 {
-    if (!State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
-    {
-        return false;
-    }
-
-    auto &instance      = FocusGFxCharacterInfo::GetInstance();
-    auto  imeWindowSize = ImGui::GetContentRegionAvail();
+    const auto &instance      = FocusGFxCharacterInfo::GetInstance();
+    const auto  imeWindowSize = ImGui::GetContentRegionAvail();
     if (imeWindowSize.x == 0 || imeWindowSize.y == 0)
     {
         return false;
     }
-    const auto &charBoundaries = instance.CharBoundaries();
-    auto       *renderer       = RE::BSGraphics::Renderer::GetSingleton();
-    auto        screenSize     = renderer->GetScreenSize();
-    bool        doUpdate       = false;
+    const auto &charBoundaries       = instance.CharBoundaries();
+    auto [screenWidth, screenHeight] = RE::BSGraphics::Renderer::GetScreenSize();
+    bool doUpdate                    = false;
 
     ImVec2 windowPos = imeWindowSize + ImGui::GetCursorScreenPos();
-    if (charBoundaries.bottom + imeWindowSize.y <= screenSize.height)
+    if (charBoundaries.bottom + imeWindowSize.y <= static_cast<float>(screenHeight))
     {
         windowPos.x = charBoundaries.right;
         windowPos.y = charBoundaries.bottom;
@@ -212,11 +198,11 @@ auto ImeUI::UpdateImeWindowPosByCaret() -> bool
 
     if (doUpdate)
     {
-        if (windowPos.x + imeWindowSize.x > screenSize.width)
+        if (windowPos.x + imeWindowSize.x > screenWidth)
         {
-            windowPos.x = screenSize.width - imeWindowSize.x;
+            windowPos.x = screenWidth - imeWindowSize.x;
         }
-        ImGui::SetNextWindowPos(windowPos, ImGuiCond_Appearing);
+        ImGui::SetNextWindowPos(windowPos);
     }
     return true;
 }

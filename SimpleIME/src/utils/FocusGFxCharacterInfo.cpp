@@ -3,8 +3,6 @@
 //
 #include "utils/FocusGFxCharacterInfo.h"
 
-#include <common/log.h>
-
 namespace LIBC_NAMESPACE_DECL
 {
 using namespace RE;
@@ -27,12 +25,12 @@ auto Ime::FocusGFxCharacterInfo::Update(GFxMovieView *movieView) -> void
     }
 }
 
-auto Ime::FocusGFxCharacterInfo::Update(const std::string &menuName, bool open) -> void
+auto Ime::FocusGFxCharacterInfo::Update(const std::string &menuName, const bool open) -> void
 {
     if (open)
     {
         m_menuStack.push_front(menuName);
-        auto movieView = UI::GetSingleton()->GetMovieView(menuName);
+        const auto movieView = UI::GetSingleton()->GetMovieView(menuName);
         Update(movieView.get());
     }
     else
@@ -67,10 +65,6 @@ void Ime::FocusGFxCharacterInfo::Reset()
 auto Ime::FocusGFxCharacterInfo::UpdateBounds(GFxMovieView *movieView, const char *path, const GFxValue &character)
     -> void
 {
-    if (movieView == nullptr)
-    {
-        return;
-    }
     GRenderer::Matrix identity;
     GPointF           screenPoint;
     if (movieView->TranslateLocalToScreen(path, {}, &screenPoint, &identity))
@@ -78,12 +72,11 @@ auto Ime::FocusGFxCharacterInfo::UpdateBounds(GFxMovieView *movieView, const cha
         m_bound.left = screenPoint.x;
         m_bound.top  = screenPoint.y;
     }
-    GFxValue _width, _height;
-    if (character.GetMember("_width", &_width) && _width.IsNumber())
+    if (GFxValue _width; character.GetMember("_width", &_width) && _width.IsNumber())
     {
         m_bound.right = static_cast<float>(_width.GetNumber()) + screenPoint.x;
     }
-    if (character.GetMember("_height", &_height) && _height.IsNumber())
+    if (GFxValue _height; character.GetMember("_height", &_height) && _height.IsNumber())
     {
         m_bound.bottom = static_cast<float>(_height.GetNumber()) + screenPoint.y;
     }
@@ -91,12 +84,11 @@ auto Ime::FocusGFxCharacterInfo::UpdateBounds(GFxMovieView *movieView, const cha
 
 auto Ime::FocusGFxCharacterInfo::UpdateTextMetrics(const GFxValue &character) -> void
 {
-    GFxValue textWidth, textHeight;
-    if (character.GetMember("textWidth", &textWidth) && textWidth.IsNumber())
+    if (GFxValue textWidth; character.GetMember("textWidth", &textWidth) && textWidth.IsNumber())
     {
         m_textWidth = textWidth.GetNumber();
     }
-    if (character.GetMember("textHeight", &textHeight) && textHeight.IsNumber())
+    if (GFxValue textHeight; character.GetMember("textHeight", &textHeight) && textHeight.IsNumber())
     {
         m_textHeight = textHeight.GetNumber();
     }
@@ -104,57 +96,61 @@ auto Ime::FocusGFxCharacterInfo::UpdateTextMetrics(const GFxValue &character) ->
 
 auto Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries() -> void
 {
-    if (m_movieView == nullptr)
+    if (!m_movieView)
     {
         UpdateByTopMenu();
     }
 
-    if (m_movieView != nullptr)
+    if (!m_movieView)
     {
-        GFxValue focusCharacterPath;
-        m_movieView->Invoke("Selection.getFocus", &focusCharacterPath, nullptr, 0);
-        GFxValue focusCharacter;
-        if (focusCharacterPath.IsString() &&
-            m_movieView->GetVariable(&focusCharacter, focusCharacterPath.GetString()) && focusCharacter.IsObject())
+        return;
+    }
+
+    GFxValue focusCharacterPath;
+    if (!m_movieView->Invoke("Selection.getFocus", &focusCharacterPath, nullptr, 0) || !focusCharacterPath.IsString())
+    {
+        return;
+    }
+
+    if (GFxValue focusCharacter;
+        m_movieView->GetVariable(&focusCharacter, focusCharacterPath.GetString()) && focusCharacter.IsObject())
+    {
+        GFxValue caretIndex;
+        m_movieView->Invoke("Selection.getCaretIndex", &caretIndex, nullptr, 0);
+        if (caretIndex.IsNumber())
         {
-            GFxValue caretIndex;
-            m_movieView->Invoke("Selection.getCaretIndex", &caretIndex, nullptr, 0);
-            if (caretIndex.IsNumber())
+
+            GFxValue hScroll;
+            focusCharacter.GetMember("hscroll", &hScroll);
+            std::array const args = {caretIndex};
+            if (GFxValue charBoundaries;
+                focusCharacter.Invoke("getExactCharBoundaries", &charBoundaries, args) && charBoundaries.IsObject())
             {
-                GFxValue charBoundaries, hscroll;
-                focusCharacter.GetMember("hscroll", &hscroll);
-                std::array args = {caretIndex};
-                focusCharacter.Invoke("getExactCharBoundaries", &charBoundaries, args);
-                if (charBoundaries.IsObject())
-                {
-                    GFxValue x, y, width, height;
-                    charBoundaries.GetMember("x", &x);
-                    charBoundaries.GetMember("y", &y);
-                    charBoundaries.GetMember("width", &width);
-                    charBoundaries.GetMember("height", &height);
-                    if (x.IsNumber())
-                    {
-                        m_charBoundaries.left = static_cast<float>(x.GetNumber()) + m_bound.left;
-                        if (hscroll.IsNumber())
-                        {
-                            m_charBoundaries.left -= static_cast<float>(hscroll.GetNumber());
-                        }
-                    }
-                    if (y.IsNumber())
-                    {
-                        m_charBoundaries.top = static_cast<float>(y.GetNumber()) + m_bound.top;
-                    }
-                    if (width.IsNumber())
-                    {
-                        m_charBoundaries.right = static_cast<float>(width.GetNumber()) + m_charBoundaries.left;
-                    }
-                    if (height.IsNumber())
-                    {
-                        m_charBoundaries.bottom = static_cast<float>(height.GetNumber()) + m_charBoundaries.top;
-                    }
-                }
+                const float hScrollPos = hScroll.IsNumber() ? hScroll.GetNumber() : 0.0F;
+                UpdateCaretCharBoundaries(hScrollPos, charBoundaries);
             }
         }
+    }
+}
+
+void Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries(const float hScroll, const GFxValue &charBoundaries)
+{
+    if (GFxValue x; charBoundaries.GetMember("x", &x) && x.IsNumber())
+    {
+        m_charBoundaries.left = static_cast<float>(x.GetNumber()) + m_bound.left;
+        m_charBoundaries.left -= hScroll;
+    }
+    if (GFxValue y; charBoundaries.GetMember("y", &y) && y.IsNumber())
+    {
+        m_charBoundaries.top = static_cast<float>(y.GetNumber()) + m_bound.top;
+    }
+    if (GFxValue width; charBoundaries.GetMember("width", &width) && width.IsNumber())
+    {
+        m_charBoundaries.right = static_cast<float>(width.GetNumber()) + m_charBoundaries.left;
+    }
+    if (GFxValue height; charBoundaries.GetMember("height", &height) && height.IsNumber())
+    {
+        m_charBoundaries.bottom = static_cast<float>(height.GetNumber()) + m_charBoundaries.top;
     }
 }
 }
