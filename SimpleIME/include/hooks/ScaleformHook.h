@@ -8,17 +8,11 @@
 #include "common/hook.h"
 #include "common/log.h"
 #include "hooks/Hooks.hpp"
-#include "ime/ImeManagerComposer.h"
 
 #include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
-namespace Ime
-{
-class ImeManagerComposer;
-}
-
 namespace Hooks
 {
 
@@ -36,7 +30,7 @@ public:
     RE::BSTArray<CM::InputContextID> contextPriorityStack;                   // 100
     uint32_t                         enabledControls;                        // 118
     uint32_t                         unk11C;                                 // 11C
-    std::int8_t                      textEntryCount;                         // 120
+    std::uint8_t                     textEntryCount;                         // 120
     bool                             ignoreKeyboardMouse;                    // 121
     bool                             ignoreActivateDisabledEvents;           // 122
     std::uint8_t                     pad123;                                 // 123
@@ -52,6 +46,9 @@ public:
     auto SKSE_AllowTextInput(bool allow) -> uint8_t;
 
     static ControlMap *GetSingleton(void);
+
+private:
+    static void DoAllowTextInput(bool allow, std::uint8_t &entryCount);
 };
 
 class Scaleform_SetScaleModeTypeHookData : public HookData<void(RE::GFxMovieView *, RE::GFxMovieView::ScaleModeType)>
@@ -110,14 +107,10 @@ public:
     // call SKSE_AllowTextInput to allow and return its result
     static auto AllowTextInput(bool allow) -> std::uint8_t;
     // use our text-entry-count
-    static void OnTextEntryCountChanged();
+    static void OnTextEntryCountChanged(std::uint8_t entryCount);
 
     static constexpr auto HasTextEntry() -> bool
     {
-        if (Ime::ImeManagerComposer::GetInstance()->IsSupportOtherMod())
-        {
-            return false;
-        }
         return g_textEntryCount > 0;
     }
 
@@ -134,10 +127,12 @@ class ScaleformHooks
     static inline std::unique_ptr<Scaleform_AllowTextInput>           g_AllowTextInputHook   = nullptr;
 
     static void SetScaleModeTypeHook(RE::GFxMovieView *pMovieView, RE::GFxMovieView::ScaleModeType scaleMode);
+#ifdef HOOK_LOAD_MOVIE
     static bool LoadMovieHook(
         RE::BSScaleformManager *, RE::IMenu *, RE::GPtr<RE::GFxMovieView> &, const char *,
         RE::BSScaleformManager::ScaleModeType, float
     );
+#endif
     // Game default AllowTextInout
     static auto Scaleform_AllowTextInputHook(ControlMap *self, bool allow) -> uint8_t;
 

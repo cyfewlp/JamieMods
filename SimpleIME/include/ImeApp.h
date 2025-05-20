@@ -51,7 +51,7 @@ private:
     std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
 
     void OnD3DInit();
-    void Start(RE::BSGraphics::RendererData &renderData);
+    void Start(const RE::BSGraphics::RendererData &renderData);
     void InstallHooks();
     void UninstallHooks();
 
@@ -61,7 +61,6 @@ private:
 
     static void           D3DInit();
     static void           DoD3DInit();
-    static void           BroadcastImeIntegrationMessage();
     static void           D3DPresent(std::uint32_t ptr);
     static void           DoD3DPresent();
     static void           DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);

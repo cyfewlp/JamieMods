@@ -24,10 +24,14 @@ constexpr auto MAX_ERROR_MESSAGE_COUNT = 10;
 
 class ImeUI
 {
-    using State = Ime::Core::State;
+    using State = Core::State;
 
 public:
-    explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService);
+    explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService)
+        : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService)
+    {
+    }
+
     ~ImeUI();
     ImeUI(const ImeUI &other)                = delete;
     ImeUI(ImeUI &&other) noexcept            = delete;
@@ -46,7 +50,8 @@ private:
     static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;
     static auto UpdateImeWindowPosByCaret() -> bool;
 
-    void RenderSettings();
+    void DrawSettings();
+    void DrawSettingsContent(ImeManagerComposer *imeManager);
     void RenderSettingsState() const;
     void RenderSettingsFocusManage();
     void RenderSettingsImePosUpdatePolicy();
@@ -56,9 +61,9 @@ private:
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
     AppUiConfig              m_uiConfig;
-    LangProfileUtil         *m_langProfileUtil = nullptr;
-    ITextService            *m_pTextService    = nullptr;
     ImeWnd                  *m_pImeWnd         = nullptr;
+    ITextService            *m_pTextService    = nullptr;
+    LangProfileUtil         *m_langProfileUtil = nullptr;
     ImGuiThemeLoader         m_uiThemeLoader{};
     std::vector<std::string> m_themeNames{};
     Translation              m_translation;

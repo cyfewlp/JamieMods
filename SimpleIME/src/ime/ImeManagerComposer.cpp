@@ -139,10 +139,6 @@ void ImeManagerComposer::PopAndPushType(const FocusType type, const bool syncIme
 
 auto ImeManagerComposer::EnableIme(bool enable) -> bool
 {
-    if (m_fSupportOtherMod)
-    {
-        return m_delegate->EnableIme(enable);
-    }
     if (!m_delegate->EnableIme(m_fKeepImeOpen || enable))
     {
         ErrorNotifier::GetInstance().addError(std::format("Unexpected error: EnableIme({}) failed.", enable));

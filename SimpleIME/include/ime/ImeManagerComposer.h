@@ -5,6 +5,8 @@
 #include "ime/PermanentFocusImeManager.h"
 #include "ime/TemporaryFocusImeManager.h"
 
+#include <stack>
+
 namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
@@ -125,7 +127,7 @@ public:
 
     [[nodiscard]] constexpr auto IsUnicodePasteEnabled() const -> bool
     {
-        return IsModEnabled() && !m_fSupportOtherMod && m_fEnableUnicodePaste;
+        return IsModEnabled() && m_fEnableUnicodePaste;
     }
 
     void SetEnableUnicodePaste(const bool fEnableUnicodePaste)
@@ -145,16 +147,6 @@ public:
             m_fDirty = true;
         }
         m_fKeepImeOpen = fKeepImeOpen;
-    }
-
-    [[nodiscard]] constexpr auto IsSupportOtherMod() const -> bool
-    {
-        return m_fSupportOtherMod;
-    }
-
-    void SetSupportOtherMod(const bool fSupportOtherMod)
-    {
-        m_fSupportOtherMod = fSupportOtherMod;
     }
 
     void SyncImeStateIfDirty()
@@ -235,7 +227,6 @@ private:
     std::stack<FocusType>                     m_FocusTypeStack{};
     bool                                      m_fKeepImeOpen        = false;
     bool                                      m_fEnableUnicodePaste = true;
-    std::atomic_bool                          m_fSupportOtherMod    = false;
     std::atomic_bool                          m_fInited             = false;
 
     // m_fKeepImeOpen, focus type
@@ -248,7 +239,10 @@ private:
     static void Init(ImeWnd *imwWnd, HWND hwndGame)
     {
         auto *instance = GetInstance();
-        if (instance->m_fInited) return;
+        if (instance->m_fInited)
+        {
+            return;
+        }
 
         instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imwWnd, hwndGame);
         instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imwWnd, hwndGame);

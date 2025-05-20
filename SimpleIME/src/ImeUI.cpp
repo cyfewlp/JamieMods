@@ -26,13 +26,6 @@ namespace Ime
 
 static constexpr ImVec4 RED_COLOR = {1.0F, 0.0F, 0.0F, 1.0F};
 
-ImeUI::ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService) : m_uiConfig(uiConfig)
-{
-    _tsetlocale(LC_ALL, _T(""));
-    m_pTextService = pTextService;
-    m_pImeWnd      = pImeWnd;
-}
-
 ImeUI::~ImeUI()
 {
     if (m_pTextService != nullptr)
@@ -162,10 +155,6 @@ void ImeUI::RenderIme() const
 
 auto ImeUI::UpdateImeWindowPos(bool showIme, bool &updated) -> void
 {
-    if (ImeManagerComposer::GetInstance()->IsSupportOtherMod())
-    {
-        return;
-    }
     switch (ImeManagerComposer::GetInstance()->GetImeWindowPosUpdatePolicy())
     {
         case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CURSOR:
@@ -262,7 +251,7 @@ void ImeUI::RenderToolWindow()
     m_translation.UseSection("Tool Window");
     ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, m_toolWindowFlags);
 
-    RenderSettings();
+    DrawSettings();
 
     m_translation.UseSection("Tool Window");
 
@@ -299,7 +288,7 @@ void ImeUI::RenderToolWindow()
     ImGui::End();
 }
 
-void ImeUI::RenderSettings()
+void ImeUI::DrawSettings()
 {
     if (!m_fShowSettings)
     {
@@ -311,60 +300,7 @@ void ImeUI::RenderSettings()
     {
         m_translation.UseSection("Settings");
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-        do
-        {
-            bool fEnableMod = ImeManager::IsModEnabled();
-            m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
-                return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
-            });
-
-            ImGui::SameLine();
-            ImGui::Text("%s", m_translation.Get("$Font_Size_Scale"));
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::DragFloat(
-                    "##FontSizeScale",
-                    &m_fontSizeScale,
-                    0.05,
-                    SettingsConfig::MIN_FONT_SIZE_SCALE,
-                    SettingsConfig::MAX_FONT_SIZE_SCALE,
-                    "%.3f",
-                    ImGuiSliderFlags_NoInput
-                ))
-            {
-                ImGui::GetIO().FontGlobalScale = m_fontSizeScale;
-            }
-
-            m_imeUIWidgets.Combo("$Languages", m_translateLanguages, [this](const std::string &lang) {
-                return m_translation.UseLanguage(lang.c_str());
-            });
-
-            if (!fEnableMod)
-            {
-                break;
-            }
-            RenderSettingsState();
-
-            m_imeUIWidgets.SeparatorText("$Features");
-
-            RenderSettingsFocusManage();
-            if (!imeManager->IsSupportOtherMod())
-            {
-                RenderSettingsImePosUpdatePolicy();
-                bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
-                if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
-                {
-                    imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
-                }
-
-                ImGui::SameLine();
-                bool fKeepImeOpen = imeManager->IsKeepImeOpen();
-                if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
-                {
-                    imeManager->SetKeepImeOpen(fKeepImeOpen);
-                }
-            }
-        } while (false);
+        DrawSettingsContent(imeManager);
         ImGui::PopStyleVar();
 
         m_imeUIWidgets.Combo("$Themes", m_themeNames, [this](const std::string &name) {
@@ -373,6 +309,58 @@ void ImeUI::RenderSettings()
     }
     ImGui::End();
     imeManager->SyncImeStateIfDirty();
+}
+
+void ImeUI::DrawSettingsContent(ImeManagerComposer *imeManager)
+{
+    bool fEnableMod = ImeManager::IsModEnabled();
+    m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
+        return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
+    });
+
+    ImGui::SameLine();
+    ImGui::Text("%s", m_translation.Get("$Font_Size_Scale"));
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    if (ImGui::DragFloat(
+            "##FontSizeScale",
+            &m_fontSizeScale,
+            0.05,
+            SettingsConfig::MIN_FONT_SIZE_SCALE,
+            SettingsConfig::MAX_FONT_SIZE_SCALE,
+            "%.3f",
+            ImGuiSliderFlags_NoInput
+        ))
+    {
+        ImGui::GetIO().FontGlobalScale = m_fontSizeScale;
+    }
+
+    m_imeUIWidgets.Combo("$Languages", m_translateLanguages, [this](const std::string &lang) {
+        return m_translation.UseLanguage(lang.c_str());
+    });
+
+    if (!fEnableMod)
+    {
+        return;
+    }
+    RenderSettingsState();
+
+    m_imeUIWidgets.SeparatorText("$Features");
+
+    RenderSettingsFocusManage();
+    RenderSettingsImePosUpdatePolicy();
+    bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
+    if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
+    {
+        imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
+    }
+
+    ImGui::SameLine();
+    bool fKeepImeOpen = imeManager->IsKeepImeOpen();
+    if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+    {
+        imeManager->SetKeepImeOpen(fKeepImeOpen);
+    }
 }
 
 void ImeUI::RenderSettingsState() const

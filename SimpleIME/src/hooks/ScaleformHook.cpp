@@ -18,30 +18,12 @@ namespace Hooks
 {
 auto ControlMap::SKSE_AllowTextInput(bool allow) -> uint8_t
 {
-    if (allow)
+    if (REL::Module::IsSE())
     {
-        if (allowTextInput == MAX_TEXT_ENTRY_COUNT)
-        {
-            log_warn("InputManager::AllowTextInput: counter overflow");
-        }
-        else
-        {
-            allowTextInput++;
-        }
+        DoAllowTextInput(allow, textEntryCount);
+        return textEntryCount;
     }
-    else
-    {
-        if (allowTextInput == 0)
-        {
-            log_warn("InputManager::AllowTextInput: counter underflow");
-        }
-        else
-        {
-            allowTextInput--;
-        }
-    }
-
-    log_debug("{} text input, count = {}", allow ? "allowed" : "disallowed", allowTextInput);
+    DoAllowTextInput(allow, allowTextInput);
     return allowTextInput;
 }
 
@@ -51,46 +33,61 @@ ControlMap *ControlMap::GetSingleton()
     return *singleton;
 }
 
+void ControlMap::DoAllowTextInput(bool allow, std::uint8_t &entryCount)
+{
+    if (allow)
+    {
+        if (entryCount == UINT8_MAX)
+        {
+            log_warn("InputManager::AllowTextInput: counter overflow");
+        }
+        else
+        {
+            entryCount++;
+        }
+    }
+    else
+    {
+        if (entryCount == 0)
+        {
+            log_warn("InputManager::AllowTextInput: counter underflow");
+        }
+        else
+        {
+            entryCount--;
+        }
+    }
+
+    log_debug("{} text input, count = {}", allow ? "allowed" : "disallowed", entryCount);
+}
+
 auto SKSE_ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
 {
-    ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
-    OnTextEntryCountChanged();
+    std::uint8_t entryCount = ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
+    OnTextEntryCountChanged(entryCount);
     log_trace("Text entry count: {}", g_textEntryCount);
     return g_textEntryCount;
 }
 
-void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged()
+void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged(std::uint8_t entryCount)
 {
-    uint8_t newValue = 0;
-    uint8_t oldValue = g_textEntryCount;
-    if (REL::Module::IsAE())
-    {
-        newValue = ControlMap::GetSingleton()->allowTextInput;
-    }
-    else if (REL::Module::IsSE())
-    {
-        newValue = ControlMap::GetSingleton()->textEntryCount;
-    }
-    if (newValue == oldValue)
+    const uint8_t oldValue = g_textEntryCount;
+    if (entryCount == oldValue)
     {
         return;
     }
 
-    g_textEntryCount = newValue;
+    g_textEntryCount = entryCount;
     auto *imeManager = Ime::ImeManagerComposer::GetInstance();
-    if (Ime::ImeManagerComposer::GetInstance()->IsSupportOtherMod())
-    {
-        return;
-    }
     imeManager->SyncImeStateIfDirty();
-    if (oldValue == 0 && newValue > 0)
+    if (oldValue == 0 && entryCount > 0)
     {
         if (!imeManager->NotifyEnableIme(true))
         {
             log_error("Send notify message fail {}", GetLastError());
         }
     }
-    else if (oldValue > 0 && newValue == 0)
+    else if (oldValue > 0 && entryCount == 0)
     {
         if (!imeManager->NotifyEnableIme(false))
         {
@@ -188,7 +185,7 @@ auto ScaleformHooks::Scaleform_AllowTextInputHook(ControlMap *self, bool allow) 
     auto result = g_AllowTextInputHook->Original(self, allow);
 
     Ime::FocusGFxCharacterInfo::GetInstance().UpdateByTopMenu();
-    SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged();
+    SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged(result);
     return result;
 }
 

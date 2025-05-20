@@ -1,7 +1,6 @@
 #include "ImeWnd.hpp"
 
 #include "ImeUI.h"
-#include "SimpleImeSupport.h"
 #include "Utils.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
@@ -11,7 +10,6 @@
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeManagerComposer.h"
-#include "ime/ImeSupportUtils.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -130,11 +128,11 @@ void ImeWnd::Start(HWND hWndParent)
         0,
         g_tMainClassName,
         L"Hide",
-        WS_CHILD, //
+        WS_CHILD,
         0,
         0,
         0,
-        0, // x,y,w,h
+        0,
         hWndParent,
         nullptr,
         wc.hInstance,
@@ -318,7 +316,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
     static DWORD currentThread = ::GetCurrentThreadId();
     if (gameThread == 0)
     {
-        gameThread = ::GetWindowThreadProcessId(m_hWndParent, NULL);
+        gameThread = ::GetWindowThreadProcessId(m_hWndParent, nullptr);
     }
     if (gameThread != currentThread)
     {
@@ -400,7 +398,7 @@ auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) con
 
 auto ImeWnd::GetImeThreadId() const -> DWORD
 {
-    return ::GetWindowThreadProcessId(m_hWnd, NULL);
+    return ::GetWindowThreadProcessId(m_hWnd, nullptr);
 }
 
 void ImeWnd::AbortIme() const
@@ -421,8 +419,8 @@ void ImeWnd::NewFrame()
         POINT cursorPos;
         if (ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
         {
-            auto *meunCursor = RE::MenuCursor::GetSingleton();
-            ImGui::GetIO().AddMousePosEvent(meunCursor->cursorPosX, meunCursor->cursorPosY);
+            auto *menuCursor = RE::MenuCursor::GetSingleton();
+            ImGui::GetIO().AddMousePosEvent(menuCursor->cursorPosX, menuCursor->cursorPosY);
         }
         else if (GetCursorPos(&cursorPos) != FALSE)
         {
@@ -474,19 +472,9 @@ auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
     return TRUE;
 }
 
-void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
+inline void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
 {
-    if (ImeManagerComposer::GetInstance()->IsSupportOtherMod())
-    {
-        std::wstring resultCopy(compositionString);
-        ImeSupportUtils::BroadcastImeMessage(
-            SimpleIME::SkseImeMessage::IME_COMPOSITION_RESULT, resultCopy.data(), resultCopy.size() * sizeof(wchar_t)
-        );
-    }
-    else
-    {
-        Utils::SendStringToGame(compositionString);
-    }
+    Utils::SendStringToGame(compositionString);
 }
 }
 }

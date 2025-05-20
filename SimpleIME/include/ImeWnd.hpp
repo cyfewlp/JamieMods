@@ -42,10 +42,10 @@ public:
 
     /**
      * Work on standalone thread and run own message loop.
-     * Mainly for avoid other plugins that init COM
-     * with COINIT_MULTITHREADED(crash logger) to effect our TSF code.
+     * Mainly avoid other plugins that init COM
+     * with COINIT_MULTITHREADED(crash logger) to affect our TSF code.
      *
-     * @param hWndParent Main window(game window)
+     * @param hWndParent Main window (game window)
      */
     void Start(HWND hWndParent);
     /**
@@ -65,7 +65,7 @@ public:
     }
 
     /**
-     * Focus to parent window to abort IME
+     * Focus to a parent window to abort IME
      */
     void AbortIme() const;
     void RenderIme() const;
@@ -89,12 +89,12 @@ private:
 
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
-    CComPtr<LangProfileUtil>      m_pLangProfileUtil{};
-    bool                          m_fEnableTsf = false;
-    bool                          m_fFocused   = false;
+    CComPtr<LangProfileUtil>      m_pLangProfileUtil;
     HWND                          m_hWnd       = nullptr;
     HWND                          m_hWndParent = nullptr;
     WNDCLASSEXW                   wc{};
+    bool                          m_fEnableTsf = false;
+    bool                          m_fFocused   = false;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

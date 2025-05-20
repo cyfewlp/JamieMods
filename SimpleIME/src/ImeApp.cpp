@@ -2,7 +2,6 @@
 #include "ImeApp.h"
 
 #include "ImeWnd.hpp"
-#include "SimpleImeSupport.h"
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/log.h"
@@ -13,7 +12,6 @@
 #include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeManagerComposer.h"
-#include "ime/ImeSupportUtils.h"
 
 #include <basetsd.h>
 #include <cstdint>
@@ -192,22 +190,9 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("Hook WndProc failed!");
     }
     InstallHooks();
-    BroadcastImeIntegrationMessage();
 }
 
-void ImeApp::BroadcastImeIntegrationMessage()
-{
-    static SimpleIME::IntegrationData g_IntegrationData //
-        = {.RenderIme               = DoD3DPresent,
-           .EnableIme               = ImeSupportUtils::EnableIme,
-           .PushContext             = ImeSupportUtils::PushContext,
-           .PopContext              = ImeSupportUtils::PopContext,
-           .UpdateImeWindowPosition = ImeSupportUtils::UpdateImeWindowPosition,
-           .IsWantCaptureInput      = ImeSupportUtils::IsWantCaptureInput};
-    ImeSupportUtils::BroadcastImeIntegrationMessage(&g_IntegrationData);
-}
-
-void ImeApp::Start(RE::BSGraphics::RendererData &renderData)
+void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 {
     std::promise<bool> ensureInitialized;
     std::future<bool>  initialized = ensureInitialized.get_future();
@@ -264,10 +249,7 @@ void ImeApp::D3DPresent(std::uint32_t ptr)
     {
         return;
     }
-    if (!ImeManagerComposer::GetInstance()->IsSupportOtherMod())
-    {
-        DoD3DPresent();
-    }
+    DoD3DPresent();
 }
 
 void ImeApp::DoD3DPresent()
