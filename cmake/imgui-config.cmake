@@ -1,0 +1,17 @@
+set(IMGUI_INCLUDE_DIRS
+    ${CMAKE_SOURCE_DIR}/extern/imgui
+    ${CMAKE_SOURCE_DIR}/extern/imgui/backends
+)
+set(IMGUI_SOURCES
+    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui.h
+    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui.cpp
+    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_widgets.cpp
+    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_tables.cpp
+    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_draw.cpp
+    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_win32.h
+    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_win32.cpp
+    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_dx11.h
+    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_dx11.cpp
+    ${CMAKE_SOURCE_DIR}/extern/imgui/misc/freetype/imgui_freetype.h
+    ${CMAKE_SOURCE_DIR}/extern/imgui/misc/freetype/imgui_freetype.cpp
+)

@@ -21,16 +21,17 @@
 #BasedOnStyle: LLVM
 
 Language: Cpp
-TabWidth: '4'
-IndentWidth: '4'
-BasedOnStyle: Microsoft    
+TabWidth: 4
+IndentWidth: 4
+BasedOnStyle: Microsoft
+NamespaceMacros:
+  - LIBC_NAMESPACE_DECL
 AccessModifierOffset: -4
 ColumnLimit: 120
-NamespaceIndentation: All
 IndentPPDirectives: BeforeHash
 FixNamespaceComments: false
-AlignAfterOpenBracket: Align 
-AlignArrayOfStructures: Left 
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Left
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AlignConsecutiveAssignments:
   Enabled: true
@@ -45,9 +46,12 @@ AlignConsecutiveMacros:
   AcrossEmptyLines: true
   AcrossComments: false
 AllowShortLambdasOnASingleLine: Empty
-BinPackArguments: true
+AllowShortBlocksOnASingleLine : Empty
+AllowShortFunctionsOnASingleLine : Empty
+BinPackArguments: false
 BinPackParameters: true
 BreakBeforeConceptDeclarations: Always
-BreakTemplateDeclarations: true
+BreakTemplateDeclarations: Yes
 SeparateDefinitionBlocks: Always
 IndentCaseLabels: true
+IncludeBlocks: Regroup
