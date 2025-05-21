@@ -40,16 +40,6 @@ auto TemporaryFocusImeManager::DoEnableIme(bool enable) -> bool
     return success;
 }
 
-auto TemporaryFocusImeManager::DoNotifyEnableIme(bool enable) const -> bool
-{
-    return ::SendNotifyMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
-}
-
-auto TemporaryFocusImeManager::DoWaitEnableIme(bool enable) const -> bool
-{
-    return ::SendMessageA(m_hwndGame, CM_IME_ENABLE, enable ? TRUE : FALSE, 0) == S_OK;
-}
-
 // On main thread
 auto TemporaryFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
 {
@@ -70,16 +60,6 @@ auto TemporaryFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
     return success;
 }
 
-auto TemporaryFocusImeManager::DoNotifyEnableMod(bool enable) const -> bool
-{
-    return ::SendNotifyMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) != FALSE;
-}
-
-auto TemporaryFocusImeManager::DoWaitEnableMod(bool enable) const -> bool
-{
-    return ::SendMessageA(m_hwndGame, CM_MOD_ENABLE, enable ? TRUE : FALSE, 0) == S_OK;
-}
-
 auto TemporaryFocusImeManager::DoForceFocusIme() -> bool
 {
     return m_ImeWnd->Focus();
@@ -89,7 +69,7 @@ auto TemporaryFocusImeManager::DoForceFocusIme() -> bool
 auto TemporaryFocusImeManager::DoSyncImeState() -> bool
 {
     const auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
-    return NotifyEnableIme(enableIme);
+    return EnableIme(enableIme);
 }
 
 // On main thread
@@ -97,7 +77,7 @@ auto TemporaryFocusImeManager::DoTryFocusIme() -> bool
 {
     m_fIsInEnableIme = true;
     bool success     = true;
-    if (!m_fIsInEnableIme)
+    if (!m_fIsInEnableIme) // FIXME
     {
         success          = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
         m_fIsInEnableIme = false;

@@ -18,11 +18,7 @@ public:
 
 protected:
     auto DoEnableIme(bool enable) -> bool override;
-    auto DoNotifyEnableIme(bool enable) const -> bool override;
-    auto DoWaitEnableIme(bool enable) const -> bool override;
     auto DoEnableMod(bool enable) -> bool override;
-    auto DoNotifyEnableMod(bool enable) const -> bool override;
-    auto DoWaitEnableMod(bool enable) const -> bool override;
     auto DoForceFocusIme() -> bool override;
     auto DoSyncImeState() -> bool override;
     auto DoTryFocusIme() -> bool override;

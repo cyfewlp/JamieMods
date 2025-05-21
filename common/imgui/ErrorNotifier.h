@@ -13,48 +13,76 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    struct ErrorMsg
+struct ErrorMsg
+{
+    enum class Level : std::uint8_t
     {
-        std::string time;
-        std::string text;
-        bool        confirmed = false;
+        debug = 0,
+        warning,
+        error
     };
 
-    class ErrorNotifier
+    std::string time;
+    std::string text;
+    bool        confirmed = false;
+    Level       level     = Level::debug;
+};
+
+class ErrorNotifier
+{
+    std::deque<ErrorMsg> errors;
+    const size_t         MaxMessages    = 64;
+    ErrorMsg::Level      m_currentLevel = ErrorMsg::Level::debug;
+
+public:
+    void addError(const std::string &txt, ErrorMsg::Level level = ErrorMsg::Level::debug);
+
+    constexpr void Debug(const std::string &txt)
     {
-    public:
-        std::deque<ErrorMsg> errors;
-        const size_t         MaxMessages = 64;
+        addError(txt, ErrorMsg::Level::debug);
+    }
 
-        void addError(const std::string &txt)
-        {
-            if (errors.size() >= MaxMessages) errors.pop_front();
-            errors.push_back({currentTime(), txt, false});
-        }
+    constexpr void Warning(const std::string &txt)
+    {
+        addError(txt, ErrorMsg::Level::warning);
+    }
 
-        void clearConfirmed()
-        {
-            errors.erase(std::ranges::remove_if(errors,
-                                                [](const ErrorMsg &e) {
-                                                    return e.confirmed;
-                                                })
-                             .begin(),
-                         errors.end());
-        }
+    constexpr void Error(const std::string &txt)
+    {
+        addError(txt, ErrorMsg::Level::error);
+    }
 
-        void Show();
+    constexpr void clearConfirmed()
+    {
+        errors.erase(
+            std::ranges::remove_if(
+                errors,
+                [](const ErrorMsg &errorMsg) {
+                    return errorMsg.confirmed;
+                }
+            ).begin(),
+            errors.end()
+        );
+    }
 
-        static auto GetInstance() -> ErrorNotifier &
-        {
-            static ErrorNotifier instance;
-            return instance;
-        }
+    void Show();
 
-    private:
-        void renderMessage(const ErrorMsg &msg, int idx);
+    void SetMessageLevel(ErrorMsg::Level level)
+    {
+        m_currentLevel = level;
+    }
 
-        static std::string currentTime();
-    };
+    static auto GetInstance() -> ErrorNotifier &
+    {
+        static ErrorNotifier instance;
+        return instance;
+    }
+
+private:
+    void renderMessage(const ErrorMsg &msg, int idx);
+
+    static std::string currentTime();
+};
 }
 
 #endif // ERRORNOTIFIER_H

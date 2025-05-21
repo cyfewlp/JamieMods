@@ -320,7 +320,7 @@ void ImeUI::DrawSettingsContent(ImeManagerComposer *imeManager)
 {
     bool fEnableMod = ImeManager::IsModEnabled();
     m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
-        return ImeManagerComposer::GetInstance()->NotifyEnableMod(EnableMod);
+        ImeManagerComposer::GetInstance()->EnableMod(EnableMod);
     });
 
     ImGui::SameLine();

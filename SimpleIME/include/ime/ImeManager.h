@@ -24,11 +24,7 @@ public:
     ImeManager(ImeManager &&other)      = delete;
 
     virtual auto EnableIme(bool enable) -> bool             = 0;
-    virtual auto NotifyEnableIme(bool enable) const -> bool = 0;
-    virtual auto WaitEnableIme(bool enable) const -> bool   = 0;
     virtual auto EnableMod(bool enable) -> bool             = 0;
-    virtual auto NotifyEnableMod(bool enable) const -> bool = 0;
-    virtual auto WaitEnableMod(bool enable) const -> bool   = 0;
     virtual auto GiveUpFocus() const -> bool                = 0;
     virtual auto ForceFocusIme() -> bool                    = 0;
     virtual auto SyncImeState() -> bool                     = 0;

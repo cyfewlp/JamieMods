@@ -42,7 +42,7 @@ public:
     static constexpr auto IsImeNotActivateOrGameLoading() -> bool
     {
         auto &state = State::GetInstance();
-        return !ImeManagerComposer::GetInstance()->IsModEnabled() || //
+        return !ImeManager::IsModEnabled() ||
                state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
                state.NotHas(State::LANG_PROFILE_ACTIVATED);
     }

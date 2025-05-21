@@ -18,23 +18,7 @@ class BaseImeManager : public ImeManager
 public:
     auto EnableIme(bool enable) -> bool override;
 
-    auto NotifyEnableIme(bool enable) const -> bool override;
-
-    auto WaitEnableIme(bool enable) const -> bool override;
-
     auto EnableMod(bool fEnableMod) -> bool override;
-
-    auto NotifyEnableMod(bool enable) const -> bool override
-    {
-        log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-        return DoNotifyEnableMod(enable);
-    }
-
-    auto WaitEnableMod(bool enable) const -> bool override
-    {
-        log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-        return DoWaitEnableMod(enable);
-    }
 
     // no effect.
     auto GiveUpFocus() const -> bool override
@@ -56,11 +40,7 @@ public:
 
 protected:
     virtual auto DoEnableIme(bool enable) -> bool             = 0;
-    virtual auto DoNotifyEnableIme(bool enable) const -> bool = 0;
-    virtual auto DoWaitEnableIme(bool enable) const -> bool   = 0;
     virtual auto DoEnableMod(bool enable) -> bool             = 0;
-    virtual auto DoNotifyEnableMod(bool enable) const -> bool = 0;
-    virtual auto DoWaitEnableMod(bool enable) const -> bool   = 0;
     virtual auto DoForceFocusIme() -> bool                    = 0;
     virtual auto DoSyncImeState() -> bool                     = 0;
     virtual auto DoTryFocusIme() -> bool                      = 0;

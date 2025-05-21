@@ -4,6 +4,7 @@
 #include "ime/ImeManager.h"
 #include "ime/PermanentFocusImeManager.h"
 #include "ime/TemporaryFocusImeManager.h"
+#include "ui/TaskQueue.h"
 
 #include <stack>
 
@@ -34,27 +35,7 @@ protected:
         return false;
     }
 
-    auto DoNotifyEnableIme(bool) const -> bool override
-    {
-        return false;
-    }
-
-    auto DoWaitEnableIme(bool) const -> bool override
-    {
-        return false;
-    }
-
     auto DoEnableMod(bool) -> bool override
-    {
-        return false;
-    }
-
-    auto DoNotifyEnableMod(bool) const -> bool override
-    {
-        return false;
-    }
-
-    auto DoWaitEnableMod(bool) const -> bool override
     {
         return false;
     }
@@ -75,13 +56,8 @@ protected:
     }
 };
 
-class ImeManagerComposer final : public ImeManager
+class ImeManagerComposer
 {
-public:
-    ImeManagerComposer()           = default;
-    ~ImeManagerComposer() override = default;
-
-private:
     auto Use(FocusType type);
 
 public:
@@ -113,7 +89,7 @@ public:
 
     [[nodiscard]] constexpr auto GetImeWindowPosUpdatePolicy() const -> ImeWindowPosUpdatePolicy
     {
-        if (!IsModEnabled())
+        if (!ImeManager::IsModEnabled())
         {
             return ImeWindowPosUpdatePolicy::NONE;
         }
@@ -127,7 +103,7 @@ public:
 
     [[nodiscard]] constexpr auto IsUnicodePasteEnabled() const -> bool
     {
-        return IsModEnabled() && m_fEnableUnicodePaste;
+        return ImeManager::IsModEnabled() && m_fEnableUnicodePaste;
     }
 
     void SetEnableUnicodePaste(const bool fEnableUnicodePaste)
@@ -151,9 +127,9 @@ public:
 
     void SyncImeStateIfDirty()
     {
-        if (m_fDirty && !SyncImeState())
+        if (m_fDirty)
         {
-            ErrorNotifier::GetInstance().addError("Unexpected error: SyncImeState failed.");
+            SyncImeState();
         }
     }
 
@@ -164,50 +140,17 @@ public:
 
     //////////////////////////////////////////////////
 
-    auto EnableIme(bool enable) -> bool override;
+    auto EnableIme(bool enable) const -> void;
 
-    auto EnableMod(bool enable) -> bool override;
+    auto EnableMod(bool enable) const -> void;
 
-    auto GiveUpFocus() const -> bool override
-    {
-        return m_delegate->GiveUpFocus();
-    }
+    auto GiveUpFocus() const -> void;
 
-    auto ForceFocusIme() -> bool override
-    {
-        return m_delegate->ForceFocusIme();
-    }
+    auto ForceFocusIme() const -> void;
 
-    auto TryFocusIme() -> bool override
-    {
-        return m_delegate->TryFocusIme();
-    }
+    auto TryFocusIme() const -> void;
 
-    auto SyncImeState() -> bool override
-    {
-        m_fDirty = false;
-        return m_delegate->SyncImeState();
-    }
-
-    auto NotifyEnableIme(bool enable) const -> bool override
-    {
-        return m_delegate->NotifyEnableIme(enable);
-    }
-
-    auto NotifyEnableMod(bool enable) const -> bool override
-    {
-        return m_delegate->NotifyEnableMod(enable);
-    }
-
-    auto WaitEnableIme(bool enable) const -> bool override
-    {
-        return m_delegate->WaitEnableIme(enable);
-    }
-
-    auto WaitEnableMod(bool enable) const -> bool override
-    {
-        return m_delegate->WaitEnableMod(enable);
-    }
+    auto SyncImeState() -> void;
 
     [[nodiscard]] auto IsInited() const -> bool
     {
@@ -233,6 +176,7 @@ private:
     bool m_fDirty = false;
 
     ImeWindowPosUpdatePolicy m_ImeWindowPosUpdatePolicy = ImeWindowPosUpdatePolicy::BASED_ON_CARET;
+    void                     AddTask(TaskQueue::Task &&task) const;
 
     friend class ImeWnd;
 

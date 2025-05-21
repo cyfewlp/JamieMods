@@ -206,11 +206,9 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             if (pThis == nullptr) break;
             return pThis->OnDestroy();
         }
-        case CM_IME_ENABLE: {
-            return ImeManagerComposer::GetInstance()->EnableIme(wParam != FALSE) ? S_OK : S_FALSE;
-        }
-        case CM_MOD_ENABLE: {
-            return ImeManagerComposer::GetInstance()->EnableMod(wParam != FALSE) ? S_OK : S_FALSE;
+        case CM_EXECUTE_TASK: {
+            TaskQueue::GetInstance().ExecuteImeThreadTasks();
+            return S_OK;
         }
         case CM_ACTIVATE_PROFILE: {
             if (pThis == nullptr) break;
@@ -302,11 +300,6 @@ auto ImeWnd::OnCreate() -> LRESULT
     return S_OK;
 }
 
-auto ImeWnd::OnImeEnable(bool enable) const -> bool
-{
-    return m_pTextService->OnFocus(enable);
-}
-
 void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
 {
     static DWORD gameThread    = 0;
@@ -360,12 +353,12 @@ auto ImeWnd::Focus() const -> bool
 {
     if (!IsFocused())
     {
-        ::SetFocus(m_hWnd);
+        return ::SetFocus(m_hWnd) == nullptr;
     }
-    return IsFocused();
+    return true;
 }
 
-auto ImeWnd::SetTsfFocus(bool focus) const -> bool
+auto ImeWnd::SetTsfFocus(const bool focus) const -> bool
 {
     return m_pTextService->OnFocus(focus);
 }

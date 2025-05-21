@@ -17,8 +17,8 @@ set(COMMON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 cmake_minimum_required(VERSION 3.21)
 
-add_subdirectory(extern/CommonLibSSE-NG CommonLibSSE EXCLUDE_FROM_ALL)
-add_subdirectory(extern)
+add_subdirectory(extern/CommonLibSSE-NG)
+#add_subdirectory(extern)
 add_subdirectory(dev)
 add_subdirectory(SimpleIME)
 add_subdirectory(SkyrimSETransmogrify)

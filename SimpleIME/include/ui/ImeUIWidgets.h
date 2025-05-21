@@ -31,7 +31,7 @@ public:
 
     void StateWidget(String label, const bool isEnabled) const;
     void Button(String label, OnClick onClick) const;
-    void Checkbox(String label, bool &checked, const std::function<bool(bool isChecked)> &&onChecked) const;
+    void Checkbox(String label, bool &checked, const std::function<void(bool isChecked)> &&onChecked) const;
     auto Checkbox(String label, bool &checked) const -> bool;
     auto Combo(String label, const std::vector<std::string> &values, std::function<bool(const std::string &)> onApply)
         -> uint32_t;

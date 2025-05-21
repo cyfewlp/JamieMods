@@ -82,17 +82,11 @@ void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged(std::uint8_t entryCou
     imeManager->SyncImeStateIfDirty();
     if (oldValue == 0 && entryCount > 0)
     {
-        if (!imeManager->NotifyEnableIme(true))
-        {
-            log_error("Send notify message fail {}", GetLastError());
-        }
+        imeManager->EnableIme(true);
     }
     else if (oldValue > 0 && entryCount == 0)
     {
-        if (!imeManager->NotifyEnableIme(false))
-        {
-            log_error("Send notify message fail {}", GetLastError());
-        }
+        imeManager->EnableIme(false);
     }
 }
 

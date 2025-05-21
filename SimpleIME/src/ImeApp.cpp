@@ -282,6 +282,10 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
         case WM_ACTIVATEAPP:
             log_info("WM_ACTIVATEAPP {:#x}, {:#x}", wParam, lParam);
             break;*/
+        case CM_EXECUTE_TASK: {
+            TaskQueue::GetInstance().ExecuteMainThreadTasks();
+            return S_OK;
+        }
         case WM_NCACTIVATE:
             log_debug("WM_NCACTIVATE {:#x}, {:#x}", wParam, lParam);
             if (wParam == TRUE)
@@ -289,10 +293,6 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
                 ImeManagerComposer::GetInstance()->TryFocusIme();
             }
             break;
-        case CM_IME_ENABLE:
-            return ImeManagerComposer::GetInstance()->EnableIme(wParam != FALSE) ? S_OK : S_FALSE;
-        case CM_MOD_ENABLE:
-            return ImeManagerComposer::GetInstance()->EnableMod(wParam != FALSE) ? S_OK : S_FALSE;
         case WM_SETFOCUS:
             log_info("WM_SETFOCUS {:#x}, {:#x}", wParam, lParam);
             ImeManagerComposer::GetInstance()->TryFocusIme();

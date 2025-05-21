@@ -84,7 +84,6 @@ private:
     auto        OnDestroy() const -> LRESULT;
     void        InitializeTextService(const AppConfig &pAppConfig);
     static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
-    auto        OnImeEnable(bool enable) const -> bool;
     void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;

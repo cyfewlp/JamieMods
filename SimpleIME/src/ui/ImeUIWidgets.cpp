@@ -70,30 +70,14 @@ void ImeUIWidgets::Button(String label, OnClick onClick) const
     TrySetItemTooltip(label);
 }
 
-void ImeUIWidgets::Checkbox(String label, bool &checked, const std::function<bool(bool isChecked)> &&onChecked) const
+void ImeUIWidgets::Checkbox(String label, bool &checked, const std::function<void(bool isChecked)> &&onChecked) const
 {
-    const auto *name         = m_translation->Get(label);
-    static bool handleFailed = false;
+    const auto *name = m_translation->Get(label);
     if (ImGui::Checkbox(name, &checked))
     {
-        if (onChecked && !onChecked(checked))
-        {
-            log_error("Can't handle {} checked {}", name, checked);
-            checked      = false;
-            handleFailed = true;
-        }
+        onChecked(checked);
     }
     TrySetItemTooltip(label);
-
-    if (handleFailed)
-    {
-        ImGui::TextColored(ImVec4(1.0f, .0f, .0f, 1.0f), "%s Failed to check/uncheck ", name);
-        ImGui::SameLine();
-        if (ImGui::Button("x"))
-        {
-            handleFailed = false;
-        }
-    }
 }
 
 auto ImeUIWidgets::Checkbox(String label, bool &checked) const -> bool

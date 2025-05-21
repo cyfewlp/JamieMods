@@ -2,7 +2,6 @@
 
 #include "ImeWnd.hpp"
 #include "common/log.h"
-#include "configs/CustomMessage.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
 
@@ -42,16 +41,6 @@ auto PermanentFocusImeManager::DoEnableIme(bool enable) -> bool
     return success;
 }
 
-auto PermanentFocusImeManager::DoNotifyEnableIme(bool enable) const -> bool
-{
-    return m_ImeWnd->SendNotifyMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0);
-}
-
-auto PermanentFocusImeManager::DoWaitEnableIme(bool enable) const -> bool
-{
-    return m_ImeWnd->SendMessageToIme(CM_IME_ENABLE, enable ? TRUE : FALSE, 0);
-}
-
 // must call on IME thread(by send message)
 // 0. Unset keepImeOpen if will disable mod
 // 1. Enable/Disable IME if any text entry changed
@@ -80,16 +69,6 @@ auto PermanentFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
         log_error("Can't enable/disable mod. last error {}", GetLastError());
     }
     return success;
-}
-
-auto PermanentFocusImeManager::DoNotifyEnableMod(bool enable) const -> bool
-{
-    return m_ImeWnd->SendNotifyMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0);
-}
-
-auto PermanentFocusImeManager::DoWaitEnableMod(bool enable) const -> bool
-{
-    return m_ImeWnd->SendMessageToIme(CM_MOD_ENABLE, enable ? TRUE : FALSE, 0);
 }
 
 // Call on IME thread
@@ -127,7 +106,7 @@ auto PermanentFocusImeManager::DoSyncImeState() -> bool
     return success;
 }
 
-// call on main thread
+// call on the main thread
 auto PermanentFocusImeManager::DoTryFocusIme() -> bool
 {
     bool success = false;

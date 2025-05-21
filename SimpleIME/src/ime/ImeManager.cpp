@@ -12,7 +12,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-auto ImeManager::Focus(HWND hwnd) -> bool
+auto ImeManager::Focus(const HWND hwnd) -> bool
 {
     auto  hwndThread      = ::GetWindowThreadProcessId(hwnd, 0);
     DWORD currentThreadId = ::GetCurrentThreadId();
@@ -22,13 +22,13 @@ auto ImeManager::Focus(HWND hwnd) -> bool
         success = ::AttachThreadInput(hwndThread, currentThreadId, TRUE) != FALSE;
         if (success)
         {
-            ::SetFocus(hwnd);
+            success = ::SetFocus(hwnd) != nullptr;
             ::AttachThreadInput(hwndThread, currentThreadId, FALSE);
         }
     }
     else
     {
-        ::SetFocus(hwnd);
+        success = ::SetFocus(hwnd) != nullptr;
     }
     return success;
 }
@@ -83,28 +83,6 @@ auto BaseImeManager::EnableIme(bool enable) -> bool
         return DoEnableIme(enable);
     }
     return true;
-}
-
-auto BaseImeManager::NotifyEnableIme(bool enable) const -> bool
-{
-    log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-    if (!IsModEnabled())
-    {
-        log_warn("Mod is disabled, operate failed");
-        return false;
-    }
-    return DoNotifyEnableIme(enable);
-}
-
-auto BaseImeManager::WaitEnableIme(bool enable) const -> bool
-{
-    log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-    if (!IsModEnabled())
-    {
-        log_warn("Mod is disabled, operate failed");
-        return false;
-    }
-    return DoWaitEnableIme(enable);
 }
 
 auto BaseImeManager::EnableMod(bool fEnableMod) -> bool
