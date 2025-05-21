@@ -16,62 +16,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
 set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
-##
-#  Test Config
-
-enable_testing()
-
-option(INSTALL_GMOCK "Install Googletest's GMock?" OFF)
-option(INSTALL_GTEST "Install Googletest's GTest?" OFF)
-
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
-add_executable(
-    ${TEST_PROJ_NAME}
-    src/AppConfig.cpp
-    src/ImGuiThemeLoader.cpp
-    test/AppConfigTest.cpp
-    test/WCharUtilsTest.cpp
-    test/ImGuiThemeLoaderTest.cpp
-)
-#target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
-
-target_link_libraries(
-    ${TEST_PROJ_NAME}
-    PRIVATE
-    imgui
-    GTest::gtest_main
-    spdlog::spdlog
-)
-target_include_directories(
-    ${TEST_PROJ_NAME}
-    PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${SIMPLEINI_INCLUDE_DIRS}
-)
-target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(${TEST_PROJ_NAME} PRIVATE SIMPLE_IME_DEBUG)
-endif ()
-
-include(GoogleTest)
-gtest_discover_tests(${TEST_PROJ_NAME})
-
-add_custom_command(
-    TARGET "${TEST_PROJ_NAME}"
-    PRE_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/test/resources" "$<TARGET_FILE_DIR:${TEST_PROJ_NAME}>/"
-    VERBATIM
-)
 
 file(GLOB_RECURSE headers *.h include/*.hpp)
 file(GLOB_RECURSE sources src/*.cpp)
@@ -81,9 +25,6 @@ source_group(
     FILES
     ${sources} ${headers}
 )
-
-## ImGui source
-include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
 
 ## Set Output folder
 
@@ -97,9 +38,10 @@ find_package(Freetype REQUIRED) # for imgui_freetype
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-#find_package(CommonLibSSE CONFIG REQUIRED)
-find_package(Microsoft.GSL CONFIG REQUIRED)
+find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
+include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
 include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
@@ -139,7 +81,6 @@ target_link_libraries(
     PRIVATE
     spdlog::spdlog
     ${DETOURS_LIBRARY}
-    Microsoft.GSL::GSL
     Freetype::Freetype
 )
 

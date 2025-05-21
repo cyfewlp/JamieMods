@@ -23,6 +23,8 @@ enum class FocusType : uint8_t
 class DummyFocusImeManager final : public BaseImeManager
 {
 public:
+    explicit DummyFocusImeManager() : BaseImeManager(nullptr) {}
+
     static auto GetInstance() -> DummyFocusImeManager *
     {
         static DummyFocusImeManager instance;
@@ -58,7 +60,7 @@ protected:
 
 class ImeManagerComposer
 {
-    auto Use(FocusType type);
+    void Use(FocusType type);
 
 public:
     enum class ImeWindowPosUpdatePolicy : uint8_t
@@ -172,6 +174,7 @@ private:
     bool                                      m_fEnableUnicodePaste = true;
     std::atomic_bool                          m_fInited             = false;
     ImeWnd                                   *m_pImeWnd             = nullptr;
+    HWND                                      m_gameHwnd            = nullptr;
 
     // m_fKeepImeOpen, focus type
     bool m_fDirty = false;
@@ -181,16 +184,17 @@ private:
 
     friend class ImeWnd;
 
-    static void Init(ImeWnd *imeWnd)
+    static void Init(ImeWnd *imeWnd, HWND gameHwnd)
     {
         auto *instance = GetInstance();
         if (instance->m_fInited)
         {
             return;
         }
+        instance->m_gameHwnd                 = gameHwnd;
         instance->m_pImeWnd                  = imeWnd;
-        instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imeWnd);
-        instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imeWnd);
+        instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imeWnd, gameHwnd);
+        instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imeWnd, gameHwnd);
         instance->m_fInited                  = true;
     }
 };

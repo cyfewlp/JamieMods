@@ -1,8 +1,8 @@
 #include "ime/ImeManager.h"
 
 #include "FakeDirectInputDevice.h"
-#include "ImeApp.h"
 #include "common/log.h"
+#include "ime/BaseImeManager.h"
 
 #include <cstdint>
 #include <processthreadsapi.h>
@@ -33,13 +33,13 @@ auto ImeManager::Focus(HWND hwnd) -> bool
     return success;
 }
 
-auto ImeManager::UnlockKeyboard() -> bool
+auto ImeManager::UnlockKeyboard() const -> bool
 {
     log_debug("Unlock keyboard: NONEXCLUSIVE + BACKGROUND.");
     HRESULT hr = E_FAIL;
     if (auto *keyboard = Hooks::FakeDirectInputDevice::GetInstance(); keyboard != nullptr)
     {
-        hr = keyboard->TryUnlockCooperativeLevel(ImeApp::GetInstance().GetGameHWND());
+        hr = keyboard->TryUnlockCooperativeLevel(m_gameHwnd);
     }
     if (FAILED(hr))
     {
@@ -48,13 +48,13 @@ auto ImeManager::UnlockKeyboard() -> bool
     return SUCCEEDED(hr);
 }
 
-auto ImeManager::RestoreKeyboard() -> bool
+auto ImeManager::RestoreKeyboard() const -> bool
 {
     log_debug("Restore keyboard: EXCLUSIVE + FOREGROUND + NOWINKEY.");
     HRESULT hr = E_FAIL;
     if (auto *keyboard = Hooks::FakeDirectInputDevice::GetInstance(); keyboard != nullptr)
     {
-        hr = keyboard->TryRestoreCooperativeLevel(ImeApp::GetInstance().GetGameHWND());
+        hr = keyboard->TryRestoreCooperativeLevel(m_gameHwnd);
     }
     if (FAILED(hr))
     {

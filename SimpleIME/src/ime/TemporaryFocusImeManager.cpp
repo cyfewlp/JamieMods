@@ -2,7 +2,6 @@
 
 #include "ImeWnd.hpp"
 #include "common/log.h"
-#include "configs/CustomMessage.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
 
@@ -26,7 +25,7 @@ auto TemporaryFocusImeManager::DoEnableIme(bool enable) -> bool
     {
         log_debug("Set IME_DISABLED and clear TSF focus");
         state.Set(State::IME_DISABLED);
-        success = Focus(reinterpret_cast<HWND>(RE::Main::GetSingleton()->wnd));
+        success = Focus(GetGameHwnd());
         success = success && RestoreKeyboard();
         // success = success && m_ImeWnd->SetTsfFocus(false);
     }

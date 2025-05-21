@@ -8,7 +8,6 @@
 
 #include "ImeWnd.hpp"
 #include "common/hook.h"
-#include "configs/CustomMessage.h"
 
 #include <RE/B/BSTEvent.h>
 #include <RE/I/InputEvent.h>
@@ -19,8 +18,6 @@ namespace Ime
 {
 class ImeApp
 {
-    static ImeApp instance;
-
 public:
     ImeApp()                              = default;
     ~ImeApp()                             = default;
@@ -29,7 +26,11 @@ public:
     ImeApp operator=(const ImeApp &other) = delete;
     ImeApp operator=(ImeApp &&other)      = delete;
 
-    static auto GetInstance() -> ImeApp &;
+    static auto GetInstance() -> ImeApp &
+    {
+        static ImeApp instance;
+        return instance;
+    }
 
     void Initialize();
     void Uninitialize();

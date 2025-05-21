@@ -12,7 +12,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-auto ImeManagerComposer::Use(FocusType type)
+void ImeManagerComposer::Use(const FocusType type)
 {
     if (FocusType::Permanent == type)
     {
@@ -87,9 +87,7 @@ void ImeManagerComposer::PopType(bool syncImeState)
     m_FocusTypeStack.pop();
     if (m_FocusTypeStack.empty())
     {
-        /*log_warn("Current focus type stack is empty, set fall back type to Permanent");
-        PushType(FocusType::Permanent);*/
-        m_delegate = nullptr;
+        m_delegate = DummyFocusImeManager::GetInstance();
     }
     else if (prev != m_FocusTypeStack.top())
     {
@@ -120,7 +118,12 @@ void ImeManagerComposer::PopAndPushType(const FocusType type, const bool syncIme
         return;
     }
     m_fDirty = true;
-    EnableIme(false);
+    AddTask([this] {
+        if (!m_delegate->EnableIme(false))
+        {
+            ErrorNotifier::GetInstance().Warning(std::format("Unexpected error: disable ime failed."));
+        }
+    });
     m_FocusTypeStack.pop();
     m_FocusTypeStack.push(type);
     Use(type);
@@ -208,7 +211,7 @@ void ImeManagerComposer::AddTask(TaskQueue::Task &&task) const
     else
     {
         TaskQueue::GetInstance().AddMainThreadTask(std::move(task));
-        ::SendNotifyMessageA(reinterpret_cast<HWND>(RE::Main::GetSingleton()->wnd), CM_EXECUTE_TASK, 0, 0);
+        ::SendNotifyMessageA(m_gameHwnd, CM_EXECUTE_TASK, 0, 0);
     }
 }
 }

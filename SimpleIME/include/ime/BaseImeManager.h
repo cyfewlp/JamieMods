@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common/log.h"
 #include "context.h"
 #include "core/State.h"
 #include "ime/ImeManager.h"
@@ -16,6 +15,8 @@ class BaseImeManager : public ImeManager
     mutable bool m_fForceUpdate = false;
 
 public:
+    explicit BaseImeManager(HWND gameHwnd) : ImeManager(gameHwnd) {}
+
     auto EnableIme(bool enable) -> bool override;
 
     auto EnableMod(bool fEnableMod) -> bool override;
@@ -39,11 +40,11 @@ public:
     auto TryFocusIme() -> bool override;
 
 protected:
-    virtual auto DoEnableIme(bool enable) -> bool             = 0;
-    virtual auto DoEnableMod(bool enable) -> bool             = 0;
-    virtual auto DoForceFocusIme() -> bool                    = 0;
-    virtual auto DoSyncImeState() -> bool                     = 0;
-    virtual auto DoTryFocusIme() -> bool                      = 0;
+    virtual auto DoEnableIme(bool enable) -> bool = 0;
+    virtual auto DoEnableMod(bool enable) -> bool = 0;
+    virtual auto DoForceFocusIme() -> bool        = 0;
+    virtual auto DoSyncImeState() -> bool         = 0;
+    virtual auto DoTryFocusIme() -> bool          = 0;
 };
 }
 }

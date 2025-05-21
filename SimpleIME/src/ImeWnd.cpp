@@ -179,7 +179,7 @@ void ImeWnd::OnStart()
     m_pTextService->OnStart(m_hWnd);
     Context::GetInstance()->SetHwndIme(m_hWnd);
 
-    ImeManagerComposer::Init(this);
+    ImeManagerComposer::Init(this, m_hWndParent);
     ApplyUiSettings();
 }
 

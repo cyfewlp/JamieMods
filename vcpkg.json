@@ -7,7 +7,7 @@
     "catch2",
     "rapidcsv",
     "spdlog",
-    "ms-gsl",
+    "gtest",
     "freetype"
   ]
 }

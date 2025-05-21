@@ -10,17 +10,6 @@
 
 using namespace LIBC_NAMESPACE::Ime;
 
-// Demonstrate some basic assertions.
-TEST(VarNameConvertTest, BasicAssertions)
-{
-    ASSERT_STREQ(ConvertCamelCaseToUnderscore("Upper").c_str(), "Upper");
-    ASSERT_STREQ(ConvertCamelCaseToUnderscore("lower").c_str(), "Lower");
-    ASSERT_STREQ(ConvertCamelCaseToUnderscore("all_lower").c_str(), "All_Lower");
-    ASSERT_STREQ(ConvertCamelCaseToUnderscore("testVar").c_str(), "Test_Var");
-    ASSERT_STREQ(ConvertCamelCaseToUnderscore("FirstUpper").c_str(), "First_Upper");
-    ASSERT_STREQ(ConvertCamelCaseToUnderscore("HTTPVar").c_str(), "HTTP_Var");
-}
-
 TEST(PropertyTest, ConfigName)
 {
     Property fontSize_{14.0F, "fontSize"};
@@ -140,11 +129,9 @@ TEST(AppConfigTest, IniLoad)
     ASSERT_STREQ(uiConfig.EmojiFontFile().c_str(), R"(C:\path\to\emoji-font)");
 
     ASSERT_EQ(loadedConfig.GetToolWindowShortcutKey(), 0x1111);
-    ASSERT_EQ(loadedConfig.EnableUnicodePaste(), false);
     ASSERT_EQ(loadedConfig.EnableTsf(), false);
     ASSERT_EQ(uiConfig.FontSize(), 160.0F);
     ASSERT_EQ(uiConfig.UseClassicTheme(), true);
     ASSERT_EQ(uiConfig.ThemeDirectory(), R"(a/b/c)");
-    ASSERT_EQ(uiConfig.DefaultTheme(), R"(12345)");
 }
 }

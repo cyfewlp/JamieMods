@@ -5,6 +5,7 @@
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/log.h"
+#include "configs/CustomMessage.h"
 #include "context.h"
 #include "core/EventHandler.h"
 #include "core/State.h"
@@ -50,21 +51,12 @@ void InitializeMessaging()
 
 namespace Ime
 {
-
-ImeApp ImeApp::instance{};
-
-auto ImeApp::GetInstance() -> ImeApp &
-{
-    return instance;
-}
-
 /**
  * Init ImeApp
  */
 void ImeApp::Initialize()
 {
     m_fInitialized.store(false);
-    // TODO: Read type by config?
     Hooks::WinHooks::InstallHooks();
 
     D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(ImeApp::D3DInit);
@@ -162,7 +154,7 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("Cannot find render manager. Initialization failed!");
     }
 
-    auto &render_data = render_manager->data;
+    const auto &render_data = render_manager->data;
     log_debug("Getting SwapChain...");
     auto *pSwapChain = render_data.renderWindows->swapChain;
     if (pSwapChain == nullptr)
@@ -241,9 +233,9 @@ void ImeApp::UninstallHooks()
     Hooks::UiHooks::UninstallHooks();
 }
 
-void ImeApp::D3DPresent(std::uint32_t ptr)
+void ImeApp::D3DPresent(const std::uint32_t ptr)
 {
-    auto &app = GetInstance();
+    const auto &app = GetInstance();
     app.D3DPresentHook->Original(ptr);
     if (!app.m_fInitialized.load())
     {
@@ -254,14 +246,14 @@ void ImeApp::D3DPresent(std::uint32_t ptr)
 
 void ImeApp::DoD3DPresent()
 {
-    auto &app = GetInstance();
+    const auto &app = GetInstance();
     app.m_imeWnd.RenderIme();
 }
 
 // we need set our keyboard to non-exclusive after game default.
 void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
 {
-    auto &app = GetInstance();
+    const auto &app = GetInstance();
     Core::EventHandler::UpdateMessageFilter(a_events);
     app.DispatchInputEventHook->Original(a_dispatcher, a_events);
     Core::EventHandler::PostHandleKeyboardEvent();

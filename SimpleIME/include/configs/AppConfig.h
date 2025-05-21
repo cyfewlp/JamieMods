@@ -179,7 +179,7 @@ public:
 
 private:
     friend class AppConfig;
-    Property<int>       m_fontSize{14, "Font_Size"};
+    Property<int>         m_fontSize{14, "Font_Size"};
     Property<bool>        m_useClassicTheme{false, "Use_Classic_Theme"};
     Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "Themes_Directory"};
     Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "Highlight_Text_Color"};

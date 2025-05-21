@@ -81,7 +81,7 @@ auto PermanentFocusImeManager::FocusImeOrGame(bool focusIme) const -> bool
     }
     else
     {
-        success = Focus(reinterpret_cast<HWND>(RE::Main::GetSingleton()->wnd));
+        success = Focus(GetGameHwnd());
     }
 
     if (!success)
