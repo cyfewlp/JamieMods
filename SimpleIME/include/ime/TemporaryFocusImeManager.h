@@ -12,7 +12,7 @@ class TemporaryFocusImeManager : public BaseImeManager
     using State = Core::State;
 
 public:
-    TemporaryFocusImeManager(ImeWnd *pImeWnd, HWND hwndGame) : m_ImeWnd(pImeWnd), m_hwndGame(hwndGame) {}
+    TemporaryFocusImeManager(ImeWnd *pImeWnd) : m_ImeWnd(pImeWnd) {}
 
     ~TemporaryFocusImeManager() override = default;
 
@@ -25,7 +25,6 @@ protected:
 
 private:
     ImeWnd *m_ImeWnd;
-    HWND    m_hwndGame;
     bool    m_fIsInEnableIme = false;
 };
 }

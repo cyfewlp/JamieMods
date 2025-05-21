@@ -12,7 +12,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-auto ImeManager::Focus(const HWND hwnd) -> bool
+auto ImeManager::Focus(HWND hwnd) -> bool
 {
     auto  hwndThread      = ::GetWindowThreadProcessId(hwnd, 0);
     DWORD currentThreadId = ::GetCurrentThreadId();

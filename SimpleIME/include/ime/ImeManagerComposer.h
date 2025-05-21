@@ -142,7 +142,7 @@ public:
 
     auto EnableIme(bool enable) const -> void;
 
-    auto EnableMod(bool enable) const -> void;
+    auto EnableMod(bool enable) -> void;
 
     auto GiveUpFocus() const -> void;
 
@@ -167,10 +167,11 @@ private:
     std::unique_ptr<PermanentFocusImeManager> m_PermanentFocusImeManager = nullptr;
     std::unique_ptr<TemporaryFocusImeManager> m_temporaryFocusImeManager = nullptr;
     ImeManager                               *m_delegate                 = DummyFocusImeManager::GetInstance();
-    std::stack<FocusType>                     m_FocusTypeStack{};
+    std::stack<FocusType>                     m_FocusTypeStack;
     bool                                      m_fKeepImeOpen        = false;
     bool                                      m_fEnableUnicodePaste = true;
     std::atomic_bool                          m_fInited             = false;
+    ImeWnd                                   *m_pImeWnd             = nullptr;
 
     // m_fKeepImeOpen, focus type
     bool m_fDirty = false;
@@ -180,16 +181,16 @@ private:
 
     friend class ImeWnd;
 
-    static void Init(ImeWnd *imwWnd, HWND hwndGame)
+    static void Init(ImeWnd *imeWnd)
     {
         auto *instance = GetInstance();
         if (instance->m_fInited)
         {
             return;
         }
-
-        instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imwWnd, hwndGame);
-        instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imwWnd, hwndGame);
+        instance->m_pImeWnd                  = imeWnd;
+        instance->m_PermanentFocusImeManager = std::make_unique<PermanentFocusImeManager>(imeWnd);
+        instance->m_temporaryFocusImeManager = std::make_unique<TemporaryFocusImeManager>(imeWnd);
         instance->m_fInited                  = true;
     }
 };

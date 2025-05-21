@@ -3,7 +3,9 @@
 //
 #include "ime/ImeManagerComposer.h"
 
+#include "ImeWnd.hpp"
 #include "configs/AppConfig.h"
+#include "configs/CustomMessage.h"
 #include "ui/TaskQueue.h"
 
 namespace LIBC_NAMESPACE_DECL
@@ -139,13 +141,14 @@ auto ImeManagerComposer::EnableIme(bool enable) const -> void
     });
 }
 
-auto ImeManagerComposer::EnableMod(bool enable) const -> void
+auto ImeManagerComposer::EnableMod(bool enable) -> void
 {
     if (ImeManager::IsModEnabled() != enable)
     {
         AddTask([this, enable] {
             if (m_delegate->EnableMod(enable))
             {
+                m_fDirty = true;
                 ImeManager::SetEnableMod(enable);
                 return;
             }
@@ -177,7 +180,7 @@ auto ImeManagerComposer::ForceFocusIme() const -> void
 auto ImeManagerComposer::TryFocusIme() const -> void
 {
     AddTask([this] {
-        if (m_delegate->TryFocusIme())
+        if (!m_delegate->TryFocusIme())
         {
             ErrorNotifier::GetInstance().Warning("Unexpected error: TryFocusIme failed");
         }
@@ -199,11 +202,13 @@ void ImeManagerComposer::AddTask(TaskQueue::Task &&task) const
 {
     if (m_FocusTypeStack.top() == FocusType::Permanent)
     {
-        TaskQueue::GetInstance().AddImeThreadTask(std::forward<TaskQueue::Task>(task));
+        TaskQueue::GetInstance().AddImeThreadTask(std::move(task));
+        ::SendNotifyMessageA(m_pImeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
     }
     else
     {
-        TaskQueue::GetInstance().AddMainThreadTask(std::forward<TaskQueue::Task>(task));
+        TaskQueue::GetInstance().AddMainThreadTask(std::move(task));
+        ::SendNotifyMessageA(reinterpret_cast<HWND>(RE::Main::GetSingleton()->wnd), CM_EXECUTE_TASK, 0, 0);
     }
 }
 }

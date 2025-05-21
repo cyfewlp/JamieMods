@@ -81,7 +81,7 @@ auto PermanentFocusImeManager::FocusImeOrGame(bool focusIme) const -> bool
     }
     else
     {
-        success = Focus(m_hwndGame);
+        success = Focus(reinterpret_cast<HWND>(RE::Main::GetSingleton()->wnd));
     }
 
     if (!success)
@@ -91,18 +91,16 @@ auto PermanentFocusImeManager::FocusImeOrGame(bool focusIme) const -> bool
     return success;
 }
 
-// call on Render thread
 auto PermanentFocusImeManager::DoForceFocusIme() -> bool
 {
     return m_ImeWnd->Focus();
 }
 
-// call on Render thread
 auto PermanentFocusImeManager::DoSyncImeState() -> bool
 {
     bool success = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
     success      = success && UnlockKeyboard();
-    success      = success && FocusImeOrGame(true);
+    success      = success && m_ImeWnd->Focus();
     return success;
 }
 

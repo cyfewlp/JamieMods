@@ -12,7 +12,7 @@ class PermanentFocusImeManager final : public BaseImeManager
     using State = Core::State;
 
 public:
-    PermanentFocusImeManager(ImeWnd *pImeWnd, HWND hwndGame) : m_ImeWnd(pImeWnd), m_hwndGame(hwndGame) {}
+    PermanentFocusImeManager(ImeWnd *pImeWnd) : m_ImeWnd(pImeWnd) {}
 
     ~PermanentFocusImeManager() override = default;
 
@@ -25,7 +25,6 @@ protected:
 
 private:
     ImeWnd *m_ImeWnd;
-    HWND    m_hwndGame;
 
     auto FocusImeOrGame(bool focusIme) const -> bool;
 };

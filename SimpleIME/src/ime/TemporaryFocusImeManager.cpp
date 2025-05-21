@@ -26,7 +26,7 @@ auto TemporaryFocusImeManager::DoEnableIme(bool enable) -> bool
     {
         log_debug("Set IME_DISABLED and clear TSF focus");
         state.Set(State::IME_DISABLED);
-        success = Focus(m_hwndGame);
+        success = Focus(reinterpret_cast<HWND>(RE::Main::GetSingleton()->wnd));
         success = success && RestoreKeyboard();
         // success = success && m_ImeWnd->SetTsfFocus(false);
     }
@@ -75,10 +75,10 @@ auto TemporaryFocusImeManager::DoSyncImeState() -> bool
 // On main thread
 auto TemporaryFocusImeManager::DoTryFocusIme() -> bool
 {
-    m_fIsInEnableIme = true;
-    bool success     = true;
+    bool success = true;
     if (!m_fIsInEnableIme) // FIXME
     {
+        m_fIsInEnableIme = true;
         success          = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
         m_fIsInEnableIme = false;
     }
