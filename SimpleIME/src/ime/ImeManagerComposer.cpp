@@ -108,7 +108,7 @@ void ImeManagerComposer::PopAndPushType(const Settings::FocusType type, const bo
     }
     m_fDirty = true;
     AddTask([this] {
-        if (!m_delegate->EnableIme(false))
+        if (!m_delegate->EnableIme(false)) // force disable ime with last focus type;
         {
             ErrorNotifier::GetInstance().Warning(std::format("Unexpected error: disable ime failed."));
         }

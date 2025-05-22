@@ -47,7 +47,7 @@ auto TemporaryFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
     {
         success = EnableIme(false);
     }
-    else if (Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry())
+    else if (IsShouldEnableIme())
     {
         success = EnableIme(true);
     }
@@ -68,8 +68,7 @@ auto TemporaryFocusImeManager::DoForceFocusIme() -> bool
 // call on render thread
 auto TemporaryFocusImeManager::DoSyncImeState() -> bool
 {
-    const auto enableIme = Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
-    return EnableIme(enableIme);
+    return EnableIme(IsShouldEnableIme());
 }
 
 // On main thread
@@ -79,7 +78,7 @@ auto TemporaryFocusImeManager::DoTryFocusIme() -> bool
     if (!m_fIsInEnableIme)
     {
         m_fIsInEnableIme = true;
-        success          = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
+        success          = EnableIme(IsShouldEnableIme());
         m_fIsInEnableIme = false;
     }
     return success;

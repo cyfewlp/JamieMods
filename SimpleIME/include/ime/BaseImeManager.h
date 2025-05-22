@@ -41,6 +41,9 @@ public:
 
     auto TryFocusIme() -> bool override;
 
+    // return true if checked "KeepImeOpen" or exists text entry, otherwise return false;
+    auto IsShouldEnableIme() const -> bool;
+
 protected:
     virtual auto DoEnableIme(bool enable) -> bool = 0;
     virtual auto DoEnableMod(bool enable) -> bool = 0;

@@ -2,6 +2,7 @@
 
 #include "FakeDirectInputDevice.h"
 #include "common/log.h"
+#include "hooks/ScaleformHook.h"
 #include "ime/BaseImeManager.h"
 
 #include <cstdint>
@@ -124,6 +125,11 @@ auto BaseImeManager::TryFocusIme() -> bool
         return false;
     }
     return DoTryFocusIme();
+}
+
+auto BaseImeManager::IsShouldEnableIme() const -> bool
+{
+    return m_settings.keepImeOpen || Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
 }
 
 }

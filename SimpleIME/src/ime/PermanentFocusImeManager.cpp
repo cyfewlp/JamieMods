@@ -55,7 +55,7 @@ auto PermanentFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
     }
     else
     {
-        success = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
+        success = EnableIme(IsShouldEnableIme());
     }
 
     if (success)
@@ -99,7 +99,7 @@ auto PermanentFocusImeManager::DoForceFocusIme() -> bool
 
 auto PermanentFocusImeManager::DoSyncImeState() -> bool
 {
-    bool success = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
+    bool success = EnableIme(IsShouldEnableIme());
     success      = success && UnlockKeyboard();
     if (success)
     {
@@ -132,7 +132,7 @@ auto PermanentFocusImeManager::DoTryFocusIme() -> bool
             m_ImeWnd->Focus();
         }
     }
-    success = success && EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
+    success = success && EnableIme(IsShouldEnableIme());
     if (!success)
     {
         log_error("Failed to focus IME: {}", ::GetLastError());
