@@ -129,7 +129,8 @@ auto BaseImeManager::TryFocusIme() -> bool
 
 auto BaseImeManager::IsShouldEnableIme() const -> bool
 {
-    return m_settings.keepImeOpen || Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry();
+    const uint8_t &textEntryCount = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
+    return m_settings.keepImeOpen || textEntryCount;
 }
 
 }

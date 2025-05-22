@@ -54,7 +54,7 @@ private:
     void DrawInputMethodsCombo() const;
     void DrawSettings(Settings &settings);
     void DrawSettingsContent(Settings &settings);
-    void DrawSettingsFocusManage() const;
+    void DrawSettingsFocusManage(Settings &settings) const;
     void DrawSettingsState() const;
     void DrawWindowPosUpdatePolicy(Settings &settings);
     void RenderCompWindow() const;

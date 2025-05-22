@@ -27,6 +27,15 @@ auto ControlMap::SKSE_AllowTextInput(bool allow) -> uint8_t
     return allowTextInput;
 }
 
+auto ControlMap::GetTextEntryCount() const -> uint8_t
+{
+    if (REL::Module::IsSE())
+    {
+        return textEntryCount;
+    }
+    return allowTextInput;
+}
+
 ControlMap *ControlMap::GetSingleton()
 {
     const REL::Relocation<ControlMap **> singleton{RE::Offset::ControlMap::Singleton};
@@ -65,20 +74,20 @@ auto SKSE_ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
 {
     std::uint8_t entryCount = ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
     OnTextEntryCountChanged(entryCount);
-    log_trace("Text entry count: {}", g_textEntryCount);
-    return g_textEntryCount;
+    log_trace("Text entry count: {}", g_prevTextEntryCount);
+    return g_prevTextEntryCount;
 }
 
 void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged(std::uint8_t entryCount)
 {
-    const uint8_t oldValue = g_textEntryCount;
+    const uint8_t oldValue = g_prevTextEntryCount;
     if (entryCount == oldValue)
     {
         return;
     }
 
-    g_textEntryCount = entryCount;
-    auto *imeManager = Ime::ImeManagerComposer::GetInstance();
+    g_prevTextEntryCount = entryCount;
+    auto *imeManager     = Ime::ImeManagerComposer::GetInstance();
     imeManager->SyncImeStateIfDirty();
     if (oldValue == 0 && entryCount > 0)
     {
@@ -188,10 +197,10 @@ auto ScaleformHooks::Scaleform_AllowTextInputHook(ControlMap *self, bool allow) 
 ScaleformHooks::ScaleformHooks()
 {
     m_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
-    m_AllowTextInputHook = std::make_unique<Scaleform_AllowTextInput>(Scaleform_AllowTextInputHook);
-    #ifdef HOOK_LOAD_MOVIE
-        m_LoadMovieHook = std::make_unique<Scaleform_LoadMovieHook>(LoadMovieHook);
-    #endif
+    m_AllowTextInputHook   = std::make_unique<Scaleform_AllowTextInput>(Scaleform_AllowTextInputHook);
+#ifdef HOOK_LOAD_MOVIE
+    m_LoadMovieHook = std::make_unique<Scaleform_LoadMovieHook>(LoadMovieHook);
+#endif
 }
 
 void ScaleformHooks::Install()

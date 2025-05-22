@@ -45,6 +45,8 @@ public:
     // A SKSE copy: InputManager::AllowTextInput
     auto SKSE_AllowTextInput(bool allow) -> uint8_t;
 
+    auto GetTextEntryCount() const -> uint8_t;
+
     static ControlMap *GetSingleton(void);
 
 private:
@@ -99,7 +101,7 @@ public:
 
 class SKSE_ScaleformAllowTextInput final : public RE::GFxFunctionHandler
 {
-    static inline std::uint8_t g_textEntryCount = 0;
+    static inline std::uint8_t g_prevTextEntryCount = 0;
 
 public:
     void Call(Params &params) override;
@@ -108,16 +110,6 @@ public:
     static auto AllowTextInput(bool allow) -> std::uint8_t;
     // use our text-entry-count
     static void OnTextEntryCountChanged(std::uint8_t entryCount);
-
-    static constexpr auto HasTextEntry() -> bool
-    {
-        return g_textEntryCount > 0;
-    }
-
-    static constexpr auto TextEntryCount() -> std::uint8_t
-    {
-        return g_textEntryCount;
-    }
 };
 
 class ScaleformHooks

@@ -74,7 +74,7 @@ auto PermanentFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
 // Call on IME thread
 auto PermanentFocusImeManager::FocusImeOrGame(bool focusIme) const -> bool
 {
-    auto success = false;
+    bool success = true;
     if (focusIme)
     {
         m_ImeWnd->Focus();

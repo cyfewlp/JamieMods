@@ -16,14 +16,13 @@ add_executable(BasicTest
 target_link_libraries(
 	BasicTest
 	PRIVATE
-		imgui
-        "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 		spdlog::spdlog
 
 )
 target_include_directories(
     BasicTest PRIVATE
     ${SIMPLEINI_INCLUDE_DIRS}
+		"D:/Program Files (x86)/boost_1_88_0/boost_1_88_0"
 )
 target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 

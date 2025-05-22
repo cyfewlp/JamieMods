@@ -82,6 +82,11 @@ public:
         return m_fDirty;
     }
 
+    auto IsModEnabled() const -> bool
+    {
+        return m_settings->enableMod;
+    }
+
     //////////////////////////////////////////////////
 
     auto EnableIme(bool enable) const -> void;

@@ -20,7 +20,6 @@
 #include <WinUser.h>
 #include <common/config.h>
 #include <common/log.h>
-#include <cstdint>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -159,7 +158,21 @@ RE::BSEventNotifyControl MenuOpenCloseEventSink::
     if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
     {
         firstOpenMainMenu = false;
-        // ImeApp::GetInstance().GetImeWnd().ApplyUiSettings();
+    }
+    else if (event->menuName == RE::ConsoleNativeUIMenu::MENU_NAME) // Steam Overlay
+    {
+        static bool prevModEnabled = false;
+
+        auto *manager = ImeManagerComposer::GetInstance();
+        if (event->opening)
+        {
+            prevModEnabled = manager->IsModEnabled();
+            manager->EnableMod(false);
+        }
+        else if (prevModEnabled)
+        {
+            manager->EnableMod(true);
+        }
     }
     else
     {
@@ -170,21 +183,13 @@ RE::BSEventNotifyControl MenuOpenCloseEventSink::
 
 void MenuOpenCloseEventSink::FixInconsistentTextEntryCount(const Event *event)
 {
-    if (event->menuName == RE::CursorMenu::MENU_NAME && !event->opening)
+    // fix: if CursorMenu hide but text-entry count > 0, try to disable ime;
+    // avoid modifying the textEntryCount field
+    const uint8_t &textEntryCount = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
+    if (event->menuName == RE::CursorMenu::MENU_NAME && textEntryCount > 0 && !event->opening)
     {
-        // fix: MapMenu will not call AllowTextInput(false) when closing
-        uint8_t textEntryCount = Hooks::SKSE_ScaleformAllowTextInput::TextEntryCount();
-        while (textEntryCount > 0)
-        {
-            Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(false);
-            textEntryCount--;
-        }
-        // check var consistency
-        textEntryCount = Hooks::SKSE_ScaleformAllowTextInput::TextEntryCount();
-        if (textEntryCount != 0)
-        {
-            log_warn("Text entry count is incorrect and can't fix it! count: {}", textEntryCount);
-        }
+        const ImeManagerComposer *manager = ImeManagerComposer::GetInstance();
+        manager->EnableIme(false);
     }
 }
 }

@@ -1,4 +1,4 @@
-﻿## What?
+## What?
 
 A SKSE plugin that make SkyrimSE/AE supports IME(Input Method Editor). 
 Mainly for Chinese players. Use ImGui + Win32 + IMM/TSF to do this.

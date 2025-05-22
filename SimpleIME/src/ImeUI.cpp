@@ -11,6 +11,7 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
+#include "hooks/ScaleformHook.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
@@ -336,9 +337,10 @@ void ImeUI::DrawSettings(Settings &settings)
 
 void ImeUI::DrawSettingsContent(Settings &settings)
 {
-    if (ImGui::Checkbox(Translate("$Enable_Mod"), &settings.enableMod))
+    bool enableMod = settings.enableMod;
+    if (ImGui::Checkbox(Translate("$Enable_Mod"), &enableMod))
     {
-        ImeManagerComposer::GetInstance()->EnableMod(settings.enableMod);
+        ImeManagerComposer::GetInstance()->EnableMod(enableMod);
     }
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
@@ -369,7 +371,7 @@ void ImeUI::DrawSettingsContent(Settings &settings)
 
     ImGui::SeparatorText(Translate("$Features"));
 
-    DrawSettingsFocusManage();
+    DrawSettingsFocusManage(settings);
     DrawWindowPosUpdatePolicy(settings);
 
     ImGui::Checkbox(Translate("$Enable_Unicode_Paste"), &settings.enableUnicodePaste);
@@ -440,24 +442,23 @@ constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
     return pressed;
 }
 
-void ImeUI::DrawSettingsFocusManage() const
+void ImeUI::DrawSettingsFocusManage(Settings &settings) const
 {
     // Focus Manage widget
     auto *imeManager = ImeManagerComposer::GetInstance();
 
     ImGui::SeparatorText(Translate("$Focus_Manage"));
 
-    auto focusType = imeManager->GetFocusManageType();
-
-    bool pressed = RadioButton(Translate("$Focus_Manage_Permanent"), &focusType, Settings::FocusType::Permanent);
+    bool pressed =
+        RadioButton(Translate("$Focus_Manage_Permanent"), &settings.focusType, Settings::FocusType::Permanent);
     ImGui::SetItemTooltip("%s", Translate("$Focus_Manage_Permanent_Tooltip"));
     ImGui::SameLine();
-    pressed |= RadioButton(Translate("$Focus_Manage_Temporary"), &focusType, Settings::FocusType::Temporary);
+    pressed |= RadioButton(Translate("$Focus_Manage_Temporary"), &settings.focusType, Settings::FocusType::Temporary);
     ImGui::SetItemTooltip("%s", Translate("$Focus_Manage_Temporary_Tooltip"));
 
     if (pressed)
     {
-        imeManager->PopAndPushType(focusType);
+        imeManager->PopAndPushType(settings.focusType);
     }
 }
 

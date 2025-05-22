@@ -28,10 +28,10 @@ source_group(
 
 ## Set Output folder
 
-#if (DEFINED ENV{MO2_MODS_PATH} AND IS_DIRECTORY "$ENV{MO2_MODS_PATH}")
-#  set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
-#endif ()
-set(OUTPUT_FOLDER "D:/GAME/Mod-Organizer-2/mods/SimpleIME")
+if (DEFINED ENV{MO2_MODS_PATH} AND IS_DIRECTORY "$ENV{MO2_MODS_PATH}")
+  set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
+endif ()
+#set(OUTPUT_FOLDER "D:/GAME/Mod-Organizer-2/mods/SimpleIME")
 
 ## Plugin settings
 find_package(Freetype REQUIRED) # for imgui_freetype
