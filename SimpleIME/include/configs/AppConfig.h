@@ -133,6 +133,7 @@ public:
         Register(m_highlightTextColor);
         Register(m_eastAsiaFontFile);
         Register(m_emojiFontFile);
+        Register(m_errorMessageDuration);
     }
 
     AppUiConfig(const AppUiConfig &other)              = default;
@@ -177,6 +178,11 @@ public:
         return m_highlightTextColor.Value();
     }
 
+    [[nodiscard]] auto ErrorMessageDuration() const -> int
+    {
+        return m_errorMessageDuration.Value();
+    }
+
 private:
     friend class AppConfig;
     Property<int>         m_fontSize{14, "Font_Size"};
@@ -186,6 +192,7 @@ private:
     Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "East_Asia_Font_File"};
     Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "Emoji_Font_File"};
     Property<std::string> m_translationDir{R"(Data\interface\SimpleIME)", "Translation_Dir"};
+    Property<int>         m_errorMessageDuration{10, "Error_Message_Duration"};
 };
 
 template <>

@@ -23,7 +23,7 @@ struct UiAddMessageHook
 {
     explicit UiAddMessageHook(func_type *ptr) : FunctionHook(RE::Offset::UIMessageQueue::AddMessage, ptr)
     {
-        log_debug("Installed {}: ", __func__, ToString());
+        log_debug("Installed {}: {}", __func__, ToString());
     }
 };
 
@@ -31,7 +31,7 @@ struct MenuProcessMessageHook : FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *,
 {
     explicit MenuProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(80283, 82306), ptr)
     {
-        log_debug("Installed {}: ", __func__, ToString());
+        log_debug("Installed {}: {}", __func__, ToString());
     }
 };
 
@@ -39,7 +39,7 @@ struct ConsoleProcessMessageHook : FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu
 {
     explicit ConsoleProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(50155, 442669), ptr)
     {
-        log_debug("Installed {}: ", __func__, ToString());
+        log_debug("Installed {}: {}", __func__, ToString());
     }
 };
 

@@ -22,10 +22,11 @@ struct ErrorMsg
         error
     };
 
-    std::string time;
     std::string text;
     bool        confirmed = false;
-    Level       level     = Level::debug;
+    Level       level     = Level::error;
+
+    std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
 };
 
 class ErrorNotifier
@@ -33,6 +34,7 @@ class ErrorNotifier
     std::deque<ErrorMsg> errors;
     const size_t         MaxMessages    = 64;
     ErrorMsg::Level      m_currentLevel = ErrorMsg::Level::debug;
+    std::chrono::seconds m_duration     = std::chrono::seconds(ULONG_LONG_MAX);
 
 public:
     void addError(const std::string &txt, ErrorMsg::Level level = ErrorMsg::Level::debug);
@@ -70,6 +72,12 @@ public:
     void SetMessageLevel(ErrorMsg::Level level)
     {
         m_currentLevel = level;
+    }
+
+    void SetMessageDuration(const int seconds)
+    {
+        size_t seconds1 = seconds < 0 ? ULONG_LONG_MAX : seconds;
+        m_duration      = std::chrono::seconds(seconds1);
     }
 
     static auto GetInstance() -> ErrorNotifier &

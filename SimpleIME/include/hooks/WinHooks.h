@@ -15,7 +15,7 @@ class OpenClipboardHook : public FunctionHook<BOOL(HWND)>
 public:
     explicit OpenClipboardHook(void *realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
     {
-        log_debug("Installed {}: ", __func__, ToString());
+        log_debug("Installed {}: {}", __func__, ToString());
     }
 };
 
@@ -24,7 +24,7 @@ class DirectInput8CreateHook : public FunctionHook<HRESULT(HINSTANCE, DWORD, REF
 public:
     explicit DirectInput8CreateHook(void *&realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
     {
-        log_debug("Installed {}: ", __func__, ToString());
+        log_debug("Installed {}: {}", __func__, ToString());
     }
 };
 

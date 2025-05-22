@@ -31,7 +31,7 @@ void ImeManagerComposer::ApplyUiSettings(const Settings &settings)
 {
     if (!IsInited())
     {
-        ErrorNotifier::GetInstance().addError("Fatal error: IME manager is not initialized.");
+        ErrorNotifier::GetInstance().Error("Fatal error: IME manager is not initialized.");
         return;
     }
     PushType(settings.focusType);
@@ -69,7 +69,7 @@ void ImeManagerComposer::PopType(bool syncImeState)
     assert(!m_fDirty && "WARNING: Missing call SyncImeState?");
     if (m_FocusTypeStack.empty())
     {
-        ErrorNotifier::GetInstance().addError("Invalid call! Focus type stack is empty.");
+        ErrorNotifier::GetInstance().Error("Invalid call! Focus type stack is empty.");
         return;
     }
     auto prev = m_FocusTypeStack.top();
@@ -95,7 +95,7 @@ void ImeManagerComposer::PopAndPushType(const Settings::FocusType type, const bo
     assert(!m_fDirty && "WARNING: Missing call SyncImeState?");
     if (m_FocusTypeStack.empty())
     {
-        ErrorNotifier::GetInstance().addError("Invalid call! Focus type stack is empty.");
+        ErrorNotifier::GetInstance().Error("Invalid call! Focus type stack is empty.");
         return;
     }
     if (const auto prev = m_FocusTypeStack.top(); prev == type)
@@ -185,7 +185,7 @@ auto ImeManagerComposer::SyncImeState() -> void
         m_fDirty = false;
         if (!m_delegate->SyncImeState())
         {
-            ErrorNotifier::GetInstance().Warning("Unexpected error: SyncImeState failed.");
+            ErrorNotifier::GetInstance().Error("Unexpected error: SyncImeState failed.");
         }
     });
 }
@@ -195,12 +195,12 @@ void ImeManagerComposer::AddTask(TaskQueue::Task &&task) const
     if (m_FocusTypeStack.top() == Settings::FocusType::Permanent)
     {
         TaskQueue::GetInstance().AddImeThreadTask(std::move(task));
-        ::SendNotifyMessageA(m_pImeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
+        ::SendMessageA(m_pImeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
     }
     else
     {
         TaskQueue::GetInstance().AddMainThreadTask(std::move(task));
-        ::SendNotifyMessageA(m_gameHwnd, CM_EXECUTE_TASK, 0, 0);
+        ::SendMessageA(m_gameHwnd, CM_EXECUTE_TASK, 0, 0);
     }
 }
 }

@@ -59,7 +59,13 @@ void ImeApp::Initialize()
     m_fInitialized.store(false);
     Hooks::WinHooks::Install();
 
-    D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(ImeApp::D3DInit);
+    D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
+    auto & errorNotifier = ErrorNotifier::GetInstance();
+    const auto & uiConfig = AppConfig::GetConfig().GetAppUiConfig();
+    errorNotifier.SetMessageDuration(uiConfig.ErrorMessageDuration());
+#ifdef SIMPLE_IME_DEBUG
+    errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
+#endif
 }
 
 void ImeApp::Uninitialize()

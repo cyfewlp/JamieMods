@@ -10,6 +10,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
+
 void ErrorNotifier::addError(const std::string &txt, ErrorMsg::Level level)
 {
     if (level < m_currentLevel)
@@ -20,7 +21,7 @@ void ErrorNotifier::addError(const std::string &txt, ErrorMsg::Level level)
     {
         errors.pop_front();
     }
-    errors.push_back({currentTime(), txt, false, level});
+    errors.push_back({txt, false, level});
 }
 
 void ErrorNotifier::Show()
@@ -51,13 +52,19 @@ void ErrorNotifier::Show()
 
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(errors.size()));
+    auto current = std::chrono::system_clock::now();
     while (clipper.Step())
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
-            if (errors[i].level >= m_currentLevel)
+            auto &message = errors[i];
+            if (message.level >= m_currentLevel)
             {
-                renderMessage(errors[i], i);
+                renderMessage(message, i);
+                if (current - message.timestamp >= m_duration)
+                {
+                    message.confirmed = true;
+                }
             }
         }
     }
@@ -69,7 +76,7 @@ void ErrorNotifier::Show()
 
 void ErrorNotifier::renderMessage(const ErrorMsg &msg, int idx)
 {
-    ImGui::Text("[%s] %s", msg.time.c_str(), msg.text.c_str());
+    ImGui::Text("%s", msg.text.c_str());
     ImGui::SameLine();
     if (ImGui::Button(("OK##" + std::to_string(idx)).c_str()))
     {
