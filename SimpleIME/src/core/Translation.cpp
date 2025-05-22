@@ -79,17 +79,38 @@ $Settings = Settings
 [Settings]
 $Enable_Mod = Enable Mod
 $Enable_Mod_Tooltip = Unchecked will disable all mod feature(Disable keyboard).
+$Font_Size_Scale = Font Size Scale
+$Languages = Language
 $States = States
+$Features = Features
 $Ime_Enabled = IME Enabled
+$Ime_Enabled_Tooltip = By default, IME only enable when exists text entry
 $Ime_Focus = IME Focus
 $Ime_Focus_Tooltip = IME only enabled when any Text Entry is active and has keyboard focus.
 $Force_Focus_Ime = Force Focus Ime
 $Ime_Follow_Ime = Ime follow cursor
 $Ime_Follow_Ime_Tooltip = Ime window appear in cursor position.
 $Keep_Ime_Open = Keep Ime Open
-$Keep_Ime_Open_Tooltip = Check KeepImeOpen when no any text entry menu will cause fatal bug!.\n Please only checked it temporary when some text entry not support IME
+$Keep_Ime_Open_Tooltip = Usually used to enable IME for some text entry that not support IME
 $Themes = Themes
-$Themes_Apply = Apply
+$Focus_Manage = Focus Management Setting
+$Focus_Manage_Permanent = Permanent Focus Management
+$Focus_Manage_Permanent_Tooltip = More stable, focus management is fully handled by this Mod
+$Focus_Manage_Temporary = Temporary
+$Focus_Manage_Temporary_Tooltip = Better compatibility, Mod manages focus only when IME is enabled
+$Enable_Unicode_Paste = Enable unicode pate
+$Enable_Unicode_Paste_Tooltip = Enable or disable mod provided unicode paste feature
+$Update_Ime_Window_Pos_By_Caret = Update IME window position by caret
+$Update_Ime_Window_Pos_By_Caret_Tooltip = Auto update IME position based on the caret position of the active text field
+
+[Ime Window Pos]
+$Policy = IME window position update policy
+$Update_By_Cursor = Based on cursor position
+$Update_By_Cursor_Tooltip = Update the IME window position according to the current mouse position
+$Update_By_Caret = Based on caret position
+$Update_By_Caret_Tooltip = Automatically update the IME window based on the caret position of the currently active input box
+$Update_By_None = None
+$Update_By_None_Tooltip = IME window position is not updated automatically
 )");
 }
 
