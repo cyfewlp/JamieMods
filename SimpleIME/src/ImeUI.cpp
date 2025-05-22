@@ -343,11 +343,11 @@ void ImeUI::DrawSettingsContent(Settings &settings)
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
     ImGui::SameLine();
-    ImGui::Text("%s", m_translation.Get("$Font_Size_Scale"));
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(-FLT_MIN);
+    const char *labelSlider = Translate("$Font_Size_Scale");
+    auto        size        = ImGui::CalcTextSize(labelSlider);
+    ImGui::SetNextItemWidth(-size.x);
     ImGui::DragFloat(
-        "##FontSizeScale",
+        Translate("$Font_Size_Scale"),
         &ImGui::GetIO().FontGlobalScale,
         0.05,
         SettingsConfig::MIN_FONT_SIZE_SCALE,
@@ -365,18 +365,21 @@ void ImeUI::DrawSettingsContent(Settings &settings)
     {
         return;
     }
-    RenderSettingsState();
+    DrawSettingsState();
 
     ImGui::SeparatorText(Translate("$Features"));
 
     DrawSettingsFocusManage();
-    RenderSettingsImePosUpdatePolicy(settings);
+    DrawWindowPosUpdatePolicy(settings);
 
     ImGui::Checkbox(Translate("$Enable_Unicode_Paste"), &settings.enableUnicodePaste);
     ImGui::SetItemTooltip("%s", Translate("$Enable_Unicode_Paste_Tooltip"));
 
     ImGui::SameLine();
-    ImGui::Checkbox(Translate("$Keep_Ime_Open"), &settings.keepImeOpen);
+    if (ImGui::Checkbox(Translate("$Keep_Ime_Open"), &settings.keepImeOpen))
+    {
+        ImeManagerComposer::GetInstance()->MarkDirty();
+    }
     ImGui::SetItemTooltip("%s", Translate("$Keep_Ime_Open_Tooltip"));
 }
 
@@ -407,7 +410,7 @@ auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values,
     return clicked;
 }
 
-void ImeUI::RenderSettingsState() const
+void ImeUI::DrawSettingsState() const
 {
     ImGui::SeparatorText(Translate("$States"));
 
@@ -458,7 +461,7 @@ void ImeUI::DrawSettingsFocusManage() const
     }
 }
 
-void ImeUI::RenderSettingsImePosUpdatePolicy(Settings &settings)
+void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
 {
     using Policy = Settings::WindowPosUpdatePolicy;
     m_translation.UseSection("Ime Window Pos");

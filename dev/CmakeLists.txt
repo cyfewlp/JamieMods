@@ -4,7 +4,7 @@ set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.
 
 
 find_package(spdlog CONFIG REQUIRED)
-find_package(Freetype CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
 find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
 ### BasicTest
@@ -30,17 +30,22 @@ target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 
 ### DevTest
 
+include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
+
 add_executable(DevTest 
     "AddressLibTool.cpp"
     "ImGuiTest.cpp"
-    #"Win32Test.cpp"
+		${IMGUI_SOURCES}
+		${IMGUI_DEMO_SOURCES}
 )
 
 target_include_directories(
     DevTest
     PRIVATE
+		${IMGUI_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+message("IMGUI_SOURCES ${IMGUI_SOURCES}")
 
 target_precompile_headers(
     DevTest PRIVATE
@@ -51,13 +56,9 @@ target_link_libraries(
 	DevTest
 	PRIVATE
 		spdlog::spdlog
-		imgui
-        "${WINDOWS_SDK_LIB_PATH}/d3d11.lib"
-        "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
-        "${WINDOWS_SDK_LIB_PATH}/Comctl32.lib"
+		Freetype::Freetype
 )
 target_compile_features(DevTest PRIVATE cxx_std_23) # <--- use C++23 standard
-
 
 ### Win32Test
 add_executable(Win32Test WIN32

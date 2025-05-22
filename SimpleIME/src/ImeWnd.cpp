@@ -181,7 +181,6 @@ void ImeWnd::OnStart(Settings *pSettings)
 
     ImeManagerComposer::Init(this, m_hWndParent, pSettings);
     ApplyUiSettings(pSettings);
-    m_threadId = GetCurrentThreadId();
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -221,11 +220,14 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             pThis->m_fFocused = true;
             log_info("IME window get focus.");
             return S_OK;
-        case WM_KILLFOCUS:
+        case WM_KILLFOCUS: {
             if (pThis == nullptr) break;
             pThis->m_fFocused = false;
+            ImGui::GetIO().ClearInputKeys();
+            ImGui::GetIO().ClearInputCharacters();
             log_info("IME window lost focus.");
             return S_OK;
+        }
         default:
             // ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
             break;

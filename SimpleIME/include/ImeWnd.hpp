@@ -59,10 +59,6 @@ public:
     auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
     auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
     auto GetImeThreadId() const -> DWORD;
-    auto GetImeThreadId1() const -> DWORD
-    {
-        return m_threadId;
-    }
 
     constexpr auto GetHWND() const -> HWND
     {
@@ -99,7 +95,6 @@ private:
     HWND                          m_hWnd       = nullptr;
     HWND                          m_hWndParent = nullptr;
     WNDCLASSEXW                   wc{};
-    DWORD                         m_threadId   = 0;
     bool                          m_fEnableTsf = false;
     bool                          m_fFocused   = false;
 };

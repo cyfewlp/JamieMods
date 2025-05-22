@@ -6,7 +6,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-// Main operations call in main thread
+// All operations call in the main thread
 class TemporaryFocusImeManager : public BaseImeManager
 {
     using State = Core::State;

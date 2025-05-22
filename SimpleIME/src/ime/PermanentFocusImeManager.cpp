@@ -108,31 +108,11 @@ auto PermanentFocusImeManager::DoSyncImeState() -> bool
     return success;
 }
 
-// call on the main thread
 auto PermanentFocusImeManager::DoTryFocusIme() -> bool
 {
-    bool success = false;
     log_debug("focus to IME wnd");
-    DWORD imeThreadId     = m_ImeWnd->GetImeThreadId();
-    DWORD currentThreadId = ::GetCurrentThreadId();
-    success               = imeThreadId != 0;
-    if (success)
-    {
-        if (imeThreadId != currentThreadId)
-        {
-            success = ::AttachThreadInput(imeThreadId, currentThreadId, TRUE) != FALSE;
-            if (success)
-            {
-                m_ImeWnd->Focus();
-                ::AttachThreadInput(imeThreadId, currentThreadId, FALSE);
-            }
-        }
-        else
-        {
-            m_ImeWnd->Focus();
-        }
-    }
-    success = success && EnableIme(IsShouldEnableIme());
+    bool success = Focus(m_ImeWnd->GetHWND());
+    success      = success && EnableIme(IsShouldEnableIme());
     if (!success)
     {
         log_error("Failed to focus IME: {}", ::GetLastError());

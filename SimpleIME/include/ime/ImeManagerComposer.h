@@ -72,6 +72,11 @@ public:
         }
     }
 
+    void MarkDirty()
+    {
+        m_fDirty = true;
+    }
+
     [[nodiscard]] constexpr auto IsDirty() const -> bool
     {
         return m_fDirty;

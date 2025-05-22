@@ -15,3 +15,6 @@ set(IMGUI_SOURCES
     ${CMAKE_SOURCE_DIR}/extern/imgui/misc/freetype/imgui_freetype.h
     ${CMAKE_SOURCE_DIR}/extern/imgui/misc/freetype/imgui_freetype.cpp
 )
+set(IMGUI_DEMO_SOURCES
+    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_demo.cpp
+)

@@ -55,8 +55,8 @@ private:
     void DrawSettings(Settings &settings);
     void DrawSettingsContent(Settings &settings);
     void DrawSettingsFocusManage() const;
-    void RenderSettingsState() const;
-    void RenderSettingsImePosUpdatePolicy(Settings &settings);
+    void DrawSettingsState() const;
+    void DrawWindowPosUpdatePolicy(Settings &settings);
     void RenderCompWindow() const;
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;

@@ -17,9 +17,13 @@ auto TemporaryFocusImeManager::DoEnableIme(bool enable) -> bool
     {
         log_debug("Clear IME_DISABLED and set TSF focus");
         state.Clear(State::IME_DISABLED);
-        m_ImeWnd->Focus();
         success = UnlockKeyboard();
-        success = success && m_ImeWnd->SetTsfFocus(true);
+        if (success)
+        {
+            m_ImeWnd->Focus();
+            success = success && m_ImeWnd->SetTsfFocus(true);
+            // we may unnecessary restore focus when call the `SetTsfFocus` fail;
+        }
     }
     else
     {
