@@ -128,7 +128,7 @@ auto ImeManagerComposer::EnableIme(bool enable) const -> void
     AddTask([this, enable] {
         if (!m_delegate->EnableIme(m_settings->keepImeOpen || enable))
         {
-            ErrorNotifier::GetInstance().addError(std::format("Unexpected error: EnableIme({}) failed.", enable));
+            ErrorNotifier::GetInstance().Warning(std::format("Unexpected error: EnableIme({}) failed.", enable));
         }
     });
 }
@@ -140,7 +140,7 @@ auto ImeManagerComposer::EnableMod(bool enable) -> void
         AddTask([this, enable] {
             if (m_delegate->EnableMod(enable))
             {
-                m_fDirty = true;
+                m_fDirty = enable;
                 m_settings->enableMod = enable;
                 return;
             }

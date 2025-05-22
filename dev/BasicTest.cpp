@@ -1,33 +1,34 @@
-﻿#include "yaml-cpp/yaml.h"
+﻿#include <boost/parser/parser.hpp>
+
 #include <iostream>
-#include <optional>
+#include <string>
 
-#include <stacktrace>
-#include <spdlog/spdlog.h>
 
-void funA()
+struct employee
 {
-    throw std::runtime_error("funA");
-}
+    int age;
+    std::string surname;
+    std::string forename;
+    double salary;
+};
 
-void funB()
-{
-    spdlog::info("start funB");
-    funA();
-}
-
+namespace bp = boost::parser;
 
 int main()
 {
-    try
-    {
-        funB();
-    } catch (const std::exception &e)
-    {
-        spdlog::error("Error {}", e.what());
-        for (const auto & entry : std::stacktrace::current())
-        {
-            spdlog::error("   at:{}",  to_string(entry));
+    std::cout << "Enter a list of doubles, separated by commas.  No pressure. ";
+    std::string input;
+    std::getline(std::cin, input);
+
+    auto const result = bp::parse(input, bp::double_ % ',');
+
+    if (result) {
+        std::cout << "Great! It looks like you entered:\n";
+        for (double x : *result) {
+            std::cout << x << "\n";
         }
+    } else {
+        std::cout
+            << "Good job!  Please proceed to the recovery annex for cake.\n";
     }
 }
