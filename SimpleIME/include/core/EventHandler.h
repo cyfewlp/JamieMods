@@ -5,6 +5,7 @@ namespace LIBC_NAMESPACE_DECL
 
 namespace Ime
 {
+struct Settings;
 class ImeWnd;
 }
 
@@ -23,7 +24,7 @@ public:
 private:
     ImeWnd *m_imeWnd;
 
-    void ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent);
+    void ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent) const;
     void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const;
 };
 
@@ -51,7 +52,7 @@ class EventHandler
 
 public:
     static void InstallEventSink(ImeWnd *imeWnd);
-    static auto UpdateMessageFilter(RE::InputEvent **a_events) -> void;
+    static auto UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void;
     /**
      * Prevent keyboard be send when IME inputing or wait input.
      * Only detect first event.

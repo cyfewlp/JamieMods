@@ -8,8 +8,7 @@
 #include "RE/GFxCharEvent.h"
 #include "common/log.h"
 #include "core/State.h"
-#include "hooks/UiHooks.h"
-#include "ime/ImeManagerComposer.h"
+#include "ui/Settings.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -42,8 +41,7 @@ public:
     static constexpr auto IsImeNotActivateOrGameLoading() -> bool
     {
         auto &state = State::GetInstance();
-        return !ImeManager::IsModEnabled() ||
-               state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
+        return state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
                state.NotHas(State::LANG_PROFILE_ACTIVATED);
     }
 
@@ -114,7 +112,7 @@ private:
         pScaleFormMessageData->scaleformEvent = pCharEvent;
         log_debug("send code {:#x} to Skyrim", code);
         RE::UIMessageQueue::GetSingleton()->AddMessage(
-            Hooks::IME_MESSAGE_FAKE_MENU, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
+            Settings::IME_MESSAGE_FAKE_MENU, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
         );
         return true;
     }

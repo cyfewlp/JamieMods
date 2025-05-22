@@ -3,6 +3,7 @@
 #include "context.h"
 #include "core/State.h"
 #include "ime/ImeManager.h"
+#include "ui/Settings.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -13,9 +14,10 @@ class BaseImeManager : public ImeManager
     static inline std::atomic_bool g_fKeepImeOpen;
     using State                 = Core::State;
     mutable bool m_fForceUpdate = false;
+    Settings    &m_settings;
 
 public:
-    explicit BaseImeManager(HWND gameHwnd) : ImeManager(gameHwnd) {}
+    explicit BaseImeManager(HWND gameHwnd, Settings &settings) : ImeManager(gameHwnd), m_settings(settings) {}
 
     auto EnableIme(bool enable) -> bool override;
 

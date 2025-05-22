@@ -14,9 +14,7 @@ class ImeWnd;
 class ImeManager
 {
     using State = Core::State;
-
-    static inline std::atomic_bool g_fEnableMod = false;
-    HWND                           m_gameHwnd;
+    HWND m_gameHwnd;
 
 public:
     ImeManager(HWND hwnd) : m_gameHwnd(hwnd) {}
@@ -31,7 +29,7 @@ public:
     virtual auto ForceFocusIme() -> bool        = 0;
     virtual auto SyncImeState() -> bool         = 0;
     /// <summary>
-    /// Try focus IME when mod is enabled
+    /// Try to focus IME when mod is enabled
     /// </summary>
     /// <returns>true if mod enabled and focus success, otherwise false</returns>
     virtual auto TryFocusIme() -> bool = 0;
@@ -43,16 +41,6 @@ public:
     auto GetGameHwnd() const -> HWND
     {
         return m_gameHwnd;
-    }
-
-    [[nodiscard]] static constexpr auto IsModEnabled() -> bool
-    {
-        return g_fEnableMod;
-    }
-
-    static void SetEnableMod(const bool enableMod)
-    {
-        g_fEnableMod = enableMod;
     }
 };
 }

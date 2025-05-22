@@ -26,10 +26,10 @@ class ImeWnd
 {
     static constexpr WORD ID_EDIT_COPY  = 1;
     static constexpr WORD ID_EDIT_PASTE = 2;
-    using State                         = Ime::Core::State;
+    using State                         = Core::State;
 
 public:
-    ImeWnd();
+    ImeWnd(Settings &settings);
     ~ImeWnd();
 
     ImeWnd(ImeWnd &&a_imeWnd)                 = delete;
@@ -46,18 +46,23 @@ public:
      * with COINIT_MULTITHREADED(crash logger) to affect our TSF code.
      *
      * @param hWndParent Main window (game window)
+     * @param pSettings
      */
-    void Start(HWND hWndParent);
+    void Start(HWND hWndParent, Settings *pSettings);
     /**
      * initialize ImGui. Work on UI thread.
      */
     void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false);
-    auto Focus() const -> bool;
+    auto Focus() const -> void;
     auto SetTsfFocus(bool focus) const -> bool;
     auto IsFocused() const -> bool;
     auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
     auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
     auto GetImeThreadId() const -> DWORD;
+    auto GetImeThreadId1() const -> DWORD
+    {
+        return m_threadId;
+    }
 
     constexpr auto GetHWND() const -> HWND
     {
@@ -68,9 +73,9 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void RenderIme() const;
+    void DrawIme(Settings &settings) const;
     void ShowToolWindow() const;
-    void ApplyUiSettings() const;
+    void ApplyUiSettings(Settings *pSettings) const;
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -79,19 +84,22 @@ private:
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
 
-    void        OnStart();
+    void        OnStart(Settings *pSettings);
     static auto OnCreate() -> LRESULT;
+    auto        SaveSettings() const -> void;
     auto        OnDestroy() const -> LRESULT;
     void        InitializeTextService(const AppConfig &pAppConfig);
     static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
     void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
+    Settings                     &m_settings;
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
     CComPtr<LangProfileUtil>      m_pLangProfileUtil;
     HWND                          m_hWnd       = nullptr;
     HWND                          m_hWndParent = nullptr;
     WNDCLASSEXW                   wc{};
+    DWORD                         m_threadId   = 0;
     bool                          m_fEnableTsf = false;
     bool                          m_fFocused   = false;
 };

@@ -10,7 +10,6 @@
 #include "ime/ITextService.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
-#include "ui/ImeUIWidgets.h"
 
 #include <vector>
 
@@ -40,26 +39,29 @@ public:
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
     void SetTheme();
-    void Draw();
-    void RenderToolWindow();
+    void Draw(const Settings &settings);
+    void RenderToolWindow(Settings &settings);
     void ShowToolWindow();
-    void ApplyUiSettings(const SettingsConfig &settingsConfig);
-    void SyncUiSettings(SettingsConfig &settingsConfig);
+    void ApplyUiSettings(Settings &settings);
 
 private:
-    auto UpdateImeWindowPos(ImVec2 &windowPos) const -> bool;
+    auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) const -> bool;
     auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) const -> bool;
-    // Calculate ime window size by candidate string & composition string.
-    // Because we need to place IME window in screen according to the IME window size;
+    // Calculate ime window size by candidate string and composition string.
+    // Because we need to place the IME window in screen according to the IME window size;
     void CalculateWindowSize();
 
-    void DrawSettings();
-    void DrawSettingsContent(ImeManagerComposer *imeManager);
+    void DrawInputMethodsCombo() const;
+    void DrawSettings(Settings &settings);
+    void DrawSettingsContent(Settings &settings);
+    void DrawSettingsFocusManage() const;
     void RenderSettingsState() const;
-    void RenderSettingsFocusManage();
-    void RenderSettingsImePosUpdatePolicy();
+    void RenderSettingsImePosUpdatePolicy(Settings &settings);
     void RenderCompWindow() const;
     void DrawCandidateWindows() const;
+    auto Translate(const char *label) const -> const char *;
+
+    static bool DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected);
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
@@ -70,17 +72,13 @@ private:
     ImGuiThemeLoader         m_uiThemeLoader{};
     std::vector<std::string> m_themeNames{};
     Translation              m_translation;
-    ImeUIWidgets             m_imeUIWidgets{&m_translation};
     std::vector<std::string> m_translateLanguages;
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
 
-    bool  m_fShowToolWindow = false;
-    bool  m_fShowSettings   = false;
-    bool  m_fPinToolWindow  = false;
-    float m_fontSizeScale   = 1.0f;
+    bool m_fShowToolWindow = false;
+    bool m_fPinToolWindow  = false;
 
     std::vector<std::string> m_errorMessages;
-    int m_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

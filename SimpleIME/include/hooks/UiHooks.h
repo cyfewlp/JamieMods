@@ -8,6 +8,7 @@
 #include "RE/GFxCharEvent.h"
 #include "common/log.h"
 #include "hooks/Hooks.hpp"
+#include "ui/Settings.h"
 
 #include <atomic>
 #include <memory>
@@ -42,8 +43,6 @@ struct ConsoleProcessMessageHook : public FunctionHook<RE::UI_MESSAGE_RESULTS(RE
     }
 };
 
-inline const RE::BSFixedString IME_MESSAGE_FAKE_MENU = "ImeMessageFakeMenu";
-
 class UiHooks
 {
     static inline std::unique_ptr<UiAddMessageHookData>      UiAddMessage           = nullptr;
@@ -52,7 +51,7 @@ class UiHooks
     static inline std::atomic_bool                           g_fEnableMessageFilter = false;
 
 public:
-    static void InstallHooks();
+    static void InstallHooks(Ime::Settings* settings);
 
     static void UninstallHooks();
 

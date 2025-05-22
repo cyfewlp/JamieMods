@@ -10,10 +10,10 @@
 #include "ImeWnd.hpp"
 #include "common/WCharUtils.h"
 #include "common/log.h"
+#include "configs/CustomMessage.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
-#include "ui/ImeUIWidgets.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
 namespace LIBC_NAMESPACE_DECL
@@ -22,6 +22,8 @@ namespace Ime
 {
 
 static constexpr ImVec4 RED_COLOR = {1.0F, 0.0F, 0.0F, 1.0F};
+constexpr auto         *EMOJI_YES = "✅";
+constexpr auto         *EMOJI_NO  = "❌";
 
 ImeUI::~ImeUI()
 {
@@ -53,58 +55,37 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
     return true;
 }
 
-void ImeUI::ApplyUiSettings(const SettingsConfig &settingsConfig)
+void ImeUI::ApplyUiSettings(Settings &settings)
 {
-    m_fontSizeScale                = settingsConfig.fontSizeScale.Value();
-    ImGui::GetIO().FontGlobalScale = m_fontSizeScale;
+    ImGui::GetIO().FontGlobalScale = settings.fontSizeScale;
 
-    m_fShowSettings = settingsConfig.showSettings.Value();
     { // Apply language config
-        const auto lang = settingsConfig.language.Value();
-        m_imeUIWidgets.SetUInt32Var("$Languages", 0);
-        if (const auto langIt = std::ranges::find(m_translateLanguages, lang); langIt != m_translateLanguages.end())
+        if (const auto langIt = std::ranges::find(m_translateLanguages, settings.language);
+            langIt == m_translateLanguages.end())
         {
-            m_translation.UseLanguage(lang.c_str());
-            size_t index = std::distance(m_translateLanguages.begin(), langIt);
-            index        = std::min(index, m_translateLanguages.size() - 1);
-            m_imeUIWidgets.SetUInt32Var("$Languages", index);
+            settings.language = "english";
         }
+        m_translation.UseLanguage(settings.language.c_str());
     }
 
     { // Apply theme config
-        m_imeUIWidgets.SetUInt32Var("$Themes", 0);
-        const auto &defaultTheme = settingsConfig.theme.Value();
-        const auto  findIt       = std::ranges::find(m_themeNames, defaultTheme);
-        if (findIt == m_themeNames.end())
+        const auto findIt = std::ranges::find(m_themeNames, settings.theme);
+        if (findIt != m_themeNames.end())
         {
-            ErrorNotifier::GetInstance().addError(
-                std::format("Can't find theme {}, fallback to ImGui default theme.", defaultTheme)
+            m_uiThemeLoader.LoadTheme(settings.theme, ImGui::GetStyle());
+        }
+        else
+        {
+            settings.theme = "";
+            ErrorNotifier::GetInstance().Warning(
+                std::format("Can't find theme {}, fallback to ImGui default theme.", settings.theme)
             );
             ImGui::StyleColorsDark();
-            return;
         }
-        m_imeUIWidgets.SetUInt32Var("$Themes", std::distance(m_themeNames.begin(), findIt));
-        auto &style = ImGui::GetStyle();
-        m_uiThemeLoader.LoadTheme(defaultTheme, style);
     }
 }
 
-void ImeUI::SyncUiSettings(SettingsConfig &settingsConfig)
-{
-    settingsConfig.fontSizeScale.SetValue(m_fontSizeScale);
-    settingsConfig.showSettings.SetValue(m_fShowSettings);
-
-    if (const auto opt = m_imeUIWidgets.GetUInt32Var("$Languages"); opt)
-    {
-        settingsConfig.language.SetValue(m_translateLanguages[opt.value()]);
-    }
-    if (const auto opt = m_imeUIWidgets.GetUInt32Var("$Themes"); opt)
-    {
-        settingsConfig.theme.SetValue(m_themeNames[opt.value()]);
-    }
-}
-
-void ImeUI::SetTheme()
+void ImeUI::SetTheme() // TODO
 {
     if (m_uiConfig.UseClassicTheme())
     {
@@ -119,7 +100,7 @@ void ImeUI::SetTheme()
     }
 }
 
-void ImeUI::Draw()
+void ImeUI::Draw(const Settings &settings)
 {
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
     windowFlags |= ImGuiWindowFlags_NoDecoration;
@@ -134,7 +115,7 @@ void ImeUI::Draw()
     if (!prevFrameIsShowing)
     {
         CalculateWindowSize();
-        if (ImVec2 windowPos; UpdateImeWindowPos(windowPos))
+        if (ImVec2 windowPos; UpdateImeWindowPos(settings, windowPos))
         {
             ImGui::SetNextWindowPos(windowPos);
         }
@@ -156,18 +137,18 @@ void ImeUI::Draw()
     ImGui::End();
 }
 
-auto ImeUI::UpdateImeWindowPos(ImVec2 &windowPos) const -> bool
+auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) const -> bool
 {
-    switch (ImeManagerComposer::GetInstance()->GetImeWindowPosUpdatePolicy())
+    switch (settings.windowPosUpdatePolicy)
     {
-        case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CURSOR:
+        case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
             if (const auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
             {
                 windowPos.x = cursor->cursorPosX;
                 windowPos.y = cursor->cursorPosY;
             }
             return true;
-        case ImeManagerComposer::ImeWindowPosUpdatePolicy::BASED_ON_CARET: {
+        case Settings::WindowPosUpdatePolicy::BASED_ON_CARET: {
             FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
             return UpdateImeWindowPosByCaret(windowPos);
         }
@@ -226,9 +207,41 @@ void ImeUI::CalculateWindowSize()
     m_imeWindowSize.y += m_imeWindowSize.y + style.WindowPadding.y * 2 + style.ItemSpacing.y;
 }
 
+void ImeUI::DrawInputMethodsCombo() const
+{
+    auto &activatedGuid     = m_langProfileUtil->GetActivatedLangProfile();
+    auto &installedProfiles = m_langProfileUtil->GetLangProfiles();
+    if (!installedProfiles.contains(activatedGuid))
+    {
+        activatedGuid = GUID_NULL;
+    }
+    auto &profile = installedProfiles[activatedGuid];
+    if (ImGui::BeginCombo("###InstalledIME", profile.desc.c_str()))
+    {
+        uint32_t idx = 0;
+        for (const std::pair<GUID, LangProfile> pair : installedProfiles)
+        {
+            ImGui::PushID(idx);
+            const auto &langProfile = pair.second;
+            const bool  isSelected  = langProfile.guidProfile == activatedGuid;
+            if (ImGui::Selectable(langProfile.desc.c_str()))
+            {
+                m_pImeWnd->SendMessageToIme(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(&pair.first));
+                activatedGuid = m_langProfileUtil->GetActivatedLangProfile();
+            }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+            ImGui::PopID();
+            idx++;
+        }
+        ImGui::EndCombo();
+    }
+}
+
 void ImeUI::ShowToolWindow()
 {
-    m_toolWindowFlags &= ~ImGuiWindowFlags_NoInputs;
     if (m_fPinToolWindow)
     {
         m_fPinToolWindow               = false;
@@ -246,7 +259,7 @@ void ImeUI::ShowToolWindow()
     }
 }
 
-void ImeUI::RenderToolWindow()
+void ImeUI::RenderToolWindow(Settings &settings)
 {
     if (!m_fShowToolWindow)
     {
@@ -254,9 +267,14 @@ void ImeUI::RenderToolWindow()
     }
 
     m_translation.UseSection("Tool Window");
-    ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, m_toolWindowFlags);
+    auto flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
+    if (m_fPinToolWindow)
+    {
+        flags |= ImGuiWindowFlags_NoInputs;
+    }
+    ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, flags);
 
-    DrawSettings();
+    DrawSettings(settings);
 
     m_translation.UseSection("Tool Window");
 
@@ -271,18 +289,17 @@ void ImeUI::RenderToolWindow()
         }
     }
 
-    if (ImGui::Button("\xf0\x9f\x93\x8c"))
+    if (ImGui::Button("\xf0\x9f\x93\x8c")) // pin
     {
-        m_toolWindowFlags |= ImGuiWindowFlags_NoInputs;
         m_fPinToolWindow               = true;
         ImGui::GetIO().MouseDrawCursor = false;
     }
 
     ImGui::SameLine();
-    m_imeUIWidgets.Checkbox("$Settings", m_fShowSettings);
+    ImGui::Checkbox(Translate("$Settings"), &settings.showSettings);
 
     ImGui::SameLine();
-    ImeUIWidgets::RenderInputMethodChooseWidget(m_langProfileUtil, m_pImeWnd);
+    DrawInputMethodsCombo();
 
     ImGui::SameLine();
     if (State::GetInstance().Has(State::IN_ALPHANUMERIC))
@@ -293,123 +310,171 @@ void ImeUI::RenderToolWindow()
     ImGui::End();
 }
 
-void ImeUI::DrawSettings()
+void ImeUI::DrawSettings(Settings &settings)
 {
-    if (!m_fShowSettings)
+    if (!settings.showSettings)
     {
         return;
     }
     auto      *imeManager = ImeManagerComposer::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
-    if (ImGui::Begin(windowName.c_str(), &m_fShowSettings, ImGuiWindowFlags_NoNav))
+    if (ImGui::Begin(windowName.c_str(), &settings.showSettings, ImGuiWindowFlags_NoNav))
     {
         m_translation.UseSection("Settings");
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-        DrawSettingsContent(imeManager);
+        DrawSettingsContent(settings);
         ImGui::PopStyleVar();
 
-        m_imeUIWidgets.Combo("$Themes", m_themeNames, [this](const std::string &name) {
-            return m_uiThemeLoader.LoadTheme(name, ImGui::GetStyle());
-        });
+        if (DrawCombo(Translate("$Themes"), m_themeNames, settings.theme))
+        {
+            m_uiThemeLoader.LoadTheme(settings.theme, ImGui::GetStyle());
+        }
     }
     ImGui::End();
     imeManager->SyncImeStateIfDirty();
 }
 
-void ImeUI::DrawSettingsContent(ImeManagerComposer *imeManager)
+void ImeUI::DrawSettingsContent(Settings &settings)
 {
-    bool fEnableMod = ImeManager::IsModEnabled();
-    m_imeUIWidgets.Checkbox("$Enable_Mod", fEnableMod, [](bool EnableMod) {
-        ImeManagerComposer::GetInstance()->EnableMod(EnableMod);
-    });
+    if (ImGui::Checkbox(Translate("$Enable_Mod"), &settings.enableMod))
+    {
+        ImeManagerComposer::GetInstance()->EnableMod(settings.enableMod);
+    }
+    ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
     ImGui::SameLine();
     ImGui::Text("%s", m_translation.Get("$Font_Size_Scale"));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::DragFloat(
-            "##FontSizeScale",
-            &m_fontSizeScale,
-            0.05,
-            SettingsConfig::MIN_FONT_SIZE_SCALE,
-            SettingsConfig::MAX_FONT_SIZE_SCALE,
-            "%.3f",
-            ImGuiSliderFlags_NoInput
-        ))
+    ImGui::DragFloat(
+        "##FontSizeScale",
+        &ImGui::GetIO().FontGlobalScale,
+        0.05,
+        SettingsConfig::MIN_FONT_SIZE_SCALE,
+        SettingsConfig::MAX_FONT_SIZE_SCALE,
+        "%.3f",
+        ImGuiSliderFlags_NoInput
+    );
+
+    if (DrawCombo(Translate("$Languages"), m_translateLanguages, settings.language))
     {
-        ImGui::GetIO().FontGlobalScale = m_fontSizeScale;
+        m_translation.UseLanguage(settings.language.c_str());
     }
 
-    m_imeUIWidgets.Combo("$Languages", m_translateLanguages, [this](const std::string &lang) {
-        return m_translation.UseLanguage(lang.c_str());
-    });
-
-    if (!fEnableMod)
+    if (!settings.enableMod)
     {
         return;
     }
     RenderSettingsState();
 
-    m_imeUIWidgets.SeparatorText("$Features");
+    ImGui::SeparatorText(Translate("$Features"));
 
-    RenderSettingsFocusManage();
-    RenderSettingsImePosUpdatePolicy();
-    bool fEnableUnicodePaste = imeManager->IsUnicodePasteEnabled();
-    if (m_imeUIWidgets.Checkbox("$Enable_Unicode_Paste", fEnableUnicodePaste))
-    {
-        imeManager->SetEnableUnicodePaste(fEnableUnicodePaste);
-    }
+    DrawSettingsFocusManage();
+    RenderSettingsImePosUpdatePolicy(settings);
+
+    ImGui::Checkbox(Translate("$Enable_Unicode_Paste"), &settings.enableUnicodePaste);
+    ImGui::SetItemTooltip("%s", Translate("$Enable_Unicode_Paste_Tooltip"));
 
     ImGui::SameLine();
-    bool fKeepImeOpen = imeManager->IsKeepImeOpen();
-    if (m_imeUIWidgets.Checkbox("$Keep_Ime_Open", fKeepImeOpen))
+    ImGui::Checkbox(Translate("$Keep_Ime_Open"), &settings.keepImeOpen);
+    ImGui::SetItemTooltip("%s", Translate("$Keep_Ime_Open_Tooltip"));
+}
+
+auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected) -> bool
+{
+    bool clicked = false;
+    if (ImGui::BeginCombo(label, selected.c_str()))
     {
-        imeManager->SetKeepImeOpen(fKeepImeOpen);
+        uint32_t idx = 0;
+        for (const auto &language : values)
+        {
+            ImGui::PushID(idx);
+            const bool isSelected = selected == language;
+            if (ImGui::Selectable(language.c_str(), isSelected) && !isSelected)
+            {
+                selected = language;
+                clicked  = true;
+            }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+            ImGui::PopID();
+            idx++;
+        }
+        ImGui::EndCombo();
     }
+    return clicked;
 }
 
 void ImeUI::RenderSettingsState() const
 {
-    m_imeUIWidgets.SeparatorText("$States");
-    m_imeUIWidgets.StateWidget("$Ime_Enabled", State::GetInstance().NotHas(State::IME_DISABLED));
-    m_imeUIWidgets.StateWidget("$Ime_Focus", m_pImeWnd->IsFocused());
+    ImGui::SeparatorText(Translate("$States"));
+
+    ImGui::Text(
+        "%s: %s", Translate("$Ime_Enabled"), State::GetInstance().NotHas(State::IME_DISABLED) ? EMOJI_YES : EMOJI_NO
+    );
+    ImGui::SetItemTooltip("%s", Translate("$Ime_Enabled_Tooltip"));
+
+    ImGui::Text("%s: %s", Translate("$Ime_Focus"), m_pImeWnd->IsFocused() ? EMOJI_YES : EMOJI_NO);
+    ImGui::SetItemTooltip("%s", Translate("$Ime_Focus_Tooltip"));
+
     ImGui::SameLine();
-    m_imeUIWidgets.Button("$Force_Focus_Ime", [] {
-        // ReSharper disable once CppExpressionWithoutSideEffects
+    if (ImGui::Button(Translate("$Force_Focus_Ime")))
+    {
         ImeManagerComposer::GetInstance()->ForceFocusIme();
-    });
+    }
 }
 
-void ImeUI::RenderSettingsFocusManage()
+template <typename T>
+constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
+{
+    bool pressed = ImGui::RadioButton(label, *pValue == value);
+    if (pressed)
+    {
+        *pValue = value;
+    }
+    return pressed;
+}
+
+void ImeUI::DrawSettingsFocusManage() const
 {
     // Focus Manage widget
     auto *imeManager = ImeManagerComposer::GetInstance();
 
-    m_imeUIWidgets.SeparatorText("$Focus_Manage");
+    ImGui::SeparatorText(Translate("$Focus_Manage"));
 
     auto focusType = imeManager->GetFocusManageType();
-    bool pressed   = m_imeUIWidgets.RadioButton("$Focus_Manage_Permanent", &focusType, FocusType::Permanent);
+
+    bool pressed = RadioButton(Translate("$Focus_Manage_Permanent"), &focusType, Settings::FocusType::Permanent);
+    ImGui::SetItemTooltip("%s", Translate("$Focus_Manage_Permanent_Tooltip"));
     ImGui::SameLine();
-    pressed |= m_imeUIWidgets.RadioButton("$Focus_Manage_Temporary", &focusType, FocusType::Temporary);
+    pressed |= RadioButton(Translate("$Focus_Manage_Temporary"), &focusType, Settings::FocusType::Temporary);
+    ImGui::SetItemTooltip("%s", Translate("$Focus_Manage_Temporary_Tooltip"));
+
     if (pressed)
     {
         imeManager->PopAndPushType(focusType);
     }
 }
 
-void ImeUI::RenderSettingsImePosUpdatePolicy()
+void ImeUI::RenderSettingsImePosUpdatePolicy(Settings &settings)
 {
-    using Policy = ImeManagerComposer::ImeWindowPosUpdatePolicy;
-    auto policy  = ImeManagerComposer::GetInstance()->GetImeWindowPosUpdatePolicy();
+    using Policy = Settings::WindowPosUpdatePolicy;
     m_translation.UseSection("Ime Window Pos");
     {
-        m_imeUIWidgets.SeparatorText("$Policy");
-        m_imeUIWidgets.RadioButton("$Update_By_Cursor", &policy, Policy::BASED_ON_CURSOR);
+        ImGui::SeparatorText(Translate("$Policy"));
+
+        RadioButton(Translate("$Update_By_Cursor"), &settings.windowPosUpdatePolicy, Policy::BASED_ON_CURSOR);
+        ImGui::SetItemTooltip("%s", Translate("$Update_By_Cursor_Tooltip"));
+
         ImGui::SameLine();
-        m_imeUIWidgets.RadioButton("$Update_By_Caret", &policy, Policy::BASED_ON_CARET);
+        RadioButton(Translate("$Update_By_Caret"), &settings.windowPosUpdatePolicy, Policy::BASED_ON_CARET);
+        ImGui::SetItemTooltip("%s", Translate("$Update_By_Caret_Tooltip"));
+
         ImGui::SameLine();
-        m_imeUIWidgets.RadioButton("$Update_By_None", &policy, Policy::NONE);
-        ImeManagerComposer::GetInstance()->SetImeWindowPosUpdatePolicy(policy);
+        RadioButton(Translate("$Update_By_None"), &settings.windowPosUpdatePolicy, Policy::NONE);
+        ImGui::SetItemTooltip("%s", Translate("$Update_By_None_Tooltip"));
     }
     m_translation.UseSection("Settings");
 }
@@ -443,6 +508,11 @@ void ImeUI::DrawCandidateWindows() const
             index++;
         }
     }
+}
+
+inline auto ImeUI::Translate(const char *label) const -> const char *
+{
+    return m_translation.Get(label);
 }
 
 } // namespace  SimpleIME

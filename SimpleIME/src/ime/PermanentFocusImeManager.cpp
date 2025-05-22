@@ -17,8 +17,8 @@ namespace Ime
 // 2. Set TSF focus
 auto PermanentFocusImeManager::DoEnableIme(bool enable) -> bool
 {
-    bool  success = true;
-    auto &state   = State::GetInstance();
+    bool  success;
+    auto &state = State::GetInstance();
     if (enable)
     {
         log_debug("Clear IME_DISABLED and set TSF focus");
@@ -77,7 +77,7 @@ auto PermanentFocusImeManager::FocusImeOrGame(bool focusIme) const -> bool
     auto success = false;
     if (focusIme)
     {
-        success = m_ImeWnd->Focus();
+        m_ImeWnd->Focus();
     }
     else
     {
@@ -93,14 +93,18 @@ auto PermanentFocusImeManager::FocusImeOrGame(bool focusIme) const -> bool
 
 auto PermanentFocusImeManager::DoForceFocusIme() -> bool
 {
-    return m_ImeWnd->Focus();
+    m_ImeWnd->Focus();
+    return true;
 }
 
 auto PermanentFocusImeManager::DoSyncImeState() -> bool
 {
     bool success = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());
     success      = success && UnlockKeyboard();
-    success      = success && m_ImeWnd->Focus();
+    if (success)
+    {
+        m_ImeWnd->Focus();
+    }
     return success;
 }
 
@@ -117,12 +121,15 @@ auto PermanentFocusImeManager::DoTryFocusIme() -> bool
         if (imeThreadId != currentThreadId)
         {
             success = ::AttachThreadInput(imeThreadId, currentThreadId, TRUE) != FALSE;
-            success = success && m_ImeWnd->Focus();
-            ::AttachThreadInput(imeThreadId, currentThreadId, FALSE);
+            if (success)
+            {
+                m_ImeWnd->Focus();
+                ::AttachThreadInput(imeThreadId, currentThreadId, FALSE);
+            }
         }
         else
         {
-            success = m_ImeWnd->Focus();
+            m_ImeWnd->Focus();
         }
     }
     success = success && EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());

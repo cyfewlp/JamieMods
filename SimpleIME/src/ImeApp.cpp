@@ -184,17 +184,33 @@ void ImeApp::OnD3DInit()
     InstallHooks();
 }
 
+void ImeApp::SetSettings()
+{
+    const auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
+
+    m_settings.windowPosUpdatePolicy = settingsConfig.GetWindowPosUpdatePolicy();
+    m_settings.enableUnicodePaste    = settingsConfig.GetEnableUnicodePaste();
+    m_settings.fontSizeScale         = settingsConfig.GetFontSizeScale();
+    m_settings.showSettings          = settingsConfig.GetShowSettings();
+    m_settings.keepImeOpen           = settingsConfig.GetKeepImeOpen();
+    m_settings.enableMod             = settingsConfig.GetEnableMod();
+    m_settings.focusType             = settingsConfig.GetFocusType();
+    m_settings.language              = settingsConfig.GetLanguage();
+    m_settings.theme                 = settingsConfig.GetTheme();
+}
+
 void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 {
     std::promise<bool> ensureInitialized;
     std::future<bool>  initialized = ensureInitialized.get_future();
     // run ImeWnd in a standalone thread
-    std::thread childWndThread([&ensureInitialized, this]() {
+    SetSettings();
+    std::thread childWndThread([&ensureInitialized, this] {
         try
         {
             m_imeWnd.Initialize();
             ensureInitialized.set_value(true);
-            m_imeWnd.Start(m_hWnd);
+            m_imeWnd.Start(m_hWnd, &m_settings);
         }
         catch (...)
         {
@@ -221,7 +237,7 @@ void ImeApp::InstallHooks()
     DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
 
     Hooks::ScaleformHooks::InstallHooks();
-    Hooks::UiHooks::InstallHooks();
+    Hooks::UiHooks::InstallHooks(&m_settings);
 }
 
 void ImeApp::UninstallHooks()
@@ -235,26 +251,26 @@ void ImeApp::UninstallHooks()
 
 void ImeApp::D3DPresent(const std::uint32_t ptr)
 {
-    const auto &app = GetInstance();
+    auto &app = GetInstance();
     app.D3DPresentHook->Original(ptr);
     if (!app.m_fInitialized.load())
     {
         return;
     }
-    DoD3DPresent();
+    app.DoD3DPresent();
 }
 
 void ImeApp::DoD3DPresent()
 {
-    const auto &app = GetInstance();
-    app.m_imeWnd.RenderIme();
+    auto &app = GetInstance();
+    app.m_imeWnd.DrawIme(m_settings);
 }
 
 // we need set our keyboard to non-exclusive after game default.
 void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
 {
     const auto &app = GetInstance();
-    Core::EventHandler::UpdateMessageFilter(a_events);
+    Core::EventHandler::UpdateMessageFilter(app.m_settings, a_events);
     app.DispatchInputEventHook->Original(a_dispatcher, a_events);
     Core::EventHandler::PostHandleKeyboardEvent();
 }

@@ -6,63 +6,52 @@
 #include "ImeWnd.hpp"
 #include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
+#include "ime/PermanentFocusImeManager.h"
+#include "ime/TemporaryFocusImeManager.h"
+#include "ui/Settings.h"
 #include "ui/TaskQueue.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-void ImeManagerComposer::Use(const FocusType type)
+void ImeManagerComposer::Use(const Settings::FocusType type)
 {
-    if (FocusType::Permanent == type)
+    if (Settings::FocusType::Permanent == type)
     {
-        m_delegate = m_PermanentFocusImeManager.get();
+        m_delegate = std::make_unique<PermanentFocusImeManager>(m_pImeWnd, m_gameHwnd, *m_settings);
     }
     else
     {
-        m_delegate = m_temporaryFocusImeManager.get();
+        m_delegate = std::make_unique<TemporaryFocusImeManager>(m_pImeWnd, m_gameHwnd, *m_settings);
     }
 }
 
-void ImeManagerComposer::ApplyUiSettings(const SettingsConfig &settingsConfig)
+void ImeManagerComposer::ApplyUiSettings(const Settings &settings)
 {
     if (!IsInited())
     {
         ErrorNotifier::GetInstance().addError("Fatal error: IME manager is not initialized.");
         return;
     }
-    PushType(settingsConfig.focusType.Value());
-    SetImeWindowPosUpdatePolicy(settingsConfig.windowPosUpdatePolicy.Value());
-    SetEnableUnicodePaste(settingsConfig.enableUnicodePaste.Value());
-    SetKeepImeOpen(settingsConfig.keepImeOpen.Value());
-    EnableMod(settingsConfig.enableMod.Value());
-    if (settingsConfig.enableMod.Value())
+    PushType(settings.focusType);
+    EnableMod(settings.enableMod);
+
+    m_fDirty = true;
+    if (settings.enableMod)
     {
         SyncImeStateIfDirty();
     }
 }
 
-void ImeManagerComposer::SyncUiSettings(SettingsConfig &settingsConfig) const
-{
-    if (!IsInited())
-    {
-        return;
-    }
-    settingsConfig.enableMod.SetValue(ImeManager::IsModEnabled());
-    settingsConfig.focusType.SetValue(GetFocusManageType());
-    settingsConfig.windowPosUpdatePolicy.SetValue(m_ImeWindowPosUpdatePolicy);
-    settingsConfig.enableUnicodePaste.SetValue(m_fEnableUnicodePaste);
-    settingsConfig.keepImeOpen.SetValue(m_fKeepImeOpen);
-}
-
-void ImeManagerComposer::PushType(FocusType type, bool syncImeState)
+void ImeManagerComposer::PushType(Settings::FocusType type, bool syncImeState)
 {
     assert(!m_fDirty && "WARNING: Missing call SyncImeState?");
     const bool diff = m_FocusTypeStack.empty() || type != m_FocusTypeStack.top();
     if (diff)
     {
         m_fDirty = true;
-        if (!dynamic_cast<DummyFocusImeManager *>(m_delegate))
+        if (!dynamic_cast<DummyFocusImeManager *>(m_delegate.get()))
         {
             EnableIme(false);
         }
@@ -87,7 +76,7 @@ void ImeManagerComposer::PopType(bool syncImeState)
     m_FocusTypeStack.pop();
     if (m_FocusTypeStack.empty())
     {
-        m_delegate = DummyFocusImeManager::GetInstance();
+        m_delegate = std::make_unique<DummyFocusImeManager>(*m_settings);
     }
     else if (prev != m_FocusTypeStack.top())
     {
@@ -101,7 +90,7 @@ void ImeManagerComposer::PopType(bool syncImeState)
     }
 }
 
-void ImeManagerComposer::PopAndPushType(const FocusType type, const bool syncImeState)
+void ImeManagerComposer::PopAndPushType(const Settings::FocusType type, const bool syncImeState)
 {
     assert(!m_fDirty && "WARNING: Missing call SyncImeState?");
     if (m_FocusTypeStack.empty())
@@ -137,7 +126,7 @@ void ImeManagerComposer::PopAndPushType(const FocusType type, const bool syncIme
 auto ImeManagerComposer::EnableIme(bool enable) const -> void
 {
     AddTask([this, enable] {
-        if (!m_delegate->EnableIme(m_fKeepImeOpen || enable))
+        if (!m_delegate->EnableIme(m_settings->keepImeOpen || enable))
         {
             ErrorNotifier::GetInstance().addError(std::format("Unexpected error: EnableIme({}) failed.", enable));
         }
@@ -146,13 +135,13 @@ auto ImeManagerComposer::EnableIme(bool enable) const -> void
 
 auto ImeManagerComposer::EnableMod(bool enable) -> void
 {
-    if (ImeManager::IsModEnabled() != enable)
+    if (m_settings->enableMod != enable)
     {
         AddTask([this, enable] {
             if (m_delegate->EnableMod(enable))
             {
                 m_fDirty = true;
-                ImeManager::SetEnableMod(enable);
+                m_settings->enableMod = enable;
                 return;
             }
             ErrorNotifier::GetInstance().Debug(std::format("Unexpected error: EnableMod({}) failed.", enable));
@@ -203,7 +192,7 @@ auto ImeManagerComposer::SyncImeState() -> void
 
 void ImeManagerComposer::AddTask(TaskQueue::Task &&task) const
 {
-    if (m_FocusTypeStack.top() == FocusType::Permanent)
+    if (m_FocusTypeStack.top() == Settings::FocusType::Permanent)
     {
         TaskQueue::GetInstance().AddImeThreadTask(std::move(task));
         ::SendNotifyMessageA(m_pImeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);

@@ -11,14 +11,14 @@ namespace Ime
 {
 auto TemporaryFocusImeManager::DoEnableIme(bool enable) -> bool
 {
-    bool  success = true;
-    auto &state   = State::GetInstance();
+    bool  success;
+    auto &state = State::GetInstance();
     if (enable)
     {
         log_debug("Clear IME_DISABLED and set TSF focus");
         state.Clear(State::IME_DISABLED);
-        success = m_ImeWnd->Focus();
-        success = success && UnlockKeyboard();
+        m_ImeWnd->Focus();
+        success = UnlockKeyboard();
         success = success && m_ImeWnd->SetTsfFocus(true);
     }
     else
@@ -61,7 +61,8 @@ auto TemporaryFocusImeManager::DoEnableMod(bool fEnableMod) -> bool
 
 auto TemporaryFocusImeManager::DoForceFocusIme() -> bool
 {
-    return m_ImeWnd->Focus();
+    m_ImeWnd->Focus();
+    return true;
 }
 
 // call on render thread
@@ -75,7 +76,7 @@ auto TemporaryFocusImeManager::DoSyncImeState() -> bool
 auto TemporaryFocusImeManager::DoTryFocusIme() -> bool
 {
     bool success = true;
-    if (!m_fIsInEnableIme) // FIXME
+    if (!m_fIsInEnableIme)
     {
         m_fIsInEnableIme = true;
         success          = EnableIme(Hooks::SKSE_ScaleformAllowTextInput::HasTextEntry());

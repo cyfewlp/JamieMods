@@ -44,31 +44,31 @@ void IniSetValue(CSimpleIniA &ini, const std::string &sectionStr, const Property
     {
         ini.SetValue(section, property.ConfigName(), property.Value().c_str());
     }
-    else if constexpr (std::is_same_v<Type, FocusType>)
+    else if constexpr (std::is_same_v<Type, Settings::FocusType>)
     {
         switch (property.Value())
         {
-            case FocusType::Permanent:
+            case Settings::FocusType::Permanent:
                 ini.SetValue(section, property.ConfigName(), "Permanent");
                 break;
-            case FocusType::Temporary:
+            case Settings::FocusType::Temporary:
                 ini.SetValue(section, property.ConfigName(), "Temporary");
                 break;
             default:
                 break;
         }
     }
-    else if constexpr (std::is_same_v<Type, WindowPosPolicy>)
+    else if constexpr (std::is_same_v<Type, Settings::WindowPosUpdatePolicy>)
     {
         switch (property.Value())
         {
-            case WindowPosPolicy::NONE:
+            case Settings::WindowPosUpdatePolicy::NONE:
                 ini.SetValue(section, property.ConfigName(), "None");
                 break;
-            case WindowPosPolicy::BASED_ON_CARET:
+            case Settings::WindowPosUpdatePolicy::BASED_ON_CARET:
                 ini.SetValue(section, property.ConfigName(), "BASED_ON_CARET");
                 break;
-            case WindowPosPolicy::BASED_ON_CURSOR:
+            case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
                 ini.SetValue(section, property.ConfigName(), "BASED_ON_CURSOR");
                 break;
             default:
@@ -104,6 +104,19 @@ void SettingsConfig::Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) co
     IniSetValueIfDiff(ini, SectionName(), enableUnicodePaste, diskConfig.enableUnicodePaste);
     IniSetValueIfDiff(ini, SectionName(), keepImeOpen, diskConfig.keepImeOpen);
     IniSetValueIfDiff(ini, SectionName(), theme, diskConfig.theme);
+}
+
+void SettingsConfig::Set(const Settings &settings)
+{
+    enableUnicodePaste.SetValue(settings.enableUnicodePaste);
+    keepImeOpen.SetValue(settings.keepImeOpen);
+    theme.SetValue(settings.theme);
+    fontSizeScale.SetValue(settings.fontSizeScale);
+    showSettings.SetValue(settings.showSettings);
+    enableMod.SetValue(settings.enableMod);
+    windowPosUpdatePolicy.SetValue(settings.windowPosUpdatePolicy);
+    focusType.SetValue(settings.focusType);
+    language.SetValue(settings.language);
 }
 
 void AppConfig::Save(CSimpleIniA &ini, const AppConfig &diskConfig) const
@@ -222,24 +235,25 @@ constexpr auto ConvertCamelCaseToUnderscore(const std::string_view &input) -> st
     return output;
 }
 
-constexpr auto converter<FocusType>::convert(const char *value, FocusType aDefault) -> FocusType
+constexpr auto converter<Settings::FocusType>::convert(const char *value, Settings::FocusType aDefault)
+    -> Settings::FocusType
 {
     if (value == nullptr) return aDefault;
     std::string strValue{value};
     std::ranges::transform(strValue, strValue.begin(), ::tolower);
-    if (strValue == "permanent") return FocusType::Permanent;
-    if (strValue == "temporary") return FocusType::Temporary;
+    if (strValue == "permanent") return Settings::FocusType::Permanent;
+    if (strValue == "temporary") return Settings::FocusType::Temporary;
     return aDefault;
 }
 
-constexpr auto converter<WindowPosPolicy>::convert(const char *value, WindowPosPolicy aDefault) -> WindowPosPolicy
+constexpr auto converter<Settings::WindowPosUpdatePolicy>::convert(const char *value, const Policy aDefault) -> Policy
 {
     if (value == nullptr) return aDefault;
     std::string strValue{value};
     std::ranges::transform(strValue, strValue.begin(), ::tolower);
-    if (strValue == "none") return WindowPosPolicy::NONE;
-    if (strValue == "based_on_caret") return WindowPosPolicy::BASED_ON_CARET;
-    if (strValue == "based_on_cursor") return WindowPosPolicy::BASED_ON_CURSOR;
+    if (strValue == "none") return Policy::NONE;
+    if (strValue == "based_on_caret") return Policy::BASED_ON_CARET;
+    if (strValue == "based_on_cursor") return Policy::BASED_ON_CURSOR;
     return aDefault;
 }
 }

@@ -188,22 +188,23 @@ private:
     Property<std::string> m_translationDir{R"(Data\interface\SimpleIME)", "Translation_Dir"};
 };
 
-using WindowPosPolicy = ImeManagerComposer::ImeWindowPosUpdatePolicy;
-
 template <>
-struct converter<FocusType>
+struct converter<Settings::FocusType>
 {
-    static constexpr auto convert(const char *value, FocusType aDefault) -> FocusType;
+    static constexpr auto convert(const char *value, Settings::FocusType aDefault) -> Settings::FocusType;
 };
 
 template <>
-struct converter<WindowPosPolicy>
+struct converter<Settings::WindowPosUpdatePolicy>
 {
-    static constexpr auto convert(const char *value, WindowPosPolicy aDefault) -> WindowPosPolicy;
+    using Policy = Settings::WindowPosUpdatePolicy;
+    static constexpr auto convert(const char *value, Policy aDefault) -> Policy;
 };
 
 struct SettingsConfig final : BaseConfig<SettingsConfig>
 {
+    using Policy = Settings::WindowPosUpdatePolicy;
+
     static constexpr float DEFAULT_FONT_SIZE_SCALE = 1.0F;
     static constexpr float MIN_FONT_SIZE_SCALE     = 0.1F;
     static constexpr float MAX_FONT_SIZE_SCALE     = 5.0F;
@@ -212,15 +213,65 @@ struct SettingsConfig final : BaseConfig<SettingsConfig>
 
     void Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) const override;
 
-    Property<float>           fontSizeScale{1.0, "Font_Size_Scale"};
-    Property<bool>            showSettings{false, "Show_Settings"};
-    Property<bool>            enableMod{true, "Enable_Mod"};
-    Property<std::string>     language{"chinese", "Language"};
-    Property<FocusType>       focusType{FocusType::Permanent, "Focus_Type"};
-    Property<WindowPosPolicy> windowPosUpdatePolicy{WindowPosPolicy::BASED_ON_CARET, "Window_Pos_Update_Policy"};
-    Property<bool>            enableUnicodePaste{true, "Enable_Unicode_Paste"};
-    Property<bool>            keepImeOpen{true, "Keep_Ime_Open"};
-    Property<std::string>     theme{"darcula", "Theme"};
+    void Set(const Settings &settings);
+
+    [[nodiscard]] auto GetFontSizeScale() const -> float
+    {
+        return fontSizeScale.Value();
+    }
+
+    [[nodiscard]] auto GetShowSettings() const -> bool
+    {
+        return showSettings.Value();
+    }
+
+    [[nodiscard]] auto GetEnableMod() const -> bool
+    {
+        return enableMod.Value();
+    }
+
+    [[nodiscard]] auto GetLanguage() const -> const std::string &
+    {
+        return language.Value();
+    }
+
+    [[nodiscard]] auto GetFocusType() const -> Settings::FocusType
+    {
+        return focusType.Value();
+    }
+
+    [[nodiscard]] auto GetWindowPosUpdatePolicy() const -> Policy
+    {
+        return windowPosUpdatePolicy.Value();
+    }
+
+    [[nodiscard]] auto GetEnableUnicodePaste() const -> bool
+    {
+        return enableUnicodePaste.Value();
+    }
+
+    [[nodiscard]] auto GetKeepImeOpen() const -> bool
+    {
+        return keepImeOpen.Value();
+    }
+
+    [[nodiscard]] auto GetTheme() const -> const std::string &
+    {
+        return theme.Value();
+    }
+
+private:
+    friend class AppConfig;
+
+    Property<float>               fontSizeScale{1.0, "Font_Size_Scale"};
+    Property<bool>                showSettings{false, "Show_Settings"};
+    Property<bool>                enableMod{true, "Enable_Mod"};
+    Property<std::string>         language{"chinese", "Language"};
+    Property<Settings::FocusType> focusType{Settings::FocusType::Permanent, "Focus_Type"};
+    Property<Policy>              windowPosUpdatePolicy{Policy::BASED_ON_CARET, "Window_Pos_Update_Policy"};
+    Property<bool>                enableUnicodePaste{true, "Enable_Unicode_Paste"};
+    Property<bool>                keepImeOpen{true, "Keep_Ime_Open"};
+    Property<std::string>         theme{"darcula", "Theme"};
 };
 
 class AppConfig final : public BaseConfig<AppConfig>

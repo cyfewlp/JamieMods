@@ -71,12 +71,16 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Hooks
 {
-void UiHooks::InstallHooks()
+
+Ime::Settings *g_settings;
+
+void UiHooks::InstallHooks(Ime::Settings *settings)
 {
     log_info("Install ui hooks...");
     UiAddMessage          = std::make_unique<UiAddMessageHookData>(AddMessageHook);
     MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
     ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
+    g_settings            = settings;
 }
 
 void UiHooks::UninstallHooks()
@@ -112,7 +116,7 @@ void UiHooks::AddMessageHook(
                 }
                 static RE::BSFixedString &topMenu = RE::InterfaceStrings::GetSingleton()->topMenu;
                 // is IME open and not IME sent message?
-                if (menuName == IME_MESSAGE_FAKE_MENU)
+                if (menuName == Ime::Settings::IME_MESSAGE_FAKE_MENU)
                 {
                     UiAddMessage->Original(self, topMenu, messageType, pMessageData);
                 }
@@ -171,7 +175,7 @@ auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) ->
 {
     auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
 
-    if (!Ime::ImeManagerComposer::GetInstance()->IsUnicodePasteEnabled() || vtable == CursorVtableAddress)
+    if (!g_settings->enableUnicodePaste || vtable == CursorVtableAddress)
     {
         return MenuProcessMessage->Original(self, uiMessage);
     }
@@ -195,7 +199,7 @@ auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) ->
 auto UiHooks::MyConsoleProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
 {
     auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
-    if (!Ime::ImeManagerComposer::GetInstance()->IsUnicodePasteEnabled() || vtable == CursorVtableAddress)
+    if (!g_settings->enableUnicodePaste || vtable == CursorVtableAddress)
     {
         return ConsoleProcessMessage->Original(self, uiMessage);
     }

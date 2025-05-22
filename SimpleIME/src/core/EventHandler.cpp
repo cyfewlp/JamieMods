@@ -41,7 +41,7 @@ void EventHandler::InstallEventSink(ImeWnd *imeWnd)
     RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
 }
 
-auto EventHandler::UpdateMessageFilter(RE::InputEvent **a_events) -> void
+auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void
 {
     if (a_events == nullptr)
     {
@@ -62,7 +62,7 @@ auto EventHandler::UpdateMessageFilter(RE::InputEvent **a_events) -> void
         return;
     }
     const auto code = buttonEvent->GetIDCode();
-    if (Utils::IsImeNotActivateOrGameLoading())
+    if (!settings.enableMod || Utils::IsImeNotActivateOrGameLoading())
     {
         Hooks::UiHooks::EnableMessageFilter(false);
     }
@@ -122,7 +122,7 @@ RE::BSEventNotifyControl InputEventSink::
     return RE::BSEventNotifyControl::kContinue;
 }
 
-void InputEventSink::ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent)
+void InputEventSink::ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent) const
 {
     auto value = buttonEvent->Value();
     switch (auto mouseKey = buttonEvent->GetIDCode())

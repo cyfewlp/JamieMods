@@ -26,7 +26,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-ImeWnd::ImeWnd()
+ImeWnd::ImeWnd(Settings& settings) : m_settings(settings)
 {
     wc = {};
     ZeroMemory(&wc, sizeof(wc));
@@ -121,7 +121,7 @@ auto ImeWnd::IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
     return false;
 }
 
-void ImeWnd::Start(HWND hWndParent)
+void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
 {
     log_info("Start ImeWnd Thread...");
     m_hWnd =
@@ -130,7 +130,7 @@ void ImeWnd::Start(HWND hWndParent)
     {
         throw SimpleIMEException("Create ImeWnd failed");
     }
-    OnStart();
+    OnStart(pSettings);
 
     MSG msg = {};
     ZeroMemory(&msg, sizeof(msg));
@@ -174,13 +174,14 @@ void ImeWnd::Start(HWND hWndParent)
     log_info("Exit ImeWnd Thread...");
 }
 
-void ImeWnd::OnStart()
+void ImeWnd::OnStart(Settings *pSettings)
 {
     m_pTextService->OnStart(m_hWnd);
     Context::GetInstance()->SetHwndIme(m_hWnd);
 
-    ImeManagerComposer::Init(this, m_hWndParent);
-    ApplyUiSettings();
+    ImeManagerComposer::Init(this, m_hWndParent, pSettings);
+    ApplyUiSettings(pSettings);
+    m_threadId = GetCurrentThreadId();
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -332,16 +333,20 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
     }
 }
 
+auto ImeWnd::SaveSettings() const -> void
+{
+    m_settings.fontSizeScale = ImGui::GetIO().FontGlobalScale;
+    AppConfig::GetConfig().GetSettingsConfig().Set(m_settings);
+
+    const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
+    const auto  configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
+    AppConfig::SaveIni(configFilePath.c_str());
+}
+
 auto ImeWnd::OnDestroy() const -> LRESULT
 {
     log_info("Save ui settings...");
-    auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
-    m_pImeUi->SyncUiSettings(settingsConfig);
-    ImeManagerComposer::GetInstance()->SyncUiSettings(settingsConfig);
-
-    const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
-    auto        configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
-    AppConfig::SaveIni(configFilePath.c_str());
+    SaveSettings();
 
     log_info("Destroy IME Window");
     UnInitialize();
@@ -349,13 +354,12 @@ auto ImeWnd::OnDestroy() const -> LRESULT
     return S_OK;
 }
 
-auto ImeWnd::Focus() const -> bool
+auto ImeWnd::Focus() const -> void
 {
     if (!IsFocused())
     {
-        return ::SetFocus(m_hWnd) != nullptr;
+        SetFocus(m_hWnd); // The return value only indicates which HWND had the focus previously.
     }
-    return true;
 }
 
 auto ImeWnd::SetTsfFocus(const bool focus) const -> bool
@@ -419,7 +423,7 @@ void ImeWnd::NewFrame()
     }
 }
 
-void ImeWnd::RenderIme() const
+void ImeWnd::DrawIme(Settings &settings) const
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -427,8 +431,8 @@ void ImeWnd::RenderIme() const
     ImGui::NewFrame();
 
     ErrorNotifier::GetInstance().Show();
-    m_pImeUi->RenderToolWindow();
-    m_pImeUi->Draw();
+    m_pImeUi->RenderToolWindow(settings);
+    m_pImeUi->Draw(settings);
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -446,11 +450,10 @@ void ImeWnd::ShowToolWindow() const
     m_pImeUi->ShowToolWindow();
 }
 
-void ImeWnd::ApplyUiSettings() const
+void ImeWnd::ApplyUiSettings(Settings *pSettings) const
 {
-    const auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
-    m_pImeUi->ApplyUiSettings(settingsConfig);
-    ImeManagerComposer::GetInstance()->ApplyUiSettings(settingsConfig);
+    m_pImeUi->ApplyUiSettings(*pSettings);
+    ImeManagerComposer::GetInstance()->ApplyUiSettings(*pSettings);
 }
 
 auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT

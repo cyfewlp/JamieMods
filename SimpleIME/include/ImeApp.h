@@ -52,18 +52,20 @@ private:
     std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
 
     void OnD3DInit();
+    void SetSettings();
     void Start(const RE::BSGraphics::RendererData &renderData);
     void InstallHooks();
     void UninstallHooks();
 
-    ImeWnd           m_imeWnd;
-    HWND             m_hWnd         = nullptr;
+    HWND             m_hWnd = nullptr;
+    Settings         m_settings{};
+    ImeWnd           m_imeWnd{m_settings};
     std::atomic_bool m_fInitialized = false;
 
     static void           D3DInit();
     static void           DoD3DInit();
     static void           D3DPresent(std::uint32_t ptr);
-    static void           DoD3DPresent();
+    void                  DoD3DPresent();
     static void           DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;

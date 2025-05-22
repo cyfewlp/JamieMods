@@ -14,7 +14,7 @@ namespace Ime
 {
 auto ImeManager::Focus(HWND hwnd) -> bool
 {
-    auto  hwndThread      = ::GetWindowThreadProcessId(hwnd, 0);
+    auto  hwndThread      = ::GetWindowThreadProcessId(hwnd, nullptr);
     DWORD currentThreadId = ::GetCurrentThreadId();
     bool  success         = true;
     if (hwndThread != currentThreadId)
@@ -22,13 +22,13 @@ auto ImeManager::Focus(HWND hwnd) -> bool
         success = ::AttachThreadInput(hwndThread, currentThreadId, TRUE) != FALSE;
         if (success)
         {
-            success = ::SetFocus(hwnd) != nullptr;
+            ::SetFocus(hwnd);
             ::AttachThreadInput(hwndThread, currentThreadId, FALSE);
         }
     }
     else
     {
-        success = ::SetFocus(hwnd) != nullptr;
+        ::SetFocus(hwnd);
     }
     return success;
 }
@@ -72,7 +72,7 @@ auto BaseImeManager::EnableIme(bool enable) -> bool
         m_fForceUpdate = false;
         return result;
     }
-    if (!IsModEnabled())
+    if (!m_settings.enableMod)
     {
         log_warn("Mod is disabled, operate failed");
         return false;
@@ -95,7 +95,7 @@ auto BaseImeManager::EnableMod(bool fEnableMod) -> bool
 auto BaseImeManager::ForceFocusIme() -> bool
 {
     log_debug("BaseImeManager::{}", __func__);
-    if (!IsModEnabled())
+    if (!m_settings.enableMod)
     {
         log_warn("Mod is disabled, operate failed");
         return false;
@@ -106,7 +106,7 @@ auto BaseImeManager::ForceFocusIme() -> bool
 auto BaseImeManager::SyncImeState() -> bool
 {
     log_debug("BaseImeManager::{}", __func__);
-    if (!IsModEnabled())
+    if (!m_settings.enableMod)
     {
         log_warn("Mod is disabled, operate failed");
         return false;
@@ -118,7 +118,7 @@ auto BaseImeManager::SyncImeState() -> bool
 auto BaseImeManager::TryFocusIme() -> bool
 {
     log_debug("BaseImeManager::{}", __func__);
-    if (!IsModEnabled())
+    if (!m_settings.enableMod)
     {
         log_warn("Mod is disabled, operate failed");
         return false;
