@@ -1,6 +1,5 @@
 #include "core/EventHandler.h"
 
-#include "ImeApp.h"
 #include "ImeWnd.hpp"
 #include "Utils.h"
 #include "configs/AppConfig.h"
@@ -22,7 +21,6 @@
 #include <common/config.h>
 #include <common/log.h>
 #include <cstdint>
-#include <dinput.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -43,16 +41,17 @@ void EventHandler::InstallEventSink(ImeWnd *imeWnd)
 
 auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void
 {
-    if (a_events == nullptr)
+    auto *uiHooks = Hooks::UiHooks::GetInstance();
+    if (!uiHooks || a_events == nullptr)
     {
         return;
     }
-    auto head = *a_events;
+    const auto head = *a_events;
     if (head == nullptr)
     {
         return;
     }
-    RE::ButtonEvent *buttonEvent = nullptr;
+    const RE::ButtonEvent *buttonEvent = nullptr;
     if (head->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
     {
         buttonEvent = head->AsButtonEvent();
@@ -64,32 +63,20 @@ auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent 
     const auto code = buttonEvent->GetIDCode();
     if (!settings.enableMod || Utils::IsImeNotActivateOrGameLoading())
     {
-        Hooks::UiHooks::EnableMessageFilter(false);
+        uiHooks->EnableMessageFilter(false);
     }
     else
     {
         if (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
         {
-            Hooks::UiHooks::EnableMessageFilter(true);
+            uiHooks->EnableMessageFilter(true);
         }
         else
         {
-            Hooks::UiHooks::EnableMessageFilter(false);
+            uiHooks->EnableMessageFilter(false);
         }
     }
 }
-
-auto EventHandler::IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool
-{
-    bool discard = false;
-    if (Hooks::UiHooks::IsEnableMessageFilter() && buttonEvent->GetIDCode() == DIK_E)
-    {
-        discard = true;
-    }
-    return discard;
-}
-
-auto EventHandler::PostHandleKeyboardEvent() -> void {}
 
 //////////////////////////////////////////////////////////////////////////
 // InputEventSink

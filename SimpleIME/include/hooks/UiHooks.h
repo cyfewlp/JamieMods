@@ -18,51 +18,56 @@ namespace LIBC_NAMESPACE_DECL
 namespace Hooks
 {
 
-struct UiAddMessageHookData
+struct UiAddMessageHook
     : FunctionHook<void(RE::UIMessageQueue *, RE::BSFixedString &, RE::UI_MESSAGE_TYPE, RE::IUIMessageData *)>
 {
-    explicit UiAddMessageHookData(func_type *ptr) : FunctionHook(RE::Offset::UIMessageQueue::AddMessage, ptr)
+    explicit UiAddMessageHook(func_type *ptr) : FunctionHook(RE::Offset::UIMessageQueue::AddMessage, ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 };
 
-struct MenuProcessMessageHook : public FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *, RE::UIMessage &)>
+struct MenuProcessMessageHook : FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *, RE::UIMessage &)>
 {
     explicit MenuProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(80283, 82306), ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 };
 
-struct ConsoleProcessMessageHook : public FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *, RE::UIMessage &)>
+struct ConsoleProcessMessageHook : FunctionHook<RE::UI_MESSAGE_RESULTS(RE::IMenu *, RE::UIMessage &)>
 {
     explicit ConsoleProcessMessageHook(func_type *ptr) : FunctionHook(RELOCATION_ID(50155, 442669), ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 };
 
 class UiHooks
 {
-    static inline std::unique_ptr<UiAddMessageHookData>      UiAddMessage           = nullptr;
-    static inline std::unique_ptr<MenuProcessMessageHook>    MenuProcessMessage     = nullptr;
-    static inline std::unique_ptr<ConsoleProcessMessageHook> ConsoleProcessMessage  = nullptr;
-    static inline std::atomic_bool                           g_fEnableMessageFilter = false;
+    std::unique_ptr<UiAddMessageHook>          UiAddMessage           = nullptr;
+    std::unique_ptr<MenuProcessMessageHook>    MenuProcessMessage     = nullptr;
+    std::unique_ptr<ConsoleProcessMessageHook> ConsoleProcessMessage  = nullptr;
+    std::atomic_bool                           m_fEnableMessageFilter = false;
+    Ime::Settings                             &m_settings;
+
+    explicit UiHooks(Ime::Settings &settings) : m_settings(settings) {}
 
 public:
-    static void InstallHooks(Ime::Settings* settings);
+    static void Install(Ime::Settings &settings);
 
-    static void UninstallHooks();
+    static void Uninstall();
 
-    static void EnableMessageFilter(bool enable)
+    static auto GetInstance() -> UiHooks *;
+
+    void EnableMessageFilter(bool enable)
     {
-        g_fEnableMessageFilter = enable;
+        m_fEnableMessageFilter = enable;
     }
 
-    static auto IsEnableMessageFilter() -> bool
+    auto IsEnableMessageFilter() -> bool
     {
-        return g_fEnableMessageFilter;
+        return m_fEnableMessageFilter;
     }
 
 private:

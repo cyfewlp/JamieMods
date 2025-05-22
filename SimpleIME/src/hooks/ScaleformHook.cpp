@@ -116,9 +116,11 @@ void UpdateFocusCharacterBound(RE::GFxMovieView *movieView, bool allow)
     }
 }
 
+static std::unique_ptr<ScaleformHooks> g_ScaleformHooks;
+
 void ScaleformHooks::SetScaleModeTypeHook(RE::GFxMovieView *pMovieView, RE::GFxMovieView::ScaleModeType scaleMode)
 {
-    g_SetScaleModeTypeHook->Original(pMovieView, scaleMode);
+    g_ScaleformHooks->m_SetScaleModeTypeHook->Original(pMovieView, scaleMode);
 
     if (pMovieView == nullptr)
     {
@@ -176,39 +178,35 @@ bool ScaleformHooks::LoadMovieHook(
 auto ScaleformHooks::Scaleform_AllowTextInputHook(ControlMap *self, bool allow) -> uint8_t
 {
     log_debug("Scaleform_AllowTextInputHook");
-    auto result = g_AllowTextInputHook->Original(self, allow);
+    auto result = g_ScaleformHooks->m_AllowTextInputHook->Original(self, allow);
 
     Ime::FocusGFxCharacterInfo::GetInstance().UpdateByTopMenu();
     SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged(result);
     return result;
 }
 
-void ScaleformHooks::InstallHooks()
+ScaleformHooks::ScaleformHooks()
 {
-    log_debug("Install GfxMovieInstallHook...");
-    if (g_SetScaleModeTypeHook == nullptr)
-    {
-        g_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
-    }
-#ifdef HOOK_LOAD_MOVIE
-    if (g_LoadMovieHook == nullptr)
-    {
-        g_LoadMovieHook = std::make_unique<Scaleform_LoadMovieHook>(LoadMovieHook);
-    }
-#endif
-    if (g_AllowTextInputHook == nullptr)
-    {
-        g_AllowTextInputHook = std::make_unique<Scaleform_AllowTextInput>(Scaleform_AllowTextInputHook);
-    }
+    m_SetScaleModeTypeHook = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeTypeHook);
+    m_AllowTextInputHook = std::make_unique<Scaleform_AllowTextInput>(Scaleform_AllowTextInputHook);
+    #ifdef HOOK_LOAD_MOVIE
+        m_LoadMovieHook = std::make_unique<Scaleform_LoadMovieHook>(LoadMovieHook);
+    #endif
 }
 
-void ScaleformHooks::UninstallHooks()
+void ScaleformHooks::Install()
 {
-    g_SetScaleModeTypeHook = nullptr;
-#ifdef HOOK_LOAD_MOVIE
-    g_LoadMovieHook = nullptr;
-#endif
-    g_AllowTextInputHook = nullptr;
+    if (!g_ScaleformHooks)
+    {
+        log_warn("Already installed ScaleformHooks.");
+    }
+    log_debug("Install GfxMovieInstallHook...");
+    g_ScaleformHooks.reset(new ScaleformHooks);
+}
+
+void ScaleformHooks::Uninstall()
+{
+    g_ScaleformHooks = nullptr;
 }
 
 }

@@ -15,7 +15,7 @@ class OpenClipboardHook : public FunctionHook<BOOL(HWND)>
 public:
     explicit OpenClipboardHook(void *realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 };
 
@@ -24,7 +24,7 @@ class DirectInput8CreateHook : public FunctionHook<HRESULT(HINSTANCE, DWORD, REF
 public:
     explicit DirectInput8CreateHook(void *&realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 };
 
@@ -34,13 +34,13 @@ class WinHooks
     static inline std::unique_ptr<DirectInput8CreateHook> DirectInput8Create = nullptr;
 
     static inline std::atomic_bool g_fDisablePaste       = false;
-    static inline std::string      MODULE_USER32_STRING  = "User32.dll";
-    static inline std::string      MODULE_DINPUT8_STRING = "dinput8.dll";
+    static constexpr const char   *MODULE_USER32_STRING  = "User32.dll";
+    static constexpr const char   *MODULE_DINPUT8_STRING = "dinput8.dll";
 
 public:
-    static void InstallHooks();
+    static void Install();
 
-    static void UninstallHooks();
+    static void Uninstall();
 
     static void DisablePaste(bool disable)
     {
@@ -48,10 +48,6 @@ public:
     }
 
 private:
-    static void           InstallGetClipboardDataHook(const char *funcName);
-    static void           InstallDirectInput8CreateHook(const char *funcName);
-    static constexpr auto ToUintPtr(LPVOID ptr) -> std::uintptr_t;
-
     static BOOL    MyOpenClipboardHook(HWND hwnd);
     static HRESULT MyDirectInput8CreateHook(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 };

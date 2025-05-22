@@ -53,12 +53,6 @@ class EventHandler
 public:
     static void InstallEventSink(ImeWnd *imeWnd);
     static auto UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void;
-    /**
-     * Prevent keyboard be send when IME inputing or wait input.
-     * Only detect first event.
-     */
-    static auto IsDiscardKeyboardEvent(const RE::ButtonEvent *buttonEvent) -> bool;
-    static auto PostHandleKeyboardEvent() -> void;
 
 private:
     static constexpr auto IsPasteShortcutPressed(auto &code);

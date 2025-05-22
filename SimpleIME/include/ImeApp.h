@@ -8,6 +8,7 @@
 
 #include "ImeWnd.hpp"
 #include "common/hook.h"
+#include "hooks/UiHooks.h"
 
 #include <RE/B/BSTEvent.h>
 #include <RE/I/InputEvent.h>

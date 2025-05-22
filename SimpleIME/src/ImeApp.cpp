@@ -57,7 +57,7 @@ namespace Ime
 void ImeApp::Initialize()
 {
     m_fInitialized.store(false);
-    Hooks::WinHooks::InstallHooks();
+    Hooks::WinHooks::Install();
 
     D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(ImeApp::D3DInit);
 }
@@ -66,7 +66,7 @@ void ImeApp::Uninitialize()
 {
     if (m_fInitialized)
     {
-        Hooks::WinHooks::UninstallHooks();
+        Hooks::WinHooks::Uninstall();
         D3DInitHook.reset();
         D3DInitHook = nullptr;
         UninstallHooks();
@@ -236,8 +236,8 @@ void ImeApp::InstallHooks()
     D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
     DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
 
-    Hooks::ScaleformHooks::InstallHooks();
-    Hooks::UiHooks::InstallHooks(&m_settings);
+    Hooks::ScaleformHooks::Install();
+    Hooks::UiHooks::Install(m_settings);
 }
 
 void ImeApp::UninstallHooks()
@@ -245,8 +245,8 @@ void ImeApp::UninstallHooks()
     D3DPresentHook         = nullptr;
     DispatchInputEventHook = nullptr;
 
-    Hooks::ScaleformHooks::UninstallHooks();
-    Hooks::UiHooks::UninstallHooks();
+    Hooks::UiHooks::Uninstall();
+    Hooks::ScaleformHooks::Uninstall();
 }
 
 void ImeApp::D3DPresent(const std::uint32_t ptr)
@@ -272,7 +272,6 @@ void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, R
     const auto &app = GetInstance();
     Core::EventHandler::UpdateMessageFilter(app.m_settings, a_events);
     app.DispatchInputEventHook->Original(a_dispatcher, a_events);
-    Core::EventHandler::PostHandleKeyboardEvent();
 }
 
 auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

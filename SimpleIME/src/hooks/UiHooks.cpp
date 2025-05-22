@@ -72,22 +72,30 @@ namespace LIBC_NAMESPACE_DECL
 namespace Hooks
 {
 
-Ime::Settings *g_settings;
+static std::unique_ptr<UiHooks> g_uiHooks;
 
-void UiHooks::InstallHooks(Ime::Settings *settings)
+auto UiHooks::GetInstance() -> UiHooks *
 {
-    log_info("Install ui hooks...");
-    UiAddMessage          = std::make_unique<UiAddMessageHookData>(AddMessageHook);
-    MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
-    ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
-    g_settings            = settings;
+    return g_uiHooks.get();
 }
 
-void UiHooks::UninstallHooks()
+void UiHooks::Install(Ime::Settings &settings)
 {
-    UiAddMessage          = nullptr;
-    MenuProcessMessage    = nullptr;
-    ConsoleProcessMessage = nullptr;
+    if (g_uiHooks != nullptr)
+    {
+        log_warn("Already installed UiHooks.");
+        return;
+    }
+    log_info("Installing ui hooks...");
+    g_uiHooks.reset(new UiHooks(settings));
+    g_uiHooks->UiAddMessage          = std::make_unique<UiAddMessageHook>(AddMessageHook);
+    g_uiHooks->MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
+    g_uiHooks->ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
+}
+
+void UiHooks::Uninstall()
+{
+    g_uiHooks = nullptr;
 }
 
 void UiHooks::AddMessageHook(
@@ -109,16 +117,16 @@ void UiHooks::AddMessageHook(
                     RE::GFxCharEvent *gfxCharEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
                     log_trace("menu {} Char message: {}", menuName.c_str(), gfxCharEvent->wcharCode);
                 }
-                if (!g_fEnableMessageFilter)
+                if (!g_uiHooks->IsEnableMessageFilter())
                 {
-                    UiAddMessage->Original(self, menuName, messageType, pMessageData);
+                    g_uiHooks->UiAddMessage->Original(self, menuName, messageType, pMessageData);
                     return;
                 }
                 static RE::BSFixedString &topMenu = RE::InterfaceStrings::GetSingleton()->topMenu;
                 // is IME open and not IME sent message?
                 if (menuName == Ime::Settings::IME_MESSAGE_FAKE_MENU)
                 {
-                    UiAddMessage->Original(self, topMenu, messageType, pMessageData);
+                    g_uiHooks->UiAddMessage->Original(self, topMenu, messageType, pMessageData);
                 }
                 else
                 {
@@ -128,7 +136,7 @@ void UiHooks::AddMessageHook(
             }
         }
     }
-    UiAddMessage->Original(self, menuName, messageType, pMessageData);
+    g_uiHooks->UiAddMessage->Original(self, menuName, messageType, pMessageData);
 }
 
 void UiHooks::ScaleformPasteText(RE::GFxMovieView *const uiMovie, RE::GFxCharEvent *const charEvent)
@@ -175,9 +183,9 @@ auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) ->
 {
     auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
 
-    if (!g_settings->enableUnicodePaste || vtable == CursorVtableAddress)
+    if (!g_uiHooks->m_settings.enableUnicodePaste || vtable == CursorVtableAddress)
     {
-        return MenuProcessMessage->Original(self, uiMessage);
+        return g_uiHooks->MenuProcessMessage->Original(self, uiMessage);
     }
 
     if (RE::GFxCharEvent *charEvent = ToCharEvent(uiMessage); charEvent != nullptr)
@@ -193,28 +201,29 @@ auto UiHooks::MyMenuProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) ->
             return RE::UI_MESSAGE_RESULTS::kHandled;
         }
     }
-    return MenuProcessMessage->Original(self, uiMessage);
+    return g_uiHooks->MenuProcessMessage->Original(self, uiMessage);
 }
 
 auto UiHooks::MyConsoleProcessMessage(RE::IMenu *self, RE::UIMessage &uiMessage) -> RE::UI_MESSAGE_RESULTS
 {
     auto vtable = reinterpret_cast<std::uintptr_t *>(self)[0];
-    if (!g_settings->enableUnicodePaste || vtable == CursorVtableAddress)
+
+    if (!g_uiHooks->m_settings.enableUnicodePaste || vtable == CursorVtableAddress)
     {
-        return ConsoleProcessMessage->Original(self, uiMessage);
+        return g_uiHooks->ConsoleProcessMessage->Original(self, uiMessage);
     }
     if (RE::GFxCharEvent *charEvent = ToCharEvent(uiMessage); charEvent != nullptr)
     {
         if (charEvent->wcharCode == 'v' && ctrlDown)
         {
             WinHooks::DisablePaste(true);
-            ConsoleProcessMessage->Original(self, uiMessage);
+            g_uiHooks->ConsoleProcessMessage->Original(self, uiMessage);
             WinHooks::DisablePaste(false);
             ScaleformPasteText(self->uiMovie.get(), charEvent);
             return RE::UI_MESSAGE_RESULTS::kHandled;
         }
     }
-    return ConsoleProcessMessage->Original(self, uiMessage);
+    return g_uiHooks->ConsoleProcessMessage->Original(self, uiMessage);
 }
 }
 }

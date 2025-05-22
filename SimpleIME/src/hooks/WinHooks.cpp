@@ -10,44 +10,28 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Hooks
 {
-void WinHooks::InstallHooks()
+void WinHooks::Install()
 {
-    InstallGetClipboardDataHook("OpenClipboard");
-    InstallDirectInput8CreateHook("DirectInput8Create");
-}
-
-void WinHooks::UninstallHooks()
-{
-    DirectInput8Create = nullptr;
-    OpenClipboard      = nullptr;
-}
-
-void WinHooks::InstallGetClipboardDataHook(const char *funcName)
-{
-    log_debug("Install hook: {} {}", MODULE_USER32_STRING.c_str(), funcName);
-    if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_USER32_STRING.c_str(), funcName); realFuncPtr != nullptr)
+    if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_USER32_STRING, "OpenClipboard"); realFuncPtr != nullptr)
     {
         OpenClipboard = std::make_unique<OpenClipboardHook>(realFuncPtr, MyOpenClipboardHook);
     }
-}
 
-void WinHooks::InstallDirectInput8CreateHook(const char *funcName)
-{
-    log_debug("Install hook: {} {}", MODULE_DINPUT8_STRING.c_str(), funcName);
-    if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_DINPUT8_STRING.c_str(), funcName); realFuncPtr != nullptr)
+    if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_DINPUT8_STRING, "DirectInput8Create");
+        realFuncPtr != nullptr)
     {
         DirectInput8Create = std::make_unique<DirectInput8CreateHook>(realFuncPtr, MyDirectInput8CreateHook);
     }
 }
 
-constexpr auto WinHooks::ToUintPtr(LPVOID ptr) -> std::uintptr_t
+void WinHooks::Uninstall()
 {
-    return reinterpret_cast<std::uintptr_t>(ptr);
+    DirectInput8Create = nullptr;
+    OpenClipboard      = nullptr;
 }
 
 BOOL WinHooks::MyOpenClipboardHook(HWND hwnd)
 {
-    log_debug("MyOpenClipboardHook ");
     if (g_fDisablePaste)
     {
         return FALSE;

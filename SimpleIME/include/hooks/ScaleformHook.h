@@ -62,7 +62,7 @@ public:
               ptr, true
           )
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 
     // NOLINTEND(*-magic-numbers)
@@ -77,7 +77,7 @@ public:
     // NOLINTBEGIN(*-magic-numbers)
     explicit Scaleform_LoadMovieHook(func_type *ptr) : FunctionHook(REL::RelocationID(80302, 82325), ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 
     // NOLINTEND(*-magic-numbers)
@@ -91,7 +91,7 @@ public:
     // NOLINTBEGIN(*-magic-numbers)
     explicit Scaleform_AllowTextInput(func_type *ptr) : FunctionHook(REL::RelocationID(67252, 68552), ptr)
     {
-        log_debug("{} hooked at {:#x}", __func__, m_address);
+        log_debug("Installed {}: ", __func__, ToString());
     }
 
     // NOLINTEND(*-magic-numbers)
@@ -122,9 +122,9 @@ public:
 
 class ScaleformHooks
 {
-    static inline std::unique_ptr<Scaleform_SetScaleModeTypeHookData> g_SetScaleModeTypeHook = nullptr;
-    static inline std::unique_ptr<Scaleform_LoadMovieHook>            g_LoadMovieHook        = nullptr;
-    static inline std::unique_ptr<Scaleform_AllowTextInput>           g_AllowTextInputHook   = nullptr;
+    std::unique_ptr<Scaleform_SetScaleModeTypeHookData> m_SetScaleModeTypeHook = nullptr;
+    std::unique_ptr<Scaleform_LoadMovieHook>            m_LoadMovieHook        = nullptr;
+    std::unique_ptr<Scaleform_AllowTextInput>           m_AllowTextInputHook   = nullptr;
 
     static void SetScaleModeTypeHook(RE::GFxMovieView *pMovieView, RE::GFxMovieView::ScaleModeType scaleMode);
 #ifdef HOOK_LOAD_MOVIE
@@ -136,10 +136,12 @@ class ScaleformHooks
     // Game default AllowTextInout
     static auto Scaleform_AllowTextInputHook(ControlMap *self, bool allow) -> uint8_t;
 
-public:
-    static void InstallHooks();
+    ScaleformHooks();
 
-    static void UninstallHooks();
+public:
+    static void Install();
+
+    static void Uninstall();
 };
 }
 }
