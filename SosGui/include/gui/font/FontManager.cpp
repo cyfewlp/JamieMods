@@ -545,7 +545,7 @@ void FontManager::CreateFontInfoFrom(IDWriteFactory *pFactory, const FontInfo &s
     }
     if (source.familyIndex >= 0)
     {
-        if (source.familyIndex < pFontCollection->GetFontFamilyCount() &&
+        if (static_cast<UINT32>(source.familyIndex) < pFontCollection->GetFontFamilyCount() &&
             SUCCEEDED(pFontCollection->GetFontFamily(source.familyIndex, &pFontFamily)))
         {
             ComPtr<IDWriteLocalizedStrings> pFontFamilyNames;

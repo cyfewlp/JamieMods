@@ -33,6 +33,7 @@ namespace LIBC_NAMESPACE_DECL
 void OutfitListTable::Show()
 {
     BaseGui::Show();
+    OnAcceptEditOutfit(m_wantEdit, m_wantEdit); // trigger OutfitEditPanel#UpdateWindowTitle
 }
 
 void OutfitListTable::Focus()
@@ -53,11 +54,6 @@ void OutfitListTable::Cleanup()
     m_wantEdit = UNTITLED_OUTFIT;
     m_outfitMultiSelection.Clear();
     m_outfitFilterInput.Clear();
-}
-
-void OutfitListTable::OnSelectActor(const RE::Actor *actor) const
-{
-    m_editPanel.OnSelectActor(actor, m_wantEdit);
 }
 
 bool OutfitListTable::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup) const
@@ -497,12 +493,16 @@ void OutfitListTable::OpenContextMenu(
 
 void OutfitListTable::OnAcceptEditOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editingOutfit) const
 {
-    +[&] {
-        return m_outfitService.GetOutfitArmors(editingOutfit.GetId(), editingOutfit.GetName());
-    };
-    +[&] {
-        return m_outfitService.GetSlotPolicy(editingOutfit.GetId(), editingOutfit.GetName());
-    };
+    if (!editingOutfit.IsUntitled())
+    {
+        +[&] {
+            return m_outfitService.GetOutfitArmors(editingOutfit.GetId(), editingOutfit.GetName());
+        };
+        +[&] {
+            return m_outfitService.GetSlotPolicy(editingOutfit.GetId(), editingOutfit.GetName());
+        };
+    }
+
     m_editPanel.OnSelectOutfit(lastEdit, editingOutfit);
 }
 

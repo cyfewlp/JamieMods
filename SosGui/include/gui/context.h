@@ -17,12 +17,6 @@ struct Context
 {
     std::list<std::unique_ptr<Popup::ModalPopup>> popupList;
 
-    static auto GetInstance() -> Context &
-    {
-        static Context instance;
-        return instance;
-    }
-
     void SetIconFont(ImFont *font)
     {
         iconFont = font;

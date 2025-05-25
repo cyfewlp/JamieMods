@@ -57,7 +57,7 @@ void SosGui::OutfitDebounceInput::updateView(const OutfitList &outfitList)
     });
 }
 
-auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool
+auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, const HWND hWnd) -> bool
 {
     auto *device    = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context   = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
@@ -115,38 +115,24 @@ auto SosGui::ShutDown() -> void
     ImGui::DestroyContext();
 }
 
-void SosGui::Focus()
-{
-    ImGui::SetWindowFocus("SosGuiOptions");
-    BaseGui::Focus();
-}
-
-void SosGui::OnRefresh()
-{
-    m_outfitListTable.OnRefresh();
-    m_outfitEditPanel.OnRefresh();
-    m_selectedActorIndex = 0;
-}
-
 auto SosGui::Cleanup() -> void
 {
+    m_characterEditPanel.Cleanup();
     m_outfitListTable.Cleanup();
     m_outfitEditPanel.Cleanup();
-    m_fShowConfigWindows = true;
-    m_selectedActorIndex = 0;
+    m_fShowPanels = true;
 }
 
 void SosGui::DrawTopModalPopup()
 {
-    auto &context = Context::GetInstance();
-    if (context.popupList.empty())
+    if (m_context.popupList.empty())
     {
         return;
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
     ImGuiScope::FontSize fontSize4(Settings::UiSettings::GetInstance()->Title4PxSize());
-    const auto          &modalPopup = context.popupList.front();
+    const auto          &modalPopup = m_context.popupList.front();
     bool                 confirmed  = false;
     const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
     if (confirmed && !m_outfitListTable.OnModalPopupConfirmed(modalPopup.get()))
@@ -155,7 +141,7 @@ void SosGui::DrawTopModalPopup()
     }
     if (toErase)
     {
-        context.popupList.pop_front();
+        m_context.popupList.pop_front();
     }
     ImGui::PopStyleVar();
 }
@@ -193,7 +179,7 @@ auto SosGui::Render() -> void
     TrySetAllowTextInput();
 
     m_uiData.ExecuteUiTasks();
-    DoRender();
+    DrawPanels();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -204,6 +190,13 @@ auto SosGui::Render() -> void
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+}
+
+void SosGui::OnImportSettings()
+{
+    m_characterEditPanel.OnRefresh();
+    m_outfitListTable.OnRefresh();
+    m_outfitEditPanel.OnRefresh();
 }
 
 void SosGui::TrySetAllowTextInput()
@@ -221,30 +214,27 @@ void SosGui::TrySetAllowTextInput()
     m_fWantTextInput = cWantTextInput;
 }
 
-auto SosGui::DoRender() -> void
+auto SosGui::DrawPanels() -> void
 {
     DockSpace();
     m_uiData.GetErrorNotifier().show();
 
-    if (!m_fShowConfigWindows)
+    if (!m_fShowPanels)
     {
         return;
     }
     try
     {
-        if (IsShowing())
-        {
-            MainConfigWindow();
-        }
+        m_characterEditPanel.Draw(m_uiData, m_dataCoordinator, m_outfitService);
 
         DrawTopModalPopup();
 
-        RE::Actor *selectedActor = GetSelectedActor();
-        auto      &context       = Context::GetInstance();
-        m_outfitListTable.Draw(context, selectedActor);
+        const auto &selectActorIndex     = m_characterEditPanel.GetSelectedActorIndex();
+        RE::Actor  *selectedActor        = GetSelectedActor(selectActorIndex);
+        m_outfitListTable.Draw(m_context, selectedActor);
 
         const auto &editingOutfit = m_outfitListTable.GetEditingOutfit();
-        m_outfitEditPanel.Draw(context, editingOutfit);
+        m_outfitEditPanel.Draw(m_context, editingOutfit);
     }
     catch (const std::exception &e)
     {
@@ -287,9 +277,10 @@ auto SosGui::DrawSidebar() -> float
                 }
             }
         };
-        FocusWindowButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
+
+        FocusWindowButton(NF_OCT_PEOPLE, "$SosGui_CharacterEditPanel"_T.c_str(), m_characterEditPanel);
         ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
-        FocusWindowButton(NF_OCT_GEAR, "$SkyOutSys_MCM_Options"_T.c_str(), *this);
+        FocusWindowButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
 
         ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
         FocusWindowButton(NF_FA_EDIT, "$SosGui_EditOutfit"_T.c_str(), m_outfitEditPanel);
@@ -358,7 +349,7 @@ void SosGui::Toolbar()
 
         if (ImGui::MenuItem("$SkyOutSys_Text_Import"_T.c_str()))
         {
-            OnRefresh();
+            OnImportSettings();
             +[&] {
                 return m_dataCoordinator.RequestImportSettings();
             };
@@ -374,9 +365,11 @@ void SosGui::Toolbar()
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
         ImGui::EndMenu();
     }
-    if (ImGuiUtil::MenuItem("$SosGui_ToolBar_ShowOrHide"))
+    if (ImGuiUtil::MenuItem(
+            std::format("{} {}", m_fShowPanels ? NF_OCT_EYE : NF_OCT_EYE_CLOSED, "$SosGui_ToolBar_ShowOrHide"_T).c_str()
+        ))
     {
-        m_fShowConfigWindows = !m_fShowConfigWindows;
+        m_fShowPanels = !m_fShowPanels;
     }
     if (ImGuiUtil::MenuItem("$SosGui_ToolBar_RefreshPlayerArmor"))
     {
@@ -384,7 +377,7 @@ void SosGui::Toolbar()
     }
     if (ImGui::MenuItem(std::format("{} {}", NF_OCT_GEAR, "$SosGui_ToolBar_Settings"_T).c_str()))
     {
-        Context::GetInstance().popupList.push_back(std::make_unique<Popup::SettingsPopup>("$SosGui_ToolBar_Settings"));
+        m_context.popupList.push_back(std::make_unique<Popup::SettingsPopup>("$SosGui_ToolBar_Settings"));
     }
     if (ImGui::MenuItem(std::format("{} {}", NF_MD_CLOSE, "$SosGui_ToolBar_Close"_T).c_str()))
     {
@@ -393,23 +386,9 @@ void SosGui::Toolbar()
     }
     if (ImGui::MenuItem("$SosGui_About"_T.c_str()))
     {
-        Context::GetInstance().popupList.push_back(std::make_unique<Popup::AboutPopup>("$SosGui_About"));
+        m_context.popupList.push_back(std::make_unique<Popup::AboutPopup>("$SosGui_About"));
     }
     ImGui::PopStyleVar();
-}
-
-void SosGui::MainConfigWindow()
-{
-    ImGui::SetNextWindowPos(ImVec2(DEFAULT_MAIN_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("SosGuiOptions", &m_show, ImGuiWindowFlags_NoNav))
-    {
-        DrawCharactersPanel();
-
-        const RE::Actor *selectedActor = GetSelectedActor();
-        m_autoSwitchOutfitView.Draw(selectedActor, m_uiData, m_dataCoordinator, m_outfitService);
-    }
-    ImGui::End();
 }
 
 EagerTask waitImport(const SosDataCoordinator &dataCoordinator)

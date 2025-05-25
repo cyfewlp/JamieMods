@@ -135,7 +135,6 @@ public:
 
     void Draw(Context &context, const EditingOutfit &editingOutfit);
     void DrawOutfitPanel(Context &context, const EditingOutfit &editingOutfit);
-    void OnSelectActor(const RE::Actor *actor, const EditingOutfit &editingOutfit);
     void OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing);
 
     // Only one modal popup can be rendered in the same time.

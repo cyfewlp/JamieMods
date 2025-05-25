@@ -21,11 +21,6 @@ void ActorPolicyView::Draw(
 {
     ImGuiScope::Child child("##LocationAutoSwitch", {0, 0}, ImGuiChildFlags_AutoResizeY);
 
-    if (currentActor == nullptr)
-    {
-        return;
-    }
-
     using namespace ImGuiUtil;
     bool fAutoSwitchEnabled = uiData.IsAutoSwitchEnabled(currentActor->GetFormID());
     if (CheckBox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))

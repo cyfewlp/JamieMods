@@ -3,6 +3,7 @@
 #include "autoswitch/ActorPolicyView.h"
 #include "data/SosUiData.h"
 #include "gui/BaseGui.h"
+#include "gui/CharacterEditPanel.h"
 #include "gui/OutfitListTable.h"
 #include "gui/popup/OutfitSelectPopup.h"
 #include "service/OutfitService.h"
@@ -16,7 +17,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-class SosGui final : public BaseGui
+class SosGui : Cleanable
 {
     struct InitFail final : std::runtime_error
     {
@@ -38,13 +39,13 @@ class SosGui final : public BaseGui
     SosUiData          m_uiData;
     OutfitService      m_outfitService;
     SosDataCoordinator m_dataCoordinator;
+    CharacterEditPanel m_characterEditPanel;
     OutfitEditPanel    m_outfitEditPanel;
     OutfitListTable    m_outfitListTable;
+    Context            m_context;
 
-    bool       m_fShowConfigWindows = true;
-    bool       m_fWantTextInput     = true; // previous frame WantTextInput state
-    int        m_selectedActorIndex = 0;
-    RE::Actor *m_selectedActor      = nullptr;
+    bool m_fShowPanels    = true;
+    bool m_fWantTextInput = true; // previous frame WantTextInput state
 
     AutoSwitch::ActorPolicyView        m_autoSwitchOutfitView{};
     std::unique_ptr<OutfitSelectPopup> m_outfitSelectPopup = nullptr;
@@ -59,15 +60,13 @@ public:
     static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
     static auto ShutDown() -> void;
 
-    void Show() override
+    void Show()
     {
-        BaseGui::Show();
+        m_characterEditPanel.Show();
         m_outfitListTable.Show();
         m_outfitEditPanel.Show();
     }
 
-    void Focus() override;
-    void OnRefresh() override;
     void Cleanup() override;
 
     auto Refresh() const -> EagerTask;
@@ -75,30 +74,24 @@ public:
 
 private:
     void DrawTopModalPopup();
-    auto DoRender() -> void;
+    auto DrawPanels() -> void;
     auto DrawSidebar() -> float;
     void DockSpace();
     void Toolbar();
-    void MainConfigWindow();
 
-    auto GetSelectedActor() -> RE::Actor *
+    auto GetSelectedActor(int index) -> RE::Actor *
     {
-        if (const auto &actors = m_uiData.GetActors(); static_cast<size_t>(m_selectedActorIndex) < actors.size())
+        if (const auto &actors = m_uiData.GetActors(); static_cast<size_t>(index) < actors.size())
         {
-            return m_uiData.GetActors().at(m_selectedActorIndex);
+            return m_uiData.GetActors().at(index);
         }
         return nullptr;
     }
 
-    static void NewFrame();
-
-    void DrawCharactersPanel();
-
-    void DrawCharactersList();
-
-    void autoSwitch_column1_outfit(RE::FormID actorId, uint32_t policyId);
-
+    void OnImportSettings();
     void TrySetAllowTextInput();
+
+    static void NewFrame();
 
     static void AllowTextInput(bool allow);
 

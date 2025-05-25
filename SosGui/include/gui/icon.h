@@ -23,6 +23,9 @@ constexpr auto *NF_OCT_SEARCH      = "\xef\x90\xa2";     //\uf422
 constexpr auto *NF_OCT_FILTER      = "\xef\x93\x97";     //\uf4d7
 constexpr auto *NF_OCT_CHECK       = "\xef\x90\xae";     //\uf42e
 constexpr auto *NF_OCT_X           = "\xef\x91\xa7";     //\uf467
+constexpr auto *NF_OCT_EYE         = "\xef\x91\x81";     //\uf441
+constexpr auto *NF_OCT_EYE_CLOSED  = "\xef\x93\x85";     //\udb80\ude09
+constexpr auto *NF_OCT_PEOPLE      = "\xef\x93\xbd";     //\uf4fd
 constexpr auto *NF_MD_CLOSE        = "\xf3\xb0\x85\x96"; //\udb80\udd56
 constexpr auto *NF_MD_HELP         = "\xf3\xb0\x8b\x96"; //\udb80\uded6
 

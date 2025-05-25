@@ -91,7 +91,6 @@ public:
     void Cleanup() override;
 
     void Draw(Context &context, RE::Actor *editingActor);
-    void OnSelectActor(const RE::Actor *actor) const;
     // Only one modal popup can be rendered in the same time.
     bool OnModalPopupConfirmed(Popup::ModalPopup *modalPopup) const;
 

@@ -58,11 +58,6 @@ void OutfitEditPanel::Focus()
     BaseGui::Focus();
 }
 
-void OutfitEditPanel::OnSelectActor(const RE::Actor *, const EditingOutfit &editingOutfit)
-{
-    m_armorView.update_view_data(GetGenerator(), editingOutfit.GetSourceOutfit());
-}
-
 void OutfitEditPanel::OnSelectOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editing)
 {
     UpdateWindowTitle(editing.GetName());
@@ -100,10 +95,9 @@ void OutfitEditPanel::Draw(Context &context, const EditingOutfit &editingOutfit)
     {
         return;
     }
-    const std::string windowName = std::format("Editing Outfit: {}###OutfitEditor", editingOutfit.GetName());
     ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_EDIT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize({DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT}, ImGuiCond_FirstUseEver);
-    if (ImGui::Begin(windowName.c_str(), &m_show))
+    if (ImGui::Begin(m_windowTitle.c_str(), &m_show))
     {
         DoDraw(context, editingOutfit);
     }
@@ -182,18 +176,21 @@ void OutfitEditPanel::DrawSideBar(const SosUiOutfit *editingOutfit)
 
 void OutfitEditPanel::UpdateWindowTitle(const std::string &outfitName)
 {
-    m_windowTitle = Translation::Translate("$SosGui_WindowName_EditingOutfit");
+    m_windowTitle = Translation::Translate("$SosGui_OutfitEditPanel");
     if (const auto pos = m_windowTitle.find("{}"); pos != std::string::npos)
     {
         m_windowTitle.replace(pos, 2, outfitName);
     }
+    m_windowTitle.append("###OutfitEditPanel");
 }
 
 void OutfitEditPanel::DrawOutfitArmors(Context &context, const EditingOutfit &editingOutfit)
 {
     if (editingOutfit.IsUntitled())
     {
-        ImGuiUtil::TextScale("$SosGui_Hint_Select{$SosGui_Outfit}", Settings::UiSettings::GetInstance()->Title3PxSize());
+        ImGuiUtil::TextScale(
+            "$SosGui_Hint_Select{$SosGui_Outfit}", Settings::UiSettings::GetInstance()->Title3PxSize()
+        );
         return;
     }
     if (editingOutfit.IsEmpty())
