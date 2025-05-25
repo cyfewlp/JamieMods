@@ -371,7 +371,7 @@ void SosGui::Toolbar()
     {
         m_fShowPanels = !m_fShowPanels;
     }
-    if (ImGuiUtil::MenuItem("$SosGui_ToolBar_RefreshPlayerArmor"))
+    if (ImGuiUtil::MenuItem(std::format("{} {}", NF_MD_REFRESH, "$SosGui_ToolBar_RefreshPlayerArmor"_T).c_str()))
     {
         util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
     }
