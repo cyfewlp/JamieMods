@@ -11,6 +11,7 @@
 #include "imgui.h"
 // #include "AddressLibTool.hpp"
 #include "Status.h"
+#include "common/WCharUtils.h"
 #include "common/toml++/toml.hpp"
 #include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
@@ -19,25 +20,27 @@
 #include "spdlog/spdlog.h"
 
 #include <array>
+#include <atlcomcli.h>
 #include <d3d11.h>
-#include <deque>
 #include <dinput.h>
+#include <dwrite.h>
 #include <ranges>
 #include <regex>
 #include <string>
 #include <windowsx.h>
 
+#pragma comment(lib, "dwrite.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dinput8.lib")
 
 using namespace std::literals;
 
 // Data
-static ID3D11Device *          g_pd3dDevice           = nullptr;
-static ID3D11DeviceContext *   g_pd3dDeviceContext    = nullptr;
-static IDXGISwapChain *        g_pSwapChain           = nullptr;
-static bool                    g_SwapChainOccluded    = false;
-static UINT                    g_ResizeWidth          = 0, g_ResizeHeight = 0;
+static ID3D11Device           *g_pd3dDevice        = nullptr;
+static ID3D11DeviceContext    *g_pd3dDeviceContext = nullptr;
+static IDXGISwapChain         *g_pSwapChain        = nullptr;
+static bool                    g_SwapChainOccluded = false;
+static UINT                    g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView *g_mainRenderTargetView = nullptr;
 // compsition varibles
 static LPDIRECTINPUT8       g_pDirectInput    = nullptr;
@@ -65,6 +68,37 @@ enum KeyModifier : uint8_t
 
 uint8_t g_keyModifiers = ImGuiKey_None;
 
+struct SystemFontFamily
+{
+    std::string                familyName;
+    CComPtr<IDWriteFontFamily> pFontFamily = nullptr;
+
+    struct FontProperty
+    {
+        DWRITE_FONT_WEIGHT      weight;
+        DWRITE_FONT_STYLE       style;
+        DWRITE_FONT_STRETCH     stretch;
+        DWRITE_FONT_SIMULATIONS simulations;
+        uint32_t                faceIndex = -1;
+
+        FontProperty(
+            const DWRITE_FONT_WEIGHT weight, const DWRITE_FONT_STYLE style, const DWRITE_FONT_STRETCH stretch,
+            const DWRITE_FONT_SIMULATIONS simulations, uint32_t faceIndex
+        )
+            : weight(weight), style(style), stretch(stretch), simulations(simulations), faceIndex(faceIndex)
+        {
+        }
+    };
+
+    std::vector<FontProperty> fontProperties;
+    uint32_t                  numFaces = 1;
+
+    SystemFontFamily(const std::string &familyName, const CComPtr<IDWriteFontFamily> &pFontFamily)
+        : familyName(familyName), pFontFamily(pFontFamily)
+    {
+    }
+};
+
 // Forward declarations of helper functions
 bool           CreateDeviceD3D(HWND hWnd);
 void           CleanupDeviceD3D();
@@ -72,21 +106,35 @@ void           CreateRenderTarget();
 void           CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void           OnStatusbarSize(HWND hWnd, UINT state, int cx, int cy);
-void           ShowToolWindow();
 void           RenderTileBarWindow();
-void           RenderToolWindow();
 bool           InitDirectInput() noexcept;
 bool           GetState() noexcept;
-auto           LoadAllThemes() -> std::vector<std::string>;
-void           UseTheme(size_t themeIndex);
+
+struct FontManager
+{
+    std::vector<SystemFontFamily> fontFamilies;
+    std::string                   defaultFontPath;
+    ImFont                       *emojiFont          = nullptr;
+    ImFont                       *previewFont        = nullptr;
+    bool                          open               = false;
+    bool                          requestReplaceFont = false;
+
+    void Init();
+    void Show();
+    void ApplyFont();
+
+private:
+    static auto GetFontFilePath(IDWriteFont *font) -> std::string;
+    static auto GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::string;
+};
 
 std::array<char, 256> keyboardState{0};
-
-void ShowDockSpace();
 }
 
 static HINSTANCE winst;
 static HWND      parentWnd;
+
+ImFont *ApplyFont(const std::string &fontName);
 
 // Main code
 int main(int, char **)
@@ -96,13 +144,36 @@ int main(int, char **)
 
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();
-    WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr,
-                      nullptr, nullptr, L"ImGui Example", nullptr};
+    WNDCLASSEXW wc = {
+        sizeof(wc),
+        CS_CLASSDC,
+        WndProc,
+        0L,
+        0L,
+        GetModuleHandle(nullptr),
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        L"ImGui Example",
+        nullptr
+    };
     ::RegisterClassExW(&wc);
     //    ::RegisterClassExW(&wchild);
     winst     = wc.hInstance;
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280,
-                                800, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = ::CreateWindowW(
+        wc.lpszClassName,
+        L"Dear ImGui DirectX11 Example",
+        WS_OVERLAPPEDWINDOW,
+        100,
+        100,
+        1280,
+        800,
+        nullptr,
+        nullptr,
+        wc.hInstance,
+        nullptr
+    );
     parentWnd = hwnd;
 
     // Initialize Direct3D
@@ -127,37 +198,10 @@ int main(int, char **)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
 
-    ImGui::StyleColorsDark();
-    // ConfigStyle();
-
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
-    ImFontConfig cfg1;
-    cfg1.MergeMode = true;
 
-    ImFontConfig cfg;
-    cfg.OversampleH = cfg.OversampleV = 1;
-    // cfg.MergeMode = true;
-    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    const ImWchar emojiRange[] = {
-        0x1F600, 0x1F64F, // Emoticons
-        0x1F300, 0x1F5FF, // Symbols & Pictographs
-        0x2600, 0x26FF,   // Miscellaneous Symbols
-        0x2700, 0x27BF,   // Dingbats
-        0                 // 终止符
-    };
-    ImWchar ascii_ranges[] = {
-        0x0020, 0x007F, // Basic Latin
-        0x00A0, 0x00FF, // Latin Supplement（可选，包含部分特殊字符）
-        0               // 终止符
-    };
-    cfg.GlyphExcludeRanges = ascii_ranges;
-    ImFont *emojiFont      = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 13.0F, &cfg, emojiRange);
-    io.Fonts->AddFontFromFileTTF(
-        R"(D:\assets\monaspace-v1.200\monaspace-v1.200\fonts\frozen\MonaspaceXenonFrozen-SemiWideMedium.ttf)", 13.0f,
-        &cfg1, io.Fonts->GetGlyphRangesDefault());
-    io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\simsun.ttc)", 13.0F, &cfg1);
-    io.Fonts->Build();
+    ImGui::StyleColorsDark();
 
     ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hwnd;
 
@@ -165,7 +209,9 @@ int main(int, char **)
     bool show_demo_window    = true;
     bool show_another_window = false;
     auto clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    ShowToolWindow();
+
+    FontManager fontManager;
+    fontManager.Init();
 
     bool done = false;
 
@@ -196,120 +242,111 @@ int main(int, char **)
             CreateRenderTarget();
         }
 
+        if (fontManager.requestReplaceFont)
+        {
+            fontManager.requestReplaceFont = false;
+            io.Fonts->RemoveFont(fontManager.emojiFont);
+            io.FontDefault          = std::move(fontManager.previewFont);
+            fontManager.emojiFont   = io.FontDefault;
+            fontManager.previewFont = nullptr;
+        }
+
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ShowDockSpace();
-
         // ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+
         {
             ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-            // ImGui::PushFont(emojiFont);
-            ImGui::Text("\xf0\x9f\x8d\x89 \xe2\x9c\x94\xef\xb8\x8f \xe2\xad\x90");
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
-            {
-                ImGui::SetItemTooltip("A unicode string");
-            }
+            fontManager.Show();
 
             if (show_another_window)
             {
-                if (ImGui::Begin("##Data", &show_another_window, ImGuiWindowFlags_AlwaysAutoResize
-                    | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_UnsavedDocument))
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
+                if (ImGui::Begin(
+                        "##Data",
+                        &show_another_window,
+                        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration |
+                            ImGuiWindowFlags_UnsavedDocument
+                    ))
                 {
-                    if (!show_another_window)
-                    {
-                        printf("Click close");
-                    }
-                    ImGui::Text("0x");
-                    ImGui::SameLine();
-                    static std::array<char, 8> formIdBuf;
-                    ImGui::InputText("##FormIdInput", formIdBuf.data(), formIdBuf.size(),
-                                     ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsHexadecimal);
 
-                    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_RootWindow))
+                    static int  selectedIndex  = -1;
+                    static bool ShowTableChild = true;
+                    ImGuiID     popupId        = 0;
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {5.0f, 10.0f});
+                    ImGuiChildFlags TableChildFlags = ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX;
+                    if (ImGui::BeginChild("Sidebar", {0, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeX))
                     {
-                        static int selectedIndex = -1;
-                        ImGuiID    popupId       = 0;
-                        if (ImGui::BeginChild("Sidebar", {300, 0}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+                        ImGui::Button("🥼");
+                        ImGui::Dummy(ImVec2{1, ImGui::GetFontSize() * 0.5f});
+                        if (ImGui::Button("📁"))
                         {
-                            static std::array<char, 256> armorNameBuf;
-                            ImGui::SetNextItemWidth(-FLT_MIN);
-                            ImGui::InputTextWithHint("##ArmorNameFilter", "Filter Armor Name", armorNameBuf.data(),
-                                                     armorNameBuf.size());
-                            if (ImGui::BeginTable("Mod Name", 1, ImGuiTableFlags_BordersOuter))
-                            {
-                                ImGui::TableNextRow();
-                                ImGui::TableNextColumn();
-                                ImGui::Selectable("Skyrim", false);
-                                ImGui::TableNextRow();
-                                ImGui::TableNextColumn();
-                                ImGui::Selectable("CC", false);
-                                ImGui::TableNextRow();
-                                ImGui::TableNextColumn();
-                                ImGui::Selectable("ArmorPack", false);
-                                ImGui::TableNextRow();
-                                ImGui::TableNextColumn();
-                                ImGui::Selectable("Dragonborn", false);
-                                ImGui::EndTable();
-                            }
-                            ImGui::Button("Clear all filter");
-                            ImGui::Separator();
-                            popupId = ImGui::GetID("Popup Armor info");
-                            if (ImGui::BeginPopup("Popup Armor info"))
-                            {
-                                ImGui::PushFontSize(24);
-                                ImGui::Text("Armor");
-                                ImGui::PopFontSize();
-                                ImGui::Indent();
-                                ImGui::Text("Basss & %d", selectedIndex);
-                                ImGui::Text("Mod: Skyrim");
-                                ImGui::Text("SlotMask: %d", 17782);
-                                ImGui::EndPopup();
-                            }
+                            ShowTableChild = !ShowTableChild;
                         }
-                        ImGui::EndChild();
+                        ImGui::PopStyleColor();
+                    }
+                    ImGui::EndChild();
 
-                        ImGui::SameLine();
-                        ImGui::BeginGroup();
+                    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
+                    ImGui::SameLine();
+                    ImGui::PopStyleVar(2);
+
+                    // ImGui::PushStyleVarX(ImGuiStyleVar_WindowMinSize, 0);
+                    if (ShowTableChild)
+                    {
+                        if (ImGui::BeginChild("TableChild", {300, 500}, TableChildFlags))
                         {
-                            bool        checked   = false;
-                            const auto &screenPos = ImGui::GetCursorScreenPos();
-                            ImGui::Checkbox("Head", &checked);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("Body", &checked);
-                            ImGui::SameLine();
-                            ImGui::Checkbox("hands", &checked);
-                            ImGui::PushFontSize(36);
-                            ImGui::Text("Armor Name");
-                            ImGui::PopFontSize();
                             static auto flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable |
-                                                ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders;
+                                                ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable |
+                                                ImGuiTableFlags_Borders;
                             ImGui::CheckboxFlags("NoHostExtendX", &flags, ImGuiTableFlags_NoHostExtendX);
                             ImGui::CheckboxFlags("ScrollY", &flags, ImGuiTableFlags_ScrollY);
+                            ImGui::CheckboxFlags(
+                                "NoPadding", &flags, ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags_NoPadOuterX
+                            );
+                            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 15)); // 水平4px，垂直2px
                             if (ImGui::BeginTable("Armor Name", 3, flags))
                             {
                                 ImGui::TableSetupScrollFreeze(1, 1);
-                                ImGui::TableSetupColumn("#Number");
-                                ImGui::TableSetupColumn("Armor Name");
-                                ImGui::TableSetupColumn("Mod Name");
-                                ImGui::TableHeadersRow();
+                                ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+                                ImGui::TableSetColumnIndex(0);
+
+                                ImGui::PushFontSize(20);
+                                ImGui::Text("Col1");
+                                ImGui::SameLine();
+                                ImGui::TableHeader("Col0");
+
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit");
+                                ImGui::TableHeader("Col1");
+
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Text("Col1");
+                                ImGui::SameLine();
+                                ImGui::TableHeader("Col2");
+                                ImGui::PopFontSize();
                                 ImGuiListClipper clipper;
-                                clipper.Begin(100);
+                                clipper.Begin(10);
                                 while (clipper.Step())
                                 {
                                     for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
                                     {
-                                        ImGui::TableNextRow();
+                                        ImGui::TableNextRow(0, ImGui::GetFontSize() + 10);
                                         ImGui::TableNextColumn();
                                         ImGui::Value("#", index);
 
                                         ImGui::TableNextColumn();
                                         bool isSelected = selectedIndex == index;
-                                        if (ImGui::Selectable(std::format("Armor {}", index).c_str(), isSelected,
-                                                              ImGuiSelectableFlags_SpanAllColumns |
-                                                              ImGuiSelectableFlags_AllowOverlap))
+                                        // ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
+                                        if (ImGui::Selectable(
+                                                std::format("SetCursorPosX {}", index).c_str(),
+                                                isSelected,
+                                                ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap
+                                            ))
                                         {
                                             selectedIndex = isSelected ? -1 : index;
                                             if (!isSelected)
@@ -319,21 +356,26 @@ int main(int, char **)
                                         }
 
                                         ImGui::TableNextColumn();
+                                        // ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
                                         ImGui::Value("ModName", index);
                                     }
                                 }
                                 ImGui::EndTable();
                             }
+                            ImGui::PopStyleVar();
                         }
-                        ImGui::EndGroup();
+                        ImGui::EndChild();
                     }
-                    else
+                    // ImGui::PopStyleVar();
+
+                    ImGui::SameLine();
+                    ImGui::BeginGroup();
                     {
-                        ImGui::Text("Please hover");
                     }
+                    ImGui::EndGroup();
                 }
                 ImGui::End();
-
+                ImGui::PopStyleVar();
             }
 
             ImGui::SameLine();
@@ -361,15 +403,6 @@ int main(int, char **)
 
             ImGui::Checkbox("Demo Window", &show_demo_window);
             ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SameLine();
-            auto &imGuiIo = ImGui::GetIO();
-            ImGui::Text("Font_Size_Scale");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::DragFloat("##Font_Size_Scale", &imGuiIo.FontGlobalScale, 0.05,
-                             0.1f, 5.0f,
-                             "%.3f", ImGuiSliderFlags_NoInput);
             ImGui::EndGroup();
 
             ImGui::SameLine();
@@ -385,8 +418,9 @@ int main(int, char **)
         // RenderToolWindow();
 
         ImGui::Render();
-        const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w,
-                                                 clear_color.z * clear_color.w, clear_color.w};
+        const float clear_color_with_alpha[4] = {
+            clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
+        };
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -443,13 +477,35 @@ bool CreateDeviceD3D(HWND hWnd)
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_0,
     };
-    HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags,
-                                                featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain,
-                                                &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+    HRESULT res = D3D11CreateDeviceAndSwapChain(
+        nullptr,
+        D3D_DRIVER_TYPE_HARDWARE,
+        nullptr,
+        createDeviceFlags,
+        featureLevelArray,
+        2,
+        D3D11_SDK_VERSION,
+        &sd,
+        &g_pSwapChain,
+        &g_pd3dDevice,
+        &featureLevel,
+        &g_pd3dDeviceContext
+    );
     if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
-        res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags,
-                                            featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice,
-                                            &featureLevel, &g_pd3dDeviceContext);
+        res = D3D11CreateDeviceAndSwapChain(
+            nullptr,
+            D3D_DRIVER_TYPE_WARP,
+            nullptr,
+            createDeviceFlags,
+            featureLevelArray,
+            2,
+            D3D11_SDK_VERSION,
+            &sd,
+            &g_pSwapChain,
+            &g_pd3dDevice,
+            &featureLevel,
+            &g_pd3dDeviceContext
+        );
     if (res != S_OK) return false;
 
     CreateRenderTarget();
@@ -525,8 +581,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return S_OK;
             }
             return S_FALSE;
-        HANDLE_MSG(hWnd, WM_SIZE, OnStatusbarSize);
-        HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
+            HANDLE_MSG(hWnd, WM_SIZE, OnStatusbarSize);
+            HANDLE_MSG(hWnd, WM_PAINT, OnPaint);
         case WM_SYSCOMMAND: {
             if ((wParam & 0xfff0) == SC_KEYMENU)
             {
@@ -557,11 +613,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             else
             {
                 g_keyDown = ImGui_ImplWin32_KeyEventToImGuiKey(wParam, lParam);
-            }
-
-            if (wParam == VK_F2)
-            {
-                ShowToolWindow();
             }
             return 0;
         case WM_DESTROY:
@@ -618,15 +669,16 @@ bool TagTabButton(const char *label, bool *p_open, bool selected, const ImVec2 &
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return false;
 
-    ImGuiContext &    g          = *GImGui;
+    ImGuiContext     &g          = *GImGui;
     const ImGuiStyle &style      = g.Style;
     const ImGuiID     id         = window->GetID(label);
     const ImVec2      label_size = ImGui::CalcTextSize(label, NULL, true);
 
     // 主按钮区域计算
     ImVec2 pos  = window->DC.CursorPos;
-    ImVec2 size = ImGui::CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 2.0f,
-                                      label_size.y + style.FramePadding.y * 2.0f);
+    ImVec2 size = ImGui::CalcItemSize(
+        size_arg, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f
+    );
 
     // 为关闭按钮预留空间
     const float close_button_size_base = g.FontSize * 0.5f;
@@ -644,7 +696,7 @@ bool TagTabButton(const char *label, bool *p_open, bool selected, const ImVec2 &
 
     // 绘制主按钮背景
     ImU32 bg_col = selected
-                       ? ImGui::GetColorU32(ImGuiCol_TabActive)
+                       ? ImGui::GetColorU32(ImGuiCol_TabSelected)
                        : (main_hovered ? ImGui::GetColorU32(ImGuiCol_TabHovered) : ImGui::GetColorU32(ImGuiCol_Tab));
     window->DrawList->AddRectFilled(bb.Min, bb.Max, bg_col, style.FrameRounding);
 
@@ -669,8 +721,10 @@ bool TagTabButton(const char *label, bool *p_open, bool selected, const ImVec2 &
 
         // 计算关闭按钮区域
         const ImVec2 close_button_size(close_button_size_base, close_button_size_base);
-        const ImVec2 close_button_offset(bb.Max.x - close_button_size.x - style.FramePadding.x - close_button_padding,
-                                         bb.Min.y + (bb.GetHeight() - close_button_size.y) * 0.5f);
+        const ImVec2 close_button_offset(
+            bb.Max.x - close_button_size.x - style.FramePadding.x - close_button_padding,
+            bb.Min.y + (bb.GetHeight() - close_button_size.y) * 0.5f
+        );
         const ImRect close_bb(close_button_offset, close_button_offset + close_button_size);
 
         // 添加关闭按钮交互区域
@@ -692,12 +746,18 @@ bool TagTabButton(const char *label, bool *p_open, bool selected, const ImVec2 &
             close_hovered ? ImGui::GetColorU32(ImGuiCol_ButtonHovered) : ImGui::GetColorU32(ImGuiCol_Text);
         const float  thickness = 1.5f;
         const ImVec2 center    = close_bb.GetCenter();
-        window->DrawList->AddLine(center + ImVec2(-close_button_size_base * 0.3f, -close_button_size_base * 0.3f),
-                                  center + ImVec2(close_button_size_base * 0.3f, close_button_size_base * 0.3f), col,
-                                  thickness);
-        window->DrawList->AddLine(center + ImVec2(close_button_size_base * 0.3f, -close_button_size_base * 0.3f),
-                                  center + ImVec2(-close_button_size_base * 0.3f, close_button_size_base * 0.3f), col,
-                                  thickness);
+        window->DrawList->AddLine(
+            center + ImVec2(-close_button_size_base * 0.3f, -close_button_size_base * 0.3f),
+            center + ImVec2(close_button_size_base * 0.3f, close_button_size_base * 0.3f),
+            col,
+            thickness
+        );
+        window->DrawList->AddLine(
+            center + ImVec2(close_button_size_base * 0.3f, -close_button_size_base * 0.3f),
+            center + ImVec2(-close_button_size_base * 0.3f, close_button_size_base * 0.3f),
+            col,
+            thickness
+        );
     }
 
     return main_pressed && !close_clicked;
@@ -761,8 +821,9 @@ void RenderToolWindow()
     ImGui::Checkbox("Settings", &g_fShowSettings);
     ImGui::SameLine();
 
-    static std::array<std::string_view, 5> fakeLangProfiles = {"ENG", "SouGou", "Microsoft Pinyin", "Google Pinyin",
-                                                               "Baidu"};
+    static std::array<std::string_view, 5> fakeLangProfiles = {
+        "ENG", "SouGou", "Microsoft Pinyin", "Google Pinyin", "Baidu"
+    };
 
     ImGui::SameLine();
     static ImGuiTableFlags flags =
@@ -816,28 +877,15 @@ void RenderToolWindow()
     ImGui::End();
 }
 
-void ShowToolWindow()
-{
-    g_toolWindowFlags &= ~ImGuiWindowFlags_NoInputs;
-    if (m_fPinToolWindow)
-    {
-        m_fPinToolWindow = false;
-        ImGui::SetWindowFocus("DevImeToolWindowTest");
-    }
-    else
-    {
-        g_fShowToolWindow = !g_fShowToolWindow;
-        if (g_fShowToolWindow)
-        {
-            ImGui::SetWindowFocus("DevImeToolWindowTest");
-        }
-    }
-}
-
 bool InitDirectInput() noexcept
 {
-    if (FAILED(DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8,
-        reinterpret_cast<void **>(&g_pDirectInput), nullptr)))
+    if (FAILED(DirectInput8Create(
+            GetModuleHandle(nullptr),
+            DIRECTINPUT_VERSION,
+            IID_IDirectInput8,
+            reinterpret_cast<void **>(&g_pDirectInput),
+            nullptr
+        )))
     {
         return false;
     }
@@ -864,7 +912,7 @@ static void GetFloatValue(const char *value, float *target)
 {
     if (std::string strValue(value); !strValue.empty())
     {
-        char *      pEnd{};
+        char       *pEnd{};
         const float result = std::strtof(value, &pEnd);
         if (*pEnd == 0)
         {
@@ -918,7 +966,7 @@ void GetIntValue(const char *value, uint8_t *target)
 {
     if (value != nullptr)
     {
-        char *   pEnd{};
+        char    *pEnd{};
         uint32_t result = std::strtoul(value, &pEnd, 10);
 
         if (*pEnd != 0 || result > 255)
@@ -956,7 +1004,9 @@ void themeColorSetup(const char *colorString, ImVec4 &color)
             spdlog::info("Color {} ==> {}, {}, {}, {}", strValue, color.x, color.y, color.z, color.w);
         }
     }
-    else {}
+    else
+    {
+    }
 }
 
 std::vector<std::string> LoadAllThemes()
@@ -964,7 +1014,7 @@ std::vector<std::string> LoadAllThemes()
     auto config = toml::parse_file(R"(D:\repo\JamieMods\common\themes.toml.txt)");
 
     // get key-value pairs
-    const auto &             themesArray = config["themes"].as_array();
+    const auto              &themesArray = config["themes"].as_array();
     std::vector<std::string> themes;
     for (const toml::node &themeNode : *themesArray)
     {
@@ -1087,8 +1137,9 @@ void UseTheme(size_t index)
     themeColorSetup(colors_node["TabSelectedOverline"].value_or(""), style.Colors[ImGuiCol_TabSelectedOverline]);
     themeColorSetup(colors_node["TabDimmed"].value_or(""), style.Colors[ImGuiCol_TabDimmed]);
     themeColorSetup(colors_node["TabDimmedSelected"].value_or(""), style.Colors[ImGuiCol_TabDimmedSelected]);
-    themeColorSetup(colors_node["TabDimmedSelectedOverline"].value_or(""),
-                    style.Colors[ImGuiCol_TabDimmedSelectedOverline]);
+    themeColorSetup(
+        colors_node["TabDimmedSelectedOverline"].value_or(""), style.Colors[ImGuiCol_TabDimmedSelectedOverline]
+    );
     themeColorSetup(colors_node["DockingPreview"].value_or(""), style.Colors[ImGuiCol_DockingPreview]);
     themeColorSetup(colors_node["DockingEmptyBg"].value_or(""), style.Colors[ImGuiCol_DockingEmptyBg]);
     themeColorSetup(colors_node["PlotLines"].value_or(""), style.Colors[ImGuiCol_PlotLines]);
@@ -1109,113 +1160,480 @@ void UseTheme(size_t index)
     themeColorSetup(colors_node["ModalWindowDimBg"].value_or(""), style.Colors[ImGuiCol_ModalWindowDimBg]);
 }
 
-void ShowDockSpace()
+void FontManager::Init()
 {
-    static bool               opt_fullscreen  = true;
-    static bool               opt_padding     = false;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    ImFontConfig cfg;
+    cfg.OversampleH = cfg.OversampleV = 1;
+    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
-    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-    // because it would be confusing to have two docking targets within each others.
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    if (opt_fullscreen)
+    ImWchar ascii_ranges[] = {0x0020, 0x00FF, 0};
+    cfg.GlyphExcludeRanges = ascii_ranges;
+
+    auto &io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
+
+    if (fontFamilies.size() > 0) return;
+    CComPtr<IDWriteFactory> pDWriteFactory = nullptr;
+    HRESULT                 hr             = DWriteCreateFactory(
+        DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown **>(&pDWriteFactory)
+    );
+
+    CComPtr<IDWriteFontCollection> pFontCollection = nullptr;
+
+    // Get the system font collection.
+    if (SUCCEEDED(hr))
     {
-        const ImGuiViewport *viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
-        ImGui::SetNextWindowViewport(viewport->ID);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoMove;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    }
-    else
-    {
-        dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-    }
-
-    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-    // and handle the pass-thru hole, so we ask Begin() to not render a background.
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) window_flags |= ImGuiWindowFlags_NoBackground;
-
-    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-    // all active windows docked into it will lose their parent and become undocked.
-    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-    if (!opt_padding) ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    static bool showDockSpace = false;
-    ImGui::Begin("DockSpace Demo", &showDockSpace, window_flags);
-    if (!opt_padding) ImGui::PopStyleVar();
-
-    if (opt_fullscreen) ImGui::PopStyleVar(2);
-
-    // Submit the DockSpace
-    ImGuiIO &io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-    {
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    }
-    else
-    {
-        ImGui::Text("ERROR: Docking is not enabled! See Demo > Configuration.");
-        ImGui::Text("Set io.ConfigFlags |= ImGuiConfigFlags_DockingEnable in your code, or ");
-        ImGui::SameLine(0.0f, 0.0f);
-        if (ImGui::SmallButton("click here")) io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        hr = pDWriteFactory->GetSystemFontCollection(&pFontCollection);
     }
 
-    if (ImGui::BeginMenuBar())
+    NONCLIENTMETRICS ncm = {};
+    ncm.cbSize           = sizeof(ncm);
+    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+
+    CComPtr<IDWriteGdiInterop> pGdiInterop = nullptr;
+    if (SUCCEEDED(pDWriteFactory->GetGdiInterop(&pGdiInterop)))
     {
-        if (ImGui::MenuItem("Close"))
+        CComPtr<IDWriteFont> pFont = nullptr;
+        pGdiInterop->CreateFontFromLOGFONT(&ncm.lfMessageFont, &pFont);
+        std::string filePath = GetFontFilePath(pFont);
+
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0, &cfg);
+        ImFontConfig cfg1;
+        cfg1.MergeMode  = true;
+        defaultFontPath = std::move(filePath);
+        emojiFont       = io.Fonts->AddFontFromFileTTF(defaultFontPath.c_str(), 16.0, &cfg1);
+        io.FontDefault  = emojiFont;
+    }
+
+    UINT32 familyCount = 0;
+
+    // Get the number of font families in the collection.
+    if (SUCCEEDED(hr))
+    {
+        familyCount = pFontCollection->GetFontFamilyCount();
+    }
+
+    fontFamilies.reserve(familyCount);
+    for (UINT32 i = 0; i < familyCount; ++i)
+    {
+        CComPtr<IDWriteFontFamily> pFontFamily = nullptr;
+        if (hr = pFontCollection->GetFontFamily(i, &pFontFamily); SUCCEEDED(hr))
         {
-            exit(0);
+            CComPtr<IDWriteLocalizedStrings> pFamilyNames = nullptr;
+
+            // Get a list of localized strings for the family name.
+            if (hr = pFontFamily->GetFamilyNames(&pFamilyNames); FAILED(hr))
+            {
+                continue;
+            }
+            auto name = GetLocalizedString(pFamilyNames);
+            if (name.empty()) continue;
+
+            SystemFontFamily systemFontFamily{name, pFontFamily};
+            for (uint32_t fontIndex = 0; fontIndex < pFontFamily->GetFontCount(); ++fontIndex)
+            {
+                CComPtr<IDWriteFont> pFont = nullptr;
+                if (SUCCEEDED(pFontFamily->GetFont(fontIndex, &pFont)))
+                {
+                    uint32_t                 faceIndex = -1;
+                    CComPtr<IDWriteFontFace> pFontFace = nullptr;
+                    if (SUCCEEDED(pFont->CreateFontFace(&pFontFace)))
+                    {
+                        faceIndex = pFontFace->GetIndex();
+                        BOOL                  isSupportedFontType;
+                        DWRITE_FONT_FILE_TYPE fontFileType;
+                        DWRITE_FONT_FACE_TYPE fontFaceType;
+                        UINT32                numberOfFace;
+
+                        UINT32 numFiles = 0;
+                        pFontFace->GetFiles(&numFiles, nullptr);
+                        std::vector<IDWriteFontFile *> fontFiles(numFiles);
+                        pFontFace->GetFiles(&numFiles, fontFiles.data());
+                        IDWriteFontFile *fontFile = fontFiles[0];
+
+                        if (SUCCEEDED(
+                                fontFile->Analyze(&isSupportedFontType, &fontFileType, &fontFaceType, &numberOfFace)
+                            ))
+                        {
+                            systemFontFamily.numFaces = numberOfFace;
+                        }
+                    }
+                    systemFontFamily.fontProperties.emplace_back(
+                        pFont->GetWeight(), pFont->GetStyle(), pFont->GetStretch(), pFont->GetSimulations(), faceIndex
+                    );
+                }
+            }
+            fontFamilies.push_back(systemFontFamily);
         }
-        if (ImGui::BeginMenu("Options"))
+    }
+}
+
+void FontManager::Show()
+{
+    auto &io = ImGui::GetIO();
+    ImGui::Checkbox("Show Font Selector", &open);
+
+    ImGui::DragFloat("##Font_Size_Scale", &io.FontGlobalScale, 0.05, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_NoInput);
+
+    auto *viewport = ImGui::GetMainViewport();
+    bool  is_open  = ImGui::BeginViewportSideBar(
+        "##MainMenuBar",
+        viewport,
+        ImGuiDir_Left,
+        30,
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar
+    );
+    if (is_open)
+    {
+        if (ImGui::BeginMenuBar())
         {
-            // Disabling fullscreen would allow the window to be moved to the front of other windows,
-            // which we can't undo at the moment without finer window depth/z control.
-            ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen);
-            ImGui::MenuItem("Padding", NULL, &opt_padding);
-            ImGui::Separator();
+            if (ImGui::BeginMenu("File"))
+            {
+                ImGui::MenuItem("Views");
+                ImGui::MenuItem("Settings");
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+    }
+    ImGui::End();
 
-            if (ImGui::MenuItem("Flag: NoDockingOverCentralNode", "",
-                                (dockspace_flags & ImGuiDockNodeFlags_NoDockingOverCentralNode) != 0))
-            {
-                dockspace_flags ^= ImGuiDockNodeFlags_NoDockingOverCentralNode;
-            }
-            if (ImGui::MenuItem("Flag: NoDockingSplit", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingSplit) != 0))
-            {
-                dockspace_flags ^= ImGuiDockNodeFlags_NoDockingSplit;
-            }
-            if (ImGui::MenuItem("Flag: NoUndocking", "", (dockspace_flags & ImGuiDockNodeFlags_NoUndocking) != 0))
-            {
-                dockspace_flags ^= ImGuiDockNodeFlags_NoUndocking;
-            }
-            if (ImGui::MenuItem("Flag: NoResize", "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))
-            {
-                dockspace_flags ^= ImGuiDockNodeFlags_NoResize;
-            }
-            if (ImGui::MenuItem("Flag: AutoHideTabBar", "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))
-            {
-                dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar;
-            }
-            if (ImGui::MenuItem("Flag: PassthruCentralNode", "",
-                                (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) != 0, opt_fullscreen))
-            {
-                dockspace_flags ^= ImGuiDockNodeFlags_PassthruCentralNode;
-            }
-            ImGui::Separator();
+    if (!open) return;
+    ImGui::PushStyleVarY(ImGuiStyleVar_FramePadding, 20);
+    int pushCount = 1;
+    if (ImGui::Begin("FontSelector", &open, ImGuiWindowFlags_MenuBar))
+    {
+        ImGui::PopStyleVar(pushCount--);
 
-            if (ImGui::MenuItem("Close", NULL, false, true)) showDockSpace = false;
-            ImGui::EndMenu();
+        bool               rebuildFont       = false;
+        static int         selectedProperty  = 0;
+        static int         selectedFontIndex = -1;
+        static std::string prevFontPath      = R"(C:\WINDOWS\Fonts\msyh.ttc)";
+
+        auto preview = "";
+        if (selectedFontIndex >= 0)
+        {
+            preview = fontFamilies[selectedFontIndex].familyName.c_str();
+        }
+        ImGui::BeginGroup();
+        if (ImGui::BeginCombo("Font list", preview))
+        {
+            int index = 0;
+            for (const auto &fontFamily : fontFamilies)
+            {
+                bool selected = index == selectedFontIndex;
+                if (ImGui::Selectable(
+                        std::format("{} face {}", fontFamily.familyName, fontFamily.numFaces).c_str(), selected
+                    ) &&
+                    !selected)
+                {
+                    selectedFontIndex = index;
+                    selectedProperty  = 0;
+                    rebuildFont       = true;
+                }
+                if (selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+                index++;
+            }
+            ImGui::EndCombo();
+        }
+        if (selectedFontIndex >= 0)
+        {
+            auto &fontFamily = fontFamilies[selectedFontIndex];
+
+            constexpr auto weightTOString = [](DWRITE_FONT_WEIGHT a_weight) {
+                switch (a_weight)
+                {
+                    case DWRITE_FONT_WEIGHT_THIN:
+                        return "Thin";
+                    case DWRITE_FONT_WEIGHT_EXTRA_LIGHT: // DWRITE_FONT_WEIGHT_ULTRA_LIGHT
+                        return "Extra light";
+                    case DWRITE_FONT_WEIGHT_LIGHT:
+                        return "Light";
+                    case DWRITE_FONT_WEIGHT_SEMI_LIGHT:
+                        return "Semi-light";
+                    case DWRITE_FONT_WEIGHT_NORMAL: // DWRITE_FONT_WEIGHT_REGULAR
+                        return "Normal";
+                    case DWRITE_FONT_WEIGHT_MEDIUM:
+                        return "Medium";
+                    case DWRITE_FONT_WEIGHT_DEMI_BOLD: // DWRITE_FONT_WEIGHT_SEMI_BOLD
+                        return "DemiBold";
+                    case DWRITE_FONT_WEIGHT_BOLD:
+                        return "Bold";
+                    case DWRITE_FONT_WEIGHT_EXTRA_BOLD: // DWRITE_FONT_WEIGHT_ULTRA_BOLD
+                        return "Extra bold";
+                    case DWRITE_FONT_WEIGHT_BLACK: // DWRITE_FONT_WEIGHT_HEAVY
+                        return "Black";
+                    case DWRITE_FONT_WEIGHT_EXTRA_BLACK: // DWRITE_FONT_WEIGHT_ULTRA_BLACK
+                        return "Extra black";
+                };
+                return "Unknown";
+            };
+            constexpr auto styleToString = [](DWRITE_FONT_STYLE a_style) {
+                switch (a_style)
+                {
+                    case DWRITE_FONT_STYLE_NORMAL:
+                        return "Normal";
+                    case DWRITE_FONT_STYLE_OBLIQUE:
+                        return "Oblique";
+                    case DWRITE_FONT_STYLE_ITALIC:
+                        return "Italic";
+                }
+                return "Unknown";
+            };
+            constexpr auto simulationsToString = [](DWRITE_FONT_SIMULATIONS aSimulations) {
+                switch (aSimulations)
+                {
+                    case DWRITE_FONT_SIMULATIONS_NONE:
+                        return "None";
+                    case DWRITE_FONT_SIMULATIONS_BOLD:
+                        return "Bold";
+                    case DWRITE_FONT_SIMULATIONS_OBLIQUE:
+                        return "Oblique";
+                }
+                return "Unknown";
+            };
+            constexpr auto stretchToString = [](DWRITE_FONT_STRETCH aStretch) {
+                switch (aStretch)
+                {
+                    case DWRITE_FONT_STRETCH_UNDEFINED:
+                        return "Undefined";
+                    case DWRITE_FONT_STRETCH_ULTRA_CONDENSED:
+                        return "Ultra-condensed";
+                    case DWRITE_FONT_STRETCH_EXTRA_CONDENSED:
+                        return "Extra-condensed";
+                    case DWRITE_FONT_STRETCH_CONDENSED:
+                        return "Condensed";
+                    case DWRITE_FONT_STRETCH_SEMI_CONDENSED:
+                        return "Semi-condensed";
+                    case DWRITE_FONT_STRETCH_NORMAL:
+                        return "Normal";
+                    case DWRITE_FONT_STRETCH_SEMI_EXPANDED:
+                        return "Semi-expanded";
+                    case DWRITE_FONT_STRETCH_EXPANDED:
+                        return "Expanded";
+                    case DWRITE_FONT_STRETCH_EXTRA_EXPANDED:
+                        return "Extra-expanded";
+                    case DWRITE_FONT_STRETCH_ULTRA_EXPANDED:
+                        return "Ultra-expanded";
+                }
+                return "Unknown";
+            };
+
+            int   index = 0;
+            auto &prop  = fontFamily.fontProperties[selectedProperty];
+            ;
+            if (ImGui::BeginCombo(
+                    "Font Property",
+                    std::format(
+                        "weight {}, style: {}, stretch {}, simulation {}",
+                        weightTOString(prop.weight),
+                        styleToString(prop.style),
+                        stretchToString(prop.stretch),
+                        simulationsToString(prop.simulations)
+                    )
+                        .c_str()
+                ))
+            {
+                for (const auto &property : fontFamily.fontProperties)
+                {
+                    ImGui::PushID(index);
+                    if (ImGui::Selectable(std::format(
+                                              "weight {}, style: {}, stretch {}, simulations {}, face {}",
+                                              weightTOString(property.weight),
+                                              styleToString(property.style),
+                                              stretchToString(property.stretch),
+                                              simulationsToString(property.simulations),
+                                              property.faceIndex
+                        )
+                                              .c_str()))
+                    {
+                        selectedProperty = index;
+                        rebuildFont      = true;
+                    }
+                    ImGui::PopID();
+                    index++;
+                }
+                ImGui::EndCombo();
+            }
+
+            if (selectedProperty >= 0)
+            {
+                auto                &property = fontFamily.fontProperties[selectedProperty];
+                CComPtr<IDWriteFont> pFont    = nullptr;
+                HRESULT              hr       = fontFamily.pFontFamily->GetFont(selectedProperty, &pFont);
+                // HRESULT              hr       = fontFamily.pFontFamily->GetFirstMatchingFont(
+                //     property.weight, property.stretch, property.style, &pFont
+                // );
+
+                std::string utf8Path;
+                if (SUCCEEDED(hr))
+                {
+                    utf8Path = GetFontFilePath(pFont);
+                    ImGui::Text("Font Path: %s", utf8Path.c_str());
+                }
+
+                {
+                    CComPtr<IDWriteLocalizedStrings> pFullName = nullptr;
+                    BOOL                             exists    = FALSE;
+                    hr = pFont->GetInformationalStrings(DWRITE_INFORMATIONAL_STRING_FULL_NAME, &pFullName, &exists);
+                    if (SUCCEEDED(hr) && exists)
+                    {
+                        auto fullName = GetLocalizedString(pFullName);
+                        ImGui::Text("Full name %s", fullName.c_str());
+                    }
+                }
+
+                ImFontConfig cfg;
+                cfg.OversampleH = cfg.OversampleV = 1;
+                cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+
+                ImWchar ascii_ranges[] = {0x0020, 0x00FF, 0};
+                cfg.GlyphExcludeRanges = ascii_ranges;
+
+                ImFontConfig cfg1;
+                cfg1.MergeMode = true;
+                if (rebuildFont /*&& prevFontPath != utf8Path*/)
+                {
+                    if (previewFont)
+                    {
+                        io.Fonts->RemoveFont(previewFont);
+                    }
+
+                    cfg1.FontNo = property.faceIndex;
+                    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0, &cfg);
+                    if (static_cast<uint32_t>(property.weight) >= static_cast<uint32_t>(DWRITE_FONT_WEIGHT_BOLD))
+                    {
+                        cfg1.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_Bold;
+                    }
+                    if (property.style == DWRITE_FONT_STYLE_OBLIQUE)
+                    {
+                        cfg1.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_Oblique;
+                    }
+                    io.Fonts->AddFontFromFileTTF(utf8Path.c_str(), 16.0, &cfg1);
+                    previewFont = io.Fonts->AddFontFromFileTTF(defaultFontPath.c_str(), 16.0, &cfg1);
+                }
+                prevFontPath = utf8Path;
+            }
+        }
+        ImGui::EndGroup();
+
+        if (ImGui::Button("Apply"))
+        {
+            requestReplaceFont = true;
         }
 
-        ImGui::EndMenuBar();
+        if (previewFont) ImGui::PushFont(previewFont);
+        ImGui::Text("%s", R"(abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789 (){}[]
++ - * / = .,;:!? #&$%@|^)");
+        ImGui::Text("The quick brown fox jumps over the lazy dog");
+
+        ImGui::Text("中文: 快速的棕色狐狸跳过了懒惰的狗");
+        ImGui::Text("日本語: 速い茶色のキツネが怠惰な犬を飛び越えます");
+        ImGui::Text("한국어: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다");
+        if (previewFont) ImGui::PopFont();
     }
 
+    ImGui::PopStyleVar(pushCount);
     ImGui::End();
 }
 
+void FontManager::ApplyFont()
+{
+    if (!previewFont) return;
+
+    auto &io           = ImGui::GetIO();
+    requestReplaceFont = false;
+    io.Fonts->RemoveFont(emojiFont);
+    io.FontDefault = std::move(previewFont);
+    emojiFont      = io.FontDefault;
+    previewFont    = nullptr;
+}
+
+auto FontManager::GetFontFilePath(IDWriteFont *pFont) -> std::string
+{
+    CComPtr<IDWriteFontFace> pFontFace = nullptr;
+    pFont->CreateFontFace(&pFontFace);
+
+    UINT32 numFiles = 0;
+    pFontFace->GetFiles(&numFiles, nullptr);
+    std::vector<IDWriteFontFile *> fontFiles(numFiles);
+    pFontFace->GetFiles(&numFiles, fontFiles.data());
+
+    // 2. 取第一个文件并获取引用键
+    IDWriteFontFile *fontFile         = fontFiles[0];
+    const void      *referenceKey     = nullptr;
+    UINT32           referenceKeySize = 0;
+    fontFile->GetReferenceKey(&referenceKey, &referenceKeySize);
+
+    // 3. 获取本地加载器实例
+    CComPtr<IDWriteFontFileLoader> baseLoader;
+    fontFile->GetLoader(&baseLoader);
+    CComPtr<IDWriteLocalFontFileLoader> localLoader;
+    localLoader = baseLoader;
+
+    // 4. 查询路径长度并分配缓冲区
+    UINT32 pathLength = 0;
+    localLoader->GetFilePathLengthFromKey(referenceKey, referenceKeySize, &pathLength);
+    std::vector<WCHAR> pathBuffer(pathLength + 1);
+
+    // 5. 读取文件路径
+    localLoader->GetFilePathFromKey(referenceKey, referenceKeySize, pathBuffer.data(), pathLength + 1);
+
+    std::wstring fontPath(pathBuffer.data());
+    std::string  utf8Path = LIBC_NAMESPACE::WCharUtils::ToString(fontPath);
+
+    std::ranges::for_each(fontFiles, [&](IDWriteFontFile *pFontFile) {
+        pFontFile->Release();
+    });
+    return utf8Path;
+}
+
+auto FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::string
+{
+    HRESULT hr     = S_OK;
+    UINT32  index  = 0;
+    BOOL    exists = false;
+
+    wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+
+    // Get the default locale for this user.
+
+    // If the default locale is returned, find that locale name, otherwise use "en-us".
+    if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+    {
+        hr = pStrings->FindLocaleName(localeName, &index, &exists);
+    }
+    if (SUCCEEDED(hr) && !exists) // if the above find did not find a match, retry with US English
+    {
+        hr = pStrings->FindLocaleName(L"en-us", &index, &exists);
+    }
+
+    // If the specified locale doesn't exist, select the first on the list.
+    if (!exists) index = 0;
+
+    UINT32 length = 0;
+
+    // Get the string length.
+    if (SUCCEEDED(hr))
+    {
+        hr = pStrings->GetStringLength(index, &length);
+    }
+    std::wstring stdString;
+    stdString.resize(length + 1);
+    // Get the family name.
+    if (SUCCEEDED(hr))
+    {
+        hr = pStrings->GetString(index, stdString.data(), length + 1);
+    }
+    if (SUCCEEDED(hr))
+    {
+        return LIBC_NAMESPACE::WCharUtils::ToString(stdString.c_str(), static_cast<int>(length));
+    }
+    return "";
+}
 }
