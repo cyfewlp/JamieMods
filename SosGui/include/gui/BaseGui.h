@@ -3,8 +3,7 @@
 #include "Cleanable.h"
 #include "common/config.h"
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class BaseGui : public Cleanable
 {
@@ -17,7 +16,7 @@ public:
     static constexpr float DEFAULT_WINDOW_WIDTH_SMALL = 200;
 
     static constexpr float DEFAULT_OUTFIT_LIST_WINDOW_POS_X = DEFAULT_WINDOW_POS_X;
-    static constexpr float DEFAULT_MAIN_WINDOW_POS_X        =
+    static constexpr float DEFAULT_MAIN_WINDOW_POS_X =
         DEFAULT_OUTFIT_LIST_WINDOW_POS_X + DEFAULT_WINDOW_WIDTH_SMALL + 10;
     static constexpr float DEFAULT_OUTFIT_EDIT_WINDOW_POS_X = DEFAULT_MAIN_WINDOW_POS_X + DEFAULT_WINDOW_WIDTH + 10;
 
@@ -28,10 +27,7 @@ public:
         m_show = true;
     }
 
-    virtual void OnRefresh()
-    {
-
-    }
+    virtual void OnRefresh() {}
 
     void Hide()
     {
@@ -48,7 +44,20 @@ public:
         return m_show;
     }
 
+    virtual void Focus()
+    {
+        m_focused = true;
+    }
+
+    auto IsFocused() const -> bool
+    {
+        return m_focused;
+    }
+
 protected:
     bool m_show = false;
+
+private:
+    bool m_focused = false;
 };
 }

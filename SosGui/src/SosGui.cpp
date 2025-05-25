@@ -115,6 +115,12 @@ auto SosGui::ShutDown() -> void
     ImGui::DestroyContext();
 }
 
+void SosGui::Focus()
+{
+    ImGui::SetWindowFocus("SosGuiOptions");
+    BaseGui::Focus();
+}
+
 void SosGui::OnRefresh()
 {
     m_outfitListTable.OnRefresh();
@@ -266,27 +272,27 @@ auto SosGui::DrawSidebar() -> float
         auto           framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
         auto           buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
         auto           fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
-        constexpr auto IconButton   = [](const char *iconClass, const char *tooltip) {
+        auto FocusWindowButton = [](const char *iconClass, const char *tooltip, BaseGui &baseGui) {
             auto isClick = ImGui::Button(iconClass);
             ImGui::SetItemTooltip("%s", tooltip);
-            return isClick;
+            if (isClick)
+            {
+                if (baseGui.IsFocused())
+                {
+                    baseGui.ToggleShow();
+                }
+                else
+                {
+                    baseGui.Focus();
+                }
+            }
         };
-        if (IconButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str()))
-        {
-            m_outfitListTable.ToggleShow();
-        }
+        FocusWindowButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
+        ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
+        FocusWindowButton(NF_OCT_GEAR, "$SkyOutSys_MCM_Options"_T.c_str(), *this);
 
         ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
-        if (IconButton(NF_OCT_GEAR, "$SkyOutSys_MCM_Options"_T.c_str()))
-        {
-            ToggleShow();
-        }
-
-        ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
-        if (IconButton(NF_FA_EDIT, "$SosGui_EditOutfit"_T.c_str()))
-        {
-            m_outfitEditPanel.ToggleShow();
-        }
+        FocusWindowButton(NF_FA_EDIT, "$SosGui_EditOutfit"_T.c_str(), m_outfitEditPanel);
     }
     ImGui::End();
     ImGui::PopStyleVar();

@@ -131,6 +131,7 @@ public:
 
     void OnRefresh() override;
     void Cleanup() override;
+    void Focus() override;
 
     void Draw(Context &context, const EditingOutfit &editingOutfit);
     void DrawOutfitPanel(Context &context, const EditingOutfit &editingOutfit);

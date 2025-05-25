@@ -52,6 +52,12 @@ void OutfitEditPanel::Cleanup()
     m_armorView.clear();
 }
 
+void OutfitEditPanel::Focus()
+{
+    ImGui::SetWindowFocus(m_windowTitle.c_str());
+    BaseGui::Focus();
+}
+
 void OutfitEditPanel::OnSelectActor(const RE::Actor *, const EditingOutfit &editingOutfit)
 {
     m_armorView.update_view_data(GetGenerator(), editingOutfit.GetSourceOutfit());

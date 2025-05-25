@@ -63,3 +63,4 @@
 	- enable SVG support or just warning user DONOT use SVG font ?
 	- `Noto Color Emoji` can't work with plutosvg + freetype.. This feature need delay, rollback SVG support ;
 - [x] [[improvement]] Add vertical padding for Menubar ;
+- [ ] gamepad control？

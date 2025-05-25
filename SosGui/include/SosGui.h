@@ -66,6 +66,7 @@ public:
         m_outfitEditPanel.Show();
     }
 
+    void Focus() override;
     void OnRefresh() override;
     void Cleanup() override;
 

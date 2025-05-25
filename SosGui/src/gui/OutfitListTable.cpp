@@ -35,6 +35,12 @@ void OutfitListTable::Show()
     BaseGui::Show();
 }
 
+void OutfitListTable::Focus()
+{
+    ImGui::SetWindowFocus("$SkyOutSys_MCMHeader_OutfitList"_T.c_str());
+    BaseGui::Focus();
+}
+
 void OutfitListTable::OnRefresh()
 {
     m_wantEdit = UNTITLED_OUTFIT;

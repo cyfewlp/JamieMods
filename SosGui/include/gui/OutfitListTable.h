@@ -86,6 +86,7 @@ public:
     }
 
     void Show() override;
+    void Focus() override;
     void OnRefresh() override;
     void Cleanup() override;
 
