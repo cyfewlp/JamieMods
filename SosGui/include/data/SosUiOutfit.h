@@ -10,8 +10,7 @@
 #include <string>
 #include <unordered_set>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class SosUiOutfit
 {
@@ -107,6 +106,8 @@ class EditingOutfit
 
 public:
     explicit EditingOutfit(const SosUiOutfit &outfit) : m_sourceOutfit(&outfit) {}
+
+    explicit EditingOutfit(const SosUiOutfit *pOutfit) : m_sourceOutfit(pOutfit) {}
 
     [[nodiscard]] auto GetSourceOutfit() const -> const SosUiOutfit *
     {

@@ -19,7 +19,7 @@ class OutfitListTable final : public BaseGui
     static constexpr int        MAX_OUTFIT_NAME_BYTES = 256;
     static inline SosUiOutfit   OUTFIT                = SosUiOutfit(UNTITLED_OUTFIT_ID, "Untitled");
     static inline EditingOutfit UNTITLED_OUTFIT{OUTFIT};
-    using DrawOutfitEntry = std::function<void(const SosUiOutfit &, size_t)>;
+    using DrawOutfitEntry = std::function<void(const SosUiOutfit *, size_t)>;
 
     struct OutfitDebounceInput final : ImGuiUtil::DebounceInput
     {
@@ -105,6 +105,7 @@ private:
     void DrawToolWidgets();
     void DrawOutfitTable(Context &context, RE::Actor *editingActor);
     void DrawOutfitTableContent(Context &context, RE::Actor *editingActor);
+    void OnToggleFavorite(std::vector<const SosUiOutfit *> &viewData, size_t index) const;
 
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);
     static void PostDrawOutfits(MultiSelection &selection);
@@ -115,7 +116,7 @@ private:
      * @return true if the context menu is open.
      */
     void OpenContextMenu(
-        Context &context, uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit &outfit,
+        Context &context, uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit *outfit,
         __out bool &acceptRename
     );
 
