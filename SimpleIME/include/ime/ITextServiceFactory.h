@@ -12,25 +12,25 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace Ime
+namespace Ime
+{
+class ITextServiceFactory
+{
+public:
+    static auto CreateInstance(bool enableTsf, ITextService **ppTextService) -> void
     {
-        class ITextServiceFactory
+        std::unique_ptr<ITextService> pTextService = nullptr;
+        if (enableTsf)
         {
-        public:
-            static auto CreateInstance(bool enableTsf, ITextService **ppTextService) -> void
-            {
-                std::unique_ptr<ITextService> pTextService = nullptr;
-                if (enableTsf)
-                {
-                    *ppTextService = new Tsf::TextService();
-                }
-                else
-                {
-                    *ppTextService = new Imm32::Imm32TextService();
-                }
-            }
-        };
+            *ppTextService = new Tsf::TextService();
+        }
+        else
+        {
+            *ppTextService = new Imm32::Imm32TextService();
+        }
     }
+};
+}
 }
 
 #endif // ITEXTSERVICEFACTORY_H

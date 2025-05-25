@@ -10,102 +10,98 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace Ime
+namespace Ime
+{
+using OnEndCompositionCallback = void(const std::wstring &compositionString);
+
+class ITextService
+{
+    using State = Ime::Core::State;
+
+public:
+    ITextService()                                                  = default;
+    virtual ~ITextService()                                         = default;
+    ITextService(const ITextService &other)                         = delete;
+    ITextService(ITextService &&other) noexcept                     = delete;
+    auto operator=(const ITextService &other) -> ITextService &     = delete;
+    auto operator=(ITextService &&other) noexcept -> ITextService & = delete;
+
+    virtual auto Initialize() -> HRESULT
     {
-        using OnEndCompositionCallback = void(const std::wstring &compositionString);
+        return S_OK;
+    }
 
-        class ITextService
-        {
-            using State = Ime::Core::State;
+    virtual void UnInitialize() {}
 
-        public:
-            ITextService()                                                  = default;
-            virtual ~ITextService()                                         = default;
-            ITextService(const ITextService &other)                         = delete;
-            ITextService(ITextService &&other) noexcept                     = delete;
-            auto operator=(const ITextService &other) -> ITextService &     = delete;
-            auto operator=(ITextService &&other) noexcept -> ITextService & = delete;
+    virtual void OnStart([[maybe_unused]] HWND hWnd) {}
 
-            virtual auto Initialize() -> HRESULT
-            {
-                return S_OK;
-            }
+    virtual bool OnFocus([[maybe_unused]] bool focus)
+    {
+        return true;
+    }
 
-            virtual void UnInitialize()
-            {
-            }
+    virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
+    virtual auto GetCandidateUi() -> CandidateUi &                                                = 0;
+    virtual auto GetTextEditor() -> TextEditor &                                                  = 0;
 
-            virtual void OnStart([[maybe_unused]] HWND hWnd)
-            {
-            }
+    virtual void RegisterCallback(OnEndCompositionCallback *callback)
+    {
+        m_OnEndCompositionCallback = callback;
+    }
 
-            virtual bool OnFocus([[maybe_unused]] bool focus)
-            {
-                return true;
-            }
+protected:
+    OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
+};
 
-            virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
-            virtual auto GetCandidateUi() -> CandidateUi &                                                = 0;
-            virtual auto GetTextEditor() -> TextEditor &                                                  = 0;
+namespace Imm32
+{
+class Imm32TextService final : public ITextService
+{
+    using State = Ime::Core::State;
 
-            virtual void RegisterCallback(OnEndCompositionCallback *callback)
-            {
-                m_OnEndCompositionCallback = callback;
-            }
+public:
+    Imm32TextService()                                                      = default;
+    ~Imm32TextService() override                                            = default;
+    Imm32TextService(const Imm32TextService &other)                         = delete;
+    Imm32TextService(Imm32TextService &&other) noexcept                     = delete;
+    auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
+    auto operator=(Imm32TextService &&other) noexcept -> Imm32TextService & = delete;
 
-        protected:
-            OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
-        };
+    /**
+     * return true means message hav processed.
+     */
+    auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool override;
 
-        namespace Imm32
-        {
-            class Imm32TextService final : public ITextService
-            {
-                using State = Ime::Core::State;
+    [[nodiscard]] auto GetCandidateUi() -> CandidateUi & override
+    {
+        return m_candidateUi;
+    }
 
-            public:
-                Imm32TextService()                                                      = default;
-                ~Imm32TextService() override                                            = default;
-                Imm32TextService(const Imm32TextService &other)                         = delete;
-                Imm32TextService(Imm32TextService &&other) noexcept                     = delete;
-                auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
-                auto operator=(Imm32TextService &&other) noexcept -> Imm32TextService & = delete;
+    [[nodiscard]] auto GetTextEditor() -> TextEditor & override
+    {
+        return m_textEditor;
+    }
 
-                /**
-                 * return true means message hav processed.
-                 */
-                auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool override;
+private:
+    static auto OnStartComposition() -> HRESULT;
+    static void UpdateConversionMode(HIMC hIMC);
+    auto        OnEndComposition() -> HRESULT;
+    auto        OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT;
+    static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool;
+    auto        ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
 
-                [[nodiscard]] auto GetCandidateUi() -> CandidateUi & override
-                {
-                    return m_candidateUi;
-                }
+    void OpenCandidate(HIMC hIMC);
+    void CloseCandidate();
+    void ChangeCandidate(HIMC hIMC);
+    void ChangeCandidateAt(HIMC hIMC);
+    void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
+    void OnSetOpenStatus(HIMC hIMC);
 
-                [[nodiscard]] auto GetTextEditor() -> TextEditor & override
-                {
-                    return m_textEditor;
-                }
-
-            private:
-                static auto OnStartComposition() -> HRESULT;
-                static void UpdateConversionMode(HIMC hIMC);
-                auto        OnEndComposition() -> HRESULT;
-                auto        OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT;
-                static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool;
-                auto        ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
-
-                void OpenCandidate(HIMC hIMC);
-                void CloseCandidate();
-                void ChangeCandidate(HIMC hIMC);
-                void ChangeCandidateAt(HIMC hIMC);
-                void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
-                void OnSetOpenStatus(HIMC hIMC);
-
-                CandidateUi m_candidateUi;
-                TextEditor  m_textEditor;
-            };
-        } // namespace Imm32
-    } // namespace Ime
+    CandidateUi m_candidateUi;
+    TextEditor  m_textEditor;
+};
+} // namespace Imm32
+} // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL
 
 #endif // IME_ITEXTSERVICE_H

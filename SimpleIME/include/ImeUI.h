@@ -8,72 +8,78 @@
 #include "core/State.h"
 #include "core/Translation.h"
 #include "ime/ITextService.h"
-#include "tsf/LangProfileUtil.h"
-#include "ui/ImeUIWidgets.h"
-
 #include "imgui.h"
+#include "tsf/LangProfileUtil.h"
+
 #include <vector>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    namespace Ime
+namespace Ime
+{
+class ImeWnd;
+
+constexpr auto MAX_ERROR_MESSAGE_COUNT = 10;
+
+class ImeUI
+{
+    using State = Core::State;
+
+public:
+    explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService)
+        : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService)
     {
-        class ImeWnd;
+    }
 
-        constexpr auto MAX_ERROR_MESSAGE_COUNT = 10;
+    ~ImeUI();
+    ImeUI(const ImeUI &other)                = delete;
+    ImeUI(ImeUI &&other) noexcept            = delete;
+    ImeUI &operator=(const ImeUI &other)     = delete;
+    ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
-        class ImeUI
-        {
-            using State = Ime::Core::State;
+    bool Initialize(LangProfileUtil *pLangProfileUtil);
+    void SetTheme();
+    void Draw(const Settings &settings);
+    void RenderToolWindow(Settings &settings);
+    void ShowToolWindow();
+    void ApplyUiSettings(Settings &settings);
 
-        public:
-            explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService);
-            ~ImeUI();
-            ImeUI(const ImeUI &other)                = delete;
-            ImeUI(ImeUI &&other) noexcept            = delete;
-            ImeUI &operator=(const ImeUI &other)     = delete;
-            ImeUI &operator=(ImeUI &&other) noexcept = delete;
+private:
+    auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) const -> bool;
+    auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) const -> bool;
+    // Calculate ime window size by candidate string and composition string.
+    // Because we need to place the IME window in screen according to the IME window size;
+    void CalculateWindowSize();
 
-            bool Initialize(LangProfileUtil *pLangProfileUtil);
-            void SetTheme();
-            void RenderIme() const;
-            void RenderToolWindow();
-            void ShowToolWindow();
-            void ApplyUiSettings(const SettingsConfig &settingsConfig);
-            void SyncUiSettings(SettingsConfig &settingsConfig);
+    void DrawInputMethodsCombo() const;
+    void DrawSettings(Settings &settings);
+    void DrawSettingsContent(Settings &settings);
+    void DrawSettingsFocusManage(Settings &settings) const;
+    void DrawSettingsState() const;
+    void DrawWindowPosUpdatePolicy(Settings &settings);
+    void RenderCompWindow() const;
+    void DrawCandidateWindows() const;
+    auto Translate(const char *label) const -> const char *;
 
-        private:
-            static auto UpdateImeWindowPos(bool showIme, bool &updated) -> void;
-            static auto UpdateImeWindowPosByCaret() -> bool;
+    static bool DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected);
 
-            void RenderSettings();
-            void RenderSettingsState() const;
-            void RenderSettingsFocusManage();
-            void RenderSettingsImePosUpdatePolicy();
-            void RenderCompWindow() const;
-            void RenderCandidateWindows() const;
+    static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
-            static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
+    AppUiConfig              m_uiConfig;
+    ImeWnd                  *m_pImeWnd         = nullptr;
+    ITextService            *m_pTextService    = nullptr;
+    LangProfileUtil         *m_langProfileUtil = nullptr;
+    ImGuiThemeLoader         m_uiThemeLoader{};
+    std::vector<std::string> m_themeNames{};
+    Translation              m_translation;
+    std::vector<std::string> m_translateLanguages;
+    ImVec2                   m_imeWindowSize = ImVec2(0, 0);
 
-            AppUiConfig              m_uiConfig;
-            LangProfileUtil         *m_langProfileUtil = nullptr;
-            ITextService            *m_pTextService    = nullptr;
-            ImeWnd                  *m_pImeWnd         = nullptr;
-            ImGuiThemeLoader         m_uiThemeLoader{};
-            std::vector<std::string> m_themeNames{};
-            Translation              m_translation;
-            ImeUIWidgets             m_imeUIWidgets{&m_translation};
-            std::vector<std::string> m_translateLanguages;
+    bool m_fShowToolWindow = false;
+    bool m_fPinToolWindow  = false;
 
-            bool  m_fShowToolWindow     = false;
-            bool  m_fShowSettings       = false;
-            bool  m_fPinToolWindow      = false;
-            float m_fontSizeScale = 1.0f;
-
-            std::vector<std::string> m_errorMessages;
-            int                      m_toolWindowFlags =
-                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
-        };
-    } // namespace SimpleIME
+    std::vector<std::string> m_errorMessages;
+};
+} // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
 #endif

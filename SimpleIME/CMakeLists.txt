@@ -1,14 +1,14 @@
 project(
-        SimpleIME
-        VERSION 1.1.2
-        DESCRIPTION "Simple IME support for Skyrim"
-        LANGUAGES CXX
+    SimpleIME
+    VERSION 1.2.0
+    DESCRIPTION "Simple IME support for Skyrim"
+    LANGUAGES CXX
 )
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
-        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
-        @ONLY
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+    @ONLY
 )
 
 set(CMAKE_CXX_STANDARD 23)
@@ -16,62 +16,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
 set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
-##
-#  Test Config
-
-enable_testing()
-
-option(INSTALL_GMOCK "Install Googletest's GMock?" OFF)
-option(INSTALL_GTEST "Install Googletest's GTest?" OFF)
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
-add_executable(
-    ${TEST_PROJ_NAME}
-    src/AppConfig.cpp
-    src/ImGuiThemeLoader.cpp
-    test/AppConfigTest.cpp
-    test/WCharUtilsTest.cpp
-    test/ImGuiThemeLoaderTest.cpp
-)
-#target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
-
-target_link_libraries(
-  ${TEST_PROJ_NAME}
-  PRIVATE
-  imgui
-  GTest::gtest_main
-  spdlog::spdlog
-)
-target_include_directories(
-  ${TEST_PROJ_NAME}
-  PRIVATE
-  ${CMAKE_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${SIMPLEINI_INCLUDE_DIRS}
-)
-target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(${TEST_PROJ_NAME} PRIVATE SIMPLE_IME_DEBUG)
-endif ()
-
-include(GoogleTest)
-gtest_discover_tests(${TEST_PROJ_NAME})
-
-add_custom_command(
-    TARGET "${TEST_PROJ_NAME}"
-    PRE_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/test/resources" "$<TARGET_FILE_DIR:${TEST_PROJ_NAME}>/"
-    VERBATIM
-)
 
 file(GLOB_RECURSE headers *.h include/*.hpp)
 file(GLOB_RECURSE sources src/*.cpp)
@@ -85,21 +29,25 @@ source_group(
 ## Set Output folder
 
 if (DEFINED ENV{MO2_MODS_PATH} AND IS_DIRECTORY "$ENV{MO2_MODS_PATH}")
-    set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
+  set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
 endif ()
+#set(OUTPUT_FOLDER "D:/GAME/Mod-Organizer-2/mods/SimpleIME")
 
 ## Plugin settings
+find_package(Freetype REQUIRED) # for imgui_freetype
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-#find_package(CommonLibSSE CONFIG REQUIRED)
-find_package(Microsoft.GSL CONFIG REQUIRED)
+find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
+include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
 include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
-	${headers}
+    ${headers}
+    ${IMGUI_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
@@ -107,10 +55,14 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_IME_DEBUG)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_IME_DEBUG)
 endif ()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_EXPORTS)
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+    SIMPLE_EXPORTS
+    IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h"
+)
 
 # include directories
 target_include_directories(
@@ -118,6 +70,7 @@ target_include_directories(
     PRIVATE
     ${DETOURS_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
+    ${IMGUI_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -127,9 +80,8 @@ target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
     spdlog::spdlog
-    imgui
     ${DETOURS_LIBRARY}
-    Microsoft.GSL::GSL
+    Freetype::Freetype
 )
 
 ## Install config
@@ -140,33 +92,32 @@ set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CM
 include(CPack)
 
 install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION SKSE/Plugins
-        COMPONENT dll
+    RUNTIME DESTINATION SKSE/Plugins
+    COMPONENT dll
 )
 # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-        DESTINATION SKSE/Plugins
-        COMPONENT pdb
-    )
+  install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+      DESTINATION SKSE/Plugins
+      COMPONENT pdb
+  )
 endif ()
 install(FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.ini
-        DESTINATION config
-        COMPONENT configuration
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.ini
+    DESTINATION config
+    COMPONENT configuration
 )
 install(FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/SimpleImeSupport.h
-        DESTINATION .
-        COMPONENT doc
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    DESTINATION .
+    COMPONENT doc
 )
 install(DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate
-        DESTINATION .
-        COMPONENT Distribution
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate
+    DESTINATION .
+    COMPONENT Distribution
 )
 cpack_add_component(dll)
 cpack_add_component(configuration)
@@ -174,9 +125,9 @@ cpack_add_component(doc)
 cpack_add_component(Distribution)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(BUILD_NAME "Debug")
+  set(BUILD_NAME "Debug")
 else ()
-    set(BUILD_NAME "Release")
+  set(BUILD_NAME "Release")
 endif ()
 
 file(GLOB_RECURSE OUTPUT_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.dll")
@@ -184,57 +135,57 @@ file(GLOB_RECURSE OUTPUT_PDBS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/
 #file(GLOB_RECURSE OUTPUT_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pex")
 
 set_property(TARGET ${PROJECT_NAME}
-        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_DLLS}")
+    APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_DLLS}")
 set_property(TARGET ${PROJECT_NAME}
-        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_PDBS}")
+    APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_PDBS}")
 #set_property(TARGET ${PROJECT_NAME}
 #        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_SCRIPTS}")
 
 if (DEFINED OUTPUT_FOLDER)
-    # If you specify an <OUTPUT_FOLDER> (including via environment variables)
-    # then we'll copy your mod files into Skyrim or a mod manager for you!
+  # If you specify an <OUTPUT_FOLDER> (including via environment variables)
+  # then we'll copy your mod files into Skyrim or a mod manager for you!
 
-    # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
-    set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
-    set(THEMES_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
-    set(TRANSLATE_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
+  # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
+  set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
+  set(THEMES_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
+  set(TRANSLATE_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
 
-    message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
+  message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
+  add_custom_command(
+      TARGET "${PROJECT_NAME}"
+      POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}$<$<CONFIG:DEBUG>:_debug>.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
+      VERBATIM
+  )
+
+  #Copy themes dir
+  add_custom_command(
+      TARGET "${PROJECT_NAME}"
+      POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E make_directory "${THEMES_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes" "${THEMES_FOLDER}"
+      VERBATIM
+  )
+
+  #Copy translate dir
+  add_custom_command(
+      TARGET "${PROJECT_NAME}"
+      POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E make_directory "${TRANSLATE_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate" "${TRANSLATE_FOLDER}"
+      VERBATIM
+  )
+
+  # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_custom_command(
-            TARGET "${PROJECT_NAME}"
-            POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}$<$<CONFIG:DEBUG>:_debug>.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
-            VERBATIM
+        TARGET "${PROJECT_NAME}"
+        POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
+        VERBATIM
     )
-
-    #Copy themes dir
-    add_custom_command(
-            TARGET "${PROJECT_NAME}"
-            POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${THEMES_FOLDER}"
-            COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes" "${THEMES_FOLDER}"
-            VERBATIM
-    )
-
-    #Copy translate dir
-    add_custom_command(
-            TARGET "${PROJECT_NAME}"
-            POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${TRANSLATE_FOLDER}"
-            COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate" "${TRANSLATE_FOLDER}"
-            VERBATIM
-    )
-
-    # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_custom_command(
-                TARGET "${PROJECT_NAME}"
-                POST_BUILD
-                COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
-                VERBATIM
-        )
-    endif ()
+  endif ()
 endif ()

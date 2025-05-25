@@ -8,6 +8,7 @@
 .vs
 .obsidian
 .vscode/settings.json
+.obsidian
 
 # Possible C++ build output directories and files
 out
