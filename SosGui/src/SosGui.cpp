@@ -269,9 +269,9 @@ auto SosGui::DrawSidebar() -> float
     {
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
-        auto           framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
-        auto           buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-        auto           fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
+        auto framePadding      = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
+        auto buttonColor       = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
+        auto fontSize          = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
         auto FocusWindowButton = [](const char *iconClass, const char *tooltip, BaseGui &baseGui) {
             auto isClick = ImGui::Button(iconClass);
             ImGui::SetItemTooltip("%s", tooltip);
@@ -334,6 +334,28 @@ void SosGui::Toolbar()
     ImGuiScope::StyleVar::FramePadding({3, 3});
     if (ImGui::BeginMenu(std::format("{} {}", NF_OCT_FILE, "$SosGui_ToolBar_File"_T).c_str()))
     {
+        {
+            bool fEnabled = m_uiData.IsEnabled();
+            if (ImGui::Checkbox("$Enabled"_T.c_str(), &fEnabled))
+            {
+                +[&] {
+                    return m_dataCoordinator.RequestEnable(fEnabled);
+                };
+            }
+        }
+
+        {
+            bool quickSlotEnabled = m_uiData.IsQuickSlotEnabled();
+            if (ImGui::Checkbox("$SkyOutSys_MCMHeader_Quickslots"_T.c_str(), &quickSlotEnabled))
+            {
+                if (EnableQuickslot(quickSlotEnabled))
+                {
+                    m_uiData.SetQuickSlotEnabled(quickSlotEnabled);
+                }
+            }
+            ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_EnableQuickslots"_T.c_str());
+        }
+
         if (ImGui::MenuItem("$SkyOutSys_Text_Import"_T.c_str()))
         {
             OnRefresh();
@@ -382,34 +404,12 @@ void SosGui::MainConfigWindow()
     ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("SosGuiOptions", &m_show, ImGuiWindowFlags_NoNav))
     {
-        bool fEnabled = m_uiData.IsEnabled();
-        if (ImGuiUtil::CheckBox("$Enabled", &fEnabled))
-        {
-            +[&] {
-                return m_dataCoordinator.RequestEnable(fEnabled);
-            };
-        }
-        DrawQuickSlotConfig();
         DrawCharactersPanel();
 
         const RE::Actor *selectedActor = GetSelectedActor();
         m_autoSwitchOutfitView.Draw(selectedActor, m_uiData, m_dataCoordinator, m_outfitService);
     }
     ImGui::End();
-}
-
-void SosGui::DrawQuickSlotConfig()
-{
-    bool quickSlotEnabled = m_uiData.IsQuickSlotEnabled();
-    if (ImGui::Checkbox("$SkyOutSys_MCMHeader_Quickslots"_T.c_str(), &quickSlotEnabled))
-    {
-        if (!EnableQuickslot(quickSlotEnabled))
-        {
-            m_uiData.SetQuickSlotEnabled(false);
-        }
-    }
-
-    ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_EnableQuickslots"_T.c_str());
 }
 
 EagerTask waitImport(const SosDataCoordinator &dataCoordinator)

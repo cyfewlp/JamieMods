@@ -90,8 +90,6 @@ private:
         return nullptr;
     }
 
-    void DrawQuickSlotConfig();
-
     static void NewFrame();
 
     void DrawCharactersPanel();
