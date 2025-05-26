@@ -11,7 +11,7 @@
 #include "common/WCharUtils.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
-#include "hooks/ScaleformHook.h"
+#include "hooks/UiHooks.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
@@ -323,19 +323,18 @@ void ImeUI::DrawSettings(Settings &settings)
     {
         m_translation.UseSection("Settings");
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-        DrawSettingsContent(settings);
-        ImGui::PopStyleVar();
-
-        if (DrawCombo(Translate("$Themes"), m_themeNames, settings.theme))
+        if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None))
         {
-            m_uiThemeLoader.LoadTheme(settings.theme, ImGui::GetStyle());
+            DrawSettingsContent(settings);
+            ImGui::EndTabBar();
         }
+        ImGui::PopStyleVar();
     }
     ImGui::End();
     imeManager->SyncImeStateIfDirty();
 }
 
-void ImeUI::DrawSettingsContent(Settings &settings)
+void ImeUI::DrawModConfig(Settings &settings)
 {
     bool enableMod = settings.enableMod;
     if (ImGui::Checkbox(Translate("$Enable_Mod"), &enableMod))
@@ -363,12 +362,14 @@ void ImeUI::DrawSettingsContent(Settings &settings)
         m_translation.UseLanguage(settings.language.c_str());
     }
 
-    if (!settings.enableMod)
+    if (DrawCombo(Translate("$Themes"), m_themeNames, settings.theme))
     {
-        return;
+        m_uiThemeLoader.LoadTheme(settings.theme, ImGui::GetStyle());
     }
-    DrawSettingsState();
+}
 
+void ImeUI::DrawFeatures(Settings &settings)
+{
     ImGui::SeparatorText(Translate("$Features"));
 
     DrawSettingsFocusManage(settings);
@@ -383,6 +384,29 @@ void ImeUI::DrawSettingsContent(Settings &settings)
         ImeManagerComposer::GetInstance()->MarkDirty();
     }
     ImGui::SetItemTooltip("%s", Translate("$Keep_Ime_Open_Tooltip"));
+}
+
+void ImeUI::DrawSettingsContent(Settings &settings)
+{
+    if (ImGui::BeginTabItem(Translate("$Mod_Config")))
+    {
+        DrawModConfig(settings);
+        ImGui::EndTabItem();
+    }
+    if (!settings.enableMod)
+    {
+        return;
+    }
+    if (ImGui::BeginTabItem(Translate("$States")))
+    {
+        DrawStates();
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem(Translate("$Features")))
+    {
+        DrawFeatures(settings);
+        ImGui::EndTabItem();
+    }
 }
 
 auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected) -> bool
@@ -412,16 +436,17 @@ auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values,
     return clicked;
 }
 
-void ImeUI::DrawSettingsState() const
+void ImeUI::DrawStates() const
 {
     ImGui::SeparatorText(Translate("$States"));
 
-    ImGui::Text(
-        "%s: %s", Translate("$Ime_Enabled"), State::GetInstance().NotHas(State::IME_DISABLED) ? EMOJI_YES : EMOJI_NO
-    );
-    ImGui::SetItemTooltip("%s", Translate("$Ime_Enabled_Tooltip"));
+    constexpr auto getStateIcon = [](bool state) {
+        return state ? EMOJI_YES : EMOJI_NO;
+    };
 
-    ImGui::Text("%s: %s", Translate("$Ime_Focus"), m_pImeWnd->IsFocused() ? EMOJI_YES : EMOJI_NO);
+    ImGui::Text("%s: %s", Translate("$Ime_Enabled"), getStateIcon(State::GetInstance().NotHas(State::IME_DISABLED)));
+    ImGui::SetItemTooltip("%s", Translate("$Ime_Enabled_Tooltip"));
+    ImGui::Text("%s: %s", Translate("$Ime_Focus"), getStateIcon(m_pImeWnd->IsFocused()));
     ImGui::SetItemTooltip("%s", Translate("$Ime_Focus_Tooltip"));
 
     ImGui::SameLine();
@@ -429,6 +454,12 @@ void ImeUI::DrawSettingsState() const
     {
         ImeManagerComposer::GetInstance()->ForceFocusIme();
     }
+    ImGui::Text(
+        "%s: %s",
+        Translate("$Message_Filter_Enabled"),
+        getStateIcon(Hooks::UiHooks::GetInstance()->IsEnableMessageFilter())
+    );
+    ImGui::SetItemTooltip("%s", Translate("$Message_Filter_Enabled_Tooltip"));
 }
 
 template <typename T>
