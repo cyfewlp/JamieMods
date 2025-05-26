@@ -66,23 +66,27 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
         {
             BOOL     bEnabled = FALSE;
             CComBSTR bstrDesc = nullptr;
-            hresult =
+
+            // Skip profile that failed to load.
+            auto hr =
                 lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled);
 
-            if (SUCCEEDED(hresult) && bEnabled == TRUE)
+            if (SUCCEEDED(hr) && bEnabled == TRUE)
             {
-                hresult = lpProfiles->GetLanguageProfileDescription(
+                hr = lpProfiles->GetLanguageProfileDescription(
                     profile.clsid, profile.langid, profile.guidProfile, &bstrDesc
                 );
-                if (SUCCEEDED(hresult))
+                if (SUCCEEDED(hr))
                 {
-                    LangProfile langProfile             = {};
-                    langProfile.clsid                   = profile.clsid;
-                    langProfile.langid                  = profile.langid;
-                    langProfile.guidProfile             = profile.guidProfile;
-                    langProfile.desc                    = WCharUtils::ToString(bstrDesc, bstrDesc.Length());
-                    m_langProfiles[profile.guidProfile] = langProfile;
-                    log_info("Load installed ime: {}", langProfile.desc.c_str());
+                    LangProfile langProfile = {};
+                    langProfile.clsid       = profile.clsid;
+                    langProfile.langid      = profile.langid;
+                    langProfile.guidProfile = profile.guidProfile;
+                    if (WCharUtils::ToString(bstrDesc, bstrDesc.Length(), langProfile.desc))
+                    {
+                        m_langProfiles[profile.guidProfile] = langProfile;
+                        log_info("Load installed ime: {}", langProfile.desc.c_str());
+                    }
                 }
             }
         }
@@ -91,7 +95,7 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
         engProfile.clsid          = CLSID_NULL;
         engProfile.langid         = LANGID_ENG; // english keyboard
         engProfile.guidProfile    = GUID_NULL;
-        engProfile.desc           = std::string("ENG");
+        engProfile.desc           = "ENG";
         m_langProfiles[GUID_NULL] = engProfile;
     }
     catch (std::runtime_error &error)

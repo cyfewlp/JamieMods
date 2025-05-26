@@ -38,11 +38,11 @@ struct LangProfile
     LANGID      langid{};
     GUID        guidProfile{};
     std::string desc{};
-} PACKED_ALIGN(128);
+};
 
 class LangProfileUtil : public ITfInputProcessorProfileActivationSink
 {
-    using State = Ime::Core::State;
+    using State = Core::State;
 
 public:
     LangProfileUtil()                                                     = default;
