@@ -6,9 +6,9 @@
 
 #include "ImeUI.h"
 
-#include "ImGuiThemeLoader.h"
 #include "ImeWnd.hpp"
 #include "common/WCharUtils.h"
+#include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "hooks/UiHooks.h"
@@ -70,34 +70,34 @@ void ImeUI::ApplyUiSettings(Settings &settings)
     }
 
     { // Apply theme config
-        const auto findIt = std::ranges::find(m_themeNames, settings.theme);
-        if (findIt != m_themeNames.end())
+        m_themesLoader.LoadThemes();
+        const auto &themes = m_themesLoader.GetThemes();
+        const auto  findIt = std::lower_bound(themes.begin(), themes.end(), ImGuiUtil::Theme(0, settings.theme));
+        const auto  index  = std::distance(themes.begin(), findIt);
+        std::expected<void, std::string> error;
+        if (static_cast<size_t>(index) < themes.size())
         {
-            m_uiThemeLoader.LoadTheme(settings.theme, ImGui::GetStyle());
+            error = m_themesLoader.UseTheme(index);
         }
         else
         {
-            settings.theme = "";
-            ErrorNotifier::GetInstance().Warning(
-                std::format("Can't find theme {}, fallback to ImGui default theme.", settings.theme)
-            );
-            ImGui::StyleColorsDark();
+            error = std::unexpected("Theme not found");
         }
-    }
-}
-
-void ImeUI::SetTheme() // TODO
-{
-    if (m_uiConfig.UseClassicTheme())
-    {
-        ImGui::StyleColorsDark();
-        return;
-    }
-
-    if (!m_uiThemeLoader.GetAllThemeNames(m_uiConfig.ThemeDirectory(), m_themeNames))
-    {
-        log_warn("Failed get theme names, fallback to ImGui default theme.");
-        ImGui::StyleColorsDark();
+        if (error)
+        {
+            settings.themeIndex = static_cast<size_t>(index);
+        }
+        else
+        {
+            ErrorNotifier::GetInstance().Warning(
+                std::format("Can't find theme {}, fallback to ImGui default theme: {}", settings.theme, error.error())
+            );
+            if (m_themesLoader.UseTheme(0))
+            {
+                settings.theme      = "Dark";
+                settings.themeIndex = 0;
+            }
+        }
     }
 }
 
@@ -216,8 +216,8 @@ void ImeUI::DrawInputMethodsCombo() const
     {
         activatedGuid = GUID_NULL;
     }
-    auto &profile = installedProfiles[activatedGuid];
-    if (ImGui::BeginCombo("###InstalledIME", profile.desc.c_str()))
+    if (const auto &profile = installedProfiles[activatedGuid];
+        ImGui::BeginCombo("###InstalledIME", profile.desc.c_str()))
     {
         uint32_t idx = 0;
         for (const std::pair<GUID, LangProfile> pair : installedProfiles)
@@ -345,7 +345,7 @@ void ImeUI::DrawModConfig(Settings &settings)
 
     ImGui::SameLine();
     const char *labelSlider = Translate("$Font_Size_Scale");
-    auto        size        = ImGui::CalcTextSize(labelSlider);
+    const auto  size        = ImGui::CalcTextSize(labelSlider);
     ImGui::SetNextItemWidth(-size.x);
     ImGui::DragFloat(
         Translate("$Font_Size_Scale"),
@@ -362,9 +362,29 @@ void ImeUI::DrawModConfig(Settings &settings)
         m_translation.UseLanguage(settings.language.c_str());
     }
 
-    if (DrawCombo(Translate("$Themes"), m_themeNames, settings.theme))
+    if (ImGui::BeginCombo(Translate("$Themes"), settings.theme.c_str()))
     {
-        m_uiThemeLoader.LoadTheme(settings.theme, ImGui::GetStyle());
+        size_t idx = 0;
+        for (const auto &theme : m_themesLoader.GetThemes())
+        {
+            ImGui::PushID(idx);
+            const bool isSelected = settings.themeIndex == idx;
+            if (ImGui::Selectable(theme.name.c_str(), isSelected) && !isSelected)
+            {
+                if (m_themesLoader.UseTheme(idx))
+                {
+                    settings.themeIndex = idx;
+                    settings.theme      = theme.name;
+                }
+            }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+            ImGui::PopID();
+            idx++;
+        }
+        ImGui::EndCombo();
     }
 }
 
@@ -440,7 +460,7 @@ void ImeUI::DrawStates() const
 {
     ImGui::SeparatorText(Translate("$States"));
 
-    constexpr auto getStateIcon = [](bool state) {
+    constexpr auto getStateIcon = [](const bool state) {
         return state ? EMOJI_YES : EMOJI_NO;
     };
 
@@ -465,7 +485,7 @@ void ImeUI::DrawStates() const
 template <typename T>
 constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
 {
-    bool pressed = ImGui::RadioButton(label, *pValue == value);
+    const bool pressed = ImGui::RadioButton(label, *pValue == value);
     if (pressed)
     {
         *pValue = value;

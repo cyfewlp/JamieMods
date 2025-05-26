@@ -127,7 +127,6 @@ public:
     AppUiConfig() : BaseConfig("UI")
     {
         Register(m_fontSize);
-        Register(m_useClassicTheme);
         Register(m_translationDir);
         Register(m_themeDirectory);
         Register(m_highlightTextColor);
@@ -158,11 +157,6 @@ public:
         return m_fontSize.Value();
     }
 
-    [[nodiscard]] auto UseClassicTheme() const -> bool
-    {
-        return m_useClassicTheme.Value();
-    }
-
     [[nodiscard]] auto TranslationDir() const -> const std::string &
     {
         return m_translationDir.Value();
@@ -186,7 +180,6 @@ public:
 private:
     friend class AppConfig;
     Property<int>         m_fontSize{14, "Font_Size"};
-    Property<bool>        m_useClassicTheme{false, "Use_Classic_Theme"};
     Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "Themes_Directory"};
     Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "Highlight_Text_Color"};
     Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "East_Asia_Font_File"};

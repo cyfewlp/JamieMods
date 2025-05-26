@@ -11,7 +11,7 @@
 namespace LIBC_NAMESPACE_DECL
 {
 
-void ErrorNotifier::addError(const std::string &txt, ErrorMsg::Level level)
+void ErrorNotifier::addError(const std::string &txt, const ErrorMsg::Level level)
 {
     if (level < m_currentLevel)
     {

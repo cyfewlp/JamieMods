@@ -8,7 +8,6 @@ add_executable(
     ${TEST_PROJ_NAME}
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     src/AppConfig.cpp
-    src/ImGuiThemeLoader.cpp
     src/ime/ImeManagerComposer.cpp
     src/ime/ImeManager.cpp
     ${TEST_SOURCES}

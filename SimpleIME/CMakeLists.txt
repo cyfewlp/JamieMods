@@ -49,6 +49,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${headers}
     ${IMGUI_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
+    ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
@@ -147,8 +148,7 @@ if (DEFINED OUTPUT_FOLDER)
 
   # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
   set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
-  set(THEMES_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
-  set(TRANSLATE_FOLDER "${OUTPUT_FOLDER}/interface/SimpleIME")
+  set(INTERFACE_FOLDER "${OUTPUT_FOLDER}/interface/${PROJECT_NAME}")
 
   message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
@@ -165,8 +165,8 @@ if (DEFINED OUTPUT_FOLDER)
   add_custom_command(
       TARGET "${PROJECT_NAME}"
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E make_directory "${THEMES_FOLDER}"
-      COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes" "${THEMES_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E make_directory "${INTERFACE_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/common/themes.toml" "${INTERFACE_FOLDER}"
       VERBATIM
   )
 
@@ -174,8 +174,8 @@ if (DEFINED OUTPUT_FOLDER)
   add_custom_command(
       TARGET "${PROJECT_NAME}"
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E make_directory "${TRANSLATE_FOLDER}"
-      COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate" "${TRANSLATE_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E make_directory "${INTERFACE_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate" "${INTERFACE_FOLDER}"
       VERBATIM
   )
 

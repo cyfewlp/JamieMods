@@ -140,7 +140,7 @@ auto ImeManagerComposer::EnableMod(bool enable) -> void
         AddTask([this, enable] {
             if (m_delegate->EnableMod(enable))
             {
-                m_fDirty = enable;
+                m_fDirty              = enable;
                 m_settings->enableMod = enable;
                 return;
             }
@@ -192,6 +192,10 @@ auto ImeManagerComposer::SyncImeState() -> void
 
 void ImeManagerComposer::AddTask(TaskQueue::Task &&task) const
 {
+    if (m_FocusTypeStack.empty())
+    {
+        return;
+    }
     if (m_FocusTypeStack.top() == Settings::FocusType::Permanent)
     {
         TaskQueue::GetInstance().AddImeThreadTask(std::move(task));

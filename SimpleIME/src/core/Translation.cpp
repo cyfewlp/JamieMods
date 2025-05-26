@@ -77,6 +77,7 @@ void Translation::LoadDefaultTranslate()
 [Tool Window]
 $Settings = Settings
 [Settings]
+$Mod_Config = Mod
 $Enable_Mod = Enable Mod
 $Enable_Mod_Tooltip = Unchecked will disable all mod feature(Disable keyboard).
 $Font_Size_Scale = Font Size Scale
@@ -87,6 +88,8 @@ $Ime_Enabled = IME Enabled
 $Ime_Enabled_Tooltip = By default, IME only enable when exists text entry
 $Ime_Focus = IME Focus
 $Ime_Focus_Tooltip = IME only enabled when any Text Entry is active and has keyboard focus.
+$Message_Filter_Enabled = Message Filter
+$Message_Filter_Enabled_Tooltip = Intercept game events during IME activation
 $Force_Focus_Ime = Force Focus Ime
 $Ime_Follow_Ime = Ime follow cursor
 $Ime_Follow_Ime_Tooltip = Ime window appear in cursor position.

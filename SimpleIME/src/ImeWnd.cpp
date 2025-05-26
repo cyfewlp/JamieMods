@@ -224,7 +224,6 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             if (pThis == nullptr) break;
             pThis->m_fFocused = false;
             ImGui::GetIO().ClearInputKeys();
-            ImGui::GetIO().ClearInputCharacters();
             log_info("IME window lost focus.");
             return S_OK;
         }
@@ -270,7 +269,6 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     ImGuiIO &io   = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigNavMoveSetMousePos = false;
-    m_pImeUi->SetTheme();
     GetClientRect(m_hWndParent, &rect);
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 

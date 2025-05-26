@@ -31,7 +31,8 @@ struct Settings
         BASED_ON_CARET,
     };
 
-    std::string           theme                 = "";
+    std::string           theme                 = "Invalid";
+    std::size_t           themeIndex            = 0; // not persist
     std::string           language              = "english";
     WindowPosUpdatePolicy windowPosUpdatePolicy = WindowPosUpdatePolicy::NONE;
     FocusType             focusType             = FocusType::Permanent;

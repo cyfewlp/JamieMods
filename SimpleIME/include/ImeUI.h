@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "ImGuiThemeLoader.h"
+#include "common/imgui/ThemesLoader.h"
+#include "common/utils.h"
 #include "configs/AppConfig.h"
 #include "core/State.h"
 #include "core/Translation.h"
@@ -27,7 +28,8 @@ class ImeUI
 
 public:
     explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService)
-        : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService)
+        : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService),
+          m_themesLoader(Utils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE))
     {
     }
 
@@ -38,7 +40,6 @@ public:
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
-    void SetTheme();
     void Draw(const Settings &settings);
     void RenderToolWindow(Settings &settings);
     void ShowToolWindow();
@@ -71,11 +72,10 @@ private:
     ImeWnd                  *m_pImeWnd         = nullptr;
     ITextService            *m_pTextService    = nullptr;
     LangProfileUtil         *m_langProfileUtil = nullptr;
-    ImGuiThemeLoader         m_uiThemeLoader{};
-    std::vector<std::string> m_themeNames{};
     Translation              m_translation;
     std::vector<std::string> m_translateLanguages;
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
+    ImGuiUtil::ThemesLoader  m_themesLoader;
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
