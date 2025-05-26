@@ -390,8 +390,6 @@ void ImeUI::DrawModConfig(Settings &settings)
 
 void ImeUI::DrawFeatures(Settings &settings)
 {
-    ImGui::SeparatorText(Translate("$Features"));
-
     DrawSettingsFocusManage(settings);
     DrawWindowPosUpdatePolicy(settings);
 
@@ -469,7 +467,8 @@ void ImeUI::DrawStates() const
     ImGui::Text("%s: %s", Translate("$Ime_Focus"), getStateIcon(m_pImeWnd->IsFocused()));
     ImGui::SetItemTooltip("%s", Translate("$Ime_Focus_Tooltip"));
 
-    ImGui::SameLine();
+    float spacing = ImGui::GetFontSize() * 2;
+    ImGui::SameLine(0, spacing);
     if (ImGui::Button(Translate("$Force_Focus_Ime")))
     {
         ImeManagerComposer::GetInstance()->ForceFocusIme();
@@ -480,10 +479,16 @@ void ImeUI::DrawStates() const
         getStateIcon(Hooks::UiHooks::GetInstance()->IsEnableMessageFilter())
     );
     ImGui::SetItemTooltip("%s", Translate("$Message_Filter_Enabled_Tooltip"));
+    ImGui::SameLine(0, spacing);
+    if (ImGui::Button(Translate("$Message_Filter_Close")))
+    {
+        Hooks::UiHooks::GetInstance()->EnableMessageFilter(false);
+    }
+    ImGui::SetItemTooltip("%s", Translate("$Message_Filter_Close_Tooltip"));
 }
 
 template <typename T>
-constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
+static constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
 {
     const bool pressed = ImGui::RadioButton(label, *pValue == value);
     if (pressed)
