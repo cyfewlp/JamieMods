@@ -9,6 +9,7 @@
 #include "common/log.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeManagerComposer.h"
+#include "ui/Settings.h"
 
 #include <RE/B/BSFixedString.h>
 #include <RE/B/BSUIScaleformData.h>
@@ -103,6 +104,11 @@ void UiHooks::AddMessageHook(
     RE::IUIMessageData *pMessageData
 )
 {
+    if (!g_uiHooks->IsEnableMessageFilter())
+    {
+        g_uiHooks->UiAddMessage->Original(self, menuName, messageType, pMessageData);
+        return;
+    }
     if (auto *strings = RE::InterfaceStrings::GetSingleton(); strings != nullptr)
     {
         if (messageType == RE::UI_MESSAGE_TYPE::kScaleformEvent)
@@ -110,17 +116,17 @@ void UiHooks::AddMessageHook(
             auto *scaleformData = reinterpret_cast<RE::BSUIScaleformData *>(pMessageData);
             // is char event?
             auto *event = scaleformData->scaleformEvent;
+            if (event->type == RE::GFxEvent::EventType::kKeyDown || event->type == RE::GFxEvent::EventType::kKeyUp)
+            {
+                Free(pMessageData);
+                return;
+            }
             if (event->type == RE::GFxEvent::EventType::kCharEvent)
             {
                 if (spdlog::should_log(spdlog::level::trace))
                 {
                     RE::GFxCharEvent *gfxCharEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
                     log_trace("menu {} Char message: {}", menuName.c_str(), gfxCharEvent->wcharCode);
-                }
-                if (!g_uiHooks->IsEnableMessageFilter())
-                {
-                    g_uiHooks->UiAddMessage->Original(self, menuName, messageType, pMessageData);
-                    return;
                 }
                 static RE::BSFixedString &topMenu = RE::InterfaceStrings::GetSingleton()->topMenu;
                 // is IME open and not IME sent message?

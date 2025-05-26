@@ -6,6 +6,7 @@
 #include "hooks/ScaleformHook.h"
 #include "hooks/UiHooks.h"
 #include "imgui.h"
+#include "ui/Settings.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
@@ -41,40 +42,40 @@ void EventHandler::InstallEventSink(ImeWnd *imeWnd)
 auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void
 {
     auto *uiHooks = Hooks::UiHooks::GetInstance();
-    if (!uiHooks || a_events == nullptr)
+    if (uiHooks == nullptr || a_events == nullptr)
     {
         return;
     }
-    const auto head = *a_events;
+    auto *const head = *a_events;
     if (head == nullptr)
     {
         return;
     }
-    const RE::ButtonEvent *buttonEvent = nullptr;
-    if (head->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
-    {
-        buttonEvent = head->AsButtonEvent();
-    }
-    if (buttonEvent == nullptr)
-    {
-        return;
-    }
-    const auto code = buttonEvent->GetIDCode();
     if (!settings.enableMod || Utils::IsImeNotActivateOrGameLoading())
     {
         uiHooks->EnableMessageFilter(false);
+        return;
     }
-    else
+    bool enableFilter = false;
+    for (auto event = head; event; event = event->next)
     {
+        const RE::ButtonEvent *buttonEvent = nullptr;
+        if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
+        {
+            buttonEvent = event->AsButtonEvent();
+        }
+        if (buttonEvent == nullptr)
+        {
+            continue;
+        }
+        const auto code = buttonEvent->GetIDCode();
         if (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
         {
-            uiHooks->EnableMessageFilter(true);
-        }
-        else
-        {
-            uiHooks->EnableMessageFilter(false);
+            enableFilter = true;
+            break;
         }
     }
+    uiHooks->EnableMessageFilter(enableFilter);
 }
 
 //////////////////////////////////////////////////////////////////////////
