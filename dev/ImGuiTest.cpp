@@ -13,10 +13,10 @@
 #include "Status.h"
 #include "common/WCharUtils.h"
 #include "common/toml++/toml.hpp"
-#include "imgui_freetype.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "imgui_internal.h"
+#include "misc/freetype/imgui_freetype.h"
 #include "spdlog/spdlog.h"
 
 #include <array>
@@ -32,6 +32,8 @@
 #pragma comment(lib, "dwrite.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dinput8.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "Comctl32.lib")
 
 using namespace std::literals;
 

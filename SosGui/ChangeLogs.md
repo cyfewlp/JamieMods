@@ -64,5 +64,5 @@
 	- `Noto Color Emoji` can't work with plutosvg + freetype.. This feature need delay, rollback SVG support ;
 - [x] [[improvement]] Add vertical padding for Menubar ;
 - [ ] gamepad control？
-- [ ] rename Main window `SosGuiOptions`-> `Characters Edit Panel`?
+- [x] rename Main window `SosGuiOptions`-> `Characters Edit Panel`?
 - [x] refresh UI favorite outfits list when unmark a outfit;
