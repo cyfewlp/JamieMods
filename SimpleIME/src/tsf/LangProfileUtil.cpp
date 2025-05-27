@@ -95,7 +95,7 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
         engProfile.clsid          = CLSID_NULL;
         engProfile.langid         = LANGID_ENG; // english keyboard
         engProfile.guidProfile    = GUID_NULL;
-        engProfile.desc           = "ENG";
+        engProfile.desc           = std::string("ENG");
         m_langProfiles[GUID_NULL] = engProfile;
     }
     catch (std::runtime_error &error)
@@ -202,20 +202,17 @@ auto Ime::LangProfileUtil::OnActivated(
     if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
     {
         m_activatedProfile = guidProfile;
-        UpdateLangProfileState();
+        auto &state        = State::GetInstance();
+        state.Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile != GUID_NULL);
+        state.Clear(State::IN_ALPHANUMERIC);
+        state.Clear(State::IN_CAND_CHOOSING);
+        state.Clear(State::IN_COMPOSING);
     }
     return S_OK;
 }
 
 void Ime::LangProfileUtil::UpdateLangProfileState() const
 {
-    if (m_activatedProfile == GUID_NULL)
-    {
-        State::GetInstance().Clear(State::LANG_PROFILE_ACTIVATED);
-    }
-    else
-    {
-        State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED);
-    }
+    State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile != GUID_NULL);
 }
 } // namespace LIBC_NAMESPACE_DECL

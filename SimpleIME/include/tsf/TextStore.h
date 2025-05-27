@@ -302,14 +302,15 @@ public:
     auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
 private:
-    void        UpdateConversionMode();
-    static void DoUpdateConversionMode(const ULONG convertionMode);
+    void        UpdateConversionMode() const;
+    static void DoUpdateConversionMode(ULONG convertionMode);
 
-    Ime::CandidateUi             m_candidateUi{};
-    Ime::TextEditor              m_textEditor{};
-    Ime::Imm32::Imm32TextService m_fallbackTextService{};
-    CComPtr<TsfCompartment>      m_pCompartment = nullptr;
-    CComPtr<TextStore>           m_pTextStore   = nullptr;
+    Ime::CandidateUi             m_candidateUi;
+    Ime::TextEditor              m_textEditor;
+    Ime::Imm32::Imm32TextService m_fallbackTextService;
+    CComPtr<TsfCompartment>      m_pCompartment         = nullptr;
+    CComPtr<TsfCompartment>      m_pCompartmentKeyBoard = nullptr;
+    CComPtr<TextStore>           m_pTextStore           = nullptr;
 };
 } // namespace Tsf
 } // namespace LIBC_NAMESPACE_DECL

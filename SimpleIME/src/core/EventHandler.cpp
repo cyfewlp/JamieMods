@@ -51,13 +51,14 @@ auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent 
     {
         return;
     }
-    if (!settings.enableMod || Utils::IsImeNotActivateOrGameLoading())
+    const auto &state = State::GetInstance();
+    if (!settings.enableMod || !state.IsKeyboardOpen() || state.IsImeNotActivateOrGameLoading())
     {
         uiHooks->EnableMessageFilter(false);
         return;
     }
     bool enableFilter = false;
-    for (auto event = head; event; event = event->next)
+    for (auto *event = head; event; event = event->next)
     {
         const RE::ButtonEvent *buttonEvent = nullptr;
         if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
@@ -69,7 +70,7 @@ auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent 
             continue;
         }
         const auto code = buttonEvent->GetIDCode();
-        if (Utils::IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
+        if (state.IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
         {
             enableFilter = true;
             break;

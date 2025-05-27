@@ -13,7 +13,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-class Utils
+class CommonUtils
 {
 public:
     static constexpr auto GetInterfaceFile(const std::string_view &fileName) -> std::string

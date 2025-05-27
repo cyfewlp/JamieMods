@@ -2,7 +2,6 @@
 
 #include "enumeration.h"
 
-#include <atomic>
 #include <cstdint>
 #include <type_traits>
 
@@ -29,14 +28,22 @@ public:
         IME_DISABLED           = 0x20, // if set, ignore any TextService change
         TSF_FOCUS              = 0x40,
         GAME_LOADING           = 0x80,
+        KEYBOARD_OPEN          = 0x100, // if not set this, we should pass game event;
         ALL                    = 0xFFFF
     };
 
     State() = default;
 
-    auto Set(StateKey state) -> void
+    auto Set(StateKey state, bool set = true) -> void
     {
-        m_state.set(state);
+        if (set)
+        {
+            m_state.set(state);
+        }
+        else
+        {
+            m_state.reset(state);
+        }
     }
 
     auto Clear(StateKey state) -> void
@@ -84,6 +91,21 @@ public:
     {
         static State g_instance;
         return g_instance;
+    }
+
+    constexpr auto IsKeyboardOpen() const
+    {
+        return Has(KEYBOARD_OPEN);
+    }
+
+    constexpr auto IsImeInputting() const
+    {
+        return HasAny(IN_CAND_CHOOSING, IN_COMPOSING);
+    }
+
+    constexpr auto IsImeNotActivateOrGameLoading() const
+    {
+        return HasAny(IME_DISABLED, IN_ALPHANUMERIC, GAME_LOADING) || NotHas(LANG_PROFILE_ACTIVATED);
     }
 
 private:

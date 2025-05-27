@@ -29,7 +29,7 @@ class ImeUI
 public:
     explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService)
         : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService),
-          m_themesLoader(Utils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE))
+          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE))
     {
     }
 

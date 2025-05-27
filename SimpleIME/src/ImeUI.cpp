@@ -7,6 +7,7 @@
 #include "ImeUI.h"
 
 #include "ImeWnd.hpp"
+#include "Utils.h"
 #include "common/WCharUtils.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
@@ -108,7 +109,7 @@ void ImeUI::Draw(const Settings &settings)
     windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
     static bool prevFrameIsShowing = false;
     const auto &state              = State::GetInstance();
-    if (state.Has(State::IME_DISABLED) || state.NotHas(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
+    if (state.ImeDisabled() || !state.IsKeyboardOpen() || !state.IsImeInputting())
     {
         prevFrameIsShowing = false;
         return;
@@ -581,9 +582,9 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
         ImGui::SameLine();
         if (fmodf(CursorAnim, 1.2f) <= 0.8f)
         {
-            ImDrawList *drawList        = ImGui::GetWindowDrawList();
-            ImVec2      cursorScreenPos = ImGui::GetCursorScreenPos();
-            ImVec2      min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
+            ImDrawList  *drawList        = ImGui::GetWindowDrawList();
+            ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
+            ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
             drawList->AddLine(
                 min,
                 ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),

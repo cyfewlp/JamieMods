@@ -19,17 +19,31 @@ HRESULT TextService::Initialize()
         DoUpdateConversionMode(ulong);
         return S_OK;
     };
-    m_pCompartment = new TsfCompartment();
+    m_pCompartment         = new TsfCompartment();
+    m_pCompartmentKeyBoard = new TsfCompartment();
     HRESULT hresult =
         m_pCompartment->Initialize(tsfSupport.GetThreadMgr(), GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, callback);
+
+    if (SUCCEEDED(hresult))
+    {
+        hresult = m_pCompartmentKeyBoard->Initialize(
+            tsfSupport.GetThreadMgr(),
+            GUID_COMPARTMENT_KEYBOARD_OPENCLOSE,
+            [](const GUID *, const ULONG ulong) {
+                State::GetInstance().Set(State::KEYBOARD_OPEN, ulong != 0);
+                return S_OK;
+            }
+        );
+    }
     if (SUCCEEDED(hresult))
     {
         hresult = m_pTextStore->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId());
     }
+
     return hresult;
 }
 
-void TextService::UpdateConversionMode()
+void TextService::UpdateConversionMode() const
 {
     ULONG convertionMode = 0;
     if (SUCCEEDED(m_pCompartment->GetValue(convertionMode)))
@@ -41,14 +55,9 @@ void TextService::UpdateConversionMode()
 void TextService::DoUpdateConversionMode(const ULONG convertionMode)
 {
     log_trace("DoUpdateConversionMode");
-    if ((convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
-    {
-        State::GetInstance().Set(State::IN_ALPHANUMERIC);
-    }
-    else
-    {
-        State::GetInstance().Clear(State::IN_ALPHANUMERIC);
-    }
+    State::GetInstance().Set(
+        State::IN_ALPHANUMERIC, (convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC
+    );
 }
 
 auto TextService::ProcessImeMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> bool

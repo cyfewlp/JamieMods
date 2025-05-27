@@ -38,18 +38,6 @@ public:
         return (capsState & 0x0001) != 0;
     }
 
-    static constexpr auto IsImeNotActivateOrGameLoading() -> bool
-    {
-        auto &state = State::GetInstance();
-        return state.HasAny(State::IME_DISABLED, State::IN_ALPHANUMERIC, State::GAME_LOADING) ||
-               state.NotHas(State::LANG_PROFILE_ACTIVATED);
-    }
-
-    static constexpr auto IsImeInputting() -> bool
-    {
-        return State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING);
-    }
-
     static constexpr auto IsKeyWillTriggerIme(const uint32_t keycode) -> bool
     {
         if (IsVkCodeDown(VK_CONTROL) || IsVkCodeDown(VK_SHIFT) || IsVkCodeDown(VK_MENU) || IsVkCodeDown(VK_LWIN) ||
