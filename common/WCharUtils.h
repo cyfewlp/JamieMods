@@ -49,8 +49,9 @@ public:
         int const size_needed = WideCharToMultiByte(codePage, 0, pwsz, charSize, nullptr, 0, nullptr, nullptr);
         if (size_needed > 0)
         {
-            outStr.resize(size_needed);
-            return WideCharToMultiByte(codePage, 0, pwsz, charSize, outStr.data(), size_needed, nullptr, nullptr) != 0;
+            size_t oldSize = outStr.size();
+            outStr.resize(oldSize + size_needed);
+            return WideCharToMultiByte(codePage, 0, pwsz, charSize, outStr.data() + oldSize, size_needed, nullptr, nullptr) != 0;
         }
         return false;
     }

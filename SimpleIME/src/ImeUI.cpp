@@ -126,7 +126,7 @@ void ImeUI::Draw(const Settings &settings)
     if (ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags))
     {
         m_imeWindowSize = ImGui::GetContentRegionAvail();
-        RenderCompWindow();
+        DrawCompWindow(settings);
 
         ImGui::Separator();
         // render ime status window: language,
@@ -539,12 +539,75 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
     m_translation.UseSection("Settings");
 }
 
-void ImeUI::RenderCompWindow() const
+void ImeUI::DrawCompWindow(const Settings &settings) const
 {
+    static float CursorAnim = 0.f;
+
+    CursorAnim += ImGui::GetIO().DeltaTime;
+
     const ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
-    const auto  &editorText    = m_pTextService->GetTextEditor().GetText();
-    const auto   str           = WCharUtils::ToString(editorText);
-    ImGui::TextColored(highLightText, "%s", str.c_str());
+    auto        &textEditor    = m_pTextService->GetTextEditor();
+
+    const auto &editorText = textEditor.GetText();
+    LONG        acpStart   = 0;
+    LONG        acpEnd     = 0;
+    textEditor.GetSelection(&acpStart, &acpEnd);
+
+    bool success = true;
+    // we assume start always == end
+    if (acpStart != acpEnd)
+    {
+        std::string text;
+        success = WCharUtils::ToString(editorText.c_str(), acpStart, text);
+        if (success)
+        {
+            ImGui::TextColored(highLightText, "%s", text.c_str());
+        }
+    }
+    else if (static_cast<size_t>(acpStart) <= editorText.size())
+    {
+        ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
+        if (acpStart > 0)
+        {
+            std::string startToCaret;
+            success = WCharUtils::ToString(editorText.c_str(), acpStart, startToCaret);
+            if (success)
+            {
+                ImGui::TextColored(highLightText, "%s", startToCaret.c_str());
+            }
+        }
+
+        // caret
+        ImGui::SameLine();
+        if (fmodf(CursorAnim, 1.2f) <= 0.8f)
+        {
+            ImDrawList *drawList        = ImGui::GetWindowDrawList();
+            ImVec2      cursorScreenPos = ImGui::GetCursorScreenPos();
+            ImVec2      min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
+            drawList->AddLine(
+                min,
+                ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
+                ImGui::GetColorU32(ImGuiCol_InputTextCursor),
+                1.0f * settings.dpiScale
+            );
+        }
+
+        success = success && static_cast<size_t>(acpStart) < editorText.size();
+        if (success)
+        {
+            std::string caretToEnd;
+            success = WCharUtils::ToString(editorText.c_str() + acpStart, editorText.size() - acpStart, caretToEnd);
+            if (success)
+            {
+                ImGui::TextColored(highLightText, "%s", caretToEnd.c_str());
+            }
+        }
+        if (!success)
+        {
+            ImGui::NewLine();
+        }
+        ImGui::PopStyleVar();
+    }
 }
 
 void ImeUI::DrawCandidateWindows() const

@@ -69,18 +69,20 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings) const;
+    void DrawIme(Settings &settings);
     void ShowToolWindow() const;
     void ApplyUiSettings(Settings *pSettings) const;
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static auto GetThis(HWND hWnd) -> ImeWnd *;
-    static void NewFrame();
+     void NewFrame();
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
 
     void        OnStart(Settings *pSettings);
+    void        OnDpiChanged(HWND hWnd);
+    void        RebuildFont() const;
     static auto OnCreate() -> LRESULT;
     auto        SaveSettings() const -> void;
     auto        OnDestroy() const -> LRESULT;
@@ -95,8 +97,9 @@ private:
     HWND                          m_hWnd       = nullptr;
     HWND                          m_hWndParent = nullptr;
     WNDCLASSEXW                   wc{};
-    bool                          m_fEnableTsf = false;
-    bool                          m_fFocused   = false;
+    bool                          m_fEnableTsf       = false;
+    bool                          m_fFocused         = false;
+    bool                          m_fWantRebuildFont = false;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

@@ -60,7 +60,7 @@ private:
     void DrawSettingsFocusManage(Settings &settings) const;
     void DrawStates() const;
     void DrawWindowPosUpdatePolicy(Settings &settings);
-    void RenderCompWindow() const;
+    void DrawCompWindow(const Settings &settings) const;
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
 

@@ -21,12 +21,13 @@
 #include <windowsx.h>
 
 // extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern auto ImGui_ImplWin32_GetDpiScaleForHwnd(void *hwnd) -> float;
 
 namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-ImeWnd::ImeWnd(Settings& settings) : m_settings(settings)
+ImeWnd::ImeWnd(Settings &settings) : m_settings(settings)
 {
     wc = {};
     ZeroMemory(&wc, sizeof(wc));
@@ -62,8 +63,25 @@ void ImeWnd::InitializeTextService(const AppConfig &pAppConfig)
     m_pLangProfileUtil = new LangProfileUtil();
 }
 
+static void TryEnableImeWndDpiAware()
+{
+    log_info("Try to enable DPI aware for IME Wnd...");
+    using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
+
+    HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
+    auto    pSetThreadDpiAwarenessContext =
+        reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
+
+    if (pSetThreadDpiAwarenessContext)
+    {
+        pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        log_info("Enable DPI aware successful!");
+    }
+}
+
 void ImeWnd::Initialize() noexcept(false)
 {
+    TryEnableImeWndDpiAware();
     wc.hInstance = GetModuleHandle(nullptr);
     if (RegisterClassExW(&wc) == 0U)
     {
@@ -183,6 +201,32 @@ void ImeWnd::OnStart(Settings *pSettings)
     ApplyUiSettings(pSettings);
 }
 
+void ImeWnd::OnDpiChanged(HWND hWnd)
+{
+    m_settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+    m_fWantRebuildFont  = true;
+}
+
+void ImeWnd::RebuildFont() const
+{
+    const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
+    float       pxFontSize = m_settings.dpiScale * uiConfig.FontSize();
+
+    auto &io = ImGui::GetIO();
+    io.Fonts->Clear();
+    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), pxFontSize))
+    {
+        io.Fonts->AddFontDefault();
+    }
+
+    // config font
+    static ImFontConfig cfg;
+    cfg.OversampleH = cfg.OversampleV = 1;
+    cfg.MergeMode                     = true;
+    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+    io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), pxFontSize, &cfg);
+}
+
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
     ImeWnd *pThis = GetThis(hWnd);
@@ -205,6 +249,11 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         case WM_DESTROY: {
             if (pThis == nullptr) break;
             return pThis->OnDestroy();
+        }
+        case WM_DPICHANGED: {
+            if (pThis == nullptr) break;
+            pThis->OnDpiChanged(hWnd);
+            return S_OK;
         }
         case CM_EXECUTE_TASK: {
             TaskQueue::GetInstance().ExecuteImeThreadTasks();
@@ -241,14 +290,6 @@ auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
     return reinterpret_cast<ImeWnd *>(ptr);
 }
 
-auto GetDpiY()
-{
-    const HDC hdc  = GetDC(nullptr);
-    const int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
-    ReleaseDC(nullptr, hdc);
-    return dpiY;
-}
-
 void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
 {
     log_info("Initializing ImGui...");
@@ -268,31 +309,24 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     RECT     rect = {0, 0, 0, 0};
     ImGuiIO &io   = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Keyboard Controls
     io.ConfigNavMoveSetMousePos = false;
     GetClientRect(m_hWndParent, &rect);
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-    const auto  dpiY       = GetDpiY();
-    const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
-    const auto  pxFontSize = MulDiv(uiConfig.FontSize(), dpiY, 72);
-    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), pxFontSize))
-    {
-        io.Fonts->AddFontDefault();
-    }
+    m_settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+    RebuildFont();
 
-    // config font
-    static ImFontConfig cfg;
-    cfg.OversampleH = cfg.OversampleV = 1;
-    cfg.MergeMode                     = true;
-    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), pxFontSize, &cfg);
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
         style.WindowRounding              = 0.0F;
         style.Colors[ImGuiCol_WindowBg].w = 1.0F;
     }
-
+    if (m_settings.dpiScale != 1.0F)
+    {
+        style.ScaleAllSizes(m_settings.dpiScale);
+    }
     log_info("ImGui initialized!");
 }
 
@@ -421,9 +455,18 @@ void ImeWnd::NewFrame()
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
+    if (m_fWantRebuildFont)
+    {
+        m_fWantRebuildFont = false;
+        RebuildFont();
+        if (m_settings.dpiScale != 1.0f)
+        {
+            ImGui::GetStyle().ScaleAllSizes(m_settings.dpiScale);
+        }
+    }
 }
 
-void ImeWnd::DrawIme(Settings &settings) const
+void ImeWnd::DrawIme(Settings &settings)
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();

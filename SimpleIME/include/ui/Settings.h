@@ -37,6 +37,7 @@ struct Settings
     WindowPosUpdatePolicy windowPosUpdatePolicy = WindowPosUpdatePolicy::NONE;
     FocusType             focusType             = FocusType::Permanent;
     float                 fontSizeScale         = 1.0F;
+    float                 dpiScale              = 1.0f;
     bool                  enableUnicodePaste    = true;
     bool                  showSettings          = false;
     bool                  keepImeOpen           = false;

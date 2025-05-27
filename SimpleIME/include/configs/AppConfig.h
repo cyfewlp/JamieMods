@@ -152,7 +152,7 @@ public:
         return m_emojiFontFile.Value();
     }
 
-    [[nodiscard]] constexpr auto FontSize() const -> float
+    [[nodiscard]] constexpr auto FontSize() const -> int
     {
         return m_fontSize.Value();
     }
