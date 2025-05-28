@@ -75,25 +75,31 @@ void ImeUI::ApplyUiSettings(Settings &settings)
         const auto &themes = m_themesLoader.GetThemes();
         const auto  findIt = std::lower_bound(themes.begin(), themes.end(), ImGuiUtil::Theme(0, settings.theme));
         const auto  index  = std::distance(themes.begin(), findIt);
-        std::expected<void, std::string> error;
+        std::expected<void, std::string> expected;
         if (static_cast<size_t>(index) < themes.size())
         {
-            error = m_themesLoader.UseTheme(index);
+            ImGuiStyle style;
+            expected = m_themesLoader.UseTheme(index, style);
+            if (expected)
+            {
+                style.ScaleAllSizes(settings.dpiScale);
+                ImGui::GetStyle() = style;
+            }
         }
         else
         {
-            error = std::unexpected("Theme not found");
+            expected = std::unexpected("Theme not found");
         }
-        if (error)
+        if (expected)
         {
             settings.themeIndex = static_cast<size_t>(index);
         }
         else
         {
-            ErrorNotifier::GetInstance().Warning(
-                std::format("Can't find theme {}, fallback to ImGui default theme: {}", settings.theme, error.error())
-            );
-            if (m_themesLoader.UseTheme(0))
+            ErrorNotifier::GetInstance().Warning(std::format(
+                "Can't find theme {}, fallback to ImGui default theme: {}", settings.theme, expected.error()
+            ));
+            if (m_themesLoader.UseTheme(0, ImGui::GetStyle()))
             {
                 settings.theme      = "Dark";
                 settings.themeIndex = 0;
@@ -127,7 +133,10 @@ void ImeUI::Draw(const Settings &settings)
     if (ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags))
     {
         m_imeWindowSize = ImGui::GetContentRegionAvail();
-        DrawCompWindow(settings);
+        if (state.Has(State::IN_COMPOSING))
+        {
+            DrawCompWindow(settings);
+        }
 
         ImGui::Separator();
         // render ime status window: language,
@@ -320,7 +329,7 @@ void ImeUI::DrawSettings(Settings &settings)
     }
     auto      *imeManager = ImeManagerComposer::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
-    if (ImGui::Begin(windowName.c_str(), &settings.showSettings, ImGuiWindowFlags_NoNav))
+    if (ImGui::Begin(windowName.c_str(), &settings.showSettings))
     {
         m_translation.UseSection("Settings");
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
@@ -344,7 +353,12 @@ void ImeUI::DrawModConfig(Settings &settings)
     }
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
-    ImGui::SameLine();
+    ImGui::InputScalar(Translate("$Font_Size"), ImGuiDataType_U32, &settings.fontSize, nullptr, nullptr, "%u");
+    if (ImGui::IsItemDeactivatedAfterEdit())
+    {
+        settings.wantRebuildFont = true;
+    }
+
     const char *labelSlider = Translate("$Font_Size_Scale");
     const auto  size        = ImGui::CalcTextSize(labelSlider);
     ImGui::SetNextItemWidth(-size.x);
@@ -372,10 +386,13 @@ void ImeUI::DrawModConfig(Settings &settings)
             const bool isSelected = settings.themeIndex == idx;
             if (ImGui::Selectable(theme.name.c_str(), isSelected) && !isSelected)
             {
-                if (m_themesLoader.UseTheme(idx))
+                ImGuiStyle style;
+                if (m_themesLoader.UseTheme(idx, style))
                 {
                     settings.themeIndex = idx;
                     settings.theme      = theme.name;
+                    style.ScaleAllSizes(settings.dpiScale);
+                    ImGui::GetStyle() = style;
                 }
             }
             if (isSelected)
@@ -614,14 +631,14 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
 void ImeUI::DrawCandidateWindows() const
 {
     const auto &candidateUi = m_pTextService->GetCandidateUi();
-    if (const auto candidateList = candidateUi.CandidateList(); candidateList.size() > 0)
+    if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
         DWORD index = 0;
         for (const auto &candidate : candidateList)
         {
             if (index == candidateUi.Selection())
             {
-                ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
+                const ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
                 ImGui::TextColored(highLightText, "%s", candidate.c_str());
             }
             else

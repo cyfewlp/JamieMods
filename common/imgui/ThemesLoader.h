@@ -84,8 +84,9 @@ public:
     void LoadThemes();
     /**
      * @param themeIndex The Themes index.
+     * @param style
      */
-    auto UseTheme(size_t themeIndex) const noexcept -> std::expected<void, std::string>;
+    auto UseTheme(size_t themeIndex, ImGuiStyle &style) const noexcept -> std::expected<void, std::string>;
 
     [[nodiscard]] auto GetThemes() const -> const std::vector<Theme> &
     {

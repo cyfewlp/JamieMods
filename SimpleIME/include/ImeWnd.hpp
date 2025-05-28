@@ -52,7 +52,8 @@ public:
     /**
      * initialize ImGui. Work on UI thread.
      */
-    void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false);
+    void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings) const
+        noexcept(false);
     auto Focus() const -> void;
     auto SetTsfFocus(bool focus) const -> bool;
     auto IsFocused() const -> bool;
@@ -69,20 +70,20 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings);
+    void DrawIme(Settings &settings) const;
     void ShowToolWindow() const;
     void ApplyUiSettings(Settings *pSettings) const;
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static auto GetThis(HWND hWnd) -> ImeWnd *;
-     void NewFrame();
+    static void NewFrame(Settings &settings);
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
 
     void        OnStart(Settings *pSettings);
-    void        OnDpiChanged(HWND hWnd);
-    void        RebuildFont() const;
+    void        OnDpiChanged(HWND hWnd) const;
+    static void RebuildFont(const Settings &settings);
     static auto OnCreate() -> LRESULT;
     auto        SaveSettings() const -> void;
     auto        OnDestroy() const -> LRESULT;
@@ -97,9 +98,8 @@ private:
     HWND                          m_hWnd       = nullptr;
     HWND                          m_hWndParent = nullptr;
     WNDCLASSEXW                   wc{};
-    bool                          m_fEnableTsf       = false;
-    bool                          m_fFocused         = false;
-    bool                          m_fWantRebuildFont = false;
+    bool                          m_fEnableTsf = false;
+    bool                          m_fFocused   = false;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

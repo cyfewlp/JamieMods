@@ -13,8 +13,6 @@ namespace Ime
 {
 AppConfig AppConfig::g_appConfig{};
 
-void AppUiConfig::Save(CSimpleIniA & /*ini*/, const AppUiConfig & /*diskConfig*/) const {}
-
 SettingsConfig::SettingsConfig() : BaseConfig("Settings")
 {
     Register(fontSizeScale);
@@ -91,6 +89,16 @@ void IniSetValueIfDiff(
         return;
     }
     IniSetValue(ini, section, property);
+}
+
+void AppUiConfig::Set(const Settings &settings)
+{
+    m_fontSize.SetValue(settings.fontSize);
+}
+
+void AppUiConfig::Save(CSimpleIniA &ini, const AppUiConfig &diskConfig) const
+{
+    IniSetValueIfDiff(ini, SectionName(), m_fontSize, diskConfig.m_fontSize);
 }
 
 void SettingsConfig::Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) const

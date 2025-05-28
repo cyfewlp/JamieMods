@@ -36,8 +36,10 @@ struct Settings
     std::string           language              = "english";
     WindowPosUpdatePolicy windowPosUpdatePolicy = WindowPosUpdatePolicy::NONE;
     FocusType             focusType             = FocusType::Permanent;
+    int                   fontSize              = 16; // not persist
     float                 fontSizeScale         = 1.0F;
-    float                 dpiScale              = 1.0f;
+    float                 dpiScale              = 1.0f; // not persist
+    bool                  wantRebuildFont       = false;// not persist
     bool                  enableUnicodePaste    = true;
     bool                  showSettings          = false;
     bool                  keepImeOpen           = false;

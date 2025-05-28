@@ -59,9 +59,9 @@ void ImeApp::Initialize()
     m_fInitialized.store(false);
     Hooks::WinHooks::Install();
 
-    D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
-    auto & errorNotifier = ErrorNotifier::GetInstance();
-    const auto & uiConfig = AppConfig::GetConfig().GetAppUiConfig();
+    D3DInitHook               = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
+    auto       &errorNotifier = ErrorNotifier::GetInstance();
+    const auto &uiConfig      = AppConfig::GetConfig().GetAppUiConfig();
     errorNotifier.SetMessageDuration(uiConfig.ErrorMessageDuration());
 #ifdef SIMPLE_IME_DEBUG
     errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
@@ -192,7 +192,8 @@ void ImeApp::OnD3DInit()
 
 void ImeApp::SetSettings()
 {
-    const auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
+    auto       &config         = AppConfig::GetConfig();
+    const auto &settingsConfig = config.GetSettingsConfig();
 
     m_settings.windowPosUpdatePolicy = settingsConfig.GetWindowPosUpdatePolicy();
     m_settings.enableUnicodePaste    = settingsConfig.GetEnableUnicodePaste();
@@ -201,6 +202,7 @@ void ImeApp::SetSettings()
     m_settings.keepImeOpen           = settingsConfig.GetKeepImeOpen();
     m_settings.enableMod             = settingsConfig.GetEnableMod();
     m_settings.focusType             = settingsConfig.GetFocusType();
+    m_settings.fontSize              = config.GetAppUiConfig().FontSize();
     m_settings.language              = settingsConfig.GetLanguage();
     m_settings.theme                 = settingsConfig.GetTheme();
 }
@@ -211,6 +213,10 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     std::future<bool>  initialized = ensureInitialized.get_future();
     // run ImeWnd in a standalone thread
     SetSettings();
+    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+    auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
+    m_imeWnd.InitImGui(m_hWnd, device, context, m_settings);
+
     std::thread childWndThread([&ensureInitialized, this] {
         try
         {
@@ -232,9 +238,6 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 
     initialized.get();
     childWndThread.detach();
-    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
-    auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
-    m_imeWnd.InitImGui(m_hWnd, device, context);
 }
 
 void ImeApp::InstallHooks()

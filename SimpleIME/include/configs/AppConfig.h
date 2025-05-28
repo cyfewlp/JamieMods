@@ -128,7 +128,6 @@ public:
     {
         Register(m_fontSize);
         Register(m_translationDir);
-        Register(m_themeDirectory);
         Register(m_highlightTextColor);
         Register(m_eastAsiaFontFile);
         Register(m_emojiFontFile);
@@ -140,6 +139,7 @@ public:
     AppUiConfig &operator=(const AppUiConfig &other)   = default;
     AppUiConfig &operator=(const AppUiConfig &&rvalue) = delete;
 
+    void Set(const Settings &settings);
     void Save(CSimpleIniA &ini, const AppUiConfig &diskConfig) const override;
 
     [[nodiscard]] constexpr auto EastAsiaFontFile() const -> const std::string &
@@ -162,11 +162,6 @@ public:
         return m_translationDir.Value();
     }
 
-    [[nodiscard]] auto ThemeDirectory() const -> const std::string &
-    {
-        return m_themeDirectory.Value();
-    }
-
     [[nodiscard]] auto HighlightTextColor() const -> uint32_t
     {
         return m_highlightTextColor.Value();
@@ -180,7 +175,6 @@ public:
 private:
     friend class AppConfig;
     Property<int>         m_fontSize{14, "Font_Size"};
-    Property<std::string> m_themeDirectory{R"(Data\interface\SimpleIME)", "Themes_Directory"};
     Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "Highlight_Text_Color"};
     Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "East_Asia_Font_File"};
     Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "Emoji_Font_File"};

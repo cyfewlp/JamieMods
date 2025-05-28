@@ -105,6 +105,11 @@ RE::BSEventNotifyControl InputEventSink::
                 }
             }
         }
+        else if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kChar)
+        {
+            const auto &charEvent = event->AsCharEvent();
+            ImGui::GetIO().AddInputCharacter(charEvent->keycode);
+        }
     }
 
     return RE::BSEventNotifyControl::kContinue;
@@ -135,12 +140,55 @@ void InputEventSink::ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent)
     }
 }
 
+struct ImGuiKeyMap
+{
+    ImGuiKey key;
+    uint32_t reKeycode;
+};
+
+std::unordered_map<uint32_t, ImGuiKey> keyMapping = {
+    {RE::BSKeyboardDevice::Keys::kBackspace,    ImGuiKey_Backspace},
+    {RE::BSKeyboardDevice::Keys::kDelete,       ImGuiKey_Delete   },
+    {RE::BSKeyboardDevice::Keys::kLeftControl,  ImGuiKey_LeftCtrl },
+    {RE::BSKeyboardDevice::Keys::kRightControl, ImGuiKey_RightCtrl},
+    {RE::BSKeyboardDevice::Keys::kA,            ImGuiKey_A        },
+    {RE::BSKeyboardDevice::Keys::kB,            ImGuiKey_B        },
+    {RE::BSKeyboardDevice::Keys::kC,            ImGuiKey_C        },
+    {RE::BSKeyboardDevice::Keys::kD,            ImGuiKey_D        },
+    {RE::BSKeyboardDevice::Keys::kE,            ImGuiKey_E        },
+    {RE::BSKeyboardDevice::Keys::kF,            ImGuiKey_F        },
+    {RE::BSKeyboardDevice::Keys::kG,            ImGuiKey_G        },
+    {RE::BSKeyboardDevice::Keys::kH,            ImGuiKey_H        },
+    {RE::BSKeyboardDevice::Keys::kI,            ImGuiKey_I        },
+    {RE::BSKeyboardDevice::Keys::kJ,            ImGuiKey_J        },
+    {RE::BSKeyboardDevice::Keys::kK,            ImGuiKey_K        },
+    {RE::BSKeyboardDevice::Keys::kL,            ImGuiKey_L        },
+    {RE::BSKeyboardDevice::Keys::kM,            ImGuiKey_M        },
+    {RE::BSKeyboardDevice::Keys::kN,            ImGuiKey_N        },
+    {RE::BSKeyboardDevice::Keys::kO,            ImGuiKey_O        },
+    {RE::BSKeyboardDevice::Keys::kP,            ImGuiKey_P        },
+    {RE::BSKeyboardDevice::Keys::kQ,            ImGuiKey_Q        },
+    {RE::BSKeyboardDevice::Keys::kR,            ImGuiKey_R        },
+    {RE::BSKeyboardDevice::Keys::kS,            ImGuiKey_S        },
+    {RE::BSKeyboardDevice::Keys::kT,            ImGuiKey_T        },
+    {RE::BSKeyboardDevice::Keys::kU,            ImGuiKey_U        },
+    {RE::BSKeyboardDevice::Keys::kV,            ImGuiKey_V        },
+    {RE::BSKeyboardDevice::Keys::kW,            ImGuiKey_W        },
+    {RE::BSKeyboardDevice::Keys::kX,            ImGuiKey_X        },
+    {RE::BSKeyboardDevice::Keys::kY,            ImGuiKey_Y        },
+    {RE::BSKeyboardDevice::Keys::kZ,            ImGuiKey_Z        },
+};
+
 void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
 {
-    if (const auto keyCode = btnEvent->GetIDCode();
-        keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
+    const auto keyCode = btnEvent->GetIDCode();
+    if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
     {
         m_imeWnd->ShowToolWindow();
+    }
+    if (keyMapping.contains(keyCode))
+    {
+        ImGui::GetIO().AddKeyEvent(keyMapping.at(keyCode), btnEvent->IsPressed());
     }
 }
 

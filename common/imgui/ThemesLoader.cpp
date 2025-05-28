@@ -292,16 +292,15 @@ void ConfigImGuiColor(const toml::node_view<toml::node> &colorsNode, ImGuiStyle 
     CONFIG_COLOR(ModalWindowDimBg);
 }
 
-void UseTheme_(toml::table &table)
+void UseTheme_(toml::table &table, ImGuiStyle & style)
 {
     const auto styleTable  = table["style"];
     const auto styleColors = table["style"]["colors"];
-    auto      &style       = ImGui::GetStyle();
     ConfigImGuiStyle(styleTable, style);
     ConfigImGuiColor(styleColors, style);
 }
 
-auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex) const noexcept -> std::expected<void, std::string>
+auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle & style) const noexcept -> std::expected<void, std::string>
 {
     if (themeIndex >= m_availableThemes.size())
     {
@@ -319,13 +318,13 @@ auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex) const noexcept -
         switch (theme.tomlArrayIndex)
         {
             case DefaultThemeIndex_DARK:
-                ImGui::StyleColorsDark();
+                ImGui::StyleColorsDark(&style);
                 return {};
             case DefaultThemeIndex_LIGHT:
-                ImGui::StyleColorsLight();
+                ImGui::StyleColorsLight(&style);
                 return {};
             case DefaultThemeIndex_CLASSIC:
-                ImGui::StyleColorsClassic();
+                ImGui::StyleColorsClassic(&style);
                 return {};
             default:
                 break;
@@ -333,7 +332,7 @@ auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex) const noexcept -
 
         if (const auto themeTable = themesValue["themes"][theme.tomlArrayIndex].as_table())
         {
-            UseTheme_(*themeTable);
+            UseTheme_(*themeTable, style);
             return {};
         }
         return std::unexpected(std::format("Can't find theme with index: {}", themeIndex));

@@ -45,7 +45,7 @@ ImeWnd::~ImeWnd()
     if (m_hWnd != nullptr)
     {
         UnregisterClassW(wc.lpszClassName, wc.hInstance);
-        ::DestroyWindow(m_hWnd);
+        DestroyWindow(m_hWnd);
     }
 }
 
@@ -143,7 +143,7 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
 {
     log_info("Start ImeWnd Thread...");
     m_hWnd =
-        ::CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, wc.hInstance, this);
+        CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, wc.hInstance, this);
     if (m_hWnd == nullptr)
     {
         throw SimpleIMEException("Create ImeWnd failed");
@@ -169,7 +169,7 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
             continue;
         }
 
-        if (::GetMessageW(&msg, nullptr, 0, 0) <= 0)
+        if (GetMessageW(&msg, nullptr, 0, 0) <= 0)
         {
             break;
         }
@@ -201,16 +201,16 @@ void ImeWnd::OnStart(Settings *pSettings)
     ApplyUiSettings(pSettings);
 }
 
-void ImeWnd::OnDpiChanged(HWND hWnd)
+void ImeWnd::OnDpiChanged(HWND hWnd) const
 {
-    m_settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    m_fWantRebuildFont  = true;
+    m_settings.dpiScale        = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+    m_settings.wantRebuildFont = true;
 }
 
-void ImeWnd::RebuildFont() const
+void ImeWnd::RebuildFont(const Settings & settings)
 {
     const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
-    float       pxFontSize = m_settings.dpiScale * uiConfig.FontSize();
+    float       pxFontSize = settings.dpiScale * settings.fontSize;
 
     auto &io = ImGui::GetIO();
     io.Fonts->Clear();
@@ -280,7 +280,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             // ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
             break;
     }
-    return ::DefWindowProcW(hWnd, uMsg, wParam, lParam);
+    return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
 auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
@@ -290,7 +290,8 @@ auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
     return reinterpret_cast<ImeWnd *>(ptr);
 }
 
-void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false)
+void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings) const
+    noexcept(false)
 {
     log_info("Initializing ImGui...");
     IMGUI_CHECKVERSION();
@@ -314,8 +315,8 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     GetClientRect(m_hWndParent, &rect);
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
-    m_settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    RebuildFont();
+    settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+    RebuildFont(settings);
 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -323,9 +324,9 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
         style.WindowRounding              = 0.0F;
         style.Colors[ImGuiCol_WindowBg].w = 1.0F;
     }
-    if (m_settings.dpiScale != 1.0F)
+    if (settings.dpiScale != 1.0F)
     {
-        style.ScaleAllSizes(m_settings.dpiScale);
+        style.ScaleAllSizes(settings.dpiScale);
     }
     log_info("ImGui initialized!");
 }
@@ -338,14 +339,14 @@ auto ImeWnd::OnCreate() -> LRESULT
 void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
 {
     static DWORD gameThread    = 0;
-    static DWORD currentThread = ::GetCurrentThreadId();
+    static DWORD currentThread = GetCurrentThreadId();
     if (gameThread == 0)
     {
-        gameThread = ::GetWindowThreadProcessId(m_hWndParent, nullptr);
+        gameThread = GetWindowThreadProcessId(m_hWndParent, nullptr);
     }
     if (gameThread != currentThread)
     {
-        if (::AttachThreadInput(gameThread, currentThread, TRUE) != FALSE)
+        if (AttachThreadInput(gameThread, currentThread, TRUE) != FALSE)
         {
             switch (uMsg)
             {
@@ -353,7 +354,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
                 case WM_KEYUP:
                 case WM_SYSKEYDOWN:
                 case WM_SYSKEYUP: {
-                    if (::PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
+                    if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
                     {
                         log_debug("Post message to game failed.");
                     }
@@ -362,7 +363,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
                 default:
                     break;
             }
-            ::AttachThreadInput(gameThread, currentThread, FALSE);
+            AttachThreadInput(gameThread, currentThread, FALSE);
         }
     }
 }
@@ -412,7 +413,7 @@ auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> 
     {
         return false;
     }
-    return ::SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
+    return SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
 }
 
 auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
@@ -421,26 +422,26 @@ auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) con
     {
         return false;
     }
-    return ::SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
+    return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
 }
 
 auto ImeWnd::GetImeThreadId() const -> DWORD
 {
-    return ::GetWindowThreadProcessId(m_hWnd, nullptr);
+    return GetWindowThreadProcessId(m_hWnd, nullptr);
 }
 
 void ImeWnd::AbortIme() const
 {
     if (State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
     {
-        ::SetFocus(m_hWndParent);
+        SetFocus(m_hWndParent);
     }
 }
 
 /**
  * If Game cursor no showing/update, update ImGui cursor from system cursor pos
  */
-void ImeWnd::NewFrame()
+void ImeWnd::NewFrame(Settings &settings)
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
@@ -455,22 +456,18 @@ void ImeWnd::NewFrame()
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
-    if (m_fWantRebuildFont)
+    if (settings.wantRebuildFont)
     {
-        m_fWantRebuildFont = false;
-        RebuildFont();
-        if (m_settings.dpiScale != 1.0f)
-        {
-            ImGui::GetStyle().ScaleAllSizes(m_settings.dpiScale);
-        }
+        settings.wantRebuildFont = false;
+        RebuildFont(settings);
     }
 }
 
-void ImeWnd::DrawIme(Settings &settings)
+void ImeWnd::DrawIme(Settings &settings) const
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
-    NewFrame();
+    NewFrame(settings);
     ImGui::NewFrame();
 
     ErrorNotifier::GetInstance().Show();
