@@ -1,5 +1,7 @@
 ﻿= Changles
 :toc: left
+:icons: font
+:tip-caption: 💡
 
 == 0.0.3
     - [x] disable ImGui Win32 backend update mouse pos
@@ -257,6 +259,35 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 
 * [ ] remove other mod supports code;
 * [ ] Complete Support `ImThemes`;
+
+=== Issues
+
+* [x] Fix `Enable Mod`
+
+== 1.2.1
+
+=== ⭐ New Features
+
+* Support config/save `Font_Size` in `Settings` panel;
+* Completely support `ImThemes`;
+** Already replaced obsolete colors name:
+*** TabActive -> TabSelected
+*** TabUnfocused -> TabDimmed
+*** TabUnfocusedActive = TabDimmedSelected
+*** NavHighlight = NavCursor
+
+WARNING: Deprecated config: `Themes_Directory`, `Use_Classic_Theme`;
+
+===  Improvement
+
+* Show `caret` in `IME` window;
+* Add a new State flag: `KEYBOARD_OPEN`. This flag be used to disable `Message Filter`(Japanese input method will set this flag).
+
+=== Fix
+
+* Clear `COMPOSITION`,`CAND_CHOSING` and `ALPHANUMERIC` state after switch input method(language profile);
+* Discard game keydown/up event when message filter is enabled;
+* Skip system input method that failed to load.
 
 === Issues
 

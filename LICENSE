@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2023 <YOUR NAME HERE>
+Copyright (c) 2025 cyfewlp
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,13 @@ SOFTWARE.
 
 ================================================================================
 
-(You may remove the license below, if desired. No attribution is necessary.)
+Third-Party Acknowledgments
+============================
 
-This template was created from https://github.com/SkyrimDev
-Released under the BSD Zero Clause License https://opensource.org/licenses/0BSD
+This project uses the “themes.toml” color schemes from the ImThemes project:
 
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
+    ImThemes — https://github.com/Patitotective/ImThemes
 
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
+ImThemes is itself licensed under the MIT License. Below is the text of
+the ImThemes license (as of its latest release). You must retain this
+license text in any redistribution of the ImThemes files.

@@ -54,6 +54,7 @@ struct Theme
     }
 };
 
+// Themes provided by ImThemes (https://github.com/Patitotective/ImThemes)
 class ThemesLoader
 {
     std::vector<Theme>      m_availableThemes;

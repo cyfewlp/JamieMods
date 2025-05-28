@@ -359,9 +359,6 @@ void ImeUI::DrawModConfig(Settings &settings)
         settings.wantRebuildFont = true;
     }
 
-    const char *labelSlider = Translate("$Font_Size_Scale");
-    const auto  size        = ImGui::CalcTextSize(labelSlider);
-    ImGui::SetNextItemWidth(-size.x);
     ImGui::DragFloat(
         Translate("$Font_Size_Scale"),
         &ImGui::GetIO().FontGlobalScale,
@@ -403,6 +400,14 @@ void ImeUI::DrawModConfig(Settings &settings)
             idx++;
         }
         ImGui::EndCombo();
+    }
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted("Themes provided by ImThemes (https://github.com/Patitotective/ImThemes)");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
     }
 }
 
