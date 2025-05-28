@@ -4,10 +4,10 @@
   <moduleName>SimpleIME</moduleName>
 
   <requiredInstallFiles>
-    <folder source="SKSE/Plugins" destination="SKSE/Plugins" />
-    <folder source="themes" destination="interface/SimpleIME" />
-    <folder source="translate" destination="interface/SimpleIME" />
-    <folder source="config" destination="SKSE/Plugins" />
+    <folder source="SKSE/Plugins" destination="SKSE/Plugins"/>
+    <folder source="interface/SimpleIME" destination="interface/SimpleIME"/>
+    <folder source="translate" destination="interface/SimpleIME"/>
+    <folder source="config" destination="SKSE/Plugins"/>
   </requiredInstallFiles>
   <installSteps order="Explicit">
     <installStep name="Theme Config">
@@ -17,7 +17,6 @@
             <plugin name="Okay, got it!">
               <description>
                 Mod uses ImThemes as theme configuration. Check it out: https://github.com/Patitotective/ImThemes.
-Check the mod page to learn how to add yourself themes.
               </description>
               <image path="fomod/ImThemes.png"/>
               <typeDescriptor>

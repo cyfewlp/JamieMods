@@ -110,12 +110,17 @@ install(FILES
 )
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_SOURCE_DIR}/LICENSE
     DESTINATION .
+    COMPONENT doc
+)
+install(FILES
+    ${CMAKE_SOURCE_DIR}/common/themes.toml
+    DESTINATION interface/${PROJECT_NAME}
     COMPONENT doc
 )
 install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
-    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/themes
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate
     DESTINATION .
     COMPONENT Distribution
@@ -161,7 +166,7 @@ if (DEFINED OUTPUT_FOLDER)
       VERBATIM
   )
 
-  #Copy themes dir
+  #Copy themes file
   add_custom_command(
       TARGET "${PROJECT_NAME}"
       POST_BUILD
