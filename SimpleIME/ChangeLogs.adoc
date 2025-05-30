@@ -264,7 +264,7 @@ so we no longer needed listen console `open/close` event and no longer needed pr
 
 * [x] Fix `Enable Mod`
 
-== 1.2.1
+== 1.3.0
 
 === ⭐ New Features
 

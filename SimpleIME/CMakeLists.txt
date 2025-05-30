@@ -1,6 +1,6 @@
 project(
     SimpleIME
-    VERSION 1.2.1
+    VERSION 1.3.0
     DESCRIPTION "Simple IME support for Skyrim"
     LANGUAGES CXX
 )

@@ -127,6 +127,12 @@ void SettingsConfig::Set(const Settings &settings)
     language.SetValue(settings.language);
 }
 
+void AppConfig::Set(const Settings &settings)
+{
+    m_appUiConfig.Set(settings);
+    m_settingsConfig.Set(settings);
+}
+
 void AppConfig::Save(CSimpleIniA &ini, const AppConfig &diskConfig) const
 {
     m_appUiConfig.Save(ini, diskConfig.m_appUiConfig);

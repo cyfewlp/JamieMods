@@ -365,7 +365,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
 auto ImeWnd::SaveSettings() const -> void
 {
     m_settings.fontSizeScale = ImGui::GetIO().FontGlobalScale;
-    AppConfig::GetConfig().GetSettingsConfig().Set(m_settings);
+    AppConfig::GetConfig().Set(m_settings);
 
     const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
     const auto  configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());

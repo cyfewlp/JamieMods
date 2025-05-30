@@ -323,6 +323,7 @@ public:
         return m_enableTsf.Value();
     }
 
+    void Set(const Settings &settings);
     void Save(CSimpleIniA &ini, const AppConfig &diskConfig) const override;
 
     /**
