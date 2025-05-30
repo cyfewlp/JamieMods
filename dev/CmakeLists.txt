@@ -17,11 +17,11 @@ target_link_libraries(
 	BasicTest
 	PRIVATE
 		spdlog::spdlog
-
 )
 target_include_directories(
     BasicTest PRIVATE
     ${SIMPLEINI_INCLUDE_DIRS}
+		${CMAKE_SOURCE_DIR}
 )
 target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
 

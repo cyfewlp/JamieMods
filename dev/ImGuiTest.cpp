@@ -55,7 +55,8 @@ static bool                 g_fShowSettings   = false;
 static int                  g_toolWindowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration;
 static ImGuiKey             g_keyDown         = ImGuiKey_None;
 
-extern ImGuiKey ImGui_ImplWin32_KeyEventToImGuiKey(WPARAM wParam, LPARAM lParam);
+extern auto ImGui_ImplWin32_KeyEventToImGuiKey(WPARAM wParam, LPARAM lParam) -> ImGuiKey;
+extern auto ImGui_ImplWin32_GetDpiScaleForHwnd(void *hwnd) -> float;
 
 namespace
 {
@@ -201,7 +202,7 @@ int main(int, char **)
     // return 0;
 
     // Create application window
-    // ImGui_ImplWin32_EnableDpiAwareness();
+    ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = {
         sizeof(wc),
         CS_CLASSDC,
@@ -262,13 +263,15 @@ int main(int, char **)
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 16.0f);
+    auto scale = ImGui_ImplWin32_GetDpiScaleForHwnd(hwnd);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 16.0f * scale);
 
     static ImFontConfig cfg;
     cfg.OversampleH = cfg.OversampleV = 1;
     cfg.MergeMode                     = true;
     cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f, &cfg);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f * scale, &cfg);
+    ImGui::GetStyle().ScaleAllSizes(scale);
 
     ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hwnd;
 
@@ -316,18 +319,15 @@ int main(int, char **)
         {
             ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
             ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0.0f);
-            ImGui::Text("hello");
-            ImGui::SameLine();
-            ImGui::Text("world");
-            ImGui::PopStyleVar();
+
             ImGui::SameLine();
             ImGui::BeginGroup();
             ImGui::Checkbox("Demo Window", &show_demo_window);
             ImGui::Checkbox("Another Window", &show_another_window);
 
             ImGui::SameLine();
-            auto &imGuiIo = ImGui::GetIO();
-            const auto & size = ImGui::CalcTextSize("Font_Size_Scale");
+            auto       &imGuiIo = ImGui::GetIO();
+            const auto &size    = ImGui::CalcTextSize("Font_Size_Scale");
             ImGui::SetNextItemWidth(-size.x);
             ImGui::DragFloat(
                 "Font_Size_Scale", &imGuiIo.FontGlobalScale, 0.05, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_NoInput
@@ -552,6 +552,14 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
+        case WM_DPICHANGED: {
+            const HDC hdc  = GetDC(nullptr);
+            const int dpiX = HIWORD(wParam);
+            const int dpiY = LOWORD(wParam);
+            ReleaseDC(nullptr, hdc);
+            spdlog::info("dpi x {}, dpi y： {}", dpiX, dpiY);
+            return 0;
+        }
         case WM_KEYDOWN:
             if (!(keyboardState[DIK_LSHIFT] & 0x80) && !(keyboardState[DIK_RSHIFT] & 0x80) //
                 && !(keyboardState[DIK_LALT] & 0x80) && !(keyboardState[DIK_RALT] & 0x80)  //
@@ -698,119 +706,113 @@ void RenderSettings()
         return;
     }
 
-    ImGui::Begin("Settings", &CollapseVisible, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin("Settings", &CollapseVisible);
     {
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-        if (ImGui::BeginTable("SettingsTable", 3))
+
+        static ImeConfig config;
+        static GuiView   guiView;
+        if (ImGui::BeginTabBar("SettingsTabbar"))
         {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            static bool EnableModFail = false;
-            ImGui::Checkbox("Enable Mod", &EnableMod);
-            ImGui::SetItemTooltip("Uncheck will disable all mod feature(Disable keyboard).");
-            if (EnableModFail)
+            if (ImGui::BeginTabItem("Mod Config"))
             {
-                ImGui::TableNextColumn();
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(1.0f, .0f, .0f, 1.0f), "%s", "Failed to enable mod");
-                if (ImGui::Button("X"))
+                static bool EnableModFail = false;
+                ImGui::Checkbox("Enable Mod", &EnableMod);
+                ImGui::SetItemTooltip("Uncheck will disable all mod feature(Disable keyboard).");
+                if (EnableModFail)
                 {
-                    EnableModFail = false;
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(1.0f, .0f, .0f, 1.0f), "%s", "Failed to enable mod");
+                    if (ImGui::Button("X"))
+                    {
+                        EnableModFail = false;
+                    }
                 }
-            }
-
-            ImGui::TableNextColumn();
-
-            ImGui::Text("Ime Enabled %s", "\xe2\x9d\x8c"); // red  ❌
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Ime Focus: %s", "\xe2\x9c\x85");
-            ImGui::SetItemTooltip("Mod must has keyboard focus to work.");
-
-            ImGui::TableNextColumn();
-            ImGui::Button("Force Focus Ime");
-
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Ime follow cursor", &g_fFollowCursor);
-            ImGui::SetItemTooltip("Ime window appear in cursor position.");
-
-            static ImeConfig config;
-            static GuiView   guiView;
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            if (ImGui::Checkbox("Tool_Window_Shortcut_Key", &guiView.showToolWindowShortcutKeyConfig) &&
-                guiView.showToolWindowShortcutKeyConfig)
-            {
-                g_keyModifiers = config.toolWindowShortcutKey.modifiers;
-                g_keyDown      = static_cast<ImGuiKey>(config.toolWindowShortcutKey.key);
-            }
-            std::string shortcutDesc;
-            auto        toShortcutDesc = [](uint8_t modifiers, ImGuiKey key) {
                 std::string shortcutDesc;
-                if ((modifiers & MODIFIER_CTRL) == MODIFIER_CTRL)
+                auto        toShortcutDesc = [](uint8_t modifiers, ImGuiKey key) {
+                    std::string shortcutDesc;
+                    if ((modifiers & MODIFIER_CTRL) == MODIFIER_CTRL)
+                    {
+                        shortcutDesc += "Ctrl + ";
+                    }
+                    if ((modifiers & MODIFIER_SHIFT) == MODIFIER_SHIFT)
+                    {
+                        shortcutDesc += "Shift + ";
+                    }
+                    if ((modifiers & MODIFIER_ALT) == MODIFIER_ALT)
+                    {
+                        shortcutDesc += "Alt + ";
+                    }
+                    shortcutDesc += ImGui::GetKeyName(key);
+                    return shortcutDesc;
+                };
+                if (guiView.showToolWindowShortcutKeyConfig)
                 {
-                    shortcutDesc += "Ctrl + ";
+                    ImGui::OpenPopup("ShortcutConfig");
                 }
-                if ((modifiers & MODIFIER_SHIFT) == MODIFIER_SHIFT)
+                if (ImGui::BeginPopupModal("ShortcutConfig", NULL, ImGuiWindowFlags_AlwaysAutoResize))
                 {
-                    shortcutDesc += "Shift + ";
+                    shortcutDesc = toShortcutDesc(g_keyModifiers, g_keyDown);
+                    ImGui::Text("%s", shortcutDesc.c_str());
+                    if (ImGui::Button("OK", ImVec2(120, 0)))
+                    {
+                        guiView.showToolWindowShortcutKeyConfig = false;
+                        config.toolWindowShortcutKey.modifiers  = g_keyModifiers;
+                        config.toolWindowShortcutKey.key        = g_keyDown;
+                        config.toolWindowShortcutKey.desc.assign(shortcutDesc);
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                    {
+                        guiView.showToolWindowShortcutKeyConfig = false;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
                 }
-                if ((modifiers & MODIFIER_ALT) == MODIFIER_ALT)
+
+                RenderLogLevelConfig("Log level", config.Log_Level);
+
+                RenderLogLevelConfig("Flush level", config.Flush_Level);
+
+                // UI configs
+                // ImGui::Checkbox("East_Asia_Font_File", &config.East_Asia_Font_File);
+                // ImGui::Checkbox("Emoji_Font_File", &config.Emoji_Font_File);
+                ImGui::Checkbox("Use_Classic_Theme", &config.Use_Classic_Theme);
+
+                RenderThemeUiConfig(config, guiView);
+
+                if (ImGui::Checkbox("Tool_Window_Shortcut_Key", &guiView.showToolWindowShortcutKeyConfig) &&
+                    guiView.showToolWindowShortcutKeyConfig)
                 {
-                    shortcutDesc += "Alt + ";
+                    g_keyModifiers = config.toolWindowShortcutKey.modifiers;
+                    g_keyDown      = static_cast<ImGuiKey>(config.toolWindowShortcutKey.key);
                 }
-                shortcutDesc += ImGui::GetKeyName(key);
-                return shortcutDesc;
-            };
-            if (guiView.showToolWindowShortcutKeyConfig)
-            {
-                ImGui::OpenPopup("ShortcutConfig");
+                ImGui::EndTabItem();
             }
-            if (ImGui::BeginPopupModal("ShortcutConfig", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginTabItem("State"))
             {
-                shortcutDesc = toShortcutDesc(g_keyModifiers, g_keyDown);
-                ImGui::Text("%s", shortcutDesc.c_str());
-                if (ImGui::Button("OK", ImVec2(120, 0)))
-                {
-                    guiView.showToolWindowShortcutKeyConfig = false;
-                    config.toolWindowShortcutKey.modifiers  = g_keyModifiers;
-                    config.toolWindowShortcutKey.key        = g_keyDown;
-                    config.toolWindowShortcutKey.desc.assign(shortcutDesc);
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Cancel", ImVec2(120, 0)))
-                {
-                    guiView.showToolWindowShortcutKeyConfig = false;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
+                ImGui::Text("Ime Enabled %s", "\xe2\x9d\x8c"); // red  ❌
+
+                ImGui::Text("Ime Focus: %s", "\xe2\x9c\x85");
+                ImGui::SetItemTooltip("Mod must has keyboard focus to work.");
+
+                ImGui::Button("Force Focus Ime");
+                ImGui::EndTabItem();
             }
 
-            ImGui::TableNextColumn();
-            RenderLogLevelConfig("Log level", config.Log_Level);
+            if (ImGui::BeginTabItem("Features"))
+            {
+                ImGui::Checkbox("Ime follow cursor", &g_fFollowCursor);
+                ImGui::SetItemTooltip("Ime window appear in cursor position.");
 
-            ImGui::TableNextColumn();
-            RenderLogLevelConfig("Flush level", config.Flush_Level);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Enable Tsf", &config.Enable_Tsf);
-
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Always Active Ime", &config.Always_Active_Ime);
-
-            // UI configs
-            // ImGui::Checkbox("East_Asia_Font_File", &config.East_Asia_Font_File);
-            // ImGui::Checkbox("Emoji_Font_File", &config.Emoji_Font_File);
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Use_Classic_Theme", &config.Use_Classic_Theme);
-            ImGui::EndTable();
-
-            RenderThemeUiConfig(config, guiView);
+                ImGui::Checkbox("Enable Tsf", &config.Enable_Tsf);
+                ImGui::Checkbox("Always Active Ime", &config.Always_Active_Ime);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
         }
+
         ImGui::PopStyleVar();
     }
     ImGui::End();
