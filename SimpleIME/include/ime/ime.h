@@ -65,6 +65,12 @@ struct CandidateUi
         m_candidateList.push_back(candidate);
     }
 
+    auto Swap(std::list<std::string> &candidates) -> void
+    {
+        std::unique_lock lock(m_mutex);
+        m_candidateList.swap(candidates);
+    }
+
     /**
      * Close current candidate list
      */

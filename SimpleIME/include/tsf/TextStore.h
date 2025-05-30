@@ -198,6 +198,8 @@ public:
     STDMETHODIMP UpdateUIElement(DWORD dwUIElementId) override;
     STDMETHODIMP EndUIElement(DWORD dwUIElementId) override;
 
+    bool CommitCandidate(UINT index) const;
+
 private:
     auto InitSinks() -> HRESULT;
 
@@ -287,6 +289,11 @@ public:
             hr = m_pTextStore->ClearFocus();
         }
         return SUCCEEDED(hr);
+    }
+
+    auto CommitCandidate(HWND /*hwnd*/, UINT index) -> bool override
+    {
+        return m_pTextStore->CommitCandidate(index);
     }
 
     [[nodiscard]] auto GetCandidateUi() -> Ime::CandidateUi & override

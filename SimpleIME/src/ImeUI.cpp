@@ -633,25 +633,90 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     }
 }
 
+struct ImGuiStyleVarScope
+{
+    uint32_t count = 0;
+
+    void Push(ImGuiStyleVar var, const ImVec2 &value)
+    {
+        ImGui::PushStyleVar(var, value);
+        count++;
+    }
+
+    ~ImGuiStyleVarScope()
+    {
+        ImGui::PopStyleVar(count);
+    }
+};
+
+struct ImGuiColorScope
+{
+    ImGuiColorScope(ImGuiCol colorIndex, ImU32 color)
+    {
+        ImGui::PushStyleColor(colorIndex, color);
+    }
+
+    ImGuiColorScope(ImGuiCol colorIndex, ImVec4 color)
+    {
+        ImGui::PushStyleColor(colorIndex, color);
+    }
+
+    ~ImGuiColorScope()
+    {
+        ImGui::PopStyleColor();
+    }
+};
+
 void ImeUI::DrawCandidateWindows() const
 {
-    const auto &candidateUi = m_pTextService->GetCandidateUi();
+    const auto  &candidateUi = m_pTextService->GetCandidateUi();
+    static DWORD hovered     = ULONG_MAX;
+
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
-        DWORD index = 0;
+        DWORD              index      = 0;
+        DWORD              clicked    = candidateList.size();
+        DWORD              anyHovered = candidateList.size();
+        ImGuiStyleVarScope styleVarScope;
+        styleVarScope.Push(ImGuiStyleVar_FramePadding, {5, 2});
+        styleVarScope.Push(ImGuiStyleVar_ItemSpacing, {0, 0});
+
+        auto           &style = ImGui::GetStyle();
+        ImGuiColorScope buttonColorScope(ImGuiCol_Button, 0);
         for (const auto &candidate : candidateList)
         {
+            ImGui::PushID(index);
+            std::optional<ImGuiColorScope> buttonColorScope1;
+            std::optional<ImGuiColorScope> textColorScope;
+            if (hovered == index)
+            {
+                buttonColorScope1.emplace(ImGuiCol_Button, style.Colors[ImGuiCol_Button]);
+            }
             if (index == candidateUi.Selection())
             {
-                const ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
-                ImGui::TextColored(highLightText, "%s", candidate.c_str());
+                textColorScope.emplace(ImGuiCol_Text, style.Colors[ImGuiCol_TextLink]);
             }
-            else
+            if (ImGui::Button(candidate.c_str()))
             {
-                ImGui::Text("%s", candidate.c_str());
+                clicked = index;
+            }
+            buttonColorScope1.reset();
+            textColorScope.reset();
+            if (ImGui::IsItemHovered())
+            {
+                anyHovered = index;
             }
             ImGui::SameLine();
+            ImGui::PopID();
             index++;
+        }
+        hovered = anyHovered;
+        if (clicked < candidateList.size())
+        {
+            TaskQueue::GetInstance().AddImeThreadTask([this, clicked] {
+                m_pTextService->CommitCandidate(m_pImeWnd->GetHWND(), clicked);
+            });
+            PostMessageA(m_pImeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
         }
     }
 }

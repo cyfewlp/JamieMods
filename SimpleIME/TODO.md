@@ -15,3 +15,12 @@
 * [x] Auto hide `ErrorNotifier`;
 * We may unnecessary to check the `SetFocus` caller thread because IME is child window with 
 	game window. [# Is it legal to have a cross-process parent/child or owner/owned window relationship?](https://devblogs.microsoft.com/oldnewthing/20130412-00/?p=4683&utm_source=chatgpt.com); According to this post introduce the child/parent window will be implicitly associate message queue.
+- [x] filter ←, →, ↑，↓, space, Enter, backspace
+	- Discard keydown/up event when message filter is enabled;
+- [x] Re-layout settings panel;  #improvement
+- [x] Update Theme config
+	- Deprecated `Use_Classic_Theme` config;
+- [ ] more config support in settings
+- [x] support select candidate by mouse;
+- [x] show caret in IME window: ←, →;  #improvement
+- [x] reset States when switch input method  #improvement

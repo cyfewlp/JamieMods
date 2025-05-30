@@ -816,6 +816,15 @@ auto TextStore::EndUIElement(DWORD /*dwUIElementId*/) -> HRESULT
     return S_OK;
 }
 
+bool TextStore::CommitCandidate(UINT index) const
+{
+    if (m_currentCandidateUi && SUCCEEDED(m_currentCandidateUi->SetSelection(index)))
+    {
+        return m_currentCandidateUi && SUCCEEDED(m_currentCandidateUi->Finalize());
+    }
+    return false;
+}
+
 auto TextStore::GetCandidateInterface(const DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const
     -> HRESULT
 {
@@ -883,6 +892,7 @@ auto TextStore::DoUpdateUIElement() -> HRESULT
         {
             candidateUi.SetSelection(selection);
         }
+        std::list<std::string> candidates;
         for (UINT index = info.firstIndex, j = 0; index < info.candidateCount && j < info.pageSize; ++j, ++index)
         {
             CComBSTR candidateStr;
@@ -895,8 +905,9 @@ auto TextStore::DoUpdateUIElement() -> HRESULT
             auto fmt = std::format(L"{}. ", j + 1);
             fmt.append(candidateStr);
             auto str = WCharUtils::ToString(fmt);
-            candidateUi.PushBack(str);
+            candidates.push_back(str);
         }
+        candidateUi.Swap(candidates);
         return S_OK;
     }
     m_currentCandidateUi->Abort();

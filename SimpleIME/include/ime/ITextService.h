@@ -42,6 +42,7 @@ public:
 
     virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
     virtual auto GetCandidateUi() -> CandidateUi &                                                = 0;
+    virtual auto CommitCandidate(HWND hwnd, UINT index) -> bool                                   = 0;
     virtual auto GetTextEditor() -> TextEditor &                                                  = 0;
 
     virtual void RegisterCallback(OnEndCompositionCallback *callback)
@@ -76,6 +77,8 @@ public:
     {
         return m_candidateUi;
     }
+
+    auto CommitCandidate(HWND hwnd, UINT index) -> bool override;
 
     [[nodiscard]] auto GetTextEditor() -> TextEditor & override
     {

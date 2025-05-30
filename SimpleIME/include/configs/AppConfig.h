@@ -128,7 +128,6 @@ public:
     {
         Register(m_fontSize);
         Register(m_translationDir);
-        Register(m_highlightTextColor);
         Register(m_eastAsiaFontFile);
         Register(m_emojiFontFile);
         Register(m_errorMessageDuration);
@@ -162,11 +161,6 @@ public:
         return m_translationDir.Value();
     }
 
-    [[nodiscard]] auto HighlightTextColor() const -> uint32_t
-    {
-        return m_highlightTextColor.Value();
-    }
-
     [[nodiscard]] auto ErrorMessageDuration() const -> int
     {
         return m_errorMessageDuration.Value();
@@ -175,7 +169,6 @@ public:
 private:
     friend class AppConfig;
     Property<int>         m_fontSize{14, "Font_Size"};
-    Property<uint32_t>    m_highlightTextColor{0x4296FAFF, "Highlight_Text_Color"};
     Property<std::string> m_eastAsiaFontFile{R"(C:\Windows\Fonts\simsun.ttc)", "East_Asia_Font_File"};
     Property<std::string> m_emojiFontFile{R"(C:\Windows\Fonts\seguiemj.ttf)", "Emoji_Font_File"};
     Property<std::string> m_translationDir{R"(Data\interface\SimpleIME)", "Translation_Dir"};

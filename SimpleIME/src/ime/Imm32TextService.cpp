@@ -67,6 +67,14 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
     return true;
 }
 
+auto Imm32TextService::CommitCandidate(HWND hwnd, UINT index)  -> bool
+{
+    HIMC hImc = ImmGetContext(hwnd);
+    bool result = ImmNotifyIME(hImc, NI_SELECTCANDIDATESTR, 0, index) != FALSE;
+    ImmReleaseContext(hwnd, hImc);
+    return result;
+}
+
 auto Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT
 {
     HIMC hIMC = ImmGetContext(hWnd);
