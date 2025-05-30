@@ -105,6 +105,7 @@ void ImeUI::ApplyUiSettings(Settings &settings)
                 settings.themeIndex = 0;
             }
         }
+        ImGui::GetStyle().FontSize = settings.fontSize;
     }
 }
 
@@ -356,7 +357,7 @@ void ImeUI::DrawModConfig(Settings &settings)
     ImGui::InputScalar(Translate("$Font_Size"), ImGuiDataType_U32, &settings.fontSize, nullptr, nullptr, "%u");
     if (ImGui::IsItemDeactivatedAfterEdit())
     {
-        settings.wantRebuildFont = true;
+        settings.wantResizeFont = true;
     }
 
     ImGui::DragFloat(
@@ -438,13 +439,9 @@ void ImeUI::DrawSettingsContent(Settings &settings)
     {
         return;
     }
-    if (ImGui::BeginTabItem(Translate("$States")))
-    {
-        DrawStates();
-        ImGui::EndTabItem();
-    }
     if (ImGui::BeginTabItem(Translate("$Features")))
     {
+        DrawStates();
         DrawFeatures(settings);
         ImGui::EndTabItem();
     }

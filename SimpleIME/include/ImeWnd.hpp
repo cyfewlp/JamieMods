@@ -82,8 +82,7 @@ private:
     static void OnCompositionResult(const std::wstring &compositionString);
 
     void        OnStart(Settings *pSettings);
-    void        OnDpiChanged(HWND hWnd) const;
-    static void RebuildFont(const Settings &settings);
+    static void AddFonts(const Settings &settings);
     static auto OnCreate() -> LRESULT;
     auto        SaveSettings() const -> void;
     auto        OnDestroy() const -> LRESULT;

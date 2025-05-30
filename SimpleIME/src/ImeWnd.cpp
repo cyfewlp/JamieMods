@@ -201,16 +201,10 @@ void ImeWnd::OnStart(Settings *pSettings)
     ApplyUiSettings(pSettings);
 }
 
-void ImeWnd::OnDpiChanged(HWND hWnd) const
-{
-    m_settings.dpiScale        = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    m_settings.wantRebuildFont = true;
-}
-
-void ImeWnd::RebuildFont(const Settings & settings)
+void ImeWnd::AddFonts(const Settings &settings)
 {
     const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
-    float       pxFontSize = settings.dpiScale * settings.fontSize;
+    float const pxFontSize = settings.dpiScale * settings.fontSize;
 
     auto &io = ImGui::GetIO();
     io.Fonts->Clear();
@@ -252,7 +246,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case WM_DPICHANGED: {
             if (pThis == nullptr) break;
-            pThis->OnDpiChanged(hWnd);
+            // pThis->OnDpiChanged(hWnd);
             return S_OK;
         }
         case CM_EXECUTE_TASK: {
@@ -316,7 +310,7 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
     settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    RebuildFont(settings);
+    AddFonts(settings);
 
     ImGuiStyle &style = ImGui::GetStyle();
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
@@ -456,10 +450,10 @@ void ImeWnd::NewFrame(Settings &settings)
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
-    if (settings.wantRebuildFont)
+    if (settings.wantResizeFont)
     {
-        settings.wantRebuildFont = false;
-        RebuildFont(settings);
+        settings.wantResizeFont    = false;
+        ImGui::GetStyle().FontSize = settings.fontSize * settings.dpiScale;
     }
 }
 
