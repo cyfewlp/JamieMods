@@ -1,8 +1,11 @@
 ﻿[size=4][color=#2EB2FF][b]What?[/b][/color][/size]
-A SKSE plugin that enables IME (Input Method Editor) support for SkyrimSE/AE, primarily aimed at Chinese players. This is achieved using ImGui, Win32, and IMM/TSF.
+A SKSE plugin that enables IME (Input Method Editor) support for SkyrimSE/AE, [s]primarily aimed at Chinese players[/s]. After multiple updates, I'm happy to announce that my mod now fully supports Japanese input methods! This is achieved using ImGui, Win32, and IMM/TSF.
+
 The mod essentially unlocks the OS IME, receiving and forwarding IME events and messages to the game. Consequently, it should also support other languages (such as Japanese, Korean, etc.). However, I'm uncertain if IME works with the same logic across different languages, so the composition and candidate windows for other languages may not function correctly.
 
-SKSE 插件, 使 SkyrimSE/A E支持输入法(IME), 主要针对中国用户, 使用 ImGui + Win32 + IMM/TSF 实现。实际上mod只是解锁了系统的 IME, 并将其事件, 消息转发到游戏中, 因此, 应该支持韩语, 日语等输入法, 但是我 并不清楚其他语言的输入法如何工作, 因此其他语言的 composition 和 candidate 窗口可能不会正常工作.
+
+
+SKSE 插件, 使 SkyrimSE/A E支持输入法(IME),[s] 主要针对中国用户[/s], 使用 ImGui + Win32 + IMM/TSF 实现。实际上mod只是解锁了系统的 IME, 并将其事件, 消息转发到游戏中, 因此, 应该支持韩语, 日语等输入法, 但是我 并不清楚其他语言的输入法如何工作, 因此其他语言的 composition 和 candidate 窗口可能不会正常工作.
 
 [img]https://i.imgur.com/vLWXeTe.png[/img]
 [size=4][color=#2EB2FF][b]
@@ -12,6 +15,25 @@ Features[/b][/color][/size]
 [*][size=3]Render IME composition & candidate window by ImGui;[/size]
 [*][size=3]ToolWindow(default F2 key) support sync and switch IME; Note: ToolWindow can pined in game, you can move it to right-bottom and pin it, just like os language bar;if you decrase Game Resolution, tool window may be can't found, To reset it position, you can go forward to Game install directory and delete file imgui.ini or the [i][Window][ToolWindow##SimpleIME] configuration section;[/i][/size]
 [/list]
+
+[size=4][color=#2EB2FF][b]✨ Features / 功能亮点[/b][/color][/size]
+[list=1]
+[*][size=3]Unlock System IME & Windows Key[/size]
+[*][size=3]解锁系统输入法及 Win 键，让游戏内外 IME 都可用[/size]
+[*][size=3]Custom IME Composition & Candidate Window[/size]
+[*][size=3]使用 ImGui 渲染输入法候选框和正在输入框[/size]
+[/list]
+
+Floating ToolWindow (Default F2)
+同步显示当前输入法，支持固定（可拖拽到右下角并“pin”），分辨率变更也能通过删除 imgui.ini 或 [Window][ToolWindow##SimpleIME] 配置段重置
+
+Multi-language & Emoji
+除了中文，还能输入日文、韩文、甚至大部分 Unicode 字符（表情符号）
+
+Focus Management Modes
+“Permanent” 与“Temporary”聚焦模式，选择最兼容的键盘消息转发策略
+
+
 [size=4][color=#2EB2FF][b]Why?[/b][/color]
 [/size]
 IME for the SkyrimSE game is unnecessary. But, if you installed SkyUI or other mods based on SkyUi/UIExtension, there may be a need to support Unicode characters. In one word, by the time you can: Search armor/spell/item/NPC with Unicode character in SkyUI(or other mods based on it).
@@ -20,14 +42,10 @@ IME for the SkyrimSE game is unnecessary. But, if you installed SkyUI or other m
 使用此mod可以使得在 SkyUI以及任何基于游戏UI的mod支持unicode 字符输入。
 
 [size=3][color=#2EB2FF][b]Theme Config[/b][/color][/size]
- Mod use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] as theme provider. By default, mod add "classic", "darcula“, ”modern", "light", and "Visual Studio" themes.
-If you want to add other themes:
-[list=1]
-[*]Use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] and export you interested theme with TOML format, copy it;
-[*]Add new ini file in mod directory: "interface/SimpleIME_Themes/" and name it by "\w+_theme.ini" pattern, e.g. "darcula_theme.ini"
-[*]Paste your export theme content and add "[style]" as first line;
-[*]The default theme file can be used as a reference.
-[/list]
+ Mod use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] as theme provider(contains the [i]themes.toml[/i]).  Follow the ImThemes tutorial to add your self theme.
+
+❗NOTE: YOU MUST PROVIDE THE  [i]themes.toml [/i]file[i].[/i]
+
 [size=4][color=#2EB2FF] [b]Usage[/b][/color] [/size]
 [list=1]
 [*]Use your os shortcut(in my case win + space) keys or the tool window (default key `F2`) to switch different IMEs.
@@ -73,16 +91,21 @@ setting and depend Windows message to work, you need to use "Temporary" focus ma
 [*]支持 SkyUI 和所有其他基于它的模组（如 `WhereAreYou` 模组）;
 [*]不支持其他自定义 UI 模组(dmenu、Modex)。因为这些模块有自己的渲染和消息处理逻辑
 [/list]
+[size=4][color=#2EB2FF] [b]Known Issue[/b][/color] [/size]
+[list=1]
+[*][size=2]iFly can't listen english mode switch: iFly not send conversion mode message[/size]
 
+[/list]
 [size=4][color=#2EB2FF] [b]For Other Mod Author[/b][/color] [/size]
+
 For other third-party mods, such as those implementing extended menus using ImGui, the simplest way to integrate with my IME mod is by invoking the AllowTextInput function:
 
 [code]
 void SosGui::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
 {
-	using func_t = decltype(&SosGui::AllowTextInput1);
-	REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
-	func(controlMap, allow);
+   using func_t = decltype(&SosGui::AllowTextInput1);
+   REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
+   func(controlMap, allow);
 }
 [/code]
 
@@ -93,24 +116,17 @@ static bool fWantTextInput = false;
 bool cWantTextInput = ImGui::GetIO().WantTextInput;
 if (!fWantTextInput && cWantTextInput)
 {
-	AllowTextInput(true);
+    AllowTextInput(true);
 }
 else if (fWantTextInput && !cWantTextInput)
 {
-	AllowTextInput(false);
+    AllowTextInput(false);
 }
 fWantTextInput = cWantTextInput;
 [/code]
 
 This approach ensures seamless compatibility between your mod's input handling and the IME mod's functionality.
 
-
-[size=4][color=#2EB2FF] [b]Known Issue[/b][/color] [/size]
-[list=1]
-[*][size=2]iFly can't listen english mode switch: iFly not send conversion mode message[/size]
-[*][size=2]CompassNavigationOverhaul exception when quit game. Is causeed by our mod?[/size]
-[*][size=2]Use IME in [b]SteamOverlay: [/b]disable mod or use [b]Temporary Focus Manage[/b][/size]
-[/list]
 [size=4] [color=#2EB2FF][b]Source Code[/b][/color] [/size]
 [url=https://github.com/cyfewlp/JamieMods]Github
 [/url]
