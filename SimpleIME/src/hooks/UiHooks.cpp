@@ -89,7 +89,7 @@ void UiHooks::Install(Ime::Settings &settings)
     }
     log_info("Installing ui hooks...");
     g_uiHooks.reset(new UiHooks(settings));
-    g_uiHooks->UiAddMessage          = std::make_unique<UiAddMessageHook>(AddMessageHook);
+
     g_uiHooks->MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
     g_uiHooks->ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
 }
@@ -97,52 +97,6 @@ void UiHooks::Install(Ime::Settings &settings)
 void UiHooks::Uninstall()
 {
     g_uiHooks = nullptr;
-}
-
-void UiHooks::AddMessageHook(
-    RE::UIMessageQueue *self, RE::BSFixedString &menuName, RE::UI_MESSAGE_TYPE messageType,
-    RE::IUIMessageData *pMessageData
-)
-{
-    if (!g_uiHooks->IsEnableMessageFilter())
-    {
-        g_uiHooks->UiAddMessage->Original(self, menuName, messageType, pMessageData);
-        return;
-    }
-    if (auto *strings = RE::InterfaceStrings::GetSingleton(); strings != nullptr)
-    {
-        if (messageType == RE::UI_MESSAGE_TYPE::kScaleformEvent)
-        {
-            auto *scaleformData = reinterpret_cast<RE::BSUIScaleformData *>(pMessageData);
-            // is char event?
-            auto *event = scaleformData->scaleformEvent;
-            if (event->type == RE::GFxEvent::EventType::kKeyDown || event->type == RE::GFxEvent::EventType::kKeyUp)
-            {
-                Free(pMessageData);
-                return;
-            }
-            if (event->type == RE::GFxEvent::EventType::kCharEvent)
-            {
-                if (spdlog::should_log(spdlog::level::trace))
-                {
-                    RE::GFxCharEvent *gfxCharEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
-                    log_trace("menu {} Char message: {}", menuName.c_str(), gfxCharEvent->wcharCode);
-                }
-                static RE::BSFixedString &topMenu = RE::InterfaceStrings::GetSingleton()->topMenu;
-                // is IME open and not IME sent message?
-                if (menuName == Ime::Settings::IME_MESSAGE_FAKE_MENU)
-                {
-                    g_uiHooks->UiAddMessage->Original(self, topMenu, messageType, pMessageData);
-                }
-                else
-                {
-                    Free(pMessageData);
-                }
-                return;
-            }
-        }
-    }
-    g_uiHooks->UiAddMessage->Original(self, menuName, messageType, pMessageData);
 }
 
 void UiHooks::ScaleformPasteText(RE::GFxMovieView *const uiMovie, RE::GFxCharEvent *const charEvent)

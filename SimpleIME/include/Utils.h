@@ -38,6 +38,12 @@ public:
         return (capsState & 0x0001) != 0;
     }
 
+    static constexpr bool IsModifierDown()
+    {
+        return IsVkCodeDown(VK_CONTROL) || IsVkCodeDown(VK_SHIFT) || IsVkCodeDown(VK_MENU) || IsVkCodeDown(VK_LWIN) ||
+               IsVkCodeDown(VK_RWIN);
+    }
+
     static constexpr auto IsKeyWillTriggerIme(const uint32_t keycode) -> bool
     {
         if (IsVkCodeDown(VK_CONTROL) || IsVkCodeDown(VK_SHIFT) || IsVkCodeDown(VK_MENU) || IsVkCodeDown(VK_LWIN) ||
@@ -90,7 +96,8 @@ private:
         {
             return true;
         }
-        auto *pCharEvent            = new RE::GFxCharEvent(code, 0);
+        auto *pCharEvent            = new RE::GFxCharEvent(code);
+        pCharEvent->type            = static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeCharEvent);
         auto *pScaleFormMessageData = pFactory->Create();
         if (pScaleFormMessageData == nullptr)
         {
@@ -100,7 +107,9 @@ private:
         pScaleFormMessageData->scaleformEvent = pCharEvent;
         log_debug("send code {:#x} to Skyrim", code);
         RE::UIMessageQueue::GetSingleton()->AddMessage(
-            Settings::IME_MESSAGE_FAKE_MENU, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
+            RE::InterfaceStrings::GetSingleton()->topMenu,
+            RE::UI_MESSAGE_TYPE::kScaleformEvent,
+            pScaleFormMessageData
         );
         return true;
     }

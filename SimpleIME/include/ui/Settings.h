@@ -16,8 +16,6 @@ namespace Ime
 {
 struct Settings
 {
-    static constexpr std::string_view IME_MESSAGE_FAKE_MENU = "ImeMessageFakeMenu";
-
     enum class FocusType : std::uint16_t
     {
         Permanent = 0,

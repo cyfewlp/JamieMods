@@ -72,6 +72,17 @@ public:
     void AbortIme() const;
     void DrawIme(Settings &settings) const;
     void ShowToolWindow() const;
+
+    bool IsShowingToolWindow() const
+    {
+        return m_pImeUi->IsShowingToolWindow();
+    }
+
+    bool IsPinedToolWindow() const
+    {
+        return m_pImeUi->IsPinedToolWindow();
+    }
+
     void ApplyUiSettings(Settings *pSettings) const;
 
 private:

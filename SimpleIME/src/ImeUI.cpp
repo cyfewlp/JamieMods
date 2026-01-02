@@ -15,6 +15,7 @@
 #include "hooks/UiHooks.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
+#include "menu/MenuNames.h"
 #include "tsf/LangProfileUtil.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
@@ -305,6 +306,11 @@ void ImeUI::RenderToolWindow(Settings &settings)
     {
         m_fPinToolWindow               = true;
         ImGui::GetIO().MouseDrawCursor = false;
+
+        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
+        {
+            messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
+        }
     }
 
     ImGui::SameLine();

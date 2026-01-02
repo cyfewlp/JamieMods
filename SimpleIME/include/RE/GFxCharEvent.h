@@ -1,6 +1,20 @@
 #pragma once
 
+#include "common/config.h"
+
 #include <cstdint>
+
+namespace LIBC_NAMESPACE_DECL
+{
+namespace Ime
+{
+// just be used to mark the event is sent by SimpleIME
+enum class GFxEventTypeEx : std::uint32_t
+{
+    kImeCharEvent = 0x80000001
+};
+}
+}
 
 namespace RE
 {

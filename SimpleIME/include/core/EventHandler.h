@@ -24,7 +24,6 @@ public:
 private:
     ImeWnd *m_imeWnd;
 
-    void ProcessMouseButtonEvent(const RE::ButtonEvent *buttonEvent) const;
     void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const;
 };
 

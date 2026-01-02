@@ -45,6 +45,16 @@ public:
     void ShowToolWindow();
     void ApplyUiSettings(Settings &settings);
 
+    bool IsShowingToolWindow() const
+    {
+        return m_fShowToolWindow;
+    }
+
+    bool IsPinedToolWindow() const
+    {
+        return m_fPinToolWindow;
+    }
+
 private:
     auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) const -> bool;
     auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) const -> bool;

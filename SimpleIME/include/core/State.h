@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/config.h"
 #include "enumeration.h"
 
 #include <cstdint>
@@ -101,6 +102,11 @@ public:
     constexpr auto IsImeInputting() const
     {
         return HasAny(IN_CAND_CHOOSING, IN_COMPOSING);
+    }
+
+    constexpr auto IsImeWaitingInput() const
+    {
+        return NotHas(IME_DISABLED, IN_ALPHANUMERIC);
     }
 
     constexpr auto IsImeNotActivateOrGameLoading() const

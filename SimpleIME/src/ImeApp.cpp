@@ -13,6 +13,8 @@
 #include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeManagerComposer.h"
+#include "menu/ImeMenu.h"
+#include "menu/ToolWindowMenu.h"
 
 #include <basetsd.h>
 #include <cstdint>
@@ -188,6 +190,9 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("Hook WndProc failed!");
     }
     InstallHooks();
+
+    ImeMenu::RegisterMenu();
+    ToolWindowMenu::RegisterMenu();
 }
 
 void ImeApp::SetSettings()
@@ -242,8 +247,8 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 
 void ImeApp::InstallHooks()
 {
-    D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
-    DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
+    // D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
+    // DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
 
     Hooks::ScaleformHooks::Install();
     Hooks::UiHooks::Install(m_settings);
@@ -266,20 +271,19 @@ void ImeApp::D3DPresent(const std::uint32_t ptr)
     {
         return;
     }
-    app.DoD3DPresent();
+    app.Render();
 }
 
-void ImeApp::DoD3DPresent()
+void ImeApp::Render()
 {
-    auto &app = GetInstance();
-    app.m_imeWnd.DrawIme(m_settings);
+    m_imeWnd.DrawIme(m_settings);
 }
 
 // we need set our keyboard to non-exclusive after game default.
 void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
 {
     const auto &app = GetInstance();
-    Core::EventHandler::UpdateMessageFilter(app.m_settings, a_events);
+    // Core::EventHandler::UpdateMessageFilter(app.m_settings, a_events);
     app.DispatchInputEventHook->Original(a_dispatcher, a_events);
 }
 

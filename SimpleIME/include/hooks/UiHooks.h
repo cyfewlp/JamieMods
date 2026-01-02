@@ -71,11 +71,6 @@ public:
     }
 
 private:
-    static void AddMessageHook(
-        RE::UIMessageQueue *self, RE::BSFixedString &menuName, RE::UI_MESSAGE_TYPE messageType,
-        RE::IUIMessageData *pMessageData
-    );
-
     // use GFxMovieView::handleEvent paset text;
     // reuse the input CharEvent;
     static void ScaleformPasteText(RE::GFxMovieView *const uiMovie, RE::GFxCharEvent *const charEvent);

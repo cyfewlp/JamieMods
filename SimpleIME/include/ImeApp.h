@@ -36,6 +36,7 @@ public:
     void Initialize();
     void Uninitialize();
     void OnInputLoaded();
+    void Render();
 
     constexpr auto GetGameHWND() const -> HWND
     {
@@ -66,7 +67,6 @@ private:
     static void           D3DInit();
     static void           DoD3DInit();
     static void           D3DPresent(std::uint32_t ptr);
-    void                  DoD3DPresent();
     static void           DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;
