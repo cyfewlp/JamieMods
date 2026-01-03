@@ -182,7 +182,7 @@ void ImeApp::OnD3DInit()
 
     log_debug("Hooking Skyrim WndProc...");
     RealWndProc = reinterpret_cast<WNDPROC>(
-        SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc))
+        SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc))
     );
     if (RealWndProc == nullptr)
     {
@@ -254,34 +254,16 @@ void ImeApp::InstallHooks()
 
 void ImeApp::UninstallHooks()
 {
-    D3DPresentHook         = nullptr;
-    DispatchInputEventHook = nullptr;
+    // D3DPresentHook         = nullptr;
+    // DispatchInputEventHook = nullptr;
 
     Hooks::ScaleformHooks::Uninstall();
 }
 
-void ImeApp::D3DPresent(const std::uint32_t ptr)
-{
-    auto &app = GetInstance();
-    app.D3DPresentHook->Original(ptr);
-    if (!app.m_fInitialized.load())
-    {
-        return;
-    }
-    app.Render();
-}
 
 void ImeApp::Render()
 {
     m_imeWnd.DrawIme(m_settings);
-}
-
-// we need set our keyboard to non-exclusive after game default.
-void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
-{
-    const auto &app = GetInstance();
-    // Core::EventHandler::UpdateMessageFilter(app.m_settings, a_events);
-    app.DispatchInputEventHook->Original(a_dispatcher, a_events);
 }
 
 auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

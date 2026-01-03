@@ -49,8 +49,8 @@ public:
 
 private:
     std::unique_ptr<Hooks::D3DInitHookData>            D3DInitHook            = nullptr;
-    std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
-    std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
+    // std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
+    // std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
 
     void OnD3DInit();
     void SetSettings();
@@ -65,7 +65,7 @@ private:
 
     static void           D3DInit();
     static void           DoD3DInit();
-    static void           D3DPresent(std::uint32_t ptr);
+    // static void           D3DPresent(std::uint32_t ptr);
     static void           DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;
