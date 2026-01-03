@@ -10,7 +10,6 @@
 #include "core/EventHandler.h"
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
-#include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeManagerComposer.h"
 #include "menu/ImeMenu.h"
@@ -251,7 +250,6 @@ void ImeApp::InstallHooks()
     // DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
 
     Hooks::ScaleformHooks::Install();
-    Hooks::UiHooks::Install(m_settings);
 }
 
 void ImeApp::UninstallHooks()
@@ -259,7 +257,6 @@ void ImeApp::UninstallHooks()
     D3DPresentHook         = nullptr;
     DispatchInputEventHook = nullptr;
 
-    Hooks::UiHooks::Uninstall();
     Hooks::ScaleformHooks::Uninstall();
 }
 

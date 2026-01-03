@@ -12,7 +12,6 @@
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
-#include "hooks/UiHooks.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "menu/MenuNames.h"
@@ -499,18 +498,6 @@ void ImeUI::DrawStates() const
     {
         ImeManagerComposer::GetInstance()->ForceFocusIme();
     }
-    ImGui::Text(
-        "%s: %s",
-        Translate("$Message_Filter_Enabled"),
-        getStateIcon(Hooks::UiHooks::GetInstance()->IsEnableMessageFilter())
-    );
-    ImGui::SetItemTooltip("%s", Translate("$Message_Filter_Enabled_Tooltip"));
-    ImGui::SameLine(0, spacing);
-    if (ImGui::Button(Translate("$Message_Filter_Close")))
-    {
-        Hooks::UiHooks::GetInstance()->EnableMessageFilter(false);
-    }
-    ImGui::SetItemTooltip("%s", Translate("$Message_Filter_Close_Tooltip"));
 }
 
 template <typename T>

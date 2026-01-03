@@ -1,12 +1,9 @@
 #include "core/EventHandler.h"
 
 #include "ImeWnd.hpp"
-#include "Utils.h"
 #include "configs/AppConfig.h"
 #include "hooks/ScaleformHook.h"
-#include "hooks/UiHooks.h"
 #include "menu/MenuNames.h"
-#include "ui/Settings.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
@@ -36,46 +33,6 @@ void EventHandler::InstallEventSink(ImeWnd *imeWnd)
     static MenuOpenCloseEventSink g_pMenuOpenCloseEventSink;
     RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&g_InputEventSink);
     RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
-}
-
-auto EventHandler::UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void
-{
-    auto *uiHooks = Hooks::UiHooks::GetInstance();
-    if (uiHooks == nullptr || a_events == nullptr)
-    {
-        return;
-    }
-    auto *const head = *a_events;
-    if (head == nullptr)
-    {
-        return;
-    }
-    const auto &state = State::GetInstance();
-    if (!settings.enableMod || !state.IsKeyboardOpen() || state.IsImeNotActivateOrGameLoading())
-    {
-        uiHooks->EnableMessageFilter(false);
-        return;
-    }
-    bool enableFilter = false;
-    for (auto *event = head; event; event = event->next)
-    {
-        const RE::ButtonEvent *buttonEvent = nullptr;
-        if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
-        {
-            buttonEvent = event->AsButtonEvent();
-        }
-        if (buttonEvent == nullptr)
-        {
-            continue;
-        }
-        const auto code = buttonEvent->GetIDCode();
-        if (state.IsImeInputting() || (!Utils::IsCapsLockOn() && Utils::IsKeyWillTriggerIme(code)))
-        {
-            enableFilter = true;
-            break;
-        }
-    }
-    uiHooks->EnableMessageFilter(enableFilter);
 }
 
 //////////////////////////////////////////////////////////////////////////

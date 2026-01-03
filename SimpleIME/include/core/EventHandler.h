@@ -51,7 +51,6 @@ class EventHandler
 
 public:
     static void InstallEventSink(ImeWnd *imeWnd);
-    static auto UpdateMessageFilter(const Settings &settings, RE::InputEvent **a_events) -> void;
 
 private:
     static constexpr auto IsPasteShortcutPressed(auto &code);
