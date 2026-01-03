@@ -4,5 +4,5 @@
 	branch = features/dynamic_fonts
 [submodule "extern/CommonLibSSE-NG"]
 	path = extern/CommonLibSSE-NG
-	url = https://github.com/CharmedBaryon/CommonLibSSE-NG
-	branch = clang-cl
+	url = https://github.com/alandtse/CommonLibVR
+	branch = ng
