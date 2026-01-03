@@ -25,6 +25,7 @@ static ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
 
 namespace Ime
 {
+bool ctrlDown = false;
 
 void ImeMenu::PostDisplay()
 {
@@ -100,8 +101,14 @@ bool IsKeyWillTriggerIme(const RE::GFxKey::Code keycode)
     return keycode >= RE::GFxKey::kA && keycode <= RE::GFxKey::kZ;
 }
 
-bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool /*down*/)
+bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
 {
+    const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
+    if (keyEvent->keyCode == RE::GFxKey::kControl)
+    {
+        ctrlDown = down;
+    }
+
     const auto &state = Core::State::GetInstance();
     if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
     {
@@ -113,7 +120,6 @@ bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool /*down*/)
         return true;
     }
 
-    const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
     if (state.IsImeWaitingInput() && IsKeyWillTriggerIme(keyEvent->keyCode))
     {
         return true;
@@ -138,10 +144,46 @@ bool ImeMenu::OnMouseWheelEvent(RE::GFxEvent *event)
     return false;
 }
 
+// Send a fake KeyEvent to Console
+// to avoid ignoring CharEvent due to the Console being held down by Ctrl.
+bool SendFakeControlUpEvent()
+{
+    auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
+    auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
+    if (!pInterfaceStrings || !pFactoryManager)
+    {
+        return false;
+    }
+    if (const auto *pFactory = pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData))
+    {
+        if (auto *pScaleFormMessageData = pFactory->Create())
+        {
+            auto *pEvent                          = new RE::GFxKeyEvent();
+            pEvent->type                          = RE::GFxEvent::EventType::kKeyUp;
+            pEvent->keyCode                       = RE::GFxKey::kControl;
+            pScaleFormMessageData->scaleformEvent = pEvent;
+
+            RE::UIMessageQueue::GetSingleton()->AddMessage(
+                RE::InterfaceStrings::GetSingleton()->console,
+                RE::UI_MESSAGE_TYPE::kScaleformEvent,
+                pScaleFormMessageData
+            );
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool ImeMenu::OnCharEvent(RE::GFxEvent *event)
 {
-    const auto  charEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
-    const auto &state     = Core::State::GetInstance();
+    const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
+    if (IsPaste(charEvent))
+    {
+        return SendFakeControlUpEvent() && Paste();
+    }
+
+    const auto &state = Core::State::GetInstance();
     if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
     {
         return false;
@@ -157,6 +199,42 @@ bool ImeMenu::OnCharEvent(RE::GFxEvent *event)
         return true;
     }
     return false;
+}
+
+bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent)
+{
+    return charEvent->wcharCode == 'v' && ctrlDown;
+}
+
+// We only handle CF_UNICODETEXT here.
+// If the clipboard only provides CF_TEXT (ANSI),
+// let the game handle paste natively.
+// This avoids incorrect Unicode injection and
+// preserves vanilla behavior.
+bool ImeMenu::Paste()
+{
+    if (::OpenClipboard(nullptr) == FALSE)
+    {
+        return false;
+    }
+
+    if (IsClipboardFormatAvailable(CF_UNICODETEXT) == FALSE)
+    {
+        ::CloseClipboard();
+        return false;
+    }
+
+    if (const HANDLE handle = ::GetClipboardData(CF_UNICODETEXT); handle != nullptr)
+    {
+        if (auto *const textData = static_cast<LPTSTR>(GlobalLock(handle)); textData != nullptr)
+        {
+            Utils::SendStringToGame(std::wstring(textData));
+
+            GlobalUnlock(handle);
+        }
+    }
+    CloseClipboard();
+    return true;
 }
 
 void ImeMenu::RegisterMenu()

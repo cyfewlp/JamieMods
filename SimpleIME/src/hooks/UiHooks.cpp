@@ -90,8 +90,8 @@ void UiHooks::Install(Ime::Settings &settings)
     log_info("Installing ui hooks...");
     g_uiHooks.reset(new UiHooks(settings));
 
-    g_uiHooks->MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
-    g_uiHooks->ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
+    // g_uiHooks->MenuProcessMessage    = std::make_unique<MenuProcessMessageHook>(MyMenuProcessMessage);
+    // g_uiHooks->ConsoleProcessMessage = std::make_unique<ConsoleProcessMessageHook>(MyConsoleProcessMessage);
 }
 
 void UiHooks::Uninstall()

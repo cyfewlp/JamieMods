@@ -162,7 +162,7 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("Cannot find render manager. Initialization failed!");
     }
 
-    const auto &render_data = render_manager->data;
+    const auto &render_data = render_manager->GetRuntimeData();
     log_debug("Getting SwapChain...");
     auto *pSwapChain = render_data.renderWindows->swapChain;
     if (pSwapChain == nullptr)

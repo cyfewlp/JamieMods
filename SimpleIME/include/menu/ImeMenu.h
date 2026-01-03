@@ -5,6 +5,7 @@
 #pragma once
 
 #include "RE/B/BSUIScaleformData.h"
+#include "RE/GFxCharEvent.h"
 #include "RE/I/IMenu.h"
 #include "common/config.h"
 
@@ -37,6 +38,9 @@ private:
     static bool OnMouseEvent(RE::GFxEvent *event, bool down);
     static bool OnMouseWheelEvent(RE::GFxEvent *event);
     static bool OnCharEvent(RE::GFxEvent *event);
+
+    static bool IsPaste(const RE::GFxCharEvent *charEvent);
+    static bool Paste();
 };
 }
 }
