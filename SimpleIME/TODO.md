@@ -24,3 +24,7 @@
 - [x] support select candidate by mouse;
 - [x] show caret in IME window: ←, →;  #improvement
 - [x] reset States when switch input method  #improvement
+* Use IMenu replace ToolWindow & IME Window
+  [x] next: remove unused codes
+  [x] Use NerdFont or PNG icon to replace UI artist;
+  [x] Test new code about that font size, font scale;

@@ -203,22 +203,38 @@ void ImeWnd::OnStart(Settings *pSettings)
 
 void ImeWnd::AddFonts(const Settings &settings)
 {
-    const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
-    float const pxFontSize = settings.dpiScale * settings.fontSize;
+    const auto &uiConfig = AppConfig::GetConfig().GetAppUiConfig();
 
     auto &io = ImGui::GetIO();
     io.Fonts->Clear();
-    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), pxFontSize))
+    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), settings.fontSize))
     {
         io.Fonts->AddFontDefault();
+
+        ErrorNotifier::GetInstance().addError(
+            std::format("Can't load east asia font from {}", uiConfig.EastAsiaFontFile()), ErrorMsg::Level::warning
+        );
     }
 
     // config font
-    static ImFontConfig cfg;
+    ImFontConfig cfg;
     cfg.OversampleH = cfg.OversampleV = 1;
     cfg.MergeMode                     = true;
-    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), pxFontSize, &cfg);
+    cfg.FontLoaderFlags |= ImGuiFreeTypeLoaderFlags_LoadColor;
+    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), settings.fontSize, &cfg))
+    {
+        ErrorNotifier::GetInstance().addError(
+            std::format("Can't load emoji font from {}", uiConfig.EmojiFontFile()), ErrorMsg::Level::warning
+        );
+    }
+
+    auto iconFile = CommonUtils::GetInterfaceFile(ICON_FILE);
+    if (!io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &cfg))
+    {
+        ErrorNotifier::GetInstance().addError(
+            std::format("Can't load icon font from {}", iconFile), ErrorMsg::Level::warning
+        );
+    }
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -322,6 +338,7 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     {
         style.ScaleAllSizes(settings.dpiScale);
     }
+    style.FontScaleDpi = settings.dpiScale;
     log_info("ImGui initialized!");
 }
 
@@ -364,7 +381,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
 
 auto ImeWnd::SaveSettings() const -> void
 {
-    m_settings.fontSizeScale = ImGui::GetIO().FontGlobalScale;
+    m_settings.fontSizeScale = ImGui::GetStyle().FontScaleMain;
     AppConfig::GetConfig().Set(m_settings);
 
     const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
@@ -435,7 +452,7 @@ void ImeWnd::AbortIme() const
 /**
  * If Game cursor no showing/update, update ImGui cursor from system cursor pos
  */
-void ImeWnd::NewFrame(Settings &settings)
+void ImeWnd::NewFrame()
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
@@ -450,23 +467,22 @@ void ImeWnd::NewFrame(Settings &settings)
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
-    if (settings.wantResizeFont)
-    {
-        settings.wantResizeFont    = false;
-        ImGui::GetStyle().FontSize = settings.fontSize * settings.dpiScale;
-    }
 }
 
 void ImeWnd::DrawIme(Settings &settings) const
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
-    NewFrame(settings);
+    NewFrame();
     ImGui::NewFrame();
 
-    ErrorNotifier::GetInstance().Show();
-    m_pImeUi->RenderToolWindow(settings);
-    m_pImeUi->Draw(settings);
+    ImGui::PushFont(nullptr, settings.fontSize);
+    {
+        ErrorNotifier::GetInstance().Show();
+        m_pImeUi->DrawToolWindow(settings);
+        m_pImeUi->Draw(settings);
+    }
+    ImGui::PopFont();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

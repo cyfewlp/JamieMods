@@ -12,6 +12,7 @@
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
+#include "icons.h"
 #include "ime/ImeManagerComposer.h"
 #include "imgui.h"
 #include "menu/MenuNames.h"
@@ -22,10 +23,6 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-
-static constexpr ImVec4 RED_COLOR = {1.0F, 0.0F, 0.0F, 1.0F};
-constexpr auto         *EMOJI_YES = "✅";
-constexpr auto         *EMOJI_NO  = "❌";
 
 ImeUI::~ImeUI()
 {
@@ -59,8 +56,6 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
 
 void ImeUI::ApplyUiSettings(Settings &settings)
 {
-    ImGui::GetIO().FontGlobalScale = settings.fontSizeScale;
-
     { // Apply language config
         if (const auto langIt = std::ranges::find(m_translateLanguages, settings.language);
             langIt == m_translateLanguages.end())
@@ -82,6 +77,7 @@ void ImeUI::ApplyUiSettings(Settings &settings)
             expected = m_themesLoader.UseTheme(index, style);
             if (expected)
             {
+                style.FontScaleMain = settings.fontSizeScale;
                 style.ScaleAllSizes(settings.dpiScale);
                 ImGui::GetStyle() = style;
             }
@@ -105,7 +101,7 @@ void ImeUI::ApplyUiSettings(Settings &settings)
                 settings.themeIndex = 0;
             }
         }
-        ImGui::GetStyle().FontSize = settings.fontSize;
+        ImGui::GetStyle().FontSizeBase = settings.fontSize;
     }
 }
 
@@ -271,7 +267,7 @@ void ImeUI::ShowToolWindow()
     }
 }
 
-void ImeUI::RenderToolWindow(Settings &settings)
+void ImeUI::DrawToolWindow(Settings &settings)
 {
     if (!m_fShowToolWindow)
     {
@@ -290,18 +286,11 @@ void ImeUI::RenderToolWindow(Settings &settings)
 
     m_translation.UseSection("Tool Window");
 
-    ImGui::Text("Drag");
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text(ICON_COD_MOVE);
     ImGui::SameLine();
 
-    if (!m_errorMessages.empty())
-    {
-        for (const auto &errorMessage : m_errorMessages)
-        {
-            ImGui::TextColored(RED_COLOR, "%s", errorMessage.c_str());
-        }
-    }
-
-    if (ImGui::Button("\xf0\x9f\x93\x8c")) // pin
+    if (ImGui::Button(m_fPinToolWindow ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE))
     {
         m_fPinToolWindow               = true;
         ImGui::GetIO().MouseDrawCursor = false;
@@ -321,11 +310,14 @@ void ImeUI::RenderToolWindow(Settings &settings)
     ImGui::SameLine();
     if (State::GetInstance().Has(State::IN_ALPHANUMERIC))
     {
+        ImGui::AlignTextToFramePadding();
         ImGui::Text("ENG");
         ImGui::SameLine();
     }
     ImGui::End();
 }
+
+ImVec4 inactiveColor = ImVec4(0.45f, 0.45f, 0.45f, 0.9f);
 
 void ImeUI::DrawSettings(Settings &settings)
 {
@@ -360,14 +352,10 @@ void ImeUI::DrawModConfig(Settings &settings)
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
     ImGui::InputScalar(Translate("$Font_Size"), ImGuiDataType_U32, &settings.fontSize, nullptr, nullptr, "%u");
-    if (ImGui::IsItemDeactivatedAfterEdit())
-    {
-        settings.wantResizeFont = true;
-    }
 
     ImGui::DragFloat(
         Translate("$Font_Size_Scale"),
-        &ImGui::GetIO().FontGlobalScale,
+        &ImGui::GetStyle().FontScaleMain,
         0.05,
         SettingsConfig::MIN_FONT_SIZE_SCALE,
         SettingsConfig::MAX_FONT_SIZE_SCALE,
@@ -392,8 +380,10 @@ void ImeUI::DrawModConfig(Settings &settings)
                 ImGuiStyle style;
                 if (m_themesLoader.UseTheme(idx, style))
                 {
-                    settings.themeIndex = idx;
-                    settings.theme      = theme.name;
+                    settings.themeIndex    = idx;
+                    settings.theme         = theme.name;
+                    settings.fontSizeScale = ImGui::GetStyle().FontScaleMain;
+                    style.FontScaleMain    = settings.fontSizeScale;
                     style.ScaleAllSizes(settings.dpiScale);
                     ImGui::GetStyle() = style;
                 }
@@ -483,17 +473,33 @@ void ImeUI::DrawStates() const
 {
     ImGui::SeparatorText(Translate("$States"));
 
-    constexpr auto getStateIcon = [](const bool state) {
-        return state ? EMOJI_YES : EMOJI_NO;
-    };
-
-    ImGui::Text("%s: %s", Translate("$Ime_Enabled"), getStateIcon(State::GetInstance().NotHas(State::IME_DISABLED)));
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextColored(
+        State::GetInstance().NotHas(State::IME_DISABLED) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor,
+        "[ %s ]",
+        ICON_FA_KEYBOARD
+    );
+    ImGui::SameLine();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", Translate("$IME"));
     ImGui::SetItemTooltip("%s", Translate("$Ime_Enabled_Tooltip"));
-    ImGui::Text("%s: %s", Translate("$Ime_Focus"), getStateIcon(m_pImeWnd->IsFocused()));
+
+    ImGui::SameLine();
+
+    const float pulse            = 0.9f + 0.1f * sinf(ImGui::GetTime() * 4.0f);
+    ImVec4      focusActiveColor = ImVec4(0.55f, 0.85f, 1.0f, 1.0f);
+    focusActiveColor.w *= pulse;
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextColored(m_pImeWnd->IsFocused() ? focusActiveColor : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
+    ImGui::SameLine();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", Translate("$FOCUS"));
     ImGui::SetItemTooltip("%s", Translate("$Ime_Focus_Tooltip"));
 
-    float spacing = ImGui::GetFontSize() * 2;
-    ImGui::SameLine(0, spacing);
+    ImGui::SameLine(0, ImGui::GetFontSize());
+    ImGui::TextDisabled("|");
+    ImGui::SameLine(0, ImGui::GetFontSize());
     if (ImGui::Button(Translate("$Force_Focus_Ime")))
     {
         ImeManagerComposer::GetInstance()->ForceFocusIme();

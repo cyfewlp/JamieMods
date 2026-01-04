@@ -24,9 +24,10 @@ static inline auto g_tMainClassName = L"SimpleIME";
 
 class ImeWnd
 {
-    static constexpr WORD ID_EDIT_COPY  = 1;
-    static constexpr WORD ID_EDIT_PASTE = 2;
-    using State                         = Core::State;
+    static constexpr std::string_view ICON_FILE     = "SymbolsNerdFontMono-Regular.ttf";
+    static constexpr WORD             ID_EDIT_COPY  = 1;
+    static constexpr WORD             ID_EDIT_PASTE = 2;
+    using State                                     = Core::State;
 
 public:
     ImeWnd(Settings &settings);
@@ -88,7 +89,7 @@ public:
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static auto GetThis(HWND hWnd) -> ImeWnd *;
-    static void NewFrame(Settings &settings);
+    static void NewFrame();
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
 

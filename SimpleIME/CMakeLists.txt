@@ -109,6 +109,11 @@ install(FILES
     COMPONENT configuration
 )
 install(FILES
+    ${CMAKE_SOURCE_DIR}/assets/fonts/SymbolsNerdFontMono-Regular.ttf
+    DESTINATION interface/${PROJECT_NAME}
+    COMPONENT assets
+)
+install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
     ${CMAKE_SOURCE_DIR}/LICENSE
     DESTINATION .
@@ -128,6 +133,7 @@ install(DIRECTORY
 cpack_add_component(dll)
 cpack_add_component(configuration)
 cpack_add_component(doc)
+cpack_add_component(assets)
 cpack_add_component(Distribution)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

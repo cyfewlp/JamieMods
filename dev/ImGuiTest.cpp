@@ -6,10 +6,13 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
-#define IMGUI_ENABLE_FREETYPE
+
+// #define IMGUI_ENABLE_FREETYPE
+// #define IMGUI_USE_WCHAR32
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "imgui.h"
+
 // #include "AddressLibTool.hpp"
 #include "SimpleIni.h"
 #include "Status.h"
@@ -263,15 +266,19 @@ int main(int, char **)
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-    auto scale = ImGui_ImplWin32_GetDpiScaleForHwnd(hwnd);
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 16.0f * scale);
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FontSizeBase = 20.0f;
 
-    static ImFontConfig cfg;
-    cfg.OversampleH = cfg.OversampleV = 1;
-    cfg.MergeMode                     = true;
-    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f * scale, &cfg);
-    ImGui::GetStyle().ScaleAllSizes(scale);
+    auto scale = ImGui_ImplWin32_GetDpiScaleForHwnd(hwnd);
+    // Load a first font
+    ImFont* font = io.Fonts->AddFontDefault();
+    ImFontConfig config;
+    config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 0.0f, &config);
+    // io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 0.0f);
+    io.Fonts->AddFontFromFileTTF("C:\\Users\\jamie\\Downloads\\SymbolsNerdFontMono-Regular.ttf", 0.0f, &config);
+
+    style.ScaleAllSizes(scale);
 
     ImGui::GetMainViewport()->PlatformHandleRaw = (void *)hwnd;
 
@@ -318,7 +325,19 @@ int main(int, char **)
 
         {
             ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-            ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0.0f);
+
+            static bool isChecked = false;
+            static std::string label = "\xf3\xb0\x88\x94 🤗";
+
+            ImGui::Text("AAA");
+            ImGui::Text("\xf3\xb0\x90\x83");
+
+
+            if (ImGui::Button(label.c_str()))
+            {
+                isChecked = !isChecked;
+                label = isChecked ? "\xee\xac\xa2" : "\xee\xae\xa0";
+            }
 
             ImGui::SameLine();
             ImGui::BeginGroup();
@@ -330,7 +349,7 @@ int main(int, char **)
             const auto &size    = ImGui::CalcTextSize("Font_Size_Scale");
             ImGui::SetNextItemWidth(-size.x);
             ImGui::DragFloat(
-                "Font_Size_Scale", &imGuiIo.FontGlobalScale, 0.05, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_NoInput
+                "Font_Size_Scale", &style.FontScaleMain, 0.05, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_NoInput
             );
             ImGui::SameLine();
             ImGui::Text("Font_Size_Scale");
@@ -1016,61 +1035,6 @@ bool LoadStyleFromFile(const char *path)
 
 bool LoadColors(CSimpleIniA &ini, ImGuiStyle &style)
 {
-    auto colors = std::span(style.Colors);
-    LoadColor(ini, "Text", colors[ImGuiCol_Text]);
-    LoadColor(ini, "TextDisabled", colors[ImGuiCol_TextDisabled]);
-    LoadColor(ini, "WindowBg", colors[ImGuiCol_WindowBg]);
-    LoadColor(ini, "ChildBg", colors[ImGuiCol_ChildBg]);
-    LoadColor(ini, "PopupBg", colors[ImGuiCol_PopupBg]);
-    LoadColor(ini, "Border", colors[ImGuiCol_Border]);
-    LoadColor(ini, "BorderShadow", colors[ImGuiCol_BorderShadow]);
-    LoadColor(ini, "FrameBg", colors[ImGuiCol_FrameBg]);
-    LoadColor(ini, "FrameBgHovered", colors[ImGuiCol_FrameBgHovered]);
-    LoadColor(ini, "FrameBgActive", colors[ImGuiCol_FrameBgActive]);
-    LoadColor(ini, "TitleBg", colors[ImGuiCol_TitleBg]);
-    LoadColor(ini, "TitleBgActive", colors[ImGuiCol_TitleBgActive]);
-    LoadColor(ini, "TitleBgCollapsed", colors[ImGuiCol_TitleBgCollapsed]);
-    LoadColor(ini, "MenuBarBg", colors[ImGuiCol_MenuBarBg]);
-    LoadColor(ini, "ScrollbarBg", colors[ImGuiCol_ScrollbarBg]);
-    LoadColor(ini, "ScrollbarGrab", colors[ImGuiCol_ScrollbarGrab]);
-    LoadColor(ini, "ScrollbarGrabHovered", colors[ImGuiCol_ScrollbarGrabHovered]);
-    LoadColor(ini, "ScrollbarGrabActive", colors[ImGuiCol_ScrollbarGrabActive]);
-    LoadColor(ini, "CheckMark", colors[ImGuiCol_CheckMark]);
-    LoadColor(ini, "SliderGrab", colors[ImGuiCol_SliderGrab]);
-    LoadColor(ini, "SliderGrabActive", colors[ImGuiCol_SliderGrabActive]);
-    LoadColor(ini, "Button", colors[ImGuiCol_Button]);
-    LoadColor(ini, "ButtonHovered", colors[ImGuiCol_ButtonHovered]);
-    LoadColor(ini, "ButtonActive", colors[ImGuiCol_ButtonActive]);
-    LoadColor(ini, "Header", colors[ImGuiCol_Header]);
-    LoadColor(ini, "HeaderHovered", colors[ImGuiCol_HeaderHovered]);
-    LoadColor(ini, "HeaderActive", colors[ImGuiCol_HeaderActive]);
-    LoadColor(ini, "Separator", colors[ImGuiCol_Separator]);
-    LoadColor(ini, "SeparatorHovered", colors[ImGuiCol_SeparatorHovered]);
-    LoadColor(ini, "SeparatorActive", colors[ImGuiCol_SeparatorActive]);
-    LoadColor(ini, "ResizeGrip", colors[ImGuiCol_ResizeGrip]);
-    LoadColor(ini, "ResizeGripHovered", colors[ImGuiCol_ResizeGripHovered]);
-    LoadColor(ini, "ResizeGripActive", colors[ImGuiCol_ResizeGripActive]);
-    LoadColor(ini, "Tab", colors[ImGuiCol_Tab]);
-    LoadColor(ini, "TabHovered", colors[ImGuiCol_TabHovered]);
-    LoadColor(ini, "TabActive", colors[ImGuiCol_TabActive]);
-    LoadColor(ini, "TabUnfocused", colors[ImGuiCol_TabUnfocused]);
-    LoadColor(ini, "TabUnfocusedActive", colors[ImGuiCol_TabUnfocusedActive]);
-    LoadColor(ini, "PlotLines", colors[ImGuiCol_PlotLines]);
-    LoadColor(ini, "PlotLinesHovered", colors[ImGuiCol_PlotLinesHovered]);
-    LoadColor(ini, "PlotHistogram", colors[ImGuiCol_PlotHistogram]);
-    LoadColor(ini, "PlotHistogramHovered", colors[ImGuiCol_PlotHistogramHovered]);
-    LoadColor(ini, "TableHeaderBg", colors[ImGuiCol_TableHeaderBg]);
-    LoadColor(ini, "TableBorderStrong", colors[ImGuiCol_TableBorderStrong]);
-    LoadColor(ini, "TableBorderLight", colors[ImGuiCol_TableBorderLight]);
-    LoadColor(ini, "TableRowBg", colors[ImGuiCol_TableRowBg]);
-    LoadColor(ini, "TableRowBgAlt", colors[ImGuiCol_TableRowBgAlt]);
-    LoadColor(ini, "TextSelectedBg", colors[ImGuiCol_TextSelectedBg]);
-    LoadColor(ini, "DragDropTarget", colors[ImGuiCol_DragDropTarget]);
-    LoadColor(ini, "NavHighlight", colors[ImGuiCol_NavHighlight]);
-    LoadColor(ini, "NavWindowingHighlight", colors[ImGuiCol_NavWindowingHighlight]);
-    LoadColor(ini, "NavWindowingDimBg", colors[ImGuiCol_NavWindowingDimBg]);
-    LoadColor(ini, "ModalWindowDimBg", colors[ImGuiCol_ModalWindowDimBg]);
-    return true;
 }
 
 static void GetIntValue(const char *value, uint8_t *target)

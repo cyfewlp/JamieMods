@@ -41,7 +41,7 @@ public:
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
     void Draw(const Settings &settings);
-    void RenderToolWindow(Settings &settings);
+    void DrawToolWindow(Settings &settings);
     void ShowToolWindow();
     void ApplyUiSettings(Settings &settings);
 
@@ -89,8 +89,6 @@ private:
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
-
-    std::vector<std::string> m_errorMessages;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
