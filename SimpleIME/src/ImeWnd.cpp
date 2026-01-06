@@ -202,7 +202,7 @@ void ImeWnd::AddFonts(const Settings &settings)
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
-    log_debug("Msssage: {} {} {}", uMsg, wParam, lParam);
+    // log_debug("Msssage: {} {} {}", uMsg, wParam, lParam);
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
@@ -218,8 +218,6 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         HANDLE_MSG(hWnd, WM_NCCREATE, OnNccCreate);
         case WM_CREATE: {
             if (pThis == nullptr) break;
-            HIMC hIMC = ImmCreateContext();
-            ImmAssociateContextEx(hWnd, hIMC, IACE_IGNORENOCONTEXT);
             return pThis->OnCreate();
         }
         case WM_DESTROY: {

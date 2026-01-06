@@ -65,6 +65,23 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
     return false;
 }
 
+bool Imm32TextService::OnFocus(bool focus)
+{
+    if (focus)
+    {
+        if (!m_hIMC)
+        {
+            m_hIMC = ImmCreateContext();
+        }
+        ImmAssociateContext(m_imeHwnd, m_hIMC);
+    }
+    else
+    {
+        m_hIMC = ImmAssociateContext(m_imeHwnd, nullptr);
+    }
+    return ITextService::OnFocus(focus);
+}
+
 auto Imm32TextService::CommitCandidate(HWND hwnd, UINT index) -> bool
 {
     HIMC hImc   = ImmGetContext(hwnd);

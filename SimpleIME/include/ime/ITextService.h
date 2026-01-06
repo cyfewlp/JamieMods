@@ -73,6 +73,13 @@ public:
      */
     auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool override;
 
+    void OnStart(HWND hWnd) override
+    {
+        m_imeHwnd = hWnd;
+    }
+
+    bool OnFocus(bool focus) override;
+
     [[nodiscard]] auto GetCandidateUi() -> CandidateUi & override
     {
         return m_candidateUi;
@@ -99,6 +106,9 @@ private:
     void ChangeCandidateAt(HIMC hIMC);
     void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
     void OnSetOpenStatus(HIMC hIMC);
+
+    HWND m_imeHwnd = nullptr;
+    HIMC m_hIMC    = nullptr;
 
     CandidateUi m_candidateUi;
     TextEditor  m_textEditor;

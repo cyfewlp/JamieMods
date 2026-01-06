@@ -473,11 +473,10 @@ void ImeUI::DrawStates() const
 {
     ImGui::SeparatorText(Translate("$States"));
 
+    const auto &state = State::GetInstance();
     ImGui::AlignTextToFramePadding();
     ImGui::TextColored(
-        State::GetInstance().NotHas(State::IME_DISABLED) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor,
-        "[ %s ]",
-        ICON_FA_KEYBOARD
+        state.NotHas(State::IME_DISABLED) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor, "[ %s ]", ICON_FA_KEYBOARD
     );
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
@@ -504,6 +503,25 @@ void ImeUI::DrawStates() const
     {
         ImeManagerComposer::GetInstance()->ForceFocusIme();
     }
+#ifdef SIMPLE_IME_DEBUG
+    auto action = [&state](State::StateKey stateKey) {
+        ImGui::SameLine();
+        ImGui::TextColored(
+            state.Has(stateKey) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor,
+            "[ %s ]",
+            ICON_FA_CROSSHAIR
+        );
+    };
+    ImGui::Text("IN_COMPOSING: ");action(State::IN_COMPOSING);
+    ImGui::Text("IN_CAND_CHOOSING: ");action(State::IN_CAND_CHOOSING);
+    ImGui::Text("IN_ALPHANUMERIC: ");action(State::IN_ALPHANUMERIC);
+    ImGui::Text("IME_OPEN: ");action(State::IME_OPEN);
+    ImGui::Text("LANG_PROFILE_ACTIVATED: ");action(State::LANG_PROFILE_ACTIVATED);
+    ImGui::Text("IME_DISABLED: ");action(State::IME_DISABLED);
+    ImGui::Text("TSF_FOCUS: ");action(State::TSF_FOCUS);
+    ImGui::Text("GAME_LOADING: ");action(State::GAME_LOADING);
+    ImGui::Text("KEYBOARD_OPEN: ");action(State::KEYBOARD_OPEN);
+#endif
 }
 
 template <typename T>
