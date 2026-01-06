@@ -92,6 +92,7 @@ private:
     static void NewFrame();
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
+    static void TsfMessageLoop(MSG msg);
 
     void        OnStart(Settings *pSettings);
     static void AddFonts(const Settings &settings);
@@ -99,7 +100,6 @@ private:
     auto        SaveSettings() const -> void;
     auto        OnDestroy() const -> LRESULT;
     void        InitializeTextService(const AppConfig &pAppConfig);
-    static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
     void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
     Settings                     &m_settings;

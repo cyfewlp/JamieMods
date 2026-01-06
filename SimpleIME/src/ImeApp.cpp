@@ -181,9 +181,8 @@ void ImeApp::OnD3DInit()
     m_fInitialized.store(true);
 
     log_debug("Hooking Skyrim WndProc...");
-    RealWndProc = reinterpret_cast<WNDPROC>(
-        SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc))
-    );
+    RealWndProc =
+        reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
     if (RealWndProc == nullptr)
     {
         throw SimpleIMEException("Hook WndProc failed!");
@@ -260,7 +259,6 @@ void ImeApp::UninstallHooks()
     Hooks::ScaleformHooks::Uninstall();
 }
 
-
 void ImeApp::Render()
 {
     m_imeWnd.DrawIme(m_settings);
@@ -297,7 +295,8 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
             ImeManagerComposer::GetInstance()->TryFocusIme();
             return S_OK;
         case WM_IME_SETCONTEXT:
-            return ::DefWindowProc(hWnd, uMsg, wParam, 0);
+            log_debug("WM_IME_SETCONTEXT");
+            return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
         case WM_NCDESTROY: {
             app.Uninitialize();
             break;

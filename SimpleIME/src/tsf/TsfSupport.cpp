@@ -42,7 +42,6 @@ auto Tsf::TsfSupport::InitializeTsf(const bool uiLessMode) -> HRESULT
         }
         ATLENSURE_SUCCEEDED(hresult);
         ATLENSURE_SUCCEEDED(m_pThreadMgr.QueryInterface(&m_messagePump));
-        ATLENSURE_SUCCEEDED(m_pThreadMgr.QueryInterface(&m_keystrokeMgr));
         m_initialized = true;
         return S_OK;
     }

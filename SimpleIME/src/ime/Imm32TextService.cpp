@@ -58,18 +58,16 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
             }
             break;
         }
-        case WM_IME_SETCONTEXT:
-            return DefWindowProcW(hWnd, WM_IME_SETCONTEXT, wParam, NULL);
         default:
             break;
     }
 
-    return true;
+    return false;
 }
 
-auto Imm32TextService::CommitCandidate(HWND hwnd, UINT index)  -> bool
+auto Imm32TextService::CommitCandidate(HWND hwnd, UINT index) -> bool
 {
-    HIMC hImc = ImmGetContext(hwnd);
+    HIMC hImc   = ImmGetContext(hwnd);
     bool result = ImmNotifyIME(hImc, NI_SELECTCANDIDATESTR, 0, index) != FALSE;
     ImmReleaseContext(hwnd, hImc);
     return result;
@@ -125,7 +123,7 @@ auto Imm32TextService::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck
 
 auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
 {
-    log_trace("ImeNotify {:#x}, {:#x}", wParam, lParam);
+    log_debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
     switch (wParam)
     {
         case IMN_SETCANDIDATEPOS:

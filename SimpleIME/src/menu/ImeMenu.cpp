@@ -134,6 +134,10 @@ bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
     auto       &io          = ImGui::GetIO();
     io.AddMouseSourceEvent(mouseSource);
     io.AddMouseButtonEvent(static_cast<int>(mouseEvent->button), down);
+    if (Core::State::GetInstance().IsImeInputting())
+    {
+        return true; // avoid underlying menu losing input focus;
+    }
     return false;
 }
 

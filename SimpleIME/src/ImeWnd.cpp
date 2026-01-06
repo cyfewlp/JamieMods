@@ -115,30 +115,6 @@ void ImeWnd::UnInitialize() const noexcept
     }
 }
 
-auto ImeWnd::IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
-{
-    BOOL fEaten = FALSE;
-    if (msg.message == WM_KEYDOWN)
-    {
-        // does an IME want it?
-        if (pKeystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
-            pKeystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
-        {
-            return true;
-        }
-    }
-    else if (msg.message == WM_KEYUP)
-    {
-        // does an IME want it?
-        if (pKeystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
-            pKeystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
 void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
 {
     log_info("Start ImeWnd Thread...");
@@ -152,43 +128,30 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
 
     MSG msg = {};
     ZeroMemory(&msg, sizeof(msg));
-    auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
-    auto const  pMessagePump  = tsfSupport.GetMessagePump();
-    auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
-    bool        done          = false;
-    while (!done)
+    if (AppConfig::GetConfig().EnableTsf())
     {
-        BOOL fResult = 0;
-        if (pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult) != S_OK)
+        TsfMessageLoop(msg);
+    }
+    else
+    {
+        bool done = false;
+        while (!done)
         {
-            done = true;
-        }
+            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+            {
+                if (msg.message == WM_QUIT)
+                {
+                    done = TRUE;
+                    break;
+                }
 
-        if (fResult != FALSE)
-        {
-            continue;
-        }
-
-        if (GetMessageW(&msg, nullptr, 0, 0) <= 0)
-        {
-            break;
-        }
-        if (IsImeWantMessage(msg, pKeystrokeMgr))
-        {
-            continue;
-        }
-
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-        if (msg.message == WM_QUIT)
-        {
-            done = true;
-        }
-        if (done)
-        {
-            break;
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
         }
     }
+
     log_info("Exit ImeWnd Thread...");
 }
 
@@ -239,6 +202,7 @@ void ImeWnd::AddFonts(const Settings &settings)
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
+    log_debug("Msssage: {} {} {}", uMsg, wParam, lParam);
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
@@ -254,10 +218,13 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         HANDLE_MSG(hWnd, WM_NCCREATE, OnNccCreate);
         case WM_CREATE: {
             if (pThis == nullptr) break;
+            HIMC hIMC = ImmCreateContext();
+            ImmAssociateContextEx(hWnd, hIMC, IACE_IGNORENOCONTEXT);
             return pThis->OnCreate();
         }
         case WM_DESTROY: {
             if (pThis == nullptr) break;
+            ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
             return pThis->OnDestroy();
         }
         case WM_DPICHANGED: {
@@ -274,6 +241,9 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
             return S_OK;
         }
+        case WM_IME_SETCONTEXT:
+            lParam &= ~(ISC_SHOWUICOMPOSITIONWINDOW | ISC_SHOWUICANDIDATEWINDOW);
+            return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
         case WM_SETFOCUS:
             if (pThis == nullptr) break;
             pThis->m_fFocused = true;
@@ -513,6 +483,42 @@ auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
     pThis->m_hWnd       = hWnd;
     pThis->m_hWndParent = lpCreateStruct->hwndParent;
     return TRUE;
+}
+
+void ImeWnd::TsfMessageLoop(MSG msg)
+{
+    auto const &tsfSupport   = Tsf::TsfSupport::GetSingleton();
+    auto const  pMessagePump = tsfSupport.GetMessagePump();
+    bool        done         = false;
+    while (!done)
+    {
+        BOOL fResult = 0;
+        if (pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult) != S_OK)
+        {
+            done = true;
+        }
+
+        if (fResult != FALSE)
+        {
+            continue;
+        }
+
+        if (GetMessageW(&msg, nullptr, 0, 0) <= 0)
+        {
+            break;
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+        if (msg.message == WM_QUIT)
+        {
+            done = true;
+        }
+        if (done)
+        {
+            break;
+        }
+    }
 }
 
 inline void ImeWnd::OnCompositionResult(const std::wstring &compositionString)

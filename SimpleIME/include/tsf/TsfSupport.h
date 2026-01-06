@@ -27,7 +27,8 @@ public:
      * Initialize TSF on current thread.
      * @param uiLessMode enable ui control by tsf app. use this flag
      * we can disable system IME candidate & read info UI
-     * @return true if initialize success, otherwise false. App should interrupt the any following TSF call if
+     * @return true if initialize success, otherwise false. App should interrupt
+     * the any following TSF call if
      * init failed.
      */
     auto InitializeTsf(bool uiLessMode) -> HRESULT;
@@ -48,11 +49,6 @@ public:
         return m_messagePump;
     }
 
-    [[nodiscard]] constexpr auto GetKeystrokeMgr() const -> CComPtr<ITfKeystrokeMgr>
-    {
-        return m_keystrokeMgr;
-    }
-
     [[nodiscard]] constexpr auto GetTfClientId() const -> const TfClientId &
     {
         return m_tfClientId;
@@ -70,7 +66,6 @@ public:
 private:
     CComPtr<ITfThreadMgrEx>  m_pThreadMgr;
     CComPtr<ITfMessagePump>  m_messagePump;
-    CComPtr<ITfKeystrokeMgr> m_keystrokeMgr;
 
     TfClientId m_tfClientId{};
     bool       m_initialized = false;
