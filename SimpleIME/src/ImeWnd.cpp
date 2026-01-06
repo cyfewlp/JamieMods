@@ -209,7 +209,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
         if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
         {
-            return S_OK;
+            return 0;
         }
     }
 

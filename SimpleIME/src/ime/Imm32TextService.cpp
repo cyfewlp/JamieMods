@@ -15,13 +15,12 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime::Imm32
 {
-auto Imm32TextService::OnStartComposition() -> HRESULT
+void Imm32TextService::OnStartComposition()
 {
     State::GetInstance().Set(State::IN_COMPOSING);
-    return S_OK;
 }
 
-auto Imm32TextService::OnEndComposition() -> HRESULT
+void Imm32TextService::OnEndComposition()
 {
     State::GetInstance().Clear(State::IN_COMPOSING);
     if (m_OnEndCompositionCallback != nullptr)
@@ -30,27 +29,22 @@ auto Imm32TextService::OnEndComposition() -> HRESULT
     }
     m_textEditor.Select(0, 0);
     m_textEditor.ClearText();
-    return S_OK;
 }
 
 auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool
 {
     switch (message)
     {
-        case WM_IME_STARTCOMPOSITION: {
-            return SUCCEEDED(OnStartComposition());
-        }
-        case WM_IME_ENDCOMPOSITION: {
-            return SUCCEEDED(OnEndComposition());
-        }
+        case WM_IME_STARTCOMPOSITION:
+            OnStartComposition();
+            return true;
+        case WM_IME_ENDCOMPOSITION:
+            OnEndComposition();
+            return true;
         case CM_IME_COMPOSITION:
-        case WM_IME_COMPOSITION: {
-            if (SUCCEEDED(OnComposition(hWnd, lParam)))
-            {
-                return true;
-            }
-            break;
-        }
+        case WM_IME_COMPOSITION:
+            OnComposition(hWnd, lParam);
+            return true;
         case WM_IME_NOTIFY: {
             if (ImeNotify(hWnd, wParam, lParam))
             {
@@ -90,12 +84,12 @@ auto Imm32TextService::CommitCandidate(HWND hwnd, UINT index) -> bool
     return result;
 }
 
-auto Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT
+void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
 {
     HIMC hIMC = ImmGetContext(hWnd);
     if (hIMC == nullptr)
     {
-        return E_FAIL;
+        return;
     }
 
     std::wstring compositionSting;
@@ -111,16 +105,35 @@ auto Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT
     }
     else if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, compositionSting))
     {
-        if (spdlog::should_log(spdlog::level::trace))
-        {
-            const auto str = WCharUtils::ToString(compositionSting);
-            log_trace("IME Composition String: {}", str.c_str());
-        }
-        m_textEditor.SelectAll();
-        m_textEditor.InsertText(compositionSting.c_str(), compositionSting.length());
+        const long cursorPos  = ImmGetCompositionStringW(hIMC, GCS_CURSORPOS, nullptr, 0);
+        const long deltaStart = ImmGetCompositionStringW(hIMC, GCS_DELTASTART, nullptr, 0);
+        UpdateComposition(compositionSting, cursorPos, deltaStart);
     }
     ImmReleaseContext(hWnd, hIMC);
-    return S_OK;
+}
+
+void Imm32TextService::UpdateComposition(const std::wstring &compStr, long cursorPos, long deltaStart)
+{
+    if (cursorPos < 0) cursorPos = 0;
+    if (deltaStart < 0) deltaStart = 0;
+
+    const long prevSize = static_cast<long>(m_textEditor.GetTextSize());
+    if (deltaStart > prevSize) deltaStart = prevSize;
+
+    m_textEditor.Select(deltaStart, prevSize);
+
+    const auto length = compStr.length();
+    if (deltaStart > length) deltaStart = length;
+    m_textEditor.InsertText(compStr.c_str() + deltaStart, length - deltaStart);
+
+    cursorPos = std::min(cursorPos, static_cast<long>(m_textEditor.GetTextSize()));
+    m_textEditor.Select(cursorPos, cursorPos);
+
+    if (spdlog::should_log(spdlog::level::trace))
+    {
+        const auto str = WCharUtils::ToString(compStr);
+        log_trace("IME Composition String: {}", str.c_str());
+    }
 }
 
 auto Imm32TextService::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool
@@ -140,7 +153,7 @@ auto Imm32TextService::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck
 
 auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
 {
-    log_debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
+    // log_debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
     switch (wParam)
     {
         case IMN_SETCANDIDATEPOS:
@@ -151,12 +164,12 @@ auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) 
             {
                 OpenCandidate(hImc);
             }
-            return true;
+            break;
         }
         case IMN_CLOSECANDIDATE: {
             State::GetInstance().Clear(State::IN_CAND_CHOOSING);
             CloseCandidate();
-            return true;
+            break;
         }
         case IMN_CHANGECANDIDATE: {
             HIMC hIMC = ImmGetContext(hWnd);
@@ -165,7 +178,7 @@ auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) 
                 ChangeCandidate(hIMC);
                 ImmReleaseContext(hWnd, hIMC);
             }
-            return true;
+            break;
         }
         case IMN_SETCONVERSIONMODE: {
             HIMC hIMC = ImmGetContext(hWnd);
@@ -174,7 +187,7 @@ auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) 
                 UpdateConversionMode(hIMC);
                 ImmReleaseContext(hWnd, hIMC);
             }
-            return true;
+            break;
         }
         case IMN_SETOPENSTATUS: {
             HIMC hIMC = ImmGetContext(hWnd);
@@ -183,7 +196,7 @@ auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) 
                 OnSetOpenStatus(hIMC);
                 ImmReleaseContext(hWnd, hIMC);
             }
-            return true;
+            break;
         }
         default:
             break;
@@ -235,14 +248,12 @@ void Imm32TextService::ChangeCandidateAt(const HIMC hIMC)
 
 void Imm32TextService::DoUpdateCandidateList(const LPCANDIDATELIST lpCandList)
 {
-    m_candidateUi.SetPageSize(lpCandList->dwPageSize);
-
     DWORD dwStartIndex = lpCandList->dwPageStart;
-    DWORD dwEndIndex   = dwStartIndex + m_candidateUi.PageSize();
+    DWORD dwEndIndex   = dwStartIndex + lpCandList->dwPageSize;
     dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
 
     m_candidateUi.Close();
-
+    m_candidateUi.SetPageSize(lpCandList->dwPageSize);
     auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);
     for (DWORD index = 0; dwStartIndex < dwEndIndex; ++index, ++dwStartIndex)
     {

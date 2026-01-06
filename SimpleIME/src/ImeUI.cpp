@@ -112,7 +112,7 @@ void ImeUI::Draw(const Settings &settings)
     windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
     static bool prevFrameIsShowing = false;
     const auto &state              = State::GetInstance();
-    if (state.ImeDisabled() || !state.IsKeyboardOpen() || !state.IsImeInputting())
+    if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
     {
         prevFrameIsShowing = false;
         return;
@@ -507,20 +507,27 @@ void ImeUI::DrawStates() const
     auto action = [&state](State::StateKey stateKey) {
         ImGui::SameLine();
         ImGui::TextColored(
-            state.Has(stateKey) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor,
-            "[ %s ]",
-            ICON_FA_CROSSHAIR
+            state.Has(stateKey) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR
         );
     };
-    ImGui::Text("IN_COMPOSING: ");action(State::IN_COMPOSING);
-    ImGui::Text("IN_CAND_CHOOSING: ");action(State::IN_CAND_CHOOSING);
-    ImGui::Text("IN_ALPHANUMERIC: ");action(State::IN_ALPHANUMERIC);
-    ImGui::Text("IME_OPEN: ");action(State::IME_OPEN);
-    ImGui::Text("LANG_PROFILE_ACTIVATED: ");action(State::LANG_PROFILE_ACTIVATED);
-    ImGui::Text("IME_DISABLED: ");action(State::IME_DISABLED);
-    ImGui::Text("TSF_FOCUS: ");action(State::TSF_FOCUS);
-    ImGui::Text("GAME_LOADING: ");action(State::GAME_LOADING);
-    ImGui::Text("KEYBOARD_OPEN: ");action(State::KEYBOARD_OPEN);
+    ImGui::Text("IN_COMPOSING: ");
+    action(State::IN_COMPOSING);
+    ImGui::Text("IN_CAND_CHOOSING: ");
+    action(State::IN_CAND_CHOOSING);
+    ImGui::Text("IN_ALPHANUMERIC: ");
+    action(State::IN_ALPHANUMERIC);
+    ImGui::Text("IME_OPEN: ");
+    action(State::IME_OPEN);
+    ImGui::Text("LANG_PROFILE_ACTIVATED: ");
+    action(State::LANG_PROFILE_ACTIVATED);
+    ImGui::Text("IME_DISABLED: ");
+    action(State::IME_DISABLED);
+    ImGui::Text("TSF_FOCUS: ");
+    action(State::TSF_FOCUS);
+    ImGui::Text("GAME_LOADING: ");
+    action(State::GAME_LOADING);
+    ImGui::Text("KEYBOARD_OPEN: ");
+    action(State::KEYBOARD_OPEN);
 #endif
 }
 
@@ -583,7 +590,7 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     CursorAnim += ImGui::GetIO().DeltaTime;
 
     const ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
-    auto        &textEditor    = m_pTextService->GetTextEditor();
+    const auto  &textEditor    = m_pTextService->GetTextEditor();
 
     const auto &editorText = textEditor.GetText();
     LONG        acpStart   = 0;
@@ -591,60 +598,57 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     textEditor.GetSelection(&acpStart, &acpEnd);
 
     bool success = true;
-    // we assume start always == end
-    if (acpStart != acpEnd)
+
+    const size_t textSize = editorText.size();
+    acpStart              = std::max(0L, acpStart);
+    acpEnd                = std::max(0L, acpEnd);
+
+    acpStart = std::min(static_cast<long>(textSize), acpStart);
+    acpEnd   = std::min(static_cast<long>(textSize), acpEnd);
+
+    if (acpEnd < acpStart) std::swap(acpStart, acpEnd);
+
+    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
+    if (acpStart > 0)
     {
-        std::string text;
-        success = WCharUtils::ToString(editorText.c_str(), acpStart, text);
+        std::string startToCaret;
+        success = WCharUtils::ToString(editorText.c_str(), acpStart, startToCaret);
         if (success)
         {
-            ImGui::TextColored(highLightText, "%s", text.c_str());
+            ImGui::TextColored(highLightText, "%s", startToCaret.c_str());
         }
     }
-    else if (static_cast<size_t>(acpStart) <= editorText.size())
+
+    // caret
+    ImGui::SameLine();
+    if (fmodf(CursorAnim, 1.2f) <= 0.8f)
     {
-        ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
-        if (acpStart > 0)
-        {
-            std::string startToCaret;
-            success = WCharUtils::ToString(editorText.c_str(), acpStart, startToCaret);
-            if (success)
-            {
-                ImGui::TextColored(highLightText, "%s", startToCaret.c_str());
-            }
-        }
+        ImDrawList  *drawList        = ImGui::GetWindowDrawList();
+        ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
+        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
+        drawList->AddLine(
+            min,
+            ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
+            ImGui::GetColorU32(ImGuiCol_InputTextCursor),
+            1.0f * settings.dpiScale
+        );
+    }
 
-        // caret
-        ImGui::SameLine();
-        if (fmodf(CursorAnim, 1.2f) <= 0.8f)
-        {
-            ImDrawList  *drawList        = ImGui::GetWindowDrawList();
-            ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-            ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
-            drawList->AddLine(
-                min,
-                ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
-                ImGui::GetColorU32(ImGuiCol_InputTextCursor),
-                1.0f * settings.dpiScale
-            );
-        }
-
-        success = success && static_cast<size_t>(acpStart) < editorText.size();
+    success = success && static_cast<size_t>(acpStart) < editorText.size();
+    if (success)
+    {
+        std::string caretToEnd;
+        success = WCharUtils::ToString(editorText.c_str() + acpStart, editorText.size() - acpStart, caretToEnd);
         if (success)
         {
-            std::string caretToEnd;
-            success = WCharUtils::ToString(editorText.c_str() + acpStart, editorText.size() - acpStart, caretToEnd);
-            if (success)
-            {
-                ImGui::TextColored(highLightText, "%s", caretToEnd.c_str());
-            }
+            ImGui::TextColored(highLightText, "%s", caretToEnd.c_str());
         }
-        if (!success)
-        {
-            ImGui::NewLine();
-        }
-        ImGui::PopStyleVar();
     }
+    if (!success)
+    {
+        ImGui::NewLine();
+    }
+    ImGui::PopStyleVar();
 }
 
 struct ImGuiStyleVarScope
@@ -683,11 +687,12 @@ struct ImGuiColorScope
 
 void ImeUI::DrawCandidateWindows() const
 {
-    const auto  &candidateUi = m_pTextService->GetCandidateUi();
-    static DWORD hovered     = ULONG_MAX;
-
-    if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
+    const auto  &candidateUi   = m_pTextService->GetCandidateUi();
+    static DWORD hovered       = ULONG_MAX;
+    const auto   candidateList = candidateUi.CandidateList();
+    if (!candidateList.empty())
     {
+
         DWORD              index      = 0;
         DWORD              clicked    = candidateList.size();
         DWORD              anyHovered = candidateList.size();

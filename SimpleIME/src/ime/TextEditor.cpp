@@ -2,7 +2,7 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
-auto Ime::TextEditor::Select(const long &&acpStart, const long &&acpEnd) -> void
+auto Ime::TextEditor::Select(const long acpStart, const long acpEnd) -> void
 {
     m_acpSelection.acpStart = acpStart;
     m_acpSelection.acpEnd   = acpEnd;
@@ -53,15 +53,37 @@ void Ime::TextEditor::GetSelection(TS_SELECTION_ACP *pSelectionAcp) const
 auto Ime::TextEditor::InsertText(const wchar_t *pwszText, const uint32_t cch) -> long
 {
     std::unique_lock lock(m_mutex);
-    if (m_acpSelection.acpStart >= static_cast<LONG>(m_editorText.size()))
+
+    const long textSize = static_cast<long>(m_editorText.size());
+
+    long start = m_acpSelection.acpStart;
+    long end   = m_acpSelection.acpEnd;
+
+    if (start < 0) start = 0;
+    if (end < 0) end = 0;
+
+    if (start > textSize) start = textSize;
+    if (end > textSize) end = textSize;
+
+    if (end < start) end = start;
+
+    if (start >= textSize)
     {
         m_editorText.append(pwszText, cch);
     }
     else
     {
-        m_editorText.replace(m_acpSelection.acpStart, m_acpSelection.acpEnd - m_acpSelection.acpStart, pwszText, cch);
+        m_editorText.replace(
+            static_cast<std::wstring::size_type>(start),
+            static_cast<std::wstring::size_type>(end - start),
+            pwszText,
+            cch
+        );
     }
-    m_acpSelection.acpEnd = m_acpSelection.acpStart + static_cast<long>(cch);
+
+    const long newCaret     = start + static_cast<long>(cch);
+    m_acpSelection.acpStart = newCaret;
+    m_acpSelection.acpEnd   = newCaret;
     return m_acpSelection.acpEnd;
 }
 

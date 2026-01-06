@@ -22,12 +22,12 @@ public:
     auto operator=(const TextEditor &other) -> TextEditor &     = delete;
     auto operator=(TextEditor &&other) noexcept -> TextEditor & = delete;
 
-    auto Select(const long &&acpStart, const long &&acpEnd) -> void;
+    auto Select(long acpStart, long acpEnd) -> void;
     auto Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
 
     auto SelectAll()
     {
-        std::shared_lock lock(m_mutex);
+        std::unique_lock<std::shared_mutex> lock(m_mutex);
         m_acpSelection.acpStart = 0;
         m_acpSelection.acpEnd   = m_editorText.size();
     }

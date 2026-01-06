@@ -93,10 +93,11 @@ public:
     }
 
 private:
-    static auto OnStartComposition() -> HRESULT;
+    static void OnStartComposition();
     static void UpdateConversionMode(HIMC hIMC);
-    auto        OnEndComposition() -> HRESULT;
-    auto        OnComposition(HWND hWnd, LPARAM compFlag) -> HRESULT;
+    void        OnEndComposition();
+    void        OnComposition(HWND hWnd, LPARAM compFlag);
+    void        UpdateComposition(const std::wstring &compStr, long cursorPos, long deltaStart);
     static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool;
     auto        ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
 
