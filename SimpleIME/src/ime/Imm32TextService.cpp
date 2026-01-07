@@ -122,7 +122,7 @@ void Imm32TextService::UpdateComposition(const std::wstring &compStr, long curso
 
     m_textEditor.Select(deltaStart, prevSize);
 
-    const auto length = compStr.length();
+    const auto length = static_cast<long>(compStr.length());
     if (deltaStart > length) deltaStart = length;
     m_textEditor.InsertText(compStr.c_str() + deltaStart, length - deltaStart);
 

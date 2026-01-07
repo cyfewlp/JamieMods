@@ -258,7 +258,7 @@ auto ImeMenu::Creator() -> IMenu *
     pMenu->menuFlags.set(flags::kAlwaysOpen);
     pMenu->depthPriority = 13;
 
-    pMenu->inputContext.set(Context::kCursor);
+    // pMenu->inputContext.set(Context::kCursor);
     // Priority 7: no render but no events
     // Priority 8: render but no events
     // Priority 9: render and have events

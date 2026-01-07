@@ -43,7 +43,7 @@ auto ToolWindowMenu::Creator() -> IMenu *
 {
     using flags = RE::UI_MENU_FLAGS;
     auto *pMenu = new ToolWindowMenu();
-    pMenu->menuFlags.set(flags::kPausesGame);
+    pMenu->menuFlags.set(flags::kPausesGame, flags::kUsesCursor);
     pMenu->depthPriority = 11;
     // Priority 7: no render but no events
     // Priority 8: render but no events
