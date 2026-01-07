@@ -29,6 +29,11 @@ void Imm32TextService::OnEndComposition()
     }
     m_textEditor.Select(0, 0);
     m_textEditor.ClearText();
+
+    if (State::GetInstance().Has(State::IN_CAND_CHOOSING))
+    {
+        CloseCandidate();
+    }
 }
 
 auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool
@@ -166,11 +171,9 @@ auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) 
             }
             break;
         }
-        case IMN_CLOSECANDIDATE: {
-            State::GetInstance().Clear(State::IN_CAND_CHOOSING);
+        case IMN_CLOSECANDIDATE:
             CloseCandidate();
             break;
-        }
         case IMN_CHANGECANDIDATE: {
             HIMC hIMC = ImmGetContext(hWnd);
             if (hIMC != nullptr)
@@ -211,6 +214,7 @@ void Imm32TextService::OpenCandidate(HIMC hIMC)
 
 void Imm32TextService::CloseCandidate()
 {
+    State::GetInstance().Clear(State::IN_CAND_CHOOSING);
     m_candidateUi.Close();
 }
 

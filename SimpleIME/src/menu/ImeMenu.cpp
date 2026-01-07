@@ -132,6 +132,12 @@ bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
     const auto &mouseSource = ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo();
     const auto *mouseEvent  = reinterpret_cast<RE::GFxMouseEvent *>(event);
     auto       &io          = ImGui::GetIO();
+    if (!io.WantCaptureMouse)
+    {
+        ImeApp::GetInstance().GetImeWnd().AbortIme();
+        return true;
+    }
+
     io.AddMouseSourceEvent(mouseSource);
     io.AddMouseButtonEvent(static_cast<int>(mouseEvent->button), down);
     if (Core::State::GetInstance().IsImeInputting())
