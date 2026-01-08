@@ -254,13 +254,13 @@ void ImeUI::ShowToolWindow()
     if (m_fPinToolWindow)
     {
         m_fPinToolWindow               = false;
-        ImGui::GetIO().MouseDrawCursor = true;
+        // ImGui::GetIO().MouseDrawCursor = true;
         ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
     }
     else
     {
         m_fShowToolWindow              = !m_fShowToolWindow;
-        ImGui::GetIO().MouseDrawCursor = m_fShowToolWindow;
+        // ImGui::GetIO().MouseDrawCursor = m_fShowToolWindow;
         if (m_fShowToolWindow)
         {
             ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
@@ -294,7 +294,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
     if (ImGui::Button(m_fPinToolWindow ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE))
     {
         m_fPinToolWindow               = true;
-        ImGui::GetIO().MouseDrawCursor = false;
+        // ImGui::GetIO().MouseDrawCursor = false;
 
         if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
         {

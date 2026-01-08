@@ -43,6 +43,11 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
         case WM_CREATE:
             m_hIMC = ImmCreateContext();
             break;
+        case WM_DESTROY: {
+            ImmAssociateContext(hWnd, nullptr);
+            ImmDestroyContext(m_hIMC);
+            break;
+        }
         case WM_IME_STARTCOMPOSITION:
             OnStartComposition();
             return true;
