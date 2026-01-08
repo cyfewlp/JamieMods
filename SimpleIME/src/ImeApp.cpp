@@ -4,6 +4,7 @@
 #include "ImeWnd.hpp"
 #include "common/common.h"
 #include "common/hook.h"
+#include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "context.h"
@@ -11,7 +12,7 @@
 #include "core/State.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/WinHooks.h"
-#include "ime/ImeManagerComposer.h"
+#include "ime/ImeController.h"
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
 
@@ -78,7 +79,6 @@ void ImeApp::Uninitialize()
         D3DInitHook = nullptr;
         UninstallHooks();
     }
-    ImeManagerComposer::GetInstance()->PopType();
     m_fInitialized.store(false);
 }
 
@@ -176,7 +176,9 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
     }
 
-    m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
+    m_hWnd        = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
+    m_hIMCDefault = ImmAssociateContext(m_hWnd, nullptr);
+
     Start(render_data);
     m_fInitialized.store(true);
 
@@ -204,7 +206,6 @@ void ImeApp::SetSettings()
     m_settings.showSettings          = settingsConfig.GetShowSettings();
     m_settings.keepImeOpen           = settingsConfig.GetKeepImeOpen();
     m_settings.enableMod             = settingsConfig.GetEnableMod();
-    m_settings.focusType             = settingsConfig.GetFocusType();
     m_settings.fontSize              = config.GetAppUiConfig().FontSize();
     m_settings.language              = settingsConfig.GetLanguage();
     m_settings.theme                 = settingsConfig.GetTheme();
@@ -287,16 +288,15 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
             log_debug("WM_NCACTIVATE {:#x}, {:#x}", wParam, lParam);
             if (wParam == TRUE)
             {
-                ImeManagerComposer::GetInstance()->TryFocusIme();
+                ImeController::GetInstance()->TryFocusIme();
             }
             break;
         case WM_SETFOCUS:
             log_info("WM_SETFOCUS {:#x}, {:#x}", wParam, lParam);
-            ImeManagerComposer::GetInstance()->TryFocusIme();
+            ImeController::GetInstance()->TryFocusIme();
             return S_OK;
         case WM_IME_SETCONTEXT:
-            log_debug("WM_IME_SETCONTEXT");
-            return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+            return ::DefWindowProc(hWnd, uMsg, wParam, 0);
         case WM_NCDESTROY: {
             app.Uninitialize();
             break;

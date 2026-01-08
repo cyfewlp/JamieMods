@@ -4,7 +4,6 @@
 #include "common/common.h"
 #include "common/log.h"
 #include "configs/AppConfig.h"
-#include "ime/ImeManagerComposer.h"
 
 #include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>

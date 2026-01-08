@@ -5,7 +5,7 @@
 #include "hooks/ScaleformHook.h"
 
 #include "common/log.h"
-#include "ime/ImeManagerComposer.h"
+#include "ime/ImeController.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
 #include <memory>
@@ -87,7 +87,7 @@ void SKSE_ScaleformAllowTextInput::OnTextEntryCountChanged(std::uint8_t entryCou
     }
 
     g_prevTextEntryCount = entryCount;
-    auto *imeManager     = Ime::ImeManagerComposer::GetInstance();
+    auto *imeManager     = Ime::ImeController::GetInstance();
     imeManager->SyncImeStateIfDirty();
     if (oldValue == 0 && entryCount > 0)
     {

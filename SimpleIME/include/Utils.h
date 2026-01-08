@@ -107,9 +107,7 @@ private:
         pScaleFormMessageData->scaleformEvent = pCharEvent;
         log_debug("send code {:#x} to Skyrim", code);
         RE::UIMessageQueue::GetSingleton()->AddMessage(
-            RE::InterfaceStrings::GetSingleton()->topMenu,
-            RE::UI_MESSAGE_TYPE::kScaleformEvent,
-            pScaleFormMessageData
+            RE::InterfaceStrings::GetSingleton()->topMenu, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
         );
         return true;
     }

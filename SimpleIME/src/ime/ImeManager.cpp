@@ -1,9 +1,9 @@
 #include "ime/ImeManager.h"
 
 #include "FakeDirectInputDevice.h"
+#include "ImeWnd.hpp"
 #include "common/log.h"
 #include "hooks/ScaleformHook.h"
-#include "ime/BaseImeManager.h"
 
 #include <cstdint>
 #include <processthreadsapi.h>
@@ -13,124 +13,106 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
+
+ImeManager::~ImeManager() {}
+
 auto ImeManager::Focus(HWND hwnd) -> bool
 {
-    auto  hwndThread      = ::GetWindowThreadProcessId(hwnd, nullptr);
-    DWORD currentThreadId = ::GetCurrentThreadId();
+    auto  hwndThread      = GetWindowThreadProcessId(hwnd, nullptr);
+    DWORD currentThreadId = GetCurrentThreadId();
     bool  success         = true;
     if (hwndThread != currentThreadId)
     {
-        success = ::AttachThreadInput(hwndThread, currentThreadId, TRUE) != FALSE;
+        success = AttachThreadInput(hwndThread, currentThreadId, TRUE) != FALSE;
         if (success)
         {
-            ::SetFocus(hwnd);
-            ::AttachThreadInput(hwndThread, currentThreadId, FALSE);
+            SetFocus(hwnd);
+            AttachThreadInput(hwndThread, currentThreadId, FALSE);
         }
     }
     else
     {
-        ::SetFocus(hwnd);
+        SetFocus(hwnd);
     }
     return success;
 }
 
-auto ImeManager::UnlockKeyboard() const -> bool
+auto ImeManager::EnableIme(bool enable) -> Result
 {
-    log_debug("Unlock keyboard: NONEXCLUSIVE + BACKGROUND.");
-    HRESULT hr = E_FAIL;
-    if (auto *keyboard = Hooks::FakeDirectInputDevice::GetInstance(); keyboard != nullptr)
-    {
-        hr = keyboard->TryUnlockCooperativeLevel(m_gameHwnd);
-    }
-    if (FAILED(hr))
-    {
-        log_error("Failed unlock keyboard.");
-    }
-    return SUCCEEDED(hr);
-}
+    log_debug("ImeManager::{} {}", __func__, enable ? "enable" : "disable");
 
-auto ImeManager::RestoreKeyboard() const -> bool
-{
-    log_debug("Restore keyboard: EXCLUSIVE + FOREGROUND + NOWINKEY.");
-    HRESULT hr = E_FAIL;
-    if (auto *keyboard = Hooks::FakeDirectInputDevice::GetInstance(); keyboard != nullptr)
+    if ((State::GetInstance().Has(State::IME_DISABLED) && enable) ||
+        (State::GetInstance().NotHas(State::IME_DISABLED) && !enable) || m_fForceUpdate)
     {
-        hr = keyboard->TryRestoreCooperativeLevel(m_gameHwnd);
-    }
-    if (FAILED(hr))
-    {
-        log_error("Failed lock keyboard.");
-    }
-    return SUCCEEDED(hr);
-}
-
-auto BaseImeManager::EnableIme(bool enable) -> bool
-{
-    log_debug("BaseImeManager::{} {}", __func__, enable ? "enable" : "disable");
-    if (m_fForceUpdate)
-    {
-        auto result    = DoEnableIme(enable);
         m_fForceUpdate = false;
+
+        bool  success;
+        auto &state = State::GetInstance();
+        if (enable)
+        {
+            log_debug("Clear IME_DISABLED and set TSF focus");
+            state.Clear(State::IME_DISABLED);
+            success = m_imeWnd->SetTsfFocus(true);
+        }
+        else
+        {
+            log_debug("Set IME_DISABLED and clear TSF focus");
+            state.Set(State::IME_DISABLED);
+            success = m_imeWnd->SetTsfFocus(false);
+        }
+
+        if (!success)
+        {
+            state.Set(State::IME_DISABLED);
+            log_error("Enable IME failed! last error {}", GetLastError());
+        }
+
+        return success ? Result::SUCCESS : Result::FAILED;
+    }
+    return Result::SUCCESS;
+}
+
+auto ImeManager::ForceFocusIme() -> Result
+{
+    log_debug("ImeManager::{}", __func__);
+    m_imeWnd->Focus();
+    return Result::SUCCESS;
+}
+
+auto ImeManager::SyncImeState() -> Result
+{
+    log_debug("ImeManager::{}", __func__);
+    m_fForceUpdate = true;
+
+    const auto result = EnableIme(IsShouldEnableIme());
+    if (IsSuccess(result))
+    {
+        m_imeWnd->Focus();
+    }
+    return result;
+}
+
+auto ImeManager::TryFocusIme() -> Result
+{
+    log_debug("ImeManager::{}", __func__);
+
+    log_debug("focus to IME wnd");
+    if (Focus(m_imeWnd->GetHWND()))
+    {
+        const auto result = EnableIme(IsShouldEnableIme());
+        if (!IsSuccess(result))
+        {
+            log_error("Failed to focus IME: {}", GetLastError());
+        }
         return result;
     }
-    if (!m_settings.enableMod)
-    {
-        log_warn("Mod is disabled, operate failed");
-        return false;
-    }
-    if ((State::GetInstance().Has(State::IME_DISABLED) && enable) ||
-        (State::GetInstance().NotHas(State::IME_DISABLED) && !enable))
-    {
-        return DoEnableIme(enable);
-    }
-    return true;
+    return Result::FAILED;
 }
 
-auto BaseImeManager::EnableMod(bool fEnableMod) -> bool
-{
-    log_debug("BaseImeManager::{} {}", __func__, fEnableMod ? "enable" : "disable");
-    m_fForceUpdate = true;
-    return DoEnableMod(fEnableMod);
-}
-
-auto BaseImeManager::ForceFocusIme() -> bool
-{
-    log_debug("BaseImeManager::{}", __func__);
-    if (!m_settings.enableMod)
-    {
-        log_warn("Mod is disabled, operate failed");
-        return false;
-    }
-    return DoForceFocusIme();
-}
-
-auto BaseImeManager::SyncImeState() -> bool
-{
-    log_debug("BaseImeManager::{}", __func__);
-    if (!m_settings.enableMod)
-    {
-        log_warn("Mod is disabled, operate failed");
-        return false;
-    }
-    m_fForceUpdate = true;
-    return DoSyncImeState();
-}
-
-auto BaseImeManager::TryFocusIme() -> bool
-{
-    log_debug("BaseImeManager::{}", __func__);
-    if (!m_settings.enableMod)
-    {
-        log_warn("Mod is disabled, operate failed");
-        return false;
-    }
-    return DoTryFocusIme();
-}
-
-auto BaseImeManager::IsShouldEnableIme() const -> bool
+auto ImeManager::IsShouldEnableIme() const -> bool
 {
     const uint8_t &textEntryCount = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
-    return m_settings.keepImeOpen || textEntryCount;
+    return m_settings.keepImeOpen || textEntryCount > 0;
 }
 
 }

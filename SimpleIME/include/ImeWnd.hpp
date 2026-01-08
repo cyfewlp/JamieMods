@@ -96,7 +96,7 @@ private:
 
     void        OnStart(Settings *pSettings);
     static void AddFonts(const Settings &settings);
-    static auto OnCreate() -> LRESULT;
+    auto        OnCreate() -> LRESULT;
     auto        SaveSettings() const -> void;
     auto        OnDestroy() const -> LRESULT;
     void        InitializeTextService(const AppConfig &pAppConfig);

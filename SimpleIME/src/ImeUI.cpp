@@ -9,11 +9,12 @@
 #include "ImeWnd.hpp"
 #include "Utils.h"
 #include "common/WCharUtils.h"
+#include "common/imgui/ErrorNotifier.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "icons.h"
-#include "ime/ImeManagerComposer.h"
+#include "ime/ImeController.h"
 #include "imgui.h"
 #include "menu/MenuNames.h"
 #include "tsf/LangProfileUtil.h"
@@ -325,7 +326,7 @@ void ImeUI::DrawSettings(Settings &settings)
     {
         return;
     }
-    auto      *imeManager = ImeManagerComposer::GetInstance();
+    auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
     if (ImGui::Begin(windowName.c_str(), &settings.showSettings))
     {
@@ -347,7 +348,7 @@ void ImeUI::DrawModConfig(Settings &settings)
     bool enableMod = settings.enableMod;
     if (ImGui::Checkbox(Translate("$Enable_Mod"), &enableMod))
     {
-        ImeManagerComposer::GetInstance()->EnableMod(enableMod);
+        ImeController::GetInstance()->EnableMod(enableMod);
     }
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
@@ -409,7 +410,6 @@ void ImeUI::DrawModConfig(Settings &settings)
 
 void ImeUI::DrawFeatures(Settings &settings)
 {
-    DrawSettingsFocusManage(settings);
     DrawWindowPosUpdatePolicy(settings);
 
     ImGui::Checkbox(Translate("$Enable_Unicode_Paste"), &settings.enableUnicodePaste);
@@ -418,7 +418,7 @@ void ImeUI::DrawFeatures(Settings &settings)
     ImGui::SameLine();
     if (ImGui::Checkbox(Translate("$Keep_Ime_Open"), &settings.keepImeOpen))
     {
-        ImeManagerComposer::GetInstance()->MarkDirty();
+        ImeController::GetInstance()->MarkDirty();
     }
     ImGui::SetItemTooltip("%s", Translate("$Keep_Ime_Open_Tooltip"));
 }
@@ -501,7 +501,7 @@ void ImeUI::DrawStates() const
     ImGui::SameLine(0, ImGui::GetFontSize());
     if (ImGui::Button(Translate("$Force_Focus_Ime")))
     {
-        ImeManagerComposer::GetInstance()->ForceFocusIme();
+        ImeController::GetInstance()->ForceFocusIme();
     }
 #ifdef SIMPLE_IME_DEBUG
     auto action = [&state](State::StateKey stateKey) {
@@ -540,26 +540,6 @@ static constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
         *pValue = value;
     }
     return pressed;
-}
-
-void ImeUI::DrawSettingsFocusManage(Settings &settings) const
-{
-    // Focus Manage widget
-    auto *imeManager = ImeManagerComposer::GetInstance();
-
-    ImGui::SeparatorText(Translate("$Focus_Manage"));
-
-    bool pressed =
-        RadioButton(Translate("$Focus_Manage_Permanent"), &settings.focusType, Settings::FocusType::Permanent);
-    ImGui::SetItemTooltip("%s", Translate("$Focus_Manage_Permanent_Tooltip"));
-    ImGui::SameLine();
-    pressed |= RadioButton(Translate("$Focus_Manage_Temporary"), &settings.focusType, Settings::FocusType::Temporary);
-    ImGui::SetItemTooltip("%s", Translate("$Focus_Manage_Temporary_Tooltip"));
-
-    if (pressed)
-    {
-        imeManager->PopAndPushType(settings.focusType);
-    }
 }
 
 void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)

@@ -67,7 +67,6 @@ private:
     void DrawModConfig(Settings &settings);
     void DrawFeatures(Settings &settings);
     void DrawSettingsContent(Settings &settings);
-    void DrawSettingsFocusManage(Settings &settings) const;
     void DrawStates() const;
     void DrawWindowPosUpdatePolicy(Settings &settings);
     void DrawCompWindow(const Settings &settings) const;

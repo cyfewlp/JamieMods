@@ -19,7 +19,6 @@ SettingsConfig::SettingsConfig() : BaseConfig("Settings")
     Register(showSettings);
     Register(enableMod);
     Register(language);
-    Register(focusType);
     Register(windowPosUpdatePolicy);
     Register(enableUnicodePaste);
     Register(keepImeOpen);
@@ -41,20 +40,6 @@ void IniSetValue(CSimpleIniA &ini, const std::string &sectionStr, const Property
     else if constexpr (std::is_same_v<Type, std::string>)
     {
         ini.SetValue(section, property.ConfigName(), property.Value().c_str());
-    }
-    else if constexpr (std::is_same_v<Type, Settings::FocusType>)
-    {
-        switch (property.Value())
-        {
-            case Settings::FocusType::Permanent:
-                ini.SetValue(section, property.ConfigName(), "Permanent");
-                break;
-            case Settings::FocusType::Temporary:
-                ini.SetValue(section, property.ConfigName(), "Temporary");
-                break;
-            default:
-                break;
-        }
     }
     else if constexpr (std::is_same_v<Type, Settings::WindowPosUpdatePolicy>)
     {
@@ -107,7 +92,6 @@ void SettingsConfig::Save(CSimpleIniA &ini, const SettingsConfig &diskConfig) co
     IniSetValueIfDiff(ini, SectionName(), showSettings, diskConfig.showSettings);
     IniSetValueIfDiff(ini, SectionName(), enableMod, diskConfig.enableMod);
     IniSetValueIfDiff(ini, SectionName(), language, diskConfig.language);
-    IniSetValueIfDiff(ini, SectionName(), focusType, diskConfig.focusType);
     IniSetValueIfDiff(ini, SectionName(), windowPosUpdatePolicy, diskConfig.windowPosUpdatePolicy);
     IniSetValueIfDiff(ini, SectionName(), enableUnicodePaste, diskConfig.enableUnicodePaste);
     IniSetValueIfDiff(ini, SectionName(), keepImeOpen, diskConfig.keepImeOpen);
@@ -123,7 +107,6 @@ void SettingsConfig::Set(const Settings &settings)
     showSettings.SetValue(settings.showSettings);
     enableMod.SetValue(settings.enableMod);
     windowPosUpdatePolicy.SetValue(settings.windowPosUpdatePolicy);
-    focusType.SetValue(settings.focusType);
     language.SetValue(settings.language);
 }
 
@@ -247,17 +230,6 @@ constexpr auto ConvertCamelCaseToUnderscore(const std::string_view &input) -> st
     }
 
     return output;
-}
-
-constexpr auto converter<Settings::FocusType>::convert(const char *value, Settings::FocusType aDefault)
-    -> Settings::FocusType
-{
-    if (value == nullptr) return aDefault;
-    std::string strValue{value};
-    std::ranges::transform(strValue, strValue.begin(), ::tolower);
-    if (strValue == "permanent") return Settings::FocusType::Permanent;
-    if (strValue == "temporary") return Settings::FocusType::Temporary;
-    return aDefault;
 }
 
 constexpr auto converter<Settings::WindowPosUpdatePolicy>::convert(const char *value, const Policy aDefault) -> Policy

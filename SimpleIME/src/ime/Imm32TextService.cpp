@@ -40,6 +40,9 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
 {
     switch (message)
     {
+        case WM_CREATE:
+            m_hIMC = ImmCreateContext();
+            break;
         case WM_IME_STARTCOMPOSITION:
             OnStartComposition();
             return true;

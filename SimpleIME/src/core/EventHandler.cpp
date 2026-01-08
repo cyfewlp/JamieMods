@@ -116,7 +116,7 @@ RE::BSEventNotifyControl MenuOpenCloseEventSink::
     {
         static bool prevModEnabled = false;
 
-        auto *manager = ImeManagerComposer::GetInstance();
+        auto *manager = ImeController::GetInstance();
         if (event->opening)
         {
             prevModEnabled = manager->IsModEnabled();
@@ -141,7 +141,7 @@ void MenuOpenCloseEventSink::FixInconsistentTextEntryCount(const Event *event)
     const uint8_t &textEntryCount = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
     if (event->menuName == RE::CursorMenu::MENU_NAME && textEntryCount > 0 && !event->opening)
     {
-        const ImeManagerComposer *manager = ImeManagerComposer::GetInstance();
+        const ImeController *manager = ImeController::GetInstance();
         manager->EnableIme(false);
     }
 }

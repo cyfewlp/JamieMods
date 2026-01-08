@@ -7,7 +7,8 @@
 #include "common/config.h"
 #include "common/log.h"
 #include "configs/converter.h"
-#include "ime/ImeManagerComposer.h"
+#include "ime/ImeController.h"
+#include "ui/Settings.h"
 
 #include <SimpleIni.h>
 
@@ -176,12 +177,6 @@ private:
 };
 
 template <>
-struct converter<Settings::FocusType>
-{
-    static constexpr auto convert(const char *value, Settings::FocusType aDefault) -> Settings::FocusType;
-};
-
-template <>
 struct converter<Settings::WindowPosUpdatePolicy>
 {
     using Policy = Settings::WindowPosUpdatePolicy;
@@ -222,11 +217,6 @@ struct SettingsConfig final : BaseConfig<SettingsConfig>
         return language.Value();
     }
 
-    [[nodiscard]] auto GetFocusType() const -> Settings::FocusType
-    {
-        return focusType.Value();
-    }
-
     [[nodiscard]] auto GetWindowPosUpdatePolicy() const -> Policy
     {
         return windowPosUpdatePolicy.Value();
@@ -250,15 +240,14 @@ struct SettingsConfig final : BaseConfig<SettingsConfig>
 private:
     friend class AppConfig;
 
-    Property<float>               fontSizeScale{1.0, "Font_Size_Scale"};
-    Property<bool>                showSettings{false, "Show_Settings"};
-    Property<bool>                enableMod{true, "Enable_Mod"};
-    Property<std::string>         language{"chinese", "Language"};
-    Property<Settings::FocusType> focusType{Settings::FocusType::Permanent, "Focus_Type"};
-    Property<Policy>              windowPosUpdatePolicy{Policy::BASED_ON_CARET, "Window_Pos_Update_Policy"};
-    Property<bool>                enableUnicodePaste{true, "Enable_Unicode_Paste"};
-    Property<bool>                keepImeOpen{true, "Keep_Ime_Open"};
-    Property<std::string>         theme{"darcula", "Theme"};
+    Property<float>       fontSizeScale{1.0, "Font_Size_Scale"};
+    Property<bool>        showSettings{false, "Show_Settings"};
+    Property<bool>        enableMod{true, "Enable_Mod"};
+    Property<std::string> language{"chinese", "Language"};
+    Property<Policy>      windowPosUpdatePolicy{Policy::BASED_ON_CARET, "Window_Pos_Update_Policy"};
+    Property<bool>        enableUnicodePaste{true, "Enable_Unicode_Paste"};
+    Property<bool>        keepImeOpen{true, "Keep_Ime_Open"};
+    Property<std::string> theme{"darcula", "Theme"};
 };
 
 class AppConfig final : public BaseConfig<AppConfig>

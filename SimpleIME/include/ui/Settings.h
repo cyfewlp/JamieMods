@@ -16,12 +16,6 @@ namespace Ime
 {
 struct Settings
 {
-    enum class FocusType : std::uint16_t
-    {
-        Permanent = 0,
-        Temporary
-    };
-
     enum class WindowPosUpdatePolicy : std::uint16_t
     {
         NONE = 0,
@@ -33,7 +27,6 @@ struct Settings
     std::size_t           themeIndex            = 0; // not persist
     std::string           language              = "english";
     WindowPosUpdatePolicy windowPosUpdatePolicy = WindowPosUpdatePolicy::NONE;
-    FocusType             focusType             = FocusType::Permanent;
     int                   fontSize              = 16; // not persist
     float                 fontSizeScale         = 1.0F;
     float                 dpiScale              = 1.0f; // not persist

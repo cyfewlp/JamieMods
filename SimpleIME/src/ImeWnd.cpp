@@ -9,7 +9,7 @@
 #include "context.h"
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
-#include "ime/ImeManagerComposer.h"
+#include "ime/ImeController.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -160,7 +160,7 @@ void ImeWnd::OnStart(Settings *pSettings)
     m_pTextService->OnStart(m_hWnd);
     Context::GetInstance()->SetHwndIme(m_hWnd);
 
-    ImeManagerComposer::Init(this, m_hWndParent, pSettings);
+    ImeController::Init(this, m_hWndParent, pSettings);
     ApplyUiSettings(pSettings);
 }
 
@@ -312,7 +312,7 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
 
 auto ImeWnd::OnCreate() -> LRESULT
 {
-    return S_OK;
+    return 0;
 }
 
 void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
@@ -471,7 +471,7 @@ void ImeWnd::ShowToolWindow() const
 void ImeWnd::ApplyUiSettings(Settings *pSettings) const
 {
     m_pImeUi->ApplyUiSettings(*pSettings);
-    ImeManagerComposer::GetInstance()->ApplyUiSettings(*pSettings);
+    ImeController::GetInstance()->ApplyUiSettings(*pSettings);
 }
 
 auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
