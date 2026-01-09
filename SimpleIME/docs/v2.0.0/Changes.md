@@ -11,4 +11,8 @@
 
 ## Optimize obtain scaleform caret pos #status/todo
 
-* Avoid IME UI render area exceed game window size;
+* Avoid IME UI render area exceed game window size; 
+* Avoid IME UI overlap text entry;
+* We haven't handled `scroll` yet, because multi-line text scenarios are limited; #status/investigating 
+*  Old logic that translate point (0,0) to screen space will get incorrect result in console menu;
+* ⭐Retrieve char boundaries and call `GFxMovieView#TranslateLocalToScreen`;

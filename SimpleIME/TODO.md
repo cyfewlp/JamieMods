@@ -33,7 +33,7 @@
 
 [x] BUG with event ImeMenu block;
     * Open/Close ToolWindow will cause IME disable;
-* [[Changes#Support choose candidate by mouse wheel]]
+* [[SimpleIME/docs/v2.0.0/Changes#Support choose candidate by mouse wheel]]
 * [[BUGs#Bug with temporary focus]]  
 * [[BUGs#Removal of the Focus Management System done]]  
 

@@ -56,12 +56,6 @@ public:
     }
 
 private:
-    auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) const -> bool;
-    auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) const -> bool;
-    // Calculate ime window size by candidate string and composition string.
-    // Because we need to place the IME window in screen according to the IME window size;
-    void CalculateWindowSize();
-
     void DrawInputMethodsCombo() const;
     void DrawSettings(Settings &settings);
     void DrawModConfig(Settings &settings);
@@ -73,6 +67,13 @@ private:
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
 
+    static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
+    static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
+    auto        IsImeNeedRelayout() const -> bool;
+    /**
+     * @brief Ensure the current ImGui window is fully within the viewport.
+     */
+    static void ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos);
 
     static void FillCommonStyleFields(ImGuiStyle &style, const Settings &settings);
 
@@ -87,6 +88,7 @@ private:
     Translation              m_translation;
     std::vector<std::string> m_translateLanguages;
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
+    ImVec2                   m_imeWindowPos  = ImVec2(0, 0);
     ImGuiUtil::ThemesLoader  m_themesLoader;
 
     bool m_fShowToolWindow = false;

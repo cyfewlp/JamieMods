@@ -19,7 +19,6 @@ auto Ime::FocusGFxCharacterInfo::Update(GFxMovieView *movieView) -> void
         if (focusCharacterPath.IsString() && movieView->GetVariable(&focusCharacter, focusCharacterPath.GetString()) &&
             focusCharacter.IsObject())
         {
-            UpdateBounds(movieView, focusCharacterPath.GetString(), focusCharacter);
             UpdateTextMetrics(focusCharacter);
         }
     }
@@ -52,34 +51,10 @@ auto Ime::FocusGFxCharacterInfo::UpdateByTopMenu() -> void
 
 void Ime::FocusGFxCharacterInfo::Reset()
 {
-    m_bound.left     = 0.0F;
-    m_bound.top      = 0.0F;
-    m_bound.right    = 0.0F;
-    m_bound.bottom   = 0.0F;
     m_movieView      = nullptr;
     m_textWidth      = 0.0F;
     m_textHeight     = 16.0F;
     m_charBoundaries = {0.0F, 0.0F, 0.0F, 0.0F};
-}
-
-auto Ime::FocusGFxCharacterInfo::UpdateBounds(GFxMovieView *movieView, const char *path, const GFxValue &character)
-    -> void
-{
-    GRenderer::Matrix identity;
-    GPointF           screenPoint;
-    if (movieView->TranslateLocalToScreen(path, {}, &screenPoint, &identity))
-    {
-        m_bound.left = screenPoint.x;
-        m_bound.top  = screenPoint.y;
-    }
-    if (GFxValue _width; character.GetMember("_width", &_width) && _width.IsNumber())
-    {
-        m_bound.right = static_cast<float>(_width.GetNumber()) + screenPoint.x;
-    }
-    if (GFxValue _height; character.GetMember("_height", &_height) && _height.IsNumber())
-    {
-        m_bound.bottom = static_cast<float>(_height.GetNumber()) + screenPoint.y;
-    }
 }
 
 auto Ime::FocusGFxCharacterInfo::UpdateTextMetrics(const GFxValue &character) -> void
@@ -119,7 +94,6 @@ auto Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries() -> void
         m_movieView->Invoke("Selection.getCaretIndex", &caretIndex, nullptr, 0);
         if (caretIndex.IsNumber())
         {
-
             GFxValue hScroll;
             focusCharacter.GetMember("hscroll", &hScroll);
             std::array const args = {caretIndex};
@@ -127,22 +101,24 @@ auto Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries() -> void
                 focusCharacter.Invoke("getExactCharBoundaries", &charBoundaries, args) && charBoundaries.IsObject())
             {
                 const float hScrollPos = hScroll.IsNumber() ? hScroll.GetNumber() : 0.0F;
-                UpdateCaretCharBoundaries(hScrollPos, charBoundaries);
+                UpdateCaretCharBoundaries(charBoundaries);
+                m_charBoundaries.left -= hScrollPos;
+
+                ConvertBoundariesToScreen(m_movieView, focusCharacterPath.GetString());
             }
         }
     }
 }
 
-void Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries(const float hScroll, const GFxValue &charBoundaries)
+void Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries(const GFxValue &charBoundaries)
 {
     if (GFxValue x; charBoundaries.GetMember("x", &x) && x.IsNumber())
     {
-        m_charBoundaries.left = static_cast<float>(x.GetNumber()) + m_bound.left;
-        m_charBoundaries.left -= hScroll;
+        m_charBoundaries.left = static_cast<float>(x.GetNumber());
     }
     if (GFxValue y; charBoundaries.GetMember("y", &y) && y.IsNumber())
     {
-        m_charBoundaries.top = static_cast<float>(y.GetNumber()) + m_bound.top;
+        m_charBoundaries.top = static_cast<float>(y.GetNumber());
     }
     if (GFxValue width; charBoundaries.GetMember("width", &width) && width.IsNumber())
     {
@@ -150,7 +126,28 @@ void Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries(const float hScroll, 
     }
     if (GFxValue height; charBoundaries.GetMember("height", &height) && height.IsNumber())
     {
-        m_charBoundaries.bottom = static_cast<float>(height.GetNumber()) + m_charBoundaries.top;
+        m_charBoundaries.bottom = static_cast<float>(height.GetNumber() + m_charBoundaries.top);
+    }
+}
+
+void Ime::FocusGFxCharacterInfo::ConvertBoundariesToScreen(GFxMovieView *movieView, const char *path)
+{
+    GRenderer::Matrix identity;
+    GPointF           screenPoint;
+
+    const GPointF leftTop{m_charBoundaries.left, m_charBoundaries.top};
+    const GPointF rightBottom{m_charBoundaries.right, m_charBoundaries.bottom};
+    if (movieView->TranslateLocalToScreen(path, leftTop, &screenPoint, &identity))
+    {
+        m_charBoundaries.left = screenPoint.x;
+        m_charBoundaries.top  = screenPoint.y;
+    }
+
+    screenPoint = {};
+    if (movieView->TranslateLocalToScreen(path, rightBottom, &screenPoint, &identity))
+    {
+        m_charBoundaries.right  = screenPoint.x;
+        m_charBoundaries.bottom = screenPoint.y;
     }
 }
 }

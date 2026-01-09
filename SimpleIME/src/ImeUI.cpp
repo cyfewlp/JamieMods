@@ -110,26 +110,29 @@ void ImeUI::Draw(const Settings &settings)
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoResize;
     windowFlags |= ImGuiWindowFlags_NoDecoration;
     windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-    static bool prevFrameIsShowing = false;
-    const auto &state              = State::GetInstance();
+    static bool shouldRelayout = true;
+    static bool imeAppearing   = true;
+    const auto &state          = State::GetInstance();
     if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
     {
-        prevFrameIsShowing = false;
+        imeAppearing   = true;
+        shouldRelayout = true;
         return;
     }
-    if (!prevFrameIsShowing)
+    if (imeAppearing)
     {
-        CalculateWindowSize();
-        if (ImVec2 windowPos; UpdateImeWindowPos(settings, windowPos))
-        {
-            ImGui::SetNextWindowPos(windowPos);
-        }
+        imeAppearing = false;
+        UpdateImeWindowPos(settings, m_imeWindowPos);
     }
-    prevFrameIsShowing = true;
+    if (shouldRelayout)
+    {
+        shouldRelayout = false;
+        ClampWindowToViewport(m_imeWindowSize, m_imeWindowPos);
+        ImGui::SetNextWindowPos(m_imeWindowPos);
+    }
 
     if (ImGui::Begin(SKSE::PluginDeclaration::GetSingleton()->GetName().data(), nullptr, windowFlags))
     {
-        m_imeWindowSize = ImGui::GetContentRegionAvail();
         if (state.Has(State::IN_COMPOSING))
         {
             DrawCompWindow(settings);
@@ -141,78 +144,14 @@ void ImeUI::Draw(const Settings &settings)
         {
             DrawCandidateWindows();
         }
+        m_imeWindowSize = ImGui::GetWindowSize();
     }
     ImGui::End();
-}
 
-auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) const -> bool
-{
-    switch (settings.windowPosUpdatePolicy)
+    if (IsImeNeedRelayout())
     {
-        case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
-            if (const auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
-            {
-                windowPos.x = cursor->cursorPosX;
-                windowPos.y = cursor->cursorPosY;
-            }
-            return true;
-        case Settings::WindowPosUpdatePolicy::BASED_ON_CARET: {
-            FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
-            return UpdateImeWindowPosByCaret(windowPos);
-        }
-        default:;
+        shouldRelayout = true;
     }
-    return false;
-}
-
-auto ImeUI::UpdateImeWindowPosByCaret(ImVec2 &windowPos) const -> bool
-{
-    const auto &instance = FocusGFxCharacterInfo::GetInstance();
-    if (m_imeWindowSize.x == 0 || m_imeWindowSize.y == 0)
-    {
-        return false;
-    }
-    const auto &charBoundaries       = instance.CharBoundaries();
-    auto [screenWidth, screenHeight] = RE::BSGraphics::Renderer::GetScreenSize();
-
-    windowPos.x = charBoundaries.left;
-    windowPos.y = charBoundaries.bottom;
-
-    if (windowPos.x + m_imeWindowSize.x > static_cast<float>(screenWidth))
-    {
-        windowPos.y = screenWidth - m_imeWindowSize.x;
-    }
-    if (windowPos.y + m_imeWindowSize.y > static_cast<float>(screenHeight))
-    {
-        windowPos.y = screenHeight - m_imeWindowSize.y;
-    }
-    return true;
-}
-
-void ImeUI::CalculateWindowSize()
-{
-    const auto &candidateUi = m_pTextService->GetCandidateUi();
-    const auto &style       = ImGui::GetStyle();
-    m_imeWindowSize.x       = 0;
-    m_imeWindowSize.y       = 0;
-    if (const auto candidateList = candidateUi.CandidateList(); candidateList.size() > 0)
-    {
-        for (const auto &candidate : candidateList)
-        {
-            auto textSize = ImGui::CalcTextSize(candidate.c_str());
-            m_imeWindowSize.x += textSize.x;
-            m_imeWindowSize.y = std::max(m_imeWindowSize.y, textSize.y);
-        }
-    }
-    {
-        const auto &editorText = m_pTextService->GetTextEditor().GetText();
-        const auto  str        = WCharUtils::ToString(editorText);
-        const auto  textSize   = ImGui::CalcTextSize(str.c_str());
-        m_imeWindowSize.x      = std::max(m_imeWindowSize.x, textSize.x);
-        m_imeWindowSize.y      = std::max(m_imeWindowSize.y, textSize.y);
-    }
-    m_imeWindowSize.x += style.WindowPadding.x * 2;
-    m_imeWindowSize.y += m_imeWindowSize.y + style.WindowPadding.y * 2 + style.ItemSpacing.y;
 }
 
 void ImeUI::DrawInputMethodsCombo() const
@@ -252,13 +191,13 @@ void ImeUI::ShowToolWindow()
 {
     if (m_fPinToolWindow)
     {
-        m_fPinToolWindow               = false;
+        m_fPinToolWindow = false;
         // ImGui::GetIO().MouseDrawCursor = true;
         ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
     }
     else
     {
-        m_fShowToolWindow              = !m_fShowToolWindow;
+        m_fShowToolWindow = !m_fShowToolWindow;
         // ImGui::GetIO().MouseDrawCursor = m_fShowToolWindow;
         if (m_fShowToolWindow)
         {
@@ -292,7 +231,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
 
     if (ImGui::Button(m_fPinToolWindow ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE))
     {
-        m_fPinToolWindow               = true;
+        m_fPinToolWindow = true;
         // ImGui::GetIO().MouseDrawCursor = false;
 
         if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
@@ -722,6 +661,87 @@ void ImeUI::DrawCandidateWindows() const
 inline auto ImeUI::Translate(const char *label) const -> const char *
 {
     return m_translation.Get(label);
+}
+
+auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
+{
+    switch (settings.windowPosUpdatePolicy)
+    {
+        case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
+            if (const auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
+            {
+                windowPos.x = cursor->cursorPosX;
+                windowPos.y = cursor->cursorPosY;
+            }
+            break;
+        case Settings::WindowPosUpdatePolicy::BASED_ON_CARET: {
+            FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
+            UpdateImeWindowPosByCaret(windowPos);
+            break;
+        }
+        default:;
+    }
+}
+
+auto ImeUI::UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void
+{
+    const auto &instance       = FocusGFxCharacterInfo::GetInstance();
+    const auto &charBoundaries = instance.CharBoundaries();
+
+    windowPos.x = charBoundaries.left;
+    windowPos.y = charBoundaries.bottom;
+}
+
+auto ImeUI::IsImeNeedRelayout() const -> bool
+{
+    const auto &viewport = ImGui::GetMainViewport();
+
+    if (m_imeWindowPos.x + m_imeWindowSize.x > viewport->Size.x + viewport->Pos.x ||
+        m_imeWindowPos.y + m_imeWindowSize.y > viewport->Size.y + viewport->Pos.y)
+    {
+        return true;
+    }
+    return false;
+}
+
+void ImeUI::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
+{
+    const auto &viewport   = ImGui::GetMainViewport();
+    const float viewRight  = viewport->Pos.x + viewport->Size.x;
+    const float viewBottom = viewport->Pos.y + viewport->Size.y;
+
+    if (windowPos.x < viewport->Pos.x)
+    {
+        windowPos.x = viewport->Pos.x;
+    }
+    if (windowPos.y < viewport->Pos.y)
+    {
+        windowPos.y = viewport->Pos.y;
+    }
+
+    if (windowSize.x < viewport->Size.x && windowPos.x + windowSize.x > viewRight)
+    {
+        windowPos.x = viewRight - windowSize.x;
+    }
+    if (windowSize.y < viewport->Size.y && windowPos.y + windowSize.y > viewBottom)
+    {
+        windowPos.y = viewBottom - windowSize.y;
+    }
+
+    const ImVec2 min            = windowPos;
+    const ImVec2 max            = {windowPos.x + windowSize.x, windowPos.y + windowSize.y};
+    const auto  &instance       = FocusGFxCharacterInfo::GetInstance();
+    const auto  &charBoundaries = instance.CharBoundaries();
+    if (charBoundaries.top < max.y && charBoundaries.bottom > min.y && charBoundaries.left < max.x &&
+        charBoundaries.right > min.x) // is overlaps?
+    {
+        // Move the window above the boundary
+        const float newY = charBoundaries.top - windowSize.y;
+        if (newY >= viewport->Pos.y)
+        {
+            windowPos.y = newY;
+        }
+    }
 }
 
 void ImeUI::FillCommonStyleFields(ImGuiStyle &style, const Settings &settings)

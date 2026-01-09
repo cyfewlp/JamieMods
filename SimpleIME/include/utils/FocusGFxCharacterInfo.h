@@ -11,7 +11,6 @@ namespace Ime
 {
 class FocusGFxCharacterInfo
 {
-    RE::GRectF        m_bound     = {};
     RE::GFxMovieView *m_movieView = nullptr;
     float             m_textHeight;
     float             m_textWidth;
@@ -21,11 +20,6 @@ class FocusGFxCharacterInfo
     ~FocusGFxCharacterInfo() = default;
 
 public:
-    auto GetBound() const -> const RE::GRectF &
-    {
-        return m_bound;
-    }
-
     [[nodiscard]] float TextHeight() const
     {
         return m_textHeight;
@@ -34,11 +28,6 @@ public:
     [[nodiscard]] float TextWidth() const
     {
         return m_textWidth;
-    }
-
-    [[nodiscard]] auto Bound() const -> const RE::GRectF &
-    {
-        return m_bound;
     }
 
     [[nodiscard]] auto MovieView() const -> RE::GFxMovieView *
@@ -75,9 +64,9 @@ private:
     std::list<std::string> m_menuStack{};
 
     void Reset();
-    auto UpdateBounds(RE::GFxMovieView *movieView, const char *path, const RE::GFxValue &character) -> void;
     auto UpdateTextMetrics(const RE::GFxValue &character) -> void;
-    void UpdateCaretCharBoundaries(float hScroll, const RE::GFxValue &charBoundaries);
+    void UpdateCaretCharBoundaries(const RE::GFxValue &charBoundaries);
+    void ConvertBoundariesToScreen(RE::GFxMovieView *movieView, const char* path);
 };
 }
 }
