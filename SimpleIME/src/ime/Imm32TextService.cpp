@@ -89,10 +89,18 @@ bool Imm32TextService::OnFocus(bool focus)
     return ITextService::OnFocus(focus);
 }
 
-auto Imm32TextService::CommitCandidate(HWND hwnd, UINT index) -> bool
+// This method does not work as expected
+auto Imm32TextService::CommitCandidate(HWND hwnd, DWORD index) -> bool
 {
-    HIMC hImc   = ImmGetContext(hwnd);
-    bool result = ImmNotifyIME(hImc, NI_SELECTCANDIDATESTR, 0, index) != FALSE;
+    log_debug("CommitCandidate {}", index);
+    HIMC hImc = ImmGetContext(hwnd);
+
+    bool result = true;
+    if (hImc)
+    {
+        result = ImmNotifyIME(hImc, NI_SELECTCANDIDATESTR, 0, index) != FALSE;
+    }
+
     ImmReleaseContext(hwnd, hImc);
     return result;
 }

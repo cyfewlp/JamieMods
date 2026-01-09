@@ -28,3 +28,12 @@
   [x] next: remove unused codes
   [x] Use NerdFont or PNG icon to replace UI artist;
   [x] Test new code about that font size, font scale;
+  [ ] Fix: After the game loads, the states of ImeMenu and ToolWindow become inconsistent.
+  [ ] code check: debug code, log: compare previous version
+
+[x] BUG with event ImeMenu block;
+    * Open/Close ToolWindow will cause IME disable;
+* [[Changes#Support choose candidate by mouse wheel]]
+* [[BUGs#Bug with temporary focus]]  
+* [[BUGs#Removal of the Focus Management System done]]  
+
