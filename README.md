@@ -52,10 +52,10 @@ Please check Project-specific README.md
 
 ## 📝 Documentation & Contribution Guide
 
-This repository is optimized for Obsidian. We use it to track bugs, features, and technical notes.
+This repository is optimized for [Obsidian](https://obsidian.md).
+We use it to track bugs, features, and technical notes.
 
 ### How we use Obsidian:
-
 
 Tagging System: We use nested tags (e.g., `#status/todo`, `#type/bug`) to manage the development lifecycle. 
 * Backlinks: Technical modules are connected via [[Double Brackets]] for better navigation.

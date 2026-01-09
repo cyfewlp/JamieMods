@@ -296,17 +296,6 @@ void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *con
     settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
     AddFonts(settings);
 
-    ImGuiStyle &style = ImGui::GetStyle();
-    if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        style.WindowRounding              = 0.0F;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
-    }
-    if (settings.dpiScale != 1.0F)
-    {
-        style.ScaleAllSizes(settings.dpiScale);
-    }
-    style.FontScaleDpi = settings.dpiScale;
     log_info("ImGui initialized!");
 }
 

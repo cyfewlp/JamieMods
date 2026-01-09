@@ -24,7 +24,7 @@ The **Focus Management System** has been completely deprecated and removed from 
     
 - **User Workflow Change:** For users who previously relied on "Temporary" focus to unlock the keyboard for other applications, we recommend using the standard **"Enable/Disable Mod"** toggle. This provides the same functional outcome without compromising the stability of the DirectInput queue.
 
-## Select candidate manually in Imm32 #status/Investigating#type/bug
+## Select candidate manually in Imm32 #status/investigating #type/bug
 
 Ime::Imm32::Imm32TextService::CommitCandidate
 
@@ -40,4 +40,9 @@ if (hImc)
 ImmReleaseContext(hwnd, hImc);
 ```
 The  `NI_SELECTCANDIDATESTR` flag does not work as expected.
+
+## Font configruation incorrectly #status/done #type/bug 
+
+* Add new method: `Ime::ImeUI::FillCommonStyleFields`. This method will set common fields after apply theme.
+* Remove `ImGuiStyle` configuration code from `ImeWnd::InitImGui`(already moved to `ImeUI::FillCommonStyleFields`).
 

@@ -22,10 +22,10 @@ Track the lifecycle of a task or bug.
 ### B. Type Tags (Categorization)
 Define what the note is about.
 
-| Tag | Description |
-| :--- | :--- |
-| `#type/bug` | A defect in existing functionality. |
-| `#type/feature` | A request for new functionality. |
+| Tag              | Description                                 |
+| :--------------- | :------------------------------------------ |
+| `#type/bug`      | A defect in existing functionality.         |
+| `#type/feature`  | A request for new functionality.            |
 | `#type/refactor` | Code improvement without changing behavior. |
 | `#type/research` | Technical spikes or documentation research. |
 

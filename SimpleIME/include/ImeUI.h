@@ -73,6 +73,9 @@ private:
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
 
+
+    static void FillCommonStyleFields(ImGuiStyle &style, const Settings &settings);
+
     static bool DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected);
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");

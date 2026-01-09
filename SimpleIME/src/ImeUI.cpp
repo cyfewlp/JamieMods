@@ -78,8 +78,7 @@ void ImeUI::ApplyUiSettings(Settings &settings)
             expected = m_themesLoader.UseTheme(index, style);
             if (expected)
             {
-                style.FontScaleMain = settings.fontSizeScale;
-                style.ScaleAllSizes(settings.dpiScale);
+                FillCommonStyleFields(style, settings);
                 ImGui::GetStyle() = style;
             }
         }
@@ -723,6 +722,20 @@ void ImeUI::DrawCandidateWindows() const
 inline auto ImeUI::Translate(const char *label) const -> const char *
 {
     return m_translation.Get(label);
+}
+
+void ImeUI::FillCommonStyleFields(ImGuiStyle &style, const Settings &settings)
+{
+    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
+    {
+        style.WindowRounding              = 0.0F;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
+    }
+    if (settings.dpiScale != 1.0F)
+    {
+        style.ScaleAllSizes(settings.dpiScale);
+    }
+    style.FontScaleDpi = settings.dpiScale;
 }
 
 } // namespace  SimpleIME

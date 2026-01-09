@@ -155,15 +155,15 @@ void ImeApp::DoD3DInit()
 
 void ImeApp::OnD3DInit()
 {
-    auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
-    if (render_manager == nullptr)
+    auto *renderManager = RE::BSGraphics::Renderer::GetSingleton();
+    if (renderManager == nullptr)
     {
         throw SimpleIMEException("Cannot find render manager. Initialization failed!");
     }
 
-    const auto &render_data = render_manager->GetRuntimeData();
+    const auto &renderData = renderManager->GetRuntimeData();
     log_debug("Getting SwapChain...");
-    auto *pSwapChain = render_data.renderWindows->swapChain;
+    auto *pSwapChain = renderData.renderWindows->swapChain;
     if (pSwapChain == nullptr)
     {
         throw SimpleIMEException("Cannot find SwapChain. Initialization failed!");
@@ -179,7 +179,7 @@ void ImeApp::OnD3DInit()
     m_hWnd        = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
     m_hIMCDefault = ImmAssociateContext(m_hWnd, nullptr);
 
-    Start(render_data);
+    Start(renderData);
     m_fInitialized.store(true);
 
     log_debug("Hooking Skyrim WndProc...");
