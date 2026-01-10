@@ -290,7 +290,22 @@ void ImeUI::DrawModConfig(Settings &settings)
     }
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
-    ImGui::InputScalar(Translate("$Font_Size"), ImGuiDataType_U32, &settings.fontSize, nullptr, nullptr, "%u");
+    ImGui::SliderInt(Translate("$Font_Size"), &settings.fontSizeTemp, 10, 100);
+    ImGui::SameLine();
+    if (ImGui::Button(Translate("$Apply")))
+    {
+        settings.fontSize = settings.fontSizeTemp;
+    }
+    ImGui::PushFont(nullptr, settings.fontSizeTemp);
+    static std::string previewText = "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.";
+    ImGui::InputTextMultiline(
+        "##preview",
+        previewText.data(),
+        previewText.capacity() + 1,
+        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3),
+        ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
+    );
+    ImGui::PopFont();
 
     ImGui::DragFloat(
         Translate("$Font_Size_Scale"),
@@ -322,8 +337,7 @@ void ImeUI::DrawModConfig(Settings &settings)
                     settings.themeIndex    = idx;
                     settings.theme         = theme.name;
                     settings.fontSizeScale = ImGui::GetStyle().FontScaleMain;
-                    style.FontScaleMain    = settings.fontSizeScale;
-                    style.ScaleAllSizes(settings.dpiScale);
+                    FillCommonStyleFields(style, settings);
                     ImGui::GetStyle() = style;
                 }
             }

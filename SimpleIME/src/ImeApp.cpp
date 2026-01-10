@@ -207,6 +207,7 @@ void ImeApp::SetSettings()
     m_settings.keepImeOpen           = settingsConfig.GetKeepImeOpen();
     m_settings.enableMod             = settingsConfig.GetEnableMod();
     m_settings.fontSize              = config.GetAppUiConfig().FontSize();
+    m_settings.fontSizeTemp          = config.GetAppUiConfig().FontSize();
     m_settings.language              = settingsConfig.GetLanguage();
     m_settings.theme                 = settingsConfig.GetTheme();
 }

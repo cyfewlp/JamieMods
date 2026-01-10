@@ -28,9 +28,10 @@ struct Settings
     std::string           language              = "english";
     WindowPosUpdatePolicy windowPosUpdatePolicy = WindowPosUpdatePolicy::NONE;
     int                   fontSize              = 16; // not persist
+    int                   fontSizeTemp          = 16; // not persist
     float                 fontSizeScale         = 1.0F;
-    float                 dpiScale              = 1.0f; // not persist
-    bool                  wantResizeFont       = false;// not persist
+    float                 dpiScale              = 1.0f;  // not persist
+    bool                  wantResizeFont        = false; // not persist
     bool                  enableUnicodePaste    = true;
     bool                  showSettings          = false;
     bool                  keepImeOpen           = false;

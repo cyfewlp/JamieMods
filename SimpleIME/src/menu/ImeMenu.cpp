@@ -61,13 +61,13 @@ auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
 
 void ImeMenu::OnShow()
 {
-    log_debug("ToolWindowMenu: Show");
+    log_trace("ImeMenu: Show");
     m_fSShow = true;
 }
 
 void ImeMenu::OnHide()
 {
-    log_debug("ToolWindowMenu: Hide");
+    log_trace("ImeMenu: Hide");
     m_fSShow = false;
 }
 
@@ -224,18 +224,18 @@ bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent)
 // preserves vanilla behavior.
 bool ImeMenu::Paste()
 {
-    if (::OpenClipboard(nullptr) == FALSE)
+    if (OpenClipboard(nullptr) == FALSE)
     {
         return false;
     }
 
     if (IsClipboardFormatAvailable(CF_UNICODETEXT) == FALSE)
     {
-        ::CloseClipboard();
+        CloseClipboard();
         return false;
     }
 
-    if (const HANDLE handle = ::GetClipboardData(CF_UNICODETEXT); handle != nullptr)
+    if (const HANDLE handle = GetClipboardData(CF_UNICODETEXT); handle != nullptr)
     {
         if (auto *const textData = static_cast<LPTSTR>(GlobalLock(handle)); textData != nullptr)
         {
