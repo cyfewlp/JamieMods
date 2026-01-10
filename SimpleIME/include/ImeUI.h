@@ -11,6 +11,7 @@
 #include "ime/ITextService.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
+#include "utils/FontManager.h"
 
 #include <vector>
 
@@ -59,6 +60,7 @@ private:
     void DrawInputMethodsCombo() const;
     void DrawSettings(Settings &settings);
     void DrawModConfig(Settings &settings);
+    void DrawFontConfig(Settings &settings);
     void DrawFeatures(Settings &settings);
     void DrawSettingsContent(Settings &settings);
     void DrawStates() const;
@@ -66,6 +68,7 @@ private:
     void DrawCompWindow(const Settings &settings) const;
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
+    void UpdatePreviewFont(const FontInfo &fontInfo);
 
     static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
     static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
@@ -90,6 +93,8 @@ private:
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
     ImVec2                   m_imeWindowPos  = ImVec2(0, 0);
     ImGuiUtil::ThemesLoader  m_themesLoader;
+    FontManager              m_fontManager = {};
+    ImFont                  *m_previewFont = nullptr;
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;

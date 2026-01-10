@@ -19,6 +19,9 @@
 #include "menu/MenuNames.h"
 #include "tsf/LangProfileUtil.h"
 #include "utils/FocusGFxCharacterInfo.h"
+#include "utils/FontManager.h"
+
+#pragma comment(lib, "dwrite.lib")
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -52,6 +55,7 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
     {
         log_warn("Failed load translation languages.");
     }
+    m_fontManager.FindInstalledFonts();
     return true;
 }
 
@@ -290,32 +294,11 @@ void ImeUI::DrawModConfig(Settings &settings)
     }
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
-    ImGui::SliderInt(Translate("$Font_Size"), &settings.fontSizeTemp, 10, 100);
-    ImGui::SameLine();
-    if (ImGui::Button(Translate("$Apply")))
+    if (ImGui::TreeNode(Translate("$Font")))
     {
-        settings.fontSize = settings.fontSizeTemp;
+        DrawFontConfig(settings);
+        ImGui::TreePop();
     }
-    ImGui::PushFont(nullptr, settings.fontSizeTemp);
-    static std::string previewText = "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.";
-    ImGui::InputTextMultiline(
-        "##preview",
-        previewText.data(),
-        previewText.capacity() + 1,
-        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3),
-        ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
-    );
-    ImGui::PopFont();
-
-    ImGui::DragFloat(
-        Translate("$Font_Size_Scale"),
-        &ImGui::GetStyle().FontScaleMain,
-        0.05,
-        SettingsConfig::MIN_FONT_SIZE_SCALE,
-        SettingsConfig::MAX_FONT_SIZE_SCALE,
-        "%.3f",
-        ImGuiSliderFlags_NoInput
-    );
 
     if (DrawCombo(Translate("$Languages"), m_translateLanguages, settings.language))
     {
@@ -358,6 +341,68 @@ void ImeUI::DrawModConfig(Settings &settings)
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
+}
+
+void ImeUI::DrawFontConfig(Settings &settings)
+{
+    ImGui::SliderInt(Translate("$Font_Size"), &settings.fontSizeTemp, 10, 100);
+    ImGui::SameLine();
+    if (ImGui::Button(Translate("$Apply")))
+    {
+        settings.fontSize = settings.fontSizeTemp;
+    }
+
+    ImGui::DragFloat(
+        Translate("$Font_Size_Scale"),
+        &ImGui::GetStyle().FontScaleMain,
+        0.05,
+        SettingsConfig::MIN_FONT_SIZE_SCALE,
+        SettingsConfig::MAX_FONT_SIZE_SCALE,
+        "%.3f",
+        ImGuiSliderFlags_NoInput
+    );
+    static int selectedIndex = 0;
+    auto      &list          = m_fontManager.GetFontInfoList();
+    if (ImGui::BeginCombo(Translate("$Font"), list.at(selectedIndex).name.c_str()))
+    {
+        // preview all installed fonts
+        int idx = 0;
+        for (const auto &fontInfo : m_fontManager.GetFontInfoList())
+        {
+            ImGui::PushID(idx);
+            const bool selected = selectedIndex == idx;
+            if (ImGui::Selectable(fontInfo.name.c_str(), selected) && !selected)
+            {
+                selectedIndex = idx;
+                UpdatePreviewFont(fontInfo);
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+            ImGui::PopID();
+
+            idx++;
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::PushFont(m_previewFont, settings.fontSizeTemp);
+    static std::string previewText =R"(abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789 (){}[]
++ - * / = .,;:!? #&$%@|^
+The quick brown fox jumps over the lazy dog
+Emoji:  🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍
+Chinese: 快速的棕色狐狸跳过了懒惰的狗
+Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます
+Korean: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다
+)";
+    ImGui::InputTextMultiline(
+        "##preview",
+        previewText.data(),
+        previewText.capacity() + 1,
+        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 12),
+        ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
+    );
+    ImGui::PopFont();
 }
 
 void ImeUI::DrawFeatures(Settings &settings)
@@ -675,6 +720,23 @@ void ImeUI::DrawCandidateWindows() const
 inline auto ImeUI::Translate(const char *label) const -> const char *
 {
     return m_translation.Get(label);
+}
+
+void ImeUI::UpdatePreviewFont(const FontInfo &fontInfo)
+{
+    const auto filePath = m_fontManager.GetFontFilePath(fontInfo);
+    log_debug("File path {}", filePath);
+    if (!filePath.empty())
+    {
+        const auto &io = ImGui::GetIO();
+        if (m_previewFont)
+        {
+            io.Fonts->RemoveFont(m_previewFont);
+            m_previewFont = nullptr;
+        }
+
+        m_previewFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
+    }
 }
 
 auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
