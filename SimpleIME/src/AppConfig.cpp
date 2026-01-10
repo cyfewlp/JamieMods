@@ -37,6 +37,10 @@ void IniSetValue(CSimpleIniA &ini, const std::string &sectionStr, const Property
     {
         ini.SetDoubleValue(section, property.ConfigName(), property.Value());
     }
+    else if constexpr (std::is_same_v<Type, int>)
+    {
+        ini.SetLongValue(section, property.ConfigName(), property.Value());
+    }
     else if constexpr (std::is_same_v<Type, std::string>)
     {
         ini.SetValue(section, property.ConfigName(), property.Value().c_str());
@@ -179,13 +183,13 @@ void AppConfig::SaveIniConfig(const char *configFilePath, const AppConfig &destA
         log_error("Load config file failed. May config file {} missing", configFilePath);
         return;
     }
-    AppConfig diskConfig;
+    const AppConfig diskConfig;
     diskConfig.Load(ini);
     diskConfig.m_appUiConfig.Load(ini);
     diskConfig.m_settingsConfig.Load(ini);
 
     destAppConfig.Save(ini, diskConfig);
-    if (auto error = ini.SaveFile(configFilePath); error != SI_OK)
+    if (const auto error = ini.SaveFile(configFilePath); error != SI_OK)
     {
         log_error("Can't save config.");
     }

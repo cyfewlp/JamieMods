@@ -16,3 +16,8 @@
 * We haven't handled `scroll` yet, because multi-line text scenarios are limited; #status/investigating 
 *  Old logic that translate point (0,0) to screen space will get incorrect result in console menu;
 * ⭐Retrieve char boundaries and call `GFxMovieView#TranslateLocalToScreen`;
+
+## Implement Unicode Paste in flash? #
+
+**NO**. The method `pasteFromClipboard` in GFx TextField class won't work as expected.
+And implement in SkyrimSE can support all UI that implemented from `IMenu` interface.

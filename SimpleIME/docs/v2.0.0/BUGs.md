@@ -46,3 +46,8 @@ The  `NI_SELECTCANDIDATESTR` flag does not work as expected.
 * Add new method: `Ime::ImeUI::FillCommonStyleFields`. This method will set common fields after apply theme.
 * Remove `ImGuiStyle` configuration code from `ImeWnd::InitImGui`(already moved to `ImeUI::FillCommonStyleFields`).
 
+## Missing int type converter #type/bug #status/done 
+
+
+
+
