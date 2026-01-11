@@ -16,7 +16,9 @@
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "menu/MenuNames.h"
+#include "misc/freetype/imgui_freetype.h"
 #include "tsf/LangProfileUtil.h"
 #include "utils/FocusGFxCharacterInfo.h"
 #include "utils/FontManager.h"
@@ -27,6 +29,21 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
+
+static std::string PREVIEW_TEXT = R"(!@#$%^&*()_+-=[]{}|;':",.<>?/
+-- Unicode & Fallback --
+Latín: áéíóú ñ  |  FullWidth: ＡＢＣ１２３
+CJK: 繁體中文测试 / 简体中文测试 / 日本語 / 한국어
+-- Emoji & Variation --
+Icons: 🥰💀✌︎🌴🐢🐐🍄🍻👑📸😬👀🚨🏡
+New: 🐦‍🔥 🍋‍🟩 🍄‍🟫 🙂‍↕️ 🙂‍↔️
+-- Skyrim Immersion --
+Dovah: Dovahkiin, naal ok zin los vahriin!
+"I used to be an adventurer like you..."
+-- Layout Stress Test --
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM (Width Test)
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii (Kerning Test)
+)";
 
 ImeUI::~ImeUI()
 {
@@ -260,7 +277,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
     ImGui::End();
 }
 
-ImVec4 inactiveColor = ImVec4(0.45f, 0.45f, 0.45f, 0.9f);
+auto inactiveColor = ImVec4(0.45f, 0.45f, 0.45f, 0.9f);
 
 void ImeUI::DrawSettings(Settings &settings)
 {
@@ -347,7 +364,8 @@ void ImeUI::DrawFontConfig(Settings &settings)
 {
     ImGui::SliderInt(Translate("$Font_Size"), &settings.fontSizeTemp, 10, 100);
     ImGui::SameLine();
-    if (ImGui::Button(Translate("$Apply")))
+    const auto applyLabel = std::format("{} {}", ICON_OCT_CHECK, Translate("$Apply"));
+    if (ImGui::Button(applyLabel.c_str()))
     {
         settings.fontSize = settings.fontSizeTemp;
     }
@@ -361,48 +379,74 @@ void ImeUI::DrawFontConfig(Settings &settings)
         "%.3f",
         ImGuiSliderFlags_NoInput
     );
-    static int selectedIndex = 0;
+    static int selectedIndex = -1;
     auto      &list          = m_fontManager.GetFontInfoList();
-    if (ImGui::BeginCombo(Translate("$Font"), list.at(selectedIndex).name.c_str()))
+
+    constexpr auto MAX_ROWS         = 12;
+    const float    TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+    const ImVec2   FontViewerSize   = {200.0F, TEXT_BASE_HEIGHT * MAX_ROWS};
+
+    ImGui::BeginChild("#FontViewer", FontViewerSize, ImGuiChildFlags_ResizeX | ImGuiChildFlags_Borders);
+    constexpr auto flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInner | ImGuiTableFlags_RowBg |
+                           ImGuiTableFlags_NoHostExtendX;
+    if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * MAX_ROWS)))
     {
-        // preview all installed fonts
         int idx = 0;
         for (const auto &fontInfo : m_fontManager.GetFontInfoList())
         {
+            ImGui::TableNextRow();
             ImGui::PushID(idx);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", idx + 1);
+
+            ImGui::TableNextColumn();
             const bool selected = selectedIndex == idx;
             if (ImGui::Selectable(fontInfo.name.c_str(), selected) && !selected)
             {
                 selectedIndex = idx;
                 UpdatePreviewFont(fontInfo);
             }
-            if (selected) ImGui::SetItemDefaultFocus();
+            if (selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
             ImGui::PopID();
 
             idx++;
         }
-        ImGui::EndCombo();
+        ImGui::EndTable();
     }
+    ImGui::EndChild();
 
-    ImGui::PushFont(m_previewFont, settings.fontSizeTemp);
-    static std::string previewText =R"(abcdefghijklmnopqrstuvwxyz
-ABCDEFGHIJKLMNOPQRSTUVWXYZ
-0123456789 (){}[]
-+ - * / = .,;:!? #&$%@|^
-The quick brown fox jumps over the lazy dog
-Emoji:  🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍
-Chinese: 快速的棕色狐狸跳过了懒惰的狗
-Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます
-Korean: 빠른 갈색 여우가 게으른 개를 뛰어넘습니다
-)";
-    ImGui::InputTextMultiline(
-        "##preview",
-        previewText.data(),
-        previewText.capacity() + 1,
-        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 12),
-        ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
-    );
-    ImGui::PopFont();
+    ImGui::SameLine();
+    ImGui::BeginChild("#FontPreview");
+    {
+        ImGui::BeginDisabled(m_previewFont.IsInvalid());
+        if (ImGui::Button(applyLabel.c_str()))
+        {
+            if (selectedIndex >= 0 && selectedIndex < list.size())
+            {
+                ApplyPreviewFontAsDefault();
+            }
+        }
+        ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_previewFont.fontFilePath.c_str());
+        ImGui::EndDisabled();
+
+        ImGui::PushFont(m_previewFont.imFont, settings.fontSizeTemp);
+
+        ImGui::InputTextMultiline(
+            "##PreviewText",
+            PREVIEW_TEXT.data(),
+            PREVIEW_TEXT.capacity() + 1,
+            ImVec2(-FLT_MIN, TEXT_BASE_HEIGHT * MAX_ROWS),
+            ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
+        );
+        ImGui::PopFont();
+    }
+    ImGui::EndChild();
+
+    // ImGui::ShowFontAtlas(ImGui::GetIO().Fonts);
 }
 
 void ImeUI::DrawFeatures(Settings &settings)
@@ -501,7 +545,7 @@ void ImeUI::DrawStates() const
         ImeController::GetInstance()->ForceFocusIme();
     }
 #ifdef SIMPLE_IME_DEBUG
-    auto action = [&state](State::StateKey stateKey) {
+    auto action = [&state](const State::StateKey stateKey) {
         ImGui::SameLine();
         ImGui::TextColored(
             state.Has(stateKey) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR
@@ -646,12 +690,12 @@ struct ImGuiStyleVarScope
 
 struct ImGuiColorScope
 {
-    ImGuiColorScope(ImGuiCol colorIndex, ImU32 color)
+    ImGuiColorScope(const ImGuiCol colorIndex, const ImU32 color)
     {
         ImGui::PushStyleColor(colorIndex, color);
     }
 
-    ImGuiColorScope(ImGuiCol colorIndex, ImVec4 color)
+    ImGuiColorScope(const ImGuiCol colorIndex, const ImVec4 color)
     {
         ImGui::PushStyleColor(colorIndex, color);
     }
@@ -724,19 +768,56 @@ inline auto ImeUI::Translate(const char *label) const -> const char *
 
 void ImeUI::UpdatePreviewFont(const FontInfo &fontInfo)
 {
-    const auto filePath = m_fontManager.GetFontFilePath(fontInfo);
+    const auto filePath = FontManager::GetFontFilePath(fontInfo);
     log_debug("File path {}", filePath);
     if (!filePath.empty())
     {
         const auto &io = ImGui::GetIO();
-        if (m_previewFont)
+        if (!m_previewFont.IsInvalid())
         {
-            io.Fonts->RemoveFont(m_previewFont);
-            m_previewFont = nullptr;
+            io.Fonts->RemoveFont(m_previewFont.imFont);
+            m_previewFont.Reset();
         }
 
-        m_previewFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
+        m_previewFont.Set(ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str()), filePath);
     }
+}
+
+// Fonts: [0]: default, [1]: previewFont
+void ImeUI::ApplyPreviewFontAsDefault()
+{
+    assert(!m_previewFont.IsInvalid() && "preview font can't bu null");
+    auto &io = ImGui::GetIO();
+
+    ImFontAtlasBuildClear(io.Fonts);
+
+    const auto &uiConfig = AppConfig::GetConfig().GetAppUiConfig();
+
+    ImFontConfig cfg;
+    cfg.OversampleH = cfg.OversampleV = 1;
+    cfg.PixelSnapH                    = true;
+    cfg.MergeMode                     = true;
+    cfg.FontLoaderFlags |= ImGuiFreeTypeLoaderFlags_LoadColor;
+    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), 0.0f, &cfg))
+    {
+        ErrorNotifier::GetInstance().addError(
+            std::format("Can't load emoji font from {}", uiConfig.EmojiFontFile()), ErrorMsg::Level::warning
+        );
+    }
+
+    auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
+    if (!io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &cfg))
+    {
+        ErrorNotifier::GetInstance().addError(
+            std::format("Can't load icon font from {}", iconFile), ErrorMsg::Level::warning
+        );
+    }
+
+    io.Fonts->RemoveFont(io.FontDefault);
+    io.FontDefault = m_previewFont.imFont;
+
+    m_previewFont.Reset();
+    // Fonts: [0]: previewFont(default)
 }
 
 auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void

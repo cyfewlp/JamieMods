@@ -170,9 +170,10 @@ void ImeWnd::AddFonts(const Settings &settings)
 
     auto &io = ImGui::GetIO();
     io.Fonts->Clear();
-    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), settings.fontSize))
+    auto *imFont = io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), settings.fontSize);
+    if (imFont == nullptr)
     {
-        io.Fonts->AddFontDefault();
+        imFont = io.Fonts->AddFontDefault();
 
         ErrorNotifier::GetInstance().addError(
             std::format("Can't load east asia font from {}", uiConfig.EastAsiaFontFile()), ErrorMsg::Level::warning
@@ -191,13 +192,14 @@ void ImeWnd::AddFonts(const Settings &settings)
         );
     }
 
-    auto iconFile = CommonUtils::GetInterfaceFile(ICON_FILE);
+    auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
     if (!io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &cfg))
     {
         ErrorNotifier::GetInstance().addError(
             std::format("Can't load icon font from {}", iconFile), ErrorMsg::Level::warning
         );
     }
+    io.FontDefault = imFont;
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

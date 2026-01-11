@@ -16,5 +16,7 @@ constexpr auto ICON_COD_MOVE       = "\xee\xac\xa2";
 constexpr auto ICON_FA_CIRCLE      = "\xef\x84\x91";
 constexpr auto ICON_FA_CROSSHAIR   = "\xef\x81\x9b";
 constexpr auto ICON_FA_KEYBOARD    = "\xef\x84\x9c";
+constexpr auto ICON_FA_FILE        = "\xef\x85\x9b";
+constexpr auto ICON_OCT_CHECK      = "\xef\x90\xae";
 }
 }

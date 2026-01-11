@@ -39,7 +39,7 @@ public:
 
     void FindInstalledFonts();
 
-    auto GetFontFilePath(const FontInfo &fontInfo) -> std::string;
+    static auto GetFontFilePath(const FontInfo &fontInfo) -> std::string;
 
 private:
     static void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result);

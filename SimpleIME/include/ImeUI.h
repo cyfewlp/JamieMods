@@ -69,6 +69,7 @@ private:
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
     void UpdatePreviewFont(const FontInfo &fontInfo);
+    void ApplyPreviewFontAsDefault();
 
     static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
     static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
@@ -94,10 +95,32 @@ private:
     ImVec2                   m_imeWindowPos  = ImVec2(0, 0);
     ImGuiUtil::ThemesLoader  m_themesLoader;
     FontManager              m_fontManager = {};
-    ImFont                  *m_previewFont = nullptr;
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
+
+    struct PreviewFont
+    {
+        ImFont     *imFont = nullptr;
+        std::string fontFilePath;
+
+        constexpr bool IsInvalid() const
+        {
+            return imFont == nullptr || fontFilePath.empty();
+        }
+
+        void Set(ImFont *pImFont, const std::string &a_fontFilePath)
+        {
+            imFont       = pImFont;
+            fontFilePath = a_fontFilePath;
+        }
+
+        void Reset()
+        {
+            imFont = nullptr;
+            fontFilePath.clear();
+        }
+    } m_previewFont;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL

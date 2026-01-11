@@ -22,6 +22,7 @@ struct Settings
         BASED_ON_CURSOR,
         BASED_ON_CARET,
     };
+    static constexpr std::string_view ICON_FILE = "SymbolsNerdFontMono-Regular.ttf";
 
     std::string           theme                 = "Invalid";
     std::size_t           themeIndex            = 0; // not persist

@@ -24,7 +24,6 @@ static inline auto g_tMainClassName = L"SimpleIME";
 
 class ImeWnd
 {
-    static constexpr std::string_view ICON_FILE     = "SymbolsNerdFontMono-Regular.ttf";
     static constexpr WORD             ID_EDIT_COPY  = 1;
     static constexpr WORD             ID_EDIT_PASTE = 2;
     using State                                     = Core::State;
