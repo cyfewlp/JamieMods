@@ -95,12 +95,12 @@ bool ImeUI::PreviewFont::UpdateImFont()
     }
     wantUpdate     = false;
     const auto &io = ImGui::GetIO();
-    if (!temp && imFont != nullptr)
+    if (IsFontOwner() && imFont != nullptr)
     {
         io.Fonts->RemoveFont(imFont);
     }
-    imFont = io.Fonts->AddFontFromFileTTF(filePath.c_str());
-    temp   = false;
+    imFont    = io.Fonts->AddFontFromFileTTF(filePath.c_str());
+    fontOwner = true;
     return true;
 }
 
@@ -112,12 +112,12 @@ bool ImeUI::FontBuilder::Update(PreviewFont &previewFont)
         case UpdateRequest::NONE:
             return false;
         case UpdateRequest::UPDATE_BASIC_FONT: {
-            Set(io, previewFont.imFont, previewFont.fullName);
+            Set(io, previewFont.GetImFont(), previewFont.GetFullName());
             previewFont.Reset();
             break;
         }
         case UpdateRequest::MERGE_FONT: {
-            MergeFont(io, previewFont.imFont, previewFont.fullName);
+            MergeFont(io, previewFont.GetImFont(), previewFont.GetFullName());
             previewFont.Reset();
             break;
         }
@@ -128,11 +128,12 @@ bool ImeUI::FontBuilder::Update(PreviewFont &previewFont)
             Reset(io);
             break;
         case UpdateRequest::PREVIEW: {
-            if (previewFont.imFont != nullptr)
+            if (auto *imFont = previewFont.GetImFont(); /**/
+                previewFont.IsFontOwner() && imFont != nullptr)
             {
-                io.Fonts->RemoveFont(previewFont.imFont);
+                io.Fonts->RemoveFont(imFont);
             }
-            previewFont.SetTemp(basicFont);
+            previewFont.Preview(basicFont);
             break;
         }
         default:;
@@ -767,12 +768,6 @@ void ImeUI::DrawFontBuilder(const Settings &settings)
 {
     ImGui::SeparatorText(Translate("$Font_Builder"));
 
-    auto &io = ImGui::GetIO();
-    if (io.Fonts->Locked)
-    {
-        log_warn("Dont modify ImFontAtlas!");
-    }
-
     // draw chosen font information
     if (m_fontBuilder.IsBuilding() &&
         ImGui::BeginTable(
@@ -826,7 +821,6 @@ void ImeUI::DrawFontBuilder(const Settings &settings)
             m_fontBuilder.Request(FontBuilder::UpdateRequest::MERGE_FONT);
         }
     }
-    ImGui::ShowDebugLogWindow();
 }
 
 auto ImeUI::DrawFontViewer(const Settings &settings) -> bool
@@ -840,7 +834,7 @@ auto ImeUI::DrawFontViewer(const Settings &settings) -> bool
 
     bool applied = false;
     ImGui::PushID(1);
-    ImGui::BeginDisabled(m_previewFont.IsInvalid());
+    ImGui::BeginDisabled(!m_previewFont.IsCommittable());
     if (ImGui::Button(std::format("{} {}", ICON_MD_CONTENT_SAVE_MOVE, Translate("$Add")).c_str()))
     {
         if (selectedIndex >= 0 && selectedIndex < list.size())
@@ -850,7 +844,7 @@ auto ImeUI::DrawFontViewer(const Settings &settings) -> bool
         }
     }
     ImGui::SameLine();
-    ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_previewFont.filePath.c_str());
+    ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_previewFont.GetFilePath().c_str());
     ImGui::EndDisabled();
     ImGui::PopID();
 
@@ -890,9 +884,9 @@ auto ImeUI::DrawFontViewer(const Settings &settings) -> bool
     ImGui::SameLine();
     ImGui::BeginChild("#FontPreviewer");
     {
-        if (m_previewFont.imFont != nullptr)
+        if (auto *imFont = m_previewFont.GetImFont(); imFont != nullptr)
         {
-            ImGui::PushFont(m_previewFont.imFont, settings.fontSizeTemp);
+            ImGui::PushFont(imFont, settings.fontSizeTemp);
 
             ImGui::InputTextMultiline(
                 "##PreviewText",
@@ -907,7 +901,6 @@ auto ImeUI::DrawFontViewer(const Settings &settings) -> bool
     ImGui::EndChild();
 
     return applied;
-    // ImGui::ShowFontAtlas(ImGui::GetIO().Fonts);
 }
 
 auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void

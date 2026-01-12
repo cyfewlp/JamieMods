@@ -100,30 +100,56 @@ private:
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
 
-    struct PreviewFont
+    class PreviewFont
     {
         ImFont     *imFont = nullptr;
         std::string filePath;
         std::string fullName;
-        bool        temp       = false;
-        bool        wantUpdate = false;
+        bool        fontOwner   = false;
+        bool        wantUpdate  = false;
 
-        constexpr bool IsInvalid() const
+    public:
+        constexpr bool IsCommittable() const
         {
-            return !temp && (imFont == nullptr || filePath.empty());
+            return imFont != nullptr && !filePath.empty();
+        }
+
+        constexpr bool IsFontOwner() const
+        {
+            return fontOwner;
+        }
+
+        [[nodiscard]] auto GetImFont() const -> ImFont *
+        {
+            return imFont;
+        }
+
+        [[nodiscard]] auto GetFilePath() const -> const std::string &
+        {
+            return filePath;
+        }
+
+        [[nodiscard]] auto GetFullName() const -> const std::string &
+        {
+            return fullName;
+        }
+
+        [[nodiscard]] bool IsWantUpdate() const
+        {
+            return wantUpdate;
         }
 
         void Set(const std::string &a_fullName, const std::string &a_fontFilePath)
         {
-            fullName   = a_fullName;
-            filePath   = a_fontFilePath;
-            wantUpdate = true;
+            fullName    = a_fullName;
+            filePath    = a_fontFilePath;
+            wantUpdate  = true;
         }
 
-        void SetTemp(ImFont *pImFont)
+        void Preview(ImFont *pImFont)
         {
-            imFont = pImFont;
-            temp   = true;
+            imFont      = pImFont;
+            fontOwner   = false;
             fullName.clear();
             filePath.clear();
         }
@@ -136,7 +162,7 @@ private:
             imFont = nullptr;
             fullName.clear();
             filePath.clear();
-            temp       = false;
+            fontOwner  = false;
             wantUpdate = false;
         }
     } m_previewFont;
