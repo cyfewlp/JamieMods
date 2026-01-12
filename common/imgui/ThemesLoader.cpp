@@ -193,7 +193,7 @@ void ConfigImGuiStyle(const toml::node_view<toml::node> &styleNode, ImGuiStyle &
     CONFIG_STYLE(ImVec2, SeparatorTextPadding);
     CONFIG_STYLE(ImVec2, DisplayWindowPadding);
     CONFIG_STYLE(ImVec2, DisplaySafeAreaPadding);
-    CONFIG_STYLE(float, DockingSeparatorSize);
+    // CONFIG_STYLE(float, DockingSeparatorSize);
     CONFIG_STYLE(float, MouseCursorScale);
     CONFIG_STYLE(float, CurveTessellationTol);
     CONFIG_STYLE(float, CircleTessellationMaxError);
@@ -272,8 +272,8 @@ void ConfigImGuiColor(const toml::node_view<toml::node> &colorsNode, ImGuiStyle 
     CONFIG_COLOR(TabDimmed);
     CONFIG_COLOR(TabDimmedSelected);
     CONFIG_COLOR(TabDimmedSelectedOverline);
-    CONFIG_COLOR(DockingPreview);
-    CONFIG_COLOR(DockingEmptyBg);
+    // CONFIG_COLOR(DockingPreview);
+    // CONFIG_COLOR(DockingEmptyBg);
     CONFIG_COLOR(PlotLines);
     CONFIG_COLOR(PlotLinesHovered);
     CONFIG_COLOR(PlotHistogram);

@@ -77,14 +77,8 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
 
 void ImeUI::NewFrame()
 {
-    bool updated = false;
-    updated      = m_previewFont.UpdateImFont();
-    updated      = m_fontBuilder.Update(m_previewFont) || updated;
-
-    if (updated)
-    {
-        ImFontAtlasBuildClear(ImGui::GetIO().Fonts);
-    }
+    m_previewFont.UpdateImFont();
+    m_fontBuilder.Update(m_previewFont);
 }
 
 bool ImeUI::PreviewFont::UpdateImFont()
@@ -986,11 +980,6 @@ void ImeUI::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
 
 void ImeUI::FillCommonStyleFields(ImGuiStyle &style, const Settings &settings)
 {
-    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        style.WindowRounding              = 0.0F;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
-    }
     if (settings.dpiScale != 1.0F)
     {
         style.ScaleAllSizes(settings.dpiScale);

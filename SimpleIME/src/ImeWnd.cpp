@@ -446,13 +446,6 @@ void ImeWnd::DrawIme(Settings &settings)
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-    // Update and Render additional Platform Windows
-    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
 }
 
 void ImeWnd::ShowToolWindow() const
