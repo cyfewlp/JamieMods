@@ -100,62 +100,25 @@ private:
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
 
-    class PreviewFont
+    struct PreviewFont
     {
         ImFont     *imFont = nullptr;
         std::string filePath;
         std::string fullName;
-        bool        fontOwner   = false;
-        bool        wantUpdate  = false;
+        bool        fontOwner  = false;
+        bool        wantUpdate = false;
 
-    public:
         constexpr bool IsCommittable() const
         {
             return imFont != nullptr && !filePath.empty();
         }
 
-        constexpr bool IsFontOwner() const
-        {
-            return fontOwner;
-        }
-
-        [[nodiscard]] auto GetImFont() const -> ImFont *
-        {
-            return imFont;
-        }
-
-        [[nodiscard]] auto GetFilePath() const -> const std::string &
-        {
-            return filePath;
-        }
-
-        [[nodiscard]] auto GetFullName() const -> const std::string &
-        {
-            return fullName;
-        }
-
-        [[nodiscard]] bool IsWantUpdate() const
-        {
-            return wantUpdate;
-        }
-
         void Set(const std::string &a_fullName, const std::string &a_fontFilePath)
         {
-            fullName    = a_fullName;
-            filePath    = a_fontFilePath;
-            wantUpdate  = true;
+            fullName   = a_fullName;
+            filePath   = a_fontFilePath;
+            wantUpdate = true;
         }
-
-        void Preview(ImFont *pImFont)
-        {
-            imFont      = pImFont;
-            fontOwner   = false;
-            fullName.clear();
-            filePath.clear();
-        }
-
-        void Update(const FontInfo &fontInfo);
-        bool UpdateImFont();
 
         void Reset()
         {
@@ -165,30 +128,22 @@ private:
             fontOwner  = false;
             wantUpdate = false;
         }
-    } m_previewFont;
+    };
 
     struct FontBuilder
     {
-        enum class UpdateRequest : std::uint8_t
-        {
-            NONE,
-            UPDATE_BASIC_FONT,
-            MERGE_FONT,
-            SET_AS_DEFAULT,
-            RESET,
-            PREVIEW
-        };
+        void UpdatePreviewFont(const FontInfo &fontInfo);
+        void BuildPreviewFont();
 
-        bool Update(PreviewFont &previewFont);
-
-        void Request(const UpdateRequest request)
-        {
-            updateRequest = request;
-        }
+        void SetBaseFont();
+        void MergeFont();
+        void Preview();
+        void SetAsDefault();
+        void Reset();
 
         constexpr bool IsBuilding() const
         {
-            return basicFont != nullptr;
+            return baseFont != nullptr;
         }
 
         constexpr auto GetFontNames() -> const std::vector<std::string> &
@@ -196,15 +151,16 @@ private:
             return fontNames;
         }
 
+        constexpr auto GetPreviewFont() -> const PreviewFont &
+        {
+            return previewFont;
+        }
+
     private:
-        void Set(const ImGuiIO &io, ImFont *pImFont, const std::string &fullName);
-        void SetAsDefault(ImGuiIO &io);
-        void MergeFont(const ImGuiIO &io, ImFont *pImFont, const std::string &fullName);
-        void Reset(const ImGuiIO &io);
 
         std::vector<std::string> fontNames;
-        ImFont                  *basicFont     = nullptr;
-        UpdateRequest            updateRequest = UpdateRequest::NONE;
+        ImFont                  *baseFont = nullptr;
+        PreviewFont              previewFont;
     } m_fontBuilder;
 };
 } // namespace SimpleIME
