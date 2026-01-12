@@ -12,6 +12,7 @@
 #include "common/log.h"
 #include "core/State.h"
 #include "menu/MenuNames.h"
+#include "menu/ToolWindowMenu.h"
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -109,6 +110,11 @@ bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
         ctrlDown = down;
     }
 
+    if (ToolWindowMenu::IsShowing())
+    {
+        return true;
+    }
+
     const auto &state = Core::State::GetInstance();
     if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
     {
@@ -136,6 +142,11 @@ bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
     io.AddMouseSourceEvent(mouseSource);
     io.AddMouseButtonEvent(static_cast<int>(mouseEvent->button), down);
 
+    if (ToolWindowMenu::IsShowing())
+    {
+        return true;
+    }
+
     if (Core::State::GetInstance().IsImeInputting())
     {
         if (!io.WantCaptureMouse)
@@ -152,6 +163,11 @@ bool ImeMenu::OnMouseWheelEvent(RE::GFxEvent *event)
 {
     const auto *mouseEvent = reinterpret_cast<RE::GFxMouseEvent *>(event);
     ImGui::GetIO().AddMouseWheelEvent(0, mouseEvent->scrollDelta);
+
+    if (ToolWindowMenu::IsShowing())
+    {
+        return true;
+    }
     return false;
 }
 

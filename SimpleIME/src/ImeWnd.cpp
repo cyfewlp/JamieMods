@@ -426,9 +426,10 @@ void ImeWnd::NewFrame()
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
+    m_pImeUi->NewFrame();
 }
 
-void ImeWnd::DrawIme(Settings &settings) const
+void ImeWnd::DrawIme(Settings &settings)
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();

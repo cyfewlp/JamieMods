@@ -23,6 +23,12 @@ RE::UI_MESSAGE_RESULTS ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message)
 {
     switch (a_message.type.get())
     {
+        case RE::UI_MESSAGE_TYPE::kShow:
+            g_showing = true;
+            return RE::UI_MESSAGE_RESULTS::kHandled;
+        case RE::UI_MESSAGE_TYPE::kHide:
+            g_showing = false;
+            return RE::UI_MESSAGE_RESULTS::kHandled;
         case RE::UI_MESSAGE_TYPE::kUserEvent: {
             const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
             if (data->fixedStr == "Cancel")

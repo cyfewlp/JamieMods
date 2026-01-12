@@ -24,9 +24,9 @@ static inline auto g_tMainClassName = L"SimpleIME";
 
 class ImeWnd
 {
-    static constexpr WORD             ID_EDIT_COPY  = 1;
-    static constexpr WORD             ID_EDIT_PASTE = 2;
-    using State                                     = Core::State;
+    static constexpr WORD ID_EDIT_COPY  = 1;
+    static constexpr WORD ID_EDIT_PASTE = 2;
+    using State                         = Core::State;
 
 public:
     ImeWnd(Settings &settings);
@@ -70,7 +70,7 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings) const;
+    void DrawIme(Settings &settings);
     void ShowToolWindow() const;
 
     bool IsShowingToolWindow() const
@@ -88,11 +88,11 @@ public:
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static auto GetThis(HWND hWnd) -> ImeWnd *;
-    static void NewFrame();
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
     static void TsfMessageLoop(MSG msg);
 
+    void        NewFrame();
     void        OnStart(Settings *pSettings);
     static void AddFonts(const Settings &settings);
     auto        OnCreate() -> LRESULT;

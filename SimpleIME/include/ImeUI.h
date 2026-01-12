@@ -41,6 +41,7 @@ public:
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
+    void NewFrame();
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);
     void ShowToolWindow();
@@ -68,8 +69,8 @@ private:
     void DrawCompWindow(const Settings &settings) const;
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
-    void UpdatePreviewFont(const FontInfo &fontInfo);
-    void ApplyPreviewFontAsDefault();
+    void DrawFontBuilder(const Settings &settings);
+    auto DrawFontViewer(const Settings &settings) -> bool;
 
     static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
     static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
@@ -102,25 +103,83 @@ private:
     struct PreviewFont
     {
         ImFont     *imFont = nullptr;
-        std::string fontFilePath;
+        std::string filePath;
+        std::string fullName;
+        bool        temp       = false;
+        bool        wantUpdate = false;
 
         constexpr bool IsInvalid() const
         {
-            return imFont == nullptr || fontFilePath.empty();
+            return !temp && (imFont == nullptr || filePath.empty());
         }
 
-        void Set(ImFont *pImFont, const std::string &a_fontFilePath)
+        void Set(const std::string &a_fullName, const std::string &a_fontFilePath)
         {
-            imFont       = pImFont;
-            fontFilePath = a_fontFilePath;
+            fullName   = a_fullName;
+            filePath   = a_fontFilePath;
+            wantUpdate = true;
         }
+
+        void SetTemp(ImFont *pImFont)
+        {
+            imFont = pImFont;
+            temp   = true;
+            fullName.clear();
+            filePath.clear();
+        }
+
+        void Update(const FontInfo &fontInfo);
+        bool UpdateImFont();
 
         void Reset()
         {
             imFont = nullptr;
-            fontFilePath.clear();
+            fullName.clear();
+            filePath.clear();
+            temp       = false;
+            wantUpdate = false;
         }
     } m_previewFont;
+
+    struct FontBuilder
+    {
+        enum class UpdateRequest : std::uint8_t
+        {
+            NONE,
+            UPDATE_BASIC_FONT,
+            MERGE_FONT,
+            SET_AS_DEFAULT,
+            RESET,
+            PREVIEW
+        };
+
+        bool Update(PreviewFont &previewFont);
+
+        void Request(const UpdateRequest request)
+        {
+            updateRequest = request;
+        }
+
+        constexpr bool IsBuilding() const
+        {
+            return basicFont != nullptr;
+        }
+
+        constexpr auto GetFontNames() -> const std::vector<std::string> &
+        {
+            return fontNames;
+        }
+
+    private:
+        void Set(const ImGuiIO &io, ImFont *pImFont, const std::string &fullName);
+        void SetAsDefault(ImGuiIO &io);
+        void MergeFont(const ImGuiIO &io, ImFont *pImFont, const std::string &fullName);
+        void Reset(const ImGuiIO &io);
+
+        std::vector<std::string> fontNames;
+        ImFont                  *basicFont     = nullptr;
+        UpdateRequest            updateRequest = UpdateRequest::NONE;
+    } m_fontBuilder;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
