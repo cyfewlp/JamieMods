@@ -34,14 +34,13 @@ private:
     static auto Creator() -> IMenu *;
 
     // is handled?
-    static bool ProcessScaleformEvent(const RE::BSUIScaleformData *data);
-
-    static bool OnKeyEvent(RE::GFxEvent *event, bool down);
-    static void SendKeyEventToImGui(RE::GFxKeyEvent *keyEvent, bool down);
+    static auto ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS;
+    static auto OnKeyEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
+    static void SendKeyEventToImGui(const RE::GFxKeyEvent *keyEvent, bool down);
     static auto MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey;
-    static bool OnMouseEvent(RE::GFxEvent *event, bool down);
-    static bool OnMouseWheelEvent(RE::GFxEvent *event);
-    static bool OnCharEvent(RE::GFxEvent *event);
+    static auto OnMouseEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
+    static auto OnMouseWheelEvent(RE::GFxEvent *event) -> RE::UI_MESSAGE_RESULTS;
+    static auto OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
 
     static bool IsPaste(const RE::GFxCharEvent *charEvent);
     static bool Paste();

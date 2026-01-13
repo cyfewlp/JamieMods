@@ -90,10 +90,7 @@ auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
             auto *scaleformData = reinterpret_cast<RE::BSUIScaleformData *>(a_message.data);
             if (scaleformData && scaleformData->scaleformEvent)
             {
-                if (ProcessScaleformEvent(scaleformData))
-                {
-                    return RE::UI_MESSAGE_RESULTS::kHandled;
-                }
+                return ProcessScaleformEvent(scaleformData);
             }
         }
         break;
@@ -114,7 +111,7 @@ void ImeMenu::OnHide()
     m_fSShow = false;
 }
 
-bool ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data)
+auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS
 {
     switch (const auto fxEvent = data->scaleformEvent; fxEvent->type.get())
     {
@@ -128,15 +125,32 @@ bool ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data)
             return OnMouseEvent(fxEvent, false);
         case RE::GFxEvent::EventType::kMouseWheel:
             return OnMouseWheelEvent(fxEvent);
-        case RE::GFxEvent::EventType::kCharEvent:
-            return OnCharEvent(fxEvent);
+        case RE::GFxEvent::EventType::kCharEvent: {
+            const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
+            const auto result    = OnCharEvent(charEvent);
+            if (ToolWindowMenu::IsShowing())
+            {
+                if (result != RE::UI_MESSAGE_RESULTS::kHandled)
+                {
+                    ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
+                }
+                return RE::UI_MESSAGE_RESULTS::kHandled;
+            }
+            return result;
+        }
         case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeCharEvent):
+            if (ToolWindowMenu::IsShowing())
+            {
+                const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
+                ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
+                return RE::UI_MESSAGE_RESULTS::kHandled;
+            }
             fxEvent->type = RE::GFxEvent::EventType::kCharEvent;
             break;
         default:
             break;
     }
-    return false;
+    return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
 bool IsKeyWillTriggerIme(const RE::GFxKey::Code keycode)
@@ -144,7 +158,7 @@ bool IsKeyWillTriggerIme(const RE::GFxKey::Code keycode)
     return keycode >= RE::GFxKey::kA && keycode <= RE::GFxKey::kZ;
 }
 
-bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
+auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE_RESULTS
 {
     const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
     SendKeyEventToImGui(keyEvent, down);
@@ -155,34 +169,34 @@ bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
 
     if (ToolWindowMenu::IsShowing())
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
 
     const auto &state = Core::State::GetInstance();
     if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
     {
-        return false;
+        return RE::UI_MESSAGE_RESULTS::kPassOn;
     }
 
     if (state.IsImeInputting())
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
 
     if (state.IsImeWaitingInput() && IsKeyWillTriggerIme(keyEvent->keyCode))
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
-    return false;
+    return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
-void ImeMenu::SendKeyEventToImGui(RE::GFxKeyEvent *keyEvent, bool down)
+void ImeMenu::SendKeyEventToImGui(const RE::GFxKeyEvent *keyEvent, const bool down)
 {
     const auto imguiKey = MapToImGuiKey(keyEvent->keyCode);
     ImGui::GetIO().AddKeyEvent(imguiKey, down);
 }
 
-auto ImeMenu::MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey
+auto ImeMenu::MapToImGuiKey(const RE::GFxKey::Code keyCode) -> ImGuiKey
 {
     ImGuiKey imguiKey = ImGuiKey_None;
 
@@ -216,7 +230,7 @@ auto ImeMenu::MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey
     return imguiKey;
 }
 
-bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
+auto ImeMenu::OnMouseEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE_RESULTS
 {
     const auto &mouseSource = ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo();
     const auto *mouseEvent  = reinterpret_cast<RE::GFxMouseEvent *>(event);
@@ -227,7 +241,7 @@ bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
 
     if (ToolWindowMenu::IsShowing())
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
 
     if (Core::State::GetInstance().IsImeInputting())
@@ -237,21 +251,21 @@ bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
             // abort ime when click area is not ImeMenu when inputting;
             ImeApp::GetInstance().GetImeWnd().AbortIme();
         }
-        return true; // avoid underlying menu losing input focus;
+        return RE::UI_MESSAGE_RESULTS::kHandled; // avoid underlying menu losing input focus;
     }
-    return false;
+    return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
-bool ImeMenu::OnMouseWheelEvent(RE::GFxEvent *event)
+auto ImeMenu::OnMouseWheelEvent(RE::GFxEvent *event) -> RE::UI_MESSAGE_RESULTS
 {
     const auto *mouseEvent = reinterpret_cast<RE::GFxMouseEvent *>(event);
     ImGui::GetIO().AddMouseWheelEvent(0, mouseEvent->scrollDelta);
 
     if (ToolWindowMenu::IsShowing())
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
-    return false;
+    return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
 // Send a fake KeyEvent to Console
@@ -285,31 +299,29 @@ bool SendFakeControlUpEvent()
     return false;
 }
 
-bool ImeMenu::OnCharEvent(RE::GFxEvent *event)
+auto ImeMenu::OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS
 {
-    const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
-    ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
-    if (IsPaste(charEvent))
+    if (!ToolWindowMenu::IsShowing() && IsPaste(charEvent))
     {
-        return SendFakeControlUpEvent() && Paste();
+        return SendFakeControlUpEvent() && Paste() ? RE::UI_MESSAGE_RESULTS::kHandled : RE::UI_MESSAGE_RESULTS::kPassOn;
     }
 
     const auto &state = Core::State::GetInstance();
     if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
     {
-        return false;
+        return RE::UI_MESSAGE_RESULTS::kPassOn;
     }
 
     if (state.IsImeInputting())
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
     if (state.IsImeWaitingInput() && ((charEvent->wcharCode > 'a' && charEvent->wcharCode < 'z') ||
                                       (charEvent->wcharCode > 'A' && charEvent->wcharCode < 'Z')))
     {
-        return true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
-    return false;
+    return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
 bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent)
