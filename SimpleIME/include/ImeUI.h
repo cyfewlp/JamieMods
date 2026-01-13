@@ -177,13 +177,19 @@ private:
 
     class FontBuilderView final : public FontBuilder
     {
+        static constexpr auto TITLE_HELP     = "Help";
+        static constexpr auto TITLE_WARNINGS = "Warnings";
+
     public:
         explicit FontBuilderView(Translation &translation) : m_translation(translation) {}
 
         void Draw(const Settings &settings);
 
     private:
-        bool            DrawFontViewer(const Settings &settings);
+        bool DrawFontViewer(const Settings &settings);
+        void DrawHelpModal() const;
+        void DrawWarningsModal() const;
+
         ImGuiTextFilter m_filter{};
         Translation    &m_translation;
     } m_fontBuilderView;

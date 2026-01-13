@@ -892,6 +892,18 @@ void ImeUI::FontBuilder::SetAsDefault()
         io.Fonts->RemoveFont(io.FontDefault);
         io.FontDefault = m_baseFont;
     }
+
+    ImFontConfig config;
+    config.MergeMode   = true;
+    config.OversampleH = 1;
+    config.OversampleV = 1;
+    config.PixelSnapH  = true;
+    config.DstFont     = m_baseFont;
+
+    // Note: Automatic detection of existing icon glyphs is skipped due
+    // to implementation complexity.
+    const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
+    io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &config);
     m_baseFont = nullptr;
     m_fontNames.clear();
 }
@@ -966,6 +978,18 @@ void ImeUI::FontBuilderView::Draw(const Settings &settings)
 
         ImGui::Separator();
     }
+
+    if (ImGui::Button(ICON_MD_HELP_BOX))
+    {
+        ImGui::OpenPopup(TITLE_HELP);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_WARNING))
+    {
+        ImGui::OpenPopup(TITLE_WARNINGS);
+    }
+    DrawHelpModal();
+    DrawWarningsModal();
 
     if (DrawFontViewer(settings))
     {
@@ -1079,6 +1103,41 @@ bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
     ImGui::EndChild();
 
     return applied;
+}
+
+void ImeUI::FontBuilderView::DrawHelpModal() const
+{
+    if (ImGui::BeginPopupModal(TITLE_HELP, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("%s", m_translation["$Font_Builder_Help1"]);
+        ImGui::Text("%s", m_translation["$Font_Builder_Help2"]);
+        ImGui::NewLine();
+        ImGui::Text("%s", m_translation["$Font_Builder_Help3"]);
+
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5 - ImGui::GetFontSize());
+        if (ImGui::Button(ICON_FA_OK_SIGN))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void ImeUI::FontBuilderView::DrawWarningsModal() const
+{
+    if (ImGui::BeginPopupModal(TITLE_WARNINGS, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("%s %s", ICON_FA_WARNING, m_translation["$Font_Builder_Warning1"]);
+        ImGui::NewLine();
+        ImGui::Text("%s %s", ICON_FA_WARNING, m_translation["$Font_Builder_Warning2"]);
+
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5 - ImGui::GetFontSize());
+        if (ImGui::Button(ICON_FA_OK_SIGN))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 } // namespace  SimpleIME

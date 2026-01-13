@@ -12,11 +12,14 @@ namespace Ime
 {
 constexpr auto ICON_MD_PIN               = "\xf3\xb0\x90\x83";
 constexpr auto ICON_MD_PIN_OUTLINE       = "\xf3\xb0\xa4\xb1";
+constexpr auto ICON_MD_HELP_BOX          = "\xf3\xb0\x9e\x8b";
 constexpr auto ICON_COD_MOVE             = "\xee\xac\xa2";
 constexpr auto ICON_FA_CIRCLE            = "\xef\x84\x91";
 constexpr auto ICON_FA_CROSSHAIR         = "\xef\x81\x9b";
 constexpr auto ICON_FA_KEYBOARD          = "\xef\x84\x9c";
 constexpr auto ICON_FA_FILE              = "\xef\x85\x9b";
+constexpr auto ICON_FA_WARNING           = "\xef\x81\xb1";
+constexpr auto ICON_FA_OK_SIGN           = "\xef\x81\x98";
 constexpr auto ICON_OCT_CHECK            = "\xef\x90\xae";
 constexpr auto ICON_MD_CONTENT_SAVE_MOVE = "\xf3\xb0\xb8\xa7";
 }
