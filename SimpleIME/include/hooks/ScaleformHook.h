@@ -47,6 +47,11 @@ public:
 
     auto GetTextEntryCount() const -> uint8_t;
 
+    auto HasTextEntry() const -> bool
+    {
+        return GetTextEntryCount() > 0;
+    }
+
     static ControlMap *GetSingleton(void);
 
 private:

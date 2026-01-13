@@ -104,8 +104,7 @@ auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
     }
     else
     {
-        const auto textEntryCount  = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
-        const bool shouldEnableIme = m_settings->keepImeOpen || textEntryCount > 0;
+        const bool shouldEnableIme = m_settings->keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
         result                     = DoEnableIme(shouldEnableIme);
     }
 

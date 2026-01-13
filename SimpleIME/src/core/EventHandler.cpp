@@ -138,8 +138,8 @@ void MenuOpenCloseEventSink::FixInconsistentTextEntryCount(const Event *event)
 {
     // fix: if CursorMenu hide but text-entry count > 0, try to disable ime;
     // avoid modifying the textEntryCount field
-    const uint8_t &textEntryCount = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
-    if (event->menuName == RE::CursorMenu::MENU_NAME && textEntryCount > 0 && !event->opening)
+    if (event->menuName == RE::CursorMenu::MENU_NAME && /**/
+        Hooks::ControlMap::GetSingleton()->HasTextEntry() && !event->opening)
     {
         const ImeController *manager = ImeController::GetInstance();
         manager->EnableIme(false);

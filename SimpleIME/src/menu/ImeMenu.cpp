@@ -14,6 +14,48 @@
 #include "menu/MenuNames.h"
 #include "menu/ToolWindowMenu.h"
 
+struct
+{
+    RE::GFxKey::Code gfxCode;
+    ImGuiKey         imGuiKey;
+} GFxCodeToImGuiKeyTable[] = {
+    {RE::GFxKey::kAlt,          ImGuiMod_Alt           },
+    {RE::GFxKey::kControl,      ImGuiMod_Ctrl          },
+    {RE::GFxKey::kShift,        ImGuiMod_Shift         },
+    {RE::GFxKey::kCapsLock,     ImGuiKey_CapsLock      },
+    // {RE::GFxKey::kTab,          ImGuiKey_Tab           }, // Don't sent tab key: bug when use tab close menu
+    {RE::GFxKey::kHome,         ImGuiKey_Home          },
+    {RE::GFxKey::kEnd,          ImGuiKey_End           },
+    {RE::GFxKey::kPageUp,       ImGuiKey_PageUp        },
+    {RE::GFxKey::kPageDown,     ImGuiKey_PageDown      },
+    {RE::GFxKey::kComma,        ImGuiKey_Comma         },
+    {RE::GFxKey::kPeriod,       ImGuiKey_Period        },
+    {RE::GFxKey::kSlash,        ImGuiKey_Slash         },
+    {RE::GFxKey::kBackslash,    ImGuiKey_Backslash     },
+    {RE::GFxKey::kQuote,        ImGuiKey_Apostrophe    },
+    {RE::GFxKey::kBracketLeft,  ImGuiKey_LeftBracket   },
+    {RE::GFxKey::kBracketRight, ImGuiKey_RightBracket  },
+    {RE::GFxKey::kReturn,       ImGuiKey_Enter         },
+    {RE::GFxKey::kEqual,        ImGuiKey_Equal         },
+    {RE::GFxKey::kMinus,        ImGuiKey_Minus         },
+    {RE::GFxKey::kEscape,       ImGuiKey_Escape        },
+    {RE::GFxKey::kLeft,         ImGuiKey_LeftArrow     },
+    {RE::GFxKey::kUp,           ImGuiKey_UpArrow       },
+    {RE::GFxKey::kRight,        ImGuiKey_RightArrow    },
+    {RE::GFxKey::kDown,         ImGuiKey_DownArrow     },
+    {RE::GFxKey::kSpace,        ImGuiKey_Space         },
+    {RE::GFxKey::kBackspace,    ImGuiKey_Backspace     },
+    {RE::GFxKey::kDelete,       ImGuiKey_Delete        },
+    {RE::GFxKey::kInsert,       ImGuiKey_Insert        },
+    {RE::GFxKey::kKP_Multiply,  ImGuiKey_KeypadMultiply},
+    {RE::GFxKey::kKP_Add,       ImGuiKey_KeypadAdd     },
+    {RE::GFxKey::kKP_Enter,     ImGuiKey_KeypadEnter   },
+    {RE::GFxKey::kKP_Subtract,  ImGuiKey_KeypadSubtract},
+    {RE::GFxKey::kKP_Decimal,   ImGuiKey_KeypadDecimal },
+    {RE::GFxKey::kKP_Divide,    ImGuiKey_KeypadDivide  },
+    {RE::GFxKey::kVoidSymbol,   ImGuiKey_None          }
+};
+
 namespace LIBC_NAMESPACE_DECL
 {
 static ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
@@ -105,6 +147,7 @@ bool IsKeyWillTriggerIme(const RE::GFxKey::Code keycode)
 bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
 {
     const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
+    SendKeyEventToImGui(keyEvent, down);
     if (keyEvent->keyCode == RE::GFxKey::kControl)
     {
         ctrlDown = down;
@@ -131,6 +174,46 @@ bool ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
         return true;
     }
     return false;
+}
+
+void ImeMenu::SendKeyEventToImGui(RE::GFxKeyEvent *keyEvent, bool down)
+{
+    const auto imguiKey = MapToImGuiKey(keyEvent->keyCode);
+    ImGui::GetIO().AddKeyEvent(imguiKey, down);
+}
+
+auto ImeMenu::MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey
+{
+    ImGuiKey imguiKey = ImGuiKey_None;
+
+    if (keyCode >= RE::GFxKey::kA && keyCode <= RE::GFxKey::kZ)
+    {
+        imguiKey = static_cast<ImGuiKey>(keyCode - RE::GFxKey::kA + ImGuiKey_A);
+    }
+    else if (keyCode >= RE::GFxKey::kF1 && keyCode <= RE::GFxKey::kF15)
+    {
+        imguiKey = static_cast<ImGuiKey>(keyCode - RE::GFxKey::kF1 + ImGuiKey_F1);
+    }
+    else if (keyCode >= RE::GFxKey::kNum0 && keyCode <= RE::GFxKey::kNum9)
+    {
+        imguiKey = static_cast<ImGuiKey>(keyCode - RE::GFxKey::kNum0 + ImGuiKey_0);
+    }
+    else if (keyCode >= RE::GFxKey::kKP_0 && keyCode <= RE::GFxKey::kKP_9)
+    {
+        imguiKey = static_cast<ImGuiKey>(keyCode - RE::GFxKey::kKP_0 + ImGuiKey_Keypad0);
+    }
+    else
+    {
+        for (const auto &[gfxCode, imGuiKey] : GFxCodeToImGuiKeyTable)
+        {
+            if (keyCode == gfxCode)
+            {
+                imguiKey = imGuiKey;
+                break;
+            }
+        }
+    }
+    return imguiKey;
 }
 
 bool ImeMenu::OnMouseEvent(RE::GFxEvent *event, bool down)
@@ -205,6 +288,7 @@ bool SendFakeControlUpEvent()
 bool ImeMenu::OnCharEvent(RE::GFxEvent *event)
 {
     const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(event);
+    ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
     if (IsPaste(charEvent))
     {
         return SendFakeControlUpEvent() && Paste();

@@ -9,6 +9,8 @@
 #include "RE/I/IMenu.h"
 #include "common/config.h"
 
+enum ImGuiKey : int;
+
 namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
@@ -35,6 +37,8 @@ private:
     static bool ProcessScaleformEvent(const RE::BSUIScaleformData *data);
 
     static bool OnKeyEvent(RE::GFxEvent *event, bool down);
+    static void SendKeyEventToImGui(RE::GFxKeyEvent *keyEvent, bool down);
+    static auto MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey;
     static bool OnMouseEvent(RE::GFxEvent *event, bool down);
     static bool OnMouseWheelEvent(RE::GFxEvent *event);
     static bool OnCharEvent(RE::GFxEvent *event);

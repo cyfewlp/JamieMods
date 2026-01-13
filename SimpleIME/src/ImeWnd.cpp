@@ -8,6 +8,8 @@
 #include "configs/CustomMessage.h"
 #include "context.h"
 #include "core/State.h"
+#include "hooks/Hooks.hpp"
+#include "hooks/ScaleformHook.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
@@ -427,6 +429,18 @@ void ImeWnd::NewFrame()
         }
     }
     m_pImeUi->NewFrame();
+
+    static bool fWantTextInput = false;
+    bool cWantTextInput = ImGui::GetIO().WantTextInput;
+    if (!fWantTextInput && cWantTextInput)
+    {
+        Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(true);
+    }
+    else if (fWantTextInput && !cWantTextInput)
+    {
+        Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(false);
+    }
+    fWantTextInput = cWantTextInput;
 }
 
 void ImeWnd::DrawIme(Settings &settings)

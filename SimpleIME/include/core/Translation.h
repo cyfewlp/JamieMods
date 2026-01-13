@@ -2,7 +2,6 @@
 
 #include <SimpleIni.h>
 #include <filesystem>
-#include <memory>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -23,6 +22,11 @@ public:
     auto UseSection(const char *section) -> void;
     auto Get(const char *key) const -> const char *;
     auto Has(const char *key) const -> bool;
+
+    auto operator[](const char *key) const -> const char *
+    {
+        return Get(key);
+    }
 
 private:
     auto        LoadLanguage(const std::filesystem::path &path) -> bool;

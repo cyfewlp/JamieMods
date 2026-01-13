@@ -111,8 +111,7 @@ auto ImeManager::TryFocusIme() -> Result
 
 auto ImeManager::IsShouldEnableIme() const -> bool
 {
-    const uint8_t &textEntryCount = Hooks::ControlMap::GetSingleton()->GetTextEntryCount();
-    return m_settings.keepImeOpen || textEntryCount > 0;
+    return m_settings.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
 }
 
 }

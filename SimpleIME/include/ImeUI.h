@@ -30,7 +30,8 @@ class ImeUI
 public:
     explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService)
         : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService),
-          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE))
+          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE)),
+          m_fontBuilderView(m_translation)
     {
     }
 
@@ -69,8 +70,6 @@ private:
     void DrawCompWindow(const Settings &settings) const;
     void DrawCandidateWindows() const;
     auto Translate(const char *label) const -> const char *;
-    void DrawFontBuilder(const Settings &settings);
-    auto DrawFontViewer(const Settings &settings) -> bool;
 
     static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
     static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
@@ -95,7 +94,6 @@ private:
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
     ImVec2                   m_imeWindowPos  = ImVec2(0, 0);
     ImGuiUtil::ThemesLoader  m_themesLoader;
-    FontManager              m_fontManager = {};
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
@@ -139,6 +137,11 @@ private:
 
     struct FontBuilder
     {
+        void Initialize()
+        {
+            m_fontManager.FindInstalledFonts();
+        }
+
         void UpdatePreviewFont(const FontInfo &fontInfo);
         void BuildPreviewFont();
 
@@ -150,26 +153,40 @@ private:
 
         constexpr bool IsBuilding() const
         {
-            return baseFont != nullptr;
+            return m_baseFont != nullptr;
         }
 
         constexpr auto GetFontNames() -> const std::vector<std::string> &
         {
-            return fontNames;
+            return m_fontNames;
         }
 
         constexpr auto GetPreviewFont() -> const PreviewFont &
         {
-            return previewFont;
+            return m_previewFont;
         }
 
-    private:
+    protected:
         void ReleasePreviewFont();
 
-        std::vector<std::string> fontNames;
-        ImFont                  *baseFont = nullptr;
-        PreviewFont              previewFont;
-    } m_fontBuilder;
+        FontManager              m_fontManager = {};
+        std::vector<std::string> m_fontNames;
+        ImFont                  *m_baseFont = nullptr;
+        PreviewFont              m_previewFont;
+    };
+
+    class FontBuilderView final : public FontBuilder
+    {
+    public:
+        explicit FontBuilderView(Translation &translation) : m_translation(translation) {}
+
+        void Draw(const Settings &settings);
+
+    private:
+        bool            DrawFontViewer(const Settings &settings);
+        ImGuiTextFilter m_filter{};
+        Translation    &m_translation;
+    } m_fontBuilderView;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
