@@ -100,6 +100,13 @@ private:
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
 
+    /**
+     * @brief Manages preview font data manually to prevent redundant memory copying.
+     * @details This implementation sets @c FontDataOwnedByAtlas to false.
+     * The allocated memory is explicitly released during the preview
+     * font rebuild process.
+     * @note Ensure that the Atlas remains valid as long as the font data is in use.
+     */
     struct PreviewFont
     {
         ImFont     *imFont = nullptr;
@@ -157,6 +164,7 @@ private:
         }
 
     private:
+        void ReleasePreviewFont();
 
         std::vector<std::string> fontNames;
         ImFont                  *baseFont = nullptr;

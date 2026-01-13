@@ -97,14 +97,12 @@ void ImeUI::FontBuilder::BuildPreviewFont()
     {
         return;
     }
-    previewFont.wantUpdate = false;
-    const auto &io         = ImGui::GetIO();
-    if (previewFont.fontOwner && previewFont.imFont != nullptr)
-    {
-        io.Fonts->RemoveFont(previewFont.imFont);
-    }
-    previewFont.imFont    = io.Fonts->AddFontFromFileTTF(previewFont.filePath.c_str());
-    previewFont.fontOwner = true;
+    ReleasePreviewFont();
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;
+    previewFont.imFont          = ImGui::GetIO().Fonts->AddFontFromFileTTF(previewFont.filePath.c_str(), 0, &config);
+    previewFont.fontOwner       = true;
+    previewFont.wantUpdate      = false;
 }
 
 void ImeUI::ApplyUiSettings(Settings &settings)
@@ -781,7 +779,7 @@ void ImeUI::DrawFontBuilder(const Settings &settings)
         {
             m_fontBuilder.SetBaseFont();
         }
-        else // merge to basic font
+        else // merge to base font
         {
             m_fontBuilder.MergeFont();
         }
@@ -967,6 +965,13 @@ auto ImeUI::FontBuilder::SetBaseFont() -> void
         fontNames.clear();
     }
     baseFont = previewFont.imFont;
+
+    // Transfer memory ownership to ImGui
+    for (const auto & config : baseFont->Sources)
+    {
+        config->FontDataOwnedByAtlas = true;
+    }
+
     fontNames.emplace_back(previewFont.fullName);
     previewFont.Reset();
 }
@@ -978,17 +983,27 @@ void ImeUI::FontBuilder::MergeFont()
         return;
     }
     const auto *previewFontCfg = previewFont.imFont->Sources[0];
+    assert(!previewFontCfg->FontDataOwnedByAtlas && "Keep FontDataOwnedByAtlas to avoid font data copy!");
 
     ImFontConfig config;
     ImStrncpy(config.Name, previewFontCfg->Name, IM_COUNTOF(config.Name));
-    config.OversampleH  = 1;
-    config.OversampleV  = 1;
-    config.PixelSnapH   = true;
-    config.MergeMode    = true;
-    config.DstFont      = baseFont;
-    config.FontData     = ImGui::MemAlloc(previewFontCfg->FontDataSize);
-    config.FontDataSize = previewFontCfg->FontDataSize;
-    std::memcpy(config.FontData, previewFontCfg->FontData, config.FontDataSize);
+    config.OversampleH = 1;
+    config.OversampleV = 1;
+    config.PixelSnapH  = true;
+    config.MergeMode   = true;
+    config.DstFont     = baseFont;
+    if (!previewFontCfg->FontDataOwnedByAtlas)
+    {
+        // Dont set FontDataOwnedByAtlas to false.
+        config.FontData     = previewFontCfg->FontData;
+        config.FontDataSize = previewFontCfg->FontDataSize;
+    }
+    else // should not reachable
+    {
+        config.FontData     = ImGui::MemAlloc(previewFontCfg->FontDataSize);
+        config.FontDataSize = previewFontCfg->FontDataSize;
+        std::memcpy(config.FontData, previewFontCfg->FontData, config.FontDataSize);
+    }
 
     auto &io = ImGui::GetIO();
     io.Fonts->AddFont(&config);
@@ -1029,6 +1044,22 @@ void ImeUI::FontBuilder::Reset()
     }
     baseFont = nullptr;
     fontNames.clear();
+}
+
+void ImeUI::FontBuilder::ReleasePreviewFont()
+{
+    if (previewFont.fontOwner && previewFont.imFont != nullptr)
+    {
+        for (const auto &config : previewFont.imFont->Sources)
+        {
+            if (!config->FontDataOwnedByAtlas)
+            {
+                IM_FREE(config->FontData);
+            }
+        }
+        ImGui::GetIO().Fonts->RemoveFont(previewFont.imFont);
+    }
+    previewFont.imFont = nullptr;
 }
 
 } // namespace  SimpleIME
