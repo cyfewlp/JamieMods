@@ -21,6 +21,7 @@ constexpr auto ICON_FA_FILE              = "\xef\x85\x9b";
 constexpr auto ICON_FA_WARNING           = "\xef\x81\xb1";
 constexpr auto ICON_FA_OK_SIGN           = "\xef\x81\x98";
 constexpr auto ICON_OCT_CHECK            = "\xef\x90\xae";
+constexpr auto ICON_OCT_GEAR             = "\xef\x90\xa3";
 constexpr auto ICON_MD_CONTENT_SAVE_MOVE = "\xf3\xb0\xb8\xa7";
 }
 }

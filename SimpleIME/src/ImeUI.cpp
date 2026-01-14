@@ -313,13 +313,11 @@ void ImeUI::DrawToolWindow(Settings &settings)
     }
 
     ImGui::SameLine();
-    if (ImGui::Checkbox(Translate("$Settings"), &settings.appearance.showSettings))
+    if (ImGui::Button(ICON_OCT_GEAR))
     {
-        if (!settings.appearance.showSettings)
-        {
-            ImGuiUtil::ThemesLoader::Cleanup();
-        }
+        settings.appearance.showSettings = true;
     }
+    ImGui::SetItemTooltip("%s", Translate("$Settings"));
 
     ImGui::SameLine();
     DrawInputMethodsCombo();
