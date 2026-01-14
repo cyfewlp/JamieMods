@@ -26,7 +26,7 @@ struct Settings
     static constexpr float            MIN_FONT_SIZE_SCALE = 0.1F;
     static constexpr float            MAX_FONT_SIZE_SCALE = 5.0F;
 
-    float fontSizeTemp   = 16.0F;    // not persist
+    float fontSizeTemp   = 16.0F; // not persist
     float dpiScale       = 1.0F;  // not persist
     bool  wantResizeFont = false; // not persist
 
@@ -45,6 +45,8 @@ struct Settings
         std::string mainFontPath   = "C:/Windows/Fonts/simsun.ttc";
         std::string emojiFontPath  = "C:/Windows/Fonts/seguiemj.ttf";
         std::string translationDir = "Data/interface/SimpleIME";
+
+        std::vector<std::string> fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"};
     } resources;
 
     struct

@@ -101,38 +101,78 @@ private:
      * font rebuild process.
      * @note Ensure that the Atlas remains valid as long as the font data is in use.
      */
-    struct PreviewFont
+    class PreviewFont
     {
-        ImFont     *imFont = nullptr;
-        std::string filePath;
-        std::string fullName;
-        bool        fontOwner  = false;
-        bool        wantUpdate = false;
+        ImFont     *m_imFont = nullptr;
+        std::string m_filePath;
+        std::string m_fullName;
+        bool        m_fontOwner  = false;
+        bool        m_wantUpdate = false;
 
+    public:
         constexpr bool IsCommittable() const
         {
-            return imFont != nullptr && !filePath.empty();
+            return m_imFont != nullptr && !m_filePath.empty();
         }
 
-        void Set(const std::string &a_fullName, const std::string &a_fontFilePath)
+        constexpr bool IsWantUpdate() const
         {
-            fullName   = a_fullName;
-            filePath   = a_fontFilePath;
-            wantUpdate = true;
+            return m_wantUpdate;
+        }
+
+        [[nodiscard]] auto GetImFont() const -> ImFont *
+        {
+            return m_imFont;
+        }
+
+        [[nodiscard]] auto GetFilePath() const -> const std::string &
+        {
+            return m_filePath;
+        }
+
+        [[nodiscard]] auto GetFullName() const -> const std::string &
+        {
+            return m_fullName;
+        }
+
+        [[nodiscard]] bool IsFontOwner() const
+        {
+            return m_fontOwner;
+        }
+
+        void SetProperty(const std::string &a_fullName, const std::string &a_fontFilePath)
+        {
+            m_fullName   = a_fullName;
+            m_filePath   = a_fontFilePath;
+            m_wantUpdate = true;
+        }
+
+        void SetImFont(ImFont *imFont)
+        {
+            m_imFont     = imFont;
+            m_fontOwner  = true;
+            m_wantUpdate = false;
+        }
+
+        void SetPreviewImFont(ImFont *imFont)
+        {
+            m_imFont    = imFont;
+            m_fontOwner = false;
         }
 
         void Reset()
         {
-            imFont = nullptr;
-            fullName.clear();
-            filePath.clear();
-            fontOwner  = false;
-            wantUpdate = false;
+            m_imFont = nullptr;
+            m_fullName.clear();
+            m_filePath.clear();
+            m_fontOwner  = false;
+            m_wantUpdate = false;
         }
     };
 
-    struct FontBuilder
+    class FontBuilder
     {
+    public:
         void Initialize()
         {
             m_fontManager.FindInstalledFonts();
@@ -144,7 +184,7 @@ private:
         void SetBaseFont();
         void MergeFont();
         void Preview();
-        void SetAsDefault();
+        void SetAsDefault(Settings &settings);
         void Reset();
 
         constexpr bool IsBuilding() const
@@ -162,16 +202,22 @@ private:
             return m_previewFont;
         }
 
-    protected:
+        constexpr auto GetFontManager() -> const FontManager &
+        {
+            return m_fontManager;
+        }
+
+    private:
         void ReleasePreviewFont();
 
         FontManager              m_fontManager = {};
-        std::vector<std::string> m_fontNames;
-        ImFont                  *m_baseFont = nullptr;
+        ImFont                  *m_baseFont    = nullptr;
         PreviewFont              m_previewFont;
-    };
+        std::vector<std::string> m_fontNames;
+        std::vector<std::string> m_fontPathList;
+    } m_fontBuilder;
 
-    class FontBuilderView final : public FontBuilder
+    class FontBuilderView
     {
         static constexpr auto TITLE_HELP     = "Help";
         static constexpr auto TITLE_WARNINGS = "Warnings";
@@ -179,14 +225,14 @@ private:
     public:
         explicit FontBuilderView(Translation &translation) : m_translation(translation) {}
 
-        void Draw(const Settings &settings);
+        void Draw(FontBuilder &fontBuilder, Settings &settings);
 
     private:
-        bool DrawFontViewer(const Settings &settings);
+        bool DrawFontViewer(FontBuilder &fontBuilder, const Settings &settings);
         void DrawHelpModal() const;
         void DrawWarningsModal() const;
 
-        ImGuiTextFilter m_filter{};
+        ImGuiTextFilter m_filter = {};
         Translation    &m_translation;
     } m_fontBuilderView;
 };

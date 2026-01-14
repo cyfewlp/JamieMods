@@ -91,7 +91,7 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
     {
         log_warn("Failed load translation languages.");
     }
-    m_fontBuilderView.Initialize();
+    m_fontBuilder.Initialize();
     return true;
 }
 
@@ -149,7 +149,7 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
 
 void ImeUI::NewFrame()
 {
-    m_fontBuilderView.BuildPreviewFont();
+    m_fontBuilder.BuildPreviewFont();
 }
 
 void ImeUI::FontBuilder::UpdatePreviewFont(const FontInfo &fontInfo)
@@ -157,24 +157,21 @@ void ImeUI::FontBuilder::UpdatePreviewFont(const FontInfo &fontInfo)
     const auto filePath = FontManager::GetFontFilePath(fontInfo);
     if (!filePath.empty())
     {
-        m_previewFont.fullName   = fontInfo.name;
-        m_previewFont.filePath   = filePath;
-        m_previewFont.wantUpdate = true;
+        m_previewFont.SetProperty(fontInfo.name, filePath);
     }
 }
 
 void ImeUI::FontBuilder::BuildPreviewFont()
 {
-    if (!m_previewFont.wantUpdate)
+    if (!m_previewFont.IsWantUpdate())
     {
         return;
     }
     ReleasePreviewFont();
     ImFontConfig config;
     config.FontDataOwnedByAtlas = false;
-    m_previewFont.imFont        = ImGui::GetIO().Fonts->AddFontFromFileTTF(m_previewFont.filePath.c_str(), 0, &config);
-    m_previewFont.fontOwner     = true;
-    m_previewFont.wantUpdate    = false;
+    const auto &path            = m_previewFont.GetFilePath();
+    m_previewFont.SetImFont(ImGui::GetIO().Fonts->AddFontFromFileTTF(path.c_str(), 0, &config));
 }
 
 void ImeUI::Draw(const Settings &settings)
@@ -437,7 +434,7 @@ void ImeUI::DrawFontConfig(Settings &settings)
         "%.3f",
         ImGuiSliderFlags_NoInput
     );
-    m_fontBuilderView.Draw(settings);
+    m_fontBuilderView.Draw(m_fontBuilder, settings);
 }
 
 void ImeUI::DrawFeatures(Settings &settings)
@@ -849,8 +846,9 @@ auto ImeUI::FontBuilder::SetBaseFont() -> void
     {
         ImGui::GetIO().Fonts->RemoveFont(m_baseFont);
         m_fontNames.clear();
+        m_fontPathList.clear();
     }
-    m_baseFont = m_previewFont.imFont;
+    m_baseFont = m_previewFont.GetImFont();
 
     // Transfer memory ownership to ImGui
     for (const auto &config : m_baseFont->Sources)
@@ -858,17 +856,18 @@ auto ImeUI::FontBuilder::SetBaseFont() -> void
         config->FontDataOwnedByAtlas = true;
     }
 
-    m_fontNames.emplace_back(m_previewFont.fullName);
+    m_fontNames.push_back(std::move(m_previewFont.GetFullName()));
+    m_fontPathList.push_back(std::move(m_previewFont.GetFilePath()));
     m_previewFont.Reset();
 }
 
 void ImeUI::FontBuilder::MergeFont()
 {
-    if (m_previewFont.imFont == nullptr)
+    if (m_previewFont.GetImFont() == nullptr)
     {
         return;
     }
-    const auto *previewFontCfg = m_previewFont.imFont->Sources[0];
+    const auto *previewFontCfg = m_previewFont.GetImFont()->Sources[0];
     assert(!previewFontCfg->FontDataOwnedByAtlas && "Keep FontDataOwnedByAtlas to avoid font data copy!");
 
     ImFontConfig config;
@@ -893,24 +892,24 @@ void ImeUI::FontBuilder::MergeFont()
 
     auto &io = ImGui::GetIO();
     io.Fonts->AddFont(&config);
-    io.Fonts->RemoveFont(m_previewFont.imFont);
+    io.Fonts->RemoveFont(m_previewFont.GetImFont());
 
-    m_fontNames.emplace_back(m_previewFont.fullName);
+    m_fontNames.push_back(std::move(m_previewFont.GetFullName()));
+    m_fontPathList.push_back(std::move(m_previewFont.GetFilePath()));
     m_previewFont.Reset();
 }
 
 void ImeUI::FontBuilder::Preview()
 {
-    if (auto *imFont = m_previewFont.imFont; /**/
-        m_previewFont.fontOwner && imFont != nullptr)
+    if (auto *imFont = m_previewFont.GetImFont(); /**/
+        m_previewFont.IsFontOwner() && imFont != nullptr)
     {
         ImGui::GetIO().Fonts->RemoveFont(imFont);
     }
-    m_previewFont.imFont    = m_baseFont;
-    m_previewFont.fontOwner = false;
+    m_previewFont.SetPreviewImFont(m_baseFont);
 }
 
-void ImeUI::FontBuilder::SetAsDefault()
+void ImeUI::FontBuilder::SetAsDefault(Settings &settings)
 {
     auto &io = ImGui::GetIO();
     if (io.FontDefault != m_baseFont)
@@ -930,6 +929,9 @@ void ImeUI::FontBuilder::SetAsDefault()
     // to implementation complexity.
     const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
     io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &config);
+
+    settings.resources.fontPathList = std::move(m_fontPathList);
+
     m_baseFont = nullptr;
     m_fontNames.clear();
 }
@@ -942,38 +944,40 @@ void ImeUI::FontBuilder::Reset()
     }
     m_baseFont = nullptr;
     m_fontNames.clear();
+    m_fontPathList.clear();
 }
 
 void ImeUI::FontBuilder::ReleasePreviewFont()
 {
-    if (m_previewFont.fontOwner && m_previewFont.imFont != nullptr)
+    if (m_previewFont.IsFontOwner() && m_previewFont.GetImFont() != nullptr)
     {
-        for (const auto &config : m_previewFont.imFont->Sources)
+        for (const auto &config : m_previewFont.GetImFont()->Sources)
         {
             if (!config->FontDataOwnedByAtlas)
             {
                 IM_FREE(config->FontData);
             }
         }
-        ImGui::GetIO().Fonts->RemoveFont(m_previewFont.imFont);
+        ImGui::GetIO().Fonts->RemoveFont(m_previewFont.GetImFont());
     }
-    m_previewFont.imFont = nullptr;
+    m_previewFont.SetPreviewImFont(nullptr);
 }
 
-void ImeUI::FontBuilderView::Draw(const Settings &settings)
+void ImeUI::FontBuilderView::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
     ImGui::SeparatorText(m_translation["$Font_Builder"]);
 
     // draw chosen font information
-    if (IsBuilding() && ImGui::BeginTable(
-                            "BasicFontInfo",
-                            2,
-                            ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit,
-                            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3)
-                        ))
+    if (fontBuilder.IsBuilding() &&
+        ImGui::BeginTable(
+            "BasicFontInfo",
+            2,
+            ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit,
+            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3)
+        ))
     {
         int idx = 0;
-        for (const auto &name : GetFontNames())
+        for (const auto &name : fontBuilder.GetFontNames())
         {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -983,22 +987,22 @@ void ImeUI::FontBuilderView::Draw(const Settings &settings)
             idx++;
         }
         ImGui::EndTable();
-        ImGui::BeginDisabled(!IsBuilding());
+        ImGui::BeginDisabled(!fontBuilder.IsBuilding());
         if (ImGui::Button(m_translation["$Font_Builder_SetAsDefault"]))
         {
-            SetAsDefault();
+            fontBuilder.SetAsDefault(settings);
         }
 
         ImGui::SameLine();
         if (ImGui::Button(m_translation["$Font_Builder_Reset"]))
         {
-            Reset();
+            fontBuilder.Reset();
         }
 
         ImGui::SameLine();
         if (ImGui::Button(m_translation["$Font_Builder_Preview"]))
         {
-            Preview();
+            fontBuilder.Preview();
         }
         ImGui::EndDisabled();
 
@@ -1017,42 +1021,42 @@ void ImeUI::FontBuilderView::Draw(const Settings &settings)
     DrawHelpModal();
     DrawWarningsModal();
 
-    if (DrawFontViewer(settings))
+    if (DrawFontViewer(fontBuilder, settings))
     {
-        if (!IsBuilding())
+        if (!fontBuilder.IsBuilding())
         {
-            SetBaseFont();
+            fontBuilder.SetBaseFont();
         }
         else // merge to base font
         {
-            MergeFont();
+            fontBuilder.MergeFont();
         }
     }
 }
 
-bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
+bool ImeUI::FontBuilderView::DrawFontViewer(FontBuilder &fontBuilder, const Settings &settings)
 {
-    static int  selectedIndex = -1;
-    const auto &list          = m_fontManager.GetFontInfoList();
+    static int selectedIndex = -1;
 
     constexpr auto MAX_ROWS         = 12;
     const float    TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
     const ImVec2   FontViewerSize   = {200.0F, TEXT_BASE_HEIGHT * MAX_ROWS};
 
-    bool applied = false;
+    bool  applied     = false;
+    auto &previewFont = fontBuilder.GetPreviewFont();
 
     ImGui::PushID(1);
-    ImGui::BeginDisabled(!m_previewFont.IsCommittable());
+    ImGui::BeginDisabled(!previewFont.IsCommittable());
     if (ImGui::Button(std::format("{} {}", ICON_MD_CONTENT_SAVE_MOVE, m_translation["$Add"]).c_str()))
     {
-        if (selectedIndex >= 0 && selectedIndex < list.size())
+        if (selectedIndex >= 0)
         {
             applied       = true;
             selectedIndex = -1;
         }
     }
     ImGui::SameLine();
-    ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_previewFont.filePath.c_str());
+    ImGui::TextWrapped("%s %s", ICON_FA_FILE, previewFont.GetFilePath().c_str());
     ImGui::EndDisabled();
     ImGui::PopID();
 
@@ -1078,7 +1082,7 @@ bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
     if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * MAX_ROWS)))
     {
         int idx = 0;
-        for (const auto &fontInfo : m_fontManager.GetFontInfoList())
+        for (const auto &fontInfo : fontBuilder.GetFontManager().GetFontInfoList())
         {
             if (!m_filter.PassFilter(fontInfo.name.c_str()))
             {
@@ -1095,7 +1099,7 @@ bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
             if (ImGui::Selectable(fontInfo.name.c_str(), selected) && !selected)
             {
                 selectedIndex = idx;
-                UpdatePreviewFont(fontInfo);
+                fontBuilder.UpdatePreviewFont(fontInfo);
             }
             if (selected)
             {
@@ -1112,9 +1116,9 @@ bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
     ImGui::SameLine();
     ImGui::BeginChild("#FontPreviewer");
     {
-        if (m_previewFont.imFont != nullptr)
+        if (previewFont.GetImFont() != nullptr)
         {
-            ImGui::PushFont(m_previewFont.imFont, settings.fontSizeTemp);
+            ImGui::PushFont(previewFont.GetImFont(), settings.fontSizeTemp);
 
             ImGui::InputTextMultiline(
                 "##PreviewText",

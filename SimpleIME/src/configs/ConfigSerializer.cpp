@@ -227,6 +227,14 @@ static toml::table AppearanceTomlTable(Settings &settings)
     };
 }
 
+static toml::table ResourcesTomlTable(Settings &settings)
+{
+    return {
+        {"translation_dir", {settings.resources.translationDir, {" 翻译文件目录"}}},
+        {"fonts",           settings.resources.fontPathList                       },
+    };
+}
+
 static toml::table InputTomlTable(Settings &settings)
 {
     return {
@@ -239,7 +247,7 @@ static toml::table InputTomlTable(Settings &settings)
 auto ConfigSerializer::DoSerialize(Settings &settings) -> toml::value
 {
     toml::value core{CoreTomlTable(settings)};
-    toml::value resources{toml::table{{"translation_dir", {settings.resources.translationDir, {" 翻译文件目录"}}}}};
+    toml::value resources{ResourcesTomlTable(settings)};
     toml::value appearance{AppearanceTomlTable(settings)};
     toml::value input{InputTomlTable(settings)};
     return {
