@@ -104,7 +104,7 @@ auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
     }
     else
     {
-        const bool shouldEnableIme = m_settings->keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
+        const bool shouldEnableIme = m_settings->input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
         result                     = DoEnableIme(shouldEnableIme);
     }
 
@@ -128,7 +128,7 @@ auto ImeController::DoEnableIme(bool enable) const -> IImeModule::Result
     {
         return IImeModule::Result::DISABLED;
     }
-    const auto result = m_delegate->EnableIme(m_settings->keepImeOpen || enable);
+    const auto result = m_delegate->EnableIme(m_settings->input.keepImeOpen || enable);
     if (!IImeModule::IsSuccess(result))
     {
         ErrorNotifier::GetInstance().Warning(std::format("Unexpected error: EnableIme({}) failed.", enable));

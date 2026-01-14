@@ -1,16 +1,13 @@
-#ifndef IMEUI_H
-#define IMEUI_H
-
 #pragma once
 
 #include "common/imgui/ThemesLoader.h"
 #include "common/utils.h"
-#include "configs/AppConfig.h"
 #include "core/State.h"
 #include "core/Translation.h"
 #include "ime/ITextService.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
+#include "ui/Settings.h"
 #include "utils/FontManager.h"
 
 #include <vector>
@@ -28,8 +25,8 @@ class ImeUI
     using State = Core::State;
 
 public:
-    explicit ImeUI(AppUiConfig const &uiConfig, ImeWnd *pImeWnd, ITextService *pTextService)
-        : m_uiConfig(uiConfig), m_pImeWnd(pImeWnd), m_pTextService(pTextService),
+    explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService)
+        : m_pImeWnd(pImeWnd), m_pTextService(pTextService),
           m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE)),
           m_fontBuilderView(m_translation)
     {
@@ -41,12 +38,12 @@ public:
     ImeUI &operator=(const ImeUI &other)     = delete;
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
-    bool Initialize(LangProfileUtil *pLangProfileUtil);
+    bool Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings);
     void NewFrame();
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);
     void ShowToolWindow();
-    void ApplyUiSettings(Settings &settings);
+    void ApplyAppearanceSettings(Settings &settings);
 
     bool IsShowingToolWindow() const
     {
@@ -85,7 +82,6 @@ private:
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
-    AppUiConfig              m_uiConfig;
     ImeWnd                  *m_pImeWnd         = nullptr;
     ITextService            *m_pTextService    = nullptr;
     LangProfileUtil         *m_langProfileUtil = nullptr;
@@ -196,4 +192,3 @@ private:
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
-#endif

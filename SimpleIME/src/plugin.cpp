@@ -3,7 +3,7 @@
 //
 #include "common/common.h"
 #include "common/log.h"
-#include "configs/AppConfig.h"
+#include "configs/ConfigSerializer.h"
 
 #include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -33,21 +33,8 @@ bool PluginLoad(const SKSE::LoadInterface *skse)
 {
     try
     {
-        const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
-        auto        configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
-        Ime::AppConfig::LoadIni(configFilePath.c_str());
-
-        const auto &pConfig = Ime::AppConfig::GetConfig();
-        InitializeLogging(pConfig.GetLogLevel(), pConfig.GetFlushLevel());
-
         Init(skse, false);
-
-        const auto version = plugin->GetVersion();
-        log_info("{} {} is loading...", plugin->GetName(), version.string());
-
         PluginInit();
-
-        log_info("{} has finished loading.", plugin->GetName());
         return true;
     }
     catch (std::exception &exception)

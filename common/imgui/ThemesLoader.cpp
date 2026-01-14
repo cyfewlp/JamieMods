@@ -4,18 +4,29 @@
 
 #include "ThemesLoader.h"
 
+#include "common/config.h"
 #include "common/log.h"
 #include "common/toml++/toml.hpp"
 #include "imgui.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <exception>
 #include <expected>
+#include <format>
 #include <ranges>
+#include <regex>
+#include <stdexcept>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <vector>
 
 namespace LIBC_NAMESPACE_DECL
 {
 void ImGuiUtil::ThemesLoader::LoadThemes()
 {
-    if (m_availableThemes.size() > 0)
+    if (!m_availableThemes.empty())
     {
         return;
     }
@@ -29,7 +40,7 @@ void ImGuiUtil::ThemesLoader::LoadThemes()
         {
             throw std::runtime_error("Invalid themes format");
         }
-        const auto themesArray = themesValue["themes"].as_array();
+        auto *const themesArray = themesValue["themes"].as_array();
         for (size_t index = 0; index < themesArray->size(); ++index)
         {
             if (auto name = themesValue["themes"][index]["name"]; name.is_string())
@@ -106,7 +117,7 @@ struct converter<uint8_t>
             char *pEnd{};
             if (const uint32_t result = std::strtoul(value, &pEnd, 10); *pEnd != 0 || result > 255)
             {
-                SPDLOG_WARN("Can't get unsigned int value or value to large()");
+                log_warn("Can't get unsigned int value or value to large()");
             }
             else
             {
@@ -292,7 +303,7 @@ void ConfigImGuiColor(const toml::node_view<toml::node> &colorsNode, ImGuiStyle 
     CONFIG_COLOR(ModalWindowDimBg);
 }
 
-void UseTheme_(toml::table &table, ImGuiStyle & style)
+void UseTheme_(toml::table &table, ImGuiStyle &style)
 {
     const auto styleTable  = table["style"];
     const auto styleColors = table["style"]["colors"];
@@ -300,7 +311,8 @@ void UseTheme_(toml::table &table, ImGuiStyle & style)
     ConfigImGuiColor(styleColors, style);
 }
 
-auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle & style) const noexcept -> std::expected<void, std::string>
+auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle &style) const noexcept
+    -> std::expected<void, std::string>
 {
     if (themeIndex >= m_availableThemes.size())
     {

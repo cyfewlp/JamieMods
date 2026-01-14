@@ -17,12 +17,13 @@ class InputEventSink : public RE::BSTEventSink<RE::InputEvent *>
     using Keys  = RE::BSWin32MouseDevice::Keys;
 
 public:
-    explicit InputEventSink(ImeWnd *m_imeWnd) : m_imeWnd(m_imeWnd) {}
+    explicit InputEventSink(ImeWnd *m_imeWnd, uint32_t shortcutKey) : m_imeWnd(m_imeWnd), m_shortcutKey(shortcutKey) {}
 
     RE::BSEventNotifyControl ProcessEvent(Event *const *event, RE::BSTEventSource<Event *> * /*eventSource*/) override;
 
 private:
-    ImeWnd *m_imeWnd;
+    ImeWnd  *m_imeWnd;
+    uint32_t m_shortcutKey;
 
     void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const;
 };
@@ -50,10 +51,7 @@ class EventHandler
     static constexpr uint32_t ENUM_VK_CONTROL                      = 0x11;
 
 public:
-    static void InstallEventSink(ImeWnd *imeWnd);
-
-private:
-    static constexpr auto IsPasteShortcutPressed(auto &code);
+    static void InstallEventSink(ImeWnd *imeWnd, uint32_t shortcutKey);
 };
 }
 }

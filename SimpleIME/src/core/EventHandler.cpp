@@ -1,8 +1,8 @@
 #include "core/EventHandler.h"
 
 #include "ImeWnd.hpp"
-#include "configs/AppConfig.h"
 #include "hooks/ScaleformHook.h"
+#include "ime/ImeController.h"
 #include "menu/MenuNames.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
@@ -14,7 +14,6 @@
 #include <RE/I/InputEvent.h>
 #include <RE/M/MainMenu.h>
 #include <RE/U/UI.h>
-#include <WinUser.h>
 #include <common/config.h>
 #include <common/log.h>
 
@@ -22,14 +21,9 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime::Core
 {
-constexpr auto EventHandler::IsPasteShortcutPressed(auto &code)
+void EventHandler::InstallEventSink(ImeWnd *imeWnd, const uint32_t shortcutKey)
 {
-    return code == ENUM_DIK_V && (::GetKeyState(ENUM_VK_CONTROL) & 0x8000) != 0;
-}
-
-void EventHandler::InstallEventSink(ImeWnd *imeWnd)
-{
-    static InputEventSink         g_InputEventSink(imeWnd);
+    static InputEventSink         g_InputEventSink(imeWnd, shortcutKey);
     static MenuOpenCloseEventSink g_pMenuOpenCloseEventSink;
     RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&g_InputEventSink);
     RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
@@ -65,8 +59,8 @@ RE::BSEventNotifyControl InputEventSink::
 
 void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
 {
-    const auto keyCode = btnEvent->GetIDCode();
-    if (keyCode == AppConfig::GetConfig().GetToolWindowShortcutKey() && btnEvent->IsDown())
+    if (const auto keyCode = btnEvent->GetIDCode(); /**/
+        keyCode == m_shortcutKey && btnEvent->IsDown())
     {
         m_imeWnd->ShowToolWindow();
         if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
@@ -96,7 +90,7 @@ RE::BSEventNotifyControl MenuOpenCloseEventSink::
     {
         FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
     }
-    // before game load, all menu will be closed;
+    // before game load, all menus will be closed;
     if (event->menuName == RE::LoadingMenu::MENU_NAME && !event->opening)
     {
         if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())

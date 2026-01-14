@@ -4,7 +4,6 @@
 #include "Utils.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
-#include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
 #include "context.h"
 #include "core/State.h"
@@ -51,11 +50,10 @@ ImeWnd::~ImeWnd()
     }
 }
 
-void ImeWnd::InitializeTextService(const AppConfig &pAppConfig)
+void ImeWnd::InitializeTextService()
 {
-    m_fEnableTsf               = pAppConfig.EnableTsf();
     ITextService *pTextService = nullptr;
-    ITextServiceFactory::CreateInstance(m_fEnableTsf, &pTextService);
+    ITextServiceFactory::CreateInstance(m_settings.enableTsf, &pTextService);
     if (FAILED(pTextService->Initialize()))
     {
         throw SimpleIMEException("Can't initialize TextService");
@@ -90,16 +88,15 @@ void ImeWnd::Initialize() noexcept(false)
         throw SimpleIMEException("Can't register class");
     }
 
-    const auto &appConfig = AppConfig::GetConfig();
-    InitializeTextService(appConfig);
-    m_pImeUi = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), this, m_pTextService.get());
+    InitializeTextService();
+    m_pImeUi = std::make_unique<ImeUI>(this, m_pTextService.get());
 
     auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
     if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
     }
-    if (!m_pImeUi->Initialize(m_pLangProfileUtil))
+    if (!m_pImeUi->Initialize(m_pLangProfileUtil, m_settings))
     {
         throw SimpleIMEException("Can't initialize ImeUI");
     }
@@ -130,7 +127,7 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
 
     MSG msg = {};
     ZeroMemory(&msg, sizeof(msg));
-    if (AppConfig::GetConfig().EnableTsf())
+    if (m_settings.enableTsf)
     {
         TsfMessageLoop(msg);
     }
@@ -168,17 +165,15 @@ void ImeWnd::OnStart(Settings *pSettings)
 
 void ImeWnd::AddFonts(const Settings &settings)
 {
-    const auto &uiConfig = AppConfig::GetConfig().GetAppUiConfig();
-
     auto &io = ImGui::GetIO();
     io.Fonts->Clear();
-    auto *imFont = io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), settings.fontSize);
+    auto *imFont = io.Fonts->AddFontFromFileTTF(settings.resources.mainFontPath.c_str());
     if (imFont == nullptr)
     {
         imFont = io.Fonts->AddFontDefault();
 
         ErrorNotifier::GetInstance().addError(
-            std::format("Can't load east asia font from {}", uiConfig.EastAsiaFontFile()), ErrorMsg::Level::warning
+            std::format("Can't load east asia font from {}", settings.resources.mainFontPath), ErrorMsg::Level::warning
         );
     }
 
@@ -187,10 +182,10 @@ void ImeWnd::AddFonts(const Settings &settings)
     cfg.OversampleH = cfg.OversampleV = 1;
     cfg.MergeMode                     = true;
     cfg.FontLoaderFlags |= ImGuiFreeTypeLoaderFlags_LoadColor;
-    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), settings.fontSize, &cfg))
+    if (!io.Fonts->AddFontFromFileTTF(settings.resources.emojiFontPath.c_str(), 0, &cfg))
     {
         ErrorNotifier::GetInstance().addError(
-            std::format("Can't load emoji font from {}", uiConfig.EmojiFontFile()), ErrorMsg::Level::warning
+            std::format("Can't load emoji font from {}", settings.resources.emojiFontPath), ErrorMsg::Level::warning
         );
     }
 
@@ -206,7 +201,7 @@ void ImeWnd::AddFonts(const Settings &settings)
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
-    // log_debug("Msssage: {} {} {}", uMsg, wParam, lParam);
+    // log_debug("Message: {} {} {}", uMsg, wParam, lParam);
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
@@ -340,21 +335,8 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
     }
 }
 
-auto ImeWnd::SaveSettings() const -> void
-{
-    m_settings.fontSizeScale = ImGui::GetStyle().FontScaleMain;
-    AppConfig::GetConfig().Set(m_settings);
-
-    const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
-    const auto  configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
-    AppConfig::SaveIni(configFilePath.c_str());
-}
-
 auto ImeWnd::OnDestroy() const -> LRESULT
 {
-    log_info("Save ui settings...");
-    SaveSettings();
-
     log_info("Destroy IME Window");
     UnInitialize();
     PostQuitMessage(0);
@@ -413,7 +395,7 @@ void ImeWnd::AbortIme() const
 /**
  * If Game cursor no showing/update, update ImGui cursor from system cursor pos
  */
-void ImeWnd::NewFrame()
+void ImeWnd::NewFrame() const
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
@@ -431,7 +413,7 @@ void ImeWnd::NewFrame()
     m_pImeUi->NewFrame();
 
     static bool fWantTextInput = false;
-    bool cWantTextInput = ImGui::GetIO().WantTextInput;
+    bool        cWantTextInput = ImGui::GetIO().WantTextInput;
     if (!fWantTextInput && cWantTextInput)
     {
         Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(true);
@@ -443,14 +425,19 @@ void ImeWnd::NewFrame()
     fWantTextInput = cWantTextInput;
 }
 
-void ImeWnd::DrawIme(Settings &settings)
+void ImeWnd::EndFrame() const
+{
+    m_settings.appearance.fontSizeScale = ImGui::GetStyle().FontScaleMain;
+}
+
+void ImeWnd::DrawIme(Settings &settings) const
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     NewFrame();
     ImGui::NewFrame();
 
-    ImGui::PushFont(nullptr, settings.fontSize);
+    ImGui::PushFont(nullptr, settings.appearance.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
         m_pImeUi->DrawToolWindow(settings);
@@ -458,6 +445,7 @@ void ImeWnd::DrawIme(Settings &settings)
     }
     ImGui::PopFont();
 
+    EndFrame();
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
@@ -469,7 +457,7 @@ void ImeWnd::ShowToolWindow() const
 
 void ImeWnd::ApplyUiSettings(Settings *pSettings) const
 {
-    m_pImeUi->ApplyUiSettings(*pSettings);
+    m_pImeUi->ApplyAppearanceSettings(*pSettings);
     ImeController::GetInstance()->ApplyUiSettings(*pSettings);
 }
 

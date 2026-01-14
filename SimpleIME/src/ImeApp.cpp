@@ -6,6 +6,7 @@
 #include "common/hook.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
+#include "configs/ConfigSerializer.h"
 #include "configs/CustomMessage.h"
 #include "context.h"
 #include "core/EventHandler.h"
@@ -25,10 +26,24 @@
 namespace LIBC_NAMESPACE_DECL
 {
 
+static std::unique_ptr<Ime::ImeApp> g_instance;
+
 bool PluginInit()
 {
+    const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
+    const auto  version = plugin->GetVersion();
+
+    static Ime::Settings g_settings;
+    Ime::ConfigSerializer::Deserialize(g_settings);
+    InitializeLogging(g_settings.logging.level, g_settings.logging.flushLevel);
+    g_instance = std::make_unique<Ime::ImeApp>(g_settings);
+
+    log_info("{} {} is loading...", plugin->GetName(), version.string());
+
+    g_instance->Initialize();
+
+    log_info("{} has finished loading.", plugin->GetName());
     InitializeMessaging();
-    Ime::ImeApp::GetInstance().Initialize();
     return true;
 }
 
@@ -53,6 +68,11 @@ void InitializeMessaging()
 
 namespace Ime
 {
+auto ImeApp::GetInstance() -> ImeApp &
+{
+    return *g_instance;
+}
+
 /**
  * Init ImeApp
  */
@@ -63,8 +83,7 @@ void ImeApp::Initialize()
 
     D3DInitHook               = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
     auto       &errorNotifier = ErrorNotifier::GetInstance();
-    const auto &uiConfig      = AppConfig::GetConfig().GetAppUiConfig();
-    errorNotifier.SetMessageDuration(uiConfig.ErrorMessageDuration());
+    errorNotifier.SetMessageDuration(m_settings.appearance.errorDisplayDuration);
 #ifdef SIMPLE_IME_DEBUG
     errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
 #endif
@@ -79,12 +98,13 @@ void ImeApp::Uninitialize()
         D3DInitHook = nullptr;
         UninstallHooks();
     }
+    ConfigSerializer::Serialize(m_settings);
     m_fInitialized.store(false);
 }
 
 void ImeApp::OnInputLoaded()
 {
-    Core::EventHandler::InstallEventSink(&m_imeWnd);
+    Core::EventHandler::InstallEventSink(&m_imeWnd, m_settings.shortcutKey);
 }
 
 class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
@@ -176,8 +196,9 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
     }
 
-    m_hWnd        = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-    m_hIMCDefault = ImmAssociateContext(m_hWnd, nullptr);
+    m_hWnd                  = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
+    m_hIMCDefault           = ImmAssociateContext(m_hWnd, nullptr);
+    m_settings.fontSizeTemp = m_settings.appearance.fontSize;
 
     Start(renderData);
     m_fInitialized.store(true);
@@ -195,29 +216,11 @@ void ImeApp::OnD3DInit()
     ToolWindowMenu::RegisterMenu();
 }
 
-void ImeApp::SetSettings()
-{
-    auto       &config         = AppConfig::GetConfig();
-    const auto &settingsConfig = config.GetSettingsConfig();
-
-    m_settings.windowPosUpdatePolicy = settingsConfig.GetWindowPosUpdatePolicy();
-    m_settings.enableUnicodePaste    = settingsConfig.GetEnableUnicodePaste();
-    m_settings.fontSizeScale         = settingsConfig.GetFontSizeScale();
-    m_settings.showSettings          = settingsConfig.GetShowSettings();
-    m_settings.keepImeOpen           = settingsConfig.GetKeepImeOpen();
-    m_settings.enableMod             = settingsConfig.GetEnableMod();
-    m_settings.fontSize              = config.GetAppUiConfig().FontSize();
-    m_settings.fontSizeTemp          = config.GetAppUiConfig().FontSize();
-    m_settings.language              = settingsConfig.GetLanguage();
-    m_settings.theme                 = settingsConfig.GetTheme();
-}
-
 void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 {
     std::promise<bool> ensureInitialized;
     std::future<bool>  initialized = ensureInitialized.get_future();
     // run ImeWnd in a standalone thread
-    SetSettings();
     auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
     m_imeWnd.InitImGui(m_hWnd, device, context, m_settings);
@@ -261,7 +264,7 @@ void ImeApp::UninstallHooks()
     Hooks::ScaleformHooks::Uninstall();
 }
 
-void ImeApp::Render()
+void ImeApp::Render() const
 {
     m_imeWnd.DrawIme(m_settings);
 }

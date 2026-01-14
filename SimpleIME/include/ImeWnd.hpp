@@ -70,7 +70,7 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings);
+    void DrawIme(Settings &settings) const;
     void ShowToolWindow() const;
 
     bool IsShowingToolWindow() const
@@ -92,13 +92,13 @@ private:
     static void OnCompositionResult(const std::wstring &compositionString);
     static void TsfMessageLoop(MSG msg);
 
-    void        NewFrame();
+    void        NewFrame() const;
+    void        EndFrame() const;
     void        OnStart(Settings *pSettings);
     static void AddFonts(const Settings &settings);
-    auto        OnCreate() -> LRESULT;
-    auto        SaveSettings() const -> void;
+    static auto OnCreate() -> LRESULT;
     auto        OnDestroy() const -> LRESULT;
-    void        InitializeTextService(const AppConfig &pAppConfig);
+    void        InitializeTextService();
     void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
     Settings                     &m_settings;
@@ -108,8 +108,7 @@ private:
     HWND                          m_hWnd       = nullptr;
     HWND                          m_hWndParent = nullptr;
     WNDCLASSEXW                   wc{};
-    bool                          m_fEnableTsf = false;
-    bool                          m_fFocused   = false;
+    bool                          m_fFocused = false;
 };
 } // namespace SimpleIME
 } // namespace LIBC_NAMESPACE_DECL
