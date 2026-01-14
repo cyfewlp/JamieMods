@@ -1,9 +1,7 @@
 //
 // Created by jamie on 2025/5/26.
 //
-
-#ifndef IMTHEMESLOADER_H
-#define IMTHEMESLOADER_H
+#pragma once
 
 #include "common/config.h"
 
@@ -89,6 +87,8 @@ public:
      */
     auto UseTheme(size_t themeIndex, ImGuiStyle &style) const noexcept -> std::expected<void, std::string>;
 
+    static void Cleanup();
+
     [[nodiscard]] auto GetThemes() const -> const std::vector<Theme> &
     {
         return m_availableThemes;
@@ -96,5 +96,3 @@ public:
 };
 }
 }
-
-#endif // IMTHEMESLOADER_H

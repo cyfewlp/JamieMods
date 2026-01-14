@@ -7,20 +7,44 @@
 #include "ImeUI.h"
 
 #include "ImeWnd.hpp"
-#include "Utils.h"
 #include "common/WCharUtils.h"
+#include "common/config.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
+#include "common/utils.h"
 #include "configs/CustomMessage.h"
+#include "core/State.h"
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "menu/MenuNames.h"
 #include "tsf/LangProfileUtil.h"
+#include "ui/Settings.h"
+#include "ui/TaskQueue.h"
 #include "utils/FocusGFxCharacterInfo.h"
 #include "utils/FontManager.h"
+
+#include <RE/M/MenuCursor.h>
+#include <RE/U/UIMessage.h>
+#include <RE/U/UIMessageQueue.h>
+#include <SKSE/Interfaces.h>
+#include <WinUser.h>
+#include <cassert>
+#include <cfloat>
+#include <cguid.h>
+#include <climits>
+#include <cstdint>
+#include <expected>
+#include <format>
+#include <math.h>
+#include <minwindef.h>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+#include <winnt.h>
 
 #pragma comment(lib, "dwrite.lib")
 
@@ -28,7 +52,6 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-
 static std::string PREVIEW_TEXT = R"(!@#$%^&*()_+-=[]{}|;':",.<>?/
 -- Unicode & Fallback --
 Latín: áéíóú ñ  |  FullWidth: ＡＢＣ１２３
@@ -39,9 +62,6 @@ New: 🐦‍🔥 🍋‍🟩 🍄‍🟫 🙂‍↕️ 🙂‍↔️
 -- Skyrim Immersion --
 Dovah: Dovahkiin, naal ok zin los vahriin!
 "I used to be an adventurer like you..."
--- Layout Stress Test --
-MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM (Width Test)
-iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii (Kerning Test)
 )";
 
 ImeUI::~ImeUI()
@@ -73,36 +93,6 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
     }
     m_fontBuilderView.Initialize();
     return true;
-}
-
-void ImeUI::NewFrame()
-{
-    m_fontBuilderView.BuildPreviewFont();
-}
-
-void ImeUI::FontBuilder::UpdatePreviewFont(const FontInfo &fontInfo)
-{
-    const auto filePath = FontManager::GetFontFilePath(fontInfo);
-    if (!filePath.empty())
-    {
-        m_previewFont.fullName   = fontInfo.name;
-        m_previewFont.filePath   = filePath;
-        m_previewFont.wantUpdate = true;
-    }
-}
-
-void ImeUI::FontBuilder::BuildPreviewFont()
-{
-    if (!m_previewFont.wantUpdate)
-    {
-        return;
-    }
-    ReleasePreviewFont();
-    ImFontConfig config;
-    config.FontDataOwnedByAtlas = false;
-    m_previewFont.imFont        = ImGui::GetIO().Fonts->AddFontFromFileTTF(m_previewFont.filePath.c_str(), 0, &config);
-    m_previewFont.fontOwner     = true;
-    m_previewFont.wantUpdate    = false;
 }
 
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
@@ -152,8 +142,39 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
                 appearance.themeIndex = 0;
             }
         }
+        ImGuiUtil::ThemesLoader::Cleanup();
         ImGui::GetStyle().FontSizeBase = appearance.fontSize;
     }
+}
+
+void ImeUI::NewFrame()
+{
+    m_fontBuilderView.BuildPreviewFont();
+}
+
+void ImeUI::FontBuilder::UpdatePreviewFont(const FontInfo &fontInfo)
+{
+    const auto filePath = FontManager::GetFontFilePath(fontInfo);
+    if (!filePath.empty())
+    {
+        m_previewFont.fullName   = fontInfo.name;
+        m_previewFont.filePath   = filePath;
+        m_previewFont.wantUpdate = true;
+    }
+}
+
+void ImeUI::FontBuilder::BuildPreviewFont()
+{
+    if (!m_previewFont.wantUpdate)
+    {
+        return;
+    }
+    ReleasePreviewFont();
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;
+    m_previewFont.imFont        = ImGui::GetIO().Fonts->AddFontFromFileTTF(m_previewFont.filePath.c_str(), 0, &config);
+    m_previewFont.fontOwner     = true;
+    m_previewFont.wantUpdate    = false;
 }
 
 void ImeUI::Draw(const Settings &settings)
@@ -216,7 +237,7 @@ void ImeUI::DrawInputMethodsCombo() const
     if (const auto &profile = installedProfiles[activatedGuid];
         ImGui::BeginCombo("###InstalledIME", profile.desc.c_str()))
     {
-        uint32_t idx = 0;
+        int32_t idx = 0;
         for (const std::pair<GUID, LangProfile> pair : installedProfiles)
         {
             ImGui::PushID(idx);
@@ -285,14 +306,20 @@ void ImeUI::DrawToolWindow(Settings &settings)
         m_fPinToolWindow = true;
         // ImGui::GetIO().MouseDrawCursor = false;
 
-        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
+        if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton())
         {
             messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
         }
     }
 
     ImGui::SameLine();
-    ImGui::Checkbox(Translate("$Settings"), &settings.appearance.showSettings);
+    if (ImGui::Checkbox(Translate("$Settings"), &settings.appearance.showSettings))
+    {
+        if (!settings.appearance.showSettings)
+        {
+            ImGuiUtil::ThemesLoader::Cleanup();
+        }
+    }
 
     ImGui::SameLine();
     DrawInputMethodsCombo();
@@ -327,6 +354,10 @@ void ImeUI::DrawSettings(Settings &settings)
             ImGui::EndTabBar();
         }
         ImGui::PopStyleVar();
+        if (!settings.appearance.showSettings)
+        {
+            ImGuiUtil::ThemesLoader::Cleanup();
+        }
     }
     ImGui::End();
     imeManager->SyncImeStateIfDirty();
@@ -392,7 +423,7 @@ void ImeUI::DrawModConfig(Settings &settings)
 
 void ImeUI::DrawFontConfig(Settings &settings)
 {
-    ImGui::SliderInt(Translate("$Font_Size"), &settings.fontSizeTemp, 10, 100);
+    ImGui::SliderFloat(Translate("$Font_Size"), &settings.fontSizeTemp, 10.0F, 100.0F);
     ImGui::SameLine();
     if (ImGui::Button(std::format("{} {}", ICON_OCT_CHECK, Translate("$Apply")).c_str()))
     {
@@ -450,7 +481,7 @@ auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values,
     bool clicked = false;
     if (ImGui::BeginCombo(label, selected.c_str()))
     {
-        uint32_t idx = 0;
+        int32_t idx = 0;
         for (const auto &language : values)
         {
             ImGui::PushID(idx);
@@ -761,12 +792,8 @@ auto ImeUI::IsImeNeedRelayout() const -> bool
 {
     const auto &viewport = ImGui::GetMainViewport();
 
-    if (m_imeWindowPos.x + m_imeWindowSize.x > viewport->Size.x + viewport->Pos.x ||
-        m_imeWindowPos.y + m_imeWindowSize.y > viewport->Size.y + viewport->Pos.y)
-    {
-        return true;
-    }
-    return false;
+    return m_imeWindowPos.x + m_imeWindowSize.x > viewport->Size.x + viewport->Pos.x ||
+           m_imeWindowPos.y + m_imeWindowSize.y > viewport->Size.y + viewport->Pos.y;
 }
 
 void ImeUI::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
@@ -1007,8 +1034,8 @@ void ImeUI::FontBuilderView::Draw(const Settings &settings)
 
 bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
 {
-    static int selectedIndex = -1;
-    auto      &list          = m_fontManager.GetFontInfoList();
+    static int  selectedIndex = -1;
+    const auto &list          = m_fontManager.GetFontInfoList();
 
     constexpr auto MAX_ROWS         = 12;
     const float    TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
@@ -1037,7 +1064,7 @@ bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F, ImGuiInputFlags_Tooltip);
-    // ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
+    ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
     if (ImGui::InputTextWithHint(
             "##Filter",
             "search font by name",
@@ -1048,7 +1075,7 @@ bool ImeUI::FontBuilderView::DrawFontViewer(const Settings &settings)
     {
         m_filter.Build();
     }
-    // ImGui::PopItemFlag();
+    ImGui::PopItemFlag();
 
     if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * MAX_ROWS)))
     {
@@ -1115,7 +1142,7 @@ void ImeUI::FontBuilderView::DrawHelpModal() const
         ImGui::NewLine();
         ImGui::Text("%s", m_translation["$Font_Builder_Help3"]);
 
-        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5 - ImGui::GetFontSize());
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5F - ImGui::GetFontSize());
         if (ImGui::Button(ICON_FA_OK_SIGN))
         {
             ImGui::CloseCurrentPopup();
@@ -1132,7 +1159,7 @@ void ImeUI::FontBuilderView::DrawWarningsModal() const
         ImGui::NewLine();
         ImGui::Text("%s %s", ICON_FA_WARNING, m_translation["$Font_Builder_Warning2"]);
 
-        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5 - ImGui::GetFontSize());
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5F - ImGui::GetFontSize());
         if (ImGui::Button(ICON_FA_OK_SIGN))
         {
             ImGui::CloseCurrentPopup();

@@ -7,7 +7,6 @@ find_package(GTest CONFIG REQUIRED)
 add_executable(
     ${TEST_PROJ_NAME}
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
-    src/AppConfig.cpp
     src/ime/ImeController.cpp
     src/ime/ImeManager.cpp
     ${TEST_SOURCES}

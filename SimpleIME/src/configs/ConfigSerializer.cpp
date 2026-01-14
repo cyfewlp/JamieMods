@@ -14,6 +14,7 @@
 #include <exception>
 #include <ios>
 #include <iosfwd>
+#include <spdlog/common.h>
 #include <string>
 #include <vector>
 

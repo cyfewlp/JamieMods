@@ -39,11 +39,11 @@ public:
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
     bool Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings);
+    void ApplyAppearanceSettings(Settings &settings);
     void NewFrame();
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);
     void ShowToolWindow();
-    void ApplyAppearanceSettings(Settings &settings);
 
     bool IsShowingToolWindow() const
     {

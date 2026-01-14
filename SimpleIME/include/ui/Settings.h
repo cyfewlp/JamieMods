@@ -26,8 +26,8 @@ struct Settings
     static constexpr float            MIN_FONT_SIZE_SCALE = 0.1F;
     static constexpr float            MAX_FONT_SIZE_SCALE = 5.0F;
 
-    int   fontSizeTemp   = 16;    // not persist
-    float dpiScale       = 1.0f;  // not persist
+    float fontSizeTemp   = 16.0F;    // not persist
+    float dpiScale       = 1.0F;  // not persist
     bool  wantResizeFont = false; // not persist
 
     uint32_t shortcutKey = 0x3C;
