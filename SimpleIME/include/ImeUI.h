@@ -40,6 +40,7 @@ public:
 
     bool Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings);
     void ApplyAppearanceSettings(Settings &settings);
+    void ApplyTheme(Settings &settings);
     void NewFrame();
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);

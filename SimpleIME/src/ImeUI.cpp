@@ -107,44 +107,52 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
         m_translation.UseLanguage(appearance.language.c_str());
     }
 
-    { // Apply theme config
-        m_themesLoader.LoadThemes();
-        const auto &themes = m_themesLoader.GetThemes();
-        const auto  findIt = std::lower_bound(themes.begin(), themes.end(), ImGuiUtil::Theme(0, appearance.theme));
-        const auto  index  = std::distance(themes.begin(), findIt);
-        std::expected<void, std::string> expected;
-        if (static_cast<size_t>(index) < themes.size())
+    ApplyTheme(settings);
+}
+
+void ImeUI::ApplyTheme(Settings &settings)
+{
+    m_themesLoader.LoadThemes();
+
+    auto       &appearance = settings.appearance;
+    const auto &themes     = m_themesLoader.GetThemes();
+
+    ImGuiStyle                       style;
+    std::expected<void, std::string> expected = std::unexpected("Theme not found");
+    if (appearance.themeIndex < themes.size())
+    {
+        if (themes[appearance.themeIndex].name == appearance.theme)
         {
-            ImGuiStyle style;
-            expected = m_themesLoader.UseTheme(index, style);
-            if (expected)
-            {
-                FillCommonStyleFields(style, settings);
-                ImGui::GetStyle() = style;
-            }
+            expected = m_themesLoader.UseTheme(appearance.themeIndex, style);
         }
-        else
-        {
-            expected = std::unexpected("Theme not found");
-        }
-        if (expected)
-        {
-            appearance.themeIndex = static_cast<size_t>(index);
-        }
-        else
-        {
-            ErrorNotifier::GetInstance().Warning(std::format(
-                "Can't find theme {}, fallback to ImGui default theme: {}", appearance.theme, expected.error()
-            ));
-            if (m_themesLoader.UseTheme(0, ImGui::GetStyle()))
-            {
-                appearance.theme      = "Dark";
-                appearance.themeIndex = 0;
-            }
-        }
-        ImGuiUtil::ThemesLoader::Cleanup();
-        ImGui::GetStyle().FontSizeBase = appearance.fontSize;
     }
+    else
+    {
+        const auto findIt     = std::lower_bound(themes.begin(), themes.end(), ImGuiUtil::Theme(0, appearance.theme));
+        appearance.themeIndex = static_cast<size_t>(std::distance(themes.begin(), findIt));
+        if (appearance.themeIndex < themes.size())
+        {
+            expected = m_themesLoader.UseTheme(appearance.themeIndex, style);
+        }
+    }
+    if (expected)
+    {
+        FillCommonStyleFields(style, settings);
+        ImGui::GetStyle() = style;
+    }
+    else
+    {
+        ErrorNotifier::GetInstance().Warning(
+            std::format("Can't find theme {}, fallback to ImGui default theme: {}", appearance.theme, expected.error())
+        );
+        if (m_themesLoader.UseTheme(0, ImGui::GetStyle()))
+        {
+            appearance.theme      = "Dark";
+            appearance.themeIndex = 0;
+        }
+    }
+    ImGuiUtil::ThemesLoader::Cleanup();
+    ImGui::GetStyle().FontSizeBase = appearance.fontSize;
 }
 
 void ImeUI::NewFrame()
@@ -329,7 +337,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
     ImGui::End();
 }
 
-auto inactiveColor = ImVec4(0.45f, 0.45f, 0.45f, 0.9f);
+static auto inactiveColor = ImVec4(0.45F, 0.45F, 0.45F, 0.9F);
 
 void ImeUI::DrawSettings(Settings &settings)
 {
@@ -383,7 +391,7 @@ void ImeUI::DrawModConfig(Settings &settings)
         size_t idx = 0;
         for (const auto &theme : m_themesLoader.GetThemes())
         {
-            ImGui::PushID(idx);
+            ImGui::PushID(static_cast<int>(idx));
             const bool isSelected = settings.appearance.themeIndex == idx;
             if (ImGui::Selectable(theme.name.c_str(), isSelected) && !isSelected)
             {
@@ -409,7 +417,7 @@ void ImeUI::DrawModConfig(Settings &settings)
     ImGui::TextDisabled("(?)");
     if (ImGui::BeginItemTooltip())
     {
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0F);
         ImGui::TextUnformatted("Themes provided by ImThemes (https://github.com/Patitotective/ImThemes)");
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
@@ -502,10 +510,11 @@ void ImeUI::DrawStates() const
 {
     ImGui::SeparatorText(Translate("$States"));
 
-    const auto &state = State::GetInstance();
+    constexpr auto STATE_ACTIVE_COLOR = ImVec4(0.35F, 0.75F, 1.0F, 1.0F);
+    const auto    &state              = State::GetInstance();
     ImGui::AlignTextToFramePadding();
     ImGui::TextColored(
-        state.NotHas(State::IME_DISABLED) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor, "[ %s ]", ICON_FA_KEYBOARD
+        state.NotHas(State::IME_DISABLED) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_KEYBOARD
     );
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
@@ -514,12 +523,8 @@ void ImeUI::DrawStates() const
 
     ImGui::SameLine();
 
-    const float pulse            = 0.9f + 0.1f * sinf(ImGui::GetTime() * 4.0f);
-    ImVec4      focusActiveColor = ImVec4(0.55f, 0.85f, 1.0f, 1.0f);
-    focusActiveColor.w *= pulse;
-
     ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(m_pImeWnd->IsFocused() ? focusActiveColor : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
+    ImGui::TextColored(m_pImeWnd->IsFocused() ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", Translate("$FOCUS"));
@@ -533,11 +538,9 @@ void ImeUI::DrawStates() const
         ImeController::GetInstance()->ForceFocusIme();
     }
 #ifdef SIMPLE_IME_DEBUG
-    auto action = [&state](const State::StateKey stateKey) {
+    auto action = [&state, &STATE_ACTIVE_COLOR](const State::StateKey stateKey) {
         ImGui::SameLine();
-        ImGui::TextColored(
-            state.Has(stateKey) ? ImVec4(0.35f, 0.75f, 1.0f, 1.0f) : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR
-        );
+        ImGui::TextColored(state.Has(stateKey) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
     };
     ImGui::Text("IN_COMPOSING: ");
     action(State::IN_COMPOSING);
@@ -594,7 +597,7 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
 
 void ImeUI::DrawCompWindow(const Settings &settings) const
 {
-    static float CursorAnim = 0.f;
+    static float CursorAnim = 0.F;
 
     CursorAnim += ImGui::GetIO().DeltaTime;
 
@@ -615,7 +618,10 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     acpStart = std::min(static_cast<long>(textSize), acpStart);
     acpEnd   = std::min(static_cast<long>(textSize), acpEnd);
 
-    if (acpEnd < acpStart) std::swap(acpStart, acpEnd);
+    if (acpEnd < acpStart)
+    {
+        std::swap(acpStart, acpEnd);
+    }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
     if (acpStart > 0)
@@ -630,16 +636,20 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
 
     // caret
     ImGui::SameLine();
-    if (fmodf(CursorAnim, 1.2f) <= 0.8f)
+    if (fmodf(CursorAnim, 1.2F) <= 0.8F)
     {
-        ImDrawList  *drawList        = ImGui::GetWindowDrawList();
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
-        drawList->AddLine(
-            min,
-            ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
+        ImRect const cursorScreenRect(
+            cursorScreenPos.x,
+            cursorScreenPos.y - ImGui::GetFontSize() + 0.5f,
+            cursorScreenPos.x + 1.0f,
+            cursorScreenPos.y - 1.5f
+        );
+        ImGui::GetWindowDrawList()->AddLine(
+            cursorScreenRect.Min,
+            cursorScreenRect.GetBL(),
             ImGui::GetColorU32(ImGuiCol_InputTextCursor),
-            1.0f * settings.dpiScale
+            1.0F * settings.dpiScale
         );
     }
 
@@ -647,7 +657,8 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     if (success)
     {
         std::string caretToEnd;
-        success = WCharUtils::ToString(editorText.c_str() + acpStart, editorText.size() - acpStart, caretToEnd);
+        auto        subFromCaret = editorText.substr(acpStart);
+        success = WCharUtils::ToString(subFromCaret.c_str(), static_cast<int>(subFromCaret.size()), caretToEnd);
         if (success)
         {
             ImGui::TextColored(highLightText, "%s", caretToEnd.c_str());
@@ -660,10 +671,11 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     ImGui::PopStyleVar();
 }
 
-struct ImGuiStyleVarScope
+class ImGuiStyleVarScope
 {
-    uint32_t count = 0;
+    int count = 0;
 
+public:
     void Push(ImGuiStyleVar var, const ImVec2 &value)
     {
         ImGui::PushStyleVar(var, value);
@@ -713,7 +725,7 @@ void ImeUI::DrawCandidateWindows() const
         ImGuiColorScope buttonColorScope(ImGuiCol_Button, 0);
         for (const auto &candidate : candidateList)
         {
-            ImGui::PushID(index);
+            ImGui::PushID(static_cast<int>(index));
             std::optional<ImGuiColorScope> buttonColorScope1;
             std::optional<ImGuiColorScope> textColorScope;
             if (hovered == index)
@@ -796,15 +808,8 @@ void ImeUI::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
     const auto &viewport   = ImGui::GetMainViewport();
     const float viewRight  = viewport->Pos.x + viewport->Size.x;
     const float viewBottom = viewport->Pos.y + viewport->Size.y;
-
-    if (windowPos.x < viewport->Pos.x)
-    {
-        windowPos.x = viewport->Pos.x;
-    }
-    if (windowPos.y < viewport->Pos.y)
-    {
-        windowPos.y = viewport->Pos.y;
-    }
+    windowPos.x            = std::max(windowPos.x, viewport->Pos.x);
+    windowPos.y            = std::max(windowPos.y, viewport->Pos.y);
 
     if (windowSize.x < viewport->Size.x && windowPos.x + windowSize.x > viewRight)
     {
@@ -928,7 +933,7 @@ void ImeUI::FontBuilder::SetAsDefault(Settings &settings)
     // Note: Automatic detection of existing icon glyphs is skipped due
     // to implementation complexity.
     const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-    io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &config);
+    io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0F, &config);
 
     settings.resources.fontPathList = std::move(m_fontPathList);
 
@@ -1042,8 +1047,8 @@ bool ImeUI::FontBuilderView::DrawFontViewer(FontBuilder &fontBuilder, const Sett
     const float    TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
     const ImVec2   FontViewerSize   = {200.0F, TEXT_BASE_HEIGHT * MAX_ROWS};
 
-    bool  applied     = false;
-    auto &previewFont = fontBuilder.GetPreviewFont();
+    bool        applied     = false;
+    const auto &previewFont = fontBuilder.GetPreviewFont();
 
     ImGui::PushID(1);
     ImGui::BeginDisabled(!previewFont.IsCommittable());
@@ -1079,7 +1084,7 @@ bool ImeUI::FontBuilderView::DrawFontViewer(FontBuilder &fontBuilder, const Sett
     }
     ImGui::PopItemFlag();
 
-    if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * MAX_ROWS)))
+    if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0F, TEXT_BASE_HEIGHT * MAX_ROWS)))
     {
         int idx = 0;
         for (const auto &fontInfo : fontBuilder.GetFontManager().GetFontInfoList())

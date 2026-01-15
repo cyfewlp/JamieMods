@@ -146,6 +146,7 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
         findAndSet(appearance, "font_size_scale", settings.appearance.fontSizeScale);
         findAndSet(appearance, "language", settings.appearance.language);
         findAndSet(appearance, "theme", settings.appearance.theme);
+        findAndSet(appearance, "theme_index", settings.appearance.themeIndex);
         findAndSet(appearance, "error_display_duration", settings.appearance.errorDisplayDuration);
         findAndSet(appearance, "show_settings", settings.appearance.showSettings);
     }
@@ -221,6 +222,7 @@ static toml::table AppearanceTomlTable(Settings &settings)
          {settings.appearance.fontSizeScale, {" 缩放倍率 (UiFontSize = font_size * font_size_scale)"}}},
         {"language",               settings.appearance.language                                       },
         {"theme",                  settings.appearance.theme                                          },
+        {"theme_index",            settings.appearance.themeIndex                                     },
         {"error_display_duration",
          {settings.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}  },
         {"show_settings",          settings.appearance.showSettings                                   },
