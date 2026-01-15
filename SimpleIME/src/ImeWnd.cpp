@@ -8,7 +8,6 @@
 #include "context.h"
 #include "core/State.h"
 #include "hooks/Hooks.hpp"
-#include "hooks/ScaleformHook.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
@@ -414,13 +413,18 @@ void ImeWnd::NewFrame() const
 
     static bool fWantTextInput = false;
     bool        cWantTextInput = ImGui::GetIO().WantTextInput;
+    const auto *imeManager     = ImeController::GetInstance();
+
+    auto* controlMap = RE::ControlMap::GetSingleton();
     if (!fWantTextInput && cWantTextInput)
     {
-        Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(true);
+        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false);
+        imeManager->EnableIme(true);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
-        Hooks::SKSE_ScaleformAllowTextInput::AllowTextInput(false);
+        imeManager->EnableIme(false);
+        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true);
     }
     fWantTextInput = cWantTextInput;
 }

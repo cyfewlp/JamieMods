@@ -4,6 +4,7 @@
 #include "menu/ToolWindowMenu.h"
 
 #include "common/log.h"
+#include "ime/ImeController.h"
 #include "menu/MenuNames.h"
 
 namespace LIBC_NAMESPACE_DECL
@@ -26,9 +27,11 @@ RE::UI_MESSAGE_RESULTS ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message)
         case RE::UI_MESSAGE_TYPE::kShow:
             g_showing = true;
             return RE::UI_MESSAGE_RESULTS::kHandled;
-        case RE::UI_MESSAGE_TYPE::kHide:
+        case RE::UI_MESSAGE_TYPE::kHide: {
             g_showing = false;
+            ImeController::GetInstance()->SyncImeState();
             return RE::UI_MESSAGE_RESULTS::kHandled;
+        }
         case RE::UI_MESSAGE_TYPE::kUserEvent: {
             const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
             if (data->fixedStr == "Cancel")
