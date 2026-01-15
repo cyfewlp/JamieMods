@@ -350,16 +350,6 @@ auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle &styl
     }
     try
     {
-        if (g_themesTable.empty() || !g_themesTable.is_array_of_tables())
-        {
-            g_themesTable = toml::parse_file(m_filePath.get());
-        }
-
-        if (!g_themesTable.at("themes").is_array_of_tables())
-        {
-            return std::unexpected("Invalid themes format");
-        }
-
         const auto &theme = m_availableThemes.at(themeIndex);
         switch (theme.tomlArrayIndex)
         {
@@ -374,6 +364,15 @@ auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle &styl
                 return {};
             default:
                 break;
+        }
+        if (g_themesTable.empty() || !g_themesTable.is_array_of_tables())
+        {
+            g_themesTable = toml::parse_file(m_filePath.get());
+        }
+
+        if (!g_themesTable.at("themes").is_array_of_tables())
+        {
+            return std::unexpected("Invalid themes format");
         }
 
         if (const auto themeTable = g_themesTable["themes"][theme.tomlArrayIndex]; themeTable.is_table())

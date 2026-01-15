@@ -639,17 +639,12 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
     if (fmodf(CursorAnim, 1.2F) <= 0.8F)
     {
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImRect const cursorScreenRect(
-            cursorScreenPos.x,
-            cursorScreenPos.y - ImGui::GetFontSize() + 0.5f,
-            cursorScreenPos.x + 1.0f,
-            cursorScreenPos.y - 1.5f
-        );
+        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
         ImGui::GetWindowDrawList()->AddLine(
-            cursorScreenRect.Min,
-            cursorScreenRect.GetBL(),
+            min,
+            ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
             ImGui::GetColorU32(ImGuiCol_InputTextCursor),
-            1.0F * settings.dpiScale
+            1.0f * settings.dpiScale
         );
     }
 
