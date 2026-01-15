@@ -16,7 +16,6 @@
 * We haven't handled `scroll` yet, because multi-line text scenarios are limited; #status/investigating 
 *  Old logic that translate point (0,0) to screen space will get incorrect result in console menu;
 * ⭐Retrieve char boundaries and call `GFxMovieView#TranslateLocalToScreen`;
-
 ## Implement Unicode Paste in flash? #
 
 **NO**. The method `pasteFromClipboard` in GFx TextField class won't work as expected.
@@ -28,10 +27,30 @@ And implement in SkyrimSE can support all UI that implemented from `IMenu` inter
 - Support preview & choose font from a specified font path;
 - store font name and index that in the `IDWriteFontSet`. Retrive font file path when user choosed a font in UI. #status/done 
 - `IDWriteFactory3` : Minimum supported client: Windows 10
-- Support choose different fonts for latin, CJK and emoji. #status/doing
+- Support choose different fonts for latin, CJK and emoji. #status/done
 - Debounce optimization:
 	- Update the preview font 200ms after the user selects a font;
-## Update ImThemes #status/todo 
+- Search/Filter font #status/done 
+- Automatically merge the nerd font when the font appied to the default font; #status/done 
+	- **Do not add your own icon fonts!** `SymbolsNerdFont` is already included via automatic merging. #userWarning
+- Save the FontBuilder configuration #status/todo 
+- Check font if duplicate?
+## Migrate config file to `toml`
 
-## Consume Scaleform event when `ToolWindowMenu` showing #status/done 
+- try use `toml` or `yaml`;
+	- [TOML](https://toml.io/en/) has better compatibility, indentation, and parsing. 
+- Already migrate configuration file to `toml`
+	- Use `toml11` parse/seriallze config file. `toml11` provide more stronger type safe and type converte.
+## Update ImThemes #status/done  
 
+## Consume Scaleform event when `ToolWindowMenu` showing #status/done
+
+- only consume events when ToolWindow#Settings is showing?
+
+## Paste: Only paste when has activing text entry.
+
+= unecceary: The CharEvent send only when has activing text entry.
+
+## Test #status/todo 
+
+- Add test

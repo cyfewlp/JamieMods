@@ -93,6 +93,7 @@ private:
     static void TsfMessageLoop(MSG msg);
 
     void        NewFrame() const;
+    static void EnableTextInputIfNeed();
     void        EndFrame() const;
     void        OnStart(Settings *pSettings);
     static void AddFonts(const Settings &settings);

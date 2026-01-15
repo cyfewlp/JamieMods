@@ -1,4 +1,4 @@
-﻿Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,readability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
+﻿Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
 HeaderFileExtensions:
   - ''
   - h

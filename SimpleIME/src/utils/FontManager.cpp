@@ -1,7 +1,7 @@
 //
 // Created by jamie on 2026/1/11.
 //
-#include "utils/FontManager.h"
+#include "ui/fonts/FontManager.h"
 
 #include "common/WCharUtils.h"
 #include "common/log.h"

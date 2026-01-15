@@ -410,7 +410,17 @@ void ImeWnd::NewFrame() const
         }
     }
     m_pImeUi->NewFrame();
+    EnableTextInputIfNeed();
+}
 
+/**
+ * @brief Notifies SkyrimSE to direct character events to ImeMenu.
+ * We call @c ControlMap::AllowTextInput and @c ImeController::EnableIme to manage focus correctly.
+ * This avoids the IME remaining enabled if the underlying menu
+ * also has a text entry field.
+ */
+void ImeWnd::EnableTextInputIfNeed()
+{
     static bool fWantTextInput = false;
     bool        cWantTextInput = ImGui::GetIO().WantTextInput;
     const auto *imeManager     = ImeController::GetInstance();
@@ -418,11 +428,13 @@ void ImeWnd::NewFrame() const
     auto* controlMap = RE::ControlMap::GetSingleton();
     if (!fWantTextInput && cWantTextInput)
     {
-        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false);
+        controlMap->AllowTextInput(true);
         imeManager->EnableIme(true);
+        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
+        controlMap->AllowTextInput(false);
         imeManager->EnableIme(false);
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true);
     }
