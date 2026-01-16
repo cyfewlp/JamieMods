@@ -8,6 +8,7 @@
 #include "core/Translation.h"
 #include "ui/Settings.h"
 #include "ui/fonts/FontBuilder.h"
+#include "ui/fonts/FontPreviewPanel.h"
 
 struct ImGuiTextFilter;
 
@@ -21,17 +22,13 @@ class FontBuilderView
     static constexpr auto TITLE_WARNINGS = "Warnings";
 
 public:
-    explicit FontBuilderView(Translation &translation) : m_translation(translation) {}
-
-    void Draw(FontBuilder &fontBuilder, Settings &settings);
+    void Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
 
 private:
-    bool DrawFontViewer(FontBuilder &fontBuilder, const Settings &settings);
-    void DrawHelpModal() const;
-    void DrawWarningsModal() const;
+    static void DrawHelpModal(const Translation &translation);
+    static void DrawWarningsModal(const Translation &translation);
 
-    ImGuiTextFilter m_filter = {};
-    Translation    &m_translation;
+    FontPreviewPanel m_fontPreviewPanel;
 };
 }
 }

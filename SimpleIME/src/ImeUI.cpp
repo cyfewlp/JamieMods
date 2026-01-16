@@ -84,14 +84,13 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
 {
     auto &appearance = settings.appearance;
-    { // Apply language config
-        if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
-            langIt == m_translateLanguages.end())
-        {
-            appearance.language = "english";
-        }
-        m_translation.UseLanguage(appearance.language.c_str());
+
+    if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
+        langIt == m_translateLanguages.end())
+    {
+        appearance.language = "english";
     }
+    m_translation.UseLanguage(appearance.language.c_str());
 
     ApplyTheme(settings);
 }
@@ -139,11 +138,6 @@ void ImeUI::ApplyTheme(Settings &settings)
     }
     ImGuiUtil::ThemesLoader::Cleanup();
     ImGui::GetStyle().FontSizeBase = appearance.fontSize;
-}
-
-void ImeUI::NewFrame()
-{
-    m_fontBuilder.BuildPreviewFont();
 }
 
 void ImeUI::Draw(const Settings &settings)
@@ -406,7 +400,7 @@ void ImeUI::DrawFontConfig(Settings &settings)
         "%.3f",
         ImGuiSliderFlags_NoInput
     );
-    m_fontBuilderView.Draw(m_fontBuilder, settings);
+    m_fontBuilderView.Draw(m_fontBuilder, m_translation, settings);
 }
 
 void ImeUI::DrawFeatures(Settings &settings)

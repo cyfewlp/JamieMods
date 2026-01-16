@@ -28,8 +28,7 @@ class ImeUI
 public:
     explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService)
         : m_pImeWnd(pImeWnd), m_pTextService(pTextService),
-          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE)),
-          m_fontBuilderView(m_translation)
+          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE))
     {
     }
 
@@ -42,7 +41,6 @@ public:
     bool Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings);
     void ApplyAppearanceSettings(Settings &settings);
     void ApplyTheme(Settings &settings);
-    void NewFrame();
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);
     void ShowToolWindow();

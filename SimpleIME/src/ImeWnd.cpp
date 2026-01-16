@@ -409,7 +409,6 @@ void ImeWnd::NewFrame() const
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
-    m_pImeUi->NewFrame();
     EnableTextInputIfNeed();
 }
 
