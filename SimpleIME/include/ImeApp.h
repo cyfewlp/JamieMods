@@ -28,7 +28,7 @@ public:
     void Initialize();
     void Uninitialize();
     void OnInputLoaded();
-    void Render() const;
+    void Draw() const;
 
     constexpr auto GetGameHWND() const -> HWND
     {

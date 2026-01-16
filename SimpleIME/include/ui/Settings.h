@@ -22,9 +22,11 @@ struct Settings
         BASED_ON_CURSOR,
         BASED_ON_CARET
     };
-    static constexpr std::string_view ICON_FILE           = "SymbolsNerdFontMono-Regular.ttf";
-    static constexpr float            MIN_FONT_SIZE_SCALE = 0.1F;
-    static constexpr float            MAX_FONT_SIZE_SCALE = 5.0F;
+    static constexpr std::string_view DEFAULT_MAIN_FONT_PATH  = "C:/Windows/Fonts/simsun.ttc";
+    static constexpr std::string_view DEFAULT_EMOJI_FONT_PATH = "C:/Windows/Fonts/seguiemj.ttf";
+    static constexpr std::string_view ICON_FILE               = "SymbolsNerdFontMono-Regular.ttf";
+    static constexpr float            MIN_FONT_SIZE_SCALE     = 0.1F;
+    static constexpr float            MAX_FONT_SIZE_SCALE     = 5.0F;
 
     float fontSizeTemp   = 16.0F; // not persist
     float dpiScale       = 1.0F;  // not persist
@@ -42,8 +44,6 @@ struct Settings
 
     struct
     {
-        std::string mainFontPath   = "C:/Windows/Fonts/simsun.ttc";
-        std::string emojiFontPath  = "C:/Windows/Fonts/seguiemj.ttf";
         std::string translationDir = "Data/interface/SimpleIME";
 
         std::vector<std::string> fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"};

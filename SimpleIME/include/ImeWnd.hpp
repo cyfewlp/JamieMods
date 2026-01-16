@@ -24,9 +24,7 @@ static inline auto g_tMainClassName = L"SimpleIME";
 
 class ImeWnd
 {
-    static constexpr WORD ID_EDIT_COPY  = 1;
-    static constexpr WORD ID_EDIT_PASTE = 2;
-    using State                         = Core::State;
+    using State = Core::State;
 
 public:
     ImeWnd(Settings &settings);
@@ -49,11 +47,7 @@ public:
      * @param pSettings
      */
     void Start(HWND hWndParent, Settings *pSettings);
-    /**
-     * initialize ImGui. Work on UI thread.
-     */
-    void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings) const
-        noexcept(false);
+
     auto Focus() const -> void;
     auto SetTsfFocus(bool focus) const -> bool;
     auto IsFocused() const -> bool;
@@ -92,11 +86,7 @@ private:
     static void OnCompositionResult(const std::wstring &compositionString);
     static void TsfMessageLoop(MSG msg);
 
-    void        NewFrame() const;
-    static void EnableTextInputIfNeed();
-    void        EndFrame() const;
     void        OnStart(Settings *pSettings);
-    static void AddFonts(const Settings &settings);
     static auto OnCreate() -> LRESULT;
     auto        OnDestroy() const -> LRESULT;
     void        InitializeTextService();

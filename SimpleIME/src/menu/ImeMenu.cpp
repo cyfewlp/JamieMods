@@ -72,7 +72,7 @@ bool ctrlDown = false;
 
 void ImeMenu::PostDisplay()
 {
-    ImeApp::GetInstance().Render();
+    ImeApp::GetInstance().Draw();
 }
 
 auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS

@@ -10,18 +10,10 @@
 #include "hooks/Hooks.hpp"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
-#include "imgui.h"
-#include "imgui_impl_dx11.h"
-#include "imgui_impl_win32.h"
-#include "misc/freetype/imgui_freetype.h"
 
-#include <d3d11.h>
 #include <msctf.h>
 #include <windows.h>
 #include <windowsx.h>
-
-// extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-extern auto ImGui_ImplWin32_GetDpiScaleForHwnd(void *hwnd) -> float;
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -162,42 +154,6 @@ void ImeWnd::OnStart(Settings *pSettings)
     ApplyUiSettings(pSettings);
 }
 
-void ImeWnd::AddFonts(const Settings &settings)
-{
-    auto &io = ImGui::GetIO();
-    io.Fonts->Clear();
-    auto *imFont = io.Fonts->AddFontFromFileTTF(settings.resources.mainFontPath.c_str());
-    if (imFont == nullptr)
-    {
-        imFont = io.Fonts->AddFontDefault();
-
-        ErrorNotifier::GetInstance().addError(
-            std::format("Can't load east asia font from {}", settings.resources.mainFontPath), ErrorMsg::Level::warning
-        );
-    }
-
-    // config font
-    ImFontConfig cfg;
-    cfg.OversampleH = cfg.OversampleV = 1;
-    cfg.MergeMode                     = true;
-    cfg.FontLoaderFlags |= ImGuiFreeTypeLoaderFlags_LoadColor;
-    if (!io.Fonts->AddFontFromFileTTF(settings.resources.emojiFontPath.c_str(), 0, &cfg))
-    {
-        ErrorNotifier::GetInstance().addError(
-            std::format("Can't load emoji font from {}", settings.resources.emojiFontPath), ErrorMsg::Level::warning
-        );
-    }
-
-    auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-    if (!io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &cfg))
-    {
-        ErrorNotifier::GetInstance().addError(
-            std::format("Can't load icon font from {}", iconFile), ErrorMsg::Level::warning
-        );
-    }
-    io.FontDefault = imFont;
-}
-
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
     // log_debug("Message: {} {} {}", uMsg, wParam, lParam);
@@ -264,37 +220,6 @@ auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
     const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
     if (ptr == 0) return nullptr;
     return reinterpret_cast<ImeWnd *>(ptr);
-}
-
-void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings) const
-    noexcept(false)
-{
-    log_info("Initializing ImGui...");
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    if (!ImGui_ImplWin32_Init(hWnd)) // avoid use member m_hWndParent: async with ImeWnd thread
-    {
-        throw SimpleIMEException("ImGui initialization failed (Win32)");
-    }
-
-    if (!ImGui_ImplDX11_Init(device, context))
-    {
-        throw SimpleIMEException("ImGui initialization failed (DX11)");
-    }
-
-    RECT     rect = {0, 0, 0, 0};
-    ImGuiIO &io   = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Keyboard Controls
-    io.ConfigNavMoveSetMousePos = false;
-    GetClientRect(m_hWndParent, &rect);
-    io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
-
-    settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    AddFonts(settings);
-
-    log_info("ImGui initialized!");
 }
 
 auto ImeWnd::OnCreate() -> LRESULT
@@ -391,67 +316,8 @@ void ImeWnd::AbortIme() const
     }
 }
 
-/**
- * If Game cursor no showing/update, update ImGui cursor from system cursor pos
- */
-void ImeWnd::NewFrame() const
-{
-    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
-    {
-        POINT cursorPos;
-        if (ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
-        {
-            auto *menuCursor = RE::MenuCursor::GetSingleton();
-            ImGui::GetIO().AddMousePosEvent(menuCursor->cursorPosX, menuCursor->cursorPosY);
-        }
-        else if (GetCursorPos(&cursorPos) != FALSE)
-        {
-            ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
-        }
-    }
-    EnableTextInputIfNeed();
-}
-
-/**
- * @brief Notifies SkyrimSE to direct character events to ImeMenu.
- * We call @c ControlMap::AllowTextInput and @c ImeController::EnableIme to manage focus correctly.
- * This avoids the IME remaining enabled if the underlying menu
- * also has a text entry field.
- */
-void ImeWnd::EnableTextInputIfNeed()
-{
-    static bool fWantTextInput = false;
-    bool        cWantTextInput = ImGui::GetIO().WantTextInput;
-    const auto *imeManager     = ImeController::GetInstance();
-
-    auto* controlMap = RE::ControlMap::GetSingleton();
-    if (!fWantTextInput && cWantTextInput)
-    {
-        controlMap->AllowTextInput(true);
-        imeManager->EnableIme(true);
-        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false);
-    }
-    else if (fWantTextInput && !cWantTextInput)
-    {
-        controlMap->AllowTextInput(false);
-        imeManager->EnableIme(false);
-        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true);
-    }
-    fWantTextInput = cWantTextInput;
-}
-
-void ImeWnd::EndFrame() const
-{
-    m_settings.appearance.fontSizeScale = ImGui::GetStyle().FontScaleMain;
-}
-
 void ImeWnd::DrawIme(Settings &settings) const
 {
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    NewFrame();
-    ImGui::NewFrame();
-
     ImGui::PushFont(nullptr, settings.appearance.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
@@ -459,10 +325,6 @@ void ImeWnd::DrawIme(Settings &settings) const
         m_pImeUi->Draw(settings);
     }
     ImGui::PopFont();
-
-    EndFrame();
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 void ImeWnd::ShowToolWindow() const

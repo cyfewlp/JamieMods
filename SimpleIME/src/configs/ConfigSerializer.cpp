@@ -136,8 +136,13 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
         settings.logging.flushLevel = toml::find_or(core, "logging", "flush_level", settings.logging.flushLevel);
     }
 
-    settings.resources.translationDir =
-        toml::find_or(config, "resources", "translation_dir", settings.resources.translationDir);
+    if (config.contains("resources"))
+    {
+        auto &resources = config["resources"];
+        settings.resources.translationDir =
+            toml::find_or(resources, "translation_dir", settings.resources.translationDir);
+        settings.resources.fontPathList = toml::get<std::vector<std::string>>(resources["fonts"]);
+    }
 
     if (config.contains("appearance"))
     {

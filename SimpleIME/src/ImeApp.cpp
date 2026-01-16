@@ -16,9 +16,9 @@
 #include "ime/ImeController.h"
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
+#include "ui/ImGuiManager.h"
 
 #include <basetsd.h>
-#include <cstdint>
 #include <future>
 #include <memory>
 #include <thread>
@@ -91,6 +91,7 @@ void ImeApp::Initialize()
 
 void ImeApp::Uninitialize()
 {
+    ImGuiManager::Shutdown();
     if (m_fInitialized)
     {
         Hooks::WinHooks::Uninstall();
@@ -223,7 +224,8 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     // run ImeWnd in a standalone thread
     auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
-    m_imeWnd.InitImGui(m_hWnd, device, context, m_settings);
+
+    ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
 
     std::thread childWndThread([&ensureInitialized, this] {
         try
@@ -264,9 +266,14 @@ void ImeApp::UninstallHooks()
     Hooks::ScaleformHooks::Uninstall();
 }
 
-void ImeApp::Render() const
+void ImeApp::Draw() const
 {
+    ImGuiManager::NewFrame();
+
     m_imeWnd.DrawIme(m_settings);
+
+    ImGuiManager::EndFrame(m_settings);
+    ImGuiManager::Render();
 }
 
 auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
