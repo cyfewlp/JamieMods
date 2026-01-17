@@ -14,11 +14,9 @@ namespace Ime
 {
 class ConfigSerializer
 {
-    static constexpr auto CONFIG_FILE_NAME = "SimpleIME.toml";
-
 public:
-    static void Serialize(Settings &settings);
-    static void Deserialize(Settings &settings);
+    static void Serialize(const std::string &fileName, Settings &settings);
+    static void Deserialize(const std::string &fileName, Settings &settings);
 
 private:
     static void DoDeserialize(toml::value &config, Settings &settings);

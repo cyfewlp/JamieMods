@@ -6,7 +6,6 @@
 #include "common/config.h"
 #include "common/log.h"
 #include "common/toml/toml.hpp"
-#include "common/utils.h"
 #include "ui/Settings.h"
 
 #include <algorithm>
@@ -106,13 +105,11 @@ static auto toString(const spdlog::level::level_enum &level) -> std::string
     }
 }
 
-void ConfigSerializer::Deserialize(Settings &settings)
+void ConfigSerializer::Deserialize(const std::string &fileName, Settings &settings)
 {
-    const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
-
     try
     {
-        auto config = toml::parse(filePath);
+        auto config = toml::parse(fileName);
         DoDeserialize(config, settings);
     }
     catch (toml::exception &exception)
@@ -139,9 +136,8 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
     if (config.contains("resources"))
     {
         auto &resources = config["resources"];
-        settings.resources.translationDir =
-            toml::find_or(resources, "translation_dir", settings.resources.translationDir);
-        settings.resources.fontPathList = toml::get<std::vector<std::string>>(resources["fonts"]);
+        findAndSet(resources, "translation_dir", settings.resources.translationDir);
+        findAndSet(resources, "fonts", settings.resources.fontPathList);
     }
 
     if (config.contains("appearance"))
@@ -165,20 +161,18 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
     }
 }
 
-void ConfigSerializer::Serialize(Settings &settings)
+void ConfigSerializer::Serialize(const std::string &fileName, Settings &settings)
 {
-    const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
-
     try
     {
         auto settingsValue = DoSerialize(settings);
 
         std::ofstream file;
         file.exceptions(std::ios::failbit | std::ios::badbit);
-        file.open(filePath, std::ios::out | std::ios::trunc);
+        file.open(fileName, std::ios::out | std::ios::trunc);
         file << toml::format(settingsValue);
         file.close();
-        log_info("Configuration saved successfully to {}", filePath);
+        log_info("Configuration saved successfully to {}", fileName);
     }
     catch (const std::ios_base::failure &e)
     {

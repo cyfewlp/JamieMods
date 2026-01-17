@@ -26,6 +26,7 @@
 namespace LIBC_NAMESPACE_DECL
 {
 
+static constexpr auto               CONFIG_FILE_NAME = "SimpleIME.toml";
 static std::unique_ptr<Ime::ImeApp> g_instance;
 
 bool PluginInit()
@@ -34,7 +35,9 @@ bool PluginInit()
     const auto  version = plugin->GetVersion();
 
     static Ime::Settings g_settings;
-    Ime::ConfigSerializer::Deserialize(g_settings);
+
+    const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
+    Ime::ConfigSerializer::Deserialize(filePath, g_settings);
     InitializeLogging(g_settings.logging.level, g_settings.logging.flushLevel);
     g_instance = std::make_unique<Ime::ImeApp>(g_settings);
 
@@ -81,8 +84,8 @@ void ImeApp::Initialize()
     m_fInitialized.store(false);
     Hooks::WinHooks::Install();
 
-    D3DInitHook               = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
-    auto       &errorNotifier = ErrorNotifier::GetInstance();
+    D3DInitHook         = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
+    auto &errorNotifier = ErrorNotifier::GetInstance();
     errorNotifier.SetMessageDuration(m_settings.appearance.errorDisplayDuration);
 #ifdef SIMPLE_IME_DEBUG
     errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
@@ -99,7 +102,8 @@ void ImeApp::Uninitialize()
         D3DInitHook = nullptr;
         UninstallHooks();
     }
-    ConfigSerializer::Serialize(m_settings);
+    const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
+    ConfigSerializer::Serialize(filePath, m_settings);
     m_fInitialized.store(false);
 }
 

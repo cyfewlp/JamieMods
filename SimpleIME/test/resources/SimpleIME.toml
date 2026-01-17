@@ -1,0 +1,31 @@
+[core]
+shortcut_key = 0x9999
+enable_mod = false
+enable_tsf = false
+
+[core.logging]
+level = "off"
+flush_level = "off"
+
+[resources]
+translation_dir = "path/to/translation"
+fonts = [
+    "path/to/font1.ttf",
+    "path/to/font2.ttf",
+]
+
+[appearance]
+font_size = 9999.0
+font_size_scale = 9999.0
+language = "a language"
+
+theme = "a theme"
+error_display_duration = 9999
+
+show_settings = true
+
+[input]
+pos_update_policy = "xxx"
+
+enable_unicode_paste = false
+keep_ime_open = true

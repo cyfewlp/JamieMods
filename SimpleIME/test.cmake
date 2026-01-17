@@ -6,11 +6,8 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(
     ${TEST_PROJ_NAME}
-    ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
-    src/ime/ImeController.cpp
-    src/ime/ImeManager.cpp
+    src/configs/ConfigSerializer.cpp
     ${TEST_SOURCES}
-    ${IMGUI_SOURCES}
 )
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
 

@@ -28,44 +28,59 @@ struct Settings
     static constexpr float            MIN_FONT_SIZE_SCALE     = 0.1F;
     static constexpr float            MAX_FONT_SIZE_SCALE     = 5.0F;
 
-    float fontSizeTemp   = 16.0F; // not persist
-    float dpiScale       = 1.0F;  // not persist
-    bool  wantResizeFont = false; // not persist
+    struct RuntimeState
+    {
+        float fontSizeTemp   = 16.0F;
+        float dpiScale       = 1.0F;
+        bool  wantResizeFont = false;
+
+        bool operator==(const RuntimeState &other) const = default;
+    } state;
 
     uint32_t shortcutKey = 0x3C;
     bool     enableMod   = true;
     bool     enableTsf   = true;
 
-    struct
+    struct Logging
     {
         spdlog::level::level_enum level      = spdlog::level::info;
         spdlog::level::level_enum flushLevel = spdlog::level::info;
+
+        bool operator==(const Logging &other) const = default;
     } logging;
 
-    struct
+    struct Resources
     {
         std::string translationDir = "Data/interface/SimpleIME";
 
         std::vector<std::string> fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"};
+
+        bool operator==(const Resources &other) const = default;
     } resources;
 
-    struct
+    struct Appearance
     {
         std::string theme                = "darcula";
-        std::size_t themeIndex           = 0; // not persist
+        std::size_t themeIndex           = 0;
         std::string language             = "english";
-        float       fontSize             = 16.0F; // not persist
+        float       fontSize             = 16.0F;
         float       fontSizeScale        = 1.0F;
         int         errorDisplayDuration = 10;
         bool        showSettings         = false;
+
+        bool operator==(const Appearance &other) const = default;
     } appearance;
 
-    struct
+    struct Input
     {
         bool                  enableUnicodePaste = true;
         bool                  keepImeOpen        = false;
         WindowPosUpdatePolicy posUpdatePolicy    = WindowPosUpdatePolicy::BASED_ON_CARET;
+
+        bool operator==(const Input &other) const = default;
     } input;
+
+    bool operator==(const Settings &other) const = default;
 };
 }
 }
