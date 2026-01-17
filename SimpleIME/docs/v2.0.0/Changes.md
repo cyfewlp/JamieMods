@@ -50,7 +50,7 @@ And implement in SkyrimSE can support all UI that implemented from `IMenu` inter
 ## Paste: Only paste when has activing text entry.
 
 = unecceary: The CharEvent send only when has activing text entry.
+## Optimize `InitErrorMessageShow`
+## Test #status/done
 
-## Test #status/todo 
-
-- Add test
+- [x] ConfigSerializerTest 
