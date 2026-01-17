@@ -384,11 +384,11 @@ void ImeUI::DrawModConfig(Settings &settings)
 
 void ImeUI::DrawFontConfig(Settings &settings)
 {
-    ImGui::SliderFloat(Translate("$Font_Size"), &settings.fontSizeTemp, 10.0F, 100.0F);
+    ImGui::SliderFloat(Translate("$Font_Size"), &settings.state.fontSizeTemp, 10.0F, 100.0F);
     ImGui::SameLine();
     if (ImGui::Button(std::format("{} {}", ICON_OCT_CHECK, Translate("$Apply")).c_str()))
     {
-        settings.appearance.fontSize = settings.fontSizeTemp;
+        settings.appearance.fontSize = settings.state.fontSizeTemp;
     }
 
     ImGui::DragFloat(
@@ -602,7 +602,7 @@ void ImeUI::DrawCompWindow(const Settings &settings) const
             min,
             ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
             ImGui::GetColorU32(ImGuiCol_InputTextCursor),
-            1.0f * settings.dpiScale
+            1.0f * settings.state.dpiScale
         );
     }
 
@@ -791,11 +791,11 @@ void ImeUI::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
 
 void ImeUI::FillCommonStyleFields(ImGuiStyle &style, const Settings &settings)
 {
-    if (settings.dpiScale != 1.0F)
+    if (settings.state.dpiScale != 1.0F)
     {
-        style.ScaleAllSizes(settings.dpiScale);
+        style.ScaleAllSizes(settings.state.dpiScale);
     }
-    style.FontScaleDpi = settings.dpiScale;
+    style.FontScaleDpi = settings.state.dpiScale;
 }
 
 } // namespace  SimpleIME

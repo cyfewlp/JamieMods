@@ -359,7 +359,7 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
     {
         if (m_imFont)
         {
-            ImGui::PushFont(m_imFont.UnsafeGetFont(), settings.fontSizeTemp);
+            ImGui::PushFont(m_imFont.UnsafeGetFont(), settings.state.fontSizeTemp);
 
             ImGui::InputTextMultiline(
                 "##PreviewText",

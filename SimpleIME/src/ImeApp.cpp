@@ -201,9 +201,9 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
     }
 
-    m_hWnd                  = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-    m_hIMCDefault           = ImmAssociateContext(m_hWnd, nullptr);
-    m_settings.fontSizeTemp = m_settings.appearance.fontSize;
+    m_hWnd                        = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
+    m_hIMCDefault                 = ImmAssociateContext(m_hWnd, nullptr);
+    m_settings.state.fontSizeTemp = m_settings.appearance.fontSize;
 
     Start(renderData);
     m_fInitialized.store(true);

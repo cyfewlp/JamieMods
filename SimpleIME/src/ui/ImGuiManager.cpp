@@ -45,7 +45,7 @@ void ImGuiManager::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceConte
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigNavMoveSetMousePos = false;
 
-    settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+    settings.state.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
     InitFonts(settings);
 
     g_initialized = true;
