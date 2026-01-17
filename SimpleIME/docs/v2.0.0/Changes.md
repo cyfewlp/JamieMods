@@ -21,20 +21,6 @@
 **NO**. The method `pasteFromClipboard` in GFx TextField class won't work as expected.
 And implement in SkyrimSE can support all UI that implemented from `IMenu` interface.
 
-## Support preview & choose installed font
-
-- Support preview & choose installed font; #status/done 
-- Support preview & choose font from a specified font path;
-- store font name and index that in the `IDWriteFontSet`. Retrive font file path when user choosed a font in UI. #status/done 
-- `IDWriteFactory3` : Minimum supported client: Windows 10
-- Support choose different fonts for latin, CJK and emoji. #status/done
-- Debounce optimization:
-	- Update the preview font 200ms after the user selects a font;
-- Search/Filter font #status/done 
-- Automatically merge the nerd font when the font appied to the default font; #status/done 
-	- **Do not add your own icon fonts!** `SymbolsNerdFont` is already included via automatic merging. #userWarning
-- Save the FontBuilder configuration #status/todo 
-- Check font if duplicate?
 ## Migrate config file to `toml`
 
 - try use `toml` or `yaml`;

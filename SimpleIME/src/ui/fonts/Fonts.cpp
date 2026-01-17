@@ -88,7 +88,7 @@ void ImFontWrap::Cleanup()
 
 void ImFontWrap::RemoveFontIfOwned() const
 {
-    if (owner && font != nullptr)
+    if (owner && font != nullptr && ImGui::GetCurrentContext() != nullptr)
     {
         ImGui::GetIO().Fonts->RemoveFont(font);
     }
@@ -293,7 +293,14 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
         }
     }
     ImGui::SameLine();
-    ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_imFont.GetFontPathOr(0).c_str());
+    if (m_debounceTimer.IsWaiting())
+    {
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextLink), ICON_MD_REFRESH);
+    }
+    else
+    {
+        ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_imFont.GetFontPathOr(0).c_str());
+    }
     ImGui::EndDisabled();
     ImGui::PopID();
 
@@ -318,8 +325,9 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
 
     if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0F, TEXT_BASE_HEIGHT * MAX_ROWS)))
     {
-        int idx = 0;
-        for (const auto &fontInfo : fontBuilder.GetFontManager().GetFontInfoList())
+        int         idx          = 0;
+        const auto &fontInfoList = fontBuilder.GetFontManager().GetFontInfoList();
+        for (const auto &fontInfo : fontInfoList)
         {
             if (!m_filter.PassFilter(fontInfo.name.c_str()))
             {
@@ -335,12 +343,8 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
             const bool selected = selectedIndex == idx;
             if (ImGui::Selectable(fontInfo.name.c_str(), selected) && !selected)
             {
-                selectedIndex       = idx;
-                const auto filePath = FontManager::GetFontFilePath(fontInfo);
-                if (!filePath.empty())
-                {
-                    PreviewFont(fontInfo.name, filePath);
-                }
+                selectedIndex = idx;
+                m_debounceTimer.Poke();
             }
             if (selected)
             {
@@ -351,6 +355,23 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
             idx++;
         }
         ImGui::EndTable();
+
+        if (m_debounceTimer.Check())
+        {
+            if (static_cast<size_t>(selectedIndex) >= fontInfoList.size())
+            {
+                m_debounceTimer.Reset();
+            }
+            else
+            {
+                auto      &fontInfo = fontInfoList[selectedIndex];
+                const auto filePath = FontManager::GetFontFilePath(fontInfo);
+                if (!filePath.empty())
+                {
+                    PreviewFont(fontInfo.name, filePath);
+                }
+            }
+        }
     }
     ImGui::EndChild();
 

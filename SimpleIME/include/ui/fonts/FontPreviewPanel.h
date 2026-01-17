@@ -5,7 +5,10 @@
 #pragma once
 
 #include "common/config.h"
+#include "ui/DebounceTimer.h"
 #include "ui/fonts/ImFontWrap.h"
+
+#include <chrono>
 
 struct ImGuiTextFilter;
 
@@ -16,6 +19,7 @@ namespace Ime
 class FontPreviewPanel
 {
     ImFontWrap      m_imFont{nullptr, "", ""};
+    DebounceTimer   m_debounceTimer{300ms};
     ImGuiTextFilter m_filter = {};
 
 public:
