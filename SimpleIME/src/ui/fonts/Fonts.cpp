@@ -189,28 +189,7 @@ bool FontBuilder::ApplyFont(Settings &settings)
 void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
 {
     if (!ImGui::CollapsingHeader(translation["$Font_Builder"])) return;
-    // draw chosen font information
-    if (fontBuilder.IsBuilding() &&
-        ImGui::BeginTable(
-            "BasicFontInfo",
-            2,
-            ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit,
-            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3)
-        ))
-    {
-        int idx = 0;
-        for (const auto &name : fontBuilder.GetBaseFont().GetFontNames())
-        {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", idx + 1);
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", name.c_str());
-            idx++;
-        }
-        ImGui::EndTable();
-    }
-
+    DrawFontInfoTable(fontBuilder);
     auto styleCount = LayoutHelper::PushButtonStyles(Material3Styles::XSMALL_ICON_BUTTON, true);
 
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
@@ -267,6 +246,46 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
             m_fontPreviewPanel.Cleanup();
         }
     }
+}
+
+void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder)
+{
+    auto listStyle = Material3Styles::LIST_4DENSITY;
+    ImGui::PushFont(nullptr, listStyle.fontSize);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, listStyle.spacing);
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, listStyle.padding);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, Material3Styles::CUSTOM_THICK_SCROLL_BAR_SIZE);
+
+    ImGui::Indent(listStyle.padding.x);
+    constexpr auto flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody |
+                           ImGuiTableFlags_SizingFixedFit;
+    constexpr int MAX_DISPLAY_ROWS = 3;
+    float         cellHeight       = listStyle.fontSize + listStyle.supportFontSize + listStyle.padding.y * 2.f;
+    if (fontBuilder.IsBuilding() &&
+        ImGui::BeginTable("BasicFontInfo", 2, flags, ImVec2(-FLT_MIN, cellHeight * MAX_DISPLAY_ROWS)))
+    {
+        auto &names = fontBuilder.GetBaseFont().GetFontNames();
+        auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
+        if (names.size() == paths.size())
+        {
+            for (size_t idx = 0; idx < names.size(); idx++)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("%llu", idx + 1);
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", names[idx].c_str());
+                ImGui::PushFont(nullptr, listStyle.supportFontSize);
+                ImGui::Text("%s", paths[idx].c_str());
+                ImGui::PopFont();
+            }
+        }
+        ImGui::EndTable();
+    }
+    ImGui::Unindent();
+    ImGui::PopFont();
+    ImGui::PopStyleVar(3);
 }
 
 void FontBuilderView::DrawHelpModal(const Translation &translation)

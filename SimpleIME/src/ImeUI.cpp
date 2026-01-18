@@ -10,6 +10,7 @@
 #include "common/WCharUtils.h"
 #include "common/config.h"
 #include "common/imgui/ErrorNotifier.h"
+#include "common/imgui/Material3Styles.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
@@ -305,6 +306,7 @@ void ImeUI::DrawSettings(Settings &settings)
     }
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Material3Styles::CUSTOM_WINDOW_PADDING2);
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         m_translation.UseSection("Settings");
@@ -321,6 +323,7 @@ void ImeUI::DrawSettings(Settings &settings)
         }
     }
     ImGui::End();
+    ImGui::PopStyleVar();
     imeManager->SyncImeStateIfDirty();
 }
 

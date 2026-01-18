@@ -25,6 +25,7 @@ public:
     void Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
 
 private:
+    static void DrawFontInfoTable(const FontBuilder &fontBuilder);
     static void DrawHelpModal(const Translation &translation);
     static void DrawWarningsModal(const Translation &translation);
 

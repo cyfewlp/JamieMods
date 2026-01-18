@@ -12,6 +12,12 @@ namespace LIBC_NAMESPACE_DECL
 /// https://m3.material.io/
 namespace Material3Styles
 {
+
+static constexpr auto CUSTOM_WINDOW_PADDING1       = ImVec2{32.f, 32.f};
+static constexpr auto CUSTOM_WINDOW_PADDING2       = ImVec2{16.f, 16.f};
+static constexpr auto CUSTOM_WINDOW_PADDING4       = ImVec2{8.f, 8.f};
+static constexpr auto CUSTOM_THICK_SCROLL_BAR_SIZE = 8.f;
+
 struct ButtonStyle
 {
     float  fontSize;
@@ -33,15 +39,38 @@ static constexpr auto SMALL_BUTTON = ButtonStyle{
 };
 
 static constexpr auto XSMALL_ICON_BUTTON = ButtonStyle{
-    .fontSize = 20.f, .padding = ImVec2{6.f, 6.f },
+    .fontSize = 20.f, .padding = ImVec2{6.f,  6.f },
          .spacing = ImVec2{16.f, 16.f},
          .rounding = 8.f
 };
 
 static constexpr auto SMALL_ICON_BUTTON = ButtonStyle{
     .fontSize = 20.f, .padding = ImVec2{10.f, 10.f},
-         .spacing = ImVec2{8.f, 8.f },
+         .spacing = ImVec2{8.f,  8.f },
          .rounding = 8.f
 };
+
+struct ListStyle
+{
+    float  fontSize;
+    float  supportFontSize;
+    ImVec2 padding;
+    ImVec2 spacing;
+};
+
+static constexpr auto LIST_2DENSITY = ListStyle{
+    .fontSize        = 24.f,
+    .supportFontSize = 20.f,
+    .padding         = ImVec2{16.f, 12.f},
+    .spacing         = ImVec2{16.f, 0.f },
+};
+
+static constexpr auto LIST_4DENSITY = ListStyle{
+    .fontSize        = 24.f,
+    .supportFontSize = 20.f,
+    .padding         = ImVec2{16.f, 8.f},
+    .spacing         = ImVec2{16.f, 0.f},
+};
+
 }
 }
