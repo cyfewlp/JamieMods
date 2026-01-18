@@ -143,7 +143,6 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
     if (config.contains("appearance"))
     {
         auto &appearance = config["appearance"];
-        findAndSet(appearance, "font_size", settings.appearance.fontSize);
         findAndSet(appearance, "font_size_scale", settings.appearance.fontSizeScale);
         findAndSet(appearance, "language", settings.appearance.language);
         findAndSet(appearance, "theme", settings.appearance.theme);
@@ -216,15 +215,13 @@ static toml::table CoreTomlTable(Settings &settings)
 static toml::table AppearanceTomlTable(Settings &settings)
 {
     return {
-        {"font_size",              settings.appearance.fontSize                                       },
-        {"font_size_scale",
-         {settings.appearance.fontSizeScale, {" 缩放倍率 (UiFontSize = font_size * font_size_scale)"}}},
-        {"language",               settings.appearance.language                                       },
-        {"theme",                  settings.appearance.theme                                          },
-        {"theme_index",            settings.appearance.themeIndex                                     },
+        {"font_size_scale",        {settings.appearance.fontSizeScale, {" 缩放倍率, 同时影响 UI 尺寸"}}},
+        {"language",               settings.appearance.language                                        },
+        {"theme",                  settings.appearance.theme                                           },
+        {"theme_index",            settings.appearance.themeIndex                                      },
         {"error_display_duration",
-         {settings.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}  },
-        {"show_settings",          settings.appearance.showSettings                                   },
+         {settings.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}   },
+        {"show_settings",          settings.appearance.showSettings                                    },
     };
 }
 

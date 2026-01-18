@@ -318,7 +318,7 @@ void ImeWnd::AbortIme() const
 
 void ImeWnd::DrawIme(Settings &settings) const
 {
-    ImGui::PushFont(nullptr, settings.appearance.fontSize);
+    ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
         m_pImeUi->DrawToolWindow(settings);

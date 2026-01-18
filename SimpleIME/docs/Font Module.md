@@ -15,3 +15,8 @@
 - Save the FontBuilder configuration #status/done 
 - Check font if duplicate?
   - Get the unique font id from DWrite. #status/investigating 
+- CLeanup when ToolWindow closed #status/todo 
+## Following Google's Material 3 Design Specification
+
+- Remove `fontSize` configruation from UI and config file:
+	- Use the **fixed** `fontSize` + scale factor to control UI.

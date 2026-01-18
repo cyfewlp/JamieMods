@@ -26,8 +26,12 @@ public:
 
     constexpr bool IsBuilding() const;
 
-    void SetBaseFont(ImFontWrap &imFont);
+    bool AddFont(int fontId, ImFontWrap &imFont);
+
+private:
     bool MergeFont(ImFontWrap &imFontWrap);
+
+public:
     /**
      * Apply current build font to the default @c ImGui font
      * @return is applied?
@@ -50,8 +54,9 @@ public:
     }
 
 private:
-    FontManager m_fontManager = {};
-    ImFontWrap  m_baseFont{nullptr, "", ""};
+    FontManager      m_fontManager = {};
+    ImFontWrap       m_baseFont{nullptr, "", ""};
+    std::vector<int> m_usedFontIds; // font index in FontManger#fontInfo list.
 };
 }
 }

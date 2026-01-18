@@ -137,7 +137,7 @@ void ImeUI::ApplyTheme(Settings &settings)
         }
     }
     ImGuiUtil::ThemesLoader::Cleanup();
-    ImGui::GetStyle().FontSizeBase = appearance.fontSize;
+    ImGui::GetStyle().FontSizeBase = settings.state.fontSize;
 }
 
 void ImeUI::Draw(const Settings &settings)
@@ -384,13 +384,6 @@ void ImeUI::DrawModConfig(Settings &settings)
 
 void ImeUI::DrawFontConfig(Settings &settings)
 {
-    ImGui::SliderFloat(Translate("$Font_Size"), &settings.state.fontSizeTemp, 10.0F, 100.0F);
-    ImGui::SameLine();
-    if (ImGui::Button(std::format("{} {}", ICON_OCT_CHECK, Translate("$Apply")).c_str()))
-    {
-        settings.appearance.fontSize = settings.state.fontSizeTemp;
-    }
-
     ImGui::DragFloat(
         Translate("$Font_Size_Scale"),
         &ImGui::GetStyle().FontScaleMain,

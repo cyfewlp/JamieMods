@@ -23,7 +23,13 @@ class FontPreviewPanel
     ImGuiTextFilter m_filter = {};
 
 public:
-    bool Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings);
+    struct InteractState
+    {
+        bool interact      = false;
+        int  selectedIndex = -1;
+    };
+
+    auto Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings) -> InteractState;
 
     void PreviewFont(const std::string &fontName, const std::string &fontPath);
 
@@ -43,6 +49,8 @@ public:
     {
         return m_imFont;
     }
+private:
+    InteractState m_interactState;
 };
 }
 }

@@ -74,7 +74,7 @@ auto FontManager::GetFontFilePath(const FontInfo &fontInfo) -> std::string
     if (FAILED(hr)) return result;
 
     ComPtr<IDWriteFontFaceReference> fontRef;
-    hr = fontSet->GetFontFaceReference(fontInfo.index, &fontRef);
+    hr = fontSet->GetFontFaceReference(static_cast<uint32_t>(fontInfo.GetIndex()), &fontRef);
     if (FAILED(hr)) return result;
 
     ComPtr<IDWriteFontFile> fontFile;

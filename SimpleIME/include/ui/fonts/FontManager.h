@@ -14,16 +14,27 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-struct FontInfo
+class FontInfo
 {
     int32_t     index = -1; // index in font set
     std::string name;
 
+public:
     FontInfo(const int32_t index, const std::string &name) : index(index), name(name) {}
 
     bool IsInvalid() const
     {
         return index == -1;
+    }
+
+    auto GetName() const -> const std::string &
+    {
+        return name;
+    }
+
+    auto GetIndex() const -> int32_t
+    {
+        return index;
     }
 };
 

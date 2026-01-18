@@ -30,7 +30,7 @@ struct Settings
 
     struct RuntimeState
     {
-        float fontSizeTemp   = 16.0F;
+        float fontSize       = 20.F;
         float dpiScale       = 1.0F;
         bool  wantResizeFont = false;
 
@@ -63,7 +63,6 @@ struct Settings
         std::string theme                = "darcula";
         std::size_t themeIndex           = 0;
         std::string language             = "english";
-        float       fontSize             = 16.0F;
         float       fontSizeScale        = 1.0F;
         int         errorDisplayDuration = 10;
         bool        showSettings         = false;

@@ -1,6 +1,8 @@
 //
 // Created by jamie on 2026/1/15.
 //
+#include "common/imgui/LayoutHelper.h"
+#include "common/imgui/Material3Styles.h"
 #include "common/utils.h"
 #include "icons.h"
 #include "imgui.h"
@@ -99,9 +101,28 @@ constexpr auto FontBuilder::IsBuilding() const -> bool
     return m_baseFont.IsCommittable();
 }
 
-auto FontBuilder::SetBaseFont(ImFontWrap &imFont) -> void
+bool FontBuilder::AddFont(int fontId, ImFontWrap &imFont)
 {
-    m_baseFont = std::move(imFont);
+    bool result = true;
+
+    if (std::ranges::contains(m_usedFontIds, fontId)) // already used
+    {
+        return false;
+    }
+
+    if (!IsBuilding())
+    {
+        m_baseFont = std::move(imFont);
+    }
+    else // merge to base font
+    {
+        result = MergeFont(imFont);
+    }
+    if (result)
+    {
+        m_usedFontIds.push_back(fontId);
+    }
+    return result;
 }
 
 bool FontBuilder::MergeFont(ImFontWrap &imFontWrap)
@@ -168,7 +189,6 @@ bool FontBuilder::ApplyFont(Settings &settings)
 void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
 {
     ImGui::SeparatorText(translation["$Font_Builder"]);
-
     // draw chosen font information
     if (fontBuilder.IsBuilding() &&
         ImGui::BeginTable(
@@ -189,51 +209,55 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
             idx++;
         }
         ImGui::EndTable();
-        ImGui::BeginDisabled(!fontBuilder.IsBuilding());
-        if (ImGui::Button(translation["$Font_Builder_SetAsDefault"]))
-        {
-            fontBuilder.ApplyFont(settings);
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button(translation["$Font_Builder_Reset"]))
-        {
-            fontBuilder.Reset();
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button(translation["$Font_Builder_Preview"]))
-        {
-            m_fontPreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
-        }
-        ImGui::EndDisabled();
-
-        ImGui::Separator();
     }
 
-    if (ImGui::Button(ICON_MD_HELP_BOX))
+    auto styleCount = LayoutHelper::PushButtonStyles(Material3Styles::XSMALL_ICON_BUTTON, true);
+
+    ImGui::BeginDisabled(!fontBuilder.IsBuilding());
+    if (ImGui::Button(ICON_MD_CHECK_DECAGRAM))
+    {
+        fontBuilder.ApplyFont(settings);
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_SetAsDefault"]);
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_MD_RESTORE))
+    {
+        fontBuilder.Reset();
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Reset"]);
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_MD_EYE))
+    {
+        m_fontPreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Preview"]);
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_MD_ALERT_CIRCLE_OUTLINE))
     {
         ImGui::OpenPopup(TITLE_HELP);
     }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Warning"]);
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_WARNING))
+    if (ImGui::Button(ICON_MD_HELP_CIRCLE_OUTLINE))
     {
         ImGui::OpenPopup(TITLE_WARNINGS);
     }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Help"]);
+    ImGui::PopStyleVar(styleCount);
+
     DrawHelpModal(translation);
     DrawWarningsModal(translation);
 
-    if (m_fontPreviewPanel.Draw(fontBuilder, translation, settings))
+    if (auto state = m_fontPreviewPanel.Draw(fontBuilder, translation, settings); state.interact)
     {
-        if (!fontBuilder.IsBuilding())
+        if (fontBuilder.AddFont(state.selectedIndex, m_fontPreviewPanel.GetImFont()))
         {
-            fontBuilder.SetBaseFont(m_fontPreviewPanel.GetImFont());
+            m_fontPreviewPanel.Cleanup();
         }
-        else // merge to base font
-        {
-            fontBuilder.MergeFont(m_fontPreviewPanel.GetImFont());
-        }
-        m_fontPreviewPanel.Cleanup();
     }
 }
 
@@ -272,24 +296,22 @@ void FontBuilderView::DrawWarningsModal(const Translation &translation)
     }
 }
 
-bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings)
+auto FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings)
+    -> InteractState
 {
-    static int selectedIndex = -1;
-
     constexpr auto MAX_ROWS         = 12;
     const float    TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
     const ImVec2   FontViewerSize   = {200.0F, TEXT_BASE_HEIGHT * MAX_ROWS};
 
-    bool applied = false;
+    m_interactState.interact = false;
 
     ImGui::PushID(1);
     ImGui::BeginDisabled(!m_imFont.IsCommittable());
     if (ImGui::Button(std::format("{} {}", ICON_MD_CONTENT_SAVE_MOVE, translation["$Add"]).c_str()))
     {
-        if (selectedIndex >= 0)
+        if (m_interactState.selectedIndex >= 0)
         {
-            applied       = true;
-            selectedIndex = -1;
+            m_interactState.interact = true;
         }
     }
     ImGui::SameLine();
@@ -325,11 +347,11 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
 
     if (ImGui::BeginTable("#InstalledFonts", 2, flags, ImVec2(0.0F, TEXT_BASE_HEIGHT * MAX_ROWS)))
     {
-        int         idx          = 0;
         const auto &fontInfoList = fontBuilder.GetFontManager().GetFontInfoList();
-        for (const auto &fontInfo : fontInfoList)
+        for (int idx = 0; static_cast<size_t>(idx) < fontInfoList.size(); idx++)
         {
-            if (!m_filter.PassFilter(fontInfo.name.c_str()))
+            const auto &fontInfo = fontInfoList[idx];
+            if (!m_filter.PassFilter(fontInfo.GetName().c_str()))
             {
                 continue;
             }
@@ -340,10 +362,10 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
             ImGui::Text("%d", idx + 1);
 
             ImGui::TableNextColumn();
-            const bool selected = selectedIndex == idx;
-            if (ImGui::Selectable(fontInfo.name.c_str(), selected) && !selected)
+            const bool selected = m_interactState.selectedIndex == idx;
+            if (ImGui::Selectable(fontInfo.GetName().c_str(), selected) && !selected)
             {
-                selectedIndex = idx;
+                m_interactState.selectedIndex = idx;
                 m_debounceTimer.Poke();
             }
             if (selected)
@@ -351,24 +373,23 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
                 ImGui::SetItemDefaultFocus();
             }
             ImGui::PopID();
-
-            idx++;
         }
         ImGui::EndTable();
 
         if (m_debounceTimer.Check())
         {
-            if (static_cast<size_t>(selectedIndex) >= fontInfoList.size())
+            size_t fontId = static_cast<size_t>(m_interactState.selectedIndex);
+            if (fontId >= fontInfoList.size())
             {
                 m_debounceTimer.Reset();
             }
             else
             {
-                auto      &fontInfo = fontInfoList[selectedIndex];
+                auto      &fontInfo = fontInfoList[fontId];
                 const auto filePath = FontManager::GetFontFilePath(fontInfo);
                 if (!filePath.empty())
                 {
-                    PreviewFont(fontInfo.name, filePath);
+                    PreviewFont(fontInfo.GetName(), filePath);
                 }
             }
         }
@@ -380,7 +401,7 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
     {
         if (m_imFont)
         {
-            ImGui::PushFont(m_imFont.UnsafeGetFont(), settings.state.fontSizeTemp);
+            ImGui::PushFont(m_imFont.UnsafeGetFont(), settings.state.fontSize);
 
             ImGui::InputTextMultiline(
                 "##PreviewText",
@@ -394,7 +415,7 @@ bool FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
     }
     ImGui::EndChild();
 
-    return applied;
+    return m_interactState;
 }
 
 void FontPreviewPanel::PreviewFont(const std::string &fontName, const std::string &fontPath)
