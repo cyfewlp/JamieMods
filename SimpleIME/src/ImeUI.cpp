@@ -333,11 +333,7 @@ void ImeUI::DrawModConfig(Settings &settings)
     }
     ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
 
-    if (ImGui::TreeNode(Translate("$Font")))
-    {
-        DrawFontConfig(settings);
-        ImGui::TreePop();
-    }
+    DrawFontConfig(settings);
 
     if (DrawCombo(Translate("$Languages"), m_translateLanguages, settings.appearance.language))
     {

@@ -188,7 +188,7 @@ bool FontBuilder::ApplyFont(Settings &settings)
 
 void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
 {
-    ImGui::SeparatorText(translation["$Font_Builder"]);
+    if (!ImGui::CollapsingHeader(translation["$Font_Builder"])) return;
     // draw chosen font information
     if (fontBuilder.IsBuilding() &&
         ImGui::BeginTable(
@@ -236,15 +236,23 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
     ImGui::EndDisabled();
 
     ImGui::SameLine();
+    auto centerPopup = [](std::string_view name) {
+        ImGui::OpenPopup(name.data());
+        constexpr auto CENTER_PIVOT = ImVec2(0.5f, 0.5f);
+
+        const auto viewportSize = ImGui::GetMainViewport()->Size;
+        ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
+        ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
+    };
     if (ImGui::Button(ICON_MD_ALERT_CIRCLE_OUTLINE))
     {
-        ImGui::OpenPopup(TITLE_HELP);
+        centerPopup(TITLE_WARNINGS);
     }
     ImGui::SetItemTooltip("%s", translation["$Font_Builder_Warning"]);
     ImGui::SameLine();
     if (ImGui::Button(ICON_MD_HELP_CIRCLE_OUTLINE))
     {
-        ImGui::OpenPopup(TITLE_WARNINGS);
+        centerPopup(TITLE_HELP);
     }
     ImGui::SetItemTooltip("%s", translation["$Font_Builder_Help"]);
     ImGui::PopStyleVar(styleCount);
@@ -263,35 +271,23 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
 
 void FontBuilderView::DrawHelpModal(const Translation &translation)
 {
-    if (ImGui::BeginPopupModal(TITLE_HELP, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    bool open = true;
+    if (ImGui::BeginPopupModal(TITLE_HELP, &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
     {
         ImGui::Text("%s", translation["$Font_Builder_Help1"]);
         ImGui::Text("%s", translation["$Font_Builder_Help2"]);
-        ImGui::NewLine();
         ImGui::Text("%s", translation["$Font_Builder_Help3"]);
-
-        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5F - ImGui::GetFontSize());
-        if (ImGui::Button(ICON_FA_OK_SIGN))
-        {
-            ImGui::CloseCurrentPopup();
-        }
         ImGui::EndPopup();
     }
 }
 
 void FontBuilderView::DrawWarningsModal(const Translation &translation)
 {
-    if (ImGui::BeginPopupModal(TITLE_WARNINGS, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    bool open = true;
+    if (ImGui::BeginPopupModal(TITLE_WARNINGS, &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
     {
-        ImGui::Text("%s %s", ICON_FA_WARNING, translation["$Font_Builder_Warning1"]);
-        ImGui::NewLine();
-        ImGui::Text("%s %s", ICON_FA_WARNING, translation["$Font_Builder_Warning2"]);
-
-        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5F - ImGui::GetFontSize());
-        if (ImGui::Button(ICON_FA_OK_SIGN))
-        {
-            ImGui::CloseCurrentPopup();
-        }
+        ImGui::Text("%s", translation["$Font_Builder_Warning1"]);
+        ImGui::Text("%s", translation["$Font_Builder_Warning2"]);
         ImGui::EndPopup();
     }
 }
