@@ -33,6 +33,7 @@ public:
     auto Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings) -> InteractState;
 
 private:
+    void DrawSearchBox();
     void DrawFontsTable(FontBuilder &fontBuilder);
 
 public:

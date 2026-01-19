@@ -7,6 +7,7 @@
 #include "common/config.h"
 
 #include <imgui.h>
+#include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -35,6 +36,10 @@ public:
         if (varCount > 0)
         {
             ImGui::PopStyleVar(varCount);
+        }
+        if (colorCount > 0)
+        {
+            ImGui::PopStyleColor(colorCount);
         }
     }
 

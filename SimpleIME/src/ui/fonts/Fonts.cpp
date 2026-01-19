@@ -31,8 +31,8 @@ Dovah: Dovahkiin, naal ok zin los vahriin!
 )";
 
 ImFontWrap::ImFontWrap(ImFont *imFont, std::string_view fontName, std::string_view fontPath, bool a_owner)
+    : font(imFont)
 {
-    font = imFont;
     m_fontNames.emplace_back(fontName);
     m_fontPathList.emplace_back(fontPath);
     owner = a_owner && font != nullptr;
@@ -390,21 +390,7 @@ auto FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
     ImGui::PopID();
 
     ImGui::BeginChild("#FontViewer", FontViewerSize, ImGuiChildFlags_ResizeX | ImGuiChildFlags_Borders);
-
-    ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F, ImGuiInputFlags_Tooltip);
-    ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-    if (ImGui::InputTextWithHint(
-            "##Filter",
-            "search font by name",
-            m_filter.InputBuf,
-            IM_COUNTOF(m_filter.InputBuf),
-            ImGuiInputTextFlags_EscapeClearsAll
-        ))
-    {
-        m_filter.Build();
-    }
-    ImGui::PopItemFlag();
+    DrawSearchBox();
 
     DrawFontsTable(fontBuilder);
     ImGui::EndChild();
@@ -429,6 +415,50 @@ auto FontPreviewPanel::Draw(FontBuilder &fontBuilder, const Translation &transla
     ImGui::EndChild();
 
     return m_interactState;
+}
+
+void FontPreviewPanel::DrawSearchBox()
+{
+    constexpr auto box      = Material3Styles::SEARCH_STANDARD;
+    ImDrawList    *drawList = ImGui::GetWindowDrawList();
+    drawList->ChannelsSplit(2);
+
+    drawList->ChannelsSetCurrent(1);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + box.padding.y);
+    ImGui::BeginGroup();
+    ImGui::SetNextItemWidth(-box.padding.x - box.fontSize);
+    ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F, ImGuiInputFlags_Tooltip);
+    ImGuiEx::StyleScope()
+        .PushVarX(ImGuiStyleVar_ItemSpacing, 0.f)
+        .PushVar(ImGuiStyleVar_FramePadding, box.padding)
+        .PushColor(ImGuiCol_FrameBg, {0, 0, 0, 0})
+        .Draw([this] {
+            ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
+            if (ImGui::InputTextWithHint(
+                    "##Filter",
+                    "search by name",
+                    m_filter.InputBuf,
+                    IM_COUNTOF(m_filter.InputBuf),
+                    ImGuiInputTextFlags_EscapeClearsAll
+                ))
+            {
+                m_filter.Build();
+            }
+            ImGui::PopItemFlag();
+        });
+    ImGui::SameLine();
+    ImGui::Text(ICON_OCT_SEARCH);
+    ImGui::EndGroup();
+
+    const auto rectMin = ImGui::GetItemRectMin();
+    const auto rectMax = ImGui::GetItemRectMax();
+    drawList->ChannelsSetCurrent(0);
+    drawList->AddRectFilled(
+        rectMin, {rectMax.x + box.padding.x, rectMax.y}, ImGui::GetColorU32(ImGuiCol_FrameBg), box.rounding
+    );
+    drawList->ChannelsMerge();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + box.padding.y);
 }
 
 void FontPreviewPanel::DrawFontsTable(FontBuilder &fontBuilder)

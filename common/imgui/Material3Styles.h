@@ -80,5 +80,13 @@ static constexpr auto TOOL_BAR_STANDARD = ToolBarStyle{
       .rounding = 24.f
 };
 
+struct SearchStyle
+{
+    float  fontSize;
+    ImVec2 padding;
+    float  rounding;
+};
+
+static constexpr auto SEARCH_STANDARD = SearchStyle{.fontSize = 20.f, .padding = ImVec2(8.f, 8.f), .rounding = 28.f};
 }
 }
