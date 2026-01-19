@@ -55,21 +55,18 @@ struct ListStyle
     float  fontSize;
     float  supportFontSize;
     ImVec2 padding;
-    ImVec2 spacing;
 };
 
 static constexpr auto LIST_2DENSITY = ListStyle{
     .fontSize        = 24.f,
     .supportFontSize = 20.f,
-    .padding         = ImVec2{16.f, 12.f},
-    .spacing         = ImVec2{16.f, 0.f },
+    .padding         = ImVec2{8.f, 12.f},
 };
 
 static constexpr auto LIST_4DENSITY = ListStyle{
     .fontSize        = 24.f,
     .supportFontSize = 20.f,
-    .padding         = ImVec2{16.f, 8.f},
-    .spacing         = ImVec2{16.f, 0.f},
+    .padding         = ImVec2{8.f, 8.f},
 };
 
 struct ToolBarStyle

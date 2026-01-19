@@ -6,6 +6,7 @@
 
 #include "common/config.h"
 #include "ui/DebounceTimer.h"
+#include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/ImFontWrap.h"
 
 #include <chrono>
@@ -31,6 +32,10 @@ public:
 
     auto Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings) -> InteractState;
 
+private:
+    void DrawFontsTable(FontBuilder &fontBuilder);
+
+public:
     void PreviewFont(const std::string &fontName, const std::string &fontPath);
 
     void PreviewFont(const ImFontWrap &imFont)
@@ -49,6 +54,7 @@ public:
     {
         return m_imFont;
     }
+
 private:
     InteractState m_interactState;
 };

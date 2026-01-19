@@ -48,6 +48,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
     ${headers}
     ${IMGUI_SOURCES}
+#    ${IMGUI_DEMO_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
