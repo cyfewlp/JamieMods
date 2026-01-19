@@ -26,6 +26,8 @@ public:
 
 private:
     static void DrawFontInfoTable(const FontBuilder &fontBuilder);
+    void        DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
+    void        DrawToolBarButtons(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
     static void DrawHelpModal(const Translation &translation);
     static void DrawWarningsModal(const Translation &translation);
 

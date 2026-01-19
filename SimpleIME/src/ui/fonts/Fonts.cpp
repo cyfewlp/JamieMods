@@ -190,51 +190,8 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
 {
     if (!ImGui::CollapsingHeader(translation["$Font_Builder"])) return;
     DrawFontInfoTable(fontBuilder);
-    auto styleCount = LayoutHelper::PushButtonStyles(Material3Styles::XSMALL_ICON_BUTTON, true);
 
-    ImGui::BeginDisabled(!fontBuilder.IsBuilding());
-    if (ImGui::Button(ICON_MD_CHECK_DECAGRAM))
-    {
-        fontBuilder.ApplyFont(settings);
-    }
-    ImGui::SetItemTooltip("%s", translation["$Font_Builder_SetAsDefault"]);
-
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_MD_RESTORE))
-    {
-        fontBuilder.Reset();
-    }
-    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Reset"]);
-
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_MD_EYE))
-    {
-        m_fontPreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
-    }
-    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Preview"]);
-    ImGui::EndDisabled();
-
-    ImGui::SameLine();
-    auto centerPopup = [](std::string_view name) {
-        ImGui::OpenPopup(name.data());
-        constexpr auto CENTER_PIVOT = ImVec2(0.5f, 0.5f);
-
-        const auto viewportSize = ImGui::GetMainViewport()->Size;
-        ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
-        ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
-    };
-    if (ImGui::Button(ICON_MD_ALERT_CIRCLE_OUTLINE))
-    {
-        centerPopup(TITLE_WARNINGS);
-    }
-    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Warning"]);
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_MD_HELP_CIRCLE_OUTLINE))
-    {
-        centerPopup(TITLE_HELP);
-    }
-    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Help"]);
-    ImGui::PopStyleVar(styleCount);
+    DrawToolBar(fontBuilder, translation, settings);
 
     DrawHelpModal(translation);
     DrawWarningsModal(translation);
@@ -286,6 +243,90 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder)
     ImGui::Unindent();
     ImGui::PopFont();
     ImGui::PopStyleVar(3);
+}
+
+/**
+ * Use The @c ImDrawList::ChannelsXXX to render toolbar background after draw toolbar;
+ */
+void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
+{
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    drawList->ChannelsSplit(2);
+
+    constexpr int bgChannel     = 0;
+    constexpr int buttonChannel = 1;
+    drawList->ChannelsSetCurrent(buttonChannel);
+    auto toolbar = Material3Styles::TOOL_BAR_STANDARD;
+
+    // 1. apply the toolbar padding space to toolbar
+    ImGui::SetCursorPos({ImGui::GetCursorPosX() + toolbar.padding.x, ImGui::GetCursorPosY() + toolbar.padding.y});
+
+    ImGui::BeginGroup();
+    DrawToolBarButtons(fontBuilder, translation, settings);
+    ImGui::EndGroup();
+
+    ImVec2 p_min = ImGui::GetItemRectMin();
+    ImVec2 p_max = ImGui::GetItemRectMax();
+    drawList->ChannelsSetCurrent(bgChannel);
+    drawList->AddRectFilled(
+        {p_min.x - toolbar.padding.x, p_min.y - toolbar.padding.y},
+        {p_max.x + toolbar.padding.x, p_max.y + toolbar.padding.y},
+        ImGui::GetColorU32(ImGuiCol_Button),
+        toolbar.rounding
+    );
+    drawList->ChannelsMerge();
+
+    // 2. apply the toolbar padding space to toolbar
+    ImGui::SetCursorPos({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + toolbar.padding.y});
+}
+
+void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
+{
+    auto styleCount = LayoutHelper::PushButtonStyles(Material3Styles::XSMALL_ICON_BUTTON, true);
+
+    ImGui::BeginDisabled(!fontBuilder.IsBuilding());
+    if (ImGui::Button(ICON_MD_CHECK_DECAGRAM))
+    {
+        fontBuilder.ApplyFont(settings);
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_SetAsDefault"]);
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_MD_RESTORE))
+    {
+        fontBuilder.Reset();
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Reset"]);
+
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_MD_EYE))
+    {
+        m_fontPreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Preview"]);
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    auto centerPopup = [](std::string_view name) {
+        ImGui::OpenPopup(name.data());
+        constexpr auto CENTER_PIVOT = ImVec2(0.5f, 0.5f);
+
+        const auto viewportSize = ImGui::GetMainViewport()->Size;
+        ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
+        ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
+    };
+    if (ImGui::Button(ICON_MD_ALERT_CIRCLE_OUTLINE))
+    {
+        centerPopup(TITLE_WARNINGS);
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Warning"]);
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_MD_HELP_CIRCLE_OUTLINE))
+    {
+        centerPopup(TITLE_HELP);
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Help"]);
+    ImGui::PopStyleVar(styleCount);
 }
 
 void FontBuilderView::DrawHelpModal(const Translation &translation)

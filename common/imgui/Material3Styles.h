@@ -72,5 +72,16 @@ static constexpr auto LIST_4DENSITY = ListStyle{
     .spacing         = ImVec2{16.f, 0.f},
 };
 
+struct ToolBarStyle
+{
+    ImVec2 padding;
+    float  rounding;
+};
+
+static constexpr auto TOOL_BAR_STANDARD = ToolBarStyle{
+    .padding = ImVec2{8.f, 8.f},
+      .rounding = 24.f
+};
+
 }
 }
