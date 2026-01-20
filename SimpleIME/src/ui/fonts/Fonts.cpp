@@ -182,8 +182,7 @@ bool FontBuilder::ApplyFont(Settings &settings)
     io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0F, &config);
 
     settings.resources.fontPathList = std::move(m_baseFont.GetFontPathList());
-    m_baseFont.Cleanup();
-
+    Reset();
     return true;
 }
 
@@ -200,7 +199,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
 
     if (ImGui::BeginChild("FontsTable", {BoxStyle.width, BoxStyle.height}, ImGuiEx::ChildFlags().Borders().ResizeX()))
     {
-        m_PreviewPanel.DrawFontsView(fontBuilder);
+        m_PreviewPanel.DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList());
     }
     ImGui::EndChild();
 
@@ -400,16 +399,16 @@ void FontBuilderView::DrawWarningsModal(const Translation &translation)
     }
 }
 
-void FontPreviewPanel::DrawFontsView(FontBuilder &fontBuilder)
+void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 {
     m_interactState.interact = false;
-    DrawSearchBox();
-    DrawFontsTable(fontBuilder);
+    DrawSearchBox(fontInfos);
+    DrawFontsTable(fontInfos);
 }
 
 void FontPreviewPanel::DrawFontsPreviewView() const
 {
-    if (m_debounceTimer.IsWaiting())
+    if (m_previewDebounceTimer.IsWaiting())
     {
         ImGui::Text("%s", ICON_MD_REFRESH);
     }
@@ -435,7 +434,7 @@ void FontPreviewPanel::DrawFontsPreviewView() const
     }
 }
 
-void FontPreviewPanel::DrawSearchBox()
+void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
 {
     constexpr auto box      = Material3Styles::SEARCH_STANDARD;
     ImDrawList    *drawList = ImGui::GetWindowDrawList();
@@ -446,27 +445,34 @@ void FontPreviewPanel::DrawSearchBox()
     ImGui::BeginGroup();
     ImGui::SetNextItemWidth(-box.padding.x - box.fontSize);
     ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F, ImGuiInputFlags_Tooltip);
+    auto drawAction = [this] {
+        if (ImGui::InputTextWithHint(
+                "##Filter",
+                "search by name",
+                m_textFilter.InputBuf,
+                IM_COUNTOF(m_textFilter.InputBuf),
+                ImGuiInputTextFlags_EscapeClearsAll
+            ))
+        {
+            m_searchDebounceTimer.Poke();
+        }
+    };
+    ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
     ImGuiEx::StyleScope()
         .PushVarX(ImGuiStyleVar_ItemSpacing, 0.f)
         .PushVar(ImGuiStyleVar_FramePadding, box.padding)
         .PushColor(ImGuiCol_FrameBg, {0, 0, 0, 0})
-        .Draw([this] {
-            ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-            if (ImGui::InputTextWithHint(
-                    "##Filter",
-                    "search by name",
-                    m_filter.InputBuf,
-                    IM_COUNTOF(m_filter.InputBuf),
-                    ImGuiInputTextFlags_EscapeClearsAll
-                ))
-            {
-                m_filter.Build();
-            }
-            ImGui::PopItemFlag();
-        });
+        .Draw(drawAction);
+    ImGui::PopItemFlag();
     ImGui::SameLine();
     ImGui::Text(ICON_OCT_SEARCH);
     ImGui::EndGroup();
+
+    if (m_searchDebounceTimer.Check())
+    {
+        m_textFilter.Build();
+        UpdateDisplayFontInfos(fontInfos);
+    }
 
     const auto rectMin = ImGui::GetItemRectMin();
     const auto rectMax = ImGui::GetItemRectMax();
@@ -479,44 +485,37 @@ void FontPreviewPanel::DrawSearchBox()
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + box.padding.y);
 }
 
-void FontPreviewPanel::DrawFontsTable(FontBuilder &fontBuilder)
+void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
 {
-    ImGui::PushFont(nullptr, Material3Styles::LIST_4DENSITY.fontSize);
-    // 1. id 2. fontName
-    ImGuiEx::StyleScope()
-        // No effect: ImGui won't use cell padding when no vertical borders
-        // .PushVar(ImGuiStyleVar_CellPadding, Material3Styles::XSMALL_ICON_BUTTON.padding)
-        .PushVar(ImGuiStyleVar_FramePadding, ImVec2{})
-        .PushVar(ImGuiStyleVar_ScrollbarSize, Material3Styles::CUSTOM_THICK_SCROLL_BAR_SIZE)
-        .Draw([&fontBuilder, this] {
-            if (ImGui::BeginTable(
-                    "#InstalledFonts", 4, ImGuiEx::TableFlags().SizingFixedFit().BordersInnerH().NoBordersInBody()
-                ))
+    auto &displayFontInfos = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
+    auto  drawAction       = [this, &displayFontInfos] {
+        if (ImGui::BeginTable(
+                "#InstalledFonts", 4, ImGuiEx::TableFlags().SizingFixedFit().BordersInnerH().NoBordersInBody()
+            ))
+        {
+            ImGuiListClipper clipper;
+            clipper.Begin(displayFontInfos.size());
+            while (clipper.Step())
             {
-                const auto &fontInfoList = fontBuilder.GetFontManager().GetFontInfoList();
-                for (int idx = 0; static_cast<size_t>(idx) < fontInfoList.size(); idx++)
+                for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
                 {
-                    const auto &fontInfo = fontInfoList[idx];
-                    if (!m_filter.PassFilter(fontInfo.GetName().c_str()))
-                    {
-                        continue;
-                    }
+                    const auto &fontInfo = displayFontInfos[static_cast<size_t>(row)];
                     ImGui::TableNextRow();
-                    ImGui::PushID(idx);
+                    ImGui::PushID(row);
 
                     ImGui::TableNextColumn();
                     ImGui::SameLine(0, Material3Styles::LIST_4DENSITY.padding.x * 2);
-                    ImGui::Text("%d", idx + 1);
+                    ImGui::Text("%d", fontInfo.GetIndex() + 1);
 
                     ImGui::TableNextColumn();
-                    const bool selected = m_interactState.selectedIndex == idx;
+                    const bool selected = m_interactState.selectedIndex == fontInfo.GetIndex();
                     if (ImGui::Selectable(
                             fontInfo.GetName().c_str(), selected, ImGuiEx::SelectableFlags().SpanAllColumns()
                         ) &&
                         !selected)
                     {
-                        m_interactState.selectedIndex = idx;
-                        m_debounceTimer.Poke();
+                        m_interactState.selectedIndex = fontInfo.GetIndex();
+                        m_previewDebounceTimer.Poke();
                     }
                     if (selected)
                     {
@@ -524,28 +523,48 @@ void FontPreviewPanel::DrawFontsTable(FontBuilder &fontBuilder)
                     }
                     ImGui::PopID();
                 }
-                ImGui::EndTable();
-
-                if (m_debounceTimer.Check())
-                {
-                    size_t fontId = static_cast<size_t>(m_interactState.selectedIndex);
-                    if (fontId >= fontInfoList.size())
-                    {
-                        m_debounceTimer.Reset();
-                    }
-                    else
-                    {
-                        auto      &fontInfo = fontInfoList[fontId];
-                        const auto filePath = FontManager::GetFontFilePath(fontInfo);
-                        if (!filePath.empty())
-                        {
-                            PreviewFont(fontInfo.GetName(), filePath);
-                        }
-                    }
-                }
             }
-        });
+            ImGui::EndTable();
+        }
+    };
+    ImGui::PushFont(nullptr, Material3Styles::LIST_4DENSITY.fontSize);
+    ImGuiEx::StyleScope()
+        // No effect: ImGui won't use cell padding when no vertical borders
+        // .PushVar(ImGuiStyleVar_CellPadding, Material3Styles::XSMALL_ICON_BUTTON.padding)
+        .PushVar(ImGuiStyleVar_FramePadding, ImVec2{})
+        .PushVar(ImGuiStyleVar_ScrollbarSize, Material3Styles::CUSTOM_THICK_SCROLL_BAR_SIZE)
+        .Draw(drawAction);
+
+    if (m_previewDebounceTimer.Check())
+    {
+        size_t fontId = static_cast<size_t>(m_interactState.selectedIndex);
+        if (fontId >= fontInfos.size())
+        {
+            m_previewDebounceTimer.Reset();
+        }
+        else
+        {
+            auto      &fontInfo = fontInfos[fontId];
+            const auto filePath = FontManager::GetFontFilePath(fontInfo);
+            if (!filePath.empty())
+            {
+                PreviewFont(fontInfo.GetName(), filePath);
+            }
+        }
+    }
     ImGui::PopFont();
+}
+
+void FontPreviewPanel::UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList)
+{
+    m_displayFontInfos.clear();
+    for (const auto &fontInfo : sourceList)
+    {
+        if (m_textFilter.PassFilter(fontInfo.GetName().c_str()))
+        {
+            m_displayFontInfos.push_back(fontInfo);
+        }
+    }
 }
 
 void FontPreviewPanel::PreviewFont(const std::string &fontName, const std::string &fontPath)

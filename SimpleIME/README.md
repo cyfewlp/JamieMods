@@ -10,3 +10,9 @@ cmake --preset debug-clangcl-ninjia-vcpkgcmake --build build\debug-clangcl-ninji
 ```shell  
 cmake --build build\debug-clangcl-ninjia-vcpkg --target SimpleIMETestcd build\debug-clangcl-ninjia-vcpkg\SimpleIME && ctest  
 ```
+
+## Gallery
+
+### FontBuilder
+
+![FontBuilder](contrib/Distribution/ToolWindow_FontBuilder.png)

@@ -9,7 +9,6 @@
 #include "tsf/LangProfileUtil.h"
 
 #include <atlcomcli.h>
-#include <d3d11.h>
 #include <windows.h>
 
 #pragma comment(lib, "d3d11.lib")

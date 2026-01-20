@@ -19,9 +19,11 @@ namespace Ime
 {
 class FontPreviewPanel
 {
-    ImFontWrap      m_imFont{nullptr, "", ""};
-    DebounceTimer   m_debounceTimer{300ms};
-    ImGuiTextFilter m_filter = {};
+    ImFontWrap            m_imFont{nullptr, "", ""};
+    DebounceTimer         m_previewDebounceTimer{300ms};
+    DebounceTimer         m_searchDebounceTimer{200ms};
+    std::vector<FontInfo> m_displayFontInfos;
+    ImGuiTextFilter       m_textFilter;
 
 public:
     struct InteractState
@@ -30,12 +32,13 @@ public:
         int  selectedIndex = -1;
     };
 
-    void DrawFontsView(FontBuilder &fontBuilder);
+    void DrawFontsView(const std::vector<FontInfo> &fontInfos);
     void DrawFontsPreviewView() const;
 
 private:
-    void DrawSearchBox();
-    void DrawFontsTable(FontBuilder &fontBuilder);
+    void DrawSearchBox(const std::vector<FontInfo> &fontInfos);
+    void DrawFontsTable(const std::vector<FontInfo> &fontInfos);
+    void UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList);
 
 public:
     bool IsWaitingPreview() const

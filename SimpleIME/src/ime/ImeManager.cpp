@@ -5,7 +5,6 @@
 #include "common/log.h"
 #include "hooks/ScaleformHook.h"
 
-#include <cstdint>
 #include <processthreadsapi.h>
 #include <windows.h>
 

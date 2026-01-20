@@ -49,7 +49,7 @@ public:
         return m_baseFont;
     }
 
-    constexpr auto GetFontManager() -> const FontManager &
+    constexpr auto GetFontManager() const -> const FontManager &
     {
         return m_fontManager;
     }
