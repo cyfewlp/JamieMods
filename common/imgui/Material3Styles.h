@@ -12,7 +12,8 @@ namespace LIBC_NAMESPACE_DECL
 /// https://m3.material.io/
 namespace Material3Styles
 {
-
+static constexpr auto GRID_UNIT                    = 4.f;
+static constexpr auto STANDARD_FONT_SIZE           = 20.f;
 static constexpr auto CUSTOM_WINDOW_PADDING1       = ImVec2{32.f, 32.f};
 static constexpr auto CUSTOM_WINDOW_PADDING2       = ImVec2{16.f, 16.f};
 static constexpr auto CUSTOM_WINDOW_PADDING4       = ImVec2{8.f, 8.f};
@@ -71,13 +72,14 @@ static constexpr auto LIST_4DENSITY = ListStyle{
 
 struct ToolBarStyle
 {
+    float  fontSize;
     ImVec2 padding;
     float  rounding;
 };
 
 static constexpr auto TOOL_BAR_STANDARD = ToolBarStyle{
-    .padding = ImVec2{8.f, 8.f},
-      .rounding = 24.f
+    .fontSize = 20.f, .padding = ImVec2{8.f, 8.f},
+         .rounding = 24.f
 };
 
 struct SearchStyle

@@ -30,13 +30,24 @@ public:
         int  selectedIndex = -1;
     };
 
-    auto Draw(FontBuilder &fontBuilder, const Translation &translation, const Settings &settings) -> InteractState;
+    void DrawFontsView(FontBuilder &fontBuilder);
+    void DrawFontsPreviewView() const;
 
 private:
     void DrawSearchBox();
     void DrawFontsTable(FontBuilder &fontBuilder);
 
 public:
+    bool IsWaitingPreview() const
+    {
+        return m_interactState.selectedIndex >= 0;
+    }
+
+    bool IsWaitingCommit() const
+    {
+        return m_imFont.IsCommittable();
+    }
+
     void PreviewFont(const std::string &fontName, const std::string &fontPath);
 
     void PreviewFont(const ImFontWrap &imFont)
@@ -45,6 +56,11 @@ public:
     }
 
     void Cleanup();
+
+    auto GetInteractState() const -> const InteractState &
+    {
+        return m_interactState;
+    }
 
     [[nodiscard]] auto GetImFont() const -> const ImFontWrap &
     {

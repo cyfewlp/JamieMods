@@ -16,6 +16,12 @@
 - Check font if duplicate?
   - Get the unique font id from DWrite. #status/investigating 
 - CLeanup when ToolWindow closed #status/todo 
+
+## Preview Font
+
+- Show current preview font info: 
+	- Simply indicate whether the current font is the **default** font. 
+- Show error tips when add font to builder
 ## Following Google's Material 3 Design Specification
 
 - Remove `fontSize` configruation from UI and config file:

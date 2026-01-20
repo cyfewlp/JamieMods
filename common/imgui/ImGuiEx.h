@@ -87,6 +87,43 @@ public:
     }
 };
 
+class FontScope
+{
+    bool Pushed = false;
+
+public:
+    FontScope() = default;
+
+    explicit FontScope(ImFont *font, float fontSize = 0.f)
+    {
+        ImGui::PushFont(font, fontSize);
+        Pushed = true;
+    }
+
+    FontScope(const FontScope &other)      = delete;
+    FontScope &operator=(FontScope &other) = delete;
+
+    FontScope &operator=(FontScope &&other) noexcept
+    {
+        Pushed       = other.Pushed;
+        other.Pushed = false;
+        return *this;
+    }
+
+    FontScope(FontScope &&other) noexcept : Pushed(other.Pushed)
+    {
+        other.Pushed = false;
+    }
+
+    ~FontScope()
+    {
+        if (Pushed)
+        {
+            ImGui::PopFont();
+        }
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// Fluent wrappers for ImGui flags designed for optimized developer experience.
 /// These utilities leverage IDE Intellisense and concise method chaining to simplify

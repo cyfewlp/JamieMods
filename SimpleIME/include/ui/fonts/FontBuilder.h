@@ -41,6 +41,7 @@ public:
     void Reset()
     {
         m_baseFont.Cleanup();
+        m_usedFontIds.clear();
     }
 
     [[nodiscard]] auto GetBaseFont() const -> const ImFontWrap &

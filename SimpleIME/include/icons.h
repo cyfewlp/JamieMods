@@ -19,6 +19,7 @@ constexpr auto ICON_MD_RESTORE              = "\xf3\xb0\xa6\x9b";
 constexpr auto ICON_MD_EYE                  = "\xf3\xb0\x88\x88";
 constexpr auto ICON_MD_ALERT_CIRCLE_OUTLINE = "\xf3\xb0\x97\x96";
 constexpr auto ICON_MD_HELP_CIRCLE_OUTLINE  = "\xf3\xb0\x98\xa5";
+constexpr auto ICON_MD_TRANSFER_RIGHT       = "\xf3\xb0\x94\xb0";
 constexpr auto ICON_COD_MOVE                = "\xee\xac\xa2";
 constexpr auto ICON_FA_CIRCLE               = "\xef\x84\x91";
 constexpr auto ICON_FA_CROSSHAIR            = "\xef\x81\x9b";

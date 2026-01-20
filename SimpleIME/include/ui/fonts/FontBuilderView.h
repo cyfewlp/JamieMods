@@ -31,7 +31,7 @@ private:
     static void DrawHelpModal(const Translation &translation);
     static void DrawWarningsModal(const Translation &translation);
 
-    FontPreviewPanel m_fontPreviewPanel;
+    FontPreviewPanel m_PreviewPanel;
 };
 }
 }
