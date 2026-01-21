@@ -1,6 +1,8 @@
 //
 // Created by jamie on 2026/1/15.
 //
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/LayoutHelper.h"
 #include "common/imgui/Material3Styles.h"
@@ -228,7 +230,11 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
 
     ImGui::SameLine(0, BoxStyle.padding);
     ImGui::BeginGroup();
-    DrawToolBar(fontBuilder, translation, settings);
+    if (ImGuiEx::BeginRightAlign("#ToolBar"))
+    {
+        DrawToolBar(fontBuilder, translation, settings);
+        ImGuiEx::EndRightAlign();
+    }
     if (m_PreviewPanel.IsWaitingPreview())
     {
         if (ImGui::BeginChild("FontBuilderFontInfo", {-FLT_MIN, BoxStyle.height}))
@@ -290,34 +296,28 @@ void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &t
 {
     auto toolbar = Material3Styles::TOOL_BAR_STANDARD;
 
-    // 1. apply the toolbar padding space to toolbar
-    ImGui::SetCursorPos({ImGui::GetCursorPosX() + toolbar.padding.x, ImGui::GetCursorPosY() + toolbar.padding.y});
-    ImGui::Dummy({});
-
     ImDrawList *drawList = ImGui::GetWindowDrawList();
     drawList->ChannelsSplit(2);
 
     constexpr int bgChannel     = 0;
     constexpr int buttonChannel = 1;
     drawList->ChannelsSetCurrent(buttonChannel);
+    ImVec2 toolbarLT = ImGui::GetCursorScreenPos();
+    ImGui::NewLine();
+
+    ImGui::SetCursorScreenPos(toolbarLT + toolbar.padding);
+
     ImGui::BeginGroup();
+    ImGui::PushStyleColor(ImGuiCol_Button, {0,0,0,0}); // avoid button color mix bg color
     DrawToolBarButtons(fontBuilder, translation, settings);
+    ImGui::PopStyleColor();
     ImGui::EndGroup();
 
-    ImVec2 p_min = ImGui::GetItemRectMin();
-    ImVec2 p_max = ImGui::GetItemRectMax();
     drawList->ChannelsSetCurrent(bgChannel);
     drawList->AddRectFilled(
-        {p_min.x - toolbar.padding.x, p_min.y - toolbar.padding.y},
-        {p_max.x + toolbar.padding.x, p_max.y + toolbar.padding.y},
-        ImGui::GetColorU32(ImGuiCol_Button),
-        toolbar.rounding
+        toolbarLT, ImGui::GetItemRectMax() + toolbar.padding, ImGui::GetColorU32(ImGuiCol_Button), toolbar.rounding
     );
     drawList->ChannelsMerge();
-
-    // 2. apply the toolbar padding space to toolbar
-    ImGui::SetCursorPos({ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + toolbar.padding.y});
-    ImGui::Dummy({}); // Commit a dummy item to extend window boundaries
 
     DrawHelpModal(translation);
     DrawWarningsModal(translation);
@@ -325,10 +325,11 @@ void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &t
 
 void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
 {
-    auto styleCount = LayoutHelper::PushButtonStyles(Material3Styles::XSMALL_ICON_BUTTON, true);
+    auto styleCount = ImGuiEx::PushButtonStyles(Material3Styles::SMALL_ICON_BUTTON, true);
 
+    ImGui::PushFont(nullptr, Material3Styles::SMALL_ICON_BUTTON.fontSize);
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
-    if (ImGui::Button(ICON_MD_CHECK_DECAGRAM))
+    if (ImGui::Button(ICON_FA_WRENCH))
     {
         fontBuilder.ApplyFont(settings);
     }
@@ -373,6 +374,7 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
         centerPopup(TITLE_HELP);
     }
     ImGui::SetItemTooltip("%s", translation["$Font_Builder_Help"]);
+    ImGui::PopFont();
     ImGui::PopStyleVar(styleCount);
 }
 

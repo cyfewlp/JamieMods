@@ -39,6 +39,18 @@ static constexpr auto SMALL_BUTTON = ButtonStyle{
          .rounding = 12.f
 };
 
+static constexpr auto MEDIUM_BUTTON = ButtonStyle{
+    .fontSize = 24.f, .padding = ImVec2{24.f, 24.f},
+         .spacing = ImVec2{8.f,  8.f },
+         .rounding = 16.f
+};
+
+static constexpr auto LARGE_BUTTON = ButtonStyle{
+    .fontSize = 32.f, .padding = ImVec2{48.f, 32.f},
+         .spacing = ImVec2{12.f, 8.f },
+         .rounding = 28.f
+};
+
 static constexpr auto XSMALL_ICON_BUTTON = ButtonStyle{
     .fontSize = 20.f, .padding = ImVec2{6.f,  6.f },
          .spacing = ImVec2{16.f, 16.f},
@@ -46,8 +58,8 @@ static constexpr auto XSMALL_ICON_BUTTON = ButtonStyle{
 };
 
 static constexpr auto SMALL_ICON_BUTTON = ButtonStyle{
-    .fontSize = 20.f, .padding = ImVec2{10.f, 10.f},
-         .spacing = ImVec2{8.f,  8.f },
+    .fontSize = 24.f, .padding = ImVec2{8.f, 8.f},
+         .spacing = ImVec2{12.f,  12.f },
          .rounding = 8.f
 };
 
