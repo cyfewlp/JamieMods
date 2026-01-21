@@ -158,6 +158,32 @@ public:
     }                                                                                                                  \
     ;
 
+FLAGS_CLASS_BODY(WindowFlags);
+FLAGS_CLASS_FUNCTION(WindowFlags, None)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoTitleBar)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoResize)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoMove)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoScrollbar)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoScrollWithMouse)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoCollapse)
+FLAGS_CLASS_FUNCTION(WindowFlags, AlwaysAutoResize)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoBackground)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoSavedSettings)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoMouseInputs)
+FLAGS_CLASS_FUNCTION(WindowFlags, MenuBar)
+FLAGS_CLASS_FUNCTION(WindowFlags, HorizontalScrollbar)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoFocusOnAppearing)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoBringToFrontOnFocus)
+FLAGS_CLASS_FUNCTION(WindowFlags, AlwaysVerticalScrollbar)
+FLAGS_CLASS_FUNCTION(WindowFlags, AlwaysHorizontalScrollbar)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoNavInputs)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoNavFocus)
+FLAGS_CLASS_FUNCTION(WindowFlags, UnsavedDocument)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoNav)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoDecoration)
+FLAGS_CLASS_FUNCTION(WindowFlags, NoInputs)
+FLAGS_CLASS_END(WindowFlags)
+
 FLAGS_CLASS_BODY(ChildFlags);
 FLAGS_CLASS_FUNCTION(ChildFlags, None)
 FLAGS_CLASS_FUNCTION(ChildFlags, Borders)

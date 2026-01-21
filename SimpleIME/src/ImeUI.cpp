@@ -10,6 +10,7 @@
 #include "common/WCharUtils.h"
 #include "common/config.h"
 #include "common/imgui/ErrorNotifier.h"
+#include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3Styles.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
@@ -158,7 +159,6 @@ void ImeUI::Draw(const Settings &settings)
     {
         imeAppearing = false;
         UpdateImeWindowPos(settings, m_imeWindowPos);
-        ImGui::OpenPopup(id.data());
     }
     if (shouldRelayout)
     {
@@ -167,9 +167,11 @@ void ImeUI::Draw(const Settings &settings)
         ImGui::SetNextWindowPos(m_imeWindowPos);
     }
 
-    auto flags = ImGuiWindowFlags_NoFocusOnAppearing;
-    if (ImGui::BeginPopup(id.data(), flags))
+    auto flags =
+        ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
+    if (ImGui::Begin(id.data(), nullptr, flags))
     {
+        ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
         if (state.Has(State::IN_COMPOSING))
         {
             DrawCompWindow(settings);
@@ -182,8 +184,8 @@ void ImeUI::Draw(const Settings &settings)
             DrawCandidateWindows();
         }
         m_imeWindowSize = ImGui::GetWindowSize();
-        ImGui::EndPopup();
     }
+    ImGui::End();
     if (IsImeNeedRelayout())
     {
         shouldRelayout = true;

@@ -48,6 +48,11 @@ The  `NI_SELECTCANDIDATESTR` flag does not work as expected.
 
 ## Missing int type converter #type/bug #status/done 
 
+## IME Window drawing behind with ToolWindow #status/done 
+
+- Must Keep IME window is the topmost window;
+	- Use this call:  `ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());`
+
 
 
 
