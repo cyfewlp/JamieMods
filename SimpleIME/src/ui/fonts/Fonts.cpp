@@ -215,20 +215,11 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
     ImGui::EndChild();
 
     ImGui::SameLine(0, Material3Styles::GRID_UNIT);
-    ImGui::BeginDisabled(!m_PreviewPanel.IsWaitingCommit());
-    constexpr auto ADD_BUTTON_OFFSET_Y = Material3Styles::STANDARD_FONT_SIZE * 4;
+    constexpr auto ADD_BUTTON_OFFSET_Y = Material3Styles::STANDARD_FONT_SIZE * 10;
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ADD_BUTTON_OFFSET_Y);
-    if (ImGui::Button(ICON_MD_TRANSFER_RIGHT))
-    {
-        if (fontBuilder.AddFont(m_PreviewPanel.GetInteractState().selectedIndex, m_PreviewPanel.GetImFont()))
-        {
-            m_PreviewPanel.Cleanup();
-        }
-    }
-    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Add"]);
-    ImGui::EndDisabled();
+    DrawAddFontButton(fontBuilder, translation);
+    ImGui::SameLine(0, Material3Styles::GRID_UNIT);
 
-    ImGui::SameLine(0, BoxStyle.padding);
     ImGui::BeginGroup();
     if (ImGuiEx::BeginRightAlign("#ToolBar"))
     {
@@ -244,6 +235,25 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
         ImGui::EndChild();
     }
     ImGui::EndGroup();
+}
+
+void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder, const Translation &translation)
+{
+    ImGui::BeginDisabled(!m_PreviewPanel.IsWaitingCommit());
+    ImGui::PushFont(nullptr, Material3Styles::MEDIUM_ICON_BUTTON.fontSize);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, Material3Styles::MEDIUM_ICON_BUTTON.padding);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, Material3Styles::MEDIUM_ICON_BUTTON.rounding);
+    if (ImGui::Button(ICON_MD_TRANSFER_RIGHT))
+    {
+        if (fontBuilder.AddFont(m_PreviewPanel.GetInteractState().selectedIndex, m_PreviewPanel.GetImFont()))
+        {
+            m_PreviewPanel.Cleanup();
+        }
+    }
+    ImGui::SetItemTooltip("%s", translation["$Font_Builder_Add"]);
+    ImGui::PopStyleVar(2);
+    ImGui::PopFont();
+    ImGui::EndDisabled();
 }
 
 void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder)

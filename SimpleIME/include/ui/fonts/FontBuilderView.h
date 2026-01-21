@@ -25,6 +25,7 @@ public:
     void Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
 
 private:
+    void        DrawAddFontButton(FontBuilder &fontBuilder, const Translation &translation);
     static void DrawFontInfoTable(const FontBuilder &fontBuilder);
     void        DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
     void        DrawToolBarButtons(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);

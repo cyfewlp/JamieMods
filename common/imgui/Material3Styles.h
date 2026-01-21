@@ -63,6 +63,12 @@ static constexpr auto SMALL_ICON_BUTTON = ButtonStyle{
          .rounding = 8.f
 };
 
+static constexpr auto MEDIUM_ICON_BUTTON = ButtonStyle{
+    .fontSize = 24.f, .padding = ImVec2{16.f, 16.f},
+         .spacing = ImVec2{12.f,  12.f },
+         .rounding = 12.f
+};
+
 struct ListStyle
 {
     float  fontSize;
