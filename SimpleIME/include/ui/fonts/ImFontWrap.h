@@ -22,6 +22,11 @@ class ImFontWrap
     std::vector<std::string> m_fontPathList;
 
 public:
+    explicit ImFontWrap(ImFont *imFont = nullptr, bool a_owner = false)
+        : font(imFont), owner(a_owner && imFont != nullptr)
+    {
+    }
+
     explicit ImFontWrap(ImFont *imFont, std::string_view fontName, std::string_view fontPath, bool a_owner = false);
 
     ImFontWrap(ImFontWrap &other) noexcept = delete;

@@ -210,7 +210,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
             "FontsPreviewer", {BoxStyle.width, BoxStyle.height}, ImGuiEx::ChildFlags().Borders().ResizeX()
         ))
     {
-        m_PreviewPanel.DrawFontsPreviewView();
+        m_PreviewPanel.DrawFontsPreviewView(translation);
     }
     ImGui::EndChild();
 
@@ -417,7 +417,7 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
     DrawFontsTable(fontInfos);
 }
 
-void FontPreviewPanel::DrawFontsPreviewView() const
+void FontPreviewPanel::DrawFontsPreviewView(const Translation &translation) const
 {
     if (m_previewDebounceTimer.IsWaiting())
     {
@@ -425,7 +425,8 @@ void FontPreviewPanel::DrawFontsPreviewView() const
     }
     else
     {
-        ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_imFont.GetFontPathOr(0).c_str());
+        auto tips = std::format("{} {}", ICON_FA_CIRCLE_INFO, translation["$Font_Builder_Preview_EmptyFontTips"]);
+        ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_imFont.GetFontPathOr(0, tips).c_str());
     }
 
     ImGui::Separator();

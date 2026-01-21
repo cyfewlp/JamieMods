@@ -19,7 +19,7 @@ namespace Ime
 {
 class FontPreviewPanel
 {
-    ImFontWrap            m_imFont{nullptr, "", ""};
+    ImFontWrap            m_imFont{};
     DebounceTimer         m_previewDebounceTimer{300ms};
     DebounceTimer         m_searchDebounceTimer{200ms};
     std::vector<FontInfo> m_displayFontInfos;
@@ -33,7 +33,7 @@ public:
     };
 
     void DrawFontsView(const std::vector<FontInfo> &fontInfos);
-    void DrawFontsPreviewView() const;
+    void DrawFontsPreviewView(const Translation &translation) const;
 
 private:
     void DrawSearchBox(const std::vector<FontInfo> &fontInfos);
