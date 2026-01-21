@@ -1,17 +1,25 @@
 //
-// Created by jamie on 2026/1/18.
+// Created by jamie on 2026/1/21.
 //
 
 #pragma once
 
 #include "common/config.h"
 #include "common/imgui/Material3Styles.h"
-#include "imgui.h"
+
+#include <imgui.h>
 
 namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx
 {
+struct TableLayoutInfo
+{
+    ImVec2          outerSize = {0, 0};
+    float           innerSize = 0;
+    ImGuiTableFlags flags     = ImGuiTableFlags_None;
+};
+
 /**
  * @return the pushed style count;
  */

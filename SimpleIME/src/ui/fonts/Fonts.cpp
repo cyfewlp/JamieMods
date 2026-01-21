@@ -4,7 +4,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "common/imgui/ImGuiEx.h"
-#include "common/imgui/LayoutHelper.h"
+#include "common/imgui/Layouts.h"
 #include "common/imgui/Material3Styles.h"
 #include "common/utils.h"
 #include "icons.h"
@@ -308,7 +308,7 @@ void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &t
     ImGui::SetCursorScreenPos(toolbarLT + toolbar.padding);
 
     ImGui::BeginGroup();
-    ImGui::PushStyleColor(ImGuiCol_Button, {0,0,0,0}); // avoid button color mix bg color
+    ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0}); // avoid button color mix bg color
     DrawToolBarButtons(fontBuilder, translation, settings);
     ImGui::PopStyleColor();
     ImGui::EndGroup();
@@ -403,7 +403,6 @@ void FontBuilderView::DrawWarningsModal(const Translation &translation)
 
 void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 {
-    m_interactState.interact = false;
     DrawSearchBox(fontInfos);
     DrawFontsTable(fontInfos);
 }
@@ -489,14 +488,18 @@ void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
 
 void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
 {
-    auto &displayFontInfos = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
-    auto  drawAction       = [this, &displayFontInfos] {
+    m_interactState.interact = false;
+    auto &displayFontInfos   = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
+    auto  drawAction         = [this, &displayFontInfos] {
         if (ImGui::BeginTable(
-                "#InstalledFonts", 4, ImGuiEx::TableFlags().SizingFixedFit().BordersInnerH().NoBordersInBody()
+                "#InstalledFonts",
+                4,
+                ImGuiEx::TableFlags().ScrollY().SizingFixedFit().BordersInnerH().NoBordersInBody(),
+                {-FLT_MIN, -FLT_MIN}
             ))
         {
             ImGuiListClipper clipper;
-            clipper.Begin(displayFontInfos.size());
+            clipper.Begin(static_cast<int>(displayFontInfos.size()));
             while (clipper.Step())
             {
                 for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
