@@ -266,7 +266,7 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder)
     ImGui::PushFont(nullptr, listStyle.fontSize);
     ImGuiEx::StyleScope()
         // No effect: ImGui won't use cell padding when no vertical borders
-        // .PushVar(ImGuiStyleVar_CellPadding, listStyle.padding)
+        .PushVarY(ImGuiStyleVar_CellPadding, listStyle.padding.y)
         .PushVar(ImGuiStyleVar_ScrollbarSize, Material3Styles::CUSTOM_THICK_SCROLL_BAR_SIZE)
         .Draw([&fontBuilder, &listStyle] {
             if (ImGui::BeginTable(
@@ -425,8 +425,10 @@ void FontPreviewPanel::DrawFontsPreviewView(const Translation &translation) cons
     }
     else
     {
+        ImGui::Text("%s", ICON_FA_FILE);
+        ImGui::SameLine(0, Material3Styles::XSMALL_ICON_BUTTON.spacing.x);
         auto tips = std::format("{} {}", ICON_FA_CIRCLE_INFO, translation["$Font_Builder_Preview_EmptyFontTips"]);
-        ImGui::TextWrapped("%s %s", ICON_FA_FILE, m_imFont.GetFontPathOr(0, tips).c_str());
+        ImGui::TextWrapped("%s", m_imFont.GetFontPathOr(0, tips).c_str());
     }
 
     ImGui::Separator();
@@ -546,7 +548,7 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
     ImGui::PushFont(nullptr, Material3Styles::LIST_4DENSITY.fontSize);
     ImGuiEx::StyleScope()
         // No effect: ImGui won't use cell padding when no vertical borders
-        // .PushVar(ImGuiStyleVar_CellPadding, Material3Styles::XSMALL_ICON_BUTTON.padding)
+        .PushVarY(ImGuiStyleVar_CellPadding, Material3Styles::LIST_4DENSITY.padding.y)
         .PushVar(ImGuiStyleVar_FramePadding, ImVec2{})
         .PushVar(ImGuiStyleVar_ScrollbarSize, Material3Styles::CUSTOM_THICK_SCROLL_BAR_SIZE)
         .Draw(drawAction);
