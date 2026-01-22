@@ -419,20 +419,49 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 
 void FontPreviewPanel::DrawFontsPreviewView(const Translation &translation) const
 {
-    if (m_previewDebounceTimer.IsWaiting())
+    std::string_view icon = "";
+    std::string_view msg  = "";
+    switch (m_state)
     {
-        ImGui::Text("%s", ICON_MD_REFRESH);
+        case State::DEBOUNCING:
+            icon = ICON_MD_REFRESH;
+            msg  = translation["$Font_Builder_Preview_Debouncing"];
+            break;
+        case State::PREVIEW_BUILDER_FONT:
+            icon = ICON_MD_EYE;
+            msg  = translation["$Font_Builder_Preview_BuilderFont"];
+            break;
+        case State::NOT_SELECTED_FONT: {
+            icon = ICON_FA_CIRCLE_INFO;
+            msg  = translation["$Font_Builder_Preview_NotSelectedFont"];
+            break;
+        }
+        case State::NOT_SUPPORTED_FONTS: {
+            icon = ICON_FA_CIRCLE_EXCLAMATION;
+            msg  = translation["$Font_Builder_Preview_NotSupportedFont"];
+            break;
+        }
+        case State::PREVIEWING: {
+            icon = ICON_FA_FILE;
+            msg  = m_imFont.GetFontPathOr(0);
+            break;
+        }
+        default:
     }
-    else
+    if (!icon.empty())
     {
-        ImGui::Text("%s", ICON_FA_FILE);
+        ImGui::Text("%s", icon.data());
         ImGui::SameLine(0, Material3Styles::XSMALL_ICON_BUTTON.spacing.x);
-        auto tips = std::format("{} {}", ICON_FA_CIRCLE_INFO, translation["$Font_Builder_Preview_EmptyFontTips"]);
-        ImGui::TextWrapped("%s", m_imFont.GetFontPathOr(0, tips).c_str());
     }
+    ImGui::TextWrapped("%s", msg.data());
 
     ImGui::Separator();
     ImGui::Dummy({0, Material3Styles::GRID_UNIT * 4});
+
+    if (m_state == State::NOT_SUPPORTED_FONTS)
+    {
+        return;
+    }
 
     // ReSharper disable All
     ImGuiEx::FontScope previewFont;
@@ -534,6 +563,7 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
                     {
                         m_interactState.selectedIndex = fontInfo.GetIndex();
                         m_previewDebounceTimer.Poke();
+                        m_state = State::DEBOUNCING;
                     }
                     if (selected)
                     {
@@ -555,6 +585,7 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
 
     if (m_previewDebounceTimer.Check())
     {
+        m_state       = State::EMPTY;
         size_t fontId = static_cast<size_t>(m_interactState.selectedIndex);
         if (fontId >= fontInfos.size())
         {
@@ -564,9 +595,15 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
         {
             auto      &fontInfo = fontInfos[fontId];
             const auto filePath = FontManager::GetFontFilePath(fontInfo);
+            m_imFont.Cleanup();
             if (!filePath.empty())
             {
                 PreviewFont(fontInfo.GetName(), filePath);
+                m_state = State::PREVIEWING;
+            }
+            else
+            {
+                m_state = State::NOT_SUPPORTED_FONTS;
             }
         }
     }
@@ -594,6 +631,7 @@ void FontPreviewPanel::PreviewFont(const std::string &fontName, const std::strin
 void FontPreviewPanel::Cleanup()
 {
     m_imFont.Cleanup();
+    m_state = State::NOT_SELECTED_FONT;
 }
 
 }

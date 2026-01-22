@@ -10,6 +10,7 @@
 #include "ui/fonts/ImFontWrap.h"
 
 #include <chrono>
+#include <string>
 
 struct ImGuiTextFilter;
 
@@ -24,6 +25,18 @@ class FontPreviewPanel
     DebounceTimer         m_searchDebounceTimer{200ms};
     std::vector<FontInfo> m_displayFontInfos;
     ImGuiTextFilter       m_textFilter;
+
+    enum class State : int8_t
+    {
+        EMPTY = 0,
+        PREVIEWING,
+        DEBOUNCING,
+        NOT_SUPPORTED_FONTS,
+        NOT_SELECTED_FONT,
+        PREVIEW_BUILDER_FONT,
+    };
+
+    State m_state = State::EMPTY;
 
 public:
     struct InteractState
@@ -51,11 +64,14 @@ public:
         return m_imFont.IsCommittable();
     }
 
+private:
     void PreviewFont(const std::string &fontName, const std::string &fontPath);
 
+public:
     void PreviewFont(const ImFontWrap &imFont)
     {
         m_imFont = imFont;
+        m_state  = State::PREVIEW_BUILDER_FONT;
     }
 
     void Cleanup();

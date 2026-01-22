@@ -29,6 +29,7 @@ constexpr auto ICON_FA_WARNING              = "\xef\x81\xb1";
 constexpr auto ICON_FA_OK_SIGN              = "\xef\x81\x98";
 constexpr auto ICON_FA_WRENCH               = "\xef\x82\xad";
 constexpr auto ICON_FA_CIRCLE_INFO          = "\xef\x81\x9a";
+constexpr auto ICON_FA_CIRCLE_EXCLAMATION   = "\xef\x81\xaa";
 constexpr auto ICON_OCT_CHECK               = "\xef\x90\xae";
 constexpr auto ICON_OCT_GEAR                = "\xef\x90\xa3";
 constexpr auto ICON_OCT_SEARCH              = "\xef\x90\xa2";
