@@ -70,7 +70,8 @@ static void TryEnableImeWndDpiAware()
     }
 }
 
-void ImeWnd::Initialize() noexcept(false)
+// FIXME: ImeUI should not dependency ImeWnd!!!
+void ImeWnd::Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false)
 {
     TryEnableImeWndDpiAware();
     wc.hInstance = GetModuleHandle(nullptr);
@@ -80,7 +81,7 @@ void ImeWnd::Initialize() noexcept(false)
     }
 
     InitializeTextService();
-    m_pImeUi = std::make_unique<ImeUI>(this, m_pTextService.get());
+    m_pImeUi = std::make_unique<ImeUI>(this, m_pTextService.get(), styles);
 
     auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
     if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))

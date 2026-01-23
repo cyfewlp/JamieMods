@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/config.h"
+#include "common/imgui/Material3.h"
 #include "core/Translation.h"
 #include "ui/Settings.h"
 #include "ui/fonts/FontBuilder.h"
@@ -22,17 +23,20 @@ class FontBuilderView
     static constexpr auto TITLE_WARNINGS = "Warnings";
 
 public:
+    explicit FontBuilderView(ImGuiEx::M3::M3Styles &styles) : m_styles(styles), m_PreviewPanel(styles) {}
+
     void Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
 
 private:
     void        DrawAddFontButton(FontBuilder &fontBuilder, const Translation &translation);
-    static void DrawFontInfoTable(const FontBuilder &fontBuilder);
+    void        DrawFontInfoTable(const FontBuilder &fontBuilder) const;
     void        DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
     void        DrawToolBarButtons(FontBuilder &fontBuilder, const Translation &translation, Settings &settings);
     static void DrawHelpModal(const Translation &translation);
     static void DrawWarningsModal(const Translation &translation);
 
-    FontPreviewPanel m_PreviewPanel;
+    ImGuiEx::M3::M3Styles &m_styles;
+    FontPreviewPanel       m_PreviewPanel;
 };
 }
 }

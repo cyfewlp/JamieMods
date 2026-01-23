@@ -34,7 +34,7 @@ public:
     ImeWnd &operator=(ImeWnd &&a_imeWnd)      = delete;
     ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
-    void Initialize() noexcept(false);
+    void Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false);
     void UnInitialize() const noexcept;
 
     /**

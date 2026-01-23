@@ -11,7 +11,7 @@
 #include "common/config.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/imgui/ImGuiEx.h"
-#include "common/imgui/Material3Styles.h"
+#include "common/imgui/Material3.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
@@ -83,6 +83,97 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
     return true;
 }
 
+// FIXME: shuld be move out to anther class
+void ApplyM3Colors(const ImGuiEx::M3::Colors &colors)
+{
+    ImGuiStyle &style = ImGui::GetStyle();
+
+    style.Colors[ImGuiCol_WindowBg] = colors.surface;
+    style.Colors[ImGuiCol_Text]     = colors.on_surface;
+    style.Colors[ImGuiCol_TitleBg]  = colors.surface_container_highest;
+    style.Colors[ImGuiCol_TitleBgActive] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.surface_container_highest, colors.on_surface, 0.12f);
+    style.Colors[ImGuiCol_TitleBgCollapsed] = colors.secondary_container;
+    style.Colors[ImGuiCol_ChildBg]          = colors.surface;
+    style.Colors[ImGuiCol_PopupBg]          = colors.primary_container;
+    style.Colors[ImGuiCol_FrameBg]          = colors.secondary_container;
+    style.Colors[ImGuiCol_FrameBgActive]    = colors.secondary_container;
+    style.Colors[ImGuiCol_FrameBgHovered]   = colors.secondary_container;
+    style.Colors[ImGuiCol_SliderGrab]       = colors.primary;
+    style.Colors[ImGuiCol_SliderGrabActive] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.primary, colors.on_primary, 0.12f);
+    style.Colors[ImGuiCol_Button]        = colors.primary;
+    style.Colors[ImGuiCol_ButtonHovered] = ImGuiEx::M3::Colors::GetStateColor(colors.primary, colors.on_primary, 0.08f);
+    style.Colors[ImGuiCol_ButtonActive]  = ImGuiEx::M3::Colors::GetStateColor(colors.primary, colors.on_primary, 0.12f);
+    style.Colors[ImGuiCol_ScrollbarBg]   = {0, 0, 0, 0};
+    style.Colors[ImGuiCol_ScrollbarGrab] = colors.outline;
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors.outline_variant;
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors.primary;
+
+    style.Colors[ImGuiCol_MenuBarBg] = colors.surface_container_high;
+
+    style.Colors[ImGuiCol_Header] = colors.surface_container_high;
+    style.Colors[ImGuiCol_HeaderHovered] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.surface_container_high, colors.on_surface, 0.08f);
+    style.Colors[ImGuiCol_HeaderActive] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.surface_container_high, colors.on_surface, 0.12f);
+
+    style.Colors[ImGuiCol_Separator] = colors.secondary;
+    style.Colors[ImGuiCol_SeparatorHovered] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.secondary, colors.on_secondary, 0.08f);
+    style.Colors[ImGuiCol_SeparatorActive] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.secondary, colors.on_secondary, 0.12f);
+
+    style.Colors[ImGuiCol_ResizeGrip] = colors.secondary_container;
+    style.Colors[ImGuiCol_ResizeGripHovered] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.08f);
+    style.Colors[ImGuiCol_ResizeGripActive] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.12f);
+
+    style.Colors[ImGuiCol_InputTextCursor] = colors.secondary;
+
+    style.Colors[ImGuiCol_Tab]         = colors.surface;
+    style.Colors[ImGuiCol_TabHovered]  = ImGuiEx::M3::Colors::GetStateColor(colors.surface, colors.on_surface, 0.08f);
+    style.Colors[ImGuiCol_TabSelected] = colors.surface;
+    style.Colors[ImGuiCol_TabSelectedOverline] = colors.primary;
+
+    style.Colors[ImGuiCol_TabDimmed] = colors.surface;
+    style.Colors[ImGuiCol_TabDimmedSelected] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.surface, colors.on_surface, 0.12f);
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors.outline_variant;
+
+    style.Colors[ImGuiCol_PlotLines] = colors.primary;
+    style.Colors[ImGuiCol_PlotLinesHovered] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.on_primary, colors.on_primary, 0.08f);
+
+    style.Colors[ImGuiCol_PlotHistogram] = colors.tertiary;
+    style.Colors[ImGuiCol_PlotHistogramHovered] =
+        ImGuiEx::M3::Colors::GetStateColor(colors.tertiary, colors.on_tertiary, 0.08f);
+
+    style.Colors[ImGuiCol_TableHeaderBg]     = colors.surface_container_high;
+    style.Colors[ImGuiCol_TableBorderStrong] = colors.outline;
+    style.Colors[ImGuiCol_TableBorderLight]  = colors.outline_variant;
+    style.Colors[ImGuiCol_TableRowBg]        = colors.surface;
+    style.Colors[ImGuiCol_TableRowBgAlt]     = colors.surface_container_lowest;
+
+    // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low;
+    style.Colors[ImGuiCol_TextSelectedBg]   = colors.primary;
+    style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
+
+    style.Colors[ImGuiCol_TreeLines] = colors.on_surface;
+
+    style.Colors[ImGuiCol_DragDropTarget]   = colors.primary;
+    style.Colors[ImGuiCol_DragDropTargetBg] = colors.surface;
+
+    style.Colors[ImGuiCol_UnsavedMarker]         = colors.on_primary;
+    style.Colors[ImGuiCol_NavCursor]             = colors.on_secondary;
+    style.Colors[ImGuiCol_NavWindowingHighlight] = colors.on_primary;
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors.surface_container;
+
+    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors.surface;
+    style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
+}
+
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
 {
     auto &appearance = settings.appearance;
@@ -94,7 +185,8 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
     }
     m_translation.UseLanguage(appearance.language.c_str());
 
-    ApplyTheme(settings);
+    ApplyM3Colors(m_styles.colors);
+    // ApplyTheme(settings); // TODO: deprecated ImThemes???
 }
 
 void ImeUI::ApplyTheme(Settings &settings)
@@ -308,7 +400,7 @@ void ImeUI::DrawSettings(Settings &settings)
     }
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Material3Styles::CUSTOM_WINDOW_PADDING2);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImGuiEx::M3::CUSTOM_WINDOW_PADDING2);
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         m_translation.UseSection("Settings");

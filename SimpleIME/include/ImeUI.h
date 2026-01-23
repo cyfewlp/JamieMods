@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/imgui/Material3.h"
 #include "common/imgui/ThemesLoader.h"
 #include "common/utils.h"
 #include "core/State.h"
@@ -26,9 +27,10 @@ class ImeUI
     using State = Core::State;
 
 public:
-    explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService)
+    explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService, ImGuiEx::M3::M3Styles &styles)
         : m_pImeWnd(pImeWnd), m_pTextService(pTextService),
-          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE))
+          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE)), m_styles(styles),
+          m_fontBuilderView(styles)
     {
     }
 
@@ -91,6 +93,7 @@ private:
     ImVec2                   m_imeWindowPos  = ImVec2(0, 0);
     ImGuiUtil::ThemesLoader  m_themesLoader;
     FontBuilder              m_fontBuilder;
+    ImGuiEx::M3::M3Styles   &m_styles;
     FontBuilderView          m_fontBuilderView;
 
     bool m_fShowToolWindow = false;
