@@ -107,10 +107,19 @@ struct SearchStyle
     float  rounding;
 };
 
-static constexpr auto SEARCH_SMALL = SearchStyle{.fontSize = 20.f, .padding = ImVec2(8.f, 8.f), .rounding = 28.f};
+static constexpr auto SEARCH_SMALL    = SearchStyle{.fontSize = 20.f, .padding = ImVec2(8.f, 8.f), .rounding = 28.f};
 static constexpr auto SEARCH_STANDARD = SearchStyle{.fontSize = 24.f, .padding = ImVec2(16.f, 16.f), .rounding = 28.f};
 
 constexpr ImVec2 TOOLTIP_PADDING = {8.f, 4.f};
+
+struct NavigationRailSpec
+{
+    float  padding;
+    float  iconSize;
+    float  fontSize;
+    ImVec2 spacing;
+    float  width;
+};
 
 struct Colors
 {
@@ -190,9 +199,22 @@ struct Colors
 struct M3Styles
 {
     Colors colors;
+    /**
+     * It is highly recommended to provide a standalone ImFont pointer that has NOT been merged with other fonts.
+     * Merging icon fonts often causes "Ascent" and "Descent" metrics to be re-calculated or corrupted to fit the
+     * primary font's baseline, leading to vertical misalignment and "bleeding" outside the glyph bounding box. For
+     * pixel-perfect grid alignment, use an independently loaded font.
+     */
+    ImFont *iconFont;
 
     constexpr M3Styles() = default;
 };
+
+namespace NavigationRail
+{
+static constexpr auto Standard =
+    NavigationRailSpec{.padding = 16.f, .iconSize = 24.f, .fontSize = 16.f, .spacing = ImVec2(2.f, 4.f), .width = 96.f};
+}
 
 }
 }

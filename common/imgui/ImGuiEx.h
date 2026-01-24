@@ -7,7 +7,6 @@
 #include "common/config.h"
 
 #include <imgui.h>
-#include <type_traits>
 
 namespace LIBC_NAMESPACE_DECL
 {
