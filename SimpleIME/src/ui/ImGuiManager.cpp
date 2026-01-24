@@ -5,7 +5,6 @@
 
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
-#include "common/utils.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -46,15 +45,14 @@ void ImGuiManager::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceConte
     io.ConfigNavMoveSetMousePos = false;
 
     settings.state.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    InitFonts(settings);
 
     g_initialized = true;
     log_info("ImGui initialized!");
 }
 
-void ImGuiManager::InitFonts(const Settings &settings)
+auto ImGuiManager::AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
 {
-    ImFont *imFont = AddFonts(settings.resources.fontPathList);
+    ImFont *imFont = AddFonts(fontsPathList);
     auto   &io     = ImGui::GetIO();
     if (imFont == nullptr)
     {
@@ -77,19 +75,7 @@ void ImGuiManager::InitFonts(const Settings &settings)
     }
 
     io.FontDefault = imFont;
-    auto iconFile  = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-
-    ImFontConfig cfg;
-    cfg.OversampleH = 1;
-    cfg.OversampleV = 1;
-    cfg.PixelSnapH  = true;
-    cfg.MergeMode   = true;
-    if (!io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0f, &cfg))
-    {
-        ErrorNotifier::GetInstance().addError(
-            std::format("Can't load icon font from {}", iconFile), ErrorMsg::Level::warning
-        );
-    }
+    return imFont;
 }
 
 auto ImGuiManager::AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *
@@ -136,6 +122,11 @@ void ImGuiManager::UpdateCursorPos()
             ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
         }
     }
+}
+
+auto ImGuiManager::AddIconFont(const std::string &filePath) -> ImFont *
+{
+    return ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
 }
 
 void ImGuiManager::NewFrame()

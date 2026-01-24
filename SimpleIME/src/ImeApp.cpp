@@ -177,8 +177,9 @@ void ImeApp::OnInputLoaded()
 class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
 {
 public:
-    RE::BSEventNotifyControl
-    ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *) override
+    RE::BSEventNotifyControl ProcessEvent(
+        const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *
+    ) override
     {
         if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
         {
@@ -291,6 +292,9 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
     ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
+    ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
+    const auto iconFile   = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
+    g_darkStyles.iconFont = ImGuiManager::AddIconFont(iconFile);
 
     std::thread childWndThread([&ensureInitialized, this] {
         try

@@ -171,19 +171,6 @@ bool FontBuilder::ApplyFont(Settings &settings)
         io.Fonts->RemoveFont(io.FontDefault);
         io.FontDefault = imFont;
     }
-
-    ImFontConfig config;
-    config.MergeMode   = true;
-    config.OversampleH = 1;
-    config.OversampleV = 1;
-    config.PixelSnapH  = true;
-    config.DstFont     = imFont;
-
-    // Note: Automatic detection of existing icon glyphs is skipped due
-    // to implementation complexity.
-    const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-    io.Fonts->AddFontFromFileTTF(iconFile.c_str(), 0.0F, &config);
-
     settings.resources.fontPathList = std::move(m_baseFont.GetFontPathList());
     Reset();
     return true;

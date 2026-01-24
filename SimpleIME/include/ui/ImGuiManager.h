@@ -22,6 +22,19 @@ class ImGuiManager
 public:
     static void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings);
 
+    /**
+     * Add the primary font, supporting the passing of multiple fonts as fallback fonts, which will be automatically
+     * merged and set as the default font
+     * @param fontsPathList the primary font and fallback fonts file path list
+     * @return the ImFont pointer.
+     */
+    static auto AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *;
+
+    /**
+     * Add an independent ICON font.
+     */
+    [[nodiscard]] static inline auto AddIconFont(const std::string &filePath) -> ImFont *;
+
     static void NewFrame();
 
     static void Render();
