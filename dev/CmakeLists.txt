@@ -1,38 +1,26 @@
 
-
-set(WINDOWS_SDK_LIB_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22000.0/um/x64")
-
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
 ### BasicTest
 
-add_executable(BasicTest 
+add_executable(BasicTest
     "BasicTest.cpp"
 )
 
-target_link_libraries(
-	BasicTest
-	PRIVATE
-		spdlog::spdlog
-)
-target_include_directories(
-    BasicTest PRIVATE
-    ${SIMPLEINI_INCLUDE_DIRS}
-		${CMAKE_SOURCE_DIR}
-)
-target_compile_features(BasicTest PRIVATE cxx_std_23) # <--- use C++23 standard
-
+target_compile_features(BasicTest PRIVATE cxx_std_26) # <--- use C++23 standard
 
 ### DevTest
 
 include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
 
 add_executable(DevTest 
-    "AddressLibTool.cpp"
+#    "AddressLibTool.cpp"
     "ImGuiTest.cpp"
+		${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3_ex.cpp
 		${IMGUI_SOURCES}
 		${IMGUI_DEMO_SOURCES}
 )
@@ -48,6 +36,7 @@ target_include_directories(
     PRIVATE
 		${IMGUI_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}
 )
 message("IMGUI_SOURCES ${IMGUI_SOURCES}")
 
@@ -84,56 +73,3 @@ target_link_libraries(
         "${WINDOWS_SDK_LIB_PATH}/imm32.lib"
 )
 target_compile_features(Win32Test PRIVATE cxx_std_23) # <--- use C++23 standard
-
-### TsfApp
-add_executable(
-    TsfApp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tsf/TsfApp.cpp
-)
-
-target_include_directories(
-    TsfApp PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/tsf
-)
-
-# Copy Data folder to the build directory
-add_custom_target(copy_data ALL
-   COMMAND ${CMAKE_COMMAND} -E copy_directory
-   ${CMAKE_SOURCE_DIR}/Data ${CMAKE_BINARY_DIR}/Data
-)
-
-### GlobalHook
-
-add_library(
-    GlobalHook SHARED 
-    GlobalHook.cpp
-)
-
-target_link_libraries(
-	GlobalHook
-	PRIVATE
-		spdlog::spdlog
-)
-target_compile_features(GlobalHook PRIVATE cxx_std_23) # <--- use C++23 standard
-
-function(my_install)
-    set(options OPTIONAL FAST)
-    set(oneValueArgs DESTINATION RENAME)
-    set(multiValueArgs TARGETS CONFIGURATIONS)
-    cmake_parse_arguments(PARSE_ARGV 0 arg
-        "${options}" "${oneValueArgs}" "${multiValueArgs}"
-    )
-    message(DEPRECATION 
-    "arg_OPTIONAL=${arg_OPTIONAL}
-     arg_FAST=${arg_FAST}
-     arg_DESTINATION=${arg_DESTINATION}
-     arg_RENAME=${arg_RENAME}
-     arg_TARGETS=${arg_TARGETS}
-     arg_CONFIGURATIONS=${arg_CONFIGURATIONS}
-     arg_UNPARSED_ARGUMENTS=${arg_UNPARSED_ARGUMENTS}
-     arg_KEYWORDS_MISSING_VALUES=${arg_KEYWORDS_MISSING_VALUES}
-    "
-    )
-endfunction()
-
-my_install(TARGETS foo bar DESTINATION bin OPTIONAL blub CONFIGURATIONS)
