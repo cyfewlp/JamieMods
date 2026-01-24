@@ -91,7 +91,6 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
             }
         }
         LangProfile engProfile = {};
-        ZeroMemory(&engProfile, sizeof(engProfile));
         engProfile.clsid          = CLSID_NULL;
         engProfile.langid         = LANGID_ENG; // english keyboard
         engProfile.guidProfile    = GUID_NULL;
