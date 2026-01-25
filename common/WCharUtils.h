@@ -37,7 +37,9 @@ public:
         return WideCharToMultiByte(codePage, 0, lpcWch, -1, nullptr, 0, nullptr, nullptr);
     }
 
-    static constexpr void ToString(const LPCWCH lpcwch, __out LPSTR lpStr, int length, UINT codePage = CP_UTF8)
+    static constexpr void ToString(
+        const LPCWCH lpcwch, __out const LPSTR lpStr, const int length, UINT codePage = CP_UTF8
+    )
     {
         WideCharToMultiByte(codePage, 0, lpcwch, -1, lpStr, length, nullptr, nullptr);
     }
@@ -46,12 +48,14 @@ public:
         const wchar_t *pwsz, const int charSize, __out std::string &outStr, const UINT codePage = CP_UTF8
     ) -> bool
     {
-        int const size_needed = WideCharToMultiByte(codePage, 0, pwsz, charSize, nullptr, 0, nullptr, nullptr);
+        const int size_needed = WideCharToMultiByte(codePage, 0, pwsz, charSize, nullptr, 0, nullptr, nullptr);
         if (size_needed > 0)
         {
-            size_t oldSize = outStr.size();
+            const size_t oldSize = outStr.size();
             outStr.resize(oldSize + size_needed);
-            return WideCharToMultiByte(codePage, 0, pwsz, charSize, outStr.data() + oldSize, size_needed, nullptr, nullptr) != 0;
+            return WideCharToMultiByte(
+                       codePage, 0, pwsz, charSize, outStr.data() + oldSize, size_needed, nullptr, nullptr
+                   ) != 0;
         }
         return false;
     }

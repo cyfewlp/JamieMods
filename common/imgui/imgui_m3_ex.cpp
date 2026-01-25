@@ -1,8 +1,11 @@
 //
 // Created by jamie on 2026/1/24.
 //
+
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "common/imgui/imgui_m3_ex.h"
 
+#include "common/imgui/Material3.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -17,14 +20,15 @@ namespace ImGuiEx::M3
 
 constexpr float CENTER_ALIGN = 0.5f;
 
-void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
+static void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
 {
     // copy from imgui.cpp#3857
     if (align.x > 0.0f) posMin.x = ImMax(posMin.x, posMin.x + (posMax.x - posMin.x - textSize.x) * align.x);
     if (align.y > 0.0f) posMin.y = ImMax(posMin.y, posMin.y + (posMax.y - posMin.y - textSize.y) * align.y);
 }
 
-[[nodiscard]] auto TextClip(const ImVec2 &textSize, const ImVec2 &pos, const ImRect &clipRect) -> std::optional<ImVec4>
+[[nodiscard]] static auto TextClip(const ImVec2 &textSize, const ImVec2 &pos, const ImRect &clipRect)
+    -> std::optional<ImVec4>
 {
     // copy from imgui.cpp#3847
     // Perform CPU side clipping for single clipped element to avoid using scissor state
@@ -106,7 +110,9 @@ auto DrawNavItem(
                 bgColor = Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.08f);
             }
             else
+            {
                 bgColor = colors.secondary_container;
+            }
             ImGui::RenderFrame(iconBgRect.Min, iconBgRect.Max, ImGui::GetColorU32(bgColor), true, 16.f);
         }
         drawList->AddText(
@@ -144,6 +150,54 @@ auto DrawNavItem(
     }
 
     ImGui::PopFont();
+    return pressed;
+}
+
+auto DrawFabButton(const std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return false;
+
+    ImGuiContext     &g        = *GImGui;
+    const ImGuiStyle &style    = g.Style;
+    const ImGuiID     id       = window->GetID(icon.data());
+    constexpr ImVec2  iconSize = {FAB::STANDARD.fontSize, FAB::STANDARD.fontSize};
+
+    ImVec2           pos  = window->DC.CursorPos;
+    constexpr ImVec2 size = {iconSize.x + FAB::STANDARD.padding.x * 2, iconSize.y + FAB::STANDARD.padding.y * 2};
+
+    const ImRect bb(pos, pos + size);
+    ImGui::ItemSize(size, style.FramePadding.y);
+    if (!ImGui::ItemAdd(bb, id)) return false;
+
+    bool hovered, held;
+    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+
+    // Render
+    ImU32       color     = m3Styles.colors.primary_container;
+    const ImU32 iconColor = m3Styles.colors.on_primary_container;
+    if (hovered && held)
+    {
+        color = Colors::GetActiveColor(color, iconColor);
+    }
+    else if (hovered)
+    {
+        color = Colors::GetHoveredColor(color, iconColor);
+    }
+
+    ImGui::RenderNavCursor(bb, id);
+    ImGui::RenderFrame(bb.Min, bb.Max, color, true, FAB::STANDARD.rounding);
+
+    ImVec2 posMix = bb.Min;
+    AlignText(posMix, {CENTER_ALIGN, CENTER_ALIGN}, bb.Max, iconSize);
+    window->DrawList->AddText(
+        m3Styles.iconFont,
+        GetFontSize(FAB::STANDARD.fontSize),
+        posMix,
+        iconColor,
+        icon.data(),
+        icon.data() + icon.size()
+    );
     return pressed;
 }
 }

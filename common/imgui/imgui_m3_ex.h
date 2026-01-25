@@ -8,6 +8,8 @@
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
 
+#include <string_view>
+
 namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx::M3
@@ -67,5 +69,14 @@ void DrawNavMenu(std::string_view icon);
  */
 auto DrawNavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool;
 
+////////////////////////////////////////////////////////////////////
+/// BUTTON
+////////////////////////////////////////////////////////////////////
+
+auto DrawFabButton(std::string_view icon, const M3Styles &m3Styles) -> bool;
+
+////////////////////////////////////////////////////////////////////
+/// LIST
+////////////////////////////////////////////////////////////////////
 }
 }

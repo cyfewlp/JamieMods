@@ -69,25 +69,6 @@ static constexpr auto MEDIUM_ICON_BUTTON = ButtonStyle{
          .rounding = 12.f
 };
 
-struct ListStyle
-{
-    float  fontSize;
-    float  supportFontSize;
-    ImVec2 padding;
-};
-
-static constexpr auto LIST_2DENSITY = ListStyle{
-    .fontSize        = 24.f,
-    .supportFontSize = 20.f,
-    .padding         = ImVec2{8.f, 12.f},
-};
-
-static constexpr auto LIST_4DENSITY = ListStyle{
-    .fontSize        = 24.f,
-    .supportFontSize = 20.f,
-    .padding         = ImVec2{8.f, 8.f},
-};
-
 struct ToolBarStyle
 {
     float  fontSize;
@@ -179,6 +160,26 @@ struct Colors
     ImColor primary_container_hovered;
     ImColor primary_container_pressed;
 
+    static constexpr ImColor GetStateColor(const ImColor &source, const ImColor &tint, const float state_alpha)
+    {
+        return ImColor(
+            source.Value.x + (tint.Value.x - source.Value.x) * state_alpha,
+            source.Value.y + (tint.Value.y - source.Value.y) * state_alpha,
+            source.Value.z + (tint.Value.z - source.Value.z) * state_alpha,
+            source.Value.w
+        );
+    }
+
+    static constexpr ImColor GetHoveredColor(const ImColor &source, const ImColor &tint)
+    {
+        return GetStateColor(source, tint, 0.08f);
+    }
+
+    static constexpr ImColor GetActiveColor(const ImColor &source, const ImColor &tint)
+    {
+        return GetStateColor(source, tint, 0.12f);
+    }
+
     static ImVec4 GetStateColor(ImVec4 source, ImVec4 tint, float state_alpha)
     {
         return ImVec4(
@@ -216,5 +217,49 @@ static constexpr auto Standard =
     NavigationRailSpec{.padding = 16.f, .iconSize = 24.f, .fontSize = 16.f, .spacing = ImVec2(2.f, 4.f), .width = 96.f};
 }
 
+struct ListStyle
+{
+    float  fontSize;
+    float  lineHeight;
+    float  supportFontSize;
+    float  supportLineHeight;
+    ImVec2 padding;
+    float  gap;
+};
+
+static constexpr auto LIST_2DENSITY = ListStyle{
+    .fontSize        = 24.f,
+    .supportFontSize = 20.f,
+    .padding         = ImVec2{8.f, 12.f},
+};
+static constexpr auto LIST_4DENSITY = ListStyle{
+    .fontSize        = 24.f,
+    .supportFontSize = 20.f,
+    .padding         = ImVec2{8.f, 8.f},
+};
+
+struct FABSpec
+{
+    float  fontSize;
+    ImVec2 padding;
+    float  rounding;
+};
+
+namespace FAB
+{
+static constexpr auto STANDARD = FABSpec{.fontSize = 24.f, .padding = ImVec2(16.f, 16.f), .rounding = 16.f};
+}
+
+namespace List
+{
+static constexpr auto STANDARD = ListStyle{
+    .fontSize          = 16.f,
+    .lineHeight        = 24.f,
+    .supportFontSize   = 14.f,
+    .supportLineHeight = 20.f,
+    .padding           = ImVec2{16.f, 10.f},
+    .gap               = 12.f
+};
+}
 }
 }

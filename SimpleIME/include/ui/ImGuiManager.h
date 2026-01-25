@@ -33,7 +33,7 @@ public:
     /**
      * Add an independent ICON font.
      */
-    [[nodiscard]] static inline auto AddIconFont(const std::string &filePath) -> ImFont *;
+    [[nodiscard]] static auto AddIconFont(const std::string &filePath) -> ImFont *;
 
     static void NewFrame();
 
@@ -44,7 +44,6 @@ public:
     static void Shutdown();
 
 private:
-    static void InitFonts(const Settings &settings);
     static auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *;
     static void UpdateCursorPos();
     static void EnableTextInputIfNeed();

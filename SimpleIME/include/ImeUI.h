@@ -60,6 +60,9 @@ public:
 private:
     void DrawInputMethodsCombo() const;
     void DrawSettings(Settings &settings);
+    void DrawMenuAppearance(Settings &settings);
+    void DrawMenuFontBuilder(Settings &settings);
+    void DrawMenuBehaviour(Settings &settings);
     void DrawModConfig(Settings &settings);
     void DrawFontConfig(Settings &settings);
     void DrawFeatures(Settings &settings);

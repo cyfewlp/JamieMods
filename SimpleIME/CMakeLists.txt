@@ -11,9 +11,6 @@ configure_file(
     @ONLY
 )
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
 set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
 
@@ -49,6 +46,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${headers}
     ${IMGUI_SOURCES}
 #    ${IMGUI_DEMO_SOURCES}
+    ${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3_ex.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
