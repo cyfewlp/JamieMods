@@ -5,7 +5,8 @@
 #pragma once
 
 #include "common/config.h"
-#include "imgui.h"
+
+#include <imgui.h>
 
 namespace LIBC_NAMESPACE_DECL
 {

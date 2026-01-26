@@ -11,7 +11,10 @@ Chinese and Japanese can be entered in-game.
 ## 📦 Project Overview
 
 ### 🌟 [SimpleIME](SimpleIME/README.md)
-The primary project in this repository. **SimpleIME** provides native IME (Input Method Editor) support for Skyrim SE/AE, enabling players to type in Chinese, Japanese, Korean, and other multi-byte languages within the game console and UI.
+
+The primary project in this repository. **SimpleIME** provides native IME (Input Method Editor) support for Skyrim
+SE/AE, enabling players to type in Chinese, Japanese, Korean, and other multi-byte languages within the game console and
+UI.
 
 ## Quick start
 
@@ -37,18 +40,36 @@ git submodule update --init --recursive
     - clang-cl(the compiler)
 - [CMake](https://cmake.org/)
 - [`vcpkg`](https://github.com/microsoft/vcpkg)
-  1. Clone the repository using git
-     OR [download it as a .zip](https://github.com/microsoft/vcpkg/archive/refs/heads/master.zip)
-  2. Go into the `vcpkg` folder and double-click on `bootstrap-vcpkg.bat`
-  3. Edit your system or user Environment Variables and add a new one:
-     - Name: `VCPKG_ROOT`    
-     Value: `C:\path\to\wherever\your\vcpkg\folder\is`
+    1. Clone the repository using git
+       OR [download it as a .zip](https://github.com/microsoft/vcpkg/archive/refs/heads/master.zip)
+    2. Go into the `vcpkg` folder and double-click on `bootstrap-vcpkg.bat`
+    3. Edit your system or user Environment Variables and add a new one:
+        - Name: `VCPKG_ROOT`    
+          Value: `C:\path\to\wherever\your\vcpkg\folder\is`
 
 <img src="https://raw.githubusercontent.com/SkyrimDev/Images/main/images/screenshots/Setting%20Environment%20Variables/VCPKG_ROOT.png" height="150" alt="">
 
 ## Build & open in IDE
 
 Please check Project-specific README.md
+
+## 🛠️ Debug Setup: Configuring MO2 Path
+
+This project includes a pre-configured CLion run task (Run MO2 SKSE) that launches the game through `Mod Organizer 2`.
+To
+use this task, you must define the `MO2Path` variable in your CLION IDE settings to point to your local MO2 installation
+folder.
+
+How to set the path variable:
+
+- Open Settings (or Preferences on macOS) by pressing **Ctrl+Alt+S**.
+- Navigate to **Appearance & Behavior > Path Variables**.
+- Click the **+** (Add) button.
+- In the Name field, enter exactly: **MO2Path**
+- In the Value field, click the folder icon and select the root directory where your `ModOrganizer.exe` is located (
+  e.g., `C:
+/Games/Mod Organizer 2`).
+- Click OK and Apply.
 
 ## 📝 Documentation & Contribution Guide
 
@@ -57,12 +78,15 @@ We use it to track bugs, features, and technical notes.
 
 ### How we use Obsidian:
 
-Tagging System: We use nested tags (e.g., `#status/todo`, `#type/bug`) to manage the development lifecycle. 
+Tagging System: We use nested tags (e.g., `#status/todo`, `#type/bug`) to manage the development lifecycle.
+
 * Backlinks: Technical modules are connected via [[Double Brackets]] for better navigation.
 * Task Tracking: Please refer to our Tagging Convention Guide before contributing or logging issues.
 
 Please check [[TAGGING_GUIDE]]
+
 ## 🤝 Credits & Libraries
+
 * [CommonLibSSEVR/ng](https://github.com/alandtse/CommonLibVR): The backbone library for Skyrim reverse engineering.
 * [Dear ImGui](https://github.com/ocornut/imgui): Used for in-game overlays.
 * [ImThemes](https://github.com/Patitotective/ImThemes): ImGui styling browser.

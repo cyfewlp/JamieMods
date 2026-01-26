@@ -187,7 +187,8 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surface_container_highest));
         ImGui::SetNextWindowSizeConstraints(
-            {BoxStyle.width, 0.f}, {ImGui::GetContentRegionAvail().x - BoxStyle.width, FLT_MAX}
+            {BoxStyle.width, 0.f},
+            {std::max(BoxStyle.width, ImGui::GetContentRegionAvail().x - BoxStyle.width), FLT_MAX}
         );
         if (ImGui::BeginChild(
                 "FontsTable",
@@ -267,8 +268,10 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
         return;
     }
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::ScrollbarSize(ImGuiEx::M3::CUSTOM_THICK_SCROLL_BAR_SIZE));
-
+    styleGuard.Push(ImGuiEx::ColorHolder::Border(m_styles.colors.outline_variant))
+        .Push(ImGuiEx::ColorHolder::TableRowBg(m_styles.colors.surface))
+        .Push(ImGuiEx::ColorHolder::TableRowBgAlt(m_styles.colors.surface))
+        .Push(ImGuiEx::StyleHolder::ScrollbarSize(ImGuiEx::M3::CUSTOM_THICK_SCROLL_BAR_SIZE));
     constexpr auto list = ImGuiEx::M3::List::STANDARD;
     ImGui::Indent(list.padding.x);
     if (ImGui::BeginTable(
