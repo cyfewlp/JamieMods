@@ -237,24 +237,10 @@ static constexpr auto Standard =
 
 struct ListStyle
 {
-    float  fontSize;
-    float  lineHeight;
-    float  supportFontSize;
-    float  supportLineHeight;
-    ImVec2 padding;
-    float  gap;
-};
-
-// FIXME: need to migrate to new list style
-static constexpr auto LIST_2DENSITY = ListStyle{
-    .fontSize        = 24.f,
-    .supportFontSize = 20.f,
-    .padding         = ImVec2{8.f, 12.f},
-};
-static constexpr auto LIST_4DENSITY = ListStyle{
-    .fontSize        = 24.f,
-    .supportFontSize = 20.f,
-    .padding         = ImVec2{8.f, 8.f},
+    TextSizeSpec text;
+    TextSizeSpec supportText;
+    ImVec2       padding;
+    float        gap;
 };
 
 struct ButtonSpec
@@ -285,12 +271,8 @@ static constexpr auto SMALL = ButtonSpec{
 namespace List
 {
 static constexpr auto STANDARD = ListStyle{
-    .fontSize          = 16.f,
-    .lineHeight        = 24.f,
-    .supportFontSize   = 14.f,
-    .supportLineHeight = 20.f,
-    .padding           = ImVec2{16.f, 10.f},
-    .gap               = 12.f
+    .text = TextSize::LARGE, .supportText = TextSize::MEDIUM, .padding = ImVec2{16.f, 10.f},
+            .gap = 12.f
 };
 }
 

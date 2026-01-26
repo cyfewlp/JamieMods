@@ -47,6 +47,25 @@ inline auto GetFontSize(float fontSizeBase) -> float
     return fontSizeBase * style.FontScaleMain * style.FontScaleDpi;
 }
 
+void LineTextUnformatted(const std::string_view &text, const float lineHeight)
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return;
+
+    auto &g = *GImGui;
+    if (auto offset = lineHeight - g.FontSize; offset <= 0)
+    {
+        ImGui::TextUnformatted(text.data(), text.data() + text.size());
+    }
+    else
+    {
+        auto backup                       = window->DC.CurrLineTextBaseOffset;
+        window->DC.CurrLineTextBaseOffset = offset * 0.5f;
+        ImGui::TextUnformatted(text.data(), text.data() + text.size());
+        window->DC.PrevLineTextBaseOffset = backup;
+    }
+}
+
 /**
  * Since the width of the navigation track is locked, a simple centered layout is all that's needed.
  */

@@ -44,6 +44,18 @@ constexpr int CHANNEL_BG = 0;
 }
 
 /**
+ * @brief Renders unformatted text with vertical alignment compensation.
+ * * This helper calculates the vertical offset needed to position text within a
+ * custom line height. It modifies the internal 'CurrLineTextBaseOffset' to
+ * push the text baseline down.
+ * * @note This uses ImGui internal APIs (imgui_internal.h).
+ * @warning Do not rely on this for general-purpose text rendering.
+ * * @param text The string view to render.
+ * @param lineHeight The desired total height of the line.
+ */
+void LineTextUnformatted(const std::string_view &text, float lineHeight = 0.0f);
+
+/**
  * Currently, the menu button on the navigation rail is meaningless; this method only handles padding, layout, and
  * simply renders the icon.
  * @param icon Due to the different icon fonts used ultimately, you need to provide the icon string for "menu" by

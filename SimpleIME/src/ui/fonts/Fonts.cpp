@@ -267,11 +267,10 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
         return;
     }
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::CellPadding(ImGuiEx::M3::LIST_4DENSITY.padding))
-        .Push(ImGuiEx::StyleHolder::ScrollbarSize(ImGuiEx::M3::CUSTOM_THICK_SCROLL_BAR_SIZE));
+    styleGuard.Push(ImGuiEx::StyleHolder::ScrollbarSize(ImGuiEx::M3::CUSTOM_THICK_SCROLL_BAR_SIZE));
 
-    auto listStyle = ImGuiEx::M3::LIST_4DENSITY;
-    ImGui::PushFont(nullptr, listStyle.fontSize);
+    constexpr auto list = ImGuiEx::M3::List::STANDARD;
+    ImGui::Indent(list.padding.x);
     if (ImGui::BeginTable(
             "BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()
         ))
@@ -280,27 +279,30 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
         auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
         if (names.size() == paths.size())
         {
+            ImGui::PushFont(nullptr, list.text.fontSize);
+            constexpr auto col1LineHeight = list.text.lineHeight + list.supportText.lineHeight;
             for (size_t idx = 0; idx < names.size(); idx++)
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::SameLine(0, listStyle.padding.x * 2);
-                ImGui::Text("%llu", idx + 1);
+                ImGuiEx::M3::LineTextUnformatted(std::format("{}", idx + 1), col1LineHeight);
 
                 ImGui::TableNextColumn();
+
                 ImGui::Text("%s", names[idx].c_str());
                 {
                     ImGuiEx::StyleGuard styleGuard1;
                     styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.on_surface_variant));
-                    ImGui::PushFont(nullptr, listStyle.supportFontSize);
+                    ImGui::PushFont(nullptr, list.supportText.fontSize);
                     ImGui::Text("%s", paths[idx].c_str());
                     ImGui::PopFont();
                 }
             }
+            ImGui::PopFont();
         }
         ImGui::EndTable();
     }
-    ImGui::PopFont();
+    ImGui::Unindent(list.padding.x);
 }
 
 void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
@@ -530,7 +532,7 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
     m_interactState.interact = false;
 
     constexpr auto list = ImGuiEx::M3::List::STANDARD;
-    ImGui::PushFont(nullptr, list.fontSize);
+    ImGui::PushFont(nullptr, list.text.fontSize);
     {
         constexpr auto      itemSpacing = ImVec2(list.padding.x, list.padding.y * 2.f);
         ImGuiEx::StyleGuard styleGuard;
@@ -569,7 +571,7 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
                     fontInfo.GetName().c_str(),
                     selected,
                     ImGuiEx::SelectableFlags().SpanAllColumns(),
-                    {0.f, list.lineHeight}
+                    {0.f, list.text.lineHeight}
                 );
                 if (clicked && !selected)
                 {
