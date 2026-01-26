@@ -238,16 +238,29 @@ static constexpr auto LIST_4DENSITY = ListStyle{
     .padding         = ImVec2{8.f, 8.f},
 };
 
-struct FABSpec
+struct ButtonSpec
 {
     float  fontSize;
     ImVec2 padding;
+    ImVec2 spacing;
+    float  size; // < 0 invalid
     float  rounding;
 };
 
 namespace FAB
 {
-static constexpr auto STANDARD = FABSpec{.fontSize = 24.f, .padding = ImVec2(16.f, 16.f), .rounding = 16.f};
+static constexpr auto STANDARD =
+    ButtonSpec{.fontSize = 24.f, .padding = ImVec2(16.f, 16.f), .spacing = ImVec2(), .size = 56.f, .rounding = 16.f};
+}
+
+namespace IconButton
+{
+static constexpr auto XSMALL = ButtonSpec{
+    .fontSize = 20.f, .padding = ImVec2(6.f, 6.f), .spacing = ImVec2(8.f, 8.f), .size = 48.f, .rounding = 8.f
+};
+static constexpr auto SMALL = ButtonSpec{
+    .fontSize = 24.f, .padding = ImVec2(8.f, 8.f), .spacing = ImVec2(4.f, 4.f), .size = 48.f, .rounding = 8.f
+};
 }
 
 namespace List
@@ -261,5 +274,26 @@ static constexpr auto STANDARD = ListStyle{
     .gap               = 12.f
 };
 }
+
+struct ToolbarSpec
+{
+    float  gap;
+    ImVec2 padding;
+    float  rounding;
+    ImVec2 margin;
+};
+
+namespace Toolbar
+{
+static constexpr auto FLOAT = ToolbarSpec{
+    .gap = 4.f, .padding = ImVec2{8.f, 8.f},
+         .rounding = 32.f, .margin = ImVec2(16.f, 24.f)
+};
+static constexpr auto DOCKED = ToolbarSpec{
+    .gap = -1.f, .padding = ImVec2{16.f, 8.f},
+         .rounding = 0.f, .margin = ImVec2(16.f, 24.f)
+};
+}
+
 }
 }

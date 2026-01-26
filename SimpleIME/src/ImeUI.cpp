@@ -13,6 +13,7 @@
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
 #include "common/imgui/ThemesLoader.h"
+#include "common/imgui/imgui_m3_ex.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "core/State.h"
@@ -31,7 +32,6 @@
 #include <RE/U/UIMessageQueue.h>
 #include <SKSE/Interfaces.h>
 #include <WinUser.h>
-#include <cassert>
 #include <cguid.h>
 #include <climits>
 #include <cstdint>
@@ -83,7 +83,7 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
     return true;
 }
 
-// FIXME: shuld be move out to anther class
+// FIXME: should be move out to anther class
 void ApplyM3Colors(const ImGuiEx::M3::Colors &colors)
 {
     ImGuiStyle &style = ImGui::GetStyle();
@@ -400,26 +400,105 @@ void ImeUI::DrawSettings(Settings &settings)
     }
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImGuiEx::M3::CUSTOM_WINDOW_PADDING2);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
-        m_translation.UseSection("Settings");
-        ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-        if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None))
+        enum class Menu : int8_t
         {
-            DrawSettingsContent(settings);
-            ImGui::EndTabBar();
-        }
-        ImGui::PopStyleVar();
-        if (!settings.appearance.showSettings)
+            Appearance,
+            FontBuilder,
+            Behaviour
+        };
+        static auto currentMenu = Menu::Appearance;
+        // Sidebar
         {
-            ImGuiUtil::ThemesLoader::Cleanup();
+            ImGuiEx::StyleGuard styleGuard;
+            styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.on_surface_variant))
+                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surface_container))
+                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.surface_container))
+                .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors.secondary))
+                .Push(ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors.secondary_container));
+
+            if (ImGui::BeginChild(
+                    "Sidebar", {ImGuiEx::M3::NavigationRail::Standard.width, -FLT_MIN}, ImGuiEx::ChildFlags().Borders()
+                ))
+            {
+                ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU);
+                if (ImGuiEx::M3::DrawNavItem(
+                        m_translation["$Appearance"], currentMenu == Menu::Appearance, ICON_MD_PALETTE, m_styles
+                    ))
+                {
+                    currentMenu = Menu::Appearance;
+                }
+                if (ImGuiEx::M3::DrawNavItem(
+                        m_translation["$Font_Builder"], currentMenu == Menu::FontBuilder, ICON_FA_WRENCH, m_styles
+                    ))
+                {
+                    currentMenu = Menu::FontBuilder;
+                }
+                if (ImGuiEx::M3::DrawNavItem(
+                        m_translation["$Behaviour"], currentMenu == Menu::Behaviour, ICON_OCT_GEAR, m_styles
+                    ))
+                {
+                    currentMenu = Menu::Behaviour;
+                }
+            }
+            ImGui::EndChild();
         }
+
+        ImGui::SameLine(0, 0);
+        ImGui::BeginGroup();
+        switch (currentMenu)
+        {
+            case Menu::Appearance:
+                DrawMenuAppearance(settings);
+                break;
+            case Menu::FontBuilder:
+                DrawMenuFontBuilder(settings);
+                break;
+            case Menu::Behaviour:
+                DrawMenuBehaviour(settings);
+                break;
+        }
+        ImGui::EndGroup();
     }
     ImGui::End();
     ImGui::PopStyleVar();
     imeManager->SyncImeStateIfDirty();
 }
+
+void ImeUI::DrawMenuAppearance(Settings &settings)
+{
+    ImGui::DragFloat(
+        Translate("$Font_Size_Scale"),
+        &ImGui::GetStyle().FontScaleMain,
+        0.05,
+        Settings::MIN_FONT_SIZE_SCALE,
+        Settings::MAX_FONT_SIZE_SCALE,
+        "%.3f",
+        ImGuiSliderFlags_NoInput
+    );
+
+    m_translation.UseSection("Settings");
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
+    if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None))
+    {
+        DrawSettingsContent(settings);
+        ImGui::EndTabBar();
+    }
+    ImGui::PopStyleVar();
+    if (!settings.appearance.showSettings)
+    {
+        ImGuiUtil::ThemesLoader::Cleanup();
+    }
+}
+
+void ImeUI::DrawMenuFontBuilder(Settings &settings)
+{
+    m_fontBuilderView.Draw(m_fontBuilder, m_translation, settings);
+}
+
+void ImeUI::DrawMenuBehaviour(Settings &settings) {}
 
 void ImeUI::DrawModConfig(Settings &settings)
 {
@@ -475,19 +554,7 @@ void ImeUI::DrawModConfig(Settings &settings)
     }
 }
 
-void ImeUI::DrawFontConfig(Settings &settings)
-{
-    ImGui::DragFloat(
-        Translate("$Font_Size_Scale"),
-        &ImGui::GetStyle().FontScaleMain,
-        0.05,
-        Settings::MIN_FONT_SIZE_SCALE,
-        Settings::MAX_FONT_SIZE_SCALE,
-        "%.3f",
-        ImGuiSliderFlags_NoInput
-    );
-    m_fontBuilderView.Draw(m_fontBuilder, m_translation, settings);
-}
+void ImeUI::DrawFontConfig(Settings &settings) {}
 
 void ImeUI::DrawFeatures(Settings &settings)
 {

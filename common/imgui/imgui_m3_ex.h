@@ -14,6 +14,10 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx::M3
 {
+
+constexpr int CHANNEL_FG = 1;
+constexpr int CHANNEL_BG = 0;
+
 [[nodiscard]] inline auto ItemToolTipStyles(const Colors &colors) -> StyleGuard
 {
     StyleGuard styleGuard;
@@ -73,7 +77,33 @@ auto DrawNavItem(std::string_view label, bool selected, std::string_view icon, c
 /// BUTTON
 ////////////////////////////////////////////////////////////////////
 
+auto DrawIconButton(
+    std::string_view icon, const ImU32 &containerColor, const ImU32 &textColor, ImFont *iconFont, const ButtonSpec &spec
+) -> bool;
+
+auto DrawIconButton(std::string_view icon, const ButtonSpec &spec, const M3Styles &m3Styles) -> bool;
+
 auto DrawFabButton(std::string_view icon, const M3Styles &m3Styles) -> bool;
+
+/**
+ * A helper function, this method is just a convention!
+ */
+inline auto CalcToolbarContentSize(const ButtonSpec &spec, const uint8_t count) -> ImVec2
+{
+    const auto buttonWidth = spec.size > 0.f ? spec.size : spec.fontSize + (spec.padding.x + spec.spacing.x) * 2.f;
+    const auto width       = spec.size > 0.f ? spec.size : List::STANDARD.gap * (count - 1) + buttonWidth * count;
+    return ImVec2(width, spec.fontSize + spec.spacing.y * 2.f);
+}
+
+/**
+ * The toolbar is a container with multiple slots, and you must
+ * provide your expected dimensions and draw your button according to the agreement.
+ * @return true is Toolbar visible
+ */
+auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, ImU32 bgColor) -> bool;
+auto BeginDockedToolbar(float buttonSize, uint8_t count, ImU32 bgColor) -> bool;
+
+auto EndDockedToolbar() -> void;
 
 ////////////////////////////////////////////////////////////////////
 /// LIST

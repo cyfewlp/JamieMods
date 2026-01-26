@@ -153,7 +153,10 @@ auto DrawNavItem(
     return pressed;
 }
 
-auto DrawFabButton(const std::string_view icon, const M3Styles &m3Styles) -> bool
+auto DrawIconButton(
+    const std::string_view icon, const ImU32 &containerColor, const ImU32 &textColor, ImFont *iconFont,
+    const ButtonSpec &spec
+) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return false;
@@ -161,10 +164,10 @@ auto DrawFabButton(const std::string_view icon, const M3Styles &m3Styles) -> boo
     ImGuiContext     &g        = *GImGui;
     const ImGuiStyle &style    = g.Style;
     const ImGuiID     id       = window->GetID(icon.data());
-    constexpr ImVec2  iconSize = {FAB::STANDARD.fontSize, FAB::STANDARD.fontSize};
+    const ImVec2      iconSize = {spec.fontSize, spec.fontSize};
 
-    ImVec2           pos  = window->DC.CursorPos;
-    constexpr ImVec2 size = {iconSize.x + FAB::STANDARD.padding.x * 2, iconSize.y + FAB::STANDARD.padding.y * 2};
+    ImVec2       pos  = window->DC.CursorPos;
+    const ImVec2 size = iconSize + spec.padding * 2 + spec.spacing * 2;
 
     const ImRect bb(pos, pos + size);
     ImGui::ItemSize(size, style.FramePadding.y);
@@ -174,31 +177,71 @@ auto DrawFabButton(const std::string_view icon, const M3Styles &m3Styles) -> boo
     bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
     // Render
-    ImU32       color     = m3Styles.colors.primary_container;
-    const ImU32 iconColor = m3Styles.colors.on_primary_container;
+    ImU32 frameColor = containerColor;
     if (hovered && held)
     {
-        color = Colors::GetActiveColor(color, iconColor);
+        frameColor = Colors::GetActiveColor(frameColor, textColor);
     }
     else if (hovered)
     {
-        color = Colors::GetHoveredColor(color, iconColor);
+        frameColor = Colors::GetHoveredColor(frameColor, textColor);
     }
 
+    const ImVec2 contentMin = bb.Min + spec.spacing;
+    const ImVec2 contentMax = bb.Max - spec.spacing;
     ImGui::RenderNavCursor(bb, id);
-    ImGui::RenderFrame(bb.Min, bb.Max, color, true, FAB::STANDARD.rounding);
+    ImGui::RenderFrame(contentMin, contentMax, frameColor, true, spec.rounding);
 
-    ImVec2 posMix = bb.Min;
-    AlignText(posMix, {CENTER_ALIGN, CENTER_ALIGN}, bb.Max, iconSize);
+    ImVec2 posMin = contentMin;
+    AlignText(posMin, {CENTER_ALIGN, CENTER_ALIGN}, contentMax, iconSize);
     window->DrawList->AddText(
-        m3Styles.iconFont,
-        GetFontSize(FAB::STANDARD.fontSize),
-        posMix,
-        iconColor,
-        icon.data(),
-        icon.data() + icon.size()
+        iconFont, GetFontSize(spec.fontSize), posMin, textColor, icon.data(), icon.data() + icon.size()
     );
     return pressed;
+}
+
+auto DrawIconButton(std::string_view icon, const ButtonSpec &spec, const M3Styles &m3Styles) -> bool
+{
+    return DrawIconButton(icon, m3Styles.colors.primary, m3Styles.colors.on_primary, m3Styles.iconFont, spec);
+}
+
+auto DrawFabButton(const std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    return DrawIconButton(
+        icon, m3Styles.colors.primary_container, m3Styles.colors.on_primary_container, m3Styles.iconFont, FAB::STANDARD
+    );
+}
+
+auto BeginDockedToolbar(const ImVec2 &buttonSize, const uint8_t count, const ImU32 bgColor) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return false;
+
+    const auto   size = ImVec2{ImGui::GetContentRegionAvail().x, buttonSize.y + Toolbar::DOCKED.padding.y * 2};
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, 0)) return false;
+
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, bgColor);
+
+    const auto minWidth = buttonSize.x * count;
+    auto       gap      = (size.x - minWidth - Toolbar::DOCKED.padding.x * 2.f) / (count - 1);
+    gap                 = std::max(gap, 0.f);
+    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, gap);
+    ImGui::SetNextItemAllowOverlap();
+
+    window->DC.CursorPos = bb.Min + Toolbar::DOCKED.padding;
+    return true;
+}
+
+auto BeginDockedToolbar(float buttonSize, const uint8_t count, const ImU32 bgColor) -> bool
+{
+    return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, bgColor);
+}
+
+auto EndDockedToolbar() -> void
+{
+    ImGui::PopStyleVar();
 }
 }
 }
