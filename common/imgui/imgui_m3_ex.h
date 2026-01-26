@@ -36,8 +36,10 @@ constexpr int CHANNEL_BG = 0;
     StyleGuard styleGuard;
     styleGuard.Push(ColorHolder::Text(colors.on_primary_container))
         .Push(ColorHolder::Button(colors.primary_container)) // default behavior
-        .Push(ColorHolder::ButtonActive(colors.primary_container_pressed))
-        .Push(ColorHolder::ButtonHovered(colors.primary_container_hovered))
+        .Push(ColorHolder::ButtonActive(Colors::GetActiveColor(colors.primary_container, colors.on_primary_container)))
+        .Push(
+            ColorHolder::ButtonHovered(Colors::GetHoveredColor(colors.primary_container, colors.on_primary_container))
+        )
         .Push(StyleHolder::FramePadding(buttonStyle.padding))
         .Push(StyleHolder::FrameRounding(buttonStyle.rounding));
     return styleGuard;

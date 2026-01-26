@@ -5,6 +5,7 @@
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/imgui/ErrorNotifier.h"
+#include "common/imgui/M3ThemeLoader.h"
 #include "common/imgui/Material3.h"
 #include "common/log.h"
 #include "configs/ConfigSerializer.h"
@@ -29,7 +30,7 @@ namespace LIBC_NAMESPACE_DECL
 
 static constexpr auto               CONFIG_FILE_NAME = "SimpleIME.toml";
 static std::unique_ptr<Ime::ImeApp> g_instance;
-static ImGuiEx::M3::M3Styles        g_darkStyles;
+static ImGuiEx::M3::M3Styles        g_M3Styles;
 
 bool PluginInit()
 {
@@ -38,65 +39,10 @@ bool PluginInit()
 
     static Ime::Settings g_settings;
 
-    //
+    if (!ImGuiEx::M3::LoadTheme(R"(C:\Users\jamie\Downloads\cyan.json)", g_M3Styles.colors))
     {
-        // FIXME: should read styles from file(.css/.json)
-        g_darkStyles.colors = ImGuiEx::M3::Colors{
-            .primary                    = ImColor(211, 188, 253),
-            .surface_tint               = ImColor(211, 188, 253),
-            .on_primary                 = ImColor(56, 38, 92),
-            .primary_container          = ImColor(79, 61, 116),
-            .on_primary_container       = ImColor(235, 221, 255),
-            .secondary                  = ImColor(205, 194, 219),
-            .on_secondary               = ImColor(52, 45, 64),
-            .secondary_container        = ImColor(75, 67, 88),
-            .on_secondary_container     = ImColor(233, 222, 248),
-            .tertiary                   = ImColor(240, 183, 197),
-            .on_tertiary                = ImColor(74, 37, 48),
-            .tertiary_container         = ImColor(100, 59, 70),
-            .on_tertiary_container      = ImColor(255, 217, 225),
-            .error                      = ImColor(255, 180, 171),
-            .on_error                   = ImColor(105, 0, 5),
-            .error_container            = ImColor(147, 0, 10),
-            .on_error_container         = ImColor(255, 218, 214),
-            .background                 = ImColor(21, 18, 24),
-            .on_background              = ImColor(231, 224, 232),
-            .surface                    = ImColor(21, 18, 24),
-            .on_surface                 = ImColor(231, 224, 232),
-            .surface_variant            = ImColor(73, 69, 78),
-            .on_surface_variant         = ImColor(203, 196, 207),
-            .outline                    = ImColor(148, 143, 153),
-            .outline_variant            = ImColor(73, 69, 78),
-            .shadow                     = ImColor(0, 0, 0),
-            .scrim                      = ImColor(0, 0, 0),
-            .inverse_surface            = ImColor(231, 224, 232),
-            .inverse_on_surface         = ImColor(50, 47, 53),
-            .inverse_primary            = ImColor(104, 84, 142),
-            .primary_fixed              = ImColor(235, 221, 255),
-            .on_primary_fixed           = ImColor(35, 15, 70),
-            .primary_fixed_dim          = ImColor(211, 188, 253),
-            .on_primary_fixed_variant   = ImColor(79, 61, 116),
-            .secondary_fixed            = ImColor(233, 222, 248),
-            .on_secondary_fixed         = ImColor(31, 24, 43),
-            .secondary_fixed_dim        = ImColor(205, 194, 219),
-            .on_secondary_fixed_variant = ImColor(75, 67, 88),
-            .tertiary_fixed             = ImColor(255, 217, 225),
-            .on_tertiary_fixed          = ImColor(49, 16, 27),
-            .tertiary_fixed_dim         = ImColor(240, 183, 197),
-            .on_tertiary_fixed_variant  = ImColor(100, 59, 70),
-            .surface_dim                = ImColor(21, 18, 24),
-            .surface_bright             = ImColor(59, 56, 62),
-            .surface_container_lowest   = ImColor(15, 13, 19),
-            .surface_container_low      = ImColor(29, 27, 32),
-            .surface_container          = ImColor(33, 31, 36),
-            .surface_container_high     = ImColor(44, 41, 47),
-            .surface_container_highest  = ImColor(54, 52, 58),
-            // .primary_container_hovered  = ImColor(54, 52, 58),
-            // .primary_container_pressed  = ImColor(54, 52, 58),
-        };
-        g_darkStyles.colors.calculateExtensionFields();
+        ImGuiEx::M3::SetDefaultDarkTheme(g_M3Styles.colors);
     }
-    //
 
     const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
     Ime::ConfigSerializer::Deserialize(filePath, g_settings);
@@ -293,13 +239,13 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 
     ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
     ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
-    const auto iconFile   = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-    g_darkStyles.iconFont = ImGuiManager::AddIconFont(iconFile);
+    const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
+    g_M3Styles.iconFont = ImGuiManager::AddIconFont(iconFile);
 
     std::thread childWndThread([&ensureInitialized, this] {
         try
         {
-            m_imeWnd.Initialize(g_darkStyles);
+            m_imeWnd.Initialize(g_M3Styles);
             ensureInitialized.set_value(true);
             m_imeWnd.Start(m_hWnd, &m_settings);
         }

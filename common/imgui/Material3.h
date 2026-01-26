@@ -173,12 +173,6 @@ struct Colors
     ImColor surface_container_high;
     ImColor surface_container_highest;
 
-    ///////////////////////////////////
-    /// Extension fields
-
-    ImColor primary_container_hovered;
-    ImColor primary_container_pressed;
-
     static constexpr ImColor GetStateColor(const ImColor &source, const ImColor &tint, const float state_alpha)
     {
         return ImColor(
@@ -207,12 +201,6 @@ struct Colors
             source.z + (tint.z - source.z) * state_alpha,
             source.w
         );
-    }
-
-    void calculateExtensionFields()
-    {
-        primary_container_hovered = GetStateColor(primary_container, on_primary_container, 0.08f);
-        primary_container_pressed = GetStateColor(primary_container, on_primary_container, 0.12f);
     }
 };
 

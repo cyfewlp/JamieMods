@@ -46,7 +46,9 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${headers}
     ${IMGUI_SOURCES}
 #    ${IMGUI_DEMO_SOURCES}
+    ${CMAKE_SOURCE_DIR}/common/json/simdjson.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3_ex.cpp
+    ${CMAKE_SOURCE_DIR}/common/imgui/M3ThemeLoader.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
