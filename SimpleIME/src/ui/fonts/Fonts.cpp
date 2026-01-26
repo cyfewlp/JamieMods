@@ -256,11 +256,7 @@ void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder, const Translat
             }
         }
     }
-    {
-        // TODO: Add M3 style tooltip
-        auto _ = ImGuiEx::M3::ItemToolTipStyles(m_styles.colors);
-        ImGui::SetItemTooltip("%s", translation["$Font_Builder_Add"]);
-    }
+    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Add"], m_styles.colors);
     ImGui::EndDisabled();
 }
 
@@ -337,10 +333,7 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     {
         fontBuilder.ApplyFont(settings);
     }
-    {
-        auto _ = ImGuiEx::M3::ItemToolTipStyles(m_styles.colors);
-        ImGui::SetItemTooltip("%s", translation["$Font_Builder_SetAsDefault"]);
-    }
+    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_SetAsDefault"], m_styles.colors);
 
     ImGui::SameLine();
     if (Button(ICON_MD_RESTORE))
@@ -351,20 +344,14 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
         }
         fontBuilder.Reset();
     }
-    {
-        auto _ = ImGuiEx::M3::ItemToolTipStyles(m_styles.colors);
-        ImGui::SetItemTooltip("%s", translation["$Font_Builder_Reset"]);
-    }
+    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Reset"], m_styles.colors);
 
     ImGui::SameLine();
     if (Button(ICON_MD_EYE))
     {
         m_PreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
     }
-    {
-        auto _ = ImGuiEx::M3::ItemToolTipStyles(m_styles.colors);
-        ImGui::SetItemTooltip("%s", translation["$Font_Builder_Preview"]);
-    }
+    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Preview"], m_styles.colors);
     ImGui::EndDisabled();
 
     ImGui::SameLine();
@@ -380,19 +367,13 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     {
         centerPopup(TITLE_WARNINGS);
     }
-    {
-        auto _ = ImGuiEx::M3::ItemToolTipStyles(m_styles.colors);
-        ImGui::SetItemTooltip("%s", translation["Font_Builder_Warning"]);
-    }
+    ImGuiEx::M3::SetItemToolTip(translation["Font_Builder_Warning"], m_styles.colors);
     ImGui::SameLine();
     if (Button(ICON_MD_HELP_CIRCLE_OUTLINE))
     {
         centerPopup(TITLE_HELP);
     }
-    {
-        auto _ = ImGuiEx::M3::ItemToolTipStyles(m_styles.colors);
-        ImGui::SetItemTooltip("%s", translation["$Font_Builder_Help"]);
-    }
+    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Help"], m_styles.colors);
 }
 
 void FontBuilderView::DrawHelpModal(const Translation &translation)

@@ -243,5 +243,16 @@ auto EndDockedToolbar() -> void
 {
     ImGui::PopStyleVar();
 }
+
+void SetItemToolTip(std::string_view text, const Colors &colors)
+{
+    StyleGuard styleGuard;
+    styleGuard.Push(ColorHolder::Text(colors.inverse_on_surface))
+        .Push(ColorHolder::PopupBg(colors.inverse_surface))
+        .Push(StyleHolder::WindowPadding(Tooltip::PLAIN.GetFullPadding()));
+    ImGui::PushFont(nullptr, Tooltip::PLAIN.textSize.fontSize);
+    ImGui::SetItemTooltip("%s", text.data());
+    ImGui::PopFont();
+}
 }
 }

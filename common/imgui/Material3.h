@@ -19,6 +19,24 @@ static constexpr auto CUSTOM_WINDOW_PADDING2       = ImVec2{16.f, 16.f};
 static constexpr auto CUSTOM_WINDOW_PADDING4       = ImVec2{8.f, 8.f};
 static constexpr auto CUSTOM_THICK_SCROLL_BAR_SIZE = 8.f;
 
+struct TextSizeSpec
+{
+    float fontSize;
+    float lineHeight;
+
+    consteval auto GetTextSpacing() const -> float
+    {
+        return lineHeight - fontSize;
+    }
+};
+
+namespace TextSize
+{
+static constexpr auto SMALL  = TextSizeSpec{.fontSize = 12.f, .lineHeight = 16.f};
+static constexpr auto MEDIUM = TextSizeSpec{.fontSize = 14.f, .lineHeight = 20.f};
+static constexpr auto LARGE  = TextSizeSpec{.fontSize = 16.f, .lineHeight = 24.f};
+}
+
 struct ButtonStyle
 {
     float  fontSize;
@@ -227,6 +245,7 @@ struct ListStyle
     float  gap;
 };
 
+// FIXME: need to migrate to new list style
 static constexpr auto LIST_2DENSITY = ListStyle{
     .fontSize        = 24.f,
     .supportFontSize = 20.f,
@@ -293,6 +312,22 @@ static constexpr auto DOCKED = ToolbarSpec{
     .gap = -1.f, .padding = ImVec2{16.f, 8.f},
          .rounding = 0.f, .margin = ImVec2(16.f, 24.f)
 };
+}
+
+struct TooltipSpec
+{
+    TextSizeSpec textSize;
+    ImVec2       padding;
+
+    consteval auto GetFullPadding() const -> ImVec2
+    {
+        return {padding.x, padding.y + textSize.GetTextSpacing()};
+    }
+};
+
+namespace Tooltip
+{
+static constexpr auto PLAIN = TooltipSpec{.textSize = TextSize::SMALL, .padding = ImVec2(8.f, 4.f)};
 }
 
 }

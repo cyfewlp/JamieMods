@@ -18,15 +18,6 @@ namespace ImGuiEx::M3
 constexpr int CHANNEL_FG = 1;
 constexpr int CHANNEL_BG = 0;
 
-[[nodiscard]] inline auto ItemToolTipStyles(const Colors &colors) -> StyleGuard
-{
-    StyleGuard styleGuard;
-    styleGuard.Push(ColorHolder::Text(colors.inverse_on_surface))
-        .Push(ColorHolder::PopupBg(colors.inverse_surface))
-        .Push(StyleHolder::WindowPadding(TOOLTIP_PADDING));
-    return styleGuard;
-}
-
 [[nodiscard]] inline auto IconButtonStyles(const Colors &colors, const ButtonStyle &buttonStyle) -> StyleGuard
 {
     StyleGuard styleGuard;
@@ -108,5 +99,11 @@ auto EndDockedToolbar() -> void;
 ////////////////////////////////////////////////////////////////////
 /// LIST
 ////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+/// Tooltip
+////////////////////////////////////////////////////////////////////
+
+void SetItemToolTip(std::string_view text, const Colors &colors);
 }
 }
