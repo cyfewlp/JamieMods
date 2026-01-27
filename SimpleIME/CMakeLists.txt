@@ -48,7 +48,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
 #    ${IMGUI_DEMO_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/json/simdjson.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3_ex.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/M3ThemeLoader.cpp
+    ${CMAKE_SOURCE_DIR}/common/imgui/M3ThemeBuilder.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
@@ -84,6 +84,7 @@ target_link_libraries(
     spdlog::spdlog
     ${DETOURS_LIBRARY}
     Freetype::Freetype
+    MaterialYou
 )
 
 ## Install config

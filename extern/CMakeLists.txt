@@ -1,33 +1,24 @@
-
-find_package(Freetype REQUIRED)
-
-add_library(
-	imgui STATIC
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_dx11.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/freetype/imgui_freetype.cpp
-)
-# target_compile_definitions(imgui PUBLIC IMGUI_USE_WCHAR32 IMGUI_ENABLE_FREETYPE)
-target_include_directories(
-	imgui
-	PUBLIC
-		${CMAKE_CURRENT_SOURCE_DIR}/imgui
-		${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
-		${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/freetype
+# add MaterialYOu
+set(MATERIAL_YOU_PATH ${CMAKE_CURRENT_SOURCE_DIR}/material-color-utilities)
+set(MCU_SOURCES
+    "${MATERIAL_YOU_PATH}/cpp/cam/cam.cc"
+    "${MATERIAL_YOU_PATH}/cpp/cam/hct.cc"
+    "${MATERIAL_YOU_PATH}/cpp/cam/hct_solver.cc"
+    "${MATERIAL_YOU_PATH}/cpp/contrast/contrast.cc"
+    "${MATERIAL_YOU_PATH}/cpp/dislike/dislike.cc"
+    "${MATERIAL_YOU_PATH}/cpp/dynamiccolor/dynamic_color.cc"
+    "${MATERIAL_YOU_PATH}/cpp/dynamiccolor/dynamic_scheme.cc"
+    "${MATERIAL_YOU_PATH}/cpp/dynamiccolor/material_dynamic_colors.cc"
+    "${MATERIAL_YOU_PATH}/cpp/palettes/tones.cc"
+    "${MATERIAL_YOU_PATH}/cpp/scheme/scheme_tonal_spot.cc"
+    #    "${MATERIAL_YOU_PATH}/cpp/utils/utils.cc"
+    "mcu_utils.cpp" # avoid dependency google absl library
 )
 
-target_precompile_headers(
-	imgui PUBLIC my_imgui_config.h
-)
+add_library(MaterialYou STATIC ${MCU_SOURCES})
 
-# linkage
-target_link_libraries(
-	imgui 
-	PRIVATE
-		Freetype::Freetype
-)
+target_compile_features(MaterialYou PUBLIC cxx_std_26)
+target_include_directories(MaterialYou PUBLIC ${MATERIAL_YOU_PATH})
+if(MSVC)
+  target_compile_definitions(MaterialYou PUBLIC _USE_MATH_DEFINES)
+endif()

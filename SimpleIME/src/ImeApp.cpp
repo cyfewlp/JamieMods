@@ -5,7 +5,7 @@
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/imgui/ErrorNotifier.h"
-#include "common/imgui/M3ThemeLoader.h"
+#include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
 #include "common/log.h"
 #include "configs/ConfigSerializer.h"
@@ -39,10 +39,7 @@ bool PluginInit()
 
     static Ime::Settings g_settings;
 
-    if (!ImGuiEx::M3::LoadTheme(R"(C:\Users\jamie\Downloads\cyan.json)", g_M3Styles.colors))
-    {
-        ImGuiEx::M3::SetDefaultDarkTheme(g_M3Styles.colors);
-    }
+    ImGuiEx::M3::ThemeBuilder::BuildThemeFromSeed(0xFF673AB7, false, g_M3Styles.colors);
 
     const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
     Ime::ConfigSerializer::Deserialize(filePath, g_settings);

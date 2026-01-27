@@ -6,3 +6,7 @@
 	path = extern/CommonLibSSE-NG
 	url = https://github.com/alandtse/CommonLibVR
 	branch = ng
+[submodule "extern/material-color-utilities"]
+	path = extern/material-color-utilities
+	url = https://github.com/material-foundation/material-color-utilities.git
+	branch = main

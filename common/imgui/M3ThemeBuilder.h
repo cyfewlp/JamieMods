@@ -6,7 +6,7 @@
 
 #include "../config.h"
 
-#include <string_view>
+#include <cstdint>
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -15,9 +15,10 @@ namespace ImGuiEx::M3
 
 struct Colors;
 
-auto LoadTheme(std::string_view path, Colors &colors) -> bool;
-
-void SetDefaultDarkTheme( Colors &colors);
-
+class ThemeBuilder
+{
+public:
+    static void BuildThemeFromSeed(uint32_t seedArgb, bool isDark, Colors &colors);
+};
 }
 }

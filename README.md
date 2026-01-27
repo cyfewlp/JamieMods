@@ -90,5 +90,6 @@ Please check [[TAGGING_GUIDE]]
 * [CommonLibSSEVR/ng](https://github.com/alandtse/CommonLibVR): The backbone library for Skyrim reverse engineering.
 * [Dear ImGui](https://github.com/ocornut/imgui): Used for in-game overlays.
 * [ImThemes](https://github.com/Patitotective/ImThemes): ImGui styling browser.
+* [material-color-utilities](https://github.com/material-foundation/material-color-utilities.git): Color libraries for Material You
 * [SimpleIni](https://github.com/brofield/simpleini): Configuration file parser.
 * [Nerd Font](https://github.com/ryanoasis/nerd-fonts): Iconic font aggregator.
