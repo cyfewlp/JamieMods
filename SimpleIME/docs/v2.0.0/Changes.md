@@ -40,3 +40,13 @@ And implement in SkyrimSE can support all UI that implemented from `IMenu` inter
 ## Test #status/done
 
 - [x] ConfigSerializerTest 
+
+## Move out member `ImeUI` from `ImeWnd` #status/todo 
+
+## Support Preview IME window #font_builder #status/todo 
+
+- Support preview IME window and some UI may 
+
+## Material 3 integrate
+
+### Add M3 style slider #status/todo 
