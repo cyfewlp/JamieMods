@@ -11,6 +11,7 @@
 #include "ui/Settings.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/FontBuilderView.h"
+#include "ui/panels/AppearancePanel.h"
 
 #include <vector>
 
@@ -30,7 +31,7 @@ public:
     explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService, ImGuiEx::M3::M3Styles &styles)
         : m_pImeWnd(pImeWnd), m_pTextService(pTextService),
           m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE)), m_styles(styles),
-          m_fontBuilderView(styles)
+          m_fontBuilderView(styles), m_panelAppearance(styles, m_translation)
     {
     }
 
@@ -60,7 +61,7 @@ public:
 private:
     void DrawInputMethodsCombo() const;
     void DrawSettings(Settings &settings);
-    void DrawMenuAppearance(Settings &settings);
+    void DrawMenuAppearance(Settings &settings, bool appearing);
     void DrawMenuFontBuilder(Settings &settings);
     void DrawMenuBehaviour(Settings &settings);
     void DrawModConfig(Settings &settings);
@@ -98,6 +99,7 @@ private:
     FontBuilder              m_fontBuilder;
     ImGuiEx::M3::M3Styles   &m_styles;
     FontBuilderView          m_fontBuilderView;
+    AppearancePanel          m_panelAppearance;
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;

@@ -22,7 +22,7 @@ constexpr int CHANNEL_BG = 0;
 {
     StyleGuard styleGuard;
     styleGuard
-        .Push(ColorHolder::Text(colors.onPrimary))
+        .Push(ColorHolder::Text(colors.OnPrimary()))
         // .Push(ColorHolder::Button(colors.primary)) // default behavior
         // .Push(ColorHolder::ButtonActive(colors.primary_pressed))
         // .Push(ColorHolder::ButtonHovered(colors.primary_hovered))
@@ -34,10 +34,10 @@ constexpr int CHANNEL_BG = 0;
 [[nodiscard]] inline auto FabButtonStyles(const Colors &colors, const ButtonStyle &buttonStyle) -> StyleGuard
 {
     StyleGuard styleGuard;
-    styleGuard.Push(ColorHolder::Text(colors.onPrimaryContainer))
-        .Push(ColorHolder::Button(colors.primaryContainer)) // default behavior
-        .Push(ColorHolder::ButtonActive(Colors::GetActiveColor(colors.primaryContainer, colors.onPrimaryContainer)))
-        .Push(ColorHolder::ButtonHovered(Colors::GetHoveredColor(colors.primaryContainer, colors.onPrimaryContainer)))
+    styleGuard.Push(ColorHolder::Text(colors.OnPrimaryContainer()))
+        .Push(ColorHolder::Button(colors.PrimaryContainer())) // default behavior
+        .Push(ColorHolder::ButtonActive(Colors::GetActiveColor(colors.PrimaryContainer(), colors.OnPrimaryContainer())))
+        .Push(ColorHolder::ButtonHovered(Colors::GetHoveredColor(colors.PrimaryContainer(), colors.OnPrimaryContainer())))
         .Push(StyleHolder::FramePadding(buttonStyle.padding))
         .Push(StyleHolder::FrameRounding(buttonStyle.rounding));
     return styleGuard;

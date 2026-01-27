@@ -24,6 +24,7 @@ void ThemeBuilder::BuildThemeFromSeed(uint32_t seedArgb, bool isDark, Colors &co
         return ImColor(r, g, b, a);
     };
 
+    colors.seedArgb                = seedArgb;
     colors.primary                 = argbToImColor(scheme.GetPrimary());
     colors.surfaceTint             = argbToImColor(scheme.GetSurfaceTint());
     colors.onPrimary               = argbToImColor(scheme.GetOnPrimary());
@@ -73,6 +74,13 @@ void ThemeBuilder::BuildThemeFromSeed(uint32_t seedArgb, bool isDark, Colors &co
     colors.surfaceContainer        = argbToImColor(scheme.GetSurfaceContainer());
     colors.surfaceContainerHigh    = argbToImColor(scheme.GetSurfaceContainerHigh());
     colors.surfaceContainerHighest = argbToImColor(scheme.GetSurfaceContainerHighest());
+
+    colors.primaryPalette        = scheme.primary_palette.get(40.0f);
+    colors.secondaryPalette      = scheme.secondary_palette.get(40.0f);
+    colors.tertiaryPalette       = scheme.tertiary_palette.get(40.0f);
+    colors.neutralPalette        = scheme.neutral_palette.get(40.0f);
+    colors.neutralVariantPalette = scheme.neutral_variant_palette.get(40.0f);
+    colors.errorPalette          = scheme.error_palette.get(40.0f);
 }
 }
 }

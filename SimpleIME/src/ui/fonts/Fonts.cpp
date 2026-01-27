@@ -185,7 +185,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
 
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surfaceContainerHighest));
+        styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainerHighest()));
         ImGui::SetNextWindowSizeConstraints(
             {BoxStyle.width, 0.f},
             {std::max(BoxStyle.width, ImGui::GetContentRegionAvail().x - BoxStyle.width), FLT_MAX}
@@ -206,7 +206,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
     ImGui::SameLine(0, 0);
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surfaceContainerLowest))
+        styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainerLowest()))
             .Push(ImGuiEx::StyleHolder::WindowPadding(ImGuiEx::M3::CUSTOM_WINDOW_PADDING2));
         if (ImGui::BeginChild(
                 "FontsPreviewer",
@@ -231,7 +231,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
     ImGui::SameLine(0, 0);
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surfaceContainerHighest));
+        styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainerHighest()));
         if (ImGui::BeginChild("FontBuilderFontInfo", {-FLT_MIN, BoxStyle.height}, ImGuiEx::ChildFlags()))
         {
             DrawToolBar(fontBuilder, translation, settings);
@@ -251,8 +251,8 @@ void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder, const Translat
     {
         if (ImGuiEx::M3::DrawIconButton(
                 ICON_MD_TRANSFER_RIGHT,
-                m_styles.colors.primary,
-                m_styles.colors.onPrimary,
+                m_styles.colors.Primary(),
+                m_styles.colors.OnPrimary(),
                 m_styles.iconFont,
                 ImGuiEx::M3::FAB::STANDARD
             ))
@@ -274,9 +274,9 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
         return;
     }
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::ColorHolder::Border(m_styles.colors.outlineVariant))
-        .Push(ImGuiEx::ColorHolder::TableRowBg(m_styles.colors.surface))
-        .Push(ImGuiEx::ColorHolder::TableRowBgAlt(m_styles.colors.surface))
+    styleGuard.Push(ImGuiEx::ColorHolder::Border(m_styles.colors.OutlineVariant()))
+        .Push(ImGuiEx::ColorHolder::TableRowBg(m_styles.colors.Surface()))
+        .Push(ImGuiEx::ColorHolder::TableRowBgAlt(m_styles.colors.Surface()))
         .Push(ImGuiEx::StyleHolder::ScrollbarSize(ImGuiEx::M3::CUSTOM_THICK_SCROLL_BAR_SIZE));
     constexpr auto list = ImGuiEx::M3::List::STANDARD;
     ImGui::Indent(list.padding.x);
@@ -301,7 +301,7 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
                 ImGui::Text("%s", names[idx].c_str());
                 {
                     ImGuiEx::StyleGuard styleGuard1;
-                    styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.onSurfaceVariant));
+                    styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurfaceVariant()));
                     ImGui::PushFont(nullptr, list.supportText.fontSize);
                     ImGui::Text("%s", paths[idx].c_str());
                     ImGui::PopFont();
@@ -316,7 +316,7 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
 
 void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
 {
-    if (ImGuiEx::M3::BeginDockedToolbar(ImGuiEx::M3::IconButton::XSMALL.size, 5, m_styles.colors.surfaceContainer))
+    if (ImGuiEx::M3::BeginDockedToolbar(ImGuiEx::M3::IconButton::XSMALL.size, 5, m_styles.colors.SurfaceContainer()))
     {
         DrawToolBarButtons(fontBuilder, translation, settings);
         ImGuiEx::M3::EndDockedToolbar();
@@ -333,8 +333,8 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     auto Button = [this](const std::string_view &icon) -> bool {
         return ImGuiEx::M3::DrawIconButton(
             icon,
-            m_styles.colors.surfaceContainer,
-            m_styles.colors.onSurfaceVariant,
+            m_styles.colors.SurfaceContainer(),
+            m_styles.colors.OnSurfaceVariant(),
             m_styles.iconFont,
             ImGuiEx::M3::IconButton::XSMALL
         );
@@ -342,8 +342,8 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
 
     if (ImGuiEx::M3::DrawIconButton(
             ICON_FA_WRENCH,
-            m_styles.colors.primary,
-            m_styles.colors.onPrimary,
+            m_styles.colors.Primary(),
+            m_styles.colors.OnPrimary(),
             m_styles.iconFont,
             ImGuiEx::M3::IconButton::XSMALL
         ))
@@ -382,8 +382,8 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     };
     if (ImGuiEx::M3::DrawIconButton(
             ICON_MD_ALERT_CIRCLE_OUTLINE,
-            m_styles.colors.tertiaryContainer,
-            m_styles.colors.onTertiaryContainer,
+            m_styles.colors.TertiaryContainer(),
+            m_styles.colors.OnTertiaryContainer(),
             m_styles.iconFont,
             ImGuiEx::M3::IconButton::XSMALL
         ))
@@ -394,8 +394,8 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     ImGui::SameLine();
     if (ImGuiEx::M3::DrawIconButton(
             ICON_MD_HELP_CIRCLE_OUTLINE,
-            m_styles.colors.secondaryContainer,
-            m_styles.colors.onSecondaryContainer,
+            m_styles.colors.SecondaryContainer(),
+            m_styles.colors.OnSecondaryContainer(),
             m_styles.iconFont,
             ImGuiEx::M3::IconButton::XSMALL
         ))
@@ -494,7 +494,7 @@ void FontPreviewPanel::DrawStatusBar(const Translation &translation) const
 
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.onSecondaryContainer));
+        styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSecondaryContainer()));
         if (!icon.empty())
         {
             ImGui::Text("%s", icon.data());
@@ -519,7 +519,7 @@ void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
         ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Push(ImGuiEx::StyleHolder::FramePadding(box.padding))
-            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors.onSurfaceVariant))
+            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurfaceVariant()))
             .Push(ImGuiEx::ColorHolder::FrameBg({0, 0, 0, 0}));
         if (ImGui::InputTextWithHint(
                 "##Filter",
@@ -547,7 +547,7 @@ void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
     const auto rectMax = ImGui::GetItemRectMax();
     drawList->ChannelsSetCurrent(0);
     drawList->AddRectFilled(
-        rectMin, {rectMax.x + box.padding.x, rectMax.y}, m_styles.colors.surfaceContainerHigh, box.rounding
+        rectMin, {rectMax.x + box.padding.x, rectMax.y}, m_styles.colors.SurfaceContainerHigh(), box.rounding
     );
     drawList->ChannelsMerge();
 
@@ -566,15 +566,16 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
         styleGuard.Push(ImGuiEx::StyleHolder::ItemSpacing(itemSpacing))
             .Push(ImGuiEx::StyleHolder::SelectableTextAlign({0.f, 0.5f}))
             .Push(ImGuiEx::StyleHolder::ScrollbarSize(ImGuiEx::M3::CUSTOM_THICK_SCROLL_BAR_SIZE))
-            .Push(ImGuiEx::ColorHolder::Header(m_styles.colors.surface))
+            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurface()))
+            .Push(ImGuiEx::ColorHolder::Header(m_styles.colors.Surface()))
             .Push(
                 ImGuiEx::ColorHolder::HeaderActive(
-                    ImGuiEx::M3::Colors::GetActiveColor(m_styles.colors.surface, m_styles.colors.onSurface)
+                    ImGuiEx::M3::Colors::GetActiveColor(m_styles.colors.Surface(), m_styles.colors.OnSurface())
                 )
             )
             .Push(
                 ImGuiEx::ColorHolder::HeaderHovered(
-                    ImGuiEx::M3::Colors::GetHoveredColor(m_styles.colors.surface, m_styles.colors.onSurface)
+                    ImGuiEx::M3::Colors::GetHoveredColor(m_styles.colors.Surface(), m_styles.colors.OnSurface())
                 )
             );
 

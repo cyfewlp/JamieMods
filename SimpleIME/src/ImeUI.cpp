@@ -89,80 +89,80 @@ void ApplyM3Colors(const ImGuiEx::M3::Colors &colors)
     using namespace ImGuiEx::M3;
     ImGuiStyle &style = ImGui::GetStyle();
 
-    style.Colors[ImGuiCol_WindowBg]         = colors.surface;
-    style.Colors[ImGuiCol_Text]             = colors.onSurface;
-    style.Colors[ImGuiCol_TitleBg]          = colors.surfaceContainerHighest;
-    style.Colors[ImGuiCol_TitleBgActive]    = Colors::GetActiveColor(colors.surfaceContainerHighest, colors.onSurface);
-    style.Colors[ImGuiCol_TitleBgCollapsed] = colors.secondaryContainer;
-    style.Colors[ImGuiCol_ChildBg]          = colors.surface;
-    style.Colors[ImGuiCol_PopupBg]          = colors.primaryContainer;
-    style.Colors[ImGuiCol_FrameBg]          = colors.secondaryContainer;
-    style.Colors[ImGuiCol_FrameBgActive]    = colors.secondaryContainer;
-    style.Colors[ImGuiCol_FrameBgHovered]   = colors.secondaryContainer;
-    style.Colors[ImGuiCol_SliderGrab]       = colors.primary;
-    style.Colors[ImGuiCol_SliderGrabActive] = Colors::GetActiveColor(colors.primary, colors.onPrimary);
-    style.Colors[ImGuiCol_Button]           = colors.primary;
-    style.Colors[ImGuiCol_ButtonHovered]    = Colors::GetHoveredColor(colors.primary, colors.onPrimary);
-    style.Colors[ImGuiCol_ButtonActive]     = Colors::GetActiveColor(colors.primary, colors.onPrimary);
-    style.Colors[ImGuiCol_ScrollbarBg]      = {0, 0, 0, 0};
-    style.Colors[ImGuiCol_ScrollbarGrab]    = colors.outline;
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors.outlineVariant;
-    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors.primary;
+    style.Colors[ImGuiCol_WindowBg]      = colors.Surface();
+    style.Colors[ImGuiCol_Text]          = colors.OnSurface();
+    style.Colors[ImGuiCol_TitleBg]       = colors.SurfaceContainerHighest();
+    style.Colors[ImGuiCol_TitleBgActive] = Colors::GetActiveColor(colors.SurfaceContainerHighest(), colors.OnSurface());
+    style.Colors[ImGuiCol_TitleBgCollapsed]     = colors.SecondaryContainer();
+    style.Colors[ImGuiCol_ChildBg]              = colors.Surface();
+    style.Colors[ImGuiCol_PopupBg]              = colors.PrimaryContainer();
+    style.Colors[ImGuiCol_FrameBg]              = colors.SecondaryContainer();
+    style.Colors[ImGuiCol_FrameBgActive]        = colors.SecondaryContainer();
+    style.Colors[ImGuiCol_FrameBgHovered]       = colors.SecondaryContainer();
+    style.Colors[ImGuiCol_SliderGrab]           = colors.Primary();
+    style.Colors[ImGuiCol_SliderGrabActive]     = Colors::GetActiveColor(colors.Primary(), colors.OnPrimary());
+    style.Colors[ImGuiCol_Button]               = colors.Primary();
+    style.Colors[ImGuiCol_ButtonHovered]        = Colors::GetHoveredColor(colors.Primary(), colors.OnPrimary());
+    style.Colors[ImGuiCol_ButtonActive]         = Colors::GetActiveColor(colors.Primary(), colors.OnPrimary());
+    style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
+    style.Colors[ImGuiCol_ScrollbarGrab]        = colors.Outline();
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors.OutlineVariant();
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors.Primary();
 
-    style.Colors[ImGuiCol_MenuBarBg] = colors.surfaceContainerHigh;
+    style.Colors[ImGuiCol_MenuBarBg] = colors.SurfaceContainerHigh();
 
-    style.Colors[ImGuiCol_Header]        = colors.surfaceContainerHigh;
-    style.Colors[ImGuiCol_HeaderHovered] = Colors::GetHoveredColor(colors.surfaceContainerHigh, colors.onSurface);
-    style.Colors[ImGuiCol_HeaderActive]  = Colors::GetActiveColor(colors.surfaceContainerHigh, colors.onSurface);
+    style.Colors[ImGuiCol_Header]        = colors.SurfaceContainerHigh();
+    style.Colors[ImGuiCol_HeaderHovered] = Colors::GetHoveredColor(colors.SurfaceContainerHigh(), colors.OnSurface());
+    style.Colors[ImGuiCol_HeaderActive]  = Colors::GetActiveColor(colors.SurfaceContainerHigh(), colors.OnSurface());
 
-    style.Colors[ImGuiCol_Separator]        = colors.secondary;
-    style.Colors[ImGuiCol_SeparatorHovered] = Colors::GetHoveredColor(colors.secondary, colors.onSecondary);
-    style.Colors[ImGuiCol_SeparatorActive]  = Colors::GetActiveColor(colors.secondary, colors.onSecondary);
+    style.Colors[ImGuiCol_Separator]        = colors.Secondary();
+    style.Colors[ImGuiCol_SeparatorHovered] = Colors::GetHoveredColor(colors.Secondary(), colors.OnSecondary());
+    style.Colors[ImGuiCol_SeparatorActive]  = Colors::GetActiveColor(colors.Secondary(), colors.OnSecondary());
 
-    style.Colors[ImGuiCol_ResizeGrip] = colors.secondaryContainer;
+    style.Colors[ImGuiCol_ResizeGrip] = colors.SecondaryContainer();
     style.Colors[ImGuiCol_ResizeGripHovered] =
-        Colors::GetHoveredColor(colors.secondaryContainer, colors.onSecondaryContainer);
+        Colors::GetHoveredColor(colors.SecondaryContainer(), colors.OnSecondaryContainer());
     style.Colors[ImGuiCol_ResizeGripActive] =
-        Colors::GetActiveColor(colors.secondaryContainer, colors.onSecondaryContainer);
+        Colors::GetActiveColor(colors.SecondaryContainer(), colors.OnSecondaryContainer());
 
-    style.Colors[ImGuiCol_InputTextCursor] = colors.secondary;
+    style.Colors[ImGuiCol_InputTextCursor] = colors.Secondary();
 
-    style.Colors[ImGuiCol_Tab]                 = colors.surface;
-    style.Colors[ImGuiCol_TabHovered]          = Colors::GetHoveredColor(colors.surface, colors.onSurface);
-    style.Colors[ImGuiCol_TabSelected]         = colors.surface;
-    style.Colors[ImGuiCol_TabSelectedOverline] = colors.primary;
+    style.Colors[ImGuiCol_Tab]                 = colors.Surface();
+    style.Colors[ImGuiCol_TabHovered]          = Colors::GetHoveredColor(colors.Surface(), colors.OnSurface());
+    style.Colors[ImGuiCol_TabSelected]         = colors.Surface();
+    style.Colors[ImGuiCol_TabSelectedOverline] = colors.Primary();
 
-    style.Colors[ImGuiCol_TabDimmed]                 = colors.surface;
-    style.Colors[ImGuiCol_TabDimmedSelected]         = Colors::GetActiveColor(colors.surface, colors.onSurface);
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors.outlineVariant;
+    style.Colors[ImGuiCol_TabDimmed]                 = colors.Surface();
+    style.Colors[ImGuiCol_TabDimmedSelected]         = Colors::GetActiveColor(colors.Surface(), colors.OnSurface());
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors.OutlineVariant();
 
-    style.Colors[ImGuiCol_PlotLines]        = colors.primary;
-    style.Colors[ImGuiCol_PlotLinesHovered] = Colors::GetHoveredColor(colors.onPrimary, colors.onPrimary);
+    style.Colors[ImGuiCol_PlotLines]        = colors.Primary();
+    style.Colors[ImGuiCol_PlotLinesHovered] = Colors::GetHoveredColor(colors.OnPrimary(), colors.OnPrimary());
 
-    style.Colors[ImGuiCol_PlotHistogram]        = colors.tertiary;
-    style.Colors[ImGuiCol_PlotHistogramHovered] = Colors::GetHoveredColor(colors.tertiary, colors.onTertiary);
+    style.Colors[ImGuiCol_PlotHistogram]        = colors.Tertiary();
+    style.Colors[ImGuiCol_PlotHistogramHovered] = Colors::GetHoveredColor(colors.Tertiary(), colors.OnTertiary());
 
-    style.Colors[ImGuiCol_TableHeaderBg]     = colors.surfaceContainerHigh;
-    style.Colors[ImGuiCol_TableBorderStrong] = colors.outline;
-    style.Colors[ImGuiCol_TableBorderLight]  = colors.outlineVariant;
-    style.Colors[ImGuiCol_TableRowBg]        = colors.surface;
-    style.Colors[ImGuiCol_TableRowBgAlt]     = colors.surfaceContainerLowest;
+    style.Colors[ImGuiCol_TableHeaderBg]     = colors.SurfaceContainerHigh();
+    style.Colors[ImGuiCol_TableBorderStrong] = colors.Outline();
+    style.Colors[ImGuiCol_TableBorderLight]  = colors.OutlineVariant();
+    style.Colors[ImGuiCol_TableRowBg]        = colors.Surface();
+    style.Colors[ImGuiCol_TableRowBgAlt]     = colors.SurfaceContainerLowest();
 
     // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low;
-    style.Colors[ImGuiCol_TextSelectedBg]   = colors.primary;
+    style.Colors[ImGuiCol_TextSelectedBg]   = colors.Primary();
     style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
 
-    style.Colors[ImGuiCol_TreeLines] = colors.onSurface;
+    style.Colors[ImGuiCol_TreeLines] = colors.OnSurface();
 
-    style.Colors[ImGuiCol_DragDropTarget]   = colors.primary;
-    style.Colors[ImGuiCol_DragDropTargetBg] = colors.surface;
+    style.Colors[ImGuiCol_DragDropTarget]   = colors.Primary();
+    style.Colors[ImGuiCol_DragDropTargetBg] = colors.Surface();
 
-    style.Colors[ImGuiCol_UnsavedMarker]         = colors.onPrimary;
-    style.Colors[ImGuiCol_NavCursor]             = colors.onSecondary;
-    style.Colors[ImGuiCol_NavWindowingHighlight] = colors.onPrimary;
-    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors.surfaceContainer;
+    style.Colors[ImGuiCol_UnsavedMarker]         = colors.OnPrimary();
+    style.Colors[ImGuiCol_NavCursor]             = colors.OnSecondary();
+    style.Colors[ImGuiCol_NavWindowingHighlight] = colors.OnPrimary();
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors.SurfaceContainer();
 
-    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors.surface;
+    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors.Surface();
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 
@@ -402,14 +402,15 @@ void ImeUI::DrawSettings(Settings &settings)
             Behaviour
         };
         static auto currentMenu = Menu::Appearance;
+        bool        appearing   = false;
         // Sidebar
         {
             ImGuiEx::StyleGuard styleGuard;
-            styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.onSurfaceVariant))
-                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surfaceContainer))
-                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.surfaceContainer))
-                .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors.secondary))
-                .Push(ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors.secondaryContainer));
+            styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurfaceVariant()))
+                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainer()))
+                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.SurfaceContainer()))
+                .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors.Secondary()))
+                .Push(ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors.SecondaryContainer()));
 
             if (ImGui::BeginChild(
                     "Sidebar", {ImGuiEx::M3::NavigationRail::Standard.width, -FLT_MIN}, ImGuiEx::ChildFlags().Borders()
@@ -421,29 +422,33 @@ void ImeUI::DrawSettings(Settings &settings)
                     ))
                 {
                     currentMenu = Menu::Appearance;
+                    appearing   = true;
                 }
                 if (ImGuiEx::M3::DrawNavItem(
                         m_translation["$Font_Builder"], currentMenu == Menu::FontBuilder, ICON_FA_WRENCH, m_styles
                     ))
                 {
                     currentMenu = Menu::FontBuilder;
+                    appearing   = true;
                 }
                 if (ImGuiEx::M3::DrawNavItem(
                         m_translation["$Behaviour"], currentMenu == Menu::Behaviour, ICON_OCT_GEAR, m_styles
                     ))
                 {
                     currentMenu = Menu::Behaviour;
+                    appearing   = true;
                 }
             }
             ImGui::EndChild();
         }
 
         ImGui::SameLine(0, 0);
+        m_translation.UseSection("Settings");
         ImGui::BeginGroup();
         switch (currentMenu)
         {
             case Menu::Appearance:
-                DrawMenuAppearance(settings);
+                DrawMenuAppearance(settings, appearing);
                 break;
             case Menu::FontBuilder:
                 DrawMenuFontBuilder(settings);
@@ -459,17 +464,9 @@ void ImeUI::DrawSettings(Settings &settings)
     imeManager->SyncImeStateIfDirty();
 }
 
-void ImeUI::DrawMenuAppearance(Settings &settings)
+void ImeUI::DrawMenuAppearance(Settings &settings, const bool appearing)
 {
-    ImGui::DragFloat(
-        Translate("$Font_Size_Scale"),
-        &ImGui::GetStyle().FontScaleMain,
-        0.05,
-        Settings::MIN_FONT_SIZE_SCALE,
-        Settings::MAX_FONT_SIZE_SCALE,
-        "%.3f",
-        ImGuiSliderFlags_NoInput
-    );
+    m_panelAppearance.Draw(appearing);
 
     m_translation.UseSection("Settings");
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));

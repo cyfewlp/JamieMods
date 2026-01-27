@@ -13,7 +13,7 @@ namespace LIBC_NAMESPACE_DECL
 namespace ImGuiEx::M3
 {
 
-struct Colors;
+class Colors;
 
 class ThemeBuilder
 {
