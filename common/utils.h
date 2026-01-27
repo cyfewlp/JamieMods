@@ -52,7 +52,7 @@ public:
         uint32_t r, g, b;
         if (get_byte(0, r) && get_byte(1, g) && get_byte(2, b))
         {
-            return 0xFF << 24 | b << 16 | g << 8 | r;
+            return 0xFF000000 | b << 16 | g << 8 | r;
         }
         return std::nullopt;
     }
