@@ -70,17 +70,6 @@ How to set the path variable:
   e.g., `C:
 /Games/Mod Organizer 2`).
 - Click OK and Apply.
-
-## 🎨 Dynamic Theming with Material You
-
-`SimpleIME` features a high-performance, dynamic theming engine powered by Google's [material-color-utilities](https://www.google.com/search?q=https://github.com/google/material-color-utilities). Instead of relying on static color presets, the project generates comprehensive, perceptually accurate UI themes in real-time based on a single "Seed Color."
-
-This looks like a solid integration of Material 3 design principles into a C++ environment. Using a popup picker to live-calculate an entire theme from a single seed color is exactly how Material You is intended to function.
-
-Here is a professionally drafted **README** section in English. It explains the integration of `material-color-utilities`, emphasizes the dynamic nature of your `SimpleIME` project, and includes relevant code snippets for clarity.
-
----
-
 ## 🎨 Dynamic Theming with Material You
 
 `SimpleIME` features a high-performance, dynamic theming engine powered by Google's [material-color-utilities](https://www.google.com/search?q=https://github.com/google/material-color-utilities). Instead of relying on static color presets, the project generates comprehensive, perceptually accurate UI themes in real-time based on a single "Seed Color."
