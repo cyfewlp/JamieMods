@@ -124,55 +124,56 @@ struct NavigationRailSpec
 struct Colors
 {
     ImColor primary;
-    ImColor surface_tint;
-    ImColor on_primary;
-    ImColor primary_container;
-    ImColor on_primary_container;
+    ImColor surfaceTint;
+    ImColor onPrimary;
+    ImColor primaryContainer;
+    ImColor onPrimaryContainer;
     ImColor secondary;
-    ImColor on_secondary;
-    ImColor secondary_container;
-    ImColor on_secondary_container;
+    ImColor onSecondary;
+    ImColor secondaryContainer;
+    ImColor onSecondaryContainer;
     ImColor tertiary;
-    ImColor on_tertiary;
-    ImColor tertiary_container;
-    ImColor on_tertiary_container;
+    ImColor onTertiary;
+    ImColor tertiaryContainer;
+    ImColor onTertiaryContainer;
     ImColor error;
-    ImColor on_error;
-    ImColor error_container;
-    ImColor on_error_container;
+    ImColor onError;
+    ImColor errorContainer;
+    ImColor onErrorContainer;
     ImColor background;
-    ImColor on_background;
+    ImColor onBackground;
     ImColor surface;
-    ImColor on_surface;
-    ImColor surface_variant;
-    ImColor on_surface_variant;
+    ImColor onSurface;
+    ImColor surfaceVariant;
+    ImColor onSurfaceVariant;
     ImColor outline;
-    ImColor outline_variant;
+    ImColor outlineVariant;
     ImColor shadow;
     ImColor scrim;
-    ImColor inverse_surface;
-    ImColor inverse_on_surface;
-    ImColor inverse_primary;
-    ImColor primary_fixed;
-    ImColor on_primary_fixed;
-    ImColor primary_fixed_dim;
-    ImColor on_primary_fixed_variant;
-    ImColor secondary_fixed;
-    ImColor on_secondary_fixed;
-    ImColor secondary_fixed_dim;
-    ImColor on_secondary_fixed_variant;
-    ImColor tertiary_fixed;
-    ImColor on_tertiary_fixed;
-    ImColor tertiary_fixed_dim;
-    ImColor on_tertiary_fixed_variant;
-    ImColor surface_dim;
-    ImColor surface_bright;
-    ImColor surface_container_lowest;
-    ImColor surface_container_low;
-    ImColor surface_container;
-    ImColor surface_container_high;
-    ImColor surface_container_highest;
+    ImColor inverseSurface;
+    ImColor inverseOnSurface;
+    ImColor inversePrimary;
+    ImColor primaryFixed;
+    ImColor onPrimaryFixed;
+    ImColor primaryFixedDim;
+    ImColor onPrimaryFixedVariant;
+    ImColor secondaryFixed;
+    ImColor onSecondaryFixed;
+    ImColor secondaryFixedDim;
+    ImColor onSecondaryFixedVariant;
+    ImColor tertiaryFixed;
+    ImColor onTertiaryFixed;
+    ImColor tertiaryFixedDim;
+    ImColor onTertiaryFixedVariant;
+    ImColor surfaceDim;
+    ImColor surfaceBright;
+    ImColor surfaceContainerLowest;
+    ImColor surfaceContainerLow;
+    ImColor surfaceContainer;
+    ImColor surfaceContainerHigh;
+    ImColor surfaceContainerHighest;
 
+private:
     static constexpr ImColor GetStateColor(const ImColor &source, const ImColor &tint, const float state_alpha)
     {
         return ImColor(
@@ -183,6 +184,7 @@ struct Colors
         );
     }
 
+public:
     static constexpr ImColor GetHoveredColor(const ImColor &source, const ImColor &tint)
     {
         return GetStateColor(source, tint, 0.08f);
@@ -191,16 +193,6 @@ struct Colors
     static constexpr ImColor GetActiveColor(const ImColor &source, const ImColor &tint)
     {
         return GetStateColor(source, tint, 0.12f);
-    }
-
-    static ImVec4 GetStateColor(ImVec4 source, ImVec4 tint, float state_alpha)
-    {
-        return ImVec4(
-            source.x + (tint.x - source.x) * state_alpha,
-            source.y + (tint.y - source.y) * state_alpha,
-            source.z + (tint.z - source.z) * state_alpha,
-            source.w
-        );
     }
 };
 

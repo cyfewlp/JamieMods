@@ -102,7 +102,7 @@ auto DrawNavItem(
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
     auto &colors    = m3Styles.colors;
-    ImU32 iconColor = colors.on_surface_variant;
+    ImU32 iconColor = colors.onSurfaceVariant;
 
     ImVec2       iconPosMin{bb.Min.x, bb.Min.y + rail.spacing.y};
     const ImVec2 iconPosMax{bb.Max.x, iconPosMin.y + rail.iconSize};
@@ -118,19 +118,19 @@ auto DrawNavItem(
                 ImVec2{iconPosMin.x - 16.f, iconPosMin.y - rail.spacing.y},
                 ImVec2(iconPosMin.x + iconSize.x + 16.f, iconPosMin.y + iconSize.y + rail.spacing.y)
             );
-            if (selected) iconColor = colors.on_secondary_container;
+            if (selected) iconColor = colors.onPrimary;
             ImVec4 bgColor;
             if (hovered && held)
             {
-                bgColor = Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.12f);
+                bgColor = Colors::GetActiveColor(colors.primary, colors.onPrimary);
             }
             else if (hovered)
             {
-                bgColor = Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.08f);
+                bgColor = Colors::GetHoveredColor(colors.secondaryContainer, colors.onSecondaryContainer);
             }
             else
             {
-                bgColor = colors.secondary_container;
+                bgColor = selected ? colors.primary : colors.secondaryContainer;
             }
             ImGui::RenderFrame(iconBgRect.Min, iconBgRect.Max, ImGui::GetColorU32(bgColor), true, 16.f);
         }
@@ -154,15 +154,15 @@ auto DrawNavItem(
     ImGui::RenderTextClipped(labelMin, labelMax, label.data(), labelEnd, &textSize, {CENTER_ALIGN, CENTER_ALIGN}, &bb);
     {
         auto fineClipOpt = TextClip(textSize, labelMin, bb);
-        // modify iconPosMin
+        // modify labelMin
         AlignText(labelMin, {CENTER_ALIGN, CENTER_ALIGN}, labelMax, textSize);
         drawList->AddText(
             nullptr,
             0.f,
             labelMin,
-            selected ? colors.secondary : colors.on_surface_variant,
+            selected ? colors.secondary : colors.onSurfaceVariant,
             label.data(),
-            label.data() + icon.size(),
+            label.data() + label.size(),
             0.0f,
             fineClipOpt ? &fineClipOpt.value() : nullptr
         );
@@ -221,14 +221,7 @@ auto DrawIconButton(
 
 auto DrawIconButton(std::string_view icon, const ButtonSpec &spec, const M3Styles &m3Styles) -> bool
 {
-    return DrawIconButton(icon, m3Styles.colors.primary, m3Styles.colors.on_primary, m3Styles.iconFont, spec);
-}
-
-auto DrawFabButton(const std::string_view icon, const M3Styles &m3Styles) -> bool
-{
-    return DrawIconButton(
-        icon, m3Styles.colors.primary_container, m3Styles.colors.on_primary_container, m3Styles.iconFont, FAB::STANDARD
-    );
+    return DrawIconButton(icon, m3Styles.colors.primary, m3Styles.colors.onPrimary, m3Styles.iconFont, spec);
 }
 
 auto BeginDockedToolbar(const ImVec2 &buttonSize, const uint8_t count, const ImU32 bgColor) -> bool
@@ -266,8 +259,8 @@ auto EndDockedToolbar() -> void
 void SetItemToolTip(std::string_view text, const Colors &colors)
 {
     StyleGuard styleGuard;
-    styleGuard.Push(ColorHolder::Text(colors.inverse_on_surface))
-        .Push(ColorHolder::PopupBg(colors.inverse_surface))
+    styleGuard.Push(ColorHolder::Text(colors.inverseOnSurface))
+        .Push(ColorHolder::PopupBg(colors.inverseSurface))
         .Push(StyleHolder::WindowPadding(Tooltip::PLAIN.GetFullPadding()));
     ImGui::PushFont(nullptr, Tooltip::PLAIN.textSize.fontSize);
     ImGui::SetItemTooltip("%s", text.data());

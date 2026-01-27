@@ -86,89 +86,81 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
 // FIXME: should be move out to anther class
 void ApplyM3Colors(const ImGuiEx::M3::Colors &colors)
 {
+    using namespace ImGuiEx::M3;
     ImGuiStyle &style = ImGui::GetStyle();
 
-    style.Colors[ImGuiCol_WindowBg] = colors.surface;
-    style.Colors[ImGuiCol_Text]     = colors.on_surface;
-    style.Colors[ImGuiCol_TitleBg]  = colors.surface_container_highest;
-    style.Colors[ImGuiCol_TitleBgActive] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.surface_container_highest, colors.on_surface, 0.12f);
-    style.Colors[ImGuiCol_TitleBgCollapsed] = colors.secondary_container;
+    style.Colors[ImGuiCol_WindowBg]         = colors.surface;
+    style.Colors[ImGuiCol_Text]             = colors.onSurface;
+    style.Colors[ImGuiCol_TitleBg]          = colors.surfaceContainerHighest;
+    style.Colors[ImGuiCol_TitleBgActive]    = Colors::GetActiveColor(colors.surfaceContainerHighest, colors.onSurface);
+    style.Colors[ImGuiCol_TitleBgCollapsed] = colors.secondaryContainer;
     style.Colors[ImGuiCol_ChildBg]          = colors.surface;
-    style.Colors[ImGuiCol_PopupBg]          = colors.primary_container;
-    style.Colors[ImGuiCol_FrameBg]          = colors.secondary_container;
-    style.Colors[ImGuiCol_FrameBgActive]    = colors.secondary_container;
-    style.Colors[ImGuiCol_FrameBgHovered]   = colors.secondary_container;
+    style.Colors[ImGuiCol_PopupBg]          = colors.primaryContainer;
+    style.Colors[ImGuiCol_FrameBg]          = colors.secondaryContainer;
+    style.Colors[ImGuiCol_FrameBgActive]    = colors.secondaryContainer;
+    style.Colors[ImGuiCol_FrameBgHovered]   = colors.secondaryContainer;
     style.Colors[ImGuiCol_SliderGrab]       = colors.primary;
-    style.Colors[ImGuiCol_SliderGrabActive] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.primary, colors.on_primary, 0.12f);
-    style.Colors[ImGuiCol_Button]        = colors.primary;
-    style.Colors[ImGuiCol_ButtonHovered] = ImGuiEx::M3::Colors::GetStateColor(colors.primary, colors.on_primary, 0.08f);
-    style.Colors[ImGuiCol_ButtonActive]  = ImGuiEx::M3::Colors::GetStateColor(colors.primary, colors.on_primary, 0.12f);
-    style.Colors[ImGuiCol_ScrollbarBg]   = {0, 0, 0, 0};
-    style.Colors[ImGuiCol_ScrollbarGrab] = colors.outline;
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors.outline_variant;
+    style.Colors[ImGuiCol_SliderGrabActive] = Colors::GetActiveColor(colors.primary, colors.onPrimary);
+    style.Colors[ImGuiCol_Button]           = colors.primary;
+    style.Colors[ImGuiCol_ButtonHovered]    = Colors::GetHoveredColor(colors.primary, colors.onPrimary);
+    style.Colors[ImGuiCol_ButtonActive]     = Colors::GetActiveColor(colors.primary, colors.onPrimary);
+    style.Colors[ImGuiCol_ScrollbarBg]      = {0, 0, 0, 0};
+    style.Colors[ImGuiCol_ScrollbarGrab]    = colors.outline;
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors.outlineVariant;
     style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors.primary;
 
-    style.Colors[ImGuiCol_MenuBarBg] = colors.surface_container_high;
+    style.Colors[ImGuiCol_MenuBarBg] = colors.surfaceContainerHigh;
 
-    style.Colors[ImGuiCol_Header] = colors.surface_container_high;
-    style.Colors[ImGuiCol_HeaderHovered] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.surface_container_high, colors.on_surface, 0.08f);
-    style.Colors[ImGuiCol_HeaderActive] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.surface_container_high, colors.on_surface, 0.12f);
+    style.Colors[ImGuiCol_Header]        = colors.surfaceContainerHigh;
+    style.Colors[ImGuiCol_HeaderHovered] = Colors::GetHoveredColor(colors.surfaceContainerHigh, colors.onSurface);
+    style.Colors[ImGuiCol_HeaderActive]  = Colors::GetActiveColor(colors.surfaceContainerHigh, colors.onSurface);
 
-    style.Colors[ImGuiCol_Separator] = colors.secondary;
-    style.Colors[ImGuiCol_SeparatorHovered] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.secondary, colors.on_secondary, 0.08f);
-    style.Colors[ImGuiCol_SeparatorActive] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.secondary, colors.on_secondary, 0.12f);
+    style.Colors[ImGuiCol_Separator]        = colors.secondary;
+    style.Colors[ImGuiCol_SeparatorHovered] = Colors::GetHoveredColor(colors.secondary, colors.onSecondary);
+    style.Colors[ImGuiCol_SeparatorActive]  = Colors::GetActiveColor(colors.secondary, colors.onSecondary);
 
-    style.Colors[ImGuiCol_ResizeGrip] = colors.secondary_container;
+    style.Colors[ImGuiCol_ResizeGrip] = colors.secondaryContainer;
     style.Colors[ImGuiCol_ResizeGripHovered] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.08f);
+        Colors::GetHoveredColor(colors.secondaryContainer, colors.onSecondaryContainer);
     style.Colors[ImGuiCol_ResizeGripActive] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.secondary_container, colors.on_secondary_container, 0.12f);
+        Colors::GetActiveColor(colors.secondaryContainer, colors.onSecondaryContainer);
 
     style.Colors[ImGuiCol_InputTextCursor] = colors.secondary;
 
-    style.Colors[ImGuiCol_Tab]         = colors.surface;
-    style.Colors[ImGuiCol_TabHovered]  = ImGuiEx::M3::Colors::GetStateColor(colors.surface, colors.on_surface, 0.08f);
-    style.Colors[ImGuiCol_TabSelected] = colors.surface;
+    style.Colors[ImGuiCol_Tab]                 = colors.surface;
+    style.Colors[ImGuiCol_TabHovered]          = Colors::GetHoveredColor(colors.surface, colors.onSurface);
+    style.Colors[ImGuiCol_TabSelected]         = colors.surface;
     style.Colors[ImGuiCol_TabSelectedOverline] = colors.primary;
 
-    style.Colors[ImGuiCol_TabDimmed] = colors.surface;
-    style.Colors[ImGuiCol_TabDimmedSelected] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.surface, colors.on_surface, 0.12f);
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors.outline_variant;
+    style.Colors[ImGuiCol_TabDimmed]                 = colors.surface;
+    style.Colors[ImGuiCol_TabDimmedSelected]         = Colors::GetActiveColor(colors.surface, colors.onSurface);
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors.outlineVariant;
 
-    style.Colors[ImGuiCol_PlotLines] = colors.primary;
-    style.Colors[ImGuiCol_PlotLinesHovered] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.on_primary, colors.on_primary, 0.08f);
+    style.Colors[ImGuiCol_PlotLines]        = colors.primary;
+    style.Colors[ImGuiCol_PlotLinesHovered] = Colors::GetHoveredColor(colors.onPrimary, colors.onPrimary);
 
-    style.Colors[ImGuiCol_PlotHistogram] = colors.tertiary;
-    style.Colors[ImGuiCol_PlotHistogramHovered] =
-        ImGuiEx::M3::Colors::GetStateColor(colors.tertiary, colors.on_tertiary, 0.08f);
+    style.Colors[ImGuiCol_PlotHistogram]        = colors.tertiary;
+    style.Colors[ImGuiCol_PlotHistogramHovered] = Colors::GetHoveredColor(colors.tertiary, colors.onTertiary);
 
-    style.Colors[ImGuiCol_TableHeaderBg]     = colors.surface_container_high;
+    style.Colors[ImGuiCol_TableHeaderBg]     = colors.surfaceContainerHigh;
     style.Colors[ImGuiCol_TableBorderStrong] = colors.outline;
-    style.Colors[ImGuiCol_TableBorderLight]  = colors.outline_variant;
+    style.Colors[ImGuiCol_TableBorderLight]  = colors.outlineVariant;
     style.Colors[ImGuiCol_TableRowBg]        = colors.surface;
-    style.Colors[ImGuiCol_TableRowBgAlt]     = colors.surface_container_lowest;
+    style.Colors[ImGuiCol_TableRowBgAlt]     = colors.surfaceContainerLowest;
 
     // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low;
     style.Colors[ImGuiCol_TextSelectedBg]   = colors.primary;
     style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
 
-    style.Colors[ImGuiCol_TreeLines] = colors.on_surface;
+    style.Colors[ImGuiCol_TreeLines] = colors.onSurface;
 
     style.Colors[ImGuiCol_DragDropTarget]   = colors.primary;
     style.Colors[ImGuiCol_DragDropTargetBg] = colors.surface;
 
-    style.Colors[ImGuiCol_UnsavedMarker]         = colors.on_primary;
-    style.Colors[ImGuiCol_NavCursor]             = colors.on_secondary;
-    style.Colors[ImGuiCol_NavWindowingHighlight] = colors.on_primary;
-    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors.surface_container;
+    style.Colors[ImGuiCol_UnsavedMarker]         = colors.onPrimary;
+    style.Colors[ImGuiCol_NavCursor]             = colors.onSecondary;
+    style.Colors[ImGuiCol_NavWindowingHighlight] = colors.onPrimary;
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors.surfaceContainer;
 
     style.Colors[ImGuiCol_ModalWindowDimBg]   = colors.surface;
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
@@ -413,11 +405,11 @@ void ImeUI::DrawSettings(Settings &settings)
         // Sidebar
         {
             ImGuiEx::StyleGuard styleGuard;
-            styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.on_surface_variant))
-                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surface_container))
-                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.surface_container))
+            styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.onSurfaceVariant))
+                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.surfaceContainer))
+                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.surfaceContainer))
                 .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors.secondary))
-                .Push(ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors.secondary_container));
+                .Push(ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors.secondaryContainer));
 
             if (ImGui::BeginChild(
                     "Sidebar", {ImGuiEx::M3::NavigationRail::Standard.width, -FLT_MIN}, ImGuiEx::ChildFlags().Borders()

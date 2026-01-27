@@ -22,7 +22,7 @@ constexpr int CHANNEL_BG = 0;
 {
     StyleGuard styleGuard;
     styleGuard
-        .Push(ColorHolder::Text(colors.on_primary))
+        .Push(ColorHolder::Text(colors.onPrimary))
         // .Push(ColorHolder::Button(colors.primary)) // default behavior
         // .Push(ColorHolder::ButtonActive(colors.primary_pressed))
         // .Push(ColorHolder::ButtonHovered(colors.primary_hovered))
@@ -34,12 +34,10 @@ constexpr int CHANNEL_BG = 0;
 [[nodiscard]] inline auto FabButtonStyles(const Colors &colors, const ButtonStyle &buttonStyle) -> StyleGuard
 {
     StyleGuard styleGuard;
-    styleGuard.Push(ColorHolder::Text(colors.on_primary_container))
-        .Push(ColorHolder::Button(colors.primary_container)) // default behavior
-        .Push(ColorHolder::ButtonActive(Colors::GetActiveColor(colors.primary_container, colors.on_primary_container)))
-        .Push(
-            ColorHolder::ButtonHovered(Colors::GetHoveredColor(colors.primary_container, colors.on_primary_container))
-        )
+    styleGuard.Push(ColorHolder::Text(colors.onPrimaryContainer))
+        .Push(ColorHolder::Button(colors.primaryContainer)) // default behavior
+        .Push(ColorHolder::ButtonActive(Colors::GetActiveColor(colors.primaryContainer, colors.onPrimaryContainer)))
+        .Push(ColorHolder::ButtonHovered(Colors::GetHoveredColor(colors.primaryContainer, colors.onPrimaryContainer)))
         .Push(StyleHolder::FramePadding(buttonStyle.padding))
         .Push(StyleHolder::FrameRounding(buttonStyle.rounding));
     return styleGuard;
@@ -87,8 +85,6 @@ auto DrawIconButton(
 ) -> bool;
 
 auto DrawIconButton(std::string_view icon, const ButtonSpec &spec, const M3Styles &m3Styles) -> bool;
-
-auto DrawFabButton(std::string_view icon, const M3Styles &m3Styles) -> bool;
 
 /**
  * A helper function, this method is just a convention!
