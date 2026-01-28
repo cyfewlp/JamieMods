@@ -262,7 +262,10 @@ void ImeUI::DrawSettings(Settings &settings)
     }
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
+
+    ImGuiEx::StyleGuard styleGuard;
+    styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurface()))
+        .Push(ImGuiEx::StyleHolder::WindowPadding({}));
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         enum class Menu : int8_t
@@ -328,7 +331,6 @@ void ImeUI::DrawSettings(Settings &settings)
         currentMenu.second = false;
     }
     ImGui::End();
-    ImGui::PopStyleVar();
     imeManager->SyncImeStateIfDirty();
 }
 

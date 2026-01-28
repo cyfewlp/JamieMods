@@ -23,6 +23,7 @@ class AppearancePanel
     ImGuiEx::M3::M3Styles &m_styles;
     Translation           &m_translation;
     ImColor                m_colorInThemeBuilder;
+    bool                   m_darkModeInThemeBuilder = false;
 
 public:
     explicit AppearancePanel(ImGuiEx::M3::M3Styles &styles, Translation &translation)

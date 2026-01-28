@@ -39,7 +39,8 @@ void AppearancePanel::Draw(const bool appearing)
     {
         if (appearing)
         {
-            m_colorInThemeBuilder = argbToImVec4(m_styles.colors.SeedArgb());
+            m_colorInThemeBuilder    = argbToImVec4(m_styles.colors.SeedArgb());
+            m_darkModeInThemeBuilder = m_styles.colors.DarkMode();
         }
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))
         {
@@ -144,8 +145,7 @@ void AppearancePanel::DrawThemeBuilder()
             ImGui::BeginGroup();
             {
                 styleGuard2.Push(ColorHolder::Text(m_styles.colors.OnSurface()));
-                bool darkMode = m_styles.colors.DarkMode();
-                ImGui::Checkbox(m_translation["$Theme_DarkMode"], &darkMode);
+                ImGui::Checkbox(m_translation["$Theme_DarkMode"], &m_darkModeInThemeBuilder);
 
                 constexpr auto buttonSpec = M3::Button::SMALL;
                 styleGuard2.Push(ColorHolder::Text(m_styles.colors.OnPrimary()))
@@ -157,7 +157,7 @@ void AppearancePanel::DrawThemeBuilder()
                         return (imU32 & 0xFF000000) | (imU32 & 0xFF) << 16 | (imU32 & 0xFF00) |
                                (imU32 & 0xFF0000) >> 16;
                     };
-                    ApplyM3Theme(imU32ToArgb(m_colorInThemeBuilder), darkMode);
+                    ApplyM3Theme(imU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
                 }
 
                 if (ImGui::Button(m_translation["$Cancel"]))
@@ -213,9 +213,9 @@ void AppearancePanel::ApplyM3Theme(uint32_t seedArgb, const bool darkMode)
 
     style.Colors[ImGuiCol_Text] = colors.OnSurface();
 
-    style.Colors[ImGuiCol_TitleBg]          = colors.SurfaceContainerHighest();
-    style.Colors[ImGuiCol_TitleBgActive]    = colors.SurfaceContainerHighest().GetPressedState(colors.OnSurface());
-    style.Colors[ImGuiCol_TitleBgCollapsed] = colors.SecondaryContainer();
+    style.Colors[ImGuiCol_TitleBg]          = colors.SurfaceContainer();
+    style.Colors[ImGuiCol_TitleBgActive]    = colors.Surface();
+    style.Colors[ImGuiCol_TitleBgCollapsed] = colors.SurfaceContainer();
 
     style.Colors[ImGuiCol_WindowBg] = colors.Surface();
     style.Colors[ImGuiCol_ChildBg]  = colors.Surface();
