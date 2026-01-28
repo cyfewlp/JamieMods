@@ -24,17 +24,12 @@ emoji_font = "C:/Windows/Fonts/seguiemj.ttf"
 translation_dir = "Data/interface/SimpleIME"
 
 [appearance]
-# 基础字体大小
-font_size = 16.0
-
-# 缩放倍率 (UiFontSize = font_size * font_size_scale)
-font_size_scale = 1.0
 
 # 界面语言 (需在 translation_dir 下有对应的 translate_{lang}.toml)
 language = "chinese"
 
-# UI 主题名称
-theme = "darcula"
+theme_seed_argb = 0xFF673AB7
+theme_dark_mode = true
 
 # 错误信息显示持续时间 (秒)，-1 为不自动关闭
 error_display_duration = 10

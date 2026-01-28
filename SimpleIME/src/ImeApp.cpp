@@ -5,9 +5,9 @@
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/imgui/ErrorNotifier.h"
-#include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
 #include "common/log.h"
+#include "common/utils.h"
 #include "configs/ConfigSerializer.h"
 #include "configs/CustomMessage.h"
 #include "context.h"
@@ -38,8 +38,6 @@ bool PluginInit()
     const auto  version = plugin->GetVersion();
 
     static Ime::Settings g_settings;
-
-    ImGuiEx::M3::ThemeBuilder::BuildThemeFromSeed(0xFF673AB7, false, g_M3Styles.colors);
 
     const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
     Ime::ConfigSerializer::Deserialize(filePath, g_settings);

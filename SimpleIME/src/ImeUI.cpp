@@ -12,7 +12,6 @@
 #include "common/imgui/ErrorNotifier.h"
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
-#include "common/imgui/ThemesLoader.h"
 #include "common/imgui/imgui_m3_ex.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
@@ -83,89 +82,6 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
     return true;
 }
 
-// FIXME: should be move out to anther class
-void ApplyM3Colors(const ImGuiEx::M3::Colors &colors)
-{
-    using namespace ImGuiEx::M3;
-    ImGuiStyle &style = ImGui::GetStyle();
-
-    style.Colors[ImGuiCol_WindowBg]      = colors.Surface();
-    style.Colors[ImGuiCol_Text]          = colors.OnSurface();
-    style.Colors[ImGuiCol_TitleBg]       = colors.SurfaceContainerHighest();
-    style.Colors[ImGuiCol_TitleBgActive] = Colors::GetActiveColor(colors.SurfaceContainerHighest(), colors.OnSurface());
-    style.Colors[ImGuiCol_TitleBgCollapsed]     = colors.SecondaryContainer();
-    style.Colors[ImGuiCol_ChildBg]              = colors.Surface();
-    style.Colors[ImGuiCol_PopupBg]              = colors.PrimaryContainer();
-    style.Colors[ImGuiCol_FrameBg]              = colors.SecondaryContainer();
-    style.Colors[ImGuiCol_FrameBgActive]        = colors.SecondaryContainer();
-    style.Colors[ImGuiCol_FrameBgHovered]       = colors.SecondaryContainer();
-    style.Colors[ImGuiCol_SliderGrab]           = colors.Primary();
-    style.Colors[ImGuiCol_SliderGrabActive]     = Colors::GetActiveColor(colors.Primary(), colors.OnPrimary());
-    style.Colors[ImGuiCol_Button]               = colors.Primary();
-    style.Colors[ImGuiCol_ButtonHovered]        = Colors::GetHoveredColor(colors.Primary(), colors.OnPrimary());
-    style.Colors[ImGuiCol_ButtonActive]         = Colors::GetActiveColor(colors.Primary(), colors.OnPrimary());
-    style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
-    style.Colors[ImGuiCol_ScrollbarGrab]        = colors.Outline();
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors.OutlineVariant();
-    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors.Primary();
-
-    style.Colors[ImGuiCol_MenuBarBg] = colors.SurfaceContainerHigh();
-
-    style.Colors[ImGuiCol_Header]        = colors.SurfaceContainerHigh();
-    style.Colors[ImGuiCol_HeaderHovered] = Colors::GetHoveredColor(colors.SurfaceContainerHigh(), colors.OnSurface());
-    style.Colors[ImGuiCol_HeaderActive]  = Colors::GetActiveColor(colors.SurfaceContainerHigh(), colors.OnSurface());
-
-    style.Colors[ImGuiCol_Separator]        = colors.Secondary();
-    style.Colors[ImGuiCol_SeparatorHovered] = Colors::GetHoveredColor(colors.Secondary(), colors.OnSecondary());
-    style.Colors[ImGuiCol_SeparatorActive]  = Colors::GetActiveColor(colors.Secondary(), colors.OnSecondary());
-
-    style.Colors[ImGuiCol_ResizeGrip] = colors.SecondaryContainer();
-    style.Colors[ImGuiCol_ResizeGripHovered] =
-        Colors::GetHoveredColor(colors.SecondaryContainer(), colors.OnSecondaryContainer());
-    style.Colors[ImGuiCol_ResizeGripActive] =
-        Colors::GetActiveColor(colors.SecondaryContainer(), colors.OnSecondaryContainer());
-
-    style.Colors[ImGuiCol_InputTextCursor] = colors.Secondary();
-
-    style.Colors[ImGuiCol_Tab]                 = colors.Surface();
-    style.Colors[ImGuiCol_TabHovered]          = Colors::GetHoveredColor(colors.Surface(), colors.OnSurface());
-    style.Colors[ImGuiCol_TabSelected]         = colors.Surface();
-    style.Colors[ImGuiCol_TabSelectedOverline] = colors.Primary();
-
-    style.Colors[ImGuiCol_TabDimmed]                 = colors.Surface();
-    style.Colors[ImGuiCol_TabDimmedSelected]         = Colors::GetActiveColor(colors.Surface(), colors.OnSurface());
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors.OutlineVariant();
-
-    style.Colors[ImGuiCol_PlotLines]        = colors.Primary();
-    style.Colors[ImGuiCol_PlotLinesHovered] = Colors::GetHoveredColor(colors.OnPrimary(), colors.OnPrimary());
-
-    style.Colors[ImGuiCol_PlotHistogram]        = colors.Tertiary();
-    style.Colors[ImGuiCol_PlotHistogramHovered] = Colors::GetHoveredColor(colors.Tertiary(), colors.OnTertiary());
-
-    style.Colors[ImGuiCol_TableHeaderBg]     = colors.SurfaceContainerHigh();
-    style.Colors[ImGuiCol_TableBorderStrong] = colors.Outline();
-    style.Colors[ImGuiCol_TableBorderLight]  = colors.OutlineVariant();
-    style.Colors[ImGuiCol_TableRowBg]        = colors.Surface();
-    style.Colors[ImGuiCol_TableRowBgAlt]     = colors.SurfaceContainerLowest();
-
-    // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low;
-    style.Colors[ImGuiCol_TextSelectedBg]   = colors.Primary();
-    style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
-
-    style.Colors[ImGuiCol_TreeLines] = colors.OnSurface();
-
-    style.Colors[ImGuiCol_DragDropTarget]   = colors.Primary();
-    style.Colors[ImGuiCol_DragDropTargetBg] = colors.Surface();
-
-    style.Colors[ImGuiCol_UnsavedMarker]         = colors.OnPrimary();
-    style.Colors[ImGuiCol_NavCursor]             = colors.OnSecondary();
-    style.Colors[ImGuiCol_NavWindowingHighlight] = colors.OnPrimary();
-    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors.SurfaceContainer();
-
-    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors.Surface();
-    style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
-}
-
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
 {
     auto &appearance = settings.appearance;
@@ -177,53 +93,7 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
     }
     m_translation.UseLanguage(appearance.language.c_str());
 
-    ApplyM3Colors(m_styles.colors);
-    // ApplyTheme(settings); // TODO: deprecated ImThemes???
-}
-
-void ImeUI::ApplyTheme(Settings &settings)
-{
-    m_themesLoader.LoadThemes();
-
-    auto       &appearance = settings.appearance;
-    const auto &themes     = m_themesLoader.GetThemes();
-
-    ImGuiStyle                       style;
-    std::expected<void, std::string> expected = std::unexpected("Theme not found");
-    if (appearance.themeIndex < themes.size())
-    {
-        if (themes[appearance.themeIndex].name == appearance.theme)
-        {
-            expected = m_themesLoader.UseTheme(appearance.themeIndex, style);
-        }
-    }
-    else
-    {
-        const auto findIt     = std::lower_bound(themes.begin(), themes.end(), ImGuiUtil::Theme(0, appearance.theme));
-        appearance.themeIndex = static_cast<size_t>(std::distance(themes.begin(), findIt));
-        if (appearance.themeIndex < themes.size())
-        {
-            expected = m_themesLoader.UseTheme(appearance.themeIndex, style);
-        }
-    }
-    if (expected)
-    {
-        FillCommonStyleFields(style, settings);
-        ImGui::GetStyle() = style;
-    }
-    else
-    {
-        ErrorNotifier::GetInstance().Warning(
-            std::format("Can't find theme {}, fallback to ImGui default theme: {}", appearance.theme, expected.error())
-        );
-        if (m_themesLoader.UseTheme(0, ImGui::GetStyle()))
-        {
-            appearance.theme      = "Dark";
-            appearance.themeIndex = 0;
-        }
-    }
-    ImGuiUtil::ThemesLoader::Cleanup();
-    ImGui::GetStyle().FontSizeBase = settings.state.fontSize;
+    m_panelAppearance.ApplyM3Theme(settings.appearance.themeSeedArgb, settings.appearance.themeDarkMode);
 }
 
 void ImeUI::Draw(const Settings &settings)
@@ -401,8 +271,8 @@ void ImeUI::DrawSettings(Settings &settings)
             FontBuilder,
             Behaviour
         };
-        static auto currentMenu = Menu::Appearance;
-        bool        appearing   = false;
+        static auto currentMenu = std::pair{Menu::Appearance, true};
+
         // Sidebar
         {
             ImGuiEx::StyleGuard styleGuard;
@@ -418,25 +288,22 @@ void ImeUI::DrawSettings(Settings &settings)
             {
                 ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU);
                 if (ImGuiEx::M3::DrawNavItem(
-                        m_translation["$Appearance"], currentMenu == Menu::Appearance, ICON_MD_PALETTE, m_styles
+                        m_translation["$Appearance"], currentMenu.first == Menu::Appearance, ICON_MD_PALETTE, m_styles
                     ))
                 {
-                    currentMenu = Menu::Appearance;
-                    appearing   = true;
+                    currentMenu = {Menu::Appearance, true};
                 }
                 if (ImGuiEx::M3::DrawNavItem(
-                        m_translation["$Font_Builder"], currentMenu == Menu::FontBuilder, ICON_FA_WRENCH, m_styles
+                        m_translation["$Font_Builder"], currentMenu.first == Menu::FontBuilder, ICON_FA_WRENCH, m_styles
                     ))
                 {
-                    currentMenu = Menu::FontBuilder;
-                    appearing   = true;
+                    currentMenu = {Menu::FontBuilder, true};
                 }
                 if (ImGuiEx::M3::DrawNavItem(
-                        m_translation["$Behaviour"], currentMenu == Menu::Behaviour, ICON_OCT_GEAR, m_styles
+                        m_translation["$Behaviour"], currentMenu.first == Menu::Behaviour, ICON_OCT_GEAR, m_styles
                     ))
                 {
-                    currentMenu = Menu::Behaviour;
-                    appearing   = true;
+                    currentMenu = {Menu::Behaviour, true};
                 }
             }
             ImGui::EndChild();
@@ -445,10 +312,10 @@ void ImeUI::DrawSettings(Settings &settings)
         ImGui::SameLine(0, 0);
         m_translation.UseSection("Settings");
         ImGui::BeginGroup();
-        switch (currentMenu)
+        switch (currentMenu.first)
         {
             case Menu::Appearance:
-                DrawMenuAppearance(settings, appearing);
+                DrawMenuAppearance(settings, currentMenu.second);
                 break;
             case Menu::FontBuilder:
                 DrawMenuFontBuilder(settings);
@@ -458,6 +325,7 @@ void ImeUI::DrawSettings(Settings &settings)
                 break;
         }
         ImGui::EndGroup();
+        currentMenu.second = false;
     }
     ImGui::End();
     ImGui::PopStyleVar();
@@ -476,10 +344,10 @@ void ImeUI::DrawMenuAppearance(Settings &settings, const bool appearing)
         ImGui::EndTabBar();
     }
     ImGui::PopStyleVar();
-    if (!settings.appearance.showSettings)
-    {
-        ImGuiUtil::ThemesLoader::Cleanup();
-    }
+
+    // sync theme config
+    settings.appearance.themeSeedArgb = m_styles.colors.SeedArgb();
+    settings.appearance.themeDarkMode = m_styles.colors.DarkMode();
 }
 
 void ImeUI::DrawMenuFontBuilder(Settings &settings)
@@ -503,43 +371,6 @@ void ImeUI::DrawModConfig(Settings &settings)
     if (DrawCombo(Translate("$Languages"), m_translateLanguages, settings.appearance.language))
     {
         m_translation.UseLanguage(settings.appearance.language.c_str());
-    }
-
-    if (ImGui::BeginCombo(Translate("$Themes"), settings.appearance.theme.c_str()))
-    {
-        size_t idx = 0;
-        for (const auto &theme : m_themesLoader.GetThemes())
-        {
-            ImGui::PushID(static_cast<int>(idx));
-            const bool isSelected = settings.appearance.themeIndex == idx;
-            if (ImGui::Selectable(theme.name.c_str(), isSelected) && !isSelected)
-            {
-                ImGuiStyle style;
-                if (m_themesLoader.UseTheme(idx, style))
-                {
-                    settings.appearance.themeIndex    = idx;
-                    settings.appearance.theme         = theme.name;
-                    settings.appearance.fontSizeScale = ImGui::GetStyle().FontScaleMain;
-                    FillCommonStyleFields(style, settings);
-                    ImGui::GetStyle() = style;
-                }
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-            ImGui::PopID();
-            idx++;
-        }
-        ImGui::EndCombo();
-    }
-    ImGui::TextDisabled("(?)");
-    if (ImGui::BeginItemTooltip())
-    {
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0F);
-        ImGui::TextUnformatted("Themes provided by ImThemes (https://github.com/Patitotective/ImThemes)");
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
     }
 }
 

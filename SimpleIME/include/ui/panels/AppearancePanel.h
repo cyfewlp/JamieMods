@@ -32,7 +32,10 @@ public:
 
     void Draw(bool appearing);
 
+    void ApplyM3Theme(uint32_t seedArgb, bool darkMode);
+
 private:
+    void DrawZoomCombo() const;
     void DrawThemeBuilder();
 };
 

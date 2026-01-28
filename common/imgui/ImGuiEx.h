@@ -389,5 +389,17 @@ FLAGS_CLASS_FUNCTION(SelectableFlags, Highlight)
 FLAGS_CLASS_FUNCTION(SelectableFlags, SelectOnNav)
 FLAGS_CLASS_END(SelectableFlags)
 
+FLAGS_CLASS_BODY(ComboFlags)
+FLAGS_CLASS_FUNCTION(ComboFlags, None)
+FLAGS_CLASS_FUNCTION(ComboFlags, PopupAlignLeft)
+FLAGS_CLASS_FUNCTION(ComboFlags, HeightSmall)
+FLAGS_CLASS_FUNCTION(ComboFlags, HeightRegular)
+FLAGS_CLASS_FUNCTION(ComboFlags, HeightLarge)
+FLAGS_CLASS_FUNCTION(ComboFlags, HeightLargest)
+FLAGS_CLASS_FUNCTION(ComboFlags, NoArrowButton)
+FLAGS_CLASS_FUNCTION(ComboFlags, NoPreview)
+FLAGS_CLASS_FUNCTION(ComboFlags, WidthFitPreview)
+FLAGS_CLASS_FUNCTION(ComboFlags, HeightMask_)
+FLAGS_CLASS_END(ComboFlags)
 }
 }

@@ -423,7 +423,6 @@ void FontBuilderView::DrawWarningsModal(const Translation &translation)
     if (ImGui::BeginPopupModal(TITLE_WARNINGS, &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
     {
         ImGui::Text("%s", translation["$Font_Builder_Warning1"]);
-        ImGui::Text("%s", translation["$Font_Builder_Warning2"]);
         ImGui::EndPopup();
     }
 }
@@ -570,12 +569,12 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
             .Push(ImGuiEx::ColorHolder::Header(m_styles.colors.Surface()))
             .Push(
                 ImGuiEx::ColorHolder::HeaderActive(
-                    ImGuiEx::M3::Colors::GetActiveColor(m_styles.colors.Surface(), m_styles.colors.OnSurface())
+                    m_styles.colors.Surface().GetPressedState(m_styles.colors.OnSurface())
                 )
             )
             .Push(
                 ImGuiEx::ColorHolder::HeaderHovered(
-                    ImGuiEx::M3::Colors::GetHoveredColor(m_styles.colors.Surface(), m_styles.colors.OnSurface())
+                    m_styles.colors.Surface().GetHoveredState(m_styles.colors.OnSurface())
                 )
             );
 

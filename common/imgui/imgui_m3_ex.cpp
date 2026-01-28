@@ -122,11 +122,11 @@ auto DrawNavItem(
             ImVec4 bgColor;
             if (hovered && held)
             {
-                bgColor = Colors::GetActiveColor(colors.Primary(), colors.OnPrimary());
+                bgColor = colors.Primary().GetPressedState(colors.OnPrimary());
             }
             else if (hovered)
             {
-                bgColor = Colors::GetHoveredColor(colors.SecondaryContainer(), colors.OnSecondaryContainer());
+                bgColor = colors.SecondaryContainer().GetHoveredState(colors.OnSecondaryContainer());
             }
             else
             {
@@ -173,7 +173,7 @@ auto DrawNavItem(
 }
 
 auto DrawIconButton(
-    const std::string_view icon, const ImU32 &containerColor, const ImU32 &textColor, ImFont *iconFont,
+    const std::string_view icon, const SurfaceColor &containerColor, const ContentColor &textColor, ImFont *iconFont,
     const ButtonSpec &spec
 ) -> bool
 {
@@ -183,7 +183,7 @@ auto DrawIconButton(
     ImGuiContext     &g        = *GImGui;
     const ImGuiStyle &style    = g.Style;
     const ImGuiID     id       = window->GetID(icon.data());
-    const ImVec2      iconSize = {spec.fontSize, spec.fontSize};
+    const ImVec2      iconSize = {spec.text.fontSize, spec.text.fontSize};
 
     ImVec2       pos  = window->DC.CursorPos;
     const ImVec2 size = iconSize + spec.padding * 2 + spec.spacing * 2;
@@ -196,14 +196,18 @@ auto DrawIconButton(
     bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
     // Render
-    ImU32 frameColor = containerColor;
+    ImU32 frameColor;
     if (hovered && held)
     {
-        frameColor = Colors::GetActiveColor(frameColor, textColor);
+        frameColor = containerColor.GetPressedState(textColor);
     }
     else if (hovered)
     {
-        frameColor = Colors::GetHoveredColor(frameColor, textColor);
+        frameColor = containerColor.GetHoveredState(textColor);
+    }
+    else
+    {
+        frameColor = containerColor;
     }
 
     const ImVec2 contentMin = bb.Min + spec.spacing;
@@ -214,7 +218,7 @@ auto DrawIconButton(
     ImVec2 posMin = contentMin;
     AlignText(posMin, {CENTER_ALIGN, CENTER_ALIGN}, contentMax, iconSize);
     window->DrawList->AddText(
-        iconFont, GetFontSize(spec.fontSize), posMin, textColor, icon.data(), icon.data() + icon.size()
+        iconFont, GetFontSize(spec.text.fontSize), posMin, textColor, icon.data(), icon.data() + icon.size()
     );
     return pressed;
 }

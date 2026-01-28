@@ -145,8 +145,8 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
         auto &appearance = config["appearance"];
         findAndSet(appearance, "font_size_scale", settings.appearance.fontSizeScale);
         findAndSet(appearance, "language", settings.appearance.language);
-        findAndSet(appearance, "theme", settings.appearance.theme);
-        findAndSet(appearance, "theme_index", settings.appearance.themeIndex);
+        findAndSet(appearance, "theme_seed_argb", settings.appearance.themeSeedArgb);
+        findAndSet(appearance, "theme_dark_mode", settings.appearance.themeDarkMode);
         findAndSet(appearance, "error_display_duration", settings.appearance.errorDisplayDuration);
         findAndSet(appearance, "show_settings", settings.appearance.showSettings);
     }
@@ -217,8 +217,8 @@ static toml::table AppearanceTomlTable(Settings &settings)
     return {
         {"font_size_scale",        {settings.appearance.fontSizeScale, {" 缩放倍率, 同时影响 UI 尺寸"}}},
         {"language",               settings.appearance.language                                        },
-        {"theme",                  settings.appearance.theme                                           },
-        {"theme_index",            settings.appearance.themeIndex                                      },
+        {"theme_seed_argb",        settings.appearance.themeSeedArgb                                   },
+        {"theme_dark_mode",        settings.appearance.themeDarkMode                                   },
         {"error_display_duration",
          {settings.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}   },
         {"show_settings",          settings.appearance.showSettings                                    },

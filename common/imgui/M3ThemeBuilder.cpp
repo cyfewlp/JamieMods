@@ -24,7 +24,9 @@ void ThemeBuilder::BuildThemeFromSeed(uint32_t seedArgb, bool isDark, Colors &co
         return ImColor(r, g, b, a);
     };
 
-    colors.seedArgb                = seedArgb;
+    colors.seedArgb = seedArgb;
+    colors.darkMode = isDark;
+
     colors.primary                 = argbToImColor(scheme.GetPrimary());
     colors.surfaceTint             = argbToImColor(scheme.GetSurfaceTint());
     colors.onPrimary               = argbToImColor(scheme.GetOnPrimary());

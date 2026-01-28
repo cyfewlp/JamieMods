@@ -1,8 +1,6 @@
 #pragma once
 
 #include "common/imgui/Material3.h"
-#include "common/imgui/ThemesLoader.h"
-#include "common/utils.h"
 #include "core/State.h"
 #include "core/Translation.h"
 #include "ime/ITextService.h"
@@ -29,9 +27,8 @@ class ImeUI
 
 public:
     explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService, ImGuiEx::M3::M3Styles &styles)
-        : m_pImeWnd(pImeWnd), m_pTextService(pTextService),
-          m_themesLoader(CommonUtils::GetInterfaceFile(ImGuiUtil::ThemesLoader::DEFAULT_THEME_FILE)), m_styles(styles),
-          m_fontBuilderView(styles), m_panelAppearance(styles, m_translation)
+        : m_pImeWnd(pImeWnd), m_pTextService(pTextService), m_styles(styles), m_fontBuilderView(styles),
+          m_panelAppearance(styles, m_translation)
     {
     }
 
@@ -43,7 +40,6 @@ public:
 
     bool Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings);
     void ApplyAppearanceSettings(Settings &settings);
-    void ApplyTheme(Settings &settings);
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);
     void ShowToolWindow();
@@ -95,7 +91,6 @@ private:
     std::vector<std::string> m_translateLanguages;
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
     ImVec2                   m_imeWindowPos  = ImVec2(0, 0);
-    ImGuiUtil::ThemesLoader  m_themesLoader;
     FontBuilder              m_fontBuilder;
     ImGuiEx::M3::M3Styles   &m_styles;
     FontBuilderView          m_fontBuilderView;

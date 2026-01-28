@@ -60,7 +60,7 @@ auto ImGuiManager::AddPrimaryFont(const std::vector<std::string> &fontsPathList)
             "Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning
         );
         io.Fonts->Clear();
-        std::vector defaultFonts = {
+         auto defaultFonts = std::vector{
             std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)
         };
         imFont = AddFonts(defaultFonts);

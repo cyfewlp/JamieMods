@@ -60,8 +60,8 @@ struct Settings
 
     struct Appearance
     {
-        std::string theme                = "darcula";
-        std::size_t themeIndex           = 0;
+        uint32_t    themeSeedArgb        = 0xFF673AB7;
+        bool        themeDarkMode        = true;
         std::string language             = "english";
         float       fontSizeScale        = 1.0F;
         int         errorDisplayDuration = 10;

@@ -19,6 +19,7 @@ static constexpr auto CUSTOM_WINDOW_PADDING1       = ImVec2{32.f, 32.f};
 static constexpr auto CUSTOM_WINDOW_PADDING2       = ImVec2{16.f, 16.f};
 static constexpr auto CUSTOM_WINDOW_PADDING4       = ImVec2{8.f, 8.f};
 static constexpr auto CUSTOM_THICK_SCROLL_BAR_SIZE = 8.f;
+static constexpr auto CUSTOM_STANDARD_MENU_WIDTH   = 208.f;
 
 struct TextSizeSpec
 {
@@ -121,71 +122,129 @@ struct NavigationRailSpec
     float  width;
 };
 
+struct ColorBase
+{
+    ImVec4 raw{0, 0, 0, 0};
+
+    constexpr ColorBase() = default;
+
+    constexpr ColorBase(float r, float g, float b, float a = 1.0f) : raw(r, g, b, a) {}
+
+    constexpr ColorBase(const ImVec4 &col) : raw(col) {}
+
+    constexpr ColorBase(int r, int g, int b, int a = 255) : raw(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f) {}
+
+    constexpr ColorBase(ImU32 rgba)
+        : raw(((rgba >> IM_COL32_R_SHIFT) & 0xFF) / 255.0f, ((rgba >> IM_COL32_G_SHIFT) & 0xFF) / 255.0f,
+              ((rgba >> IM_COL32_B_SHIFT) & 0xFF) / 255.0f, ((rgba >> IM_COL32_A_SHIFT) & 0xFF) / 255.0f)
+    {
+    }
+
+    constexpr operator ImVec4() const
+    {
+        return raw;
+    }
+
+    constexpr operator ImU32() const
+    {
+        return ((ImU32)(raw.x * 255.0f + 0.5f) << IM_COL32_R_SHIFT) |
+               ((ImU32)(raw.y * 255.0f + 0.5f) << IM_COL32_G_SHIFT) |
+               ((ImU32)(raw.z * 255.0f + 0.5f) << IM_COL32_B_SHIFT) |
+               ((ImU32)(raw.w * 255.0f + 0.5f) << IM_COL32_A_SHIFT);
+    }
+};
+
+class ContentColor : public ColorBase
+{
+    using ColorBase::ColorBase;
+};
+
+class SurfaceColor : public ColorBase
+{
+public:
+    using ColorBase::ColorBase;
+
+    static constexpr float HOVER_OPACITY   = 0.08f;
+    static constexpr float PRESSED_OPACITY = 0.12f;
+
+    constexpr SurfaceColor GetState(const ContentColor &onColor, const float stateOpacity) const
+    {
+        return SurfaceColor(
+            raw.x + (onColor.raw.x - raw.x) * stateOpacity,
+            raw.y + (onColor.raw.y - raw.y) * stateOpacity,
+            raw.z + (onColor.raw.z - raw.z) * stateOpacity,
+            raw.w
+        );
+    }
+
+    constexpr SurfaceColor GetHoveredState(const ContentColor &onColor) const
+    {
+        return GetState(onColor, HOVER_OPACITY);
+    }
+
+    constexpr SurfaceColor GetPressedState(const ContentColor &onColor) const
+    {
+        return GetState(onColor, PRESSED_OPACITY);
+    }
+};
+
 class ThemeBuilder;
 
 class Colors
 {
-    ImColor primary;
-    ImColor surfaceTint;
-    ImColor onPrimary;
-    ImColor primaryContainer;
-    ImColor onPrimaryContainer;
-    ImColor secondary;
-    ImColor onSecondary;
-    ImColor secondaryContainer;
-    ImColor onSecondaryContainer;
-    ImColor tertiary;
-    ImColor onTertiary;
-    ImColor tertiaryContainer;
-    ImColor onTertiaryContainer;
-    ImColor error;
-    ImColor onError;
-    ImColor errorContainer;
-    ImColor onErrorContainer;
-    ImColor background;
-    ImColor onBackground;
-    ImColor surface;
-    ImColor onSurface;
-    ImColor surfaceVariant;
-    ImColor onSurfaceVariant;
-    ImColor outline;
-    ImColor outlineVariant;
-    ImColor shadow;
-    ImColor scrim;
-    ImColor inverseSurface;
-    ImColor inverseOnSurface;
-    ImColor inversePrimary;
-    ImColor primaryFixed;
-    ImColor onPrimaryFixed;
-    ImColor primaryFixedDim;
-    ImColor onPrimaryFixedVariant;
-    ImColor secondaryFixed;
-    ImColor onSecondaryFixed;
-    ImColor secondaryFixedDim;
-    ImColor onSecondaryFixedVariant;
-    ImColor tertiaryFixed;
-    ImColor onTertiaryFixed;
-    ImColor tertiaryFixedDim;
-    ImColor onTertiaryFixedVariant;
-    ImColor surfaceDim;
-    ImColor surfaceBright;
-    ImColor surfaceContainerLowest;
-    ImColor surfaceContainerLow;
-    ImColor surfaceContainer;
-    ImColor surfaceContainerHigh;
-    ImColor surfaceContainerHighest;
-
-    static constexpr ImColor GetStateColor(const ImColor &source, const ImColor &tint, const float state_alpha)
-    {
-        return ImColor(
-            source.Value.x + (tint.Value.x - source.Value.x) * state_alpha,
-            source.Value.y + (tint.Value.y - source.Value.y) * state_alpha,
-            source.Value.z + (tint.Value.z - source.Value.z) * state_alpha,
-            source.Value.w
-        );
-    }
+    SurfaceColor primary;
+    SurfaceColor surfaceTint;
+    ContentColor onPrimary;
+    SurfaceColor primaryContainer;
+    ContentColor onPrimaryContainer;
+    SurfaceColor secondary;
+    ContentColor onSecondary;
+    SurfaceColor secondaryContainer;
+    ContentColor onSecondaryContainer;
+    SurfaceColor tertiary;
+    ContentColor onTertiary;
+    SurfaceColor tertiaryContainer;
+    ContentColor onTertiaryContainer;
+    SurfaceColor error;
+    ContentColor onError;
+    SurfaceColor errorContainer;
+    ContentColor onErrorContainer;
+    SurfaceColor background;
+    ContentColor onBackground;
+    SurfaceColor surface;
+    ContentColor onSurface;
+    SurfaceColor surfaceVariant;
+    ContentColor onSurfaceVariant;
+    SurfaceColor outline;
+    SurfaceColor outlineVariant;
+    SurfaceColor shadow;
+    SurfaceColor scrim;
+    SurfaceColor inverseSurface;
+    SurfaceColor inverseOnSurface;
+    SurfaceColor inversePrimary;
+    SurfaceColor primaryFixed;
+    ContentColor onPrimaryFixed;
+    SurfaceColor primaryFixedDim;
+    ContentColor onPrimaryFixedVariant;
+    SurfaceColor secondaryFixed;
+    ContentColor onSecondaryFixed;
+    SurfaceColor secondaryFixedDim;
+    ContentColor onSecondaryFixedVariant;
+    SurfaceColor tertiaryFixed;
+    ContentColor onTertiaryFixed;
+    SurfaceColor tertiaryFixedDim;
+    ContentColor onTertiaryFixedVariant;
+    SurfaceColor surfaceDim;
+    SurfaceColor surfaceBright;
+    SurfaceColor surfaceContainerLowest;
+    SurfaceColor surfaceContainerLow;
+    SurfaceColor surfaceContainer;
+    SurfaceColor surfaceContainerHigh;
+    SurfaceColor surfaceContainerHighest;
 
     uint32_t seedArgb;
+    bool     darkMode = false;
+
     uint32_t primaryPalette;
     uint32_t secondaryPalette;
     uint32_t tertiaryPalette;
@@ -196,18 +255,10 @@ class Colors
     friend class ThemeBuilder;
 
 public:
-    static constexpr ImColor GetHoveredColor(const ImColor &source, const ImColor &tint)
-    {
-        return GetStateColor(source, tint, 0.08f);
-    }
-
-    static constexpr ImColor GetActiveColor(const ImColor &source, const ImColor &tint)
-    {
-        return GetStateColor(source, tint, 0.12f);
-    }
-
     // clang-format off
     auto SeedArgb() const -> uint32_t { return seedArgb; }
+    auto DarkMode() const -> bool { return darkMode; }
+
     auto PrimaryPalette() const -> uint32_t {return primaryPalette;}
     auto SecondaryPalette() const -> uint32_t {return secondaryPalette;}
     auto TertiaryPalette() const -> uint32_t {return tertiaryPalette;}
@@ -215,58 +266,57 @@ public:
     auto NeutralVariantPalette() const -> uint32_t {return neutralVariantPalette;}
     auto ErrorPalette() const -> uint32_t {return errorPalette;}
 
-    auto Primary() const -> const ImColor & { return primary; }
-    auto SurfaceTint() const -> const ImColor & { return surfaceTint; }
-    auto OnPrimary() const -> const ImColor & { return onPrimary; }
-    auto PrimaryContainer() const -> const ImColor & { return primaryContainer; }
-    auto OnPrimaryContainer() const -> const ImColor & { return onPrimaryContainer; }
-    auto Secondary() const -> const ImColor & { return secondary; }
-    auto OnSecondary() const -> const ImColor & { return onSecondary; }
-    auto SecondaryContainer() const -> const ImColor & { return secondaryContainer; }
-    auto OnSecondaryContainer() const -> const ImColor & { return onSecondaryContainer; }
-    auto Tertiary() const -> const ImColor & { return tertiary; }
-    auto OnTertiary() const -> const ImColor & { return onTertiary; }
-    auto TertiaryContainer() const -> const ImColor & { return tertiaryContainer; }
-    auto OnTertiaryContainer() const -> const ImColor & { return onTertiaryContainer; }
-    auto Error() const -> const ImColor & { return error; }
-    auto OnError() const -> const ImColor & { return onError; }
-    auto ErrorContainer() const -> const ImColor & { return errorContainer; }
-    auto OnErrorContainer() const -> const ImColor & { return onErrorContainer; }
-    auto Background() const -> const ImColor & { return background; }
-    auto OnBackground() const -> const ImColor & { return onBackground; }
-    auto Surface() const -> const ImColor & { return surface; }
-    auto OnSurface() const -> const ImColor & { return onSurface; }
-    auto SurfaceVariant() const -> const ImColor & { return surfaceVariant; }
-    auto OnSurfaceVariant() const -> const ImColor & { return onSurfaceVariant; }
-    auto Outline() const -> const ImColor & { return outline; }
-    auto OutlineVariant() const -> const ImColor & { return outlineVariant; }
-    auto Shadow() const -> const ImColor & { return shadow; }
-    auto Scrim() const -> const ImColor & { return scrim; }
-    auto InverseSurface() const -> const ImColor & { return inverseSurface; }
-    auto InverseOnSurface() const -> const ImColor & { return inverseOnSurface; }
-    auto InversePrimary() const -> const ImColor & { return inversePrimary; }
-    auto PrimaryFixed() const -> const ImColor & { return primaryFixed; }
-    auto OnPrimaryFixed() const -> const ImColor & { return onPrimaryFixed; }
-    auto PrimaryFixedDim() const -> const ImColor & { return primaryFixedDim; }
-    auto OnPrimaryFixedVariant() const -> const ImColor & { return onPrimaryFixedVariant; }
-    auto SecondaryFixed() const -> const ImColor & { return secondaryFixed; }
-    auto OnSecondaryFixed() const -> const ImColor & { return onSecondaryFixed; }
-    auto SecondaryFixedDim() const -> const ImColor & { return secondaryFixedDim; }
-    auto OnSecondaryFixedVariant() const -> const ImColor & { return onSecondaryFixedVariant; }
-    auto TertiaryFixed() const -> const ImColor & { return tertiaryFixed; }
-    auto OnTertiaryFixed() const -> const ImColor & { return onTertiaryFixed; }
-    auto TertiaryFixedDim() const -> const ImColor & { return tertiaryFixedDim; }
-    auto OnTertiaryFixedVariant() const -> const ImColor & { return onTertiaryFixedVariant; }
-    auto SurfaceDim() const -> const ImColor & { return surfaceDim; }
-    auto SurfaceBright() const -> const ImColor & { return surfaceBright; }
-    auto SurfaceContainerLowest() const -> const ImColor & { return surfaceContainerLowest; }
-    auto SurfaceContainerLow() const -> const ImColor & { return surfaceContainerLow; }
-    auto SurfaceContainer() const -> const ImColor & { return surfaceContainer; }
-    auto SurfaceContainerHigh() const -> const ImColor & { return surfaceContainerHigh; }
-    auto SurfaceContainerHighest() const -> const ImColor & { return surfaceContainerHighest; }
+    auto Primary() const -> const SurfaceColor & { return primary; }
+    auto SurfaceTint() const -> const SurfaceColor & { return surfaceTint; }
+    auto OnPrimary() const -> const ContentColor & { return onPrimary; }
+    auto PrimaryContainer() const -> const SurfaceColor & { return primaryContainer; }
+    auto OnPrimaryContainer() const -> const ContentColor & { return onPrimaryContainer; }
+    auto Secondary() const -> const SurfaceColor & { return secondary; }
+    auto OnSecondary() const -> const ContentColor & { return onSecondary; }
+    auto SecondaryContainer() const -> const SurfaceColor & { return secondaryContainer; }
+    auto OnSecondaryContainer() const -> const ContentColor & { return onSecondaryContainer; }
+    auto Tertiary() const -> const SurfaceColor & { return tertiary; }
+    auto OnTertiary() const -> const ContentColor & { return onTertiary; }
+    auto TertiaryContainer() const -> const SurfaceColor & { return tertiaryContainer; }
+    auto OnTertiaryContainer() const -> const ContentColor & { return onTertiaryContainer; }
+    auto Error() const -> const SurfaceColor & { return error; }
+    auto OnError() const -> const ContentColor & { return onError; }
+    auto ErrorContainer() const -> const SurfaceColor & { return errorContainer; }
+    auto OnErrorContainer() const -> const ContentColor & { return onErrorContainer; }
+    auto Background() const -> const SurfaceColor & { return background; }
+    auto OnBackground() const -> const ContentColor & { return onBackground; }
+    auto Surface() const -> const SurfaceColor & { return surface; }
+    auto OnSurface() const -> const ContentColor & { return onSurface; }
+    auto SurfaceVariant() const -> const SurfaceColor & { return surfaceVariant; }
+    auto OnSurfaceVariant() const -> const ContentColor & { return onSurfaceVariant; }
+    auto Outline() const -> const SurfaceColor & { return outline; }
+    auto OutlineVariant() const -> const SurfaceColor & { return outlineVariant; }
+    auto Shadow() const -> const SurfaceColor & { return shadow; }
+    auto Scrim() const -> const SurfaceColor & { return scrim; }
+    auto InverseSurface() const -> const SurfaceColor & { return inverseSurface; }
+    auto InverseOnSurface() const -> const SurfaceColor & { return inverseOnSurface; }
+    auto InversePrimary() const -> const SurfaceColor & { return inversePrimary; }
+    auto PrimaryFixed() const -> const SurfaceColor & { return primaryFixed; }
+    auto OnPrimaryFixed() const -> const ContentColor & { return onPrimaryFixed; }
+    auto PrimaryFixedDim() const -> const SurfaceColor & { return primaryFixedDim; }
+    auto OnPrimaryFixedVariant() const -> const ContentColor & { return onPrimaryFixedVariant; }
+    auto SecondaryFixed() const -> const SurfaceColor & { return secondaryFixed; }
+    auto OnSecondaryFixed() const -> const ContentColor & { return onSecondaryFixed; }
+    auto SecondaryFixedDim() const -> const SurfaceColor & { return secondaryFixedDim; }
+    auto OnSecondaryFixedVariant() const -> const ContentColor & { return onSecondaryFixedVariant; }
+    auto TertiaryFixed() const -> const SurfaceColor & { return tertiaryFixed; }
+    auto OnTertiaryFixed() const -> const ContentColor & { return onTertiaryFixed; }
+    auto TertiaryFixedDim() const -> const SurfaceColor & { return tertiaryFixedDim; }
+    auto OnTertiaryFixedVariant() const -> const ContentColor & { return onTertiaryFixedVariant; }
+    auto SurfaceDim() const -> const SurfaceColor & { return surfaceDim; }
+    auto SurfaceBright() const -> const SurfaceColor & { return surfaceBright; }
+    auto SurfaceContainerLowest() const -> const SurfaceColor & { return surfaceContainerLowest; }
+    auto SurfaceContainerLow() const -> const SurfaceColor & { return surfaceContainerLow; }
+    auto SurfaceContainer() const -> const SurfaceColor & { return surfaceContainer; }
+    auto SurfaceContainerHigh() const -> const SurfaceColor & { return surfaceContainerHigh; }
+    auto SurfaceContainerHighest() const -> const SurfaceColor & { return surfaceContainerHighest; }
 
     // clang-format on
-
 };
 
 struct M3Styles
@@ -299,26 +349,34 @@ struct ListStyle
 
 struct ButtonSpec
 {
-    float  fontSize;
-    ImVec2 padding;
-    ImVec2 spacing;
-    float  size; // < 0 invalid
-    float  rounding;
+    TextSizeSpec text;
+    ImVec2       padding;
+    ImVec2       spacing;
+    float        size; // < 0 invalid
+    float        rounding;
 };
 
 namespace FAB
 {
-static constexpr auto STANDARD =
-    ButtonSpec{.fontSize = 24.f, .padding = ImVec2(16.f, 16.f), .spacing = ImVec2(), .size = 56.f, .rounding = 16.f};
+static constexpr auto STANDARD = ButtonSpec{
+    .text = TextSize::LARGE, .padding = ImVec2(16.f, 16.f), .spacing = ImVec2(), .size = 56.f, .rounding = 16.f
+};
 }
 
 namespace IconButton
 {
 static constexpr auto XSMALL = ButtonSpec{
-    .fontSize = 20.f, .padding = ImVec2(6.f, 6.f), .spacing = ImVec2(8.f, 8.f), .size = 48.f, .rounding = 8.f
+    .text = TextSize::MEDIUM, .padding = ImVec2(6.f, 6.f), .spacing = ImVec2(8.f, 8.f), .size = 48.f, .rounding = 8.f
 };
 static constexpr auto SMALL = ButtonSpec{
-    .fontSize = 24.f, .padding = ImVec2(8.f, 8.f), .spacing = ImVec2(4.f, 4.f), .size = 48.f, .rounding = 8.f
+    .text = TextSize::LARGE, .padding = ImVec2(8.f, 8.f), .spacing = ImVec2(4.f, 4.f), .size = 48.f, .rounding = 8.f
+};
+}
+
+namespace Button
+{
+static constexpr auto SMALL = ButtonSpec{
+    .text = TextSize::LARGE, .padding = ImVec2(16.f, 10.f), .spacing = ImVec2(0.f, 4.f), .size = -1.f, .rounding = 12.f
 };
 }
 

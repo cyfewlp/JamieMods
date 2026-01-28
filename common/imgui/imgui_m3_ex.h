@@ -36,10 +36,11 @@ constexpr int CHANNEL_BG = 0;
     StyleGuard styleGuard;
     styleGuard.Push(ColorHolder::Text(colors.OnPrimaryContainer()))
         .Push(ColorHolder::Button(colors.PrimaryContainer())) // default behavior
-        .Push(ColorHolder::ButtonActive(Colors::GetActiveColor(colors.PrimaryContainer(), colors.OnPrimaryContainer())))
-        .Push(ColorHolder::ButtonHovered(Colors::GetHoveredColor(colors.PrimaryContainer(), colors.OnPrimaryContainer())))
+        .Push(ColorHolder::ButtonActive(colors.PrimaryContainer().GetPressedState(colors.OnPrimaryContainer())))
+        .Push(ColorHolder::ButtonHovered(colors.PrimaryContainer().GetHoveredState(colors.OnPrimaryContainer())))
         .Push(StyleHolder::FramePadding(buttonStyle.padding))
         .Push(StyleHolder::FrameRounding(buttonStyle.rounding));
+
     return styleGuard;
 }
 
@@ -81,20 +82,11 @@ auto DrawNavItem(std::string_view label, bool selected, std::string_view icon, c
 ////////////////////////////////////////////////////////////////////
 
 auto DrawIconButton(
-    std::string_view icon, const ImU32 &containerColor, const ImU32 &textColor, ImFont *iconFont, const ButtonSpec &spec
+    std::string_view icon, const SurfaceColor &containerColor, const ContentColor &textColor, ImFont *iconFont,
+    const ButtonSpec &spec
 ) -> bool;
 
 auto DrawIconButton(std::string_view icon, const ButtonSpec &spec, const M3Styles &m3Styles) -> bool;
-
-/**
- * A helper function, this method is just a convention!
- */
-inline auto CalcToolbarContentSize(const ButtonSpec &spec, const uint8_t count) -> ImVec2
-{
-    const auto buttonWidth = spec.size > 0.f ? spec.size : spec.fontSize + (spec.padding.x + spec.spacing.x) * 2.f;
-    const auto width       = spec.size > 0.f ? spec.size : List::STANDARD.gap * (count - 1) + buttonWidth * count;
-    return ImVec2(width, spec.fontSize + spec.spacing.y * 2.f);
-}
 
 /**
  * The toolbar is a container with multiple slots, and you must
