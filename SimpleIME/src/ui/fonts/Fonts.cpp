@@ -3,10 +3,11 @@
 //
 #define IMGUI_DEFINE_MATH_OPERATORS
 
+#include "common/i18n/Translator.h"
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
 #include "common/imgui/imgui_m3_ex.h"
-#include "common/utils.h"
+#include "i18n/TranslatorHolder.h"
 #include "icons.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -174,7 +175,7 @@ bool FontBuilder::ApplyFont(Settings &settings)
     return true;
 }
 
-void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
+void FontBuilderView::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
     constexpr struct
     {
@@ -214,7 +215,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
                 ImGuiEx::ChildFlags().Borders().AlwaysUseWindowPadding()
             ))
         {
-            m_PreviewPanel.DrawFontsPreviewView(translation);
+            m_PreviewPanel.DrawFontsPreviewView();
 
             constexpr auto button = ImGuiEx::M3::MEDIUM_ICON_BUTTON;
             constexpr auto width  = button.fontSize + button.padding.x * 2.f;
@@ -223,7 +224,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
             ImGui::Dummy({0.f, avail.y - height - ImGuiEx::M3::CUSTOM_WINDOW_PADDING1.y});
             const auto indent = (avail.x - width) * .5f;
             ImGui::Indent(indent);
-            DrawAddFontButton(fontBuilder, translation);
+            DrawAddFontButton(fontBuilder);
             ImGui::Unindent(indent);
         }
         ImGui::EndChild();
@@ -234,7 +235,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
         styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainerHighest()));
         if (ImGui::BeginChild("FontBuilderFontInfo", {-FLT_MIN, BoxStyle.height}, ImGuiEx::ChildFlags()))
         {
-            DrawToolBar(fontBuilder, translation, settings);
+            DrawToolBar(fontBuilder, settings);
 
             if (m_PreviewPanel.IsWaitingPreview())
             {
@@ -245,7 +246,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, const Translation &translat
     }
 }
 
-void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder, const Translation &translation)
+void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder)
 {
     ImGui::BeginDisabled(!m_PreviewPanel.IsWaitingCommit());
     {
@@ -263,7 +264,7 @@ void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder, const Translat
             }
         }
     }
-    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Add"], m_styles.colors);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Add"), m_styles.colors);
     ImGui::EndDisabled();
 }
 
@@ -314,20 +315,20 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
     ImGui::Unindent(list.padding.x);
 }
 
-void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
+void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
 {
     if (ImGuiEx::M3::BeginDockedToolbar(ImGuiEx::M3::IconButton::XSMALL.size, 5, m_styles.colors.SurfaceContainer()))
     {
-        DrawToolBarButtons(fontBuilder, translation, settings);
+        DrawToolBarButtons(fontBuilder, settings);
         ImGuiEx::M3::EndDockedToolbar();
     }
     ImGui::Dummy({0, ImGuiEx::M3::Toolbar::DOCKED.margin.y});
 
-    DrawHelpModal(translation);
-    DrawWarningsModal(translation);
+    DrawHelpModal();
+    DrawWarningsModal();
 }
 
-void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Translation &translation, Settings &settings)
+void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings)
 {
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
     auto Button = [this](const std::string_view &icon) -> bool {
@@ -350,7 +351,7 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     {
         fontBuilder.ApplyFont(settings);
     }
-    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_SetAsDefault"], m_styles.colors);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.SetAsDefault"), m_styles.colors);
 
     ImGui::SameLine();
     if (Button(ICON_MD_RESTORE))
@@ -361,14 +362,14 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
         }
         fontBuilder.Reset();
     }
-    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Reset"], m_styles.colors);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Reset"), m_styles.colors);
 
     ImGui::SameLine();
     if (Button(ICON_MD_EYE))
     {
         m_PreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
     }
-    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Preview"], m_styles.colors);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Preview"), m_styles.colors);
     ImGui::EndDisabled();
 
     ImGui::SameLine();
@@ -388,9 +389,9 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
             ImGuiEx::M3::IconButton::XSMALL
         ))
     {
-        centerPopup(TITLE_WARNINGS);
+        centerPopup(TITLE_WARNING);
     }
-    ImGuiEx::M3::SetItemToolTip(translation["Font_Builder_Warning"], m_styles.colors);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"), m_styles.colors);
     ImGui::SameLine();
     if (ImGuiEx::M3::DrawIconButton(
             ICON_MD_HELP_CIRCLE_OUTLINE,
@@ -402,27 +403,35 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, const Transla
     {
         centerPopup(TITLE_HELP);
     }
-    ImGuiEx::M3::SetItemToolTip(translation["$Font_Builder_Help"], m_styles.colors);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"), m_styles.colors);
 }
 
-void FontBuilderView::DrawHelpModal(const Translation &translation)
+void FontBuilderView::DrawHelpModal()
 {
     bool open = true;
-    if (ImGui::BeginPopupModal(TITLE_HELP, &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
+    if (ImGui::BeginPopupModal(
+            Translate("Settings.FontBuilder.HelpTitle").data(),
+            &open,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
+        ))
     {
-        ImGui::Text("%s", translation["$Font_Builder_Help1"]);
-        ImGui::Text("%s", translation["$Font_Builder_Help2"]);
-        ImGui::Text("%s", translation["$Font_Builder_Help3"]);
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Help1").data());
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Help2").data());
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Help3").data());
         ImGui::EndPopup();
     }
 }
 
-void FontBuilderView::DrawWarningsModal(const Translation &translation)
+void FontBuilderView::DrawWarningsModal()
 {
     bool open = true;
-    if (ImGui::BeginPopupModal(TITLE_WARNINGS, &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
+    if (ImGui::BeginPopupModal(
+            Translate("Settings.FontBuilder.WarningTitle").data(),
+            &open,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
+        ))
     {
-        ImGui::Text("%s", translation["$Font_Builder_Warning1"]);
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Warning1").data());
         ImGui::EndPopup();
     }
 }
@@ -433,9 +442,9 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
     DrawFontsTable(fontInfos);
 }
 
-void FontPreviewPanel::DrawFontsPreviewView(const Translation &translation) const
+void FontPreviewPanel::DrawFontsPreviewView() const
 {
-    DrawStatusBar(translation);
+    DrawStatusBar();
 
     ImGui::Separator();
     ImGui::Dummy({0, ImGuiEx::M3::GRID_UNIT * 4});
@@ -459,7 +468,7 @@ void FontPreviewPanel::DrawFontsPreviewView(const Translation &translation) cons
     }
 }
 
-void FontPreviewPanel::DrawStatusBar(const Translation &translation) const
+void FontPreviewPanel::DrawStatusBar() const
 {
     std::string_view icon = "";
     std::string_view msg  = "";
@@ -467,20 +476,20 @@ void FontPreviewPanel::DrawStatusBar(const Translation &translation) const
     {
         case State::DEBOUNCING:
             icon = ICON_MD_REFRESH;
-            msg  = translation["$Font_Builder_Preview_Debouncing"];
+            msg  = Translate("Settings.FontBuilder.PreviewPanel.Debouncing");
             break;
         case State::PREVIEW_BUILDER_FONT:
             icon = ICON_MD_EYE;
-            msg  = translation["$Font_Builder_Preview_BuilderFont"];
+            msg  = Translate("Settings.FontBuilder.PreviewPanel.BuilderFont");
             break;
         case State::NOT_SELECTED_FONT: {
             icon = ICON_FA_CIRCLE_INFO;
-            msg  = translation["$Font_Builder_Preview_NotSelectedFont"];
+            msg  = Translate("Settings.FontBuilder.PreviewPanel.NotSelectedFont");
             break;
         }
         case State::NOT_SUPPORTED_FONTS: {
             icon = ICON_FA_CIRCLE_EXCLAMATION;
-            msg  = translation["$Font_Builder_Preview_NotSupportedFont"];
+            msg  = Translate("Settings.FontBuilder.PreviewPanel.NotSupportedFont");
             break;
         }
         case State::PREVIEWING: {

@@ -1,0 +1,57 @@
+[Settings]
+Settings = "Settings"
+
+[Settings.Appearance]
+Apply = "Apply"
+Cancel = "Cancel"
+DarkMode = "DarkMode"
+Languages = "Languages"
+Zoom = "Zoom"
+
+[Settings.Behaviour]
+EnableMod = "Enable Mod"
+EnableModToolTip = "Unchecked will disable all mod feature(Disable keyboard)."
+EnableUnicodePaste = "Enable unicode pate"
+EnableUnicodePasteTooltip = "Enable or disable mod provided unicode paste feature"
+Focus = "Focus"
+FocusTooltip = "IME only enabled when any Text Entry is active and has keyboard focus."
+ForceFocusIme = "Force Focus Ime"
+ImeEnabled = "Ime Enabled"
+ImeEnabledTooltip = "By default, IME only enable when exists text entry"
+KeepImeOpen = "Keep IME Open"
+KeepImeOpenTooltip = "Usually used to enable IME for some text entry that not support IME"
+States = "States"
+
+[Settings.FontBuilder]
+Add = "Add Font"
+Help = "Help"
+HelpTitle = "Help###Help"
+Help1 = "What is Font Builder?"
+Help2 = "The Font Builder is a tool designed to customize your ImGui font setup. You can assign different font files to specific Unicode ranges (e.g., Latin, CJK)."
+Help3 = "Glyph searching follows the font priority list. If a character is not found in the first font, the system will move to the next one in the sequence."
+Preview = "Preview"
+Reset = "Reset"
+SetAsDefault = "Set As Default Font"
+Warning = "Warning"
+WarningTitle = "Warning###Warning"
+Warning1 = "To ensure stability and performance, Please avoid adding too many fonts or using font files that are excessively large. High memory usage from large fonts may lead to lag."
+
+[Settings.Sidebar]
+Appearance = "Appearance"
+Behaviour = "Behaviour"
+FontBuilder = "FontBuilder"
+
+[Settings.Behaviour.ImePos]
+Policy = "IME window position update policy"
+UpdateByCaret = "Based on caret position"
+UpdateByCaretTooltip = "Automatically update the IME window based on the caret position of the currently active input box"
+UpdateByCursor = "Based on cursor position"
+UpdateByCursorTooltip = "Update the IME window position according to the current mouse position"
+UpdateByNone = "None"
+UpdateByNoneTooltip = "IME window position is not updated automatically"
+
+[Settings.FontBuilder.PreviewPanel]
+BuilderFont = "Previewing Generated Font"
+Debouncing = "Updating..."
+NotSelectedFont = "No font selected (Previewing Default)"
+NotSupportedFont = "Unsupported font format."

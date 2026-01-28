@@ -7,6 +7,7 @@ find_package(GTest CONFIG REQUIRED)
 add_executable(
     ${TEST_PROJ_NAME}
     src/configs/ConfigSerializer.cpp
+    src/i18n/TranslationLoader.cpp
     ${TEST_SOURCES}
 )
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )

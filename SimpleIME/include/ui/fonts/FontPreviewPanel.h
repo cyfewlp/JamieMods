@@ -49,10 +49,10 @@ public:
     };
 
     void DrawFontsView(const std::vector<FontInfo> &fontInfos);
-    void DrawFontsPreviewView(const Translation &translation) const;
+    void DrawFontsPreviewView() const;
 
 private:
-    inline void DrawStatusBar(const Translation &translation) const;
+    inline void DrawStatusBar() const;
 
     void DrawSearchBox(const std::vector<FontInfo> &fontInfos);
     void DrawFontsTable(const std::vector<FontInfo> &fontInfos);

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "common/i18n/Translator.h"
 #include "common/imgui/Material3.h"
 #include "core/State.h"
-#include "core/Translation.h"
 #include "ime/ITextService.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
@@ -28,7 +28,7 @@ class ImeUI
 public:
     explicit ImeUI(ImeWnd *pImeWnd, ITextService *pTextService, ImGuiEx::M3::M3Styles &styles)
         : m_pImeWnd(pImeWnd), m_pTextService(pTextService), m_styles(styles), m_fontBuilderView(styles),
-          m_panelAppearance(styles, m_translation)
+          m_panelAppearance(styles)
     {
     }
 
@@ -38,7 +38,7 @@ public:
     ImeUI &operator=(const ImeUI &other)     = delete;
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
-    bool Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings);
+    bool Initialize(LangProfileUtil *pLangProfileUtil);
     void ApplyAppearanceSettings(Settings &settings);
     void Draw(const Settings &settings);
     void DrawToolWindow(Settings &settings);
@@ -68,8 +68,8 @@ private:
     void DrawWindowPosUpdatePolicy(Settings &settings);
     void DrawCompWindow(const Settings &settings) const;
     void DrawCandidateWindows() const;
-    auto Translate(const char *label) const -> const char *;
 
+    static void LoadTranslation(std::string_view language);
     static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
     static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
     auto        IsImeNeedRelayout() const -> bool;
@@ -87,7 +87,6 @@ private:
     ImeWnd                  *m_pImeWnd         = nullptr;
     ITextService            *m_pTextService    = nullptr;
     LangProfileUtil         *m_langProfileUtil = nullptr;
-    Translation              m_translation;
     std::vector<std::string> m_translateLanguages;
     ImVec2                   m_imeWindowSize = ImVec2(0, 0);
     ImVec2                   m_imeWindowPos  = ImVec2(0, 0);

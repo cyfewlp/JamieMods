@@ -88,7 +88,7 @@ void ImeWnd::Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false)
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
     }
-    if (!m_pImeUi->Initialize(m_pLangProfileUtil, m_settings))
+    if (!m_pImeUi->Initialize(m_pLangProfileUtil))
     {
         throw SimpleIMEException("Can't initialize ImeUI");
     }

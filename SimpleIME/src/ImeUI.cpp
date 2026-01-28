@@ -16,6 +16,8 @@
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "core/State.h"
+#include "i18n/TranslationLoader.h"
+#include "i18n/TranslatorHolder.h"
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
@@ -51,6 +53,8 @@ namespace LIBC_NAMESPACE_DECL
 namespace Ime
 {
 
+constexpr auto TRANSLATE_FILES_DIR = "Data/interface/SimpleIME";
+
 ImeUI::~ImeUI()
 {
     if (m_pTextService != nullptr)
@@ -59,7 +63,7 @@ ImeUI::~ImeUI()
     }
 }
 
-bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settings)
+bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
 {
     log_debug("Initializing ImeUI...");
     m_langProfileUtil = pLangProfileUtil;
@@ -74,10 +78,6 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
         log_error("Failed load active ime");
         return false;
     }
-    if (!m_translation.GetTranslateLanguages(settings.resources.translationDir, m_translateLanguages))
-    {
-        log_warn("Failed load translation languages.");
-    }
     m_fontBuilder.Initialize();
     return true;
 }
@@ -85,15 +85,15 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil, const Settings &settin
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
 {
     auto &appearance = settings.appearance;
+    m_panelAppearance.ApplyM3Theme(appearance.themeSeedArgb, appearance.themeDarkMode);
 
+    TranslationLoader::ScanLanguages(TRANSLATE_FILES_DIR, m_translateLanguages);
     if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
         langIt == m_translateLanguages.end())
     {
         appearance.language = "english";
     }
-    m_translation.UseLanguage(appearance.language.c_str());
-
-    m_panelAppearance.ApplyM3Theme(settings.appearance.themeSeedArgb, settings.appearance.themeDarkMode);
+    LoadTranslation(appearance.language);
 }
 
 void ImeUI::Draw(const Settings &settings)
@@ -205,7 +205,6 @@ void ImeUI::DrawToolWindow(Settings &settings)
         return;
     }
 
-    m_translation.UseSection("Tool Window");
     auto flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration;
     if (m_fPinToolWindow)
     {
@@ -214,8 +213,6 @@ void ImeUI::DrawToolWindow(Settings &settings)
     ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, flags);
 
     DrawSettings(settings);
-
-    m_translation.UseSection("Tool Window");
 
     ImGui::AlignTextToFramePadding();
     ImGui::Text(ICON_COD_MOVE);
@@ -237,7 +234,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
     {
         settings.appearance.showSettings = true;
     }
-    ImGui::SetItemTooltip("%s", Translate("$Settings"));
+    ImGui::SetItemTooltip("%s", Translate("Settings.Settings").data());
 
     ImGui::SameLine();
     DrawInputMethodsCombo();
@@ -261,7 +258,7 @@ void ImeUI::DrawSettings(Settings &settings)
         return;
     }
     auto      *imeManager = ImeController::GetInstance();
-    const auto windowName = std::format("{}###SettingsWindow", m_translation.Get("$Settings"));
+    const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurface()))
@@ -278,8 +275,8 @@ void ImeUI::DrawSettings(Settings &settings)
 
         // Sidebar
         {
-            ImGuiEx::StyleGuard styleGuard;
-            styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurfaceVariant()))
+            ImGuiEx::StyleGuard styleGuard1;
+            styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurfaceVariant()))
                 .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainer()))
                 .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.SurfaceContainer()))
                 .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors.Secondary()))
@@ -291,19 +288,28 @@ void ImeUI::DrawSettings(Settings &settings)
             {
                 ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU);
                 if (ImGuiEx::M3::DrawNavItem(
-                        m_translation["$Appearance"], currentMenu.first == Menu::Appearance, ICON_MD_PALETTE, m_styles
+                        Translate("Settings.Sidebar.Appearance"),
+                        currentMenu.first == Menu::Appearance,
+                        ICON_MD_PALETTE,
+                        m_styles
                     ))
                 {
                     currentMenu = {Menu::Appearance, true};
                 }
                 if (ImGuiEx::M3::DrawNavItem(
-                        m_translation["$Font_Builder"], currentMenu.first == Menu::FontBuilder, ICON_FA_WRENCH, m_styles
+                        Translate("Settings.Sidebar.FontBuilder"),
+                        currentMenu.first == Menu::FontBuilder,
+                        ICON_FA_WRENCH,
+                        m_styles
                     ))
                 {
                     currentMenu = {Menu::FontBuilder, true};
                 }
                 if (ImGuiEx::M3::DrawNavItem(
-                        m_translation["$Behaviour"], currentMenu.first == Menu::Behaviour, ICON_OCT_GEAR, m_styles
+                        Translate("Settings.Sidebar.Behaviour"),
+                        currentMenu.first == Menu::Behaviour,
+                        ICON_OCT_GEAR,
+                        m_styles
                     ))
                 {
                     currentMenu = {Menu::Behaviour, true};
@@ -313,7 +319,7 @@ void ImeUI::DrawSettings(Settings &settings)
         }
 
         ImGui::SameLine(0, 0);
-        m_translation.UseSection("Settings");
+
         ImGui::BeginGroup();
         switch (currentMenu.first)
         {
@@ -338,7 +344,6 @@ void ImeUI::DrawMenuAppearance(Settings &settings, const bool appearing)
 {
     m_panelAppearance.Draw(appearing);
 
-    m_translation.UseSection("Settings");
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
     if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None))
     {
@@ -354,7 +359,7 @@ void ImeUI::DrawMenuAppearance(Settings &settings, const bool appearing)
 
 void ImeUI::DrawMenuFontBuilder(Settings &settings)
 {
-    m_fontBuilderView.Draw(m_fontBuilder, m_translation, settings);
+    m_fontBuilderView.Draw(m_fontBuilder, settings);
 }
 
 void ImeUI::DrawMenuBehaviour(Settings &settings) {}
@@ -362,17 +367,19 @@ void ImeUI::DrawMenuBehaviour(Settings &settings) {}
 void ImeUI::DrawModConfig(Settings &settings)
 {
     bool enableMod = settings.enableMod;
-    if (ImGui::Checkbox(Translate("$Enable_Mod"), &enableMod))
+    if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod").data(), &enableMod))
     {
         ImeController::GetInstance()->EnableMod(enableMod);
     }
-    ImGui::SetItemTooltip("%s", Translate("$Enable_Mod_Tooltip"));
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableModToolTip").data());
 
     DrawFontConfig(settings);
 
-    if (DrawCombo(Translate("$Languages"), m_translateLanguages, settings.appearance.language))
+    if (DrawCombo(
+            Translate("Settings.Appearance.Languages").data(), m_translateLanguages, settings.appearance.language
+        ))
     {
-        m_translation.UseLanguage(settings.appearance.language.c_str());
+        LoadTranslation(settings.appearance.language);
     }
 }
 
@@ -382,34 +389,27 @@ void ImeUI::DrawFeatures(Settings &settings)
 {
     DrawWindowPosUpdatePolicy(settings);
 
-    ImGui::Checkbox(Translate("$Enable_Unicode_Paste"), &settings.input.enableUnicodePaste);
-    ImGui::SetItemTooltip("%s", Translate("$Enable_Unicode_Paste_Tooltip"));
+    ImGui::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste").data(), &settings.input.enableUnicodePaste);
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableUnicodePasteTooltip").data());
 
     ImGui::SameLine();
-    if (ImGui::Checkbox(Translate("$Keep_Ime_Open"), &settings.input.keepImeOpen))
+    if (ImGui::Checkbox(Translate("Settings.Behaviour.KeepImeOpen").data(), &settings.input.keepImeOpen))
     {
         ImeController::GetInstance()->MarkDirty();
     }
-    ImGui::SetItemTooltip("%s", Translate("$Keep_Ime_Open_Tooltip"));
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.KeepImeOpenTooltip").data());
 }
 
 void ImeUI::DrawSettingsContent(Settings &settings)
 {
-    if (ImGui::BeginTabItem(Translate("$Mod_Config")))
-    {
-        DrawModConfig(settings);
-        ImGui::EndTabItem();
-    }
+    DrawModConfig(settings);
     if (!settings.enableMod)
     {
         return;
     }
-    if (ImGui::BeginTabItem(Translate("$Features")))
-    {
-        DrawStates();
-        DrawFeatures(settings);
-        ImGui::EndTabItem();
-    }
+
+    DrawStates();
+    DrawFeatures(settings);
 }
 
 auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected) -> bool
@@ -441,7 +441,7 @@ auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values,
 
 void ImeUI::DrawStates() const
 {
-    ImGui::SeparatorText(Translate("$States"));
+    ImGui::SeparatorText(Translate("Settings.Behaviour.States").data());
 
     constexpr auto STATE_ACTIVE_COLOR = ImVec4(0.35F, 0.75F, 1.0F, 1.0F);
     const auto    &state              = State::GetInstance();
@@ -451,8 +451,8 @@ void ImeUI::DrawStates() const
     );
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("%s", Translate("$IME"));
-    ImGui::SetItemTooltip("%s", Translate("$Ime_Enabled_Tooltip"));
+    ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImeEnabledTooltip").data());
 
     ImGui::SameLine();
 
@@ -460,13 +460,13 @@ void ImeUI::DrawStates() const
     ImGui::TextColored(m_pImeWnd->IsFocused() ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("%s", Translate("$FOCUS"));
-    ImGui::SetItemTooltip("%s", Translate("$Ime_Focus_Tooltip"));
+    ImGui::Text("%s", Translate("Settings.Behaviour.Focus").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.FocusTooltip").data());
 
     ImGui::SameLine(0, ImGui::GetFontSize());
     ImGui::TextDisabled("|");
     ImGui::SameLine(0, ImGui::GetFontSize());
-    if (ImGui::Button(Translate("$Force_Focus_Ime")))
+    if (ImGui::Button(Translate("Settings.Behaviour.ForceFocusIme").data()))
     {
         ImeController::GetInstance()->ForceFocusIme();
     }
@@ -510,22 +510,29 @@ static constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
 void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
 {
     using Policy = Settings::WindowPosUpdatePolicy;
-    m_translation.UseSection("Ime Window Pos");
-    {
-        ImGui::SeparatorText(Translate("$Policy"));
 
-        RadioButton(Translate("$Update_By_Cursor"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CURSOR);
-        ImGui::SetItemTooltip("%s", Translate("$Update_By_Cursor_Tooltip"));
+    ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy").data());
 
-        ImGui::SameLine();
-        RadioButton(Translate("$Update_By_Caret"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CARET);
-        ImGui::SetItemTooltip("%s", Translate("$Update_By_Caret_Tooltip"));
+    RadioButton(
+        Translate("Settings.Behaviour.ImePos.UpdateByCursor").data(),
+        &settings.input.posUpdatePolicy,
+        Policy::BASED_ON_CURSOR
+    );
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCursorTooltip").data());
 
-        ImGui::SameLine();
-        RadioButton(Translate("$Update_By_None"), &settings.input.posUpdatePolicy, Policy::NONE);
-        ImGui::SetItemTooltip("%s", Translate("$Update_By_None_Tooltip"));
-    }
-    m_translation.UseSection("Settings");
+    ImGui::SameLine();
+    RadioButton(
+        Translate("Settings.Behaviour.ImePos.UpdateByCaret").data(),
+        &settings.input.posUpdatePolicy,
+        Policy::BASED_ON_CARET
+    );
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCaretTooltip").data());
+
+    ImGui::SameLine();
+    RadioButton(
+        Translate("Settings.Behaviour.ImePos.UpdateByNone").data(), &settings.input.posUpdatePolicy, Policy::NONE
+    );
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip").data());
 }
 
 void ImeUI::DrawCompWindow(const Settings &settings) const
@@ -689,9 +696,14 @@ void ImeUI::DrawCandidateWindows() const
     }
 }
 
-inline auto ImeUI::Translate(const char *label) const -> const char *
+void ImeUI::LoadTranslation(const std::string_view language)
 {
-    return m_translation.Get(label);
+    const TranslationLoader loader(TRANSLATE_FILES_DIR, "Settings");
+
+    if (auto opt = loader.LoadFrom(language))
+    {
+        TranslatorHolder::g_translator = std::move(opt.value());
+    }
 }
 
 auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void

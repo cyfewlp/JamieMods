@@ -66,7 +66,7 @@ TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
     settings.resources.fontPathList   = std::vector{random.NextStrinng(10), random.NextStrinng(10)};
 
     settings.appearance.fontSizeScale        = std::round(random.NextFloat(1.f, 9999.f) * 100.f) / 100.f;
-    settings.appearance.themeSeedArgb        = random.NextInt(0, 0xffffffff);
+    settings.appearance.themeSeedArgb        = random.NextInt(0, 0xffffff);
     settings.appearance.themeDarkMode        = random.NextBool();
     settings.appearance.language             = random.NextStrinng(10);
     settings.appearance.errorDisplayDuration = random.NextInt(0, 0xffff);

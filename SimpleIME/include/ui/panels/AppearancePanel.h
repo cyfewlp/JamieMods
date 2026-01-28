@@ -5,7 +5,6 @@
 #pragma once
 
 #include "common/config.h"
-#include "core/Translation.h"
 #include "imgui.h"
 
 namespace LIBC_NAMESPACE_DECL
@@ -21,15 +20,11 @@ namespace Ime
 class AppearancePanel
 {
     ImGuiEx::M3::M3Styles &m_styles;
-    Translation           &m_translation;
     ImColor                m_colorInThemeBuilder;
     bool                   m_darkModeInThemeBuilder = false;
 
 public:
-    explicit AppearancePanel(ImGuiEx::M3::M3Styles &styles, Translation &translation)
-        : m_styles(styles), m_translation(translation)
-    {
-    }
+    explicit AppearancePanel(ImGuiEx::M3::M3Styles &styles) : m_styles(styles) {}
 
     void Draw(bool appearing);
 

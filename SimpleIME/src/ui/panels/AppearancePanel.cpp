@@ -7,6 +7,7 @@
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
+#include "i18n/TranslatorHolder.h"
 
 #include <imgui.h>
 
@@ -82,7 +83,7 @@ void AppearancePanel::DrawZoomCombo() const
     {
         ImGui::SetNextItemWidth(ImGuiEx::M3::CUSTOM_STANDARD_MENU_WIDTH);
     }
-    if (ImGui::BeginCombo("Zoom", "100%", ImGuiEx::ComboFlags().NoArrowButton()))
+    if (ImGui::BeginCombo(Translate("Settings.Appearance.Zoom").data(), "100%", ImGuiEx::ComboFlags().NoArrowButton()))
     {
         ImGui::Selectable("50%");
         ImGui::Selectable("100%");
@@ -145,13 +146,14 @@ void AppearancePanel::DrawThemeBuilder()
             ImGui::BeginGroup();
             {
                 styleGuard2.Push(ColorHolder::Text(m_styles.colors.OnSurface()));
-                ImGui::Checkbox(m_translation["$Theme_DarkMode"], &m_darkModeInThemeBuilder);
+
+                ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeInThemeBuilder);
 
                 constexpr auto buttonSpec = M3::Button::SMALL;
                 styleGuard2.Push(ColorHolder::Text(m_styles.colors.OnPrimary()))
                     .Push(StyleHolder::FrameRounding(buttonSpec.rounding))
                     .Push(StyleHolder::FramePadding(buttonSpec.padding));
-                if (ImGui::Button(m_translation["$Apply"]))
+                if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
                 {
                     auto imU32ToArgb = [](ImU32 imU32) -> uint32_t {
                         return (imU32 & 0xFF000000) | (imU32 & 0xFF) << 16 | (imU32 & 0xFF00) |
@@ -160,7 +162,7 @@ void AppearancePanel::DrawThemeBuilder()
                     ApplyM3Theme(imU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
                 }
 
-                if (ImGui::Button(m_translation["$Cancel"]))
+                if (ImGui::Button(Translate("Settings.Appearance.Cancel").data()))
                 {
                     ImGui::CloseCurrentPopup();
                 }
