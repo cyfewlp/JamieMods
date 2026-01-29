@@ -53,6 +53,27 @@ git submodule update --init --recursive
 
 Please check Project-specific README.md
 
+### Python
+
+project contains python scripts tool. Please configrue your `Python` environment:
+
+1. **Create and Activate Virtual Environment**:
+```shell
+python -m venv .venv
+# Windows PowerShell 
+.\.venv\Scripts\Activate.ps1 
+# Linux/macOS source 
+.venv/bin/activate
+```
+
+**Install Dependencies**:
+```shell
+pip install -r requirements.txt
+```
+#### Scripts
+- `SimpleIME/extract_i18n.py`: extract all translate keys from specify directory.
+	- Print warning message if some keys missing in translate files.
+	- Print warning message if some keys defined in translate files but not used in code;
 ## 🛠️ Debug Setup: Configuring MO2 Path
 
 This project includes a pre-configured CLion run task (Run MO2 SKSE) that launches the game through `Mod Organizer 2`.

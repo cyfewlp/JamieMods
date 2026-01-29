@@ -75,6 +75,10 @@ private:
 
 #ifdef RECORD_KEY
 
+/**
+ * Non-crypto hashes in C++: FNV 1/1a
+ * https://asecuritysite.com/encryption/smh_fnv
+ */
 constexpr auto HashKey(const std::string_view str) -> uint64_t
 {
     static std::unordered_set<std::string> hashes;
