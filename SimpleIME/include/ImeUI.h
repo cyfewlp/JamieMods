@@ -3,6 +3,7 @@
 #include "common/i18n/Translator.h"
 #include "common/imgui/Material3.h"
 #include "core/State.h"
+#include "i18n/TranslatorHolder.h"
 #include "ime/ITextService.h"
 #include "imgui.h"
 #include "tsf/LangProfileUtil.h"
@@ -55,21 +56,21 @@ public:
     }
 
 private:
-    void DrawInputMethodsCombo() const;
-    void DrawSettings(Settings &settings);
-    void DrawMenuAppearance(Settings &settings, bool appearing);
-    void DrawMenuFontBuilder(Settings &settings);
-    void DrawMenuBehaviour(Settings &settings);
-    void DrawModConfig(Settings &settings);
-    void DrawFontConfig(Settings &settings);
-    void DrawFeatures(Settings &settings);
-    void DrawSettingsContent(Settings &settings);
-    void DrawStates() const;
-    void DrawWindowPosUpdatePolicy(Settings &settings);
-    void DrawCompWindow(const Settings &settings) const;
-    void DrawCandidateWindows() const;
+    void        DrawInputMethodsCombo() const;
+    void        DrawSettings(Settings &settings);
+    void        DrawMenuAppearance(Settings &settings, bool appearing);
+    void        DrawMenuFontBuilder(Settings &settings);
+    void        DrawMenuBehaviour(Settings &settings);
+    void        DrawModConfig(Settings &settings);
+    void        DrawFontConfig(Settings &settings);
+    static void DrawFeatures(Settings &settings);
+    void        DrawSettingsContent(Settings &settings);
+    void        DrawStates() const;
+    static void DrawWindowPosUpdatePolicy(Settings &settings);
+    void        DrawCompWindow(const Settings &settings) const;
+    void        DrawCandidateWindows() const;
+    void        LoadTranslation(std::string_view language) const;
 
-    static void LoadTranslation(std::string_view language);
     static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
     static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
     auto        IsImeNeedRelayout() const -> bool;
@@ -94,6 +95,8 @@ private:
     ImGuiEx::M3::M3Styles   &m_styles;
     FontBuilderView          m_fontBuilderView;
     AppearancePanel          m_panelAppearance;
+
+    std::optional<TranslatorHolder::UpdateHandle> m_i18nHandle;
 
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;

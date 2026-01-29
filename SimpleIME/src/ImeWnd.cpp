@@ -299,7 +299,7 @@ auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) con
 {
     if (m_hWnd == nullptr)
     {
-        return false;
+        return true;
     }
     return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
 }

@@ -92,5 +92,17 @@ constexpr auto HashKey(const std::string_view str) -> uint64_t
     }
     return hash;
 }
+
+consteval auto operator""_hash(const char* str, size_t length) -> uint64_t
+{
+    uint64_t hash = 0xcbf29ce484222325ULL;
+    for (int i = 0; i < length; i++)
+    {
+        hash ^= static_cast<uint64_t>(str[i]);
+        hash *= 0x100000001b3ULL;
+    }
+    return hash;
+}
+
 }
 }

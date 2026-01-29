@@ -93,6 +93,15 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
     {
         appearance.language = "english";
     }
+
+    if (auto accessorOpt = TranslatorHolder::RequestUpdateHandle())
+    {
+        m_i18nHandle.emplace(accessorOpt.value());
+    }
+    else
+    {
+        throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
+    }
     LoadTranslation(appearance.language);
 }
 
@@ -696,13 +705,15 @@ void ImeUI::DrawCandidateWindows() const
     }
 }
 
-void ImeUI::LoadTranslation(const std::string_view language)
+// FIXME: Handle error
+void ImeUI::LoadTranslation(const std::string_view language) const
 {
+    if (!m_i18nHandle) return;
     const TranslationLoader loader(TRANSLATE_FILES_DIR, "Settings");
 
-    if (auto opt = loader.LoadFrom(language))
+    if (auto opt = loader.LoadFrom(language); opt)
     {
-        TranslatorHolder::g_translator = std::move(opt.value());
+        m_i18nHandle->Update(std::move(opt.value()));
     }
 }
 
