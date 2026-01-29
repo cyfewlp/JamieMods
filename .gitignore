@@ -27,3 +27,6 @@ imgui.ini
 Data/SKSE/Plugins/version*.bin
 /Folder.DotSettings.user
 /scripts/game-profile
+
+#game-profile
+scripts/game-profile
