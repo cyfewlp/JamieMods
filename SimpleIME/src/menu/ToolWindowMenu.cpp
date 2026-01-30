@@ -3,6 +3,7 @@
 //
 #include "menu/ToolWindowMenu.h"
 
+#include "ImeApp.h"
 #include "common/log.h"
 #include "ime/ImeController.h"
 #include "menu/MenuNames.h"
@@ -20,8 +21,12 @@ void ToolWindowMenu::RegisterMenu()
     }
 }
 
-RE::UI_MESSAGE_RESULTS ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message)
+auto ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
 {
+    if (!ImeApp::GetInstance().GetState().IsInitialized())
+    {
+        return RE::UI_MESSAGE_RESULTS::kPassOn;
+    }
     switch (a_message.type.get())
     {
         case RE::UI_MESSAGE_TYPE::kShow:

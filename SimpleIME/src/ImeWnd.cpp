@@ -5,7 +5,6 @@
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
-#include "context.h"
 #include "core/State.h"
 #include "hooks/Hooks.hpp"
 #include "ime/ITextServiceFactory.h"
@@ -149,7 +148,6 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
 void ImeWnd::OnStart(Settings *pSettings)
 {
     m_pTextService->OnStart(m_hWnd);
-    Context::GetInstance()->SetHwndIme(m_hWnd);
 
     ImeController::Init(this, m_hWndParent, pSettings);
     ApplyUiSettings(pSettings);

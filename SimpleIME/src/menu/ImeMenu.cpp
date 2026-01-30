@@ -77,7 +77,10 @@ void ImeMenu::PostDisplay()
 
 auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
 {
-    void();
+    if (!ImeApp::GetInstance().GetState().IsInitialized())
+    {
+        return RE::UI_MESSAGE_RESULTS::kPassOn;
+    }
     switch (a_message.type.get())
     {
         case RE::UI_MESSAGE_TYPE::kShow:
