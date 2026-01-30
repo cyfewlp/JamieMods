@@ -12,7 +12,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ui/fonts/FontBuilder.h"
-#include "ui/fonts/FontBuilderView.h"
+#include "ui/fonts/FontBuilderPanel.h"
 #include "ui/fonts/FontPreviewPanel.h"
 #include "ui/fonts/ImFontWrap.h"
 
@@ -175,7 +175,7 @@ bool FontBuilder::ApplyFont(Settings &settings)
     return true;
 }
 
-void FontBuilderView::Draw(FontBuilder &fontBuilder, Settings &settings)
+void FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
     constexpr struct
     {
@@ -246,7 +246,7 @@ void FontBuilderView::Draw(FontBuilder &fontBuilder, Settings &settings)
     }
 }
 
-void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder)
+void FontBuilderPanel::DrawAddFontButton(FontBuilder &fontBuilder)
 {
     ImGui::BeginDisabled(!m_PreviewPanel.IsWaitingCommit());
     {
@@ -268,7 +268,7 @@ void FontBuilderView::DrawAddFontButton(FontBuilder &fontBuilder)
     ImGui::EndDisabled();
 }
 
-void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
+void FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder) const
 {
     if (!fontBuilder.IsBuilding())
     {
@@ -315,7 +315,7 @@ void FontBuilderView::DrawFontInfoTable(const FontBuilder &fontBuilder) const
     ImGui::Unindent(list.padding.x);
 }
 
-void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
+void FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
 {
     if (ImGuiEx::M3::BeginDockedToolbar(ImGuiEx::M3::IconButton::XSMALL.size, 5, m_styles.colors.SurfaceContainer()))
     {
@@ -328,7 +328,7 @@ void FontBuilderView::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
     DrawWarningsModal();
 }
 
-void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings)
+void FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings)
 {
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
     auto Button = [this](const std::string_view &icon) -> bool {
@@ -406,7 +406,7 @@ void FontBuilderView::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &set
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"), m_styles.colors);
 }
 
-void FontBuilderView::DrawHelpModal()
+void FontBuilderPanel::DrawHelpModal()
 {
     bool open = true;
     if (ImGui::BeginPopupModal(
@@ -422,7 +422,7 @@ void FontBuilderView::DrawHelpModal()
     }
 }
 
-void FontBuilderView::DrawWarningsModal()
+void FontBuilderPanel::DrawWarningsModal()
 {
     bool open = true;
     if (ImGui::BeginPopupModal(

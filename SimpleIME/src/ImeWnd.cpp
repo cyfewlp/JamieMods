@@ -80,7 +80,8 @@ void ImeWnd::Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false)
     }
 
     InitializeTextService();
-    m_pImeUi = std::make_unique<ImeUI>(this, m_pTextService.get(), styles);
+    m_pImeWindow = std::make_unique<ImeWindow>(*this, m_pTextService.get(), styles);
+    m_pImeUi     = std::make_unique<ImeUI>(this, styles);
 
     auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
     if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
@@ -320,8 +321,8 @@ void ImeWnd::DrawIme(Settings &settings) const
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
+        m_pImeWindow->Draw(settings);
         m_pImeUi->DrawToolWindow(settings);
-        m_pImeUi->Draw(settings);
     }
     ImGui::PopFont();
 }

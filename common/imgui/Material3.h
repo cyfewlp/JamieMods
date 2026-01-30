@@ -20,6 +20,7 @@ static constexpr auto CUSTOM_WINDOW_PADDING2       = ImVec2{16.f, 16.f};
 static constexpr auto CUSTOM_WINDOW_PADDING4       = ImVec2{8.f, 8.f};
 static constexpr auto CUSTOM_THICK_SCROLL_BAR_SIZE = 8.f;
 static constexpr auto CUSTOM_STANDARD_MENU_WIDTH   = 208.f;
+static constexpr auto CUSTOM_STANDARD_MENU_PADDING = 12.f;
 
 struct TextSizeSpec
 {

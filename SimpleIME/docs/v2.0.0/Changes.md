@@ -50,3 +50,12 @@ And implement in SkyrimSE can support all UI that implemented from `IMenu` inter
 ## Material 3 integrate
 
 ### Add M3 style slider #status/todo 
+
+## ImeUI should be a member of ImeApp #status/doing
+
+- ImeUI require `TSF`
+	- `LangProfileUtil`: show `Input Method` in UI.
+	- `TextSrvice`:
+		- need `TextEditor` read, commit candidates and composition string.
+	- Add `ImeWindow`: responsible for drawing IME and automatic layout.
+

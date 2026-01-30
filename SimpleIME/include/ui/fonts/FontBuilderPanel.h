@@ -16,13 +16,13 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-class FontBuilderView
+class FontBuilderPanel
 {
     static constexpr auto TITLE_HELP    = "Help";
     static constexpr auto TITLE_WARNING = "Warning";
 
 public:
-    explicit FontBuilderView(ImGuiEx::M3::M3Styles &styles) : m_styles(styles), m_PreviewPanel(styles) {}
+    explicit FontBuilderPanel(ImGuiEx::M3::M3Styles &styles) : m_styles(styles), m_PreviewPanel(styles) {}
 
     void Draw(FontBuilder &fontBuilder, Settings &settings);
 

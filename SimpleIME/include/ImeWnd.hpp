@@ -7,6 +7,7 @@
 #include "core/State.h"
 #include "ime/ITextService.h"
 #include "tsf/LangProfileUtil.h"
+#include "ui/ImeWindow.h"
 
 #include <atlcomcli.h>
 #include <windows.h>
@@ -92,6 +93,7 @@ private:
     void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
     Settings                     &m_settings;
+    std::unique_ptr<ImeWindow>    m_pImeWindow   = nullptr;
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
     CComPtr<LangProfileUtil>      m_pLangProfileUtil;

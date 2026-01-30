@@ -7,7 +7,6 @@
 #include "ImeUI.h"
 
 #include "ImeWnd.hpp"
-#include "common/WCharUtils.h"
 #include "common/config.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/imgui/ImGuiEx.h"
@@ -21,24 +20,16 @@
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "menu/MenuNames.h"
 #include "tsf/LangProfileUtil.h"
 #include "ui/Settings.h"
-#include "ui/TaskQueue.h"
-#include "utils/FocusGFxCharacterInfo.h"
 
-#include <RE/M/MenuCursor.h>
 #include <RE/U/UIMessage.h>
 #include <RE/U/UIMessageQueue.h>
-#include <SKSE/Interfaces.h>
-#include <WinUser.h>
 #include <cguid.h>
-#include <climits>
 #include <cstdint>
 #include <expected>
 #include <format>
-#include <math.h>
 #include <minwindef.h>
 #include <optional>
 #include <string>
@@ -57,10 +48,7 @@ constexpr auto TRANSLATE_FILES_DIR = "Data/interface/SimpleIME";
 
 ImeUI::~ImeUI()
 {
-    if (m_pTextService != nullptr)
-    {
-        m_langProfileUtil->Release();
-    }
+    m_langProfileUtil->Release();
 }
 
 bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
@@ -103,56 +91,6 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
         throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
     }
     LoadTranslation(appearance.language);
-}
-
-void ImeUI::Draw(const Settings &settings)
-{
-    static bool shouldRelayout = true;
-    static bool imeAppearing   = true;
-    const auto &state          = State::GetInstance();
-    const auto  id             = SKSE::PluginDeclaration::GetSingleton()->GetName();
-    if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
-    {
-        imeAppearing   = true;
-        shouldRelayout = true;
-        ImGui::CloseCurrentPopup();
-        return;
-    }
-    if (imeAppearing)
-    {
-        imeAppearing = false;
-        UpdateImeWindowPos(settings, m_imeWindowPos);
-    }
-    if (shouldRelayout)
-    {
-        shouldRelayout = false;
-        ClampWindowToViewport(m_imeWindowSize, m_imeWindowPos);
-        ImGui::SetNextWindowPos(m_imeWindowPos);
-    }
-
-    auto flags =
-        ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
-    if (ImGui::Begin(id.data(), nullptr, flags))
-    {
-        ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
-        if (state.Has(State::IN_COMPOSING))
-        {
-            DrawCompWindow(settings);
-        }
-
-        ImGui::Separator();
-        // render ime status window: language,
-        if (state.Has(State::IN_CAND_CHOOSING))
-        {
-            DrawCandidateWindows();
-        }
-        m_imeWindowSize = ImGui::GetWindowSize();
-    }
-    ImGui::End();
-    if (IsImeNeedRelayout())
-    {
-        shouldRelayout = true;
-    }
 }
 
 void ImeUI::DrawInputMethodsCombo() const
@@ -544,167 +482,6 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip").data());
 }
 
-void ImeUI::DrawCompWindow(const Settings &settings) const
-{
-    static float CursorAnim = 0.F;
-
-    CursorAnim += ImGui::GetIO().DeltaTime;
-
-    const ImVec4 highLightText = ImGui::GetStyle().Colors[ImGuiCol_TextLink];
-    const auto  &textEditor    = m_pTextService->GetTextEditor();
-
-    const auto &editorText = textEditor.GetText();
-    LONG        acpStart   = 0;
-    LONG        acpEnd     = 0;
-    textEditor.GetSelection(&acpStart, &acpEnd);
-
-    bool success = true;
-
-    const size_t textSize = editorText.size();
-    acpStart              = std::max(0L, acpStart);
-    acpEnd                = std::max(0L, acpEnd);
-
-    acpStart = std::min(static_cast<long>(textSize), acpStart);
-    acpEnd   = std::min(static_cast<long>(textSize), acpEnd);
-
-    if (acpEnd < acpStart)
-    {
-        std::swap(acpStart, acpEnd);
-    }
-
-    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 0);
-    if (acpStart > 0)
-    {
-        std::string startToCaret;
-        success = WCharUtils::ToString(editorText.c_str(), acpStart, startToCaret);
-        if (success)
-        {
-            ImGui::TextColored(highLightText, "%s", startToCaret.c_str());
-        }
-    }
-
-    // caret
-    ImGui::SameLine();
-    if (fmodf(CursorAnim, 1.2F) <= 0.8F)
-    {
-        ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f);
-        ImGui::GetWindowDrawList()->AddLine(
-            min,
-            ImVec2(min.x, cursorScreenPos.y + ImGui::GetFontSize() - 1.5f),
-            ImGui::GetColorU32(ImGuiCol_InputTextCursor),
-            1.0f * settings.state.dpiScale
-        );
-    }
-
-    success = success && static_cast<size_t>(acpStart) < editorText.size();
-    if (success)
-    {
-        std::string caretToEnd;
-        auto        subFromCaret = editorText.substr(acpStart);
-        success = WCharUtils::ToString(subFromCaret.c_str(), static_cast<int>(subFromCaret.size()), caretToEnd);
-        if (success)
-        {
-            ImGui::TextColored(highLightText, "%s", caretToEnd.c_str());
-        }
-    }
-    if (!success)
-    {
-        ImGui::NewLine();
-    }
-    ImGui::PopStyleVar();
-}
-
-class ImGuiStyleVarScope
-{
-    int count = 0;
-
-public:
-    void Push(ImGuiStyleVar var, const ImVec2 &value)
-    {
-        ImGui::PushStyleVar(var, value);
-        count++;
-    }
-
-    ~ImGuiStyleVarScope()
-    {
-        ImGui::PopStyleVar(count);
-    }
-};
-
-struct ImGuiColorScope
-{
-    ImGuiColorScope(const ImGuiCol colorIndex, const ImU32 color)
-    {
-        ImGui::PushStyleColor(colorIndex, color);
-    }
-
-    ImGuiColorScope(const ImGuiCol colorIndex, const ImVec4 color)
-    {
-        ImGui::PushStyleColor(colorIndex, color);
-    }
-
-    ~ImGuiColorScope()
-    {
-        ImGui::PopStyleColor();
-    }
-};
-
-void ImeUI::DrawCandidateWindows() const
-{
-    const auto  &candidateUi   = m_pTextService->GetCandidateUi();
-    static DWORD hovered       = ULONG_MAX;
-    const auto   candidateList = candidateUi.CandidateList();
-    if (!candidateList.empty())
-    {
-
-        DWORD              index      = 0;
-        DWORD              clicked    = candidateList.size();
-        DWORD              anyHovered = candidateList.size();
-        ImGuiStyleVarScope styleVarScope;
-        styleVarScope.Push(ImGuiStyleVar_FramePadding, {5, 2});
-        styleVarScope.Push(ImGuiStyleVar_ItemSpacing, {0, 0});
-
-        auto           &style = ImGui::GetStyle();
-        ImGuiColorScope buttonColorScope(ImGuiCol_Button, 0);
-        for (const auto &candidate : candidateList)
-        {
-            ImGui::PushID(static_cast<int>(index));
-            std::optional<ImGuiColorScope> buttonColorScope1;
-            std::optional<ImGuiColorScope> textColorScope;
-            if (hovered == index)
-            {
-                buttonColorScope1.emplace(ImGuiCol_Button, style.Colors[ImGuiCol_Button]);
-            }
-            if (index == candidateUi.Selection())
-            {
-                textColorScope.emplace(ImGuiCol_Text, style.Colors[ImGuiCol_TextLink]);
-            }
-            if (ImGui::Button(candidate.c_str()))
-            {
-                clicked = index;
-            }
-            buttonColorScope1.reset();
-            textColorScope.reset();
-            if (ImGui::IsItemHovered())
-            {
-                anyHovered = index;
-            }
-            ImGui::SameLine();
-            ImGui::PopID();
-            index++;
-        }
-        hovered = anyHovered;
-        if (clicked < candidateList.size())
-        {
-            TaskQueue::GetInstance().AddImeThreadTask([this, clicked] {
-                m_pTextService->CommitCandidate(m_pImeWnd->GetHWND(), clicked);
-            });
-            PostMessageA(m_pImeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
-        }
-    }
-}
-
 // FIXME: Handle error
 void ImeUI::LoadTranslation(const std::string_view language) const
 {
@@ -714,76 +491,6 @@ void ImeUI::LoadTranslation(const std::string_view language) const
     if (auto opt = loader.LoadFrom(language); opt)
     {
         m_i18nHandle->Update(std::move(opt.value()));
-    }
-}
-
-auto ImeUI::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
-{
-    switch (settings.input.posUpdatePolicy)
-    {
-        case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
-            if (const auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
-            {
-                windowPos.x = cursor->cursorPosX;
-                windowPos.y = cursor->cursorPosY;
-            }
-            break;
-        case Settings::WindowPosUpdatePolicy::BASED_ON_CARET: {
-            FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
-            UpdateImeWindowPosByCaret(windowPos);
-            break;
-        }
-        default:;
-    }
-}
-
-auto ImeUI::UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void
-{
-    const auto &instance       = FocusGFxCharacterInfo::GetInstance();
-    const auto &charBoundaries = instance.CharBoundaries();
-
-    windowPos.x = charBoundaries.left;
-    windowPos.y = charBoundaries.bottom;
-}
-
-auto ImeUI::IsImeNeedRelayout() const -> bool
-{
-    const auto &viewport = ImGui::GetMainViewport();
-
-    return m_imeWindowPos.x + m_imeWindowSize.x > viewport->Size.x + viewport->Pos.x ||
-           m_imeWindowPos.y + m_imeWindowSize.y > viewport->Size.y + viewport->Pos.y;
-}
-
-void ImeUI::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
-{
-    const auto &viewport   = ImGui::GetMainViewport();
-    const float viewRight  = viewport->Pos.x + viewport->Size.x;
-    const float viewBottom = viewport->Pos.y + viewport->Size.y;
-    windowPos.x            = std::max(windowPos.x, viewport->Pos.x);
-    windowPos.y            = std::max(windowPos.y, viewport->Pos.y);
-
-    if (windowSize.x < viewport->Size.x && windowPos.x + windowSize.x > viewRight)
-    {
-        windowPos.x = viewRight - windowSize.x;
-    }
-    if (windowSize.y < viewport->Size.y && windowPos.y + windowSize.y > viewBottom)
-    {
-        windowPos.y = viewBottom - windowSize.y;
-    }
-
-    const ImVec2 min            = windowPos;
-    const ImVec2 max            = {windowPos.x + windowSize.x, windowPos.y + windowSize.y};
-    const auto  &instance       = FocusGFxCharacterInfo::GetInstance();
-    const auto  &charBoundaries = instance.CharBoundaries();
-    if (charBoundaries.top < max.y && charBoundaries.bottom > min.y && charBoundaries.left < max.x &&
-        charBoundaries.right > min.x) // is overlaps?
-    {
-        // Move the window above the boundary
-        const float newY = charBoundaries.top - windowSize.y;
-        if (newY >= viewport->Pos.y)
-        {
-            windowPos.y = newY;
-        }
     }
 }
 
