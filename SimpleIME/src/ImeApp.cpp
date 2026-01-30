@@ -121,6 +121,7 @@ void ImeApp::Uninitialize()
     const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
     ConfigSerializer::Serialize(filePath, m_settings);
     m_state.SetState(State::StateKey::DORMANCY);
+    spdlog::shutdown();
 }
 
 void ImeApp::OnInputLoaded()

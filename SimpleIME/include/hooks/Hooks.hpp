@@ -77,13 +77,23 @@ public:
     {
         if (detoured)
         {
-            log_debug(
+            const auto msg = std::format(
                 "Detour {:#x} detach {:#x}",
                 reinterpret_cast<std::uintptr_t>(m_hook),
                 reinterpret_cast<std::uintptr_t>(m_originalFuncPtr)
             );
+            if (spdlog::default_logger())
+            {
+                log_debug("{}", msg);
+            }
+            else
+            {
+                OutputDebugStringA(msg.c_str());
+            }
+
             DetourUtil::DetourDetach(&reinterpret_cast<PVOID &>(m_originalFuncPtr), m_hook);
         }
+        detoured = false;
     }
 
     [[nodiscard]] bool Detoured() const
