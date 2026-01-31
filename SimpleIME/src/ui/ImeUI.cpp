@@ -91,7 +91,10 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
         throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
     }
     LoadTranslation(appearance.language);
-    m_styles.UpdateScaling(1.0f); // TODO: save zoom in config file?
+
+    appearance.zoom = std::min(2.0f, appearance.zoom);
+    appearance.zoom = std::max(0.5f, appearance.zoom);
+    m_styles.UpdateScaling(appearance.zoom);
 }
 
 void ImeUI::DrawInputMethodsCombo() const
@@ -234,7 +237,7 @@ void ImeUI::DrawSettings(Settings &settings)
 
             if (ImGui::BeginChild(
                     "Sidebar",
-                    {m_styles[ImGuiEx::M3::Spacing::NAV_RAIL_WIDTH], -FLT_MIN},
+                    {m_styles.GetSize(ImGuiEx::M3::ComponentSize::NAV_RAIL_WIDTH), -FLT_MIN},
                     ImGuiEx::ChildFlags().Borders()
                 ))
             {

@@ -30,6 +30,7 @@ TEST(ConfigSerializerTest, DeserializeAll)
     ASSERT_EQ(settings.appearance.themeDarkMode, false);
     ASSERT_EQ(settings.appearance.errorDisplayDuration, 9999);
     ASSERT_EQ(settings.appearance.showSettings, true);
+    ASSERT_FLOAT_EQ(settings.appearance.zoom, 1.75f);
 
     // raw value: "xxx"
     ASSERT_EQ(settings.input.posUpdatePolicy, Settings::WindowPosUpdatePolicy::NONE);
@@ -65,7 +66,7 @@ TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
     settings.resources.translationDir = random.NextStrinng(10);
     settings.resources.fontPathList   = std::vector{random.NextStrinng(10), random.NextStrinng(10)};
 
-    settings.appearance.fontSizeScale        = std::round(random.NextFloat(1.f, 9999.f) * 100.f) / 100.f;
+    settings.appearance.zoom                 = std::round(random.NextFloat(1.f, 9999.f) * 100.f) / 100.f;
     settings.appearance.themeSeedArgb        = random.NextInt(0, 0xffffff);
     settings.appearance.themeDarkMode        = random.NextBool();
     settings.appearance.language             = random.NextStrinng(10);

@@ -63,7 +63,7 @@ struct Settings
         uint32_t    themeSeedArgb        = 0xFF673AB7;
         bool        themeDarkMode        = true;
         std::string language             = "english";
-        float       fontSizeScale        = 1.0F;
+        float       zoom                 = 1.0F;
         int         errorDisplayDuration = 10;
         bool        showSettings         = false;
 

@@ -20,7 +20,7 @@ language = "a language"
 theme_seed_argb = 0x33333333
 theme_dark_mode = false
 error_display_duration = 9999
-
+zoom = 1.75
 show_settings = true
 
 [input]
