@@ -161,7 +161,7 @@ auto Imm32TextService::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck
 {
     if ((compFlag & flagToCheck) != 0)
     {
-        LONG bufLenInBytes = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
+        const LONG bufLenInBytes = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
         if (bufLenInBytes > 0)
         {
             pWcharBuf.resize(bufLenInBytes / sizeof(WCHAR) + 1);
@@ -252,7 +252,7 @@ void Imm32TextService::ChangeCandidateAt(const HIMC hIMC)
         log_warn("Global alloc {} failed.", bufLen);
         return;
     }
-    LPCANDIDATELIST lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
+    const auto lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
     if (lpCandList == nullptr)
     {
         log_error("Candidate alloc memory failed.");

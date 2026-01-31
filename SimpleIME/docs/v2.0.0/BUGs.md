@@ -52,6 +52,8 @@ The  `NI_SELECTCANDIDATESTR` flag does not work as expected.
 
 - Must Keep IME window is the topmost window;
 	- Use this call:  `ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());`
+## IME: composition result Destination incorrect #type/bug #status/todo 
+## IME: `CharEvent` Intercept behaviour incorrect #type/bug #status/todo 
 
 
 

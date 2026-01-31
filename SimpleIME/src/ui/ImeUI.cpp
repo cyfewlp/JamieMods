@@ -91,6 +91,7 @@ void ImeUI::ApplyAppearanceSettings(Settings &settings)
         throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
     }
     LoadTranslation(appearance.language);
+    m_styles.UpdateScaling(1.0f); // TODO: save zoom in config file?
 }
 
 void ImeUI::DrawInputMethodsCombo() const
@@ -208,7 +209,7 @@ void ImeUI::DrawSettings(Settings &settings)
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurface()))
+    styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::ContentToken::onSurface]))
         .Push(ImGuiEx::StyleHolder::WindowPadding({}));
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
@@ -223,17 +224,21 @@ void ImeUI::DrawSettings(Settings &settings)
         // Sidebar
         {
             ImGuiEx::StyleGuard styleGuard1;
-            styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurfaceVariant()))
-                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors.SurfaceContainer()))
-                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors.SurfaceContainer()))
-                .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors.Secondary()))
-                .Push(ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors.SecondaryContainer()));
+            styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::ContentToken::onSurfaceVariant]))
+                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainer]))
+                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainer]))
+                .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors[ImGuiEx::M3::SurfaceToken::secondary]))
+                .Push(
+                    ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors[ImGuiEx::M3::SurfaceToken::secondaryContainer])
+                );
 
             if (ImGui::BeginChild(
-                    "Sidebar", {ImGuiEx::M3::NavigationRail::Standard.width, -FLT_MIN}, ImGuiEx::ChildFlags().Borders()
+                    "Sidebar",
+                    {m_styles[ImGuiEx::M3::Spacing::NAV_RAIL_WIDTH], -FLT_MIN},
+                    ImGuiEx::ChildFlags().Borders()
                 ))
             {
-                ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU);
+                ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU, m_styles);
                 if (ImGuiEx::M3::DrawNavItem(
                         Translate("Settings.Sidebar.Appearance"),
                         currentMenu.first == Menu::Appearance,

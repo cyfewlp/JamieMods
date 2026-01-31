@@ -13,114 +13,15 @@ namespace LIBC_NAMESPACE_DECL
 /// https://m3.material.io/
 namespace ImGuiEx::M3
 {
-static constexpr auto GRID_UNIT                    = 4.f;
-static constexpr auto STANDARD_FONT_SIZE           = 20.f;
-static constexpr auto CUSTOM_WINDOW_PADDING1       = ImVec2{32.f, 32.f};
-static constexpr auto CUSTOM_WINDOW_PADDING2       = ImVec2{16.f, 16.f};
-static constexpr auto CUSTOM_WINDOW_PADDING4       = ImVec2{8.f, 8.f};
-static constexpr auto CUSTOM_THICK_SCROLL_BAR_SIZE = 8.f;
-static constexpr auto CUSTOM_STANDARD_MENU_WIDTH   = 208.f;
-static constexpr auto CUSTOM_STANDARD_MENU_PADDING = 12.f;
-
-struct TextSizeSpec
+struct Text
 {
     float fontSize;
     float lineHeight;
 
-    consteval auto GetTextSpacing() const -> float
+    constexpr auto GetTextSpacing() const -> float
     {
         return lineHeight - fontSize;
     }
-};
-
-namespace TextSize
-{
-static constexpr auto SMALL  = TextSizeSpec{.fontSize = 12.f, .lineHeight = 16.f};
-static constexpr auto MEDIUM = TextSizeSpec{.fontSize = 14.f, .lineHeight = 20.f};
-static constexpr auto LARGE  = TextSizeSpec{.fontSize = 16.f, .lineHeight = 24.f};
-}
-
-struct ButtonStyle
-{
-    float  fontSize;
-    ImVec2 padding;
-    ImVec2 spacing;
-    float  rounding;
-};
-
-static constexpr auto XSMALL_BUTTON = ButtonStyle{
-    .fontSize = 20.f, .padding = ImVec2{12.f, 6.f },
-         .spacing = ImVec2{18.f, 16.f},
-         .rounding = 12.f
-};
-
-static constexpr auto SMALL_BUTTON = ButtonStyle{
-    .fontSize = 20.f, .padding = ImVec2{16.f, 10.f},
-         .spacing = ImVec2{12.f, 8.f },
-         .rounding = 12.f
-};
-
-static constexpr auto MEDIUM_BUTTON = ButtonStyle{
-    .fontSize = 24.f, .padding = ImVec2{24.f, 24.f},
-         .spacing = ImVec2{8.f,  8.f },
-         .rounding = 16.f
-};
-
-static constexpr auto LARGE_BUTTON = ButtonStyle{
-    .fontSize = 32.f, .padding = ImVec2{48.f, 32.f},
-         .spacing = ImVec2{12.f, 8.f },
-         .rounding = 28.f
-};
-
-static constexpr auto XSMALL_ICON_BUTTON = ButtonStyle{
-    .fontSize = 20.f, .padding = ImVec2{6.f,  6.f },
-         .spacing = ImVec2{16.f, 16.f},
-         .rounding = 8.f
-};
-
-static constexpr auto SMALL_ICON_BUTTON = ButtonStyle{
-    .fontSize = 24.f, .padding = ImVec2{8.f,  8.f },
-         .spacing = ImVec2{12.f, 12.f},
-         .rounding = 8.f
-};
-
-static constexpr auto MEDIUM_ICON_BUTTON = ButtonStyle{
-    .fontSize = 24.f, .padding = ImVec2{16.f, 16.f},
-         .spacing = ImVec2{12.f, 12.f},
-         .rounding = 12.f
-};
-
-struct ToolBarStyle
-{
-    float  fontSize;
-    ImVec2 padding;
-    float  rounding;
-};
-
-static constexpr auto TOOL_BAR_STANDARD = ToolBarStyle{
-    .fontSize = 20.f, .padding = ImVec2{8.f, 8.f},
-         .rounding = 24.f
-};
-
-struct SearchStyle
-{
-    float  fontSize;
-    ImVec2 padding;
-    float  rounding;
-};
-
-static constexpr auto SEARCH_SMALL    = SearchStyle{.fontSize = 20.f, .padding = ImVec2(8.f, 8.f), .rounding = 28.f};
-static constexpr auto SEARCH_STANDARD = SearchStyle{.fontSize = 24.f, .padding = ImVec2(16.f, 16.f), .rounding = 28.f};
-
-constexpr ImVec2 TOOLTIP_PADDING = {8.f, 4.f};
-
-struct NavigationRailSpec
-{
-    float  padding;
-    float  iconSize;
-    float  fontSize;
-    ImVec2 spacing;
-    float  width;
 };
 
 struct ColorBase
@@ -178,12 +79,12 @@ public:
         );
     }
 
-    constexpr SurfaceColor GetHoveredState(const ContentColor &onColor) const
+    constexpr SurfaceColor Hovered(const ContentColor &onColor) const
     {
         return GetState(onColor, HOVER_OPACITY);
     }
 
-    constexpr SurfaceColor GetPressedState(const ContentColor &onColor) const
+    constexpr SurfaceColor Pressed(const ContentColor &onColor) const
     {
         return GetState(onColor, PRESSED_OPACITY);
     }
@@ -191,60 +92,71 @@ public:
 
 class ThemeBuilder;
 
+enum class SurfaceToken : std::uint8_t
+{
+    background = 0,
+    error,
+    errorContainer,
+    inversePrimary,
+    inverseSurface,
+    outline,
+    outlineVariant,
+    primary,
+    primaryContainer,
+    primaryFixed,
+    primaryFixedDim,
+    scrim,
+    secondary,
+    secondaryContainer,
+    secondaryFixed,
+    secondaryFixedDim,
+    shadow,
+    surface,
+    surfaceBright,
+    surfaceContainer,
+    surfaceContainerHigh,
+    surfaceContainerHighest,
+    surfaceContainerLow,
+    surfaceContainerLowest,
+    surfaceDim,
+    surfaceTint,
+    surfaceVariant,
+    tertiary,
+    tertiaryContainer,
+    tertiaryFixed,
+    tertiaryFixedDim,
+    count
+};
+
+enum class ContentToken : std::uint8_t
+{
+    onBackground = 0,
+    onError,
+    onErrorContainer,
+    onPrimary,
+    onPrimaryContainer,
+    onPrimaryFixed,
+    onPrimaryFixedVariant,
+    onSecondary,
+    onSecondaryContainer,
+    onSecondaryFixed,
+    onSecondaryFixedVariant,
+    onSurface,
+    onSurfaceVariant,
+    onTertiary,
+    onTertiaryContainer,
+    onTertiaryFixed,
+    onTertiaryFixedVariant,
+    inverseOnSurface,
+    count
+};
+
 class Colors
 {
-    SurfaceColor primary;
-    SurfaceColor surfaceTint;
-    ContentColor onPrimary;
-    SurfaceColor primaryContainer;
-    ContentColor onPrimaryContainer;
-    SurfaceColor secondary;
-    ContentColor onSecondary;
-    SurfaceColor secondaryContainer;
-    ContentColor onSecondaryContainer;
-    SurfaceColor tertiary;
-    ContentColor onTertiary;
-    SurfaceColor tertiaryContainer;
-    ContentColor onTertiaryContainer;
-    SurfaceColor error;
-    ContentColor onError;
-    SurfaceColor errorContainer;
-    ContentColor onErrorContainer;
-    SurfaceColor background;
-    ContentColor onBackground;
-    SurfaceColor surface;
-    ContentColor onSurface;
-    SurfaceColor surfaceVariant;
-    ContentColor onSurfaceVariant;
-    SurfaceColor outline;
-    SurfaceColor outlineVariant;
-    SurfaceColor shadow;
-    SurfaceColor scrim;
-    SurfaceColor inverseSurface;
-    SurfaceColor inverseOnSurface;
-    SurfaceColor inversePrimary;
-    SurfaceColor primaryFixed;
-    ContentColor onPrimaryFixed;
-    SurfaceColor primaryFixedDim;
-    ContentColor onPrimaryFixedVariant;
-    SurfaceColor secondaryFixed;
-    ContentColor onSecondaryFixed;
-    SurfaceColor secondaryFixedDim;
-    ContentColor onSecondaryFixedVariant;
-    SurfaceColor tertiaryFixed;
-    ContentColor onTertiaryFixed;
-    SurfaceColor tertiaryFixedDim;
-    ContentColor onTertiaryFixedVariant;
-    SurfaceColor surfaceDim;
-    SurfaceColor surfaceBright;
-    SurfaceColor surfaceContainerLowest;
-    SurfaceColor surfaceContainerLow;
-    SurfaceColor surfaceContainer;
-    SurfaceColor surfaceContainerHigh;
-    SurfaceColor surfaceContainerHighest;
-
-    uint32_t seedArgb;
-    bool     darkMode = false;
+    std::array<SurfaceColor, static_cast<uint8_t>(SurfaceToken::count)> surfaceColors;
+    std::array<ContentColor, static_cast<uint8_t>(ContentToken::count)> contentColors;
+    uint32_t                                                            seedArgb;
+    bool                                                                darkMode = false;
 
     uint32_t primaryPalette;
     uint32_t secondaryPalette;
@@ -267,61 +179,68 @@ public:
     auto NeutralVariantPalette() const -> uint32_t {return neutralVariantPalette;}
     auto ErrorPalette() const -> uint32_t {return errorPalette;}
 
-    auto Primary() const -> const SurfaceColor & { return primary; }
-    auto SurfaceTint() const -> const SurfaceColor & { return surfaceTint; }
-    auto OnPrimary() const -> const ContentColor & { return onPrimary; }
-    auto PrimaryContainer() const -> const SurfaceColor & { return primaryContainer; }
-    auto OnPrimaryContainer() const -> const ContentColor & { return onPrimaryContainer; }
-    auto Secondary() const -> const SurfaceColor & { return secondary; }
-    auto OnSecondary() const -> const ContentColor & { return onSecondary; }
-    auto SecondaryContainer() const -> const SurfaceColor & { return secondaryContainer; }
-    auto OnSecondaryContainer() const -> const ContentColor & { return onSecondaryContainer; }
-    auto Tertiary() const -> const SurfaceColor & { return tertiary; }
-    auto OnTertiary() const -> const ContentColor & { return onTertiary; }
-    auto TertiaryContainer() const -> const SurfaceColor & { return tertiaryContainer; }
-    auto OnTertiaryContainer() const -> const ContentColor & { return onTertiaryContainer; }
-    auto Error() const -> const SurfaceColor & { return error; }
-    auto OnError() const -> const ContentColor & { return onError; }
-    auto ErrorContainer() const -> const SurfaceColor & { return errorContainer; }
-    auto OnErrorContainer() const -> const ContentColor & { return onErrorContainer; }
-    auto Background() const -> const SurfaceColor & { return background; }
-    auto OnBackground() const -> const ContentColor & { return onBackground; }
-    auto Surface() const -> const SurfaceColor & { return surface; }
-    auto OnSurface() const -> const ContentColor & { return onSurface; }
-    auto SurfaceVariant() const -> const SurfaceColor & { return surfaceVariant; }
-    auto OnSurfaceVariant() const -> const ContentColor & { return onSurfaceVariant; }
-    auto Outline() const -> const SurfaceColor & { return outline; }
-    auto OutlineVariant() const -> const SurfaceColor & { return outlineVariant; }
-    auto Shadow() const -> const SurfaceColor & { return shadow; }
-    auto Scrim() const -> const SurfaceColor & { return scrim; }
-    auto InverseSurface() const -> const SurfaceColor & { return inverseSurface; }
-    auto InverseOnSurface() const -> const SurfaceColor & { return inverseOnSurface; }
-    auto InversePrimary() const -> const SurfaceColor & { return inversePrimary; }
-    auto PrimaryFixed() const -> const SurfaceColor & { return primaryFixed; }
-    auto OnPrimaryFixed() const -> const ContentColor & { return onPrimaryFixed; }
-    auto PrimaryFixedDim() const -> const SurfaceColor & { return primaryFixedDim; }
-    auto OnPrimaryFixedVariant() const -> const ContentColor & { return onPrimaryFixedVariant; }
-    auto SecondaryFixed() const -> const SurfaceColor & { return secondaryFixed; }
-    auto OnSecondaryFixed() const -> const ContentColor & { return onSecondaryFixed; }
-    auto SecondaryFixedDim() const -> const SurfaceColor & { return secondaryFixedDim; }
-    auto OnSecondaryFixedVariant() const -> const ContentColor & { return onSecondaryFixedVariant; }
-    auto TertiaryFixed() const -> const SurfaceColor & { return tertiaryFixed; }
-    auto OnTertiaryFixed() const -> const ContentColor & { return onTertiaryFixed; }
-    auto TertiaryFixedDim() const -> const SurfaceColor & { return tertiaryFixedDim; }
-    auto OnTertiaryFixedVariant() const -> const ContentColor & { return onTertiaryFixedVariant; }
-    auto SurfaceDim() const -> const SurfaceColor & { return surfaceDim; }
-    auto SurfaceBright() const -> const SurfaceColor & { return surfaceBright; }
-    auto SurfaceContainerLowest() const -> const SurfaceColor & { return surfaceContainerLowest; }
-    auto SurfaceContainerLow() const -> const SurfaceColor & { return surfaceContainerLow; }
-    auto SurfaceContainer() const -> const SurfaceColor & { return surfaceContainer; }
-    auto SurfaceContainerHigh() const -> const SurfaceColor & { return surfaceContainerHigh; }
-    auto SurfaceContainerHighest() const -> const SurfaceColor & { return surfaceContainerHighest; }
+    auto Get(SurfaceToken token) const -> const SurfaceColor &
+    {
+        return surfaceColors[static_cast<uint8_t>(token)];
+    }
+
+    auto operator[](SurfaceToken token) const -> const SurfaceColor &
+    {
+        return surfaceColors[static_cast<uint8_t>(token)];
+    }
+
+    auto Get(ContentToken token) const -> const ContentColor &
+    {
+        return contentColors[static_cast<uint8_t>(token)];
+    }
+
+    auto operator[](ContentToken token) const -> const ContentColor &
+    {
+        return contentColors[static_cast<uint8_t>(token)];
+    }
 
     // clang-format on
 };
 
+// Size tips to pass item draw functions
+enum class SizeTips : uint8_t
+{
+    XSMALL = 0,
+    SMALL  = 1,
+    MEDIUM = 2,
+    LARGE  = 4,
+    XLARGE = 8
+};
+
+enum class Spacing : uint8_t
+{
+    None       = 0,
+    XS         = 1,      // 4dp
+    S          = 2,      // 8dp
+    M          = 3,      // 12dp
+    L          = 4,      // 16dp
+    XL         = 6,      // 24dp
+    XXL        = 8,      // 32dp
+    Max        = 16,     // 64dp，
+    Double_XS  = 1 << 1, // 8dp
+    Double_S   = 2 << 1, // 16dp
+    Double_M   = 3 << 1, // 24dp
+    Double_L   = 4 << 1, // 32dp
+    Double_XL  = 6 << 1, // 48dp
+    Double_XXL = 8 << 1, // 64dp
+};
+
+enum class ComponentSize : uint8_t
+{
+    LIST_WIDTH     = 70, // 280dp
+    NAV_RAIL_WIDTH = 24, // 96dp
+    MENU_WIDTH     = 52, // 208dp
+};
+
 struct M3Styles
 {
+    static constexpr float BASE_UNIT = 4.0f;
+
     Colors colors;
     /**
      * It is highly recommended to provide a standalone ImFont pointer that has NOT been merged with other fonts.
@@ -332,98 +251,76 @@ struct M3Styles
     ImFont *iconFont;
 
     constexpr M3Styles() = default;
-};
 
-namespace NavigationRail
-{
-static constexpr auto Standard =
-    NavigationRailSpec{.padding = 16.f, .iconSize = 24.f, .fontSize = 16.f, .spacing = ImVec2(2.f, 4.f), .width = 96.f};
-}
+private:
+    Text  smallText{.fontSize = 12.f, .lineHeight = 16.f};
+    Text  mediumText{.fontSize = 14.f, .lineHeight = 20.f};
+    Text  largeText{.fontSize = 16.f, .lineHeight = 24.f};
+    float iconSize = 24.f;
 
-struct ListStyle
-{
-    TextSizeSpec text;
-    TextSizeSpec supportText;
-    ImVec2       padding;
-    float        gap;
-};
+    std::array<float, 32> precomputedPx;
+    float                 currentScale = 1.0f;
 
-struct ButtonSpec
-{
-    TextSizeSpec text;
-    ImVec2       padding;
-    ImVec2       spacing;
-    float        size; // < 0 invalid
-    float        rounding;
-};
-
-namespace FAB
-{
-static constexpr auto STANDARD = ButtonSpec{
-    .text = TextSize::LARGE, .padding = ImVec2(16.f, 16.f), .spacing = ImVec2(), .size = 56.f, .rounding = 16.f
-};
-}
-
-namespace IconButton
-{
-static constexpr auto XSMALL = ButtonSpec{
-    .text = TextSize::MEDIUM, .padding = ImVec2(6.f, 6.f), .spacing = ImVec2(8.f, 8.f), .size = 48.f, .rounding = 8.f
-};
-static constexpr auto SMALL = ButtonSpec{
-    .text = TextSize::LARGE, .padding = ImVec2(8.f, 8.f), .spacing = ImVec2(4.f, 4.f), .size = 48.f, .rounding = 8.f
-};
-}
-
-namespace Button
-{
-static constexpr auto SMALL = ButtonSpec{
-    .text = TextSize::LARGE, .padding = ImVec2(16.f, 10.f), .spacing = ImVec2(0.f, 4.f), .size = -1.f, .rounding = 12.f
-};
-}
-
-namespace List
-{
-static constexpr auto STANDARD = ListStyle{
-    .text = TextSize::LARGE, .supportText = TextSize::MEDIUM, .padding = ImVec2{16.f, 10.f},
-            .gap = 12.f
-};
-}
-
-struct ToolbarSpec
-{
-    float  gap;
-    ImVec2 padding;
-    float  rounding;
-    ImVec2 margin;
-};
-
-namespace Toolbar
-{
-static constexpr auto FLOAT = ToolbarSpec{
-    .gap = 4.f, .padding = ImVec2{8.f, 8.f},
-         .rounding = 32.f, .margin = ImVec2(16.f, 24.f)
-};
-static constexpr auto DOCKED = ToolbarSpec{
-    .gap = -1.f, .padding = ImVec2{16.f, 8.f},
-         .rounding = 0.f, .margin = ImVec2(16.f, 24.f)
-};
-}
-
-struct TooltipSpec
-{
-    TextSizeSpec textSize;
-    ImVec2       padding;
-
-    consteval auto GetFullPadding() const -> ImVec2
+public:
+    void UpdateScaling(const float newScale)
     {
-        return {padding.x, padding.y + textSize.GetTextSpacing()};
+        currentScale = newScale;
+        for (size_t i = 0; i < precomputedPx.size(); ++i)
+        {
+            precomputedPx[i] = std::floor(static_cast<float>(i) * BASE_UNIT * newScale);
+        }
+        smallText.fontSize   = 12.f * newScale;
+        smallText.lineHeight = 16.f * newScale;
+
+        mediumText.fontSize   = 14.f * newScale;
+        mediumText.lineHeight = 20.f * newScale;
+
+        largeText.fontSize   = 16.f * newScale;
+        largeText.lineHeight = 24.f * newScale;
+
+        iconSize = 24.f * newScale;
+    }
+
+    auto Get(Spacing s) const -> float
+    {
+        return precomputedPx[static_cast<uint8_t>(s)];
+    }
+
+    auto GetUnit(uint8_t units) const -> float
+    {
+        return precomputedPx[units < 32 ? units : 31];
+    }
+
+    auto GetSize(ComponentSize componentSize) const -> float
+    {
+        return BASE_UNIT * currentScale * static_cast<float>(componentSize);
+    }
+
+    auto operator[](Spacing s) const -> float
+    {
+        return Get(s);
+    }
+
+    [[nodiscard]] auto GetSmallText() const -> const Text &
+    {
+        return smallText;
+    }
+
+    [[nodiscard]] auto GetMediumText() const -> const Text &
+    {
+        return mediumText;
+    }
+
+    [[nodiscard]] auto GetLargeText() const -> const Text &
+    {
+        return largeText;
+    }
+
+    [[nodiscard]] auto GetIconSize() const -> float
+    {
+        return iconSize;
     }
 };
-
-namespace Tooltip
-{
-static constexpr auto PLAIN = TooltipSpec{.textSize = TextSize::SMALL, .padding = ImVec2(8.f, 4.f)};
-}
 
 }
 }
