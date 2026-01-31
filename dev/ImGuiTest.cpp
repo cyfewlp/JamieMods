@@ -6,7 +6,6 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
-
 // #define IMGUI_ENABLE_FREETYPE
 // #define IMGUI_USE_WCHAR32
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -258,7 +257,7 @@ int main(int, char **)
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
 
     ImGui::StyleColorsDark();
     // ConfigStyle();
@@ -266,12 +265,12 @@ int main(int, char **)
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-    ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiStyle &style  = ImGui::GetStyle();
     style.FontSizeBase = 20.0f;
 
     auto scale = ImGui_ImplWin32_GetDpiScaleForHwnd(hwnd);
     // Load a first font
-    ImFont* font = io.Fonts->AddFontDefault();
+    ImFont      *font = io.Fonts->AddFontDefault();
     ImFontConfig config;
     config.MergeMode = true;
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\simsun.ttc", 0.0f, &config);
@@ -323,40 +322,34 @@ int main(int, char **)
 
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
+        float require_scale  = 1.0f;
+        bool  updateClipRect = false;
         {
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-            static bool isChecked = false;
-            static std::string label = "\xf3\xb0\x88\x94 🤗";
-
-            ImGui::Text("AAA");
-            ImGui::Text("\xf3\xb0\x90\x83");
-
-
-            if (ImGui::Button(label.c_str()))
+            if (ImGui::Begin("Hello, world!"))
             {
-                isChecked = !isChecked;
-                label = isChecked ? "\xee\xac\xa2" : "\xee\xae\xa0";
+                static int e = 0;
+                if (ImGui::RadioButton("150%", &e, 0))
+                {
+                    ImGui::GetIO().DisplayFramebufferScale = ImVec2(1.5f, 1.5f);
+                }
+                ImGui::SameLine();
+                if (ImGui::RadioButton("200%", &e, 1))
+                {
+                    updateClipRect = true;
+                    require_scale  = 2.0f;
+                }
+                ImGui::SameLine();
+                if (ImGui::RadioButton("50%", &e, 2))
+                {
+                    updateClipRect = true;
+                    require_scale  = 0.5f;
+                }
+                ImGui::SameLine();
+                if (ImGui::RadioButton("100%", &e, 2))
+                {
+                    ImGui::GetIO().DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+                }
             }
-
-            ImGui::SameLine();
-            ImGui::BeginGroup();
-            ImGui::Checkbox("Demo Window", &show_demo_window);
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SameLine();
-            auto       &imGuiIo = ImGui::GetIO();
-            const auto &size    = ImGui::CalcTextSize("Font_Size_Scale");
-            ImGui::SetNextItemWidth(-size.x);
-            ImGui::DragFloat(
-                "Font_Size_Scale", &style.FontScaleMain, 0.05, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_NoInput
-            );
-            ImGui::SameLine();
-            ImGui::Text("Font_Size_Scale");
-            ImGui::EndGroup();
-
-            static char buf[64] = "";
-            ImGui::InputText("UTF-8 input", buf, IM_ARRAYSIZE(buf));
             ImGui::End();
         }
 
@@ -399,6 +392,12 @@ int main(int, char **)
         RenderToolWindow();
 
         ImGui::Render();
+        if (updateClipRect)
+        {
+            ImGui::GetIO().DisplayFramebufferScale = ImVec2(require_scale, require_scale);
+            ImGui::GetDrawData()->ScaleClipRects(ImVec2(0.5f, 0.5f));
+        }
+
         const float clear_color_with_alpha[4] = {
             clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
         };
@@ -1033,9 +1032,7 @@ bool LoadStyleFromFile(const char *path)
     return true;
 }
 
-bool LoadColors(CSimpleIniA &ini, ImGuiStyle &style)
-{
-}
+bool LoadColors(CSimpleIniA &ini, ImGuiStyle &style) {}
 
 static void GetIntValue(const char *value, uint8_t *target)
 {

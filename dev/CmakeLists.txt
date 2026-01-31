@@ -20,7 +20,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
 add_executable(DevTest 
 #    "AddressLibTool.cpp"
     "ImGuiTest.cpp"
-		${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3_ex.cpp
 		${IMGUI_SOURCES}
 		${IMGUI_DEMO_SOURCES}
 )
