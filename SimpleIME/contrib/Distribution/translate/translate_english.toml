@@ -7,6 +7,8 @@ Cancel = "Cancel"
 DarkMode = "DarkMode"
 Languages = "Languages"
 Zoom = "Zoom"
+ThemeColor = "Theme Color"
+ThemeBuilder = "Theme Builder###ThemeBuilder"
 
 [Settings.Behaviour]
 EnableMod = "Enable Mod"

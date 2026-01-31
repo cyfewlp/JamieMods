@@ -13,6 +13,8 @@ Cancel = "取消"
 DarkMode = "黑暗模式"
 Languages = "语言"
 Zoom = "缩放"
+ThemeColor = "主题颜色"
+ThemeBuilder = "主题构建器###ThemeBuilder"
 
 [Settings.FontBuilder]
 Add = "添加字体"

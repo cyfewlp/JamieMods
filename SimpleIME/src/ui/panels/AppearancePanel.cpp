@@ -7,6 +7,7 @@
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
+#include "cpp/scheme/scheme_tonal_spot.h"
 #include "i18n/TranslatorHolder.h"
 
 #include <imgui.h>
@@ -108,107 +109,126 @@ void AppearancePanel::DrawZoomCombo() const
 void AppearancePanel::DrawThemeBuilder()
 {
     using namespace ImGuiEx;
-    const auto &medium = m_styles.GetMediumText();
-    StyleGuard  styleGuard;
-    styleGuard.Push(StyleHolder::FramePadding({0.f, medium.GetTextSpacing()}))
-        .Push(ColorHolder::ChildBg(m_styles.colors[M3::SurfaceToken::surface]));
-
+    const auto &medium    = m_styles.GetMediumText();
+    const auto &colors    = m_styles.colors;
+    bool        openPopup = false;
     ImGui::PushFont(nullptr, medium.fontSize);
-    constexpr auto flags = ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip;
-    const bool     openPopup = ImGui::ColorButton("##SeedColor", argbToImVec4(m_styles.colors.SeedArgb()), flags);
-    ImGui::SameLine();
-    ImGui::PushFont(nullptr, m_styles.GetLargeText().fontSize);
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted("Source color");
-    ImGui::PopFont();
 
+    constexpr auto colorButtonFlags = ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
+    {
+        StyleGuard styleGuard;
+        styleGuard.Push(StyleHolder::FramePadding({0.f, m_styles[M3::Spacing::M]}))
+            .Push(ColorHolder::ChildBg(colors[M3::SurfaceToken::surface]));
+
+        openPopup = ImGui::ColorButton("##SeedColor", argbToImVec4(colors.SeedArgb()), colorButtonFlags);
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor").data());
+    }
+    auto imU32ToArgb = [](ImU32 imU32) -> uint32_t {
+        return (imU32 & 0xFF000000) | (imU32 & 0xFF) << 16 | (imU32 & 0xFF00) | (imU32 & 0xFF0000) >> 16;
+    };
+
+    bool edited = false;
     if (openPopup)
     {
-        ImGui::OpenPopup("seedColorPicker");
+        ImGui::OpenPopup("ThemeBuilder");
+        edited = true;
     }
     {
-        StyleGuard styleGuard1;
-        styleGuard1.Push(StyleHolder::FramePadding({0.f, medium.GetTextSpacing()}))
-            .Push(ColorHolder::PopupBg(m_styles.colors[M3::SurfaceToken::surfaceContainerHigh]));
-        if (ImGui::BeginPopup("seedColorPicker"))
+        StyleGuard styleGuard;
+        styleGuard.Push(StyleHolder::FramePadding({0.f, m_styles[M3::Spacing::S]}))
+            .Push(StyleHolder::WindowPadding({m_styles[M3::Spacing::M], m_styles[M3::Spacing::M]}))
+            .Push(ColorHolder::PopupBg(colors[M3::SurfaceToken::surfaceContainerHigh]));
+        if (ImGui::BeginPopupModal(
+                Translate("Settings.Appearance.ThemeBuilder").data(), nullptr, WindowFlags().AlwaysAutoResize()
+            ))
         {
-            // setup DragInt/DragScalar styles
-            StyleGuard styleGuard2;
-            styleGuard2.Push(ColorHolder::Text(m_styles.colors[M3::ContentToken::onPrimaryContainer]))
-                .Push(ColorHolder::FrameBg(m_styles.colors[M3::SurfaceToken::primaryContainer]))
-                .Push(
-                    ColorHolder::FrameBgHovered(m_styles.colors[M3::SurfaceToken::primaryContainer].Hovered(
-                        m_styles.colors[M3::ContentToken::onPrimaryContainer]
-                    ))
-                )
-                .Push(
-                    ColorHolder::FrameBgActive(m_styles.colors[M3::SurfaceToken::primaryContainer].Pressed(
-                        m_styles.colors[M3::ContentToken::onPrimaryContainer]
-                    ))
-                );
-            ImGui::ColorPicker4(
-                "##picker",
-                reinterpret_cast<float *>(&m_colorInThemeBuilder.Value),
-                ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview
-            );
-            ImGui::SameLine();
+            using namespace material_color_utilities;
+            static std::unique_ptr<SchemeTonalSpot> scheme = nullptr;
 
             ImGui::BeginGroup();
             {
-                styleGuard2.Push(ColorHolder::Text(m_styles.colors[M3::ContentToken::onSurface]));
-
-                ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeInThemeBuilder);
-
-                styleGuard2.Push(ColorHolder::Text(m_styles.colors[M3::ContentToken::onPrimary]))
-                    .Push(StyleHolder::FrameRounding(m_styles.GetUnit(2)))
-                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::S], m_styles[M3::Spacing::S]}));
+                StyleGuard styleGuard1;
+                styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onPrimaryContainer]))
+                    .Push(ColorHolder::FrameBg(colors[M3::SurfaceToken::primaryContainer]))
+                    .Push(
+                        ColorHolder::FrameBgHovered(
+                            colors[M3::SurfaceToken::primaryContainer].Hovered(
+                                colors[M3::ContentToken::onPrimaryContainer]
+                            )
+                        )
+                    )
+                    .Push(
+                        ColorHolder::FrameBgActive(
+                            colors[M3::SurfaceToken::primaryContainer].Pressed(
+                                colors[M3::ContentToken::onPrimaryContainer]
+                            )
+                        )
+                    );
+                if (ImGui::ColorPicker3(
+                        "##picker",
+                        reinterpret_cast<float *>(&m_colorInThemeBuilder.Value),
+                        ColorEditFlags().NoSmallPreview().NoSidePreview()
+                    ))
+                {
+                    edited = true;
+                }
+                styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onPrimary]))
+                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::M], m_styles[M3::Spacing::S]}))
+                    .Push(StyleHolder::ItemSpacing({m_styles[M3::Spacing::L], 0.f}))
+                    .Push(StyleHolder::FrameRounding(m_styles[M3::Spacing::M]));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
                 {
-                    auto imU32ToArgb = [](ImU32 imU32) -> uint32_t {
-                        return (imU32 & 0xFF000000) | (imU32 & 0xFF) << 16 | (imU32 & 0xFF00) |
-                               (imU32 & 0xFF0000) >> 16;
-                    };
                     ApplyM3Theme(imU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
+                    scheme.reset();
+                    ImGui::CloseCurrentPopup();
                 }
 
+                ImGui::SameLine();
                 if (ImGui::Button(Translate("Settings.Appearance.Cancel").data()))
                 {
+                    scheme.reset();
                     ImGui::CloseCurrentPopup();
                 }
             }
             ImGui::EndGroup();
 
-            styleGuard2.Pop();
+            ImGui::SameLine(0, m_styles[M3::Spacing::S]);
+
+            ImGui::BeginGroup();
+            ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeInThemeBuilder);
+            if (edited)
+            {
+                scheme = std::make_unique<SchemeTonalSpot>(
+                    Hct(imU32ToArgb(m_colorInThemeBuilder)), m_darkModeInThemeBuilder, 0.0
+                );
+            }
+
+            if (scheme)
+            {
+                StyleGuard styleGuard1;
+                styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onSurface]))
+                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::L], m_styles[M3::Spacing::L]}))
+                    .Push(StyleHolder::ItemSpacing({0, m_styles[M3::Spacing::M]}));
+
+                auto draw_palette = [&colorButtonFlags, this](std::string_view label, const TonalPalette &palette) {
+                    ImGui::ColorButton(label.data(), argbToImVec4(palette.get_key_color().ToInt()), colorButtonFlags);
+                    ImGui::SameLine(0, m_styles[M3::Spacing::S]);
+                    ImGui::TextUnformatted(label.data());
+                };
+                draw_palette("Primary", scheme->primary_palette);
+                draw_palette("Secondary", scheme->secondary_palette);
+                draw_palette("Tertiary", scheme->tertiary_palette);
+                draw_palette("Neutral", scheme->neutral_palette);
+                draw_palette("NeutralVariant", scheme->neutral_variant_palette);
+                draw_palette("Error", scheme->error_palette);
+            }
+            ImGui::EndGroup();
+
             ImGui::EndPopup();
         }
     }
-
-    ////
-
-    ImGui::ColorButton("##Primary}", argbToImVec4(m_styles.colors.PrimaryPalette()), flags);
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Primary");
-
-    ImGui::ColorButton("##Secondary}", argbToImVec4(m_styles.colors.SecondaryPalette()), flags);
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Secondary");
-
-    ImGui::ColorButton("##Tertiary}", argbToImVec4(m_styles.colors.TertiaryPalette()), flags);
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Tertiary");
-
-    ImGui::ColorButton("##Neutral}", argbToImVec4(m_styles.colors.NeutralPalette()), flags);
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Neutral");
-
-    ImGui::ColorButton("##NeutralVariant}", argbToImVec4(m_styles.colors.NeutralVariantPalette()), flags);
-    ImGui::SameLine();
-    ImGui::TextUnformatted("NeutralVariant");
-
-    ImGui::ColorButton("##Error}", argbToImVec4(m_styles.colors.ErrorPalette()), flags);
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Error");
-
     ImGui::PopFont();
 }
 
