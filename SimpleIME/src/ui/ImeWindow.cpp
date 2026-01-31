@@ -50,11 +50,11 @@ void ImeWindow::Draw(const Settings &settings)
         ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Push(ImGuiEx::StyleHolder::WindowPadding({}))
-        .Push(ImGuiEx::ColorHolder::Text(m_styles.colors.Primary()))
-        .Push(ImGuiEx::ColorHolder::WindowBg(m_styles.colors.SurfaceContainerLow()))
-        .Push(ImGuiEx::ColorHolder::Separator(m_styles.colors.OutlineVariant()));
+        .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::SurfaceToken::primary]))
+        .Push(ImGuiEx::ColorHolder::WindowBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainerLow]))
+        .Push(ImGuiEx::ColorHolder::Separator(m_styles.colors[ImGuiEx::M3::SurfaceToken::outlineVariant]));
 
-    ImGui::PushFont(nullptr, ImGuiEx::M3::TextSize::LARGE.fontSize);
+    ImGui::PushFont(nullptr, m_styles.GetLargeText().fontSize);
     if (ImGui::Begin("IME", nullptr, flags))
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
@@ -106,8 +106,8 @@ void ImeWindow::DrawCompWindow() const
 
     // use frame padding set line height
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::FramePadding({0, ImGuiEx::M3::CUSTOM_STANDARD_MENU_PADDING}));
-    ImGui::SameLine(0, ImGuiEx::M3::CUSTOM_STANDARD_MENU_PADDING);
+    styleGuard.Push(ImGuiEx::StyleHolder::FramePadding({0, m_styles[ImGuiEx::M3::Spacing::M]}));
+    ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::M]);
     ImGui::AlignTextToFramePadding();
 
     bool success;
@@ -126,7 +126,7 @@ void ImeWindow::DrawCompWindow() const
     if (fmodf(CursorAnim, 1.2F) <= 0.8F)
     {
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + ImGuiEx::M3::CUSTOM_STANDARD_MENU_PADDING);
+        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m_styles[ImGuiEx::M3::Spacing::M]);
         ImGui::GetWindowDrawList()->AddLine(
             min, ImVec2(min.x, min.y + ImGui::GetFontSize() - 1.5f), ImGui::GetColorU32(ImGuiCol_InputTextCursor), 1.0f
         );
@@ -152,30 +152,26 @@ void ImeWindow::DrawCompWindow() const
 
 void ImeWindow::DrawCandidateWindows() const
 {
-    const auto &candidateUi   = m_pTextService->GetCandidateUi();
-    const auto  candidateList = candidateUi.CandidateList();
-    if (!candidateList.empty())
+    using namespace ImGuiEx::M3;
+    const auto &candidateUi = m_pTextService->GetCandidateUi();
+    if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
         DWORD index   = 0;
         DWORD clicked = candidateList.size();
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Push(ImGuiEx::StyleHolder::ItemSpacing({0, 0}))
-            .Push(
-                ImGuiEx::StyleHolder::FramePadding(
-                    {ImGuiEx::M3::CUSTOM_STANDARD_MENU_PADDING, ImGuiEx::M3::CUSTOM_STANDARD_MENU_PADDING}
-                )
-            )
-            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnSurface()))
+            .Push(ImGuiEx::StyleHolder::FramePadding({m_styles[Spacing::M], m_styles[Spacing::M]}))
+            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onSurface]))
             .Push(ImGuiEx::ColorHolder::Button({0, 0, 0, 0}))
             .Push(
                 ImGuiEx::ColorHolder::ButtonHovered(
-                    m_styles.colors.SurfaceContainer().GetHoveredState(m_styles.colors.OnSurface())
+                    m_styles.colors[SurfaceToken::surfaceContainer].Hovered(m_styles.colors[ContentToken::onSurface])
                 )
             )
             .Push(
                 ImGuiEx::ColorHolder::ButtonActive(
-                    m_styles.colors.SurfaceContainer().GetPressedState(m_styles.colors.OnSurface())
+                    m_styles.colors[SurfaceToken::surfaceContainer].Pressed(m_styles.colors[ContentToken::onSurface])
                 )
             );
 
@@ -185,17 +181,17 @@ void ImeWindow::DrawCandidateWindows() const
             ImGuiEx::StyleGuard styleGuard1;
             if (index == candidateUi.Selection())
             {
-                styleGuard1.Push(ImGuiEx::ColorHolder::Button(m_styles.colors.TertiaryContainer()))
-                    .Push(ImGuiEx::ColorHolder::Text(m_styles.colors.OnTertiaryContainer()))
+                styleGuard1.Push(ImGuiEx::ColorHolder::Button(m_styles.colors[SurfaceToken::primaryContainer]))
+                    .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onPrimaryContainer]))
                     .Push(
-                        ImGuiEx::ColorHolder::ButtonHovered(
-                            m_styles.colors.TertiaryContainer().GetHoveredState(m_styles.colors.OnTertiaryContainer())
-                        )
+                        ImGuiEx::ColorHolder::ButtonHovered(m_styles.colors[SurfaceToken::primaryContainer].Hovered(
+                            m_styles.colors[ContentToken::onPrimaryContainer]
+                        ))
                     )
                     .Push(
-                        ImGuiEx::ColorHolder::ButtonActive(
-                            m_styles.colors.TertiaryContainer().GetPressedState(m_styles.colors.OnTertiaryContainer())
-                        )
+                        ImGuiEx::ColorHolder::ButtonActive(m_styles.colors[SurfaceToken::primaryContainer].Pressed(
+                            m_styles.colors[ContentToken::onPrimaryContainer]
+                        ))
                     );
             }
 
@@ -280,8 +276,7 @@ void ImeWindow::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPo
         charBoundaries.right > min.x) // is overlaps?
     {
         // Move the window above the boundary
-        const float newY = charBoundaries.top - windowSize.y;
-        if (newY >= viewport->Pos.y)
+        if (const float newY = charBoundaries.top - windowSize.y; newY >= viewport->Pos.y)
         {
             windowPos.y = newY;
         }
