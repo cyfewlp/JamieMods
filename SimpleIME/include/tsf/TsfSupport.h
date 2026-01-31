@@ -49,6 +49,11 @@ public:
         return m_messagePump;
     }
 
+    [[nodiscard]] constexpr auto GetKeystrokeMgr() const -> CComPtr<ITfKeystrokeMgr>
+    {
+        return m_KeystrokeMgr;
+    }
+
     [[nodiscard]] constexpr auto GetTfClientId() const -> const TfClientId &
     {
         return m_tfClientId;
@@ -66,6 +71,7 @@ public:
 private:
     CComPtr<ITfThreadMgrEx>  m_pThreadMgr;
     CComPtr<ITfMessagePump>  m_messagePump;
+    CComPtr<ITfKeystrokeMgr> m_KeystrokeMgr;
 
     TfClientId m_tfClientId{};
     bool       m_initialized = false;

@@ -84,7 +84,7 @@ private:
     static auto GetThis(HWND hWnd) -> ImeWnd *;
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
-    static void TsfMessageLoop(MSG msg);
+    static void TsfMessageLoop();
 
     void        OnStart(Settings *pSettings);
     static auto OnCreate() -> LRESULT;

@@ -169,7 +169,7 @@ void ImGuiManager::EnableTextInputIfNeed()
 
 void ImGuiManager::EndFrame(Settings &settings)
 {
-    settings.appearance.fontSizeScale = ImGui::GetStyle().FontScaleMain;
+    // settings.appearance.fontSizeScale = ImGui::GetStyle().FontScaleMain;
 }
 
 void ImGuiManager::Render()

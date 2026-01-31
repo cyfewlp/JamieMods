@@ -55,6 +55,43 @@ The  `NI_SELECTCANDIDATESTR` flag does not work as expected.
 ## IME: composition result Destination incorrect #type/bug #status/todo 
 ## IME: `CharEvent` Intercept behaviour incorrect #type/bug #status/todo 
 
+## FIX Fatal: TSF Message Loss & IME Deadlock via Redundant Message Retrieval #type/fatal #status/done 
+### Description
 
+A critical flaw existed in the application's message loop where input messages (notably from the Microsoft Pinyin IME) were being discarded. This occurred because the loop invoked both `ITfMessagePump::PeekMessageW` and the standard `GetMessageW` in a way that the latter would overwrite the message buffer already populated by the former.
 
+When using **Microsoft Pinyin**, certain state-change triggers (like the **Shift** key for Chinese/English toggling) rely on a continuous sequence of messages. Discarding a single `WM_KEYUP` or `WM_IME_NOTIFY` message would cause the IME's internal state machine to hang, resulting in a complete loss of keyboard input responsiveness.
+### Technical Analysis
 
+The bug followed this logic flow:
+
+1. `pMessagePump->PeekMessageW(..., PM_REMOVE, &fResult)` was called, successfully pulling a message from the queue.
+    
+2. If `fResult` was `FALSE` (meaning TSF didn't internally "eat" the message), the code proceeded to call `GetMessageW`.
+    
+3. `GetMessageW` is a blocking call that waits for the _next_ message, immediately overwriting the `MSG` structure containing the previously peeked message.
+    
+4. **Result:** Every message that TSF didn't explicitly handle was effectively deleted from the system without being dispatched via `TranslateMessage`/`DispatchMessage`.
+### Impact
+- **IME Deadlock:** Microsoft Pinyin would get stuck in a "pending" state during composition.
+- **Input Blocking:** The `Shift` key would fail to toggle modes after the first few uses.
+- **UI Unresponsiveness:** Systematic loss of `WM_PAINT` or other critical window messages.
+### Resolution
+
+The message loop was refactored to use a **Single-Source-of-Truth** pattern:
+- Implemented a non-blocking `PeekMessageW` loop that processes the message immediately if TSF returns `fResult == FALSE`.
+- Integrated `MsgWaitForMultipleObjectsEx` with the `MWMO_INPUTAVAILABLE` flag to ensure the thread sleeps efficiently without high CPU usage while remaining responsive to all input types.
+- Guaranteed that every message removed from the queue is either consumed by `ITfKeystrokeMgr` or dispatched to the window procedure.
+
+Corrected Logic Pattern
+```cpp
+while (pMessagePump->PeekMessageW(&msg, ..., PM_REMOVE, &fResult) == S_OK) {
+    if (fResult) continue; // Handled by TSF
+    if (!HandleKeystroke(msg)) { // Handled by KeystrokeMgr
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+// Thread-safe sleep until next message
+MsgWaitForMultipleObjectsEx(0, nullptr, INFINITE, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+```

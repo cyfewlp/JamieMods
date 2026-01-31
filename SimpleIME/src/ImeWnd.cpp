@@ -117,14 +117,14 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
     }
     OnStart(pSettings);
 
-    MSG msg = {};
-    ZeroMemory(&msg, sizeof(msg));
     if (m_settings.enableTsf)
     {
-        TsfMessageLoop(msg);
+        TsfMessageLoop();
     }
     else
     {
+        MSG msg = {};
+        ZeroMemory(&msg, sizeof(msg));
         bool done = false;
         while (!done)
         {
@@ -347,39 +347,58 @@ auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
     return TRUE;
 }
 
-void ImeWnd::TsfMessageLoop(MSG msg)
+void ImeWnd::TsfMessageLoop()
 {
     auto const &tsfSupport   = Tsf::TsfSupport::GetSingleton();
     auto const  pMessagePump = tsfSupport.GetMessagePump();
-    bool        done         = false;
-    while (!done)
+    const auto &keystrokeMgr = tsfSupport.GetKeystrokeMgr();
+    MSG         msg{};
+    BOOL        fResult = FALSE;
+    while (true)
     {
-        BOOL fResult = 0;
-        if (pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult) != S_OK)
-        {
-            done = true;
-        }
+        HRESULT hr = pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult);
 
-        if (fResult != FALSE)
+        if (FAILED(hr))
         {
+            if (hr == E_FAIL || hr == E_UNEXPECTED)
+            {
+                log_error("TSF message pump failed irrecoverably (HRESULT: {:#x}). Exiting loop.", hr);
+                break;
+            }
+            MsgWaitForMultipleObjectsEx(0, nullptr, 1, QS_INPUT, MWMO_INPUTAVAILABLE);
             continue;
         }
 
-        if (GetMessageW(&msg, nullptr, 0, 0) <= 0)
+        if (!fResult)
+        {
+            MsgWaitForMultipleObjectsEx(0, nullptr, 10, QS_INPUT, MWMO_INPUTAVAILABLE);
+            continue;
+        }
+        if (msg.message == WM_QUIT)
         {
             break;
+        }
+
+        BOOL fEaten = FALSE;
+        if (msg.message == WM_KEYDOWN)
+        {
+            if (SUCCEEDED(keystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten)) && fEaten &&
+                SUCCEEDED(keystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten)) && fEaten)
+            {
+                continue;
+            }
+        }
+        else if (msg.message == WM_KEYUP)
+        {
+            if (SUCCEEDED(keystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten)) && fEaten &&
+                SUCCEEDED(keystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten)) && fEaten)
+            {
+                continue;
+            }
         }
 
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-        if (msg.message == WM_QUIT)
-        {
-            done = true;
-        }
-        if (done)
-        {
-            break;
-        }
     }
 }
 

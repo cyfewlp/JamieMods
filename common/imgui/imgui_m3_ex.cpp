@@ -7,7 +7,6 @@
 
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
-#include "common/imgui/m3_styles.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 
