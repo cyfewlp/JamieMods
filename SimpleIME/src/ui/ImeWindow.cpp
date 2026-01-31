@@ -106,7 +106,7 @@ void ImeWindow::DrawCompWindow() const
 
     // use frame padding set line height
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::FramePadding({0, m_styles[ImGuiEx::M3::Spacing::M]}));
+    styleGuard.Push(ImGuiEx::StyleHolder::FramePadding({0, m_styles[ImGuiEx::M3::Spacing::S]}));
     ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::M]);
     ImGui::AlignTextToFramePadding();
 
@@ -126,7 +126,7 @@ void ImeWindow::DrawCompWindow() const
     if (fmodf(CursorAnim, 1.2F) <= 0.8F)
     {
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m_styles[ImGuiEx::M3::Spacing::M]);
+        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m_styles[ImGuiEx::M3::Spacing::S]);
         ImGui::GetWindowDrawList()->AddLine(
             min, ImVec2(min.x, min.y + ImGui::GetFontSize() - 1.5f), ImGui::GetColorU32(ImGuiCol_InputTextCursor), 1.0f
         );
@@ -161,7 +161,7 @@ void ImeWindow::DrawCandidateWindows() const
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Push(ImGuiEx::StyleHolder::ItemSpacing({0, 0}))
-            .Push(ImGuiEx::StyleHolder::FramePadding({m_styles[Spacing::M], m_styles[Spacing::M]}))
+            .Push(ImGuiEx::StyleHolder::FramePadding({m_styles[Spacing::M], m_styles[Spacing::S]}))
             .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onSurface]))
             .Push(ImGuiEx::ColorHolder::Button({0, 0, 0, 0}))
             .Push(
