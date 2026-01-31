@@ -14,16 +14,14 @@
 #include "menu/MenuNames.h"
 #include "menu/ToolWindowMenu.h"
 
-struct
-{
-    RE::GFxKey::Code gfxCode;
-    ImGuiKey         imGuiKey;
-} GFxCodeToImGuiKeyTable[] = {
+#include <unordered_map>
+
+std::unordered_map<RE::GFxKey::Code, ImGuiKey> GFxCodeToImGuiKeyTable = {
     {RE::GFxKey::kAlt,          ImGuiMod_Alt           },
     {RE::GFxKey::kControl,      ImGuiMod_Ctrl          },
     {RE::GFxKey::kShift,        ImGuiMod_Shift         },
     {RE::GFxKey::kCapsLock,     ImGuiKey_CapsLock      },
-    // {RE::GFxKey::kTab,          ImGuiKey_Tab           }, // Don't sent tab key: bug when use tab close menu
+    // {RE::GFxKey::kTab,          ImGuiKey_Tab
     {RE::GFxKey::kHome,         ImGuiKey_Home          },
     {RE::GFxKey::kEnd,          ImGuiKey_End           },
     {RE::GFxKey::kPageUp,       ImGuiKey_PageUp        },
@@ -60,7 +58,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 static ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
 {
-    LPARAM extra_info = ::GetMessageExtraInfo();
+    const LPARAM extra_info = GetMessageExtraInfo();
     if ((extra_info & 0xFFFFFF80) == 0xFF515700) return ImGuiMouseSource_Pen;
     if ((extra_info & 0xFFFFFF80) == 0xFF515780) return ImGuiMouseSource_TouchScreen;
     return ImGuiMouseSource_Mouse;
@@ -130,16 +128,7 @@ auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI
             return OnMouseWheelEvent(fxEvent);
         case RE::GFxEvent::EventType::kCharEvent: {
             const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
-            const auto result    = OnCharEvent(charEvent);
-            if (ToolWindowMenu::IsShowing())
-            {
-                if (result != RE::UI_MESSAGE_RESULTS::kHandled)
-                {
-                    ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
-                }
-                return RE::UI_MESSAGE_RESULTS::kHandled;
-            }
-            return result;
+            return OnCharEvent(charEvent);
         }
         case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeCharEvent):
             if (ToolWindowMenu::IsShowing())
@@ -156,11 +145,6 @@ auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI
     return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
-bool IsKeyWillTriggerIme(const RE::GFxKey::Code keycode)
-{
-    return keycode >= RE::GFxKey::kA && keycode <= RE::GFxKey::kZ;
-}
-
 auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE_RESULTS
 {
     const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
@@ -169,24 +153,7 @@ auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE
     {
         ctrlDown = down;
     }
-
     if (ToolWindowMenu::IsShowing())
-    {
-        return RE::UI_MESSAGE_RESULTS::kHandled;
-    }
-
-    const auto &state = Core::State::GetInstance();
-    if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
-    {
-        return RE::UI_MESSAGE_RESULTS::kPassOn;
-    }
-
-    if (state.IsImeInputting())
-    {
-        return RE::UI_MESSAGE_RESULTS::kHandled;
-    }
-
-    if (state.IsImeWaitingInput() && IsKeyWillTriggerIme(keyEvent->keyCode))
     {
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }
@@ -221,13 +188,10 @@ auto ImeMenu::MapToImGuiKey(const RE::GFxKey::Code keyCode) -> ImGuiKey
     }
     else
     {
-        for (const auto &[gfxCode, imGuiKey] : GFxCodeToImGuiKeyTable)
+        auto foundIt = GFxCodeToImGuiKeyTable.find(keyCode);
+        if (foundIt != GFxCodeToImGuiKeyTable.end())
         {
-            if (keyCode == gfxCode)
-            {
-                imguiKey = imGuiKey;
-                break;
-            }
+            imguiKey = foundIt->second;
         }
     }
     return imguiKey;
@@ -304,23 +268,18 @@ bool SendFakeControlUpEvent()
 
 auto ImeMenu::OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS
 {
-    if (!ToolWindowMenu::IsShowing() && IsPaste(charEvent))
+    if (ToolWindowMenu::IsShowing())
+    {
+        ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
+        return RE::UI_MESSAGE_RESULTS::kHandled;
+    }
+    if (IsPaste(charEvent))
     {
         return SendFakeControlUpEvent() && Paste() ? RE::UI_MESSAGE_RESULTS::kHandled : RE::UI_MESSAGE_RESULTS::kPassOn;
     }
 
     const auto &state = Core::State::GetInstance();
-    if (state.NotHas(Core::State::LANG_PROFILE_ACTIVATED) || Utils::IsModifierDown() || Utils::IsCapsLockOn())
-    {
-        return RE::UI_MESSAGE_RESULTS::kPassOn;
-    }
-
-    if (state.IsImeInputting())
-    {
-        return RE::UI_MESSAGE_RESULTS::kHandled;
-    }
-    if (state.IsImeWaitingInput() && ((charEvent->wcharCode > 'a' && charEvent->wcharCode < 'z') ||
-                                      (charEvent->wcharCode > 'A' && charEvent->wcharCode < 'Z')))
+    if (state.Has(Core::State::LANG_PROFILE_ACTIVATED))
     {
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }
@@ -332,11 +291,10 @@ bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent)
     return charEvent->wcharCode == 'v' && ctrlDown;
 }
 
-// We only handle CF_UNICODETEXT here.
-// If the clipboard only provides CF_TEXT (ANSI),
-// let the game handle paste natively.
-// This avoids incorrect Unicode injection and
-// preserves vanilla behavior.
+/**
+ * We only handle @c CF_UNICODETEXT here. If the clipboard only provides @ CF_TEXT (ANSI), let the game handle paste
+ * natively. This avoids incorrect Unicode injection and preserves vanilla behavior.
+ */
 bool ImeMenu::Paste()
 {
     if (OpenClipboard(nullptr) == FALSE)

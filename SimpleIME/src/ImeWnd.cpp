@@ -2,6 +2,7 @@
 
 #include "ImeUI.h"
 #include "Utils.h"
+#include "common/WCharUtils.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
@@ -10,6 +11,7 @@
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
 
+#include <codecvt>
 #include <msctf.h>
 #include <windows.h>
 #include <windowsx.h>
@@ -182,16 +184,16 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         case WM_DPICHANGED: {
             if (pThis == nullptr) break;
             // pThis->OnDpiChanged(hWnd);
-            return S_OK;
+            return 0;
         }
         case CM_EXECUTE_TASK: {
             TaskQueue::GetInstance().ExecuteImeThreadTasks();
-            return S_OK;
+            return 0;
         }
         case CM_ACTIVATE_PROFILE: {
             if (pThis == nullptr) break;
             pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
-            return S_OK;
+            return 0;
         }
         case WM_IME_SETCONTEXT:
             lParam &= ~(ISC_SHOWUICOMPOSITIONWINDOW | ISC_SHOWUICANDIDATEWINDOW);
@@ -200,13 +202,21 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             if (pThis == nullptr) break;
             pThis->m_fFocused = true;
             log_info("IME window get focus.");
-            return S_OK;
+            return 0;
         case WM_KILLFOCUS: {
             if (pThis == nullptr) break;
             pThis->m_fFocused = false;
             ImGui::GetIO().ClearInputKeys();
             log_info("IME window lost focus.");
-            return S_OK;
+            return 0;
+        }
+        case WM_CHAR: {
+            if (pThis == nullptr) break;
+            if (Core::State::GetInstance().Has(State::LANG_PROFILE_ACTIVATED))
+            {
+                Utils::SendStringToGame(std::wstring(1, wParam));
+            }
+            return 0;
         }
         default:
             // ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);

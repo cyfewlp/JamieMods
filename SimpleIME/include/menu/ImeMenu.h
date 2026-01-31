@@ -33,7 +33,7 @@ public:
 private:
     static auto Creator() -> IMenu *;
 
-    // is handled?
+    /// is handled?
     static auto ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS;
     static auto OnKeyEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
     static void SendKeyEventToImGui(const RE::GFxKeyEvent *keyEvent, bool down);
