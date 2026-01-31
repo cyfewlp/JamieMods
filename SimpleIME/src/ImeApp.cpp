@@ -121,7 +121,6 @@ void ImeApp::Uninitialize()
     const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
     ConfigSerializer::Serialize(filePath, m_settings);
     m_state.SetState(State::StateKey::DORMANCY);
-    spdlog::shutdown();
 }
 
 void ImeApp::OnInputLoaded()
@@ -350,14 +349,12 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
             return 0;
         }
         case WM_NCACTIVATE:
-            log_debug("WM_NCACTIVATE {:#x}, {:#x}", wParam, lParam);
             if (wParam == TRUE)
             {
                 ImeController::GetInstance()->TryFocusIme();
             }
             break;
         case WM_SETFOCUS:
-            log_info("WM_SETFOCUS {:#x}, {:#x}", wParam, lParam);
             ImeController::GetInstance()->TryFocusIme();
             return 0;
         case WM_IME_SETCONTEXT:
@@ -373,3 +370,18 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
 }
 } // namespace Ime
 } // namespace LIBC_NAMESPACE_DECL
+
+BOOL APIENTRY DllMain(HMODULE, DWORD ul_reason, LPVOID)
+{
+    switch (ul_reason)
+    {
+        case DLL_PROCESS_ATTACH:
+            // spdlog::info("DLL_PROCESS_ATTACH");
+            break;
+        case DLL_PROCESS_DETACH:
+            spdlog::shutdown();
+            break;
+        default:;
+    }
+    return TRUE;
+}

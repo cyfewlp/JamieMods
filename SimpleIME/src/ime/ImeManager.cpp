@@ -15,7 +15,7 @@ namespace Ime
 
 ImeManager::~ImeManager() {}
 
-auto ImeManager::Focus(HWND hwnd) -> bool
+auto ImeManager::Focus(const HWND hwnd) -> bool
 {
     auto  hwndThread      = GetWindowThreadProcessId(hwnd, nullptr);
     DWORD currentThreadId = GetCurrentThreadId();
