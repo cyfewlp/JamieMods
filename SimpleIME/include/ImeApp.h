@@ -23,6 +23,7 @@ public:
             INITIALIZING,
             INITIALIZED,
             INITIALIZE_FAILED,
+            SHUTDOWN,
             DORMANCY
         };
 
@@ -101,7 +102,7 @@ public:
     void Initialize();
     void Uninitialize();
     void OnInputLoaded();
-    void Draw() const;
+    void Draw();
 
     constexpr auto GetGameHWND() const -> HWND
     {
@@ -125,6 +126,7 @@ private:
 
     void OnD3DInit();
     void Start(const RE::BSGraphics::RendererData &renderData);
+    void Shutdown();
 
     static void InstallHooks();
     static void UninstallHooks();

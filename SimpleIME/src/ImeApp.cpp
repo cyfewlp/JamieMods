@@ -191,14 +191,8 @@ void ImeApp::D3DInit()
         log_error(message.c_str());
         g_pInitErrorMessageShow->PushMessage(std::move(message));
     }
-    LogStacktrace();
-    log_info("Force close ImeWnd...");
 
-    if (app.m_imeWnd.SendNotifyMessageToIme(WM_QUIT, -1, 0) == FALSE)
-    {
-        log_error("Send WM_QUIT to ImeWnd failed.");
-    }
-    app.Uninitialize();
+    app.Shutdown();
 }
 
 void ImeApp::DoD3DInit()
@@ -313,6 +307,19 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     childWndThread.detach();
 }
 
+// FIXME: is safe?
+void ImeApp::Shutdown()
+{
+    LogStacktrace();
+    m_state.SetState(State::StateKey::SHUTDOWN);
+    log_info("Force close ImeWnd...");
+    if (!m_imeWnd.SendNotifyMessageToIme(WM_QUIT, 0, 0))
+    {
+        log_error("Can't close ImeWnd! May IME uninitialized?");
+    }
+    Uninitialize();
+}
+
 void ImeApp::InstallHooks()
 {
     // D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
@@ -334,7 +341,7 @@ void ImeApp::LogAlreadyInitialized() const
     log_warn("Already Initialized! Current state: {}", m_state.GetStateKetText());
 }
 
-void ImeApp::Draw() const
+void ImeApp::Draw()
 {
     if (!m_state.IsInitialized())
     {
@@ -342,7 +349,16 @@ void ImeApp::Draw() const
     }
     ImGuiManager::NewFrame();
 
-    m_imeWnd.DrawIme(m_settings);
+    try
+    {
+        m_imeWnd.DrawIme(m_settings);
+    }
+    catch (std::exception &e)
+    {
+        log_warn("Unexpected exception: {}. Quit!", e.what());
+        RE::DebugMessageBox("Unexpected exception. SimpleIME will close.");
+        Shutdown();
+    }
 
     ImGuiManager::EndFrame(m_settings);
     ImGuiManager::Render();
