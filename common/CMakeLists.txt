@@ -7,6 +7,7 @@ set(TEST_PROJ_NAME "CommonTest")
 add_executable(
     ${TEST_PROJ_NAME}
     ${TEST_SOURCES}
+        imgui/imgui_m3.cpp
 )
 
 target_link_libraries(

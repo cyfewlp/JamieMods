@@ -42,12 +42,6 @@ static void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax,
     return std::nullopt;
 }
 
-inline auto GetFontSize(float fontSizeBase) -> float
-{
-    auto &style = ImGui::GetStyle();
-    return fontSizeBase * style.FontScaleMain * style.FontScaleDpi;
-}
-
 void LineTextUnformatted(const std::string_view &text, const float lineHeight)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -56,13 +50,13 @@ void LineTextUnformatted(const std::string_view &text, const float lineHeight)
     auto &g = *GImGui;
     if (auto offset = lineHeight - g.FontSize; offset <= 0)
     {
-        ImGui::TextUnformatted(text.data(), text.data() + text.size());
+        ImGui::TextUnformatted(TextStart(text), TextEnd(text));
     }
     else
     {
         auto backup                       = window->DC.CurrLineTextBaseOffset;
-        window->DC.CurrLineTextBaseOffset = offset * 0.5f;
-        ImGui::TextUnformatted(text.data(), text.data() + text.size());
+        window->DC.CurrLineTextBaseOffset = offset * HALF;
+        ImGui::TextUnformatted(TextStart(text), TextEnd(text));
         window->DC.PrevLineTextBaseOffset = backup;
     }
 }
@@ -73,7 +67,7 @@ void LineTextUnformatted(const std::string_view &text, const float lineHeight)
 void DrawNavMenu(std::string_view icon, const M3Styles &m3Styles)
 {
     ImGui::Dummy({0.f, m3Styles[Spacing::L]});
-    ImGui::TextAligned(CENTER_ALIGN, -FLT_MIN, "%s", icon.data());
+    ImGui::TextAligned(CENTER_ALIGN, -FLT_MIN, "%s", TextStart(icon));
     ImGui::Dummy({0.f, m3Styles[Spacing::L]});
 }
 
@@ -82,40 +76,41 @@ auto DrawNavItem(
 ) -> bool
 {
     StyleGuard styleGuard;
-    styleGuard.Push(StyleHolder::ItemSpacing({0.f, m3Styles[Spacing::XS]}));
+    styleGuard.Style_ItemSpacing({0.f, m3Styles[Spacing::XS]});
     const auto   regionLT   = ImGui::GetCursorScreenPos();
     const float  itemWidth  = ImGui::GetContentRegionAvail().x;
-    const float  itemHeight = m3Styles.GetMediumText().fontSize + m3Styles.GetIconSize() + m3Styles[Spacing::XS] * 4;
+    const auto   iconSize   = ImVec2{m3Styles.IconSize(), m3Styles.IconSize()};
+    const float  itemHeight = m3Styles.LabelText().fontSize + iconSize.y + m3Styles[Spacing::XS] * 4;
     const ImRect bb(regionLT, {regionLT.x + itemWidth, regionLT.y + itemHeight});
-    const auto   id = ImGui::GetID(label.data());
+    const auto   id = ImGui::GetID(TextStart(label));
     ImGui::ItemSize({itemWidth, itemHeight}, m3Styles[Spacing::XS]);
     if (!ImGui::ItemAdd(bb, id))
     {
         return false;
     }
 
-    bool       hovered, held;
+    bool       hovered = false, held = false;
     const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-    auto &colors    = m3Styles.colors;
-    ImU32 iconColor = colors.Get(ContentToken::onSurfaceVariant);
+    auto &colors    = m3Styles.Colors();
+    auto  iconColor = colors[ContentToken::onSurfaceVariant];
 
-    ImVec2       iconPosMin{bb.Min.x, bb.Min.y + m3Styles[Spacing::XS]};
-    const ImVec2 iconPosMax{bb.Max.x, iconPosMin.y + m3Styles.GetIconSize()};
+    ImVec2 iconPosMin{bb.Min.x, bb.Min.y + m3Styles[Spacing::XS]};
+    ImVec2 iconPosMax{bb.Max.x, iconPosMin.y + iconSize.y};
     {
-        const ImVec2 iconSize{m3Styles.GetIconSize(), m3Styles.GetIconSize()};
-        auto         fineClipOpt = TextClip(iconSize, iconPosMin, bb);
+        auto fineClipOpt = TextClip(iconSize, iconPosMin, bb);
         // modify iconPosMin
         AlignText(iconPosMin, {CENTER_ALIGN, CENTER_ALIGN}, iconPosMax, iconSize);
+        iconPosMax = iconPosMin + iconSize;
         // icon bg rect
         if (selected || hovered || held)
         {
             const auto offset     = ImVec2(m3Styles[Spacing::L], m3Styles[Spacing::XS]);
-            auto       iconBgRect = ImRect(iconPosMin - offset, iconPosMin + iconSize + offset);
+            const auto iconBgRect = ImRect(iconPosMin - offset, iconPosMin + iconSize + offset);
             if (selected) iconColor = colors[ContentToken::onPrimary];
-            ImVec4 bgColor;
+            SurfaceColor bgColor;
             if (hovered && held)
             {
                 bgColor = colors[SurfaceToken::primary].Pressed(colors[ContentToken::onPrimary]);
@@ -128,36 +123,39 @@ auto DrawNavItem(
             {
                 bgColor = selected ? colors[SurfaceToken::primary] : colors[SurfaceToken::secondaryContainer];
             }
-            ImGui::RenderFrame(iconBgRect.Min, iconBgRect.Max, ImGui::GetColorU32(bgColor), true, 16.f);
+            ImGui::RenderFrame(
+                iconBgRect.Min, iconBgRect.Max, ImGui::ColorConvertFloat4ToU32(bgColor), true, iconSize.x
+            );
         }
         drawList->AddText(
-            m3Styles.iconFont,
-            m3Styles.GetIconSize(),
+            m3Styles.IconFont(),
+            m3Styles.IconSize(),
             iconPosMin,
-            iconColor,
-            icon.data(),
-            icon.data() + icon.size(),
+            static_cast<ImU32>(iconColor),
+            TextStart(icon),
+            TextEnd(icon),
             0.0f,
             fineClipOpt ? &fineClipOpt.value() : nullptr
         );
     }
 
-    ImGui::PushFont(nullptr, m3Styles.GetMediumText().fontSize);
-    ImVec2       labelMin{bb.Min.x, iconPosMax.y + m3Styles[Spacing::Double_XS]};
-    const ImVec2 labelMax{bb.Max.x, labelMin.y + m3Styles.GetMediumText().fontSize};
-    const auto   labelEnd = label.data() + label.size();
-    const auto   textSize = ImGui::CalcTextSize(label.data(), labelEnd);
+    ImGui::PushFont(nullptr, m3Styles.LabelText().fontSize);
     {
-        auto fineClipOpt = TextClip(textSize, labelMin, bb);
+        ImVec2       labelMin{bb.Min.x, iconPosMax.y + m3Styles[Spacing::Double_XS]};
+        const ImVec2 labelMax{bb.Max.x, labelMin.y + m3Styles.LabelText().fontSize};
+        const auto   textSize    = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
+        const auto   fineClipOpt = TextClip(textSize, labelMin, bb);
         // modify labelMin
         AlignText(labelMin, {CENTER_ALIGN, CENTER_ALIGN}, labelMax, textSize);
+        const ColorBase &textColor = selected ? static_cast<const ColorBase &>(colors[SurfaceToken::secondary])
+                                              : static_cast<const ColorBase &>(colors[ContentToken::onSurfaceVariant]);
         drawList->AddText(
             nullptr,
             0.f,
             labelMin,
-            selected ? colors[SurfaceToken::secondary] : colors[ContentToken::onSurfaceVariant],
-            label.data(),
-            label.data() + label.size(),
+            ImGui::ColorConvertFloat4ToU32(textColor),
+            TextStart(label),
+            TextEnd(label),
             0.0f,
             fineClipOpt ? &fineClipOpt.value() : nullptr
         );
@@ -203,13 +201,13 @@ auto DrawIconButton(
             rounding = m3Styles.GetUnit(4);
             break;
         case SizeTips::XLARGE:
-            padding  = m3Styles.GetUnit(12);
+            padding  = m3Styles[Spacing::PADDING_XL];
             iconSize = m3Styles.GetUnit(10);
-            rounding = m3Styles.GetUnit(4);
+            rounding = m3Styles[Spacing::L];
             break;
     }
 
-    const ImGuiID id    = window->GetID(icon.data());
+    const ImGuiID id    = window->GetID(TextStart(icon));
     const ImVec2  pos   = window->DC.CursorPos;
     const auto    width = iconSize + padding * 2 + margin * 2;
     const ImVec2  size  = {width, width};
@@ -218,20 +216,19 @@ auto DrawIconButton(
     ImGui::ItemSize(size, padding + margin);
     if (!ImGui::ItemAdd(bb, id)) return false;
 
-    bool       hovered, held;
+    bool       hovered = false, held = false;
     const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
     // Render
-    auto containerColor = m3Styles.colors.Get(surfaceColorToken);
-    auto textColor      = m3Styles.colors.Get(contentColorToken);
+    auto containerColor = m3Styles.Colors().at(surfaceColorToken);
+    auto textColor      = m3Styles.Colors().at(contentColorToken);
 
-    ImGuiContext &g = *GImGui;
-    ImU32         frameColor;
-    if (g.CurrentItemFlags & ImGuiItemFlags_Disabled)
+    ImVec4 frameColor;
+    if (const ImGuiContext &g = *GImGui; g.CurrentItemFlags & ImGuiItemFlags_Disabled)
     {
-        textColor     = m3Styles.colors.Get(ContentToken::onSurface);
-        textColor.raw = textColor.raw * ContentColor::DISABLED_OPACITY;
-        frameColor    = ImGui::ColorConvertFloat4ToU32(textColor.raw * SurfaceColor::DISABLED_OPACITY);
+        textColor  = m3Styles.Colors().at(ContentToken::onSurface);
+        frameColor = m3Styles.Colors().at(ContentToken::onSurface) * SurfaceColor::DISABLED_OPACITY;
+        textColor  = ContentColor(textColor * ContentColor::DISABLED_OPACITY);
     }
     else if (hovered && held)
     {
@@ -249,16 +246,18 @@ auto DrawIconButton(
     const ImVec2 contentMin = bb.Min + ImVec2{margin, margin};
     const ImVec2 contentMax = bb.Max - ImVec2{margin, margin};
     ImGui::RenderNavCursor(bb, id);
-    ImGui::RenderFrame(contentMin, contentMax, frameColor, true, rounding);
+    ImGui::RenderFrame(contentMin, contentMax, ImGui::ColorConvertFloat4ToU32(frameColor), true, rounding);
 
     ImVec2 posMin = contentMin;
     AlignText(posMin, {CENTER_ALIGN, CENTER_ALIGN}, contentMax, ImVec2(iconSize, iconSize));
-    window->DrawList->AddText(m3Styles.iconFont, iconSize, posMin, textColor, icon.data(), icon.data() + icon.size());
+    window->DrawList->AddText(
+        m3Styles.IconFont(), iconSize, posMin, ImGui::ColorConvertFloat4ToU32(textColor), TextStart(icon), TextEnd(icon)
+    );
     return pressed;
 }
 
 auto BeginDockedToolbar(
-    const ImVec2 &buttonSize, uint8_t count, const SurfaceToken surfaceToken, const M3Styles &m3Styles
+    const ImVec2 &buttonSize, const uint8_t count, const SurfaceToken surfaceToken, const M3Styles &m3Styles
 ) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -272,9 +271,9 @@ auto BeginDockedToolbar(
 
     bb.Min.y += margin;
     bb.Max.y -= margin;
-    window->DrawList->AddRectFilled(bb.Min, bb.Max, m3Styles.colors[surfaceToken]);
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, static_cast<ImU32>(m3Styles.Colors().at(surfaceToken)));
 
-    const auto minWidth = buttonSize.x * count;
+    const auto minWidth = buttonSize.x * static_cast<float>(count);
     auto       gap      = (size.x - minWidth - m3Styles[Spacing::Double_L]) / (count - 1);
     gap                 = std::max(gap, 0.f);
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, gap);
@@ -291,13 +290,13 @@ auto EndDockedToolbar() -> void
 
 void SetItemToolTip(std::string_view text, const M3Styles &m3Styles)
 {
-    const auto smallText = m3Styles.GetSmallText();
-    StyleGuard styleGuard;
-    styleGuard.Push(ColorHolder::Text(m3Styles.colors[ContentToken::inverseOnSurface]))
-        .Push(ColorHolder::PopupBg(m3Styles.colors[SurfaceToken::inverseSurface]))
-        .Push(StyleHolder::WindowPadding({m3Styles[Spacing::S], m3Styles[Spacing::XS] + smallText.GetTextSpacing()}));
-    ImGui::PushFont(nullptr, smallText.fontSize);
-    ImGui::SetItemTooltip("%s", text.data());
+    const auto &labelText = m3Styles.LabelText();
+    StyleGuard  styleGuard;
+    styleGuard.Color_Text(m3Styles.Colors().at(ContentToken::inverseOnSurface))
+        .Color_PopupBg(m3Styles.Colors().at(SurfaceToken::inverseSurface))
+        .Style_WindowPadding({m3Styles[Spacing::S], m3Styles[Spacing::XS] + HalfLineGap(labelText)});
+    ImGui::PushFont(nullptr, labelText.fontSize);
+    ImGui::SetItemTooltip("%s", TextStart(text));
     ImGui::PopFont();
 }
 }

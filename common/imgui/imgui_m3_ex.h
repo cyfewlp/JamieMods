@@ -13,8 +13,25 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx::M3
 {
-constexpr int CHANNEL_FG = 1;
-constexpr int CHANNEL_BG = 0;
+constexpr int  CHANNEL_FG = 1;
+constexpr int  CHANNEL_BG = 0;
+constexpr auto HALF       = 0.5f;
+
+inline auto HalfLineGap(const Text &text) -> float
+{
+    return (text.lineHeight - text.fontSize) * HALF;
+}
+
+inline auto TextStart(const std::string_view text) -> const char *
+{
+    // ReSharper disable once CppDFALocalValueEscapesFunction
+    return text.data();
+}
+
+inline auto TextEnd(const std::string_view text) -> const char *
+{
+    return text.data() + text.size(); // NOLINT(*-pro-bounds-pointer-arithmetic)
+}
 
 /**
  * @brief Renders unformatted text with vertical alignment compensation.
@@ -83,5 +100,12 @@ auto EndDockedToolbar() -> void;
 ////////////////////////////////////////////////////////////////////
 
 void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
+
+/// Popup
+
+auto BeginModalPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
+
+auto EndPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
+
 }
 }

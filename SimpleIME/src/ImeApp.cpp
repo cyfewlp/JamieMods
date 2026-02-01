@@ -28,10 +28,10 @@
 namespace LIBC_NAMESPACE_DECL
 {
 
-static constexpr auto               CONFIG_FILE_NAME     = "SimpleIME.toml";
-static constexpr auto               INIT_TIMEOUT_SECONDS = 5s;
-static std::unique_ptr<Ime::ImeApp> g_instance;
-static ImGuiEx::M3::M3Styles        g_M3Styles;
+static constexpr auto                         CONFIG_FILE_NAME     = "SimpleIME.toml";
+static constexpr auto                         INIT_TIMEOUT_SECONDS = 5s;
+static std::unique_ptr<Ime::ImeApp>           g_instance           = nullptr;
+static std::unique_ptr<ImGuiEx::M3::M3Styles> g_M3Styles           = nullptr;
 
 bool PluginInit()
 {
@@ -261,12 +261,21 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
     ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
     const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-    g_M3Styles.iconFont = ImGuiManager::AddIconFont(iconFile);
+    auto      *iconFont = ImGuiManager::AddFont(iconFile);
+    if (iconFont == nullptr)
+    {
+        throw SimpleIMEException("Cannot find icon font. Initialization failed!");
+    }
+
+    using M3Colors = ImGuiEx::M3::Colors;
+    using M3Styles = ImGuiEx::M3::M3Styles;
+    auto colors    = M3Colors(m_settings.appearance.themeSourceColor, m_settings.appearance.themeDarkMode);
+    g_M3Styles     = std::make_unique<M3Styles>(colors, iconFont);
 
     std::thread childWndThread([&ensureInitialized, this] {
         try
         {
-            m_imeWnd.Initialize(g_M3Styles);
+            m_imeWnd.Initialize(*g_M3Styles);
             ensureInitialized.set_value(true);
             m_imeWnd.Start(m_hWnd, &m_settings);
         }

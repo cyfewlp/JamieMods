@@ -28,19 +28,13 @@ inline auto argbToImVec4(uint32_t a_argb) -> ImVec4
 
 void AppearancePanel::Draw(const bool appearing)
 {
-    using namespace ImGuiEx::M3;
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::WindowPadding({m_styles[Spacing::L], m_styles[Spacing::L]}))
-        .Push(ImGuiEx::StyleHolder::ItemSpacing({m_styles[Spacing::M], m_styles[Spacing::Double_M]}))
-        .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onSurface]))
-        .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors[SurfaceToken::surface]));
+    styleGuard.Style_WindowPadding({m_styles[ImGuiEx::M3::Spacing::L], m_styles[ImGuiEx::M3::Spacing::L]})
+        .Style_ItemSpacing({m_styles[ImGuiEx::M3::Spacing::M], m_styles[ImGuiEx::M3::Spacing::Double_M]})
+        .Color_Text(m_styles.Colors().at(ImGuiEx::M3::ContentToken::onSurface))
+        .Color_ChildBg(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::surface));
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
     {
-        if (appearing)
-        {
-            m_colorInThemeBuilder    = argbToImVec4(m_styles.colors.SeedArgb());
-            m_darkModeInThemeBuilder = m_styles.colors.DarkMode();
-        }
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))
         {
             ImGui::TableNextRow();
@@ -60,22 +54,18 @@ void AppearancePanel::Draw(const bool appearing)
 void AppearancePanel::DrawZoomCombo() const
 {
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::ContentToken::onSurfaceVariant]))
-        .Push(ImGuiEx::StyleHolder::FrameBorderSize(4.f))
-        .Push(ImGuiEx::ColorHolder::Border(m_styles.colors[ImGuiEx::M3::SurfaceToken::primary]))
-        .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surface]))
-        .Push(
-            ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors[ImGuiEx::M3::SurfaceToken::surface].Hovered(
-                m_styles.colors[ImGuiEx::M3::ContentToken::onSurfaceVariant]
-            ))
-        )
-        .Push(ImGuiEx::ColorHolder::PopupBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainerLow]))
-        .Push(ImGuiEx::ColorHolder::HeaderActive(m_styles.colors[ImGuiEx::M3::SurfaceToken::tertiaryContainer]))
-        .Push(
-            ImGuiEx::ColorHolder::HeaderHovered(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainerLow].Hovered(
-                m_styles.colors[ImGuiEx::M3::ContentToken::onSurface]
-            ))
-        );
+    styleGuard.Color_Text(m_styles.Colors().at(ImGuiEx::M3::ContentToken::onSurfaceVariant))
+        .Style_FrameBorderSize(4.f)
+        .Color_Border(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
+        .Color_FrameBg(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::surface))
+        .Color_FrameBgHovered(m_styles.Colors()
+                                  .at(ImGuiEx::M3::SurfaceToken::surface)
+                                  .Hovered(m_styles.Colors().at(ImGuiEx::M3::ContentToken::onSurfaceVariant)))
+        .Color_PopupBg(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
+        .Color_HeaderActive(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::tertiaryContainer))
+        .Color_HeaderHovered(m_styles.Colors()
+                                 .at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow)
+                                 .Hovered(m_styles.Colors().at(ImGuiEx::M3::ContentToken::onSurface)));
     const auto availX = ImGui::GetContentRegionAvail().x;
     if (const auto maxWidth = m_styles.GetSize(ImGuiEx::M3::ComponentSize::MENU_WIDTH); availX > maxWidth)
     {
@@ -108,25 +98,24 @@ void AppearancePanel::DrawZoomCombo() const
 
 void AppearancePanel::DrawThemeBuilder()
 {
-    using namespace ImGuiEx;
-    const auto &medium    = m_styles.GetMediumText();
-    const auto &colors    = m_styles.colors;
+    const auto &colors    = m_styles.Colors();
     bool        openPopup = false;
-    ImGui::PushFont(nullptr, medium.fontSize);
+    ImGui::PushFont(nullptr, m_styles.LabelText().fontSize);
 
-    constexpr auto colorButtonFlags = ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
+    constexpr auto colorButtonFlags = ImGuiEx::ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
     {
-        StyleGuard styleGuard;
-        styleGuard.Push(StyleHolder::FramePadding({0.f, m_styles[M3::Spacing::M]}))
-            .Push(ColorHolder::ChildBg(colors[M3::SurfaceToken::surface]));
+        ImGuiEx::StyleGuard styleGuard;
+        styleGuard.Style_FramePadding({0.f, m_styles[ImGuiEx::M3::Spacing::M]})
+            .Color_ChildBg(colors[ImGuiEx::M3::SurfaceToken::surface]);
 
         openPopup = ImGui::ColorButton("##SeedColor", argbToImVec4(colors.SeedArgb()), colorButtonFlags);
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor").data());
     }
-    auto imU32ToArgb = [](ImU32 imU32) -> uint32_t {
-        return (imU32 & 0xFF000000) | (imU32 & 0xFF) << 16 | (imU32 & 0xFF00) | (imU32 & 0xFF0000) >> 16;
+    auto ImU32ToArgb = [](const ImU32 imU32) -> uint32_t {
+        return (imU32 & IM_COL32_A_MASK) | (imU32 & IM_COL32_R_MASK) << ImGuiEx::M3::ARGB_R_SHIFT |
+               (imU32 & IM_COL32_G_MASK) | (imU32 & IM_COL32_B_MASK) >> IM_COL32_B_SHIFT;
     };
 
     bool edited = false;
@@ -136,12 +125,12 @@ void AppearancePanel::DrawThemeBuilder()
         edited = true;
     }
     {
-        StyleGuard styleGuard;
-        styleGuard.Push(StyleHolder::FramePadding({0.f, m_styles[M3::Spacing::S]}))
-            .Push(StyleHolder::WindowPadding({m_styles[M3::Spacing::M], m_styles[M3::Spacing::M]}))
-            .Push(ColorHolder::PopupBg(colors[M3::SurfaceToken::surfaceContainerHigh]));
+        ImGuiEx::StyleGuard styleGuard;
+        styleGuard.Style_FramePadding({0.f, m_styles[ImGuiEx::M3::Spacing::S]})
+            .Style_WindowPadding({m_styles[ImGuiEx::M3::Spacing::M], m_styles[ImGuiEx::M3::Spacing::M]})
+            .Color_PopupBg(colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh]);
         if (ImGui::BeginPopupModal(
-                Translate("Settings.Appearance.ThemeBuilder").data(), nullptr, WindowFlags().AlwaysAutoResize()
+                Translate("Settings.Appearance.ThemeBuilder").data(), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
             ))
         {
             using namespace material_color_utilities;
@@ -149,38 +138,35 @@ void AppearancePanel::DrawThemeBuilder()
 
             ImGui::BeginGroup();
             {
-                StyleGuard styleGuard1;
-                styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onPrimaryContainer]))
-                    .Push(ColorHolder::FrameBg(colors[M3::SurfaceToken::primaryContainer]))
-                    .Push(
-                        ColorHolder::FrameBgHovered(
-                            colors[M3::SurfaceToken::primaryContainer].Hovered(
-                                colors[M3::ContentToken::onPrimaryContainer]
-                            )
+                ImGuiEx::StyleGuard styleGuard1;
+                styleGuard1.Color_Text(colors[ImGuiEx::M3::ContentToken::onPrimaryContainer])
+                    .Color_FrameBg(colors[ImGuiEx::M3::SurfaceToken::primaryContainer])
+                    .Color_FrameBgHovered(
+                        colors[ImGuiEx::M3::SurfaceToken::primaryContainer].Hovered(
+                            colors[ImGuiEx::M3::ContentToken::onPrimaryContainer]
                         )
                     )
-                    .Push(
-                        ColorHolder::FrameBgActive(
-                            colors[M3::SurfaceToken::primaryContainer].Pressed(
-                                colors[M3::ContentToken::onPrimaryContainer]
-                            )
+
+                    .Color_FrameBgActive(
+                        colors[ImGuiEx::M3::SurfaceToken::primaryContainer].Pressed(
+                            colors[ImGuiEx::M3::ContentToken::onPrimaryContainer]
                         )
                     );
                 if (ImGui::ColorPicker3(
                         "##picker",
                         reinterpret_cast<float *>(&m_colorInThemeBuilder.Value),
-                        ColorEditFlags().NoSmallPreview().NoSidePreview()
+                        ImGuiEx::ColorEditFlags().NoSmallPreview().NoSidePreview()
                     ))
                 {
                     edited = true;
                 }
-                styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onPrimary]))
-                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::L], m_styles[M3::Spacing::M]}))
-                    .Push(StyleHolder::ItemSpacing({m_styles[M3::Spacing::L], 0.f}))
-                    .Push(StyleHolder::FrameRounding(m_styles.GetSize(M3::ComponentSize::BUTTON_ROUNDING)));
+                styleGuard1.Color_Text(colors[ImGuiEx::M3::ContentToken::onPrimary])
+                    .Style_FramePadding({m_styles[ImGuiEx::M3::Spacing::L], m_styles[ImGuiEx::M3::Spacing::M]})
+                    .Style_ItemSpacing({m_styles[ImGuiEx::M3::Spacing::L], 0.f})
+                    .Style_FrameRounding(m_styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
                 {
-                    ApplyM3Theme(imU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
+                    ApplyM3Theme(ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
                     scheme.reset();
                     ImGui::CloseCurrentPopup();
                 }
@@ -194,27 +180,29 @@ void AppearancePanel::DrawThemeBuilder()
             }
             ImGui::EndGroup();
 
-            ImGui::SameLine(0, m_styles[M3::Spacing::S]);
+            ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::S]);
 
             ImGui::BeginGroup();
             ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeInThemeBuilder);
             if (edited)
             {
-                scheme = std::make_unique<SchemeTonalSpot>(
-                    Hct(imU32ToArgb(m_colorInThemeBuilder)), m_darkModeInThemeBuilder, 0.0
+                m_colorInThemeBuilder    = argbToImVec4(m_styles.Colors().SeedArgb());
+                m_darkModeInThemeBuilder = m_styles.Colors().DarkMode();
+                scheme                   = std::make_unique<SchemeTonalSpot>(
+                    Hct(ImU32ToArgb(m_colorInThemeBuilder)), m_darkModeInThemeBuilder, 0.0
                 );
             }
 
             if (scheme)
             {
-                StyleGuard styleGuard1;
-                styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onSurface]))
-                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::L], m_styles[M3::Spacing::L]}))
-                    .Push(StyleHolder::ItemSpacing({0, m_styles[M3::Spacing::M]}));
+                ImGuiEx::StyleGuard styleGuard1;
+                styleGuard1.Color_Text(colors[ImGuiEx::M3::ContentToken::onSurface])
+                    .Style_FramePadding({m_styles[ImGuiEx::M3::Spacing::L], m_styles[ImGuiEx::M3::Spacing::L]})
+                    .Style_ItemSpacing({0, m_styles[ImGuiEx::M3::Spacing::M]});
 
                 auto draw_palette = [&colorButtonFlags, this](std::string_view label, const TonalPalette &palette) {
                     ImGui::ColorButton(label.data(), argbToImVec4(palette.get_key_color().ToInt()), colorButtonFlags);
-                    ImGui::SameLine(0, m_styles[M3::Spacing::S]);
+                    ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::S]);
                     ImGui::TextUnformatted(label.data());
                 };
                 draw_palette("Primary", scheme->primary_palette);
@@ -232,104 +220,114 @@ void AppearancePanel::DrawThemeBuilder()
     ImGui::PopFont();
 }
 
-void AppearancePanel::ApplyM3Theme(uint32_t seedArgb, const bool darkMode)
+void AppearancePanel::ApplyM3Theme(uint32_t sourceColor, const bool isDark)
 {
-    using namespace ImGuiEx::M3;
-    auto &colors = m_styles.colors;
+    auto &colors = m_styles.Colors();
 
-    ThemeBuilder::BuildThemeFromSeed(seedArgb, darkMode, colors);
-    m_colorInThemeBuilder = ImColor(argbToImVec4(m_styles.colors.SeedArgb()));
+    m_styles.RebuildColors(sourceColor, isDark);
+
+    m_colorInThemeBuilder = ImColor(argbToImVec4(m_styles.Colors().SeedArgb()));
 
     ImGuiStyle &style = ImGui::GetStyle();
 
-    style.Colors[ImGuiCol_Text] = colors[ContentToken::onSurface];
+    style.Colors[ImGuiCol_Text]             = colors[ImGuiEx::M3::ContentToken::onSurface];
+    style.Colors[ImGuiCol_TitleBg]          = colors[ImGuiEx::M3::SurfaceToken::surfaceContainer];
+    style.Colors[ImGuiCol_TitleBgActive]    = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TitleBgCollapsed] = colors[ImGuiEx::M3::SurfaceToken::surfaceContainer];
 
-    style.Colors[ImGuiCol_TitleBg]          = colors[SurfaceToken::surfaceContainer];
-    style.Colors[ImGuiCol_TitleBgActive]    = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TitleBgCollapsed] = colors[SurfaceToken::surfaceContainer];
+    style.Colors[ImGuiCol_WindowBg] = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_ChildBg]  = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_PopupBg]  = colors[ImGuiEx::M3::SurfaceToken::primaryContainer];
 
-    style.Colors[ImGuiCol_WindowBg] = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_ChildBg]  = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_PopupBg]  = colors[SurfaceToken::primaryContainer];
+    style.Colors[ImGuiCol_FrameBg]       = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer];
+    style.Colors[ImGuiCol_FrameBgActive] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Pressed(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+    style.Colors[ImGuiCol_FrameBgHovered] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Hovered(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+    style.Colors[ImGuiCol_Border]       = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_BorderShadow] = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
 
-    style.Colors[ImGuiCol_FrameBg] = colors[SurfaceToken::secondaryContainer];
-    style.Colors[ImGuiCol_FrameBgActive] =
-        colors[SurfaceToken::secondaryContainer].Pressed(colors[ContentToken::onSecondaryContainer]);
-    style.Colors[ImGuiCol_FrameBgHovered] =
-        colors[SurfaceToken::secondaryContainer].Hovered(colors[ContentToken::onSecondaryContainer]);
-    style.Colors[ImGuiCol_Border]       = colors[SurfaceToken::outlineVariant];
-    style.Colors[ImGuiCol_BorderShadow] = colors[SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_SliderGrab] = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_SliderGrabActive] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Pressed(colors[ImGuiEx::M3::ContentToken::onPrimary]);
 
-    style.Colors[ImGuiCol_SliderGrab]       = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_SliderGrabActive] = colors[SurfaceToken::primary].Pressed(colors[ContentToken::onPrimary]);
-
-    style.Colors[ImGuiCol_Button]        = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_ButtonHovered] = colors[SurfaceToken::primary].Hovered(colors[ContentToken::onPrimary]);
-    style.Colors[ImGuiCol_ButtonActive]  = colors[SurfaceToken::primary].Pressed(colors[ContentToken::onPrimary]);
+    style.Colors[ImGuiCol_Button] = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_ButtonHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Hovered(colors[ImGuiEx::M3::ContentToken::onPrimary]);
+    style.Colors[ImGuiCol_ButtonActive] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Pressed(colors[ImGuiEx::M3::ContentToken::onPrimary]);
 
     style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
-    style.Colors[ImGuiCol_ScrollbarGrab]        = colors[SurfaceToken::outline];
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors[SurfaceToken::outlineVariant];
-    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors[SurfaceToken::primary];
+    style.Colors[ImGuiCol_ScrollbarGrab]        = colors[ImGuiEx::M3::SurfaceToken::outline];
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors[ImGuiEx::M3::SurfaceToken::primary];
 
-    style.Colors[ImGuiCol_MenuBarBg] = colors[SurfaceToken::surfaceContainerHigh];
+    style.Colors[ImGuiCol_MenuBarBg] = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh];
 
-    style.Colors[ImGuiCol_Header] = colors[SurfaceToken::surfaceContainerHigh];
+    style.Colors[ImGuiCol_Header] = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh];
     style.Colors[ImGuiCol_HeaderHovered] =
-        colors[SurfaceToken::surfaceContainerHigh].Hovered(colors[ContentToken::onSurface]);
+        colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh].Hovered(colors[ImGuiEx::M3::ContentToken::onSurface]);
     style.Colors[ImGuiCol_HeaderActive] =
-        colors[SurfaceToken::surfaceContainerHigh].Pressed(colors[ContentToken::onSurface]);
+        colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh].Pressed(colors[ImGuiEx::M3::ContentToken::onSurface]);
 
-    style.Colors[ImGuiCol_Separator] = colors[SurfaceToken::secondary];
+    style.Colors[ImGuiCol_Separator] = colors[ImGuiEx::M3::SurfaceToken::secondary];
     style.Colors[ImGuiCol_SeparatorHovered] =
-        colors[SurfaceToken::secondary].Hovered(colors[ContentToken::onSecondary]);
-    style.Colors[ImGuiCol_SeparatorActive] = colors[SurfaceToken::secondary].Pressed(colors[ContentToken::onSecondary]);
+        colors[ImGuiEx::M3::SurfaceToken::secondary].Hovered(colors[ImGuiEx::M3::ContentToken::onSecondary]);
+    style.Colors[ImGuiCol_SeparatorActive] =
+        colors[ImGuiEx::M3::SurfaceToken::secondary].Pressed(colors[ImGuiEx::M3::ContentToken::onSecondary]);
 
-    style.Colors[ImGuiCol_ResizeGrip] = colors[SurfaceToken::secondaryContainer];
-    style.Colors[ImGuiCol_ResizeGripHovered] =
-        colors[SurfaceToken::secondaryContainer].Hovered(colors[ContentToken::onSecondaryContainer]);
-    style.Colors[ImGuiCol_ResizeGripActive] =
-        colors[SurfaceToken::secondaryContainer].Pressed(colors[ContentToken::onSecondaryContainer]);
+    style.Colors[ImGuiCol_ResizeGrip]        = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer];
+    style.Colors[ImGuiCol_ResizeGripHovered] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Hovered(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+    style.Colors[ImGuiCol_ResizeGripActive] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Pressed(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
 
-    style.Colors[ImGuiCol_InputTextCursor] = colors[SurfaceToken::secondary];
+    style.Colors[ImGuiCol_InputTextCursor] = colors[ImGuiEx::M3::SurfaceToken::secondary];
 
-    style.Colors[ImGuiCol_Tab]                 = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TabHovered]          = colors[SurfaceToken::surface].Hovered(colors[ContentToken::onSurface]);
-    style.Colors[ImGuiCol_TabSelected]         = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TabSelectedOverline] = colors[SurfaceToken::primary];
+    style.Colors[ImGuiCol_Tab] = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TabHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::surface].Hovered(colors[ImGuiEx::M3::ContentToken::onSurface]);
+    style.Colors[ImGuiCol_TabSelected]         = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TabSelectedOverline] = colors[ImGuiEx::M3::SurfaceToken::primary];
 
-    style.Colors[ImGuiCol_TabDimmed]         = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TabDimmedSelected] = colors[SurfaceToken::surface].Pressed(colors[ContentToken::onSurface]);
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors[SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_TabDimmed] = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TabDimmedSelected] =
+        colors[ImGuiEx::M3::SurfaceToken::surface].Pressed(colors[ImGuiEx::M3::ContentToken::onSurface]);
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
 
-    style.Colors[ImGuiCol_PlotLines]        = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_PlotLinesHovered] = colors[SurfaceToken::primary].Hovered(colors[ContentToken::onPrimary]);
+    style.Colors[ImGuiCol_PlotLines] = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_PlotLinesHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Hovered(colors[ImGuiEx::M3::ContentToken::onPrimary]);
 
-    style.Colors[ImGuiCol_PlotHistogram] = colors[SurfaceToken::tertiary];
+    style.Colors[ImGuiCol_PlotHistogram] = colors[ImGuiEx::M3::SurfaceToken::tertiary];
     style.Colors[ImGuiCol_PlotHistogramHovered] =
-        colors[SurfaceToken::tertiary].Hovered(colors[ContentToken::onTertiary]);
+        colors[ImGuiEx::M3::SurfaceToken::tertiary].Hovered(colors[ImGuiEx::M3::ContentToken::onTertiary]);
 
-    style.Colors[ImGuiCol_TableHeaderBg]     = colors[SurfaceToken::surfaceContainerHigh];
-    style.Colors[ImGuiCol_TableBorderStrong] = colors[SurfaceToken::outline];
-    style.Colors[ImGuiCol_TableBorderLight]  = colors[SurfaceToken::outlineVariant];
-    style.Colors[ImGuiCol_TableRowBg]        = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TableRowBgAlt]     = colors[SurfaceToken::surfaceContainerLowest];
+    style.Colors[ImGuiCol_TableHeaderBg]     = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh];
+    style.Colors[ImGuiCol_TableBorderStrong] = colors[ImGuiEx::M3::SurfaceToken::outline];
+    style.Colors[ImGuiCol_TableBorderLight]  = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_TableRowBg]        = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TableRowBgAlt]     = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerLowest];
 
     // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low;
-    style.Colors[ImGuiCol_TextSelectedBg]   = colors[SurfaceToken::primary];
+    style.Colors[ImGuiCol_TextSelectedBg]   = colors[ImGuiEx::M3::SurfaceToken::primary];
     style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
 
-    style.Colors[ImGuiCol_TreeLines] = colors[ContentToken::onSurface];
+    style.Colors[ImGuiCol_TreeLines] = colors[ImGuiEx::M3::ContentToken::onSurface];
 
-    style.Colors[ImGuiCol_DragDropTarget]   = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_DragDropTargetBg] = colors[SurfaceToken::surface];
+    style.Colors[ImGuiCol_DragDropTarget]   = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_DragDropTargetBg] = colors[ImGuiEx::M3::SurfaceToken::surface];
 
-    style.Colors[ImGuiCol_UnsavedMarker]         = colors[ContentToken::onPrimary];
-    style.Colors[ImGuiCol_NavCursor]             = colors[ContentToken::onSecondary];
-    style.Colors[ImGuiCol_NavWindowingHighlight] = colors[ContentToken::onPrimary];
-    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors[SurfaceToken::surfaceContainer];
+    style.Colors[ImGuiCol_UnsavedMarker]         = colors[ImGuiEx::M3::ContentToken::onPrimary];
+    style.Colors[ImGuiCol_NavCursor]             = colors[ImGuiEx::M3::ContentToken::onSecondary];
+    style.Colors[ImGuiCol_NavWindowingHighlight] = colors[ImGuiEx::M3::ContentToken::onPrimary];
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors[ImGuiEx::M3::SurfaceToken::surfaceContainer];
 
-    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[SurfaceToken::surface];
+    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[ImGuiEx::M3::SurfaceToken::surface];
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 }

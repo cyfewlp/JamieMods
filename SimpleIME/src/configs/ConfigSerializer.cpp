@@ -145,7 +145,7 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
         auto &appearance = config["appearance"];
         findAndSet(appearance, "zoom", settings.appearance.zoom);
         findAndSet(appearance, "language", settings.appearance.language);
-        findAndSet(appearance, "theme_seed_argb", settings.appearance.themeSeedArgb);
+        findAndSet(appearance, "theme_source_color", settings.appearance.themeSourceColor);
         findAndSet(appearance, "theme_dark_mode", settings.appearance.themeDarkMode);
         findAndSet(appearance, "error_display_duration", settings.appearance.errorDisplayDuration);
         findAndSet(appearance, "show_settings", settings.appearance.showSettings);
@@ -217,7 +217,7 @@ static toml::table AppearanceTomlTable(Settings &settings)
     return {
         {"zoom",                   {settings.appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25的整数倍"}}},
         {"language",               settings.appearance.language                                               },
-        {"theme_seed_argb",        settings.appearance.themeSeedArgb                                          },
+        {"theme_source_color",     settings.appearance.themeSourceColor                                       },
         {"theme_dark_mode",        settings.appearance.themeDarkMode                                          },
         {"error_display_duration",
          {settings.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}          },

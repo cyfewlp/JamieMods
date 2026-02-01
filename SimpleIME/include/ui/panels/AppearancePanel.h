@@ -7,6 +7,8 @@
 #include "common/config.h"
 #include "imgui.h"
 
+#include <cstdint>
+
 namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx::M3
@@ -28,7 +30,7 @@ public:
 
     void Draw(bool appearing);
 
-    void ApplyM3Theme(uint32_t seedArgb, bool darkMode);
+    void ApplyM3Theme(uint32_t sourceColor, bool isDark);
 
 private:
     void DrawZoomCombo() const;

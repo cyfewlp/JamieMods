@@ -124,7 +124,7 @@ void ImGuiManager::UpdateCursorPos()
     }
 }
 
-auto ImGuiManager::AddIconFont(const std::string &filePath) -> ImFont *
+auto ImGuiManager::AddFont(const std::string &filePath) -> ImFont *
 {
     return ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
 }

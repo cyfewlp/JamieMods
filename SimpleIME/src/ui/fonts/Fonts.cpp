@@ -176,11 +176,13 @@ bool FontBuilder::ApplyFont(Settings &settings)
 
 void FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
-    using namespace ImGuiEx::M3;
+    using Spacing       = ImGuiEx::M3::Spacing;
+    using ComponentSize = ImGuiEx::M3::ComponentSize;
+    using SurfaceToken  = ImGuiEx::M3::SurfaceToken;
 
     auto                minWidth = m_styles.GetSize(ComponentSize::LIST_WIDTH);
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors[SurfaceToken::surfaceContainerHighest]));
+    styleGuard.Color_ChildBg(m_styles.Colors().at(SurfaceToken::surfaceContainerHighest));
     {
         ImGui::SetNextWindowSizeConstraints(
             {minWidth, 0.f}, {std::max(minWidth, ImGui::GetContentRegionAvail().x - minWidth), FLT_MAX}
@@ -199,8 +201,8 @@ void FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
     ImGui::SameLine(0, 0);
     {
         ImGuiEx::StyleGuard styleGuard1;
-        styleGuard1.Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors[SurfaceToken::surfaceContainerLowest]))
-            .Push(ImGuiEx::StyleHolder::WindowPadding({m_styles[Spacing::L], m_styles[Spacing::L]}));
+        styleGuard1.Color_ChildBg(m_styles.Colors().at(SurfaceToken::surfaceContainerLowest))
+            .Style_WindowPadding({m_styles[Spacing::L], m_styles[Spacing::L]});
 
         ImGui::SetNextWindowSizeConstraints(
             {m_styles[Spacing::XL], 0.f},
@@ -208,13 +210,13 @@ void FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
         );
         if (ImGui::BeginChild(
                 "FontsPreviewer",
-                {-m_styles.GetUnit(23) * 2.f, -FLT_MIN},
+                {-m_styles.GetSize(ComponentSize::NAV_RAIL_WIDTH) * 2.f, -FLT_MIN},
                 ImGuiEx::ChildFlags().Borders().ResizeX().AlwaysUseWindowPadding()
             ))
         {
             m_PreviewPanel.DrawFontsPreviewView();
 
-            const auto width  = m_styles.GetMediumText().fontSize + m_styles[Spacing::Double_L];
+            const auto width  = m_styles.LabelText().fontSize + m_styles[Spacing::Double_L];
             const auto height = width;
             const auto avail  = ImGui::GetContentRegionAvail();
             ImGui::Dummy({0.f, avail.y - height - m_styles[Spacing::XL]});
@@ -264,16 +266,19 @@ void FontBuilderPanel::DrawAddFontButton(FontBuilder &fontBuilder)
 
 void FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder) const
 {
-    using namespace ImGuiEx::M3;
+    using Spacing      = ImGuiEx::M3::Spacing;
+    using ContentToken = ImGuiEx::M3::ContentToken;
+    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+
     if (!fontBuilder.IsBuilding())
     {
         return;
     }
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::ColorHolder::Border(m_styles.colors[SurfaceToken::outlineVariant]))
-        .Push(ImGuiEx::ColorHolder::TableRowBg(m_styles.colors[SurfaceToken::surface]))
-        .Push(ImGuiEx::ColorHolder::TableRowBgAlt(m_styles.colors[SurfaceToken::surface]))
-        .Push(ImGuiEx::StyleHolder::ScrollbarSize(m_styles[Spacing::XS]));
+    styleGuard.Color_Border(m_styles.Colors().at(SurfaceToken::outlineVariant))
+        .Color_TableRowBg(m_styles.Colors().at(SurfaceToken::surface))
+        .Color_TableRowBgAlt(m_styles.Colors().at(SurfaceToken::surface))
+        .Style_ScrollbarSize(m_styles[Spacing::XS]);
     ImGui::Indent(m_styles[Spacing::L]);
     if (ImGui::BeginTable(
             "BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()
@@ -283,22 +288,22 @@ void FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder) const
         auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
         if (names.size() == paths.size())
         {
-            ImGui::PushFont(nullptr, m_styles.GetLargeText().fontSize);
-            const auto col1LineHeight = m_styles.GetLargeText().fontSize + m_styles.GetSmallText().fontSize;
+            ImGui::PushFont(nullptr, m_styles.TitleText().fontSize);
+            const auto col1LineHeight = m_styles.TitleText().fontSize + m_styles.SmallLabelText().fontSize;
             for (size_t idx = 0; idx < names.size(); idx++)
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                LineTextUnformatted(std::format("{}", idx + 1), col1LineHeight);
+                ImGuiEx::M3::LineTextUnformatted(std::format("{}", idx + 1), col1LineHeight);
 
                 ImGui::TableNextColumn();
 
-                ImGui::Text("%s", names[idx].c_str());
+                ImGui::Text("%s", names.at(idx).c_str());
                 {
                     ImGuiEx::StyleGuard styleGuard1;
-                    styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onSurfaceVariant]));
-                    ImGui::PushFont(nullptr, m_styles.GetSmallText().fontSize);
-                    ImGui::Text("%s", paths[idx].c_str());
+                    styleGuard1.Color_Text(m_styles.Colors().at(ContentToken::onSurfaceVariant));
+                    ImGui::PushFont(nullptr, m_styles.SmallLabelText().fontSize);
+                    ImGui::Text("%s", paths.at(idx).c_str());
                     ImGui::PopFont();
                 }
             }
@@ -311,11 +316,15 @@ void FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder) const
 
 void FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
 {
-    using namespace ImGuiEx::M3;
-    if (BeginDockedToolbar(m_styles.GetUnit(12), 5, SurfaceToken::surfaceContainer, m_styles))
+    if (ImGuiEx::M3::BeginDockedToolbar(
+            m_styles.GetSize(ImGuiEx::M3::ComponentSize::ICON_BUTTON),
+            5,
+            ImGuiEx::M3::SurfaceToken::surfaceContainer,
+            m_styles
+        ))
     {
         DrawToolBarButtons(fontBuilder, settings);
-        EndDockedToolbar();
+        ImGuiEx::M3::EndDockedToolbar();
     }
 
     DrawHelpModal();
@@ -496,34 +505,35 @@ void FontPreviewPanel::DrawStatusBar() const
 
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]));
+        styleGuard.Color_Text(m_styles.Colors().at(ImGuiEx::M3::ContentToken::onSecondaryContainer));
         if (!icon.empty())
         {
             ImGui::Text("%s", icon.data());
             ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::L]);
         }
         ImGui::TextWrapped("%s", msg.data());
-        ImGui::SameLine();
-        ImGui::Dummy({8., 8.f + ImGui::GetFontSize()});
     }
 }
 
 void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
 {
-    using namespace ImGuiEx::M3;
+    using Spacing      = ImGuiEx::M3::Spacing;
+    using ContentToken = ImGuiEx::M3::ContentToken;
+    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+
     ImDrawList *drawList = ImGui::GetWindowDrawList();
     drawList->ChannelsSplit(2);
 
     drawList->ChannelsSetCurrent(1);
-    ImGui::PushFont(nullptr, m_styles.GetLargeText().fontSize);
+    ImGui::PushFont(nullptr, m_styles.TitleText().fontSize);
     ImGui::BeginGroup();
     {
-        ImGui::SetNextItemWidth(-m_styles[Spacing::Double_L] - m_styles.GetLargeText().fontSize);
+        ImGui::SetNextItemWidth(-m_styles[Spacing::Double_L] - m_styles.TitleText().fontSize);
         ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::StyleHolder::FramePadding({m_styles[Spacing::L], m_styles[Spacing::L]}))
-            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onSurfaceVariant]))
-            .Push(ImGuiEx::ColorHolder::FrameBg({0, 0, 0, 0}));
+        styleGuard.Style_FramePadding({m_styles[Spacing::L], m_styles[Spacing::L]})
+            .Color_Text(m_styles.Colors().at(ContentToken::onSurfaceVariant))
+            .Color_FrameBg({0, 0, 0, 0});
         if (ImGui::InputTextWithHint(
                 "##Filter",
                 "search by name",
@@ -553,8 +563,8 @@ void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
     drawList->AddRectFilled(
         rectMin,
         {rectMax.x + m_styles[Spacing::L], rectMax.y},
-        m_styles.colors[SurfaceToken::surfaceContainerHigh],
-        (rectMax.y - rectMin.y) * 0.5f // 28dp
+        ImGui::ColorConvertFloat4ToU32(m_styles.Colors().at(SurfaceToken::surfaceContainerHigh)),
+        (rectMax.y - rectMin.y) * ImGuiEx::M3::HALF
     );
     drawList->ChannelsMerge();
 
@@ -563,29 +573,28 @@ void FontPreviewPanel::DrawSearchBox(const std::vector<FontInfo> &fontInfos)
 
 void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos)
 {
-    using namespace ImGuiEx::M3;
+    using Spacing      = ImGuiEx::M3::Spacing;
+    using ContentToken = ImGuiEx::M3::ContentToken;
+    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+
     m_interactState.interact = false;
 
-    const auto &text = m_styles.GetLargeText();
+    const auto &text = m_styles.TitleText();
     ImGui::PushFont(nullptr, text.fontSize);
     {
         const auto itemSpacing = ImVec2(m_styles[Spacing::L], m_styles[Spacing::M]);
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard
-            .Push(ImGuiEx::StyleHolder::ItemSpacing(itemSpacing)) // Selectable used
-            .Push(ImGuiEx::StyleHolder::SelectableTextAlign({0.f, 0.5f}))
-            .Push(ImGuiEx::StyleHolder::ScrollbarSize(m_styles[Spacing::XS]))
-            .Push(ImGuiEx::ColorHolder::Header(m_styles.colors[SurfaceToken::surface]))
-            .Push(
-                ImGuiEx::ColorHolder::HeaderActive(
-                    m_styles.colors[SurfaceToken::surface].Pressed(m_styles.colors[ContentToken::onSurface])
-                )
+            .Style_ItemSpacing(itemSpacing) // Selectable used
+            .Style_SelectableTextAlign({0.f, 0.5f})
+            .Style_ScrollbarSize(m_styles[Spacing::XS])
+            .Color_Header(m_styles.Colors().at(SurfaceToken::surface))
+            .Color_HeaderActive(
+                m_styles.Colors().at(SurfaceToken::surface).Pressed(m_styles.Colors().at(ContentToken::onSurface))
             )
-            .Push(
-                ImGuiEx::ColorHolder::HeaderHovered(
-                    m_styles.colors[SurfaceToken::surface].Hovered(m_styles.colors[ContentToken::onSurface])
-                )
+            .Color_HeaderHovered(
+                m_styles.Colors().at(SurfaceToken::surface).Hovered(m_styles.Colors().at(ContentToken::onSurface))
             );
 
         ImGui::Spacing();

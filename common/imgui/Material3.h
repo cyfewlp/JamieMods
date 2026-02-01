@@ -6,6 +6,7 @@
 
 #include "common/config.h"
 
+#include <cstdint>
 #include <imgui.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -13,52 +14,65 @@ namespace LIBC_NAMESPACE_DECL
 /// https://m3.material.io/
 namespace ImGuiEx::M3
 {
+
+static constexpr auto ARGB_R_SHIFT = 16;
+static constexpr auto ARGB_G_SHIFT = 8;
+static constexpr auto ARGB_B_SHIFT = 0;
+static constexpr auto ARGB_A_SHIFT = 24;
+static constexpr auto ARGB_R_MASK  = 0xFF0000;
+static constexpr auto ARGB_G_MASK  = 0xFF00;
+static constexpr auto ARGB_B_MASK  = 0xFF;
+static constexpr auto ARGB_A_MASK  = 0xFF000000;
+
 struct Text
 {
     float fontSize;
     float lineHeight;
-
-    constexpr auto GetTextSpacing() const -> float
-    {
-        return lineHeight - fontSize;
-    }
 };
 
-struct ColorBase
+static constexpr auto TEXT_LABEL_SMALL    = Text(12.f, 16.f);
+static constexpr auto TEXT_LABEL_LARGE    = Text(14.f, 20.f);
+static constexpr auto TEXT_TITLE_MEDIUM   = Text(16.f, 24.f);
+static constexpr auto TEXT_HEADLINE_SMALL = Text(24.f, 32.f);
+static constexpr auto ICON_SIZE           = 24.f;
+
+class ColorBase
 {
     ImVec4 raw{0, 0, 0, 0};
 
+public:
     constexpr ColorBase() = default;
 
     constexpr ColorBase(float r, float g, float b, float a = 1.0f) : raw(r, g, b, a) {}
 
-    constexpr ColorBase(const ImVec4 &col) : raw(col) {}
+    constexpr explicit ColorBase(const ImVec4 &col) : raw(col) {}
+
+    constexpr auto operator=(const ImVec4 &col) -> ColorBase &
+    {
+        raw = col;
+        return *this;
+    }
 
     constexpr ColorBase(int r, int g, int b, int a = 255) : raw(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f) {}
 
-    constexpr ColorBase(ImU32 rgba)
-        : raw(((rgba >> IM_COL32_R_SHIFT) & 0xFF) / 255.0f, ((rgba >> IM_COL32_G_SHIFT) & 0xFF) / 255.0f,
-              ((rgba >> IM_COL32_B_SHIFT) & 0xFF) / 255.0f, ((rgba >> IM_COL32_A_SHIFT) & 0xFF) / 255.0f)
-    {
-    }
+    constexpr explicit ColorBase(ImU32 rgba) : raw(ImGui::ColorConvertU32ToFloat4(rgba)) {}
 
-    constexpr operator ImVec4() const
+    constexpr operator ImVec4() const // NOLINT(*-explicit-constructor)
     {
         return raw;
     }
 
-    constexpr operator ImU32() const
+    constexpr explicit operator ImU32() const
     {
-        return ((ImU32)(raw.x * 255.0f + 0.5f) << IM_COL32_R_SHIFT) |
-               ((ImU32)(raw.y * 255.0f + 0.5f) << IM_COL32_G_SHIFT) |
-               ((ImU32)(raw.z * 255.0f + 0.5f) << IM_COL32_B_SHIFT) |
-               ((ImU32)(raw.w * 255.0f + 0.5f) << IM_COL32_A_SHIFT);
+        return ImGui::ColorConvertFloat4ToU32(raw);
     }
 };
 
-struct ContentColor : public ColorBase
+struct ContentColor : ColorBase
 {
     using ColorBase::ColorBase;
+    using ColorBase::operator=;
+
     static constexpr float DISABLED_OPACITY = 0.38f;
 };
 
@@ -66,6 +80,7 @@ class SurfaceColor : public ColorBase
 {
 public:
     using ColorBase::ColorBase;
+    using ColorBase::operator=;
 
     static constexpr float HOVER_OPACITY    = 0.08f;
     static constexpr float PRESSED_OPACITY  = 0.12f;
@@ -73,11 +88,10 @@ public:
 
     constexpr SurfaceColor GetState(const ContentColor &onColor, const float stateOpacity) const
     {
+        const ImVec4 l = static_cast<ImVec4>(*this);
+        const ImVec4 r = static_cast<ImVec4>(onColor);
         return SurfaceColor(
-            raw.x + (onColor.raw.x - raw.x) * stateOpacity,
-            raw.y + (onColor.raw.y - raw.y) * stateOpacity,
-            raw.z + (onColor.raw.z - raw.z) * stateOpacity,
-            raw.w
+            l.x + (r.x - l.x) * stateOpacity, l.y + (r.y - l.y) * stateOpacity, l.z + (r.z - l.z) * stateOpacity, l.w
         );
     }
 
@@ -160,45 +174,33 @@ class Colors
     uint32_t                                                            seedArgb;
     bool                                                                darkMode = false;
 
-    uint32_t primaryPalette;
-    uint32_t secondaryPalette;
-    uint32_t tertiaryPalette;
-    uint32_t neutralPalette;
-    uint32_t neutralVariantPalette;
-    uint32_t errorPalette;
-
     friend class ThemeBuilder;
 
 public:
+    explicit Colors(const uint32_t seedArgb, const bool darkMode) : seedArgb(seedArgb), darkMode(darkMode) {}
+
     // clang-format off
     auto SeedArgb() const -> uint32_t { return seedArgb; }
     auto DarkMode() const -> bool { return darkMode; }
 
-    auto PrimaryPalette() const -> uint32_t {return primaryPalette;}
-    auto SecondaryPalette() const -> uint32_t {return secondaryPalette;}
-    auto TertiaryPalette() const -> uint32_t {return tertiaryPalette;}
-    auto NeutralPalette() const -> uint32_t {return neutralPalette;}
-    auto NeutralVariantPalette() const -> uint32_t {return neutralVariantPalette;}
-    auto ErrorPalette() const -> uint32_t {return errorPalette;}
-
-    auto Get(SurfaceToken token) const -> const SurfaceColor &
+    auto at(SurfaceToken token) const -> const SurfaceColor &
     {
-        return surfaceColors[static_cast<uint8_t>(token)];
+        return surfaceColors.at(static_cast<uint8_t>(token));
     }
 
     auto operator[](SurfaceToken token) const -> const SurfaceColor &
     {
-        return surfaceColors[static_cast<uint8_t>(token)];
+        return surfaceColors.at(static_cast<uint8_t>(token));
     }
 
-    auto Get(ContentToken token) const -> const ContentColor &
+    auto at(ContentToken token) const -> const ContentColor &
     {
-        return contentColors[static_cast<uint8_t>(token)];
+        return contentColors.at(static_cast<uint8_t>(token));
     }
 
     auto operator[](ContentToken token) const -> const ContentColor &
     {
-        return contentColors[static_cast<uint8_t>(token)];
+        return contentColors.at(static_cast<uint8_t>(token));
     }
 
     // clang-format on
@@ -223,6 +225,7 @@ enum class Spacing : uint8_t
     L          = 4,      // 16dp
     XL         = 6,      // 24dp
     XXL        = 8,      // 32dp
+    PADDING_XL = 12,     // 48dp
     Max        = 16,     // 64dp，
     Double_XS  = 1 << 1, // 8dp
     Double_S   = 2 << 1, // 16dp
@@ -230,6 +233,7 @@ enum class Spacing : uint8_t
     Double_L   = 4 << 1, // 32dp
     Double_XL  = 6 << 1, // 48dp
     Double_XXL = 8 << 1, // 64dp
+    Count      = 32
 };
 
 enum class ComponentSize : uint8_t
@@ -238,9 +242,10 @@ enum class ComponentSize : uint8_t
     NAV_RAIL_WIDTH  = 24, // 96dp
     MENU_WIDTH      = 52, // 208dp
     BUTTON_ROUNDING = 25, // 100dp
+    ICON_BUTTON     = 12, // 48dp
 };
 
-struct M3Styles
+class M3Styles
 {
     static constexpr float BASE_UNIT = 4.0f;
 
@@ -251,47 +256,59 @@ struct M3Styles
      * primary font's baseline, leading to vertical misalignment and "bleeding" outside the glyph bounding box. For
      * pixel-perfect grid alignment, use an independently loaded font.
      */
-    ImFont *iconFont;
+    ImFont *iconFont{nullptr};
 
-    constexpr M3Styles() = default;
+    Text  smallLabelText = TEXT_LABEL_LARGE;
+    Text  labelText      = TEXT_LABEL_LARGE;
+    Text  titleText      = TEXT_TITLE_MEDIUM;
+    float iconSize       = ICON_SIZE;
 
-private:
-    Text  smallText{.fontSize = 12.f, .lineHeight = 16.f};
-    Text  mediumText{.fontSize = 14.f, .lineHeight = 20.f};
-    Text  largeText{.fontSize = 16.f, .lineHeight = 24.f};
-    float iconSize = 24.f;
+    std::array<float, static_cast<size_t>(Spacing::Count)> precomputedPx{};
 
-    std::array<float, 32> precomputedPx;
-    float                 currentScale = 1.0f;
+    float currentScale = 1.0f;
 
 public:
+    constexpr explicit M3Styles(const Colors &colors, ImFont *iconFont) : colors(colors), iconFont(iconFont)
+    {
+        UpdateScaling(currentScale);
+    }
+
     void UpdateScaling(const float newScale)
     {
         currentScale = newScale;
         for (size_t i = 0; i < precomputedPx.size(); ++i)
         {
-            precomputedPx[i] = std::floor(static_cast<float>(i) * BASE_UNIT * newScale);
+            precomputedPx.at(i) = std::floor(static_cast<float>(i) * BASE_UNIT * newScale);
         }
-        smallText.fontSize   = 12.f * newScale;
-        smallText.lineHeight = 16.f * newScale;
+        labelText.fontSize   = TEXT_LABEL_LARGE.fontSize * newScale;
+        labelText.lineHeight = TEXT_LABEL_LARGE.lineHeight * newScale;
 
-        mediumText.fontSize   = 14.f * newScale;
-        mediumText.lineHeight = 20.f * newScale;
+        titleText.fontSize   = TEXT_TITLE_MEDIUM.fontSize * newScale;
+        titleText.lineHeight = TEXT_TITLE_MEDIUM.lineHeight * newScale;
 
-        largeText.fontSize   = 16.f * newScale;
-        largeText.lineHeight = 24.f * newScale;
+        iconSize = ICON_SIZE * newScale;
+    }
 
-        iconSize = 24.f * newScale;
+    void RebuildColors(const uint32_t sourceColor, const bool isDark);
+
+    auto Colors() const -> const Colors &
+    {
+        return colors;
+    }
+
+    auto IconFont() const -> ImFont *
+    {
+        return iconFont;
     }
 
     auto Get(Spacing s) const -> float
     {
-        return precomputedPx[static_cast<uint8_t>(s)];
+        return precomputedPx.at(static_cast<uint8_t>(s));
     }
 
     auto GetUnit(uint8_t units) const -> float
     {
-        return precomputedPx[units < 32 ? units : 31];
+        return precomputedPx.at(units < 32 ? units : 31);
     }
 
     auto GetSize(ComponentSize componentSize) const -> float
@@ -304,22 +321,22 @@ public:
         return Get(s);
     }
 
-    [[nodiscard]] auto GetSmallText() const -> const Text &
+    [[nodiscard]] auto SmallLabelText() const -> const Text &
     {
-        return smallText;
+        return smallLabelText;
     }
 
-    [[nodiscard]] auto GetMediumText() const -> const Text &
+    [[nodiscard]] auto LabelText() const -> const Text &
     {
-        return mediumText;
+        return labelText;
     }
 
-    [[nodiscard]] auto GetLargeText() const -> const Text &
+    [[nodiscard]] auto TitleText() const -> const Text &
     {
-        return largeText;
+        return titleText;
     }
 
-    [[nodiscard]] auto GetIconSize() const -> float
+    [[nodiscard]] auto IconSize() const -> float
     {
         return iconSize;
     }

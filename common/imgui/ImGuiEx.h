@@ -7,6 +7,11 @@
 #include "common/config.h"
 
 #include <imgui.h>
+#include <utility>
+
+static constexpr auto IM_COL32_R_MASK = 0xFF;
+static constexpr auto IM_COL32_G_MASK = 0xFF00;
+static constexpr auto IM_COL32_B_MASK = 0xFF0000;
 
 namespace LIBC_NAMESPACE_DECL
 {
@@ -49,140 +54,6 @@ public:
     }
 };
 
-struct ColorHolder
-{
-    ImGuiCol idx;
-    ImVec4   val;
-
-    explicit constexpr ColorHolder(ImGuiCol idx, const ImVec4 &val) : idx(idx), val(val) {}
-
-    // clang-format off
-
-    static constexpr auto Text(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_Text,val};}
-    static constexpr auto TextDisabled(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TextDisabled, val};}
-    static constexpr auto WindowBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_WindowBg, val};}
-    static constexpr auto ChildBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ChildBg, val};}
-    static constexpr auto PopupBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_PopupBg, val};}
-    static constexpr auto Border(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_Border, val};}
-    static constexpr auto BorderShadow(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_BorderShadow, val};}
-    static constexpr auto FrameBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_FrameBg, val};}
-    static constexpr auto FrameBgHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_FrameBgHovered, val};}
-    static constexpr auto FrameBgActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_FrameBgActive, val};}
-    static constexpr auto TitleBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TitleBg, val};}
-    static constexpr auto TitleBgActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TitleBgActive, val};}
-    static constexpr auto TitleBgCollapsed(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TitleBgCollapsed, val};}
-    static constexpr auto MenuBarBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_MenuBarBg, val};}
-    static constexpr auto ScrollbarBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ScrollbarBg, val};}
-    static constexpr auto ScrollbarGrab(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ScrollbarGrab, val};}
-    static constexpr auto ScrollbarGrabHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ScrollbarGrabHovered, val};}
-    static constexpr auto ScrollbarGrabActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ScrollbarGrabActive, val};}
-    static constexpr auto CheckMark(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_CheckMark, val};}
-    static constexpr auto SliderGrab(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_SliderGrab, val};}
-    static constexpr auto SliderGrabActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_SliderGrabActive, val};}
-    static constexpr auto Button(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_Button, val};}
-    static constexpr auto ButtonHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ButtonHovered, val};}
-    static constexpr auto ButtonActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ButtonActive, val};}
-    static constexpr auto Header(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_Header, val};}
-    static constexpr auto HeaderHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_HeaderHovered, val};}
-    static constexpr auto HeaderActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_HeaderActive, val};}
-    static constexpr auto Separator(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_Separator, val};}
-    static constexpr auto SeparatorHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_SeparatorHovered, val};}
-    static constexpr auto SeparatorActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_SeparatorActive, val};}
-    static constexpr auto ResizeGrip(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ResizeGrip, val};}
-    static constexpr auto ResizeGripHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ResizeGripHovered, val};}
-    static constexpr auto ResizeGripActive(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ResizeGripActive, val};}
-    static constexpr auto InputTextCursor(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_InputTextCursor, val};}
-    static constexpr auto TabHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TabHovered, val};}
-    static constexpr auto Tab(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_Tab, val};}
-    static constexpr auto TabSelected(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TabSelected, val};}
-    static constexpr auto TabSelectedOverline(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TabSelectedOverline, val};}
-    static constexpr auto TabDimmed(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TabDimmed, val};}
-    static constexpr auto TabDimmedSelected(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TabDimmedSelected, val};}
-    static constexpr auto TabDimmedSelectedOverline(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TabDimmedSelectedOverline, val};}
-    static constexpr auto PlotLines(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_PlotLines, val};}
-    static constexpr auto PlotLinesHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_PlotLinesHovered, val};}
-    static constexpr auto PlotHistogram(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_PlotHistogram, val};}
-    static constexpr auto PlotHistogramHovered(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_PlotHistogramHovered, val};}
-    static constexpr auto TableHeaderBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TableHeaderBg, val};}
-    static constexpr auto TableBorderStrong(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TableBorderStrong, val};}
-    static constexpr auto TableBorderLight(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TableBorderLight, val};}
-    static constexpr auto TableRowBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TableRowBg, val};}
-    static constexpr auto TableRowBgAlt(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TableRowBgAlt, val};}
-    static constexpr auto TextLink(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TextLink, val};}
-    static constexpr auto TextSelectedBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TextSelectedBg, val};}
-    static constexpr auto TreeLines(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_TreeLines, val};}
-    static constexpr auto DragDropTarget(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_DragDropTarget, val};}
-    static constexpr auto DragDropTargetBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_DragDropTargetBg, val};}
-    static constexpr auto UnsavedMarker(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_UnsavedMarker, val};}
-    static constexpr auto NavCursor(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_NavCursor, val};}
-    static constexpr auto NavWindowingHighlight(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_NavWindowingHighlight, val};}
-    static constexpr auto NavWindowingDimBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_NavWindowingDimBg, val};}
-    static constexpr auto ModalWindowDimBg(const ImVec4&val) -> ColorHolder {return ColorHolder{ImGuiCol_ModalWindowDimBg, val};}
-
-    // clang-format on
-};
-
-struct StyleHolder
-{
-    enum class Type
-    {
-        Float,
-        Vec2
-    };
-
-    ImGuiStyleVar idx;
-    Type          type;
-    ImVec2        val;
-
-    explicit constexpr StyleHolder(const ImGuiStyleVar &idx, const Type &type, const ImVec2 &val)
-        : idx(idx), type(type), val(val)
-    {
-    }
-
-    // clang-format off
-    static constexpr auto Alpha(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_Alpha, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto DisabledAlpha(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_DisabledAlpha, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto WindowPadding(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_WindowPadding, Type::Vec2, val};}
-    static constexpr auto WindowRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_WindowRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto WindowBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_WindowBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto WindowMinSize(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_WindowMinSize, Type::Vec2, val};}
-    static constexpr auto WindowTitleAlign(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_WindowTitleAlign, Type::Vec2, val};}
-    static constexpr auto ChildRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ChildRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto ChildBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ChildBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto PopupRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_PopupRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto PopupBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_PopupBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto FramePadding(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_FramePadding, Type::Vec2, val};}
-    static constexpr auto FrameRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_FrameRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto FrameBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_FrameBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto ItemSpacing(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ItemSpacing, Type::Vec2, val};}
-    static constexpr auto ItemInnerSpacing(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ItemInnerSpacing, Type::Vec2, val};}
-    static constexpr auto IndentSpacing(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_IndentSpacing, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto CellPadding(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_CellPadding, Type::Vec2, val};}
-    static constexpr auto ScrollbarSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ScrollbarSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto ScrollbarRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ScrollbarRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto ScrollbarPadding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ScrollbarPadding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto GrabMinSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_GrabMinSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto GrabRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_GrabRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto ImageBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ImageBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TabRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TabRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TabBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TabBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TabMinWidthBase(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TabMinWidthBase, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TabMinWidthShrink(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TabMinWidthShrink, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TabBarBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TabBarBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TabBarOverlineSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TabBarOverlineSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TableAngledHeadersAngle(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TableAngledHeadersAngle, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TableAngledHeadersTextAlign(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TableAngledHeadersTextAlign, Type::Vec2, val};}
-    static constexpr auto TreeLinesSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TreeLinesSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto TreeLinesRounding(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_TreeLinesRounding, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto ButtonTextAlign(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_ButtonTextAlign, Type::Vec2, val};}
-    static constexpr auto SelectableTextAlign(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_SelectableTextAlign, Type::Vec2, val};}
-    static constexpr auto SeparatorTextBorderSize(float val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_SeparatorTextBorderSize, Type::Float, ImVec2(val, 0)};}
-    static constexpr auto SeparatorTextAlign(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_SeparatorTextAlign, Type::Vec2, val};}
-    static constexpr auto SeparatorTextPadding(const ImVec2 &val) -> StyleHolder{return StyleHolder{ImGuiStyleVar_SeparatorTextPadding, Type::Vec2, val};}
-
-    // clang-format on
-};
-
 class StyleGuard
 {
     int varCount   = 0;
@@ -215,27 +86,6 @@ public:
         Pop();
     }
 
-    constexpr auto Push(StyleHolder style) -> StyleGuard &
-    {
-        if (style.type == StyleHolder::Type::Float)
-        {
-            ImGui::PushStyleVar(style.idx, style.val.x);
-        }
-        else
-        {
-            ImGui::PushStyleVar(style.idx, style.val);
-        }
-        varCount++;
-        return *this;
-    }
-
-    constexpr auto Push(ColorHolder s) -> StyleGuard &
-    {
-        ImGui::PushStyleColor(s.idx, s.val);
-        colorCount++;
-        return *this;
-    }
-
     template <typename T>
     auto PushVar(ImGuiStyleVar idx, T val) -> StyleGuard &
     {
@@ -244,10 +94,606 @@ public:
         return *this;
     }
 
-    auto PushColor(ImGuiCol idx, ImU32 col) -> StyleGuard &
+    auto PushColor(ImGuiCol idx, const ImVec4 &col) -> StyleGuard &
     {
         ImGui::PushStyleColor(idx, col);
         colorCount++;
+        return *this;
+    }
+
+    constexpr auto Style_Alpha(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_Alpha, val);
+        return *this;
+    }
+
+    constexpr auto Style_DisabledAlpha(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_DisabledAlpha, val);
+        return *this;
+    }
+
+    constexpr auto Style_WindowPadding(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_WindowPadding, val);
+        return *this;
+    }
+
+    constexpr auto Style_WindowRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_WindowRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_WindowBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_WindowBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_WindowMinSize(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_WindowMinSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_WindowTitleAlign(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_WindowTitleAlign, val);
+        return *this;
+    }
+
+    constexpr auto Style_ChildRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ChildRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_ChildBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ChildBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_PopupRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_PopupRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_PopupBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_PopupBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_FramePadding(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_FramePadding, val);
+        return *this;
+    }
+
+    constexpr auto Style_FrameRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_FrameRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_FrameBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_FrameBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_ItemSpacing(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ItemSpacing, val);
+        return *this;
+    }
+
+    constexpr auto Style_ItemInnerSpacing(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ItemInnerSpacing, val);
+        return *this;
+    }
+
+    constexpr auto Style_IndentSpacing(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_IndentSpacing, val);
+        return *this;
+    }
+
+    constexpr auto Style_CellPadding(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_CellPadding, val);
+        return *this;
+    }
+
+    constexpr auto Style_ScrollbarSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ScrollbarSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_ScrollbarRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ScrollbarRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_ScrollbarPadding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ScrollbarPadding, val);
+        return *this;
+    }
+
+    constexpr auto Style_GrabMinSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_GrabMinSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_GrabRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_GrabRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_ImageBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ImageBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_TabRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TabRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_TabBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TabBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_TabMinWidthBase(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TabMinWidthBase, val);
+        return *this;
+    }
+
+    constexpr auto Style_TabMinWidthShrink(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TabMinWidthShrink, val);
+        return *this;
+    }
+
+    constexpr auto Style_TabBarBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TabBarBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_TabBarOverlineSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TabBarOverlineSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_TableAngledHeadersAngle(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TableAngledHeadersAngle, val);
+        return *this;
+    }
+
+    constexpr auto Style_TableAngledHeadersTextAlign(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TableAngledHeadersTextAlign, val);
+        return *this;
+    }
+
+    constexpr auto Style_TreeLinesSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TreeLinesSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_TreeLinesRounding(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_TreeLinesRounding, val);
+        return *this;
+    }
+
+    constexpr auto Style_ButtonTextAlign(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_ButtonTextAlign, val);
+        return *this;
+    }
+
+    constexpr auto Style_SelectableTextAlign(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_SelectableTextAlign, val);
+        return *this;
+    }
+
+    constexpr auto Style_SeparatorTextBorderSize(float val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_SeparatorTextBorderSize, val);
+        return *this;
+    }
+
+    constexpr auto Style_SeparatorTextAlign(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_SeparatorTextAlign, val);
+        return *this;
+    }
+
+    constexpr auto Style_SeparatorTextPadding(const ImVec2 &val) -> StyleGuard &
+    {
+        PushVar(ImGuiStyleVar_SeparatorTextPadding, val);
+        return *this;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    constexpr auto Color_Text(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_Text, val);
+        return *this;
+    }
+
+    constexpr auto Color_TextDisabled(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TextDisabled, val);
+        return *this;
+    }
+
+    constexpr auto Color_WindowBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_WindowBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_ChildBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ChildBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_PopupBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_PopupBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_Border(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_Border, val);
+        return *this;
+    }
+
+    constexpr auto Color_BorderShadow(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_BorderShadow, val);
+        return *this;
+    }
+
+    constexpr auto Color_FrameBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_FrameBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_FrameBgHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_FrameBgHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_FrameBgActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_FrameBgActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_TitleBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TitleBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_TitleBgActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TitleBgActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_TitleBgCollapsed(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TitleBgCollapsed, val);
+        return *this;
+    }
+
+    constexpr auto Color_MenuBarBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_MenuBarBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_ScrollbarBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ScrollbarBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_ScrollbarGrab(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ScrollbarGrab, val);
+        return *this;
+    }
+
+    constexpr auto Color_ScrollbarGrabHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ScrollbarGrabHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_ScrollbarGrabActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ScrollbarGrabActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_CheckMark(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_CheckMark, val);
+        return *this;
+    }
+
+    constexpr auto Color_SliderGrab(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_SliderGrab, val);
+        return *this;
+    }
+
+    constexpr auto Color_SliderGrabActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_SliderGrabActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_Button(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_Button, val);
+        return *this;
+    }
+
+    constexpr auto Color_ButtonHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ButtonHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_ButtonActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ButtonActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_Header(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_Header, val);
+        return *this;
+    }
+
+    constexpr auto Color_HeaderHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_HeaderHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_HeaderActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_HeaderActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_Separator(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_Separator, val);
+        return *this;
+    }
+
+    constexpr auto Color_SeparatorHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_SeparatorHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_SeparatorActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_SeparatorActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_ResizeGrip(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ResizeGrip, val);
+        return *this;
+    }
+
+    constexpr auto Color_ResizeGripHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ResizeGripHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_ResizeGripActive(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ResizeGripActive, val);
+        return *this;
+    }
+
+    constexpr auto Color_InputTextCursor(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_InputTextCursor, val);
+        return *this;
+    }
+
+    constexpr auto Color_TabHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TabHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_Tab(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_Tab, val);
+        return *this;
+    }
+
+    constexpr auto Color_TabSelected(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TabSelected, val);
+        return *this;
+    }
+
+    constexpr auto Color_TabSelectedOverline(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TabSelectedOverline, val);
+        return *this;
+    }
+
+    constexpr auto Color_TabDimmed(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TabDimmed, val);
+        return *this;
+    }
+
+    constexpr auto Color_TabDimmedSelected(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TabDimmedSelected, val);
+        return *this;
+    }
+
+    constexpr auto Color_TabDimmedSelectedOverline(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TabDimmedSelectedOverline, val);
+        return *this;
+    }
+
+    constexpr auto Color_PlotLines(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_PlotLines, val);
+        return *this;
+    }
+
+    constexpr auto Color_PlotLinesHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_PlotLinesHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_PlotHistogram(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_PlotHistogram, val);
+        return *this;
+    }
+
+    constexpr auto Color_PlotHistogramHovered(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_PlotHistogramHovered, val);
+        return *this;
+    }
+
+    constexpr auto Color_TableHeaderBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TableHeaderBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_TableBorderStrong(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TableBorderStrong, val);
+        return *this;
+    }
+
+    constexpr auto Color_TableBorderLight(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TableBorderLight, val);
+        return *this;
+    }
+
+    constexpr auto Color_TableRowBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TableRowBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_TableRowBgAlt(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TableRowBgAlt, val);
+        return *this;
+    }
+
+    constexpr auto Color_TextLink(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TextLink, val);
+        return *this;
+    }
+
+    constexpr auto Color_TextSelectedBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TextSelectedBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_TreeLines(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_TreeLines, val);
+        return *this;
+    }
+
+    constexpr auto Color_DragDropTarget(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_DragDropTarget, val);
+        return *this;
+    }
+
+    constexpr auto Color_DragDropTargetBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_DragDropTargetBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_UnsavedMarker(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_UnsavedMarker, val);
+        return *this;
+    }
+
+    constexpr auto Color_NavCursor(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_NavCursor, val);
+        return *this;
+    }
+
+    constexpr auto Color_NavWindowingHighlight(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_NavWindowingHighlight, val);
+        return *this;
+    }
+
+    constexpr auto Color_NavWindowingDimBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_NavWindowingDimBg, val);
+        return *this;
+    }
+
+    constexpr auto Color_ModalWindowDimBg(const ImVec4 &val) -> StyleGuard &
+    {
+        PushColor(ImGuiCol_ModalWindowDimBg, val);
         return *this;
     }
 

@@ -10,9 +10,10 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-HeaderFilterRegex: .*LangProfileUtil.*
+HeaderFilterRegex: '^(?!.*extern/).*'
 ExcludeHeaderFilterRegex: .*imgui.*|.*RE.*
 CheckOptions:
   llvmlibc-restrict-system-libc-headers.Includes: '-*'
+  cppcoreguidelines-pro-bounds-avoid-unchecked-container-access.ExcludeClasses: '::ImGuiEx::M3::Colors;::ImGuiEx::M3::M3Styles'
 FormatStyle: file
 User: jamie

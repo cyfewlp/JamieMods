@@ -60,7 +60,7 @@ struct Settings
 
     struct Appearance
     {
-        uint32_t    themeSeedArgb        = 0xFF673AB7;
+        uint32_t    themeSourceColor        = 0xFF673AB7;
         bool        themeDarkMode        = true;
         std::string language             = "english";
         float       zoom                 = 1.0F;

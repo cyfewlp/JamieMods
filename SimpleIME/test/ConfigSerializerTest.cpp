@@ -26,7 +26,7 @@ TEST(ConfigSerializerTest, DeserializeAll)
     auto exceptFonts = std::vector<std::string>{"path/to/font1.ttf", "path/to/font2.ttf"};
     ASSERT_EQ(settings.resources.fontPathList, exceptFonts);
     ASSERT_EQ(settings.appearance.language, "a language");
-    ASSERT_EQ(settings.appearance.themeSeedArgb, 0x33333333);
+    ASSERT_EQ(settings.appearance.themeSourceColor, 0x33333333);
     ASSERT_EQ(settings.appearance.themeDarkMode, false);
     ASSERT_EQ(settings.appearance.errorDisplayDuration, 9999);
     ASSERT_EQ(settings.appearance.showSettings, true);
@@ -67,7 +67,7 @@ TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
     settings.resources.fontPathList   = std::vector{random.NextStrinng(10), random.NextStrinng(10)};
 
     settings.appearance.zoom                 = std::round(random.NextFloat(1.f, 9999.f) * 100.f) / 100.f;
-    settings.appearance.themeSeedArgb        = random.NextInt(0, 0xffffff);
+    settings.appearance.themeSourceColor     = random.NextInt(0, 0xffffff);
     settings.appearance.themeDarkMode        = random.NextBool();
     settings.appearance.language             = random.NextStrinng(10);
     settings.appearance.errorDisplayDuration = random.NextInt(0, 0xffff);

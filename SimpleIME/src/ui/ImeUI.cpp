@@ -73,7 +73,7 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
 {
     auto &appearance = settings.appearance;
-    m_panelAppearance.ApplyM3Theme(appearance.themeSeedArgb, appearance.themeDarkMode);
+    m_panelAppearance.ApplyM3Theme(appearance.themeSourceColor, appearance.themeDarkMode);
 
     TranslationLoader::ScanLanguages(TRANSLATE_FILES_DIR, m_translateLanguages);
     if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
@@ -212,8 +212,7 @@ void ImeUI::DrawSettings(Settings &settings)
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::ContentToken::onSurface]))
-        .Push(ImGuiEx::StyleHolder::WindowPadding({}));
+    styleGuard.Color_Text(m_styles.Colors()[ImGuiEx::M3::ContentToken::onSurface]).Style_WindowPadding({});
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         enum class Menu : int8_t
@@ -227,13 +226,11 @@ void ImeUI::DrawSettings(Settings &settings)
         // Sidebar
         {
             ImGuiEx::StyleGuard styleGuard1;
-            styleGuard1.Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::ContentToken::onSurfaceVariant]))
-                .Push(ImGuiEx::ColorHolder::ChildBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainer]))
-                .Push(ImGuiEx::ColorHolder::FrameBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainer]))
-                .Push(ImGuiEx::ColorHolder::FrameBgActive(m_styles.colors[ImGuiEx::M3::SurfaceToken::secondary]))
-                .Push(
-                    ImGuiEx::ColorHolder::FrameBgHovered(m_styles.colors[ImGuiEx::M3::SurfaceToken::secondaryContainer])
-                );
+            styleGuard1.Color_Text(m_styles.Colors()[ImGuiEx::M3::ContentToken::onSurfaceVariant])
+                .Color_ChildBg(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainer])
+                .Color_FrameBg(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainer])
+                .Color_FrameBgActive(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::secondary])
+                .Color_FrameBgHovered(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::secondaryContainer]);
 
             if (ImGui::BeginChild(
                     "Sidebar",
@@ -299,17 +296,11 @@ void ImeUI::DrawMenuAppearance(Settings &settings, const bool appearing)
 {
     m_panelAppearance.Draw(appearing);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 4));
-    if (ImGui::BeginTabBar("SettingsTabBar", ImGuiTabBarFlags_None))
-    {
-        DrawSettingsContent(settings);
-        ImGui::EndTabBar();
-    }
-    ImGui::PopStyleVar();
+    DrawSettingsContent(settings); // FIXME: slice to menus
 
     // sync theme config
-    settings.appearance.themeSeedArgb = m_styles.colors.SeedArgb();
-    settings.appearance.themeDarkMode = m_styles.colors.DarkMode();
+    settings.appearance.themeSourceColor = m_styles.Colors().SeedArgb();
+    settings.appearance.themeDarkMode    = m_styles.Colors().DarkMode();
 }
 
 void ImeUI::DrawMenuFontBuilder(Settings &settings)

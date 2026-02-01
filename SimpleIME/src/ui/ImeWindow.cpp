@@ -49,12 +49,12 @@ void ImeWindow::Draw(const Settings &settings)
     constexpr auto flags =
         ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::WindowPadding({}))
-        .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ImGuiEx::M3::SurfaceToken::primary]))
-        .Push(ImGuiEx::ColorHolder::WindowBg(m_styles.colors[ImGuiEx::M3::SurfaceToken::surfaceContainerLow]))
-        .Push(ImGuiEx::ColorHolder::Separator(m_styles.colors[ImGuiEx::M3::SurfaceToken::outlineVariant]));
+    styleGuard.Style_WindowPadding({})
+        .Color_Text(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
+        .Color_WindowBg(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
+        .Color_Separator(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
 
-    ImGui::PushFont(nullptr, m_styles.GetLargeText().fontSize);
+    ImGui::PushFont(nullptr, m_styles.TitleText().fontSize);
     if (ImGui::Begin("IME", nullptr, flags))
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
@@ -106,11 +106,11 @@ void ImeWindow::DrawCompWindow() const
 
     // use frame padding set line height
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Push(ImGuiEx::StyleHolder::FramePadding({0, m_styles[ImGuiEx::M3::Spacing::S]}));
+    styleGuard.Style_FramePadding({0, m_styles[ImGuiEx::M3::Spacing::S]});
     ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::M]);
     ImGui::AlignTextToFramePadding();
 
-    bool success;
+    bool success = false;
     if (acpStart > 0)
     {
         std::string startToCaret;
@@ -152,7 +152,10 @@ void ImeWindow::DrawCompWindow() const
 
 void ImeWindow::DrawCandidateWindows() const
 {
-    using namespace ImGuiEx::M3;
+    using Spacing      = ImGuiEx::M3::Spacing;
+    using ContentToken = ImGuiEx::M3::ContentToken;
+    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+
     const auto &candidateUi = m_pTextService->GetCandidateUi();
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
@@ -160,20 +163,16 @@ void ImeWindow::DrawCandidateWindows() const
         DWORD clicked = candidateList.size();
 
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Push(ImGuiEx::StyleHolder::ItemSpacing({0, 0}))
-            .Push(ImGuiEx::StyleHolder::FramePadding({m_styles[Spacing::M], m_styles[Spacing::S]}))
-            .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onSurface]))
-            .Push(ImGuiEx::ColorHolder::Button({0, 0, 0, 0}))
-            .Push(
-                ImGuiEx::ColorHolder::ButtonHovered(
-                    m_styles.colors[SurfaceToken::surfaceContainer].Hovered(m_styles.colors[ContentToken::onSurface])
-                )
-            )
-            .Push(
-                ImGuiEx::ColorHolder::ButtonActive(
-                    m_styles.colors[SurfaceToken::surfaceContainer].Pressed(m_styles.colors[ContentToken::onSurface])
-                )
-            );
+        styleGuard.Style_ItemSpacing({0, 0})
+            .Style_FramePadding({m_styles[Spacing::M], m_styles[Spacing::S]})
+            .Color_Text(m_styles.Colors().at(ContentToken::onSurface))
+            .Color_Button({0, 0, 0, 0})
+            .Color_ButtonHovered(m_styles.Colors()
+                                     .at(SurfaceToken::surfaceContainer)
+                                     .Hovered(m_styles.Colors().at(ContentToken::onSurface)))
+            .Color_ButtonActive(m_styles.Colors()
+                                    .at(SurfaceToken::surfaceContainer)
+                                    .Pressed(m_styles.Colors().at(ContentToken::onSurface)));
 
         for (const auto &candidate : candidateList)
         {
@@ -181,18 +180,14 @@ void ImeWindow::DrawCandidateWindows() const
             ImGuiEx::StyleGuard styleGuard1;
             if (index == candidateUi.Selection())
             {
-                styleGuard1.Push(ImGuiEx::ColorHolder::Button(m_styles.colors[SurfaceToken::primaryContainer]))
-                    .Push(ImGuiEx::ColorHolder::Text(m_styles.colors[ContentToken::onPrimaryContainer]))
-                    .Push(
-                        ImGuiEx::ColorHolder::ButtonHovered(m_styles.colors[SurfaceToken::primaryContainer].Hovered(
-                            m_styles.colors[ContentToken::onPrimaryContainer]
-                        ))
-                    )
-                    .Push(
-                        ImGuiEx::ColorHolder::ButtonActive(m_styles.colors[SurfaceToken::primaryContainer].Pressed(
-                            m_styles.colors[ContentToken::onPrimaryContainer]
-                        ))
-                    );
+                styleGuard1.Color_Button(m_styles.Colors()[SurfaceToken::primaryContainer])
+                    .Color_Text(m_styles.Colors()[ContentToken::onPrimaryContainer])
+                    .Color_ButtonHovered(m_styles.Colors()[SurfaceToken::primaryContainer].Hovered(
+                        m_styles.Colors()[ContentToken::onPrimaryContainer]
+                    ))
+                    .Color_ButtonActive(m_styles.Colors()[SurfaceToken::primaryContainer].Pressed(
+                        m_styles.Colors()[ContentToken::onPrimaryContainer]
+                    ));
             }
 
             if (ImGui::Button(candidate.c_str()))
