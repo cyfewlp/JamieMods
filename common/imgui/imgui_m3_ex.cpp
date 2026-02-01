@@ -222,10 +222,18 @@ auto DrawIconButton(
     const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
     // Render
-    const auto containerColor = m3Styles.colors.Get(surfaceColorToken);
-    const auto textColor      = m3Styles.colors.Get(contentColorToken);
-    ImU32      frameColor;
-    if (hovered && held)
+    auto containerColor = m3Styles.colors.Get(surfaceColorToken);
+    auto textColor      = m3Styles.colors.Get(contentColorToken);
+
+    ImGuiContext &g = *GImGui;
+    ImU32         frameColor;
+    if (g.CurrentItemFlags & ImGuiItemFlags_Disabled)
+    {
+        textColor     = m3Styles.colors.Get(ContentToken::onSurface);
+        textColor.raw = textColor.raw * ContentColor::DISABLED_OPACITY;
+        frameColor    = ImGui::ColorConvertFloat4ToU32(textColor.raw * SurfaceColor::DISABLED_OPACITY);
+    }
+    else if (hovered && held)
     {
         frameColor = containerColor.Pressed(textColor);
     }

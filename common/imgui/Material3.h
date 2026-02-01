@@ -56,9 +56,10 @@ struct ColorBase
     }
 };
 
-class ContentColor : public ColorBase
+struct ContentColor : public ColorBase
 {
     using ColorBase::ColorBase;
+    static constexpr float DISABLED_OPACITY = 0.38f;
 };
 
 class SurfaceColor : public ColorBase
@@ -66,8 +67,9 @@ class SurfaceColor : public ColorBase
 public:
     using ColorBase::ColorBase;
 
-    static constexpr float HOVER_OPACITY   = 0.08f;
-    static constexpr float PRESSED_OPACITY = 0.12f;
+    static constexpr float HOVER_OPACITY    = 0.08f;
+    static constexpr float PRESSED_OPACITY  = 0.12f;
+    static constexpr float DISABLED_OPACITY = 0.10f;
 
     constexpr SurfaceColor GetState(const ContentColor &onColor, const float stateOpacity) const
     {
