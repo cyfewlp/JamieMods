@@ -175,9 +175,9 @@ void AppearancePanel::DrawThemeBuilder()
                     edited = true;
                 }
                 styleGuard1.Push(ColorHolder::Text(colors[M3::ContentToken::onPrimary]))
-                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::M], m_styles[M3::Spacing::S]}))
+                    .Push(StyleHolder::FramePadding({m_styles[M3::Spacing::L], m_styles[M3::Spacing::M]}))
                     .Push(StyleHolder::ItemSpacing({m_styles[M3::Spacing::L], 0.f}))
-                    .Push(StyleHolder::FrameRounding(m_styles[M3::Spacing::M]));
+                    .Push(StyleHolder::FrameRounding(m_styles.GetSize(M3::ComponentSize::BUTTON_ROUNDING)));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
                 {
                     ApplyM3Theme(imU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
