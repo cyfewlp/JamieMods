@@ -11,8 +11,6 @@
 
 #include <vector>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class ImeWnd;
@@ -71,5 +69,4 @@ private:
     bool m_fShowToolWindow = false;
     bool m_fPinToolWindow  = false;
 };
-} // namespace SimpleIME
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace Ime

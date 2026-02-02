@@ -14,8 +14,6 @@
     #error "ImGui version changed! imgui_m3_ex only supports v1.92.6WIP"
 #endif
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 
@@ -298,6 +296,5 @@ void SetItemToolTip(std::string_view text, const M3Styles &m3Styles)
     ImGui::PushFont(nullptr, labelText.fontSize);
     ImGui::SetItemTooltip("%s", TextStart(text));
     ImGui::PopFont();
-}
 }
 }

@@ -14,8 +14,6 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dinput8.lib")
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 class FakeDirectInputDevice : public IDirectInputDevice8A
@@ -121,7 +119,7 @@ public:
     STDMETHOD(SetCooperativeLevel)(THIS_ HWND hwnd, DWORD dwFlags)
     {
         m_realCooperativeLevelFlags = dwFlags;
-        log_debug("Real CooperativeLevel {:#x}, {}", dwFlags, dwFlags & DISCL_EXCLUSIVE);
+        logger::debug("Real CooperativeLevel {:#x}, {}", dwFlags, dwFlags & DISCL_EXCLUSIVE);
         dwFlags &= ~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
         dwFlags |= DISCL_NONEXCLUSIVE;
         m_cooperativeLevelFlags = dwFlags;
@@ -136,7 +134,7 @@ public:
         {
             if (hr = Unacquire(); SUCCEEDED(hr))
             {
-                log_debug("Restore CooperativeLevel {:#x}", m_realCooperativeLevelFlags);
+                logger::debug("Restore CooperativeLevel {:#x}", m_realCooperativeLevelFlags);
                 hr = m_realDevice->SetCooperativeLevel(hWnd, m_realCooperativeLevelFlags);
             }
             Acquire();
@@ -343,8 +341,6 @@ private:
     IDirectInput8A *m_realDInput;
 };
 
-} // namespace SimpleIME
-
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace Hooks
 
 #endif // FAKEDIRECTINPUTDEVICE_H

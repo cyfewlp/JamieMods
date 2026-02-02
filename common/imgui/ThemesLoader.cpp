@@ -4,7 +4,6 @@
 
 #include "ThemesLoader.h"
 
-#include "common/config.h"
 #include "common/log.h"
 #include "common/toml++/toml.hpp"
 #include "imgui.h"
@@ -20,8 +19,6 @@
 #include <string>
 #include <vector>
 
-namespace LIBC_NAMESPACE_DECL
-{
 void ImGuiUtil::ThemesLoader::LoadThemes()
 {
     if (!m_availableThemes.empty())
@@ -55,7 +52,7 @@ void ImGuiUtil::ThemesLoader::LoadThemes()
     }
     catch (std::exception &e)
     {
-        log_error("Can't load themes from {}: {}", m_filePath.get(), e.what());
+        logger::error("Can't load themes from {}: {}", m_filePath.get(), e.what());
     }
 }
 
@@ -392,5 +389,4 @@ auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle &styl
 void ImGuiUtil::ThemesLoader::Cleanup()
 {
     g_themesTable.clear();
-}
 }

@@ -8,8 +8,6 @@
 #include <processthreadsapi.h>
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -38,7 +36,7 @@ auto ImeManager::Focus(const HWND hwnd) -> bool
 
 auto ImeManager::EnableIme(bool enable) -> Result
 {
-    log_debug("ImeManager::{} {}", __func__, enable ? "enable" : "disable");
+    logger::debug("ImeManager::{} {}", __func__, enable ? "enable" : "disable");
 
     if ((State::GetInstance().Has(State::IME_DISABLED) && enable) ||
         (State::GetInstance().NotHas(State::IME_DISABLED) && !enable) || m_fForceUpdate)
@@ -49,13 +47,13 @@ auto ImeManager::EnableIme(bool enable) -> Result
         auto &state = State::GetInstance();
         if (enable)
         {
-            log_debug("Clear IME_DISABLED and set TSF focus");
+            logger::debug("Clear IME_DISABLED and set TSF focus");
             state.Clear(State::IME_DISABLED);
             success = m_imeWnd->SetTsfFocus(true);
         }
         else
         {
-            log_debug("Set IME_DISABLED and clear TSF focus");
+            logger::debug("Set IME_DISABLED and clear TSF focus");
             state.Set(State::IME_DISABLED);
             success = m_imeWnd->SetTsfFocus(false);
         }
@@ -63,7 +61,7 @@ auto ImeManager::EnableIme(bool enable) -> Result
         if (!success)
         {
             state.Set(State::IME_DISABLED);
-            log_error("Enable IME failed! last error {}", GetLastError());
+            logger::error("Enable IME failed! last error {}", GetLastError());
         }
 
         return success ? Result::SUCCESS : Result::FAILED;
@@ -73,14 +71,14 @@ auto ImeManager::EnableIme(bool enable) -> Result
 
 auto ImeManager::ForceFocusIme() -> Result
 {
-    log_debug("ImeManager::{}", __func__);
+    logger::debug("ImeManager::{}", __func__);
     m_imeWnd->Focus();
     return Result::SUCCESS;
 }
 
 auto ImeManager::SyncImeState() -> Result
 {
-    log_debug("ImeManager::{}", __func__);
+    logger::debug("ImeManager::{}", __func__);
     m_fForceUpdate = true;
 
     const auto result = EnableIme(IsShouldEnableIme());
@@ -93,15 +91,15 @@ auto ImeManager::SyncImeState() -> Result
 
 auto ImeManager::TryFocusIme() -> Result
 {
-    log_debug("ImeManager::{}", __func__);
+    logger::debug("ImeManager::{}", __func__);
 
-    log_debug("focus to IME wnd");
+    logger::debug("focus to IME wnd");
     if (Focus(m_imeWnd->GetHWND()))
     {
         const auto result = EnableIme(IsShouldEnableIme());
         if (!IsSuccess(result))
         {
-            log_error("Failed to focus IME: {}", GetLastError());
+            logger::error("Failed to focus IME: {}", GetLastError());
         }
         return result;
     }
@@ -114,5 +112,4 @@ auto ImeManager::IsShouldEnableIme() const -> bool
     return m_settings.input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
 }
 
-}
 }

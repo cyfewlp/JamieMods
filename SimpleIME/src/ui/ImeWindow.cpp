@@ -18,8 +18,6 @@
 #include "ui/TaskQueue.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 void ImeWindow::Draw(const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
@@ -276,6 +274,5 @@ void ImeWindow::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPo
             windowPos.y = newY;
         }
     }
-}
 }
 }

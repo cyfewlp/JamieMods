@@ -4,15 +4,12 @@
 #pragma once
 
 #include "Settings.h"
-#include "common/config.h"
 
 #include <d3d11.h>
 #include <windef.h>
 
 struct ImFont;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 class M3Styles;
@@ -48,12 +45,11 @@ public:
 
     static void Shutdown();
 
-    static void ApplyM3Theme(ImGuiEx::M3::M3Styles & m3Styles);
+    static void ApplyM3Theme(ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
     static auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *;
     static void UpdateCursorPos();
     static void EnableTextInputIfNeed();
 };
-}
 }

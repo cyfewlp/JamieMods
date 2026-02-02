@@ -8,7 +8,6 @@
     #define RECORD_KEY
 #endif
 
-#include "../config.h"
 #include "common/log.h"
 
 #include <cstdint>
@@ -19,8 +18,6 @@
     #include <unordered_set>
 #endif
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace i18n
 {
 class Translator
@@ -97,7 +94,7 @@ constexpr auto HashKey(const std::string_view str) -> uint64_t
     return hash;
 }
 
-consteval auto operator""_hash(const char* str, size_t length) -> uint64_t
+consteval auto operator""_hash(const char *str, size_t length) -> uint64_t
 {
     uint64_t hash = 0xcbf29ce484222325ULL;
     for (int i = 0; i < length; i++)
@@ -108,5 +105,4 @@ consteval auto operator""_hash(const char* str, size_t length) -> uint64_t
     return hash;
 }
 
-}
 }

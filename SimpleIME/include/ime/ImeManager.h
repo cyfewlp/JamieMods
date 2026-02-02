@@ -1,14 +1,11 @@
 #pragma once
 
 #include "IImeModule.h"
-#include "common/config.h"
 #include "core/State.h"
 #include "ui/Settings.h"
 
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -51,5 +48,4 @@ public:
 private:
     auto IsShouldEnableIme() const -> bool;
 };
-}
 }

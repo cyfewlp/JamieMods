@@ -8,8 +8,6 @@
 #include "TextEditor.h"
 #include "core/State.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 using OnEndCompositionCallback = void(const std::wstring &compositionString);
@@ -42,7 +40,7 @@ public:
 
     virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
     virtual auto GetCandidateUi() -> CandidateUi &                                                = 0;
-    virtual auto CommitCandidate(HWND hwnd, DWORD index) -> bool                                   = 0;
+    virtual auto CommitCandidate(HWND hwnd, DWORD index) -> bool                                  = 0;
     virtual auto GetTextEditor() -> TextEditor &                                                  = 0;
 
     virtual void RegisterCallback(OnEndCompositionCallback *callback)
@@ -116,6 +114,5 @@ private:
 };
 } // namespace Imm32
 } // namespace Ime
-} // namespace LIBC_NAMESPACE_DECL
 
 #endif // IME_ITEXTSERVICE_H

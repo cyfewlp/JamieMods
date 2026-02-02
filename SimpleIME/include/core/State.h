@@ -1,13 +1,10 @@
 #pragma once
 
-#include "common/config.h"
 #include "enumeration.h"
 
 #include <cstdint>
 #include <type_traits>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime::Core
 {
 class State
@@ -117,5 +114,4 @@ public:
 private:
     Enumeration<StateKey> m_state;
 };
-}
 }

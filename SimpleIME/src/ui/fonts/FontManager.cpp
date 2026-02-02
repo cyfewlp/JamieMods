@@ -5,6 +5,7 @@
 
 #include "common/WCharUtils.h"
 #include "common/log.h"
+#include "common/toml/toml.hpp"
 
 #include <dwrite_3.h>
 #include <windows.h>
@@ -12,107 +13,118 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
 using Microsoft::WRL::ComPtr;
 
+namespace
+{
+auto GetFontRef(const FontInfo &fontInfo) -> ComPtr<IDWriteFontFaceReference>
+{
+    if (fontInfo.IsInvalid()) return nullptr;
+
+    ComPtr<IDWriteFactory3> factory;
+
+    HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
+    if (FAILED(hr)) return nullptr;
+
+    ComPtr<IDWriteFontSet> fontSet;
+    hr = factory->GetSystemFontSet(&fontSet);
+    if (FAILED(hr)) return nullptr;
+
+    ComPtr<IDWriteFontFaceReference> fontRef;
+    hr = fontSet->GetFontFaceReference(static_cast<uint32_t>(fontInfo.GetIndex()), &fontRef);
+    if (FAILED(hr)) return nullptr;
+    return fontRef;
+}
+
+auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
+{
+    std::wstring filePath;
+    ComPtr<IDWriteFontFile> dwFontFile;
+    HRESULT hr = fontRef->GetFontFile(&dwFontFile);
+    if (FAILED(hr)) return filePath;
+
+    ComPtr<IDWriteFontFileLoader> loader;
+    hr = dwFontFile->GetLoader(&loader);
+    if (FAILED(hr)) return filePath;
+
+    ComPtr<IDWriteLocalFontFileLoader> localLoader;
+    if (FAILED(loader.As(&localLoader))) return filePath;
+
+    const void *key = nullptr;
+    UINT32 keySize = 0;
+    if (SUCCEEDED(dwFontFile->GetReferenceKey(&key, &keySize)) && keySize > 0)
+    {
+        UINT32 pathLen = 0;
+        hr = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
+        if (SUCCEEDED(hr) && pathLen > 0)
+        {
+            hr = localLoader->GetFilePathFromKey(key, keySize, filePath.data(), pathLen + 1);
+            if (SUCCEEDED(hr))
+            {
+                return filePath;
+            }
+        }
+    }
+    return filePath;
+}
+}
+
 void FontManager::FindInstalledFonts()
 {
     if (!m_fontList.empty())
     {
-        log_warn("Already fill all installed fonts info.");
+        logger::warn("Already fill all installed fonts info.");
         return;
     }
 
     ComPtr<IDWriteFactory3> factory;
 
     HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
-    if (FAILED(hr))
-    {
-        return;
-    }
+    if (FAILED(hr)) return;
 
     ComPtr<IDWriteFontSet> fontSet;
     hr = factory->GetSystemFontSet(&fontSet);
-    if (SUCCEEDED(hr))
-    {
-        const UINT32 fontCount = fontSet->GetFontCount();
-        for (UINT32 idx = 0; idx < fontCount; idx++)
-        {
-            BOOL                            exists = FALSE;
-            ComPtr<IDWriteLocalizedStrings> localizedStrings;
+    if (FAILED(hr)) return;
 
-            if (SUCCEEDED(fontSet->GetPropertyValues(idx, DWRITE_FONT_PROPERTY_ID_FULL_NAME, &exists, &localizedStrings)
-                ))
+    const UINT32 fontCount = fontSet->GetFontCount();
+    for (UINT32 idx = 0; idx < fontCount; idx++)
+    {
+        BOOL exists = FALSE;
+        ComPtr<IDWriteLocalizedStrings> localizedStrings;
+
+        if (SUCCEEDED(fontSet->GetPropertyValues(idx, DWRITE_FONT_PROPERTY_ID_FULL_NAME, &exists, &localizedStrings)))
+        {
+            std::string fontFullName;
+            GetLocalizedString(localizedStrings.Get(), fontFullName);
+            if (fontFullName.empty())
             {
-                std::string fontFullName;
-                GetLocalizedString(localizedStrings.Get(), fontFullName);
-                if (fontFullName.empty())
-                {
-                    continue;
-                }
-                m_fontList.emplace_back(FontInfo(idx, fontFullName));
+                continue;
             }
+            m_fontList.emplace_back(FontInfo(idx, fontFullName));
         }
     }
+
 }
 
 auto FontManager::GetFontFilePath(const FontInfo &fontInfo) -> std::string
 {
     std::string result;
-    if (fontInfo.IsInvalid()) return result;
 
-    ComPtr<IDWriteFactory3> factory;
-    HRESULT                 hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
-    if (FAILED(hr)) return result;
+    auto fontRef = GetFontRef(fontInfo);
+    if (!fontRef) return result;
 
-    ComPtr<IDWriteFontSet> fontSet;
-    hr = factory->GetSystemFontSet(&fontSet);
-    if (FAILED(hr)) return result;
-
-    ComPtr<IDWriteFontFaceReference> fontRef;
-    hr = fontSet->GetFontFaceReference(static_cast<uint32_t>(fontInfo.GetIndex()), &fontRef);
-    if (FAILED(hr)) return result;
-
-    ComPtr<IDWriteFontFile> fontFile;
-    hr = fontRef->GetFontFile(&fontFile);
-    if (FAILED(hr)) return result;
-
-    ComPtr<IDWriteFontFileLoader> loader;
-    hr = fontFile->GetLoader(&loader);
-    if (FAILED(hr)) return result;
-
-    ComPtr<IDWriteLocalFontFileLoader> localLoader;
-    if (SUCCEEDED(loader.As(&localLoader)))
-    {
-        const void *key;
-        UINT32      keySize;
-        if (SUCCEEDED(fontFile->GetReferenceKey(&key, &keySize)))
-        {
-            UINT32 pathLen;
-            hr = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
-            if (SUCCEEDED(hr))
-            {
-                std::wstring filePath(pathLen, L'\0');
-                hr = localLoader->GetFilePathFromKey(key, keySize, &filePath[0], pathLen + 1);
-                if (SUCCEEDED(hr))
-                {
-                    return WCharUtils::ToString(filePath);
-                }
-            }
-        }
-    }
-    return result;
+    const auto &filePath = GetPathFromReference(fontRef.Get());
+    return WCharUtils::ToString(filePath);
 }
 
 void FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result)
 {
-    HRESULT hr     = S_OK;
-    UINT32  index  = 0;
-    BOOL    exists = false;
+    HRESULT hr = S_OK;
+    UINT32 index = 0;
+    BOOL exists = false;
 
     wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
 
@@ -148,6 +160,5 @@ void FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::str
     {
         result = WCharUtils::ToString(wstring);
     }
-}
 }
 }

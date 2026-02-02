@@ -5,8 +5,6 @@
 #include <atlcomcli.h>
 #include <msctf.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
 auto ToErrorMessage(HRESULT hresult) -> std::string;
@@ -79,6 +77,5 @@ private:
     static TsfSupport s_instance;
 };
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL
 
 #endif

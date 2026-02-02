@@ -4,15 +4,12 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "common/imgui/Material3.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/FontPreviewPanel.h"
 
 struct ImGuiTextFilter;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class FontBuilderPanel
@@ -35,5 +32,4 @@ private:
 
     FontPreviewPanel m_PreviewPanel{};
 };
-}
 }

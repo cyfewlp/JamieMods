@@ -10,8 +10,6 @@
 #include "ITextService.h"
 #include "tsf/TextStore.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class ITextServiceFactory
@@ -30,7 +28,6 @@ public:
         }
     }
 };
-}
 }
 
 #endif // ITEXTSERVICEFACTORY_H

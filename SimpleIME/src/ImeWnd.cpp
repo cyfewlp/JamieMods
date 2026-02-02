@@ -16,8 +16,6 @@
 #include <windows.h>
 #include <windowsx.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 ImeWnd::ImeWnd(Settings &settings) : m_settings(settings)
@@ -57,7 +55,7 @@ void ImeWnd::InitializeTextService()
 
 static void TryEnableImeWndDpiAware()
 {
-    log_info("Try to enable DPI aware for IME Wnd...");
+    logger::info("Try to enable DPI aware for IME Wnd...");
     using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
 
     HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
@@ -67,7 +65,7 @@ static void TryEnableImeWndDpiAware()
     if (pSetThreadDpiAwarenessContext)
     {
         pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-        log_info("Enable DPI aware successful!");
+        logger::info("Enable DPI aware successful!");
     }
 }
 
@@ -110,7 +108,7 @@ void ImeWnd::UnInitialize() const noexcept
 
 void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 {
-    log_info("Start ImeWnd Thread...");
+    logger::info("Start ImeWnd Thread...");
     m_hWnd =
         CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, wc.hInstance, this);
     if (m_hWnd == nullptr)
@@ -148,7 +146,7 @@ void ImeWnd::Run() const
         }
     }
 
-    log_info("Exit ImeWnd Thread...");
+    logger::info("Exit ImeWnd Thread...");
 }
 
 auto ImeWnd::Focus() const -> void
@@ -224,7 +222,7 @@ void ImeWnd::ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
-    // log_debug("Message: {} {} {}", uMsg, wParam, lParam);
+    // logger::debug("Message: {} {} {}", uMsg, wParam, lParam);
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
@@ -267,13 +265,13 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         case WM_SETFOCUS:
             if (pThis == nullptr) break;
             pThis->m_fFocused = true;
-            log_info("IME window get focus.");
+            logger::info("IME window get focus.");
             return 0;
         case WM_KILLFOCUS: {
             if (pThis == nullptr) break;
             pThis->m_fFocused = false;
             ImGui::GetIO().ClearInputKeys();
-            log_info("IME window lost focus.");
+            logger::info("IME window lost focus.");
             return 0;
         }
         case WM_CHAR: {
@@ -327,7 +325,7 @@ void ImeWnd::TsfMessageLoop()
         {
             if (hr == E_FAIL || hr == E_UNEXPECTED)
             {
-                log_error("TSF message pump failed irrecoverably (HRESULT: {:#x}). Exiting loop.", hr);
+                logger::error("TSF message pump failed irrecoverably (HRESULT: {:#x}). Exiting loop.", hr);
                 break;
             }
             MsgWaitForMultipleObjectsEx(0, nullptr, 1, QS_INPUT, MWMO_INPUTAVAILABLE);
@@ -376,7 +374,7 @@ void ImeWnd::OnCreated(Settings &settings)
 
 auto ImeWnd::OnDestroy() const -> LRESULT
 {
-    log_info("Destroy IME Window");
+    logger::info("Destroy IME Window");
     UnInitialize();
     PostQuitMessage(0);
     return S_OK;
@@ -402,7 +400,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
                 case WM_SYSKEYUP: {
                     if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
                     {
-                        log_debug("Post message to game failed.");
+                        logger::debug("Post message to game failed.");
                     }
                     break;
                 }
@@ -413,5 +411,4 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
         }
     }
 }
-}
-}
+} // namespace Ime

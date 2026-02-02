@@ -5,9 +5,6 @@
 
 #include <comdef.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
-
 Tsf::TsfSupport Tsf::TsfSupport::s_instance{};
 
 //
@@ -48,7 +45,7 @@ auto Tsf::TsfSupport::InitializeTsf(const bool uiLessMode) -> HRESULT
     }
     catch (CAtlException &atlException)
     {
-        log_error("Fatal error: Initialize TSF failed: {}", ToErrorMessage(atlException.m_hr));
+        logger::error("Fatal error: Initialize TSF failed: {}", ToErrorMessage(atlException.m_hr));
     }
     return E_FAIL;
 }
@@ -56,5 +53,4 @@ auto Tsf::TsfSupport::InitializeTsf(const bool uiLessMode) -> HRESULT
 Tsf::TsfSupport::~TsfSupport()
 {
     CoUninitialize();
-}
 }

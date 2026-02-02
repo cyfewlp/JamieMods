@@ -6,8 +6,6 @@
 
 #include <dinput.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 void WinHooks::Install()
@@ -53,6 +51,5 @@ HRESULT WinHooks::MyDirectInput8CreateHook(
 
     *reinterpret_cast<IDirectInput8A **>(ppvOut) = new FakeDirectInput(dinput);
     return DI_OK;
-}
 }
 }

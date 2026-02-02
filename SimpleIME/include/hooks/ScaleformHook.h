@@ -11,8 +11,6 @@
 
 #include <memory>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 
@@ -69,7 +67,7 @@ public:
               ptr, true
           )
     {
-        log_debug("Installed {}: {}", __func__, ToString());
+        logger::debug("Installed {}: {}", __func__, ToString());
     }
 
     // NOLINTEND(*-magic-numbers)
@@ -84,7 +82,7 @@ public:
     // NOLINTBEGIN(*-magic-numbers)
     explicit Scaleform_LoadMovieHook(func_type *ptr) : FunctionHook(REL::RelocationID(80302, 82325), ptr)
     {
-        log_debug("Installed {}: {}", __func__, ToString());
+        logger::debug("Installed {}: {}", __func__, ToString());
     }
 
     // NOLINTEND(*-magic-numbers)
@@ -98,7 +96,7 @@ public:
     // NOLINTBEGIN(*-magic-numbers)
     explicit Scaleform_AllowTextInput(func_type *ptr) : FunctionHook(REL::RelocationID(67252, 68552), ptr)
     {
-        log_debug("Installed {}: {}", __func__, ToString());
+        logger::debug("Installed {}: {}", __func__, ToString());
     }
 
     // NOLINTEND(*-magic-numbers)
@@ -140,7 +138,6 @@ public:
 
     static void Uninstall();
 };
-}
 }
 
 #endif // HOOK_H

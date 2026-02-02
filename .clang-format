@@ -24,15 +24,20 @@ Language: Cpp
 TabWidth: 4
 IndentWidth: 4
 BasedOnStyle: Microsoft
-NamespaceMacros:
-  - LIBC_NAMESPACE_DECL
 AccessModifierOffset: -4
 ColumnLimit: 120
 IndentPPDirectives: BeforeHash
-FixNamespaceComments: false
+BinPackArguments: false
+BinPackParameters: true
+BreakBeforeConceptDeclarations: Always
+BreakTemplateDeclarations: Yes
+SeparateDefinitionBlocks: Always
+IndentCaseLabels: true
+IncludeBlocks: Regroup
+
+# Align
 AlignAfterOpenBracket: BlockIndent
 AlignArrayOfStructures: Left
-AllowShortIfStatementsOnASingleLine: WithoutElse
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: false
@@ -45,13 +50,16 @@ AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
   AcrossComments: false
+
+
+# short code statements
+
+AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: Empty
 AllowShortBlocksOnASingleLine : Empty
 AllowShortFunctionsOnASingleLine : Empty
-BinPackArguments: false
-BinPackParameters: true
-BreakBeforeConceptDeclarations: Always
-BreakTemplateDeclarations: Yes
-SeparateDefinitionBlocks: Always
-IndentCaseLabels: true
-IncludeBlocks: Regroup
+
+# namespace
+NamespaceIndentation: None
+CompactNamespaces: false
+FixNamespaceComments: true

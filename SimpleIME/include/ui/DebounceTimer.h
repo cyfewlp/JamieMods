@@ -4,12 +4,8 @@
 
 #pragma once
 
-#include "common/config.h"
-
 #include <chrono>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class DebounceTimer
@@ -57,5 +53,4 @@ private:
     bool                      m_IsWaiting = false;
     bool                      m_Triggered = false;
 };
-}
 }

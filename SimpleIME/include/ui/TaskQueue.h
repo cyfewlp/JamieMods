@@ -5,13 +5,9 @@
 #ifndef TASKQUEUE_H
 #define TASKQUEUE_H
 
-#include "common/config.h"
-
 #include <functional>
 #include <queue>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class TaskQueue
@@ -59,7 +55,6 @@ private:
     std::queue<Task> m_imeThreadTasks;
     std::queue<Task> m_mainThreadTasks;
 };
-}
 }
 
 #endif // TASKQUEUE_H

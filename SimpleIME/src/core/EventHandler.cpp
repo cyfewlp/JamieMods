@@ -4,6 +4,7 @@
 #include "hooks/ScaleformHook.h"
 #include "ime/ImeController.h"
 #include "menu/MenuNames.h"
+#include "common/log.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
@@ -14,16 +15,12 @@
 #include <RE/I/InputEvent.h>
 #include <RE/M/MainMenu.h>
 #include <RE/U/UI.h>
-#include <common/config.h>
-#include <common/log.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime::Core
 {
 void EventHandler::InstallEventSink(ImeWnd *imeWnd, const uint32_t shortcutKey)
 {
-    static InputEventSink         g_InputEventSink(imeWnd, shortcutKey);
+    static InputEventSink g_InputEventSink(imeWnd, shortcutKey);
     static MenuOpenCloseEventSink g_pMenuOpenCloseEventSink;
     RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&g_InputEventSink);
     RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
@@ -34,7 +31,7 @@ void EventHandler::InstallEventSink(ImeWnd *imeWnd, const uint32_t shortcutKey)
 //////////////////////////////////////////////////////////////////////////
 
 RE::BSEventNotifyControl InputEventSink::
-    ProcessEvent(Event *const *events, RE::BSTEventSource<Event *> * /*eventSource*/)
+ProcessEvent(Event *const *events, RE::BSTEventSource<Event *> * /*eventSource*/)
 {
     for (auto *event = *events; event != nullptr; event = event->next)
     {
@@ -82,9 +79,9 @@ void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
 //////////////////////////////////////////////////////////////////////////
 
 RE::BSEventNotifyControl MenuOpenCloseEventSink::
-    ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
+ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
 {
-    log_debug("Menu {} open {}", event->menuName.c_str(), event->opening);
+    logger::debug("Menu {} open {}", event->menuName.c_str(), event->opening);
     static bool firstOpenMainMenu = true;
     if (event->menuName != RE::CursorMenu::MENU_NAME && event->menuName != RE::HUDMenu::MENU_NAME)
     {
@@ -139,5 +136,4 @@ void MenuOpenCloseEventSink::FixInconsistentTextEntryCount(const Event *event)
         manager->EnableIme(false);
     }
 }
-}
-}
+} // namespace Ime::Core

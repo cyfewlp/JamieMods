@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "common/log.h"
 
 #include <cstdint>
@@ -17,8 +16,6 @@ enum : std::uint8_t
     NUMHOOKS
 };
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 template <typename func_t>
@@ -84,7 +81,7 @@ public:
             );
             if (spdlog::default_logger())
             {
-                log_debug("{}", msg);
+                logger::debug("{}", msg);
             }
             else
             {
@@ -141,7 +138,7 @@ using MYHOOKDATA = struct _MYHOOKDATA
     int      nType;
     HOOKPROC hkprc;
     HHOOK    hhook;
-} ATTR_PACKED;
+};
 
 LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
 void             InstallRegisterClassHook();
@@ -150,6 +147,5 @@ void             InstallWindowsHooks();
 auto WINAPI MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM;
 
 }; // namespace SimpleIME
-} // namespace LIBC_NAMESPACE_DECL
 
 #endif

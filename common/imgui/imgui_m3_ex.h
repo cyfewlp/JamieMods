@@ -4,13 +4,10 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "common/imgui/Material3.h"
 
 #include <string_view>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 constexpr int  CHANNEL_FG = 1;
@@ -107,5 +104,4 @@ auto BeginModalPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
 auto EndPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
-}
 }

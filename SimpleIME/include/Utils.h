@@ -10,8 +10,6 @@
 #include "core/State.h"
 #include "ui/Settings.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class Utils
@@ -63,19 +61,19 @@ public:
     template <typename String>
     static void SendStringToGame(String &&sourceString)
     {
-        log_debug("Ready result string to Skyrim...");
+        logger::debug("Ready result string to Skyrim...");
         auto *pInterfaceStrings = RE::InterfaceStrings::GetSingleton();
         auto *pFactoryManager   = RE::MessageDataFactoryManager::GetSingleton();
         if (pInterfaceStrings == nullptr || pFactoryManager == nullptr)
         {
-            log_warn("Can't send string to Skyrim may game already close?");
+            logger::warn("Can't send string to Skyrim may game already close?");
             return;
         }
 
         const auto *pFactory = pFactoryManager->GetCreator<RE::BSUIScaleformData>(pInterfaceStrings->bsUIScaleformData);
         if (pFactory == nullptr)
         {
-            log_warn("Can't send string to Skyrim may game already close?");
+            logger::warn("Can't send string to Skyrim may game already close?");
             return;
         }
 
@@ -101,18 +99,17 @@ private:
         auto *pScaleFormMessageData = pFactory->Create();
         if (pScaleFormMessageData == nullptr)
         {
-            log_error("Unable create BSTDerivedCreator.");
+            logger::error("Unable create BSTDerivedCreator.");
             return false;
         }
         pScaleFormMessageData->scaleformEvent = pCharEvent;
-        log_debug("send code {:#x} to Skyrim", code);
+        logger::debug("send code {:#x} to Skyrim", code);
         RE::UIMessageQueue::GetSingleton()->AddMessage(
             RE::InterfaceStrings::GetSingleton()->topMenu, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
         );
         return true;
     }
 };
-}
-}
+} // namespace Ime
 
 #endif // GAMESTRINGSENDER_H

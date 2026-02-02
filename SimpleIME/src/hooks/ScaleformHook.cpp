@@ -12,8 +12,6 @@
 
 // #define HOOK_LOAD_MOVIE
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 auto ControlMap::SKSE_AllowTextInput(bool allow) -> uint8_t
@@ -48,7 +46,7 @@ void ControlMap::DoAllowTextInput(bool allow, std::uint8_t &entryCount)
     {
         if (entryCount == UINT8_MAX)
         {
-            log_warn("InputManager::AllowTextInput: counter overflow");
+            logger::warn("InputManager::AllowTextInput: counter overflow");
         }
         else
         {
@@ -59,7 +57,7 @@ void ControlMap::DoAllowTextInput(bool allow, std::uint8_t &entryCount)
     {
         if (entryCount == 0)
         {
-            log_warn("InputManager::AllowTextInput: counter underflow");
+            logger::warn("InputManager::AllowTextInput: counter underflow");
         }
         else
         {
@@ -67,14 +65,14 @@ void ControlMap::DoAllowTextInput(bool allow, std::uint8_t &entryCount)
         }
     }
 
-    log_debug("{} text input, count = {}", allow ? "allowed" : "disallowed", entryCount);
+    logger::debug("{} text input, count = {}", allow ? "allowed" : "disallowed", entryCount);
 }
 
 auto SKSE_ScaleformAllowTextInput::AllowTextInput(bool allow) -> std::uint8_t
 {
     std::uint8_t entryCount = ControlMap::GetSingleton()->SKSE_AllowTextInput(allow);
     OnTextEntryCountChanged(entryCount);
-    log_trace("Text entry count: {}", g_prevTextEntryCount);
+    logger::trace("Text entry count: {}", g_prevTextEntryCount);
     return g_prevTextEntryCount;
 }
 
@@ -103,7 +101,7 @@ void SKSE_ScaleformAllowTextInput::Call(Params &params)
 {
     if (params.argCount == 0)
     {
-        log_error("AllowInput called with illegal args");
+        logger::error("AllowInput called with illegal args");
         return;
     }
 
@@ -137,13 +135,13 @@ void ScaleformHooks::SetScaleModeTypeHook(RE::GFxMovieView *pMovieView, RE::GFxM
     }
     if (auto *movieView = pMovieView->GetMovieDef(); movieView != nullptr)
     {
-        log_trace("GfxMovieInstallHook: {}", movieView->GetFileURL());
+        logger::trace("GfxMovieInstallHook: {}", movieView->GetFileURL());
     }
 
     RE::GFxValue skse;
     if (!pMovieView->GetVariable(&skse, "_global.skse") || !skse.IsObject())
     {
-        log_error("Can't get _global.skse");
+        logger::error("Can't get _global.skse");
         return;
     }
     RE::GFxValue fn_AllowTextInput;
@@ -157,7 +155,7 @@ RE::FxDelegateHandler::CallbackFn *SetAllowTextInput;
 
 void MySetAllowTextInput(const RE::FxDelegateArgs &a_params)
 {
-    log_debug("MySetAllowTextInput");
+    logger::debug("MySetAllowTextInput");
     SetAllowTextInput(a_params); // call sub_140CD5910 id: 68552
 
     UpdateFocusCharacterBound(a_params.GetMovie(), true);
@@ -186,7 +184,7 @@ bool ScaleformHooks::LoadMovieHook(
 
 auto ScaleformHooks::Scaleform_AllowTextInputHook(ControlMap *self, bool allow) -> uint8_t
 {
-    log_debug("Scaleform_AllowTextInputHook");
+    logger::debug("Scaleform_AllowTextInputHook");
     auto result = g_ScaleformHooks->m_AllowTextInputHook->Original(self, allow);
 
     Ime::FocusGFxCharacterInfo::GetInstance().UpdateByTopMenu();
@@ -207,9 +205,9 @@ void ScaleformHooks::Install()
 {
     if (!g_ScaleformHooks)
     {
-        log_warn("Already installed ScaleformHooks.");
+        logger::warn("Already installed ScaleformHooks.");
     }
-    log_debug("Install GfxMovieInstallHook...");
+    logger::debug("Install GfxMovieInstallHook...");
     g_ScaleformHooks.reset(new ScaleformHooks);
 }
 
@@ -218,5 +216,4 @@ void ScaleformHooks::Uninstall()
     g_ScaleformHooks = nullptr;
 }
 
-}
 }

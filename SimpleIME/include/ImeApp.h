@@ -7,11 +7,8 @@
 #include "common/hook.h"
 #include "ui/Settings.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
-
 class ImeApp
 {
 public:
@@ -60,7 +57,7 @@ public:
         {
             if (stateKey <= m_stateKey)
             {
-                log_error(
+                logger::error(
                     "The state cannot be rolled back from [{}] to [{}]!",
                     GetStateKetText(m_stateKey),
                     GetStateKetText(stateKey)
@@ -149,5 +146,4 @@ private:
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;
 };
-}
-}
+} // namespace Ime

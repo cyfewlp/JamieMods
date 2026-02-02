@@ -12,8 +12,6 @@
 #include "ui/Settings.h"
 #include "ui/TaskQueue.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -117,7 +115,7 @@ auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
 
     if (!fResult)
     {
-        log_error("Can't enable/disable mod. last error {}", GetLastError());
+        logger::error("Can't enable/disable mod. last error {}", GetLastError());
     }
     return fResult ? IImeModule::Result::SUCCESS : IImeModule::Result::FAILED;
 }
@@ -185,7 +183,7 @@ auto ImeController::DoSyncImeState() -> IImeModule::Result
 
 auto ImeController::RestoreKeyboard() const -> bool
 {
-    log_debug("Restore keyboard: EXCLUSIVE + FOREGROUND + NOWINKEY.");
+    logger::debug("Restore keyboard: EXCLUSIVE + FOREGROUND + NOWINKEY.");
     HRESULT hr = E_FAIL;
     if (auto *keyboard = Hooks::FakeDirectInputDevice::GetInstance(); keyboard != nullptr)
     {
@@ -193,14 +191,14 @@ auto ImeController::RestoreKeyboard() const -> bool
     }
     if (FAILED(hr))
     {
-        log_error("Failed lock keyboard.");
+        logger::error("Failed lock keyboard.");
     }
     return SUCCEEDED(hr);
 }
 
 auto ImeController::UnlockKeyboard() const -> bool
 {
-    log_debug("Unlock keyboard: NONEXCLUSIVE + BACKGROUND.");
+    logger::debug("Unlock keyboard: NONEXCLUSIVE + BACKGROUND.");
     HRESULT hr = E_FAIL;
     if (auto *keyboard = Hooks::FakeDirectInputDevice::GetInstance(); keyboard != nullptr)
     {
@@ -208,7 +206,7 @@ auto ImeController::UnlockKeyboard() const -> bool
     }
     if (FAILED(hr))
     {
-        log_error("Failed unlock keyboard.");
+        logger::error("Failed unlock keyboard.");
     }
     return SUCCEEDED(hr);
 }
@@ -227,7 +225,7 @@ bool ImeController::FocusImeOrGame(const bool focusIme) const
 
     if (!success)
     {
-        log_error("Failed focus to {}", focusIme ? "IME" : "Game");
+        logger::error("Failed focus to {}", focusIme ? "IME" : "Game");
     }
     return success;
 }
@@ -252,5 +250,4 @@ void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings)
     instance->m_fInited  = true;
 }
 
-}
 }

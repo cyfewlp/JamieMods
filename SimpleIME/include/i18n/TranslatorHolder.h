@@ -4,14 +4,11 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "common/i18n/Translator.h"
 
 #include <atomic>
 #include <memory>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -58,6 +55,5 @@ public:
 constexpr auto Translate(const std::string_view key) -> const char *
 {
     return TranslatorHolder::GetTranslator().Translate(i18n::HashKey(key), key).data();
-}
 }
 }

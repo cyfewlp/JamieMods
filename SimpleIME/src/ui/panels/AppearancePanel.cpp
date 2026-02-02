@@ -16,8 +16,6 @@
 
 #include <imgui.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
@@ -253,7 +251,7 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M
     appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
     m3Styles.UpdateScaling(appearance.zoom);
 
-    const auto dir = CommonUtils::GetInterfacePath() / SIMPLE_IME;
+    const auto dir = utils::GetInterfacePath() / SIMPLE_IME;
     TranslationLoader::ScanLanguages(dir, m_translateLanguages);
 
     if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
@@ -277,12 +275,11 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M
 void AppearancePanel::LoadTranslation(std::string_view language) const
 {
     if (!m_i18nHandle) return;
-    const TranslationLoader loader(CommonUtils::GetInterfacePath() / SIMPLE_IME, "Settings");
+    const TranslationLoader loader(utils::GetInterfacePath() / SIMPLE_IME, "Settings");
 
     if (auto opt = loader.LoadFrom(language); opt)
     {
         m_i18nHandle->Update(std::move(opt.value()));
     }
-}
 }
 }

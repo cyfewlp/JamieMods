@@ -11,8 +11,6 @@
 
 #pragma comment(lib, "imm32.lib")
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime::Imm32
 {
 void Imm32TextService::OnStartComposition()
@@ -92,7 +90,7 @@ bool Imm32TextService::OnFocus(bool focus)
 // This method does not work as expected
 auto Imm32TextService::CommitCandidate(HWND hwnd, DWORD index) -> bool
 {
-    log_debug("CommitCandidate {}", index);
+    logger::debug("CommitCandidate {}", index);
     HIMC hImc = ImmGetContext(hwnd);
 
     bool result = true;
@@ -121,7 +119,7 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
         if (spdlog::should_log(spdlog::level::trace))
         {
             const auto str = WCharUtils::ToString(compositionSting);
-            log_trace("IME Composition Result String: {}", str.c_str());
+            logger::trace("IME Composition Result String: {}", str.c_str());
         }
     }
     else if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, compositionSting))
@@ -153,7 +151,7 @@ void Imm32TextService::UpdateComposition(const std::wstring &compStr, long curso
     if (spdlog::should_log(spdlog::level::trace))
     {
         const auto str = WCharUtils::ToString(compStr);
-        log_trace("IME Composition String: {}", str.c_str());
+        logger::trace("IME Composition String: {}", str.c_str());
     }
 }
 
@@ -174,7 +172,7 @@ auto Imm32TextService::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck
 
 auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
 {
-    // log_debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
+    // logger::debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
     switch (wParam)
     {
         case IMN_SETCANDIDATEPOS:
@@ -249,13 +247,13 @@ void Imm32TextService::ChangeCandidateAt(const HIMC hIMC)
     HGLOBAL hGlobal = GlobalAlloc(LPTR, bufLen);
     if (hGlobal == nullptr)
     {
-        log_warn("Global alloc {} failed.", bufLen);
+        logger::warn("Global alloc {} failed.", bufLen);
         return;
     }
     const auto lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
     if (lpCandList == nullptr)
     {
-        log_error("Candidate alloc memory failed.");
+        logger::error("Candidate alloc memory failed.");
         GlobalFree(hGlobal);
         m_candidateUi.Close();
         return;
@@ -311,13 +309,12 @@ void Imm32TextService::UpdateConversionMode(HIMC hIMC)
         {
             case IME_CMODE_ALPHANUMERIC:
                 State::GetInstance().Clear(State::IN_ALPHANUMERIC);
-                log_debug("CMODE:ALPHANUMERIC, Disable IME");
+                logger::debug("CMODE:ALPHANUMERIC, Disable IME");
                 break;
             default:
                 State::GetInstance().Clear(State::IN_ALPHANUMERIC);
                 break;
         }
     }
-}
 }
 }

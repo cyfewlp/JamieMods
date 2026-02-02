@@ -4,12 +4,11 @@
 
 #pragma once
 
-#include "common/config.h"
+#include "ImGuiEx.h"
+#include "imgui.h"
 
-#include <imgui.h>
+#include <string_view>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx
 {
 static auto BeginRightAlign(std::string_view id) -> bool
@@ -31,6 +30,5 @@ static auto BeginRightAlign(std::string_view id) -> bool
 static void EndRightAlign()
 {
     ImGui::EndTable();
-}
 }
 }

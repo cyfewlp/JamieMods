@@ -8,9 +8,6 @@
 
 #include <ctime>
 
-namespace LIBC_NAMESPACE_DECL
-{
-
 void ErrorNotifier::addError(const std::string &txt, const ErrorMsg::Level level)
 {
     if (level < m_currentLevel)
@@ -92,5 +89,4 @@ std::string ErrorNotifier::currentTime()
     localtime_s(&tstruct, &now);
     strftime(buf, sizeof(buf), "%X", &tstruct);
     return std::string(buf);
-}
 }

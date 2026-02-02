@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "ui/Settings.h"
 #include "ui/fonts/FontManager.h"
 #include "ui/fonts/ImFontWrap.h"
@@ -12,8 +11,6 @@
 struct ImFont;
 struct ImGuiTextFilter;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class FontBuilder
@@ -59,5 +56,4 @@ private:
     ImFontWrap       m_baseFont{};
     std::vector<int> m_usedFontIds; // font index in FontManger#fontInfo list.
 };
-}
 }

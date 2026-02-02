@@ -3,15 +3,11 @@
 //
 #pragma once
 
-#include "common/config.h"
-
 #include <string>
 #include <vector>
 
 struct IDWriteLocalizedStrings;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class FontInfo
@@ -55,5 +51,4 @@ public:
 private:
     static void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result);
 };
-}
 }

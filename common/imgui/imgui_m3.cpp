@@ -4,13 +4,10 @@
 #include "M3ThemeBuilder.h"
 #include "Material3.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 void M3Styles::RebuildColors(const Argb sourceColor, const bool isDark)
 {
     ThemeBuilder::BuildThemeFromSeed(sourceColor, isDark, colors);
-}
 }
 }

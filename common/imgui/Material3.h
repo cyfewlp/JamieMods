@@ -4,13 +4,9 @@
 
 #pragma once
 
-#include "common/config.h"
-
 #include <cstdint>
 #include <imgui.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 /// https://m3.material.io/
 namespace ImGuiEx::M3
 {
@@ -86,8 +82,8 @@ public:
 
     constexpr SurfaceColor GetState(const ContentColor &onColor, const float stateOpacity) const
     {
-        const ImVec4 l = static_cast<ImVec4>(*this);
-        const ImVec4 r = static_cast<ImVec4>(onColor);
+        const auto l = static_cast<ImVec4>(*this);
+        const auto r = static_cast<ImVec4>(onColor);
         return SurfaceColor(
             l.x + (r.x - l.x) * stateOpacity, l.y + (r.y - l.y) * stateOpacity, l.z + (r.z - l.z) * stateOpacity, l.w
         );
@@ -385,5 +381,4 @@ public:
     }
 };
 
-}
 }

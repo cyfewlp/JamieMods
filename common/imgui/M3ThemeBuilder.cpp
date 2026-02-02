@@ -9,8 +9,6 @@
 
 #include <cstdint>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 void ThemeBuilder::BuildThemeFromSeed(const Argb sourceColor, const bool isDark, Colors &colors)
@@ -93,6 +91,5 @@ void ThemeBuilder::FillContentColors(Colors::ContentColors &contentColors, const
     contentColors.at(static_cast<size_t>(ContentToken::onTertiaryFixedVariant)) = ArgbToImVec4(scheme.GetOnTertiaryFixedVariant());
     contentColors.at(static_cast<size_t>(ContentToken::inverseOnSurface))       = ArgbToImVec4(scheme.GetInverseOnSurface());
     // clang-format on
-}
 }
 }

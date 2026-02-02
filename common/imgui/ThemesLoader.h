@@ -3,8 +3,6 @@
 //
 #pragma once
 
-#include "common/config.h"
-
 #include <algorithm>
 #include <expected>
 #include <memory>
@@ -13,8 +11,6 @@
 
 struct ImGuiStyle;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiUtil
 {
 struct Theme
@@ -94,5 +90,4 @@ public:
         return m_availableThemes;
     }
 };
-}
 }

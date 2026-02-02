@@ -15,8 +15,6 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 class M3Styles;
@@ -108,6 +106,5 @@ private:
     bool                          m_fFocused = false;
 };
 } // namespace SimpleIME
-} // namespace LIBC_NAMESPACE_DECL
 
 #endif

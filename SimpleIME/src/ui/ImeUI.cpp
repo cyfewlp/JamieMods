@@ -7,7 +7,6 @@
 #include "ImeUI.h"
 
 #include "ImeWnd.hpp"
-#include "common/config.h"
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
 #include "common/imgui/imgui_m3_ex.h"
@@ -35,8 +34,6 @@
 
 #pragma comment(lib, "dwrite.lib")
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -49,17 +46,17 @@ ImeUI::~ImeUI()
 
 bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
 {
-    log_debug("Initializing ImeUI...");
+    logger::debug("Initializing ImeUI...");
     m_langProfileUtil = pLangProfileUtil;
     m_langProfileUtil->AddRef();
     if (!m_langProfileUtil->LoadAllLangProfiles())
     {
-        log_error("Failed load lang profiles");
+        logger::error("Failed load lang profiles");
         return false;
     }
     if (!m_langProfileUtil->LoadActiveIme())
     {
-        log_error("Failed load active ime");
+        logger::error("Failed load active ime");
         return false;
     }
     m_fontBuilder.Initialize();
@@ -387,26 +384,19 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
     ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy"));
 
     RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByCursor"),
-        &settings.input.posUpdatePolicy,
-        Policy::BASED_ON_CURSOR
+        Translate("Settings.Behaviour.ImePos.UpdateByCursor"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CURSOR
     );
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCursorTooltip"));
 
     ImGui::SameLine();
     RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByCaret"),
-        &settings.input.posUpdatePolicy,
-        Policy::BASED_ON_CARET
+        Translate("Settings.Behaviour.ImePos.UpdateByCaret"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CARET
     );
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCaretTooltip"));
 
     ImGui::SameLine();
-    RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByNone"), &settings.input.posUpdatePolicy, Policy::NONE
-    );
+    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByNone"), &settings.input.posUpdatePolicy, Policy::NONE);
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip"));
 }
 
 } // namespace  SimpleIME
-} // namespace LIBC_NAMESPACE_DECL

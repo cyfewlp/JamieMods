@@ -5,10 +5,7 @@
 #pragma once
 
 #include "RE/I/IMenu.h"
-#include "common/config.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 // only be used pause game when ToolWindow is open;
@@ -29,5 +26,4 @@ public:
 private:
     static auto Creator() -> IMenu *;
 };
-}
 }

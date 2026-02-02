@@ -3,8 +3,6 @@
 //
 #include "utils/FocusGFxCharacterInfo.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 using namespace RE;
 
 auto Ime::FocusGFxCharacterInfo::Update(GFxMovieView *movieView) -> void
@@ -149,5 +147,4 @@ void Ime::FocusGFxCharacterInfo::ConvertBoundariesToScreen(GFxMovieView *movieVi
         m_charBoundaries.right  = screenPoint.x;
         m_charBoundaries.bottom = screenPoint.y;
     }
-}
 }

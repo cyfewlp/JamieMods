@@ -16,6 +16,11 @@
 
 #include <unordered_map>
 
+namespace Ime
+{
+
+namespace
+{
 std::unordered_map<RE::GFxKey::Code, ImGuiKey> GFxCodeToImGuiKeyTable = {
     {RE::GFxKey::kAlt,          ImGuiMod_Alt           },
     {RE::GFxKey::kControl,      ImGuiMod_Ctrl          },
@@ -54,19 +59,14 @@ std::unordered_map<RE::GFxKey::Code, ImGuiKey> GFxCodeToImGuiKeyTable = {
     {RE::GFxKey::kVoidSymbol,   ImGuiKey_None          }
 };
 
-namespace LIBC_NAMESPACE_DECL
-{
-static ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
+ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
 {
     const LPARAM extra_info = GetMessageExtraInfo();
     if ((extra_info & 0xFFFFFF80) == 0xFF515700) return ImGuiMouseSource_Pen;
     if ((extra_info & 0xFFFFFF80) == 0xFF515780) return ImGuiMouseSource_TouchScreen;
     return ImGuiMouseSource_Mouse;
 }
-
-namespace Ime
-{
-bool ctrlDown = false;
+} // namespace
 
 void ImeMenu::PostDisplay()
 {
@@ -102,13 +102,13 @@ auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
 
 void ImeMenu::OnShow()
 {
-    log_trace("ImeMenu: Show");
+    logger::trace("ImeMenu: Show");
     m_fSShow = true;
 }
 
 void ImeMenu::OnHide()
 {
-    log_trace("ImeMenu: Hide");
+    logger::trace("ImeMenu: Hide");
     m_fSShow = false;
 }
 
@@ -323,7 +323,7 @@ bool ImeMenu::Paste()
 
 void ImeMenu::RegisterMenu()
 {
-    log_info("Registering ToolWindowMenu...");
+    logger::info("Registering ToolWindowMenu...");
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
         ui->Register(ImeMenuName, Creator);
@@ -345,5 +345,4 @@ auto ImeMenu::Creator() -> IMenu *
 
     return pMenu;
 }
-}
-}
+} // namespace Ime

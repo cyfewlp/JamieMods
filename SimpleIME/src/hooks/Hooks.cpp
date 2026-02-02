@@ -8,8 +8,6 @@
 #include <processthreadsapi.h>
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 auto DetourUtil::DetourAttach(PVOID *original, PVOID hook) -> bool
@@ -62,7 +60,7 @@ auto DetourUtil::DetourAttach(PVOID *original, PVOID hook) -> bool
                     errorMsg = "unexpected error when detour.";
                     break;
             }
-            log_error("Failed detour: {}", errorMsg.data());
+            logger::error("Failed detour: {}", errorMsg.data());
         }
     }
 }
@@ -117,7 +115,7 @@ auto DetourUtil::DetourDetach(void **original, void *hook) -> bool
                     errorMsg = "unexpected error when detour.";
                     break;
             }
-            log_error("Failed detour: {}", errorMsg.data());
+            logger::error("Failed detour: {}", errorMsg.data());
         }
     }
 }
@@ -131,11 +129,11 @@ void InstallWindowsHooks()
 
     for (auto &hookData : myHookData)
     {
-        log_debug("Hooking Skyrim {}...", hookData.nType);
+        logger::debug("Hooking Skyrim {}...", hookData.nType);
         const HHOOK hhk = SetWindowsHookExW(WH_GETMESSAGE, MyGetMsgProc, nullptr, GetCurrentThreadId());
         if (hhk == nullptr)
         {
-            log_error("Hook {} failed! error code: {}", hookData.nType, GetLastError());
+            logger::error("Hook {} failed! error code: {}", hookData.nType, GetLastError());
             return;
         }
         hookData.hhook = hhk;
@@ -164,18 +162,18 @@ LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam)
                 switch (msg->message)
                 {
                     case WM_IME_COMPOSITION:
-                        msg->message = CM_IME_COMPOSITION;
+                        msg->message = Ime::CM_IME_COMPOSITION;
                         break;
                     case WM_IME_CHAR:
-                        msg->message = CM_IME_CHAR;
+                        msg->message = Ime::CM_IME_CHAR;
                         break;
                     case WM_CHAR:
-                        msg->message = CM_CHAR;
+                        msg->message = Ime::CM_CHAR;
                         break;
                     default:
                         break;
                 }
-                log_debug("Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
+                logger::debug("Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
             }
             break;
         default:
@@ -195,11 +193,11 @@ void InstallRegisterClassHook()
     DetourAttach(&reinterpret_cast<PVOID &>(RealRegisterClassExA), reinterpret_cast<void *>(MyRegisterClassExA));
     if (LONG const error = DetourTransactionCommit(); error == NO_ERROR)
     {
-        log_debug("{}: Detoured {}.", pszModule, pszFunction);
+        logger::debug("{}: Detoured {}.", pszModule, pszFunction);
     }
     else
     {
-        log_error("{}: Error Detouring {}.", pszModule, pszFunction);
+        logger::error("{}: Error Detouring {}.", pszModule, pszFunction);
     }
 }
 
@@ -209,5 +207,4 @@ auto MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM
     return RealRegisterClassExA(wndClass);
 }
 
-}
 }

@@ -4,10 +4,6 @@
 
 #pragma once
 
-#include "common/config.h"
-
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 constexpr auto ICON_MD_PIN                  = "\xf3\xb0\x90\x83";
@@ -36,5 +32,4 @@ constexpr auto ICON_OCT_CHECK               = "\xef\x90\xae";
 constexpr auto ICON_OCT_GEAR                = "\xef\x90\xa3";
 constexpr auto ICON_OCT_SEARCH              = "\xef\x90\xa2";
 constexpr auto ICON_MD_CONTENT_SAVE_MOVE    = "\xf3\xb0\xb8\xa7";
-}
-}
+} // namespace Ime

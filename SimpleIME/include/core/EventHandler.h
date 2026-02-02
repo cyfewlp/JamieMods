@@ -1,8 +1,5 @@
 #pragma once
 
-namespace LIBC_NAMESPACE_DECL
-{
-
 namespace Ime
 {
 struct Settings;
@@ -53,5 +50,4 @@ class EventHandler
 public:
     static void InstallEventSink(ImeWnd *imeWnd, uint32_t shortcutKey);
 };
-}
 }

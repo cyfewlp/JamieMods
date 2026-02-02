@@ -9,8 +9,6 @@
 
 #include <concepts>
 
-namespace LIBC_NAMESPACE_DECL
-{
 template <typename enum_t, typename Underlying = std::underlying_type_t<enum_t>>
 class Enumeration
 {
@@ -73,17 +71,19 @@ public:
 
     template <class... Args>
     constexpr auto set(Args... a_args) noexcept -> Enumeration & //
-        requires(std::same_as<Args, enum_type> &&...) {
-            _impl |= (static_cast<underlying_type>(a_args) | ...);
-            return *this;
-        }
+        requires(std::same_as<Args, enum_type> && ...)
+    {
+        _impl |= (static_cast<underlying_type>(a_args) | ...);
+        return *this;
+    }
 
     template <class... Args>
     constexpr auto reset(Args... a_args) noexcept -> Enumeration & //
-        requires(std::same_as<Args, enum_type> &&...) {
-            _impl &= ~(static_cast<underlying_type>(a_args) | ...);
-            return *this;
-        }
+        requires(std::same_as<Args, enum_type> && ...)
+    {
+        _impl &= ~(static_cast<underlying_type>(a_args) | ...);
+        return *this;
+    }
 
     template <class... Args>
     [[nodiscard]] constexpr auto any(Args... a_args) const noexcept -> bool //
@@ -119,5 +119,5 @@ auto all(enum_t &state, Flags... flags) -> bool
     (value1 & value2);
     return (value1 & value2) == value2;
 }
-} // namespace LIBC_NAMESPACE_DECL
+
 #endif // ENUMERATION_H

@@ -1,4 +1,3 @@
-
 #include "ImeApp.h"
 
 #include "ImeWnd.hpp"
@@ -27,20 +26,22 @@
 #include <queue>
 #include <thread>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
 {
+constexpr auto                         CONFIG_FILE_NAME     = "SimpleIME.toml";
+constexpr auto                         INIT_TIMEOUT_SECONDS = 5s;
+std::unique_ptr<Ime::ImeApp>           g_instance           = nullptr;
+std::unique_ptr<ImGuiEx::M3::M3Styles> g_M3Styles           = nullptr;
 
-static constexpr auto                         CONFIG_FILE_NAME     = "SimpleIME.toml";
-static constexpr auto                         INIT_TIMEOUT_SECONDS = 5s;
-static std::unique_ptr<Ime::ImeApp>           g_instance           = nullptr;
-static std::unique_ptr<ImGuiEx::M3::M3Styles> g_M3Styles           = nullptr;
-
-static auto ConfigFilePath() -> std::filesystem::path
+auto ConfigFilePath() -> std::filesystem::path
 {
-    return CommonUtils::GetInterfacePath() / SIMPLE_IME /  CONFIG_FILE_NAME;
+    return utils::GetInterfacePath() / SIMPLE_IME / CONFIG_FILE_NAME;
 }
+} // namespace
 
-bool PluginInit()
+namespace SksePlugin
+{
+bool Initialize()
 {
     const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     const auto  version = plugin->GetVersion();
@@ -51,11 +52,11 @@ bool PluginInit()
     InitializeLogging(g_settings.logging.level, g_settings.logging.flushLevel);
     g_instance = std::make_unique<Ime::ImeApp>(g_settings);
 
-    log_info("{} {} is loading...", plugin->GetName(), version.string());
+    logger::info("{} {} is loading...", plugin->GetName(), version.string());
 
     g_instance->Initialize();
 
-    log_info("{} has finished loading.", plugin->GetName());
+    logger::info("{} has finished loading.", plugin->GetName());
     InitializeMessaging();
     return true;
 }
@@ -79,6 +80,7 @@ void InitializeMessaging()
         }
     });
 }
+} // namespace SksePlugin
 
 namespace Ime
 {
@@ -186,14 +188,14 @@ void ImeApp::D3DInit()
     {
         app.m_state.SetState(State::StateKey::INITIALIZE_FAILED);
         auto message = std::format("SimpleIME initialize fail: \n {}", error.what());
-        log_error(message.c_str());
+        logger::error(message.c_str());
         g_pInitErrorMessageShow->PushMessage(std::move(message));
     }
     catch (...)
     {
         app.m_state.SetState(State::StateKey::INITIALIZE_FAILED);
         auto message = std::string("SimpleIME: Unknown fatal error during D3DInit.");
-        log_error(message.c_str());
+        logger::error(message.c_str());
         g_pInitErrorMessageShow->PushMessage(std::move(message));
     }
 
@@ -216,14 +218,14 @@ void ImeApp::OnD3DInit()
     }
 
     const auto &renderData = renderManager->GetRuntimeData();
-    log_debug("Getting SwapChain...");
+    logger::debug("Getting SwapChain...");
     auto *pSwapChain = renderData.renderWindows->swapChain;
     if (pSwapChain == nullptr)
     {
         throw SimpleIMEException("Cannot find SwapChain. Initialization failed!");
     }
 
-    log_debug("Getting SwapChain desc...");
+    logger::debug("Getting SwapChain desc...");
     REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
     if (pSwapChain->GetDesc(&swapChainDesc) < 0)
     {
@@ -235,7 +237,7 @@ void ImeApp::OnD3DInit()
 
     Start(renderData);
 
-    log_debug("Hooking Skyrim WndProc...");
+    logger::debug("Hooking Skyrim WndProc...");
     RealWndProc =
         reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
     if (RealWndProc == nullptr)
@@ -259,7 +261,7 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 
     ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
     ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
-    const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
+    const auto iconFile = utils::GetInterfaceFile(Settings::ICON_FILE);
     auto      *iconFont = ImGuiManager::AddFont(iconFile); // FIXME:: should move to ImeUI after refactor ImeUI
     if (iconFont == nullptr)
     {
@@ -287,14 +289,15 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
                 ensureInitialized.set_exception(std::current_exception());
             }
             catch (...)
-            { // set_exception() may throw too
+            {
+                // set_exception() may throw too
             }
         }
     });
 
     if (initialized.wait_for(INIT_TIMEOUT_SECONDS) == std::future_status::timeout)
     {
-        log_error("IME Window initialization timed out!");
+        logger::error("IME Window initialization timed out!");
 
         if (childWndThread.joinable())
         {
@@ -305,7 +308,7 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
                 });
                 if (future.wait_for(1s) == std::future_status::timeout)
                 {
-                    log_warn("IME thread did not respond to WM_CLOSE, detaching...");
+                    logger::warn("IME thread did not respond to WM_CLOSE, detaching...");
                 }
             }
         }
@@ -317,12 +320,12 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 // FIXME: is safe?
 void ImeApp::Shutdown()
 {
-    LogStacktrace();
+    logger::LogStacktrace();
     m_state.SetState(State::StateKey::SHUTDOWN);
-    log_info("Force close ImeWnd...");
+    logger::info("Force close ImeWnd...");
     if (!m_imeWnd.SendNotifyMessageToIme(WM_QUIT, 0, 0))
     {
-        log_error("Can't close ImeWnd! May IME uninitialized?");
+        logger::error("Can't close ImeWnd! May IME uninitialized?");
     }
     Uninitialize();
 }
@@ -345,7 +348,7 @@ void ImeApp::UninstallHooks()
 
 void ImeApp::LogAlreadyInitialized() const
 {
-    log_warn("Already Initialized! Current state: {}", m_state.GetStateKetText());
+    logger::warn("Already Initialized! Current state: {}", m_state.GetStateKetText());
 }
 
 void ImeApp::Draw()
@@ -362,7 +365,7 @@ void ImeApp::Draw()
     }
     catch (std::exception &e)
     {
-        log_warn("Unexpected exception: {}. Quit!", e.what());
+        logger::warn("Unexpected exception: {}. Quit!", e.what());
         RE::DebugMessageBox("Unexpected exception. SimpleIME will close.");
         Shutdown();
     }
@@ -401,7 +404,6 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
     return RealWndProc(hWnd, uMsg, wParam, lParam);
 }
 } // namespace Ime
-} // namespace LIBC_NAMESPACE_DECL
 
 BOOL APIENTRY DllMain(HMODULE, DWORD ul_reason, LPVOID)
 {

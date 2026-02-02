@@ -8,7 +8,7 @@
 #include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SksePlugin
 {
 void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::level::level_enum flushLevel)
 {
@@ -34,37 +34,37 @@ bool PluginLoad(const SKSE::LoadInterface *skse)
     try
     {
         Init(skse, false);
-        PluginInit();
+        Initialize();
         return true;
     }
     catch (std::exception &exception)
     {
-        log_error("Fatal error, SimpleIME init fail: {}", exception.what());
-        LogStacktrace();
+        logger::error("Fatal error, SimpleIME init fail: {}", exception.what());
+        logger::LogStacktrace();
     }
     catch (...)
     {
-        log_error("Fatal error. occur unknown exception.");
-        LogStacktrace();
+        logger::error("Fatal error. occur unknown exception.");
+        logger::LogStacktrace();
     }
     return false;
 }
 
 int ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *)
 {
-    log_critical("System exception (code {}) raised during plugin initialization.", code);
-    LogStacktrace();
+    logger::critical("System exception (code {}) raised during plugin initialization.", code);
+    logger::LogStacktrace();
     return EXCEPTION_CONTINUE_SEARCH;
 }
-}
+} // namespace SksePlugin
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse)
 {
     __try
     {
-        return LIBC_NAMESPACE::PluginLoad(skse);
+        return SksePlugin::PluginLoad(skse);
     }
-    __except (LIBC_NAMESPACE::ErrorHandler(GetExceptionCode(), GetExceptionInformation()))
+    __except (SksePlugin::ErrorHandler(GetExceptionCode(), GetExceptionInformation()))
     {
     }
     return false;

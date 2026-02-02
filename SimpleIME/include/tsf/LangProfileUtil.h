@@ -28,8 +28,6 @@ struct hash<GUID>
 };
 } // namespace std
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 struct LangProfile
@@ -89,5 +87,5 @@ private:
     GUID                                  m_activatedProfile = GUID_NULL;
 };
 } // namespace Ime
-} // namespace LIBC_NAMESPACE_DECL
+
 #endif

@@ -5,8 +5,6 @@
 #pragma once
 #include "RE/G/GRect.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class FocusGFxCharacterInfo
@@ -68,5 +66,4 @@ private:
     void UpdateCaretCharBoundaries(const RE::GFxValue &charBoundaries);
     void ConvertBoundariesToScreen(RE::GFxMovieView *movieView, const char* path);
 };
-}
 }

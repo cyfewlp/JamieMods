@@ -3,13 +3,9 @@
 
 #pragma once
 
-#include "common/config.h"
-
 #include <string>
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 class WCharUtils
 {
 public:
@@ -60,6 +56,5 @@ public:
         return false;
     }
 };
-} // namespace LIBC_NAMESPACE_DECL
 
 #endif

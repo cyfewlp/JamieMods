@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "ui/DebounceTimer.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/ImFontWrap.h"
@@ -14,8 +13,6 @@
 
 struct ImGuiTextFilter;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class FontPreviewPanel
@@ -98,5 +95,4 @@ public:
 private:
     InteractState m_interactState;
 };
-}
 }

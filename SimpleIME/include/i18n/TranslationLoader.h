@@ -4,13 +4,10 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "common/i18n/Translator.h"
 
 #include <filesystem>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class TranslationLoader
@@ -31,5 +28,4 @@ public:
 private:
     auto LoadFromFile(const std::filesystem::path &file) const -> std::optional<i18n::Translator>;
 };
-}
 }

@@ -5,11 +5,8 @@
 #pragma once
 
 #include "Settings.h"
-#include "common/config.h"
 #include "imgui.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 class M3Styles;
@@ -45,5 +42,4 @@ private:
      */
     static void ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos);
 };
-}
 }

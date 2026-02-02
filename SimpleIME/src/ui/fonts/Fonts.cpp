@@ -16,8 +16,6 @@
 #include "ui/fonts/FontPreviewPanel.h"
 #include "ui/fonts/ImFontWrap.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 static constexpr auto PREVIEW_TEXT = {
@@ -688,5 +686,4 @@ void FontPreviewPanel::Cleanup()
     m_state = State::NOT_SELECTED_FONT;
 }
 
-}
 }

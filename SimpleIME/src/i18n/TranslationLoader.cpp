@@ -10,9 +10,6 @@
 #include <iostream>
 #include <regex>
 
-namespace LIBC_NAMESPACE_DECL
-{
-
 void Ime::TranslationLoader::ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &languages)
 {
     namespace fs = std::filesystem;
@@ -104,12 +101,11 @@ auto Ime::TranslationLoader::LoadFromFile(const std::filesystem::path &file) con
     }
     catch (std::exception &e)
     {
-        log_warn("Load translate file from {} fail! {}", file.generic_string(), e.what());
+        logger::warn("Load translate file from {} fail! {}", file.generic_string(), e.what());
     }
     catch (...)
     {
-        log_warn("Load translate file from {} fail!", file.generic_string());
+        logger::warn("Load translate file from {} fail!", file.generic_string());
     }
     return std::nullopt;
-}
 }

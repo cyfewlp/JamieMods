@@ -4,13 +4,11 @@
 
 #pragma once
 
-#include "common/config.h"
+#include "common/utils.h"
 
 #include <imgui.h>
 #include <utility>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx
 {
 
@@ -873,5 +871,27 @@ FLAGS_CLASS_FUNCTION(ColorEditFlags, InputRGB)
 FLAGS_CLASS_FUNCTION(ColorEditFlags, InputHSV)
 FLAGS_CLASS_END(ColorEditFlags)
 
+constexpr auto HexToU32(std::string_view hex) -> std::optional<ImU32>
+{
+    if (hex.size() != 7 || !hex.starts_with("#")) return std::nullopt;
+
+    auto hexSv1 = hex.substr(1);
+
+    auto get_byte = [&](size_t idx, uint32_t &col) -> bool {
+        auto p1 = utils::HexCharToInt(hexSv1[idx * 2]);
+        if (p1 == UINT8_MAX) return false;
+        auto p2 = utils::HexCharToInt(hexSv1[idx * 2 + 1]);
+        if (p2 == UINT8_MAX) return false;
+        col = p1 << 4 | p2;
+        return true;
+    };
+
+    uint32_t r = 0, g = 0, b = 0;
+    if (get_byte(0, r) && get_byte(1, g) && get_byte(2, b))
+    {
+        return IM_COL32_A_MASK | b << IM_COL32_B_SHIFT | g << IM_COL32_G_SHIFT | r;
+    }
+    return std::nullopt;
 }
+
 }

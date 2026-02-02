@@ -3,7 +3,6 @@
 //
 #include "configs/ConfigSerializer.h"
 
-#include "common/config.h"
 #include "common/log.h"
 #include "common/toml/toml.hpp"
 #include "ui/Settings.h"
@@ -20,9 +19,9 @@
 namespace toml
 {
 template <>
-struct from<LIBC_NAMESPACE::Ime::Settings::WindowPosUpdatePolicy>
+struct from<Ime::Settings::WindowPosUpdatePolicy>
 {
-    using Policy = LIBC_NAMESPACE::Ime::Settings::WindowPosUpdatePolicy;
+    using Policy = Ime::Settings::WindowPosUpdatePolicy;
 
     static Policy from_toml(const toml::value &v)
     {
@@ -64,12 +63,11 @@ struct from<spdlog::level::level_enum>
 
 } // toml
 
-namespace LIBC_NAMESPACE_DECL
+namespace Ime::ConfigSerializer
 {
-namespace Ime
+namespace
 {
-
-static auto toString(const Settings::WindowPosUpdatePolicy policy) -> std::string
+auto toString(const Settings::WindowPosUpdatePolicy policy) -> std::string
 {
     switch (policy)
     {
@@ -82,7 +80,7 @@ static auto toString(const Settings::WindowPosUpdatePolicy policy) -> std::strin
     }
 }
 
-static auto toString(const spdlog::level::level_enum &level) -> std::string
+auto toString(const spdlog::level::level_enum &level) -> std::string
 {
     switch (level)
     {
@@ -105,7 +103,66 @@ static auto toString(const spdlog::level::level_enum &level) -> std::string
     }
 }
 
-void ConfigSerializer::Deserialize(const std::filesystem::path &filePath, Settings &settings)
+toml::table toTomlTable(Settings &settings)
+{
+    using Comments = std::vector<std::string>;
+
+    static Comments const shortcutKeyComment = {" 快捷键配置 (使用标准的 Hex 格式)", " DIK_F1 = 0x3B, DIK_F2 = 0x3C..."};
+    static Comments enableTsfComment = {" 现代输入法建议开启，旧版输入法可能不兼容"};
+    static Comments enableModComment = {" 是否启用 Mod 功能"};
+    static Comments logLevelComment = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
+
+    toml::value shortKey{settings.shortcutKey, shortcutKeyComment};
+    shortKey.as_integer_fmt().uppercase = true;
+    shortKey.as_integer_fmt().fmt = toml::integer_format::hex;
+
+    toml::table logging{
+        {"level", {toString(settings.logging.level), logLevelComment}},
+        {"flush_level", toString(settings.logging.flushLevel)},
+    };
+    return {
+        {"shortcut_key", shortKey},
+        {"enable_tsf", {settings.enableTsf, enableTsfComment}},
+        {"enable_mod", {settings.enableMod, enableModComment}},
+        {"logging", logging}
+    };
+}
+
+toml::table toTomlTable(Settings::Appearance &appearance)
+{
+    return {
+        {"zoom", {appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25的整数倍"}}},
+        {"language", appearance.language},
+        {"theme_source_color", appearance.themeSourceColor},
+        {"theme_dark_mode", appearance.themeDarkMode},
+        {"error_display_duration", {appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
+        {"show_settings", appearance.showSettings},
+    };
+}
+
+toml::table toTomlTable(Settings::Resources &resources)
+{
+    return {
+        {"translation_dir", {resources.translationDir, {" 翻译文件目录"}}},
+        {"fonts", resources.fontPathList},
+    };
+}
+
+toml::table toTomlTable(Settings::Input &input)
+{
+    return {
+        {"enable_unicode_paste", input.enableUnicodePaste},
+        {"keep_ime_open", input.keepImeOpen},
+        {"pos_update_policy", toString(input.posUpdatePolicy)},
+    };
+}
+}
+
+void DoDeserialize(toml::value &config, Settings &settings);
+
+auto DoSerialize(Settings &settings) -> toml::value;
+
+void Deserialize(const std::filesystem::path &filePath, Settings &settings)
 {
     try
     {
@@ -114,11 +171,38 @@ void ConfigSerializer::Deserialize(const std::filesystem::path &filePath, Settin
     }
     catch (toml::exception &exception)
     {
-        log_error("Parse configuration failed! Fallback to default configuration: {}", exception.what());
+        logger::error("Parse configuration failed! Fallback to default configuration: {}", exception.what());
     }
 }
 
-void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
+void Serialize(const std::filesystem::path &filePath, Settings &settings)
+{
+    try
+    {
+        const auto settingsValue = DoSerialize(settings);
+
+        std::ofstream file;
+        file.exceptions(std::ios::failbit | std::ios::badbit);
+        file.open(filePath, std::ios::out | std::ios::trunc);
+        file << toml::format(settingsValue);
+        file.close();
+        logger::info("Configuration saved successfully to {}", filePath.generic_string());
+    }
+    catch (const std::ios_base::failure &e)
+    {
+        logger::error("File IO error while saving configuration: {}", e.what());
+    }
+    catch (toml::exception &exception)
+    {
+        logger::error("Parse configuration failed! Can't save configuration: {}", exception.what());
+    }
+    catch (const std::exception &e)
+    {
+        logger::error("Unknown error during serialization: {}", e.what());
+    }
+}
+
+void DoDeserialize(toml::value &config, Settings &settings)
 {
     auto findAndSet = [](auto &tomlTable, const char *key, auto &value) {
         value = toml::find_or(tomlTable, key, value);
@@ -129,7 +213,7 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
         findAndSet(core, "shortcut_key", settings.shortcutKey);
         findAndSet(core, "enable_tsf", settings.enableTsf);
         findAndSet(core, "enable_mod", settings.enableMod);
-        settings.logging.level      = toml::find_or(core, "logging", "level", settings.logging.level);
+        settings.logging.level = toml::find_or(core, "logging", "level", settings.logging.level);
         settings.logging.flushLevel = toml::find_or(core, "logging", "flush_level", settings.logging.flushLevel);
     }
 
@@ -160,102 +244,19 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
     }
 }
 
-void ConfigSerializer::Serialize(const std::filesystem::path &filePath, Settings &settings)
+auto DoSerialize(Settings &settings) -> toml::value
 {
-    try
-    {
-        auto settingsValue = DoSerialize(settings);
-
-        std::ofstream file;
-        file.exceptions(std::ios::failbit | std::ios::badbit);
-        file.open(filePath, std::ios::out | std::ios::trunc);
-        file << toml::format(settingsValue);
-        file.close();
-        log_info("Configuration saved successfully to {}", filePath.generic_string());
-    }
-    catch (const std::ios_base::failure &e)
-    {
-        log_error("File IO error while saving configuration: {}", e.what());
-    }
-    catch (toml::exception &exception)
-    {
-        log_error("Parse configuration failed! Can't save configuration: {}", exception.what());
-    }
-    catch (const std::exception &e)
-    {
-        log_error("Unknown error during serialization: {}", e.what());
-    }
-}
-
-static toml::table CoreTomlTable(Settings &settings)
-{
-    using Comments = std::vector<std::string>;
-
-    static Comments shortcutKeyComment = {" 快捷键配置 (使用标准的 Hex 格式)", " DIK_F1 = 0x3B, DIK_F2 = 0x3C..."};
-    static Comments enableTsfComment   = {" 现代输入法建议开启，旧版输入法可能不兼容"};
-    static Comments enableModComment   = {" 是否启用 Mod 功能"};
-    static Comments logLevelComment    = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
-
-    toml::value shortKey{settings.shortcutKey, shortcutKeyComment};
-    shortKey.as_integer_fmt().uppercase = true;
-    shortKey.as_integer_fmt().fmt       = toml::integer_format::hex;
-
-    toml::table logging{
-        {"level",       {toString(settings.logging.level), logLevelComment}},
-        {"flush_level", toString(settings.logging.flushLevel)              },
-    };
-    return {
-        {"shortcut_key", shortKey                              },
-        {"enable_tsf",   {settings.enableTsf, enableTsfComment}},
-        {"enable_mod",   {settings.enableMod, enableModComment}},
-        {"logging",      logging                               }
-    };
-}
-
-static toml::table AppearanceTomlTable(Settings &settings)
-{
-    return {
-        {"zoom",                   {settings.appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25的整数倍"}}},
-        {"language",               settings.appearance.language                                               },
-        {"theme_source_color",     settings.appearance.themeSourceColor                                       },
-        {"theme_dark_mode",        settings.appearance.themeDarkMode                                          },
-        {"error_display_duration",
-         {settings.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}          },
-        {"show_settings",          settings.appearance.showSettings                                           },
-    };
-}
-
-static toml::table ResourcesTomlTable(Settings &settings)
-{
-    return {
-        {"translation_dir", {settings.resources.translationDir, {" 翻译文件目录"}}},
-        {"fonts",           settings.resources.fontPathList                       },
-    };
-}
-
-static toml::table InputTomlTable(Settings &settings)
-{
-    return {
-        {"enable_unicode_paste", settings.input.enableUnicodePaste       },
-        {"keep_ime_open",        settings.input.keepImeOpen              },
-        {"pos_update_policy",    toString(settings.input.posUpdatePolicy)},
-    };
-}
-
-auto ConfigSerializer::DoSerialize(Settings &settings) -> toml::value
-{
-    toml::value core{CoreTomlTable(settings)};
-    toml::value resources{ResourcesTomlTable(settings)};
-    toml::value appearance{AppearanceTomlTable(settings)};
-    toml::value input{InputTomlTable(settings)};
+    toml::value core{toTomlTable(settings)};
+    toml::value resources{toTomlTable(settings.resources)};
+    toml::value appearance{toTomlTable(settings.appearance)};
+    toml::value input{toTomlTable(settings.input)};
     return {
         toml::table{
-                    {"core", core},
-                    {"resources", resources},
-                    {"appearance", appearance},
-                    {"input", input},
-                    }
+            {"core", core},
+            {"resources", resources},
+            {"appearance", appearance},
+            {"input", input},
+        }
     };
-}
 }
 }

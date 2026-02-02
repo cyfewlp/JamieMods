@@ -5,8 +5,6 @@
 #include "ui/Settings.h"
 #include "ui/TaskQueue.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -85,5 +83,4 @@ private:
 
     static void Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings);
 };
-}
 }

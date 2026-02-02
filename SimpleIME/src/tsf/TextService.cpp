@@ -6,8 +6,6 @@
 #include "tsf/TextStore.h"
 #include "tsf/TsfSupport.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
 HRESULT TextService::Initialize()
@@ -27,9 +25,7 @@ HRESULT TextService::Initialize()
     if (SUCCEEDED(hresult))
     {
         hresult = m_pCompartmentKeyBoard->Initialize(
-            tsfSupport.GetThreadMgr(),
-            GUID_COMPARTMENT_KEYBOARD_OPENCLOSE,
-            [](const GUID *, const ULONG ulong) {
+            tsfSupport.GetThreadMgr(), GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, [](const GUID *, const ULONG ulong) {
                 State::GetInstance().Set(State::KEYBOARD_OPEN, ulong != 0);
                 return S_OK;
             }
@@ -54,7 +50,7 @@ void TextService::UpdateConversionMode() const
 
 void TextService::DoUpdateConversionMode(const ULONG convertionMode)
 {
-    log_trace("DoUpdateConversionMode");
+    logger::trace("DoUpdateConversionMode");
     State::GetInstance().Set(
         State::IN_ALPHANUMERIC, (convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC
     );
@@ -91,4 +87,3 @@ auto TextService::ProcessImeMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
     return false;
 }
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL

@@ -10,7 +10,7 @@
 
 #define LIBC_NAMESPACE __llvm_libc_simpleime
 
-#include "common/config.h" // NOLINT
+// NOLINT
 
 using namespace std::literals;
 
@@ -21,5 +21,5 @@ class SimpleIMEException : public std::runtime_error
 public:
     int code;
 
-    explicit SimpleIMEException(const std::string &_Message, int a_code = 0) : code(a_code), runtime_error(_Message) {}
+    explicit SimpleIMEException(const std::string &_Message, int a_code = 0) : runtime_error(_Message), code(a_code) {}
 };

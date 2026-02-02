@@ -10,12 +10,10 @@
 #include <stdexcept>
 #include <unordered_map>
 
-namespace LIBC_NAMESPACE_DECL
-{
 auto Ime::LangProfileUtil::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
 {
     _ATL_COM_BEGIN
-    log_debug("Initializing LangProfileUtil...");
+    logger::debug("Initializing LangProfileUtil...");
     HRESULT hresult = lpThreadMgr->QueryInterface(IID_PPV_ARGS(&m_lpThreadMgr));
     ATLENSURE_SUCCEEDED(hresult);
 
@@ -85,12 +83,12 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
                     if (WCharUtils::ToString(bstrDesc, bstrDesc.Length(), langProfile.desc))
                     {
                         m_langProfiles[profile.guidProfile] = langProfile;
-                        log_info("Load installed ime: {}", langProfile.desc.c_str());
+                        logger::info("Load installed ime: {}", langProfile.desc.c_str());
                     }
                 }
             }
         }
-        LangProfile engProfile = {};
+        LangProfile engProfile    = {};
         engProfile.clsid          = CLSID_NULL;
         engProfile.langid         = LANGID_ENG; // english keyboard
         engProfile.guidProfile    = GUID_NULL;
@@ -99,7 +97,7 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
     }
     catch (std::runtime_error &error)
     {
-        log_error("LoadIme failed: {}", error.what());
+        logger::error("LoadIme failed: {}", error.what());
     }
     return SUCCEEDED(hresult);
 }
@@ -130,7 +128,7 @@ auto Ime::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) -> bool
     );
     if (FAILED(hresult))
     {
-        log_error("Active profile {} failed: {}", profile.desc, Tsf::ToErrorMessage(hresult));
+        logger::error("Active profile {} failed: {}", profile.desc, Tsf::ToErrorMessage(hresult));
     }
     return SUCCEEDED(hresult);
 }
@@ -145,7 +143,7 @@ auto Ime::LangProfileUtil::LoadActiveIme() noexcept -> bool
         return true;
     }
 
-    log_error("Load active IME failed.");
+    logger::error("Load active IME failed.");
     return false;
 }
 
@@ -214,4 +212,3 @@ void Ime::LangProfileUtil::UpdateLangProfileState() const
 {
     State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile != GUID_NULL);
 }
-} // namespace LIBC_NAMESPACE_DECL

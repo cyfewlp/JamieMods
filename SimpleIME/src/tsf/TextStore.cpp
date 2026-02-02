@@ -10,8 +10,6 @@
 #include <olectl.h>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
 TextStore::~TextStore()
@@ -43,7 +41,7 @@ auto TextStore::Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfC
     HRESULT __hrAtlComMethod;
     try
     {
-        log_debug("Initializing TextStore...");
+        logger::debug("Initializing TextStore...");
         ATLENSURE_SUCCEEDED(lpThreadMgr.QueryInterface(&m_threadMgr));
         ATLENSURE_SUCCEEDED(m_threadMgr->CreateDocumentMgr(&m_documentMgr));
 
@@ -64,7 +62,7 @@ auto TextStore::Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfC
     {
         __hrAtlComMethod = E_FAIL;
     }
-    log_error("Failed initialize TextStore: {}", ToErrorMessage(__hrAtlComMethod));
+    logger::error("Failed initialize TextStore: {}", ToErrorMessage(__hrAtlComMethod));
     return __hrAtlComMethod;
 }
 
@@ -111,11 +109,11 @@ auto TextStore::Focus() -> HRESULT
 {
     if (m_threadMgr == nullptr || m_hWnd == nullptr || m_documentMgr == nullptr)
     {
-        log_debug("Can't associate focus. Please first Initialize & set hwnd");
+        logger::debug("Can't associate focus. Please first Initialize & set hwnd");
         return E_FAIL;
     }
     auto &state = State::GetInstance();
-    log_debug("Associate Focus");
+    logger::debug("Associate Focus");
     m_pPrevDocMgr.Release();
     HRESULT hr = m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
     if (SUCCEEDED(hr))
@@ -127,7 +125,7 @@ auto TextStore::Focus() -> HRESULT
 
 auto TextStore::ClearFocus() const -> HRESULT
 {
-    log_debug("Clear Focus");
+    logger::debug("Clear Focus");
     auto                   &state = State::GetInstance();
     CComPtr<ITfDocumentMgr> tempDocMgr;
     HRESULT                 hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
@@ -510,7 +508,7 @@ auto TextStore::InsertTextAtSelection(
     }
 
     LONG acpNewEnd = m_pTextEditor->InsertText(pwszText, cch);
-    log_trace("TextStore::{} {}, {}, {}, count {}", __func__, acpStart, acpOldEnd, acpNewEnd, cch);
+    logger::trace("TextStore::{} {}, {}, {}, count {}", __func__, acpStart, acpOldEnd, acpNewEnd, cch);
 
     if ((dwFlags & TS_IAS_NOQUERY) != TS_IAS_NOQUERY)
     {
@@ -716,7 +714,7 @@ auto TextStore::InsertEmbeddedAtSelection(
 
 auto TextStore::OnStartComposition(ITfCompositionView *pComposition, BOOL *pfOk) -> HRESULT
 {
-    log_trace("TextStore::{} {}", __func__, m_cCompositions);
+    logger::trace("TextStore::{} {}", __func__, m_cCompositions);
     *pfOk = TRUE;
     if (m_cCompositions >= MAX_COMPOSITIONS)
     {
@@ -953,4 +951,3 @@ auto TextStore::IsLocked(const DWORD dwLockType) const -> bool
     return m_fLocked && (m_dwLockType & dwLockType) != 0U;
 }
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL

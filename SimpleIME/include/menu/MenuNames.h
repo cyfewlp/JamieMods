@@ -3,13 +3,8 @@
 //
 #pragma once
 
-#include "common/config.h"
-
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 constexpr auto ImeMenuName        = "SimpleImeMenu";
 constexpr auto ToolWindowMenuName = "SimpleIME ToolWindow";
-}
 }

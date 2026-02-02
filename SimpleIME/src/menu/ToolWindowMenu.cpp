@@ -8,13 +8,11 @@
 #include "ime/ImeController.h"
 #include "menu/MenuNames.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 void ToolWindowMenu::RegisterMenu()
 {
-    log_info("Registering ToolWindowMenu...");
+    logger::info("Registering ToolWindowMenu...");
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
         ui->Register(ToolWindowMenuName, Creator);
@@ -66,5 +64,4 @@ auto ToolWindowMenu::Creator() -> IMenu *
     return pMenu;
 }
 
-}
 }

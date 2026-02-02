@@ -60,21 +60,21 @@
 ----
 auto *ui      = RE::UI::GetSingleton();
 using Context = RE::UserEvents::INPUT_CONTEXT_IDS;
-log_debug("menu {}, open {}", a_event->menuName.c_str(), a_event->opening);
-log_debug("stack {}", ui->menuStack.size());
+logger::debug("menu {}, open {}", a_event->menuName.c_str(), a_event->opening);
+logger::debug("stack {}", ui->menuStack.size());
 auto hasInputContext = false;
 for (const auto &menu : ui->menuStack)
 {
     auto menuName = std::string(typeid(*menu.get()).name());
     menuName.erase(0, strlen("class "));
-    log_debug(
+    logger::debug(
         "  menu name {} context {} {:32b}", menuName,
         static_cast<uint32_t>(menu->inputContext.get()), static_cast<uint32_t>(menu->menuFlags.get()));
     // SE kNone = 18, AE kNone = 19
     // TODO can't dynamic activate IME by check inputContext: InventoryMenu(SkyUi) no inpuContext
     if (menu->inputContext.get() != 19 && !IsMenuDisableIme(menuName))
     {
-        log_debug("=====Has Input Context");
+        logger::debug("=====Has Input Context");
         hasInputContext = true;
         break;
     }

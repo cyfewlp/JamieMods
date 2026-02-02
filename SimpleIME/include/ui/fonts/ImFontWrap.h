@@ -4,14 +4,10 @@
 
 #pragma once
 
-#include "common/config.h"
-
 #include <string>
 
 struct ImFont;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class ImFontWrap
@@ -126,5 +122,4 @@ public:
 private:
     inline void RemoveFontIfOwned() const;
 };
-}
 }

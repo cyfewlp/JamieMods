@@ -8,8 +8,6 @@
 #include <string>
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 struct CandWindowProp
@@ -83,12 +81,11 @@ struct CandidateUi
     }
 
 private:
+    std::list<std::string>    m_candidateList;
     DWORD                     m_dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
     DWORD                     m_dwSelection{0};
-    std::list<std::string>    m_candidateList;
     mutable std::shared_mutex m_mutex;
-} PACKED_ALIGN(64);
-
+};
 } // namespace Ime
-} // namespace LIBC_NAMESPACE_DECL
+
 #endif

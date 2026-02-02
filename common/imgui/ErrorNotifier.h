@@ -5,14 +5,10 @@
 #ifndef ERRORNOTIFIER_H
 #define ERRORNOTIFIER_H
 
-#include "common/config.h"
-
 #include <algorithm>
 #include <deque>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
-{
 struct ErrorMsg
 {
     enum class Level : std::uint8_t
@@ -91,6 +87,5 @@ private:
 
     static std::string currentTime();
 };
-}
 
 #endif // ERRORNOTIFIER_H

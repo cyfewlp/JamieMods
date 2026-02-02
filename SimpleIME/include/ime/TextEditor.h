@@ -8,8 +8,6 @@
 #include <TextStor.h>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class TextEditor
@@ -78,5 +76,5 @@ private:
     std::wstring              m_editorText;
 };
 } // namespace Ime
-} // namespace LIBC_NAMESPACE_DECL
+
 #endif

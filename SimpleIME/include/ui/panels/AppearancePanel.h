@@ -4,14 +4,11 @@
 
 #pragma once
 
-#include "common/config.h"
 #include "common/imgui/Material3.h"
 #include "i18n/TranslatorHolder.h"
 #include "imgui.h"
 #include "ui/Settings.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImGuiEx::M3
 {
 class M3Styles;
@@ -49,5 +46,4 @@ private:
     void LoadTranslation(std::string_view language) const;
 };
 
-}
 }

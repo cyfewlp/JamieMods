@@ -4,10 +4,6 @@
 
 #pragma once
 
-#include "common/config.h"
-
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 class IImeModule
@@ -38,5 +34,4 @@ public:
         return res == Result::FAILED;
     }
 };
-}
 }

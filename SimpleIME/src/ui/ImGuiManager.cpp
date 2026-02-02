@@ -21,8 +21,6 @@
 
 extern auto ImGui_ImplWin32_GetDpiScaleForHwnd(void *hwnd) -> float;
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 
@@ -30,12 +28,12 @@ void ImGuiManager::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceConte
 {
     if (g_initialized)
     {
-        log_warn("ImGui already initialized!");
+        logger::warn("ImGui already initialized!");
         return;
     }
     g_initialized = false;
 
-    log_info("Initializing ImGui...");
+    logger::info("Initializing ImGui...");
     ImGui::CreateContext();
     ImGui_ImplWin32_Init(hWnd);
     ImGui_ImplDX11_Init(device, context);
@@ -48,7 +46,7 @@ void ImGuiManager::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceConte
     settings.state.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
 
     g_initialized = true;
-    log_info("ImGui initialized!");
+    logger::info("ImGui initialized!");
 }
 
 auto ImGuiManager::AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
@@ -295,5 +293,4 @@ void ImGuiManager::ApplyM3Theme(ImGuiEx::M3::M3Styles &m3Styles)
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 
-}
 }

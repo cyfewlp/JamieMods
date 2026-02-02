@@ -6,8 +6,6 @@
 
 #include <REL/Relocation.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 
@@ -86,7 +84,7 @@ struct D3DInitHookData : HookData<void()>
     explicit D3DInitHookData(func_type *ptr)
         : HookData(REL::RelocationID(75595, 77226), REL::VariantOffset(0x9, 0x275, 0x00), ptr)
     {
-        log_debug("Installed {}: {}", __func__, ToString());
+        logger::debug("Installed {}: {}", __func__, ToString());
     }
 };
 
@@ -95,7 +93,7 @@ struct D3DPresentHookData : HookData<void(std::uint32_t)>
     explicit D3DPresentHookData(func_type *ptr)
         : HookData(REL::RelocationID(75461, 77246), REL::VariantOffset(0x9, 0x9, 0x00), ptr)
     {
-        log_debug("Installed {}: {}", __func__, ToString());
+        logger::debug("Installed {}: {}", __func__, ToString());
     }
 };
 
@@ -104,10 +102,9 @@ struct DispatchInputEventHookData : HookData<void(RE::BSTEventSource<RE::InputEv
     explicit DispatchInputEventHookData(func_type *ptr)
         : HookData(REL::RelocationID(67315, 68617), REL::VariantOffset(0x7B, 0x7B, 0x00), ptr)
     {
-        log_debug("Installed {}: {}", __func__, ToString());
+        logger::debug("Installed {}: {}", __func__, ToString());
     }
 };
-}
 }
 
 #endif // !COMMON_HOOK_H

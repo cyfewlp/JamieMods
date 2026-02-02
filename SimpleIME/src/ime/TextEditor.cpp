@@ -1,7 +1,5 @@
 #include "ime/TextEditor.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 auto Ime::TextEditor::Select(const long acpStart, const long acpEnd) -> void
 {
     m_acpSelection.acpStart = acpStart;
@@ -101,5 +99,4 @@ auto Ime::TextEditor::UnsafeGetText(
     {
         wcsncpy_s(lpWch, bufferSize, m_editorText.substr(offset).c_str(), cchRequire);
     }
-}
 }

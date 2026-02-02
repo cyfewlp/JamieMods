@@ -12,8 +12,6 @@
 #include <atlcomcli.h>
 #include <msctf.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
 struct FuncTracer
@@ -59,14 +57,14 @@ struct AdviseSinkCache
         pTextStoreAcpSink.Release();
         dwMask = 0;
     }
-} PACKED_ALIGN(32);
+};
 
 struct CandidateInfo
 {
     UINT  candidateCount = 0;
     UINT  pageSize       = 0;
     DWORD firstIndex     = 0;
-} ALIGN(16);
+};
 
 class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
 {
@@ -135,8 +133,9 @@ public:
      * position. This value cannot be outside the document range.
      * @return
      */
-    STDMETHODIMP QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG cch, LONG *pacpResultStart, LONG *pacpResultEnd)
-        override;
+    STDMETHODIMP QueryInsert(
+        LONG acpTestStart, LONG acpTestEnd, ULONG cch, LONG *pacpResultStart, LONG *pacpResultEnd
+    ) override;
     /**
      * returns the character position of a text selection in a document. This method supports multiple text
      * selections. The caller must have a read-only lock on the document before calling this method.
@@ -159,8 +158,9 @@ public:
     ) override;
     STDMETHODIMP GetFormattedText(LONG acpStart, LONG acpEnd, IDataObject **ppDataObject) override;
     STDMETHODIMP GetEmbedded(LONG acpPos, REFGUID rguidService, REFIID riid, IUnknown **ppunk) override;
-    STDMETHODIMP QueryInsertEmbedded(const GUID *pguidService, const FORMATETC *pFormatEtc, BOOL *pfInsertable)
-        override;
+    STDMETHODIMP QueryInsertEmbedded(
+        const GUID *pguidService, const FORMATETC *pFormatEtc, BOOL *pfInsertable
+    ) override;
     STDMETHODIMP InsertEmbedded(
         DWORD dwFlags, LONG acpStart, LONG acpEnd, IDataObject *pDataObject, TS_TEXTCHANGE *pChange
     ) override;
@@ -171,8 +171,9 @@ public:
         DWORD dwFlags, IDataObject *pDataObject, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
     ) override;
     STDMETHODIMP RequestSupportedAttrs(DWORD dwFlags, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs) override;
-    STDMETHODIMP RequestAttrsAtPosition(LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags)
-        override;
+    STDMETHODIMP RequestAttrsAtPosition(
+        LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags
+    ) override;
     STDMETHODIMP RequestAttrsTransitioningAtPosition(
         LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags
     ) override;
@@ -320,5 +321,5 @@ private:
     CComPtr<TextStore>           m_pTextStore           = nullptr;
 };
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL
+
 #endif

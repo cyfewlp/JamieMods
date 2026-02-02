@@ -6,8 +6,6 @@
     #include <atlcomcli.h>
     #include <msctf.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
 using CompartmentChangeCallback = std::function<HRESULT(const GUID *, ULONG)>;
@@ -42,6 +40,6 @@ private:
     CompartmentChangeCallback m_callback = nullptr;
 };
 } // namespace Tsf
-}
+
 #endif
 // namespace LIBC_NAMESPACE_DECL

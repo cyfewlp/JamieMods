@@ -3,15 +3,11 @@
 //
 #pragma once
 
-#include "common/config.h"
-
 #include <algorithm>
 #include <cstdint>
 #include <spdlog/common.h>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
 struct Settings
@@ -81,5 +77,4 @@ struct Settings
 
     bool operator==(const Settings &other) const = default;
 };
-}
 }
