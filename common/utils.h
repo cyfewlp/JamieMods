@@ -7,6 +7,7 @@
 
 #include "config.h"
 
+#include <filesystem>
 #include <format>
 #include <optional>
 #include <string>
@@ -25,6 +26,11 @@ public:
         return std::format("Data\\interface\\{}\\{}", pluginName, fileName);
     }
 #endif
+
+    static constexpr auto GetInterfacePath() -> std::filesystem::path
+    {
+        return "Data/interface";
+    }
 
     static constexpr uint8_t HexCharToInt(char c)
     {

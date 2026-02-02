@@ -105,11 +105,11 @@ static auto toString(const spdlog::level::level_enum &level) -> std::string
     }
 }
 
-void ConfigSerializer::Deserialize(const std::string &fileName, Settings &settings)
+void ConfigSerializer::Deserialize(const std::filesystem::path &filePath, Settings &settings)
 {
     try
     {
-        auto config = toml::parse(fileName);
+        auto config = toml::parse(filePath);
         DoDeserialize(config, settings);
     }
     catch (toml::exception &exception)
@@ -160,7 +160,7 @@ void ConfigSerializer::DoDeserialize(toml::value &config, Settings &settings)
     }
 }
 
-void ConfigSerializer::Serialize(const std::string &fileName, Settings &settings)
+void ConfigSerializer::Serialize(const std::filesystem::path &filePath, Settings &settings)
 {
     try
     {
@@ -168,10 +168,10 @@ void ConfigSerializer::Serialize(const std::string &fileName, Settings &settings
 
         std::ofstream file;
         file.exceptions(std::ios::failbit | std::ios::badbit);
-        file.open(fileName, std::ios::out | std::ios::trunc);
+        file.open(filePath, std::ios::out | std::ios::trunc);
         file << toml::format(settingsValue);
         file.close();
-        log_info("Configuration saved successfully to {}", fileName);
+        log_info("Configuration saved successfully to {}", filePath);
     }
     catch (const std::ios_base::failure &e)
     {

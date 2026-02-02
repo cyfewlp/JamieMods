@@ -9,10 +9,6 @@
 #include <imgui.h>
 #include <utility>
 
-static constexpr auto IM_COL32_R_MASK = 0xFF;
-static constexpr auto IM_COL32_G_MASK = 0xFF00;
-static constexpr auto IM_COL32_B_MASK = 0xFF0000;
-
 namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx

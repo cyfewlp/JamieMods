@@ -14,7 +14,7 @@
 
 using namespace std::literals;
 
-static constexpr int DIRECTINPUT_ACQUIRE_FAILED = 0x1;
+static constexpr auto SIMPLE_IME = "SimpleIME";
 
 class SimpleIMEException : public std::runtime_error
 {

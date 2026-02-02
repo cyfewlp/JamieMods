@@ -8,7 +8,6 @@
 
 #include "ImeWnd.hpp"
 #include "common/config.h"
-#include "common/imgui/ErrorNotifier.h"
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
 #include "common/imgui/imgui_m3_ex.h"
@@ -28,13 +27,10 @@
 #include <RE/U/UIMessageQueue.h>
 #include <cguid.h>
 #include <cstdint>
-#include <expected>
 #include <format>
 #include <minwindef.h>
-#include <optional>
 #include <string>
 #include <utility>
-#include <vector>
 #include <winnt.h>
 
 #pragma comment(lib, "dwrite.lib")
@@ -70,31 +66,9 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
     return true;
 }
 
-void ImeUI::ApplyAppearanceSettings(Settings &settings)
+void ImeUI::ApplySettings(Settings &settings)
 {
-    auto &appearance = settings.appearance;
-    m_panelAppearance.ApplyM3Theme();
-
-    TranslationLoader::ScanLanguages(TRANSLATE_FILES_DIR, m_translateLanguages);
-    if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
-        langIt == m_translateLanguages.end())
-    {
-        appearance.language = "english";
-    }
-
-    if (auto accessorOpt = TranslatorHolder::RequestUpdateHandle())
-    {
-        m_i18nHandle.emplace(accessorOpt.value());
-    }
-    else
-    {
-        throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
-    }
-    LoadTranslation(appearance.language);
-
-    appearance.zoom = std::min(2.0f, appearance.zoom);
-    appearance.zoom = std::max(0.5f, appearance.zoom);
-    m_styles.UpdateScaling(appearance.zoom);
+    m_panelAppearance.ApplySettings(settings.appearance);
 }
 
 void ImeUI::DrawInputMethodsCombo() const
@@ -276,7 +250,7 @@ void ImeUI::DrawSettings(Settings &settings)
         switch (currentMenu.first)
         {
             case Menu::Appearance:
-                DrawMenuAppearance(settings, currentMenu.second);
+                DrawMenuAppearance(settings);
                 break;
             case Menu::FontBuilder:
                 DrawMenuFontBuilder(settings);
@@ -292,14 +266,12 @@ void ImeUI::DrawSettings(Settings &settings)
     imeManager->SyncImeStateIfDirty();
 }
 
-void ImeUI::DrawMenuAppearance(Settings &settings, const bool appearing)
+void ImeUI::DrawMenuAppearance(Settings &settings)
 {
-    m_panelAppearance.Draw(appearing);
-
-    DrawSettingsContent(settings); // FIXME: slice to menus
+    m_panelAppearance.Draw(settings);
 
     // sync theme config
-    settings.appearance.themeSourceColor = m_styles.Colors().SeedArgb();
+    settings.appearance.themeSourceColor = m_styles.Colors().SourceColor();
     settings.appearance.themeDarkMode    = m_styles.Colors().DarkMode();
 }
 
@@ -308,9 +280,7 @@ void ImeUI::DrawMenuFontBuilder(Settings &settings)
     m_fontBuilderView.Draw(m_fontBuilder, settings);
 }
 
-void ImeUI::DrawMenuBehaviour(Settings &settings) {}
-
-void ImeUI::DrawModConfig(Settings &settings)
+void ImeUI::DrawMenuBehaviour(Settings &settings) const
 {
     bool enableMod = settings.enableMod;
     if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod").data(), &enableMod))
@@ -318,18 +288,14 @@ void ImeUI::DrawModConfig(Settings &settings)
         ImeController::GetInstance()->EnableMod(enableMod);
     }
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableModToolTip").data());
-
-    DrawFontConfig(settings);
-
-    if (DrawCombo(
-            Translate("Settings.Appearance.Languages").data(), m_translateLanguages, settings.appearance.language
-        ))
+    if (!settings.enableMod)
     {
-        LoadTranslation(settings.appearance.language);
+        return;
     }
-}
 
-void ImeUI::DrawFontConfig(Settings &settings) {}
+    DrawStates();
+    DrawFeatures(settings);
+}
 
 void ImeUI::DrawFeatures(Settings &settings)
 {
@@ -344,45 +310,6 @@ void ImeUI::DrawFeatures(Settings &settings)
         ImeController::GetInstance()->MarkDirty();
     }
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.KeepImeOpenTooltip").data());
-}
-
-void ImeUI::DrawSettingsContent(Settings &settings)
-{
-    DrawModConfig(settings);
-    if (!settings.enableMod)
-    {
-        return;
-    }
-
-    DrawStates();
-    DrawFeatures(settings);
-}
-
-auto ImeUI::DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected) -> bool
-{
-    bool clicked = false;
-    if (ImGui::BeginCombo(label, selected.c_str()))
-    {
-        int32_t idx = 0;
-        for (const auto &language : values)
-        {
-            ImGui::PushID(idx);
-            const bool isSelected = selected == language;
-            if (ImGui::Selectable(language.c_str(), isSelected) && !isSelected)
-            {
-                selected = language;
-                clicked  = true;
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-            ImGui::PopID();
-            idx++;
-        }
-        ImGui::EndCombo();
-    }
-    return clicked;
 }
 
 void ImeUI::DrawStates() const
@@ -479,27 +406,6 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
         Translate("Settings.Behaviour.ImePos.UpdateByNone").data(), &settings.input.posUpdatePolicy, Policy::NONE
     );
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip").data());
-}
-
-// FIXME: Handle error
-void ImeUI::LoadTranslation(const std::string_view language) const
-{
-    if (!m_i18nHandle) return;
-    const TranslationLoader loader(TRANSLATE_FILES_DIR, "Settings");
-
-    if (auto opt = loader.LoadFrom(language); opt)
-    {
-        m_i18nHandle->Update(std::move(opt.value()));
-    }
-}
-
-void ImeUI::FillCommonStyleFields(ImGuiStyle &style, const Settings &settings)
-{
-    if (settings.state.dpiScale != 1.0F)
-    {
-        style.ScaleAllSizes(settings.state.dpiScale);
-    }
-    style.FontScaleDpi = settings.state.dpiScale;
 }
 
 } // namespace  SimpleIME

@@ -344,7 +344,7 @@ void ImeWnd::ShowToolWindow() const
 
 void ImeWnd::ApplyUiSettings(Settings *pSettings) const
 {
-    m_pImeUi->ApplyAppearanceSettings(*pSettings);
+    m_pImeUi->ApplySettings(*pSettings);
     ImeController::GetInstance()->ApplyUiSettings(*pSettings);
 }
 

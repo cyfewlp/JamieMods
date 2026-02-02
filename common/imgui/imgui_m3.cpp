@@ -8,7 +8,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace ImGuiEx::M3
 {
-void M3Styles::RebuildColors(const uint32_t sourceColor, const bool isDark)
+void M3Styles::RebuildColors(const Argb sourceColor, const bool isDark)
 {
     ThemeBuilder::BuildThemeFromSeed(sourceColor, isDark, colors);
 }

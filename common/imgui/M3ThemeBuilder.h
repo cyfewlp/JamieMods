@@ -28,7 +28,7 @@ class ThemeBuilder
 
 public:
     static void BuildThemeFromSeed(uint32_t sourceColor, bool isDark, Colors &colors);
-    static auto BuildThemeFromSeed(uint32_t sourceColor, bool isDark) -> Colors;
+    static auto BuildThemeFromSeed(Argb sourceColor, bool isDark) -> Colors;
 
 private:
     static void FillSurfaceColors(Colors::SurfaceColors &surfaceColors, const Scheme &scheme);

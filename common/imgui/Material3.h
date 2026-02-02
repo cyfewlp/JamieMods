@@ -53,8 +53,6 @@ public:
         return *this;
     }
 
-    constexpr ColorBase(int r, int g, int b, int a = 255) : raw(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f) {}
-
     constexpr explicit ColorBase(ImU32 rgba) : raw(ImGui::ColorConvertU32ToFloat4(rgba)) {}
 
     constexpr operator ImVec4() const // NOLINT(*-explicit-constructor)
@@ -167,6 +165,27 @@ enum class ContentToken : std::uint8_t
     count
 };
 
+using Argb = std::uint32_t;
+
+static constexpr auto IM_COL32_R_MASK = 0xFF;
+static constexpr auto IM_COL32_G_MASK = 0xFF00;
+static constexpr auto IM_COL32_B_MASK = 0xFF0000;
+
+constexpr auto ImU32ToArgb(const ImU32 imU32) -> Argb
+{
+    return (imU32 & IM_COL32_A_MASK) | (imU32 & IM_COL32_R_MASK) << ARGB_R_SHIFT | (imU32 & IM_COL32_G_MASK) |
+           (imU32 & IM_COL32_B_MASK) >> IM_COL32_B_SHIFT;
+}
+
+constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
+{
+    const uint8_t a = (argb & ARGB_A_MASK) >> ARGB_A_SHIFT;
+    const uint8_t r = (argb & ARGB_R_MASK) >> ARGB_R_SHIFT;
+    const uint8_t g = (argb & ARGB_G_MASK) >> ARGB_G_SHIFT;
+    const uint8_t b = argb & ARGB_B_MASK;
+    return ImColor(r, g, b, a);
+}
+
 class Colors
 {
 public:
@@ -176,22 +195,22 @@ public:
 private:
     SurfaceColors surfaceColors;
     ContentColors contentColors;
-    uint32_t      seedArgb;
+    Argb          sourceColor;
     bool          darkMode = false;
 
     friend class ThemeBuilder;
 
 public:
     explicit Colors(
-        const uint32_t seedArgb, const bool darkMode, SurfaceColors &&surfaceColors, ContentColors &&contentColors
+        const Argb sourceColor, const bool darkMode, SurfaceColors &&surfaceColors, ContentColors &&contentColors
     )
-        : seedArgb(seedArgb), darkMode(darkMode), surfaceColors(std::move(surfaceColors)),
+        : sourceColor(sourceColor), darkMode(darkMode), surfaceColors(std::move(surfaceColors)),
           contentColors(std::move(contentColors))
     {
     }
 
     // clang-format off
-    auto SeedArgb() const -> uint32_t { return seedArgb; }
+    auto SourceColor() const -> Argb { return sourceColor; }
     auto DarkMode() const -> bool { return darkMode; }
 
     auto at(SurfaceToken token) const -> const SurfaceColor &
@@ -291,6 +310,10 @@ public:
 
     void UpdateScaling(const float newScale)
     {
+        if (currentScale == newScale)
+        {
+            return;
+        }
         currentScale = newScale;
         for (size_t i = 0; i < precomputedPx.size(); ++i)
         {
@@ -305,7 +328,7 @@ public:
         iconSize = ICON_SIZE * newScale;
     }
 
-    void RebuildColors(uint32_t sourceColor, bool isDark);
+    void RebuildColors(Argb sourceColor, bool isDark);
 
     auto Colors() const -> const Colors &
     {

@@ -19,6 +19,7 @@
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
 #include "ui/ImGuiManager.h"
+#include "ui/Settings.h"
 
 #include <basetsd.h>
 #include <future>
@@ -34,6 +35,11 @@ static constexpr auto                         INIT_TIMEOUT_SECONDS = 5s;
 static std::unique_ptr<Ime::ImeApp>           g_instance           = nullptr;
 static std::unique_ptr<ImGuiEx::M3::M3Styles> g_M3Styles           = nullptr;
 
+static auto ConfigFilePath() -> std::filesystem::path
+{
+    return CommonUtils::GetInterfacePath() / SIMPLE_IME /  CONFIG_FILE_NAME;
+}
+
 bool PluginInit()
 {
     const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
@@ -41,8 +47,7 @@ bool PluginInit()
 
     static Ime::Settings g_settings;
 
-    const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
-    Ime::ConfigSerializer::Deserialize(filePath, g_settings);
+    Ime::ConfigSerializer::Deserialize(ConfigFilePath(), g_settings);
     InitializeLogging(g_settings.logging.level, g_settings.logging.flushLevel);
     g_instance = std::make_unique<Ime::ImeApp>(g_settings);
 
@@ -119,8 +124,7 @@ void ImeApp::Uninitialize()
             RealWndProc = nullptr;
         }
     }
-    const auto filePath = CommonUtils::GetInterfaceFile(CONFIG_FILE_NAME);
-    ConfigSerializer::Serialize(filePath, m_settings);
+    ConfigSerializer::Serialize(ConfigFilePath(), m_settings);
     m_state.SetState(State::StateKey::DORMANCY);
 }
 

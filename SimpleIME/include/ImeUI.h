@@ -38,7 +38,7 @@ public:
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
-    void ApplyAppearanceSettings(Settings &settings);
+    void ApplySettings(Settings &settings);
     void DrawToolWindow(Settings &settings);
     void ShowToolWindow();
 
@@ -55,20 +55,12 @@ public:
 private:
     void        DrawInputMethodsCombo() const;
     void        DrawSettings(Settings &settings);
-    void        DrawMenuAppearance(Settings &settings, bool appearing);
+    void        DrawMenuAppearance(Settings &settings);
     void        DrawMenuFontBuilder(Settings &settings);
-    void        DrawMenuBehaviour(Settings &settings);
-    void        DrawModConfig(Settings &settings);
-    void        DrawFontConfig(Settings &settings);
+    void        DrawMenuBehaviour(Settings &settings) const;
     static void DrawFeatures(Settings &settings);
-    void        DrawSettingsContent(Settings &settings);
     void        DrawStates() const;
     static void DrawWindowPosUpdatePolicy(Settings &settings);
-    void        LoadTranslation(std::string_view language) const;
-
-    static void FillCommonStyleFields(ImGuiStyle &style, const Settings &settings);
-
-    static bool DrawCombo(const char *label, const std::vector<std::string> &values, std::string &selected);
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 

@@ -7,8 +7,11 @@
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
+#include "common/utils.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
+#include "i18n/TranslationLoader.h"
 #include "i18n/TranslatorHolder.h"
+#include "ui/Settings.h"
 
 #include <imgui.h>
 
@@ -16,17 +19,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-inline auto argbToImVec4(uint32_t a_argb) -> ImVec4
-{
-    return ImVec4(
-        ((a_argb & 0xFF0000) >> 16) / 255.f,
-        ((a_argb & 0xFF00) >> 8) / 255.f,
-        (a_argb & 0xFF) / 255.f,
-        ((a_argb & 0xFF000000) >> 24) / 255.f
-    );
-}
-
-void AppearancePanel::Draw(const bool appearing)
+void AppearancePanel::Draw(Settings &settings)
 {
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Style_WindowPadding({m_styles[ImGuiEx::M3::Spacing::L], m_styles[ImGuiEx::M3::Spacing::L]})
@@ -44,6 +37,7 @@ void AppearancePanel::Draw(const bool appearing)
             DrawZoomCombo();
             ImGui::Spacing();
             DrawThemeBuilder();
+            DrawLanguagesCombo(settings.appearance);
             ImGui::TableNextColumn();
             ImGui::EndTable();
         }
@@ -55,7 +49,7 @@ void AppearancePanel::DrawZoomCombo() const
 {
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Color_Text(m_styles.Colors().at(ImGuiEx::M3::ContentToken::onSurfaceVariant))
-        .Style_FrameBorderSize(4.f)
+        .Style_FrameBorderSize(m_styles[ImGuiEx::M3::Spacing::XS])
         .Color_Border(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
         .Color_FrameBg(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::surface))
         .Color_FrameBgHovered(m_styles.Colors()
@@ -71,11 +65,11 @@ void AppearancePanel::DrawZoomCombo() const
     {
         ImGui::SetNextItemWidth(maxWidth);
     }
-    constexpr uint8_t             zoomUnit         = 25;
-    static std::array<uint8_t, 6> zoomList         = {2, 3, 4, 5, 6, 8};
-    static uint8_t                currentZoomIndex = 2; // 100%
+    constexpr uint8_t zoomUnit         = 25;
+    static std::array zoomList         = {2, 3, 4, 5, 6, 8};
+    static uint8_t    currentZoomIndex = 2; // 100%
 
-    const auto preview = std::format("{}%", zoomList[currentZoomIndex] * zoomUnit);
+    const auto preview = std::format("{}%", zoomList.at(currentZoomIndex) * zoomUnit);
     if (ImGui::BeginCombo(
             Translate("Settings.Appearance.Zoom").data(), preview.c_str(), ImGuiEx::ComboFlags().NoArrowButton()
         ))
@@ -87,7 +81,7 @@ void AppearancePanel::DrawZoomCombo() const
             if (const bool selected = index == currentZoomIndex;
                 ImGui::Selectable(std::format("{}%", zoom * zoomUnit).c_str(), selected) && !selected)
             {
-                m_styles.UpdateScaling(percentage / 100.f);
+                m_styles.UpdateScaling(static_cast<float>(percentage) / 100.f);
                 currentZoomIndex = index;
             }
             index++;
@@ -108,16 +102,12 @@ void AppearancePanel::DrawThemeBuilder()
         styleGuard.Style_FramePadding({0.f, m_styles[ImGuiEx::M3::Spacing::M]})
             .Color_ChildBg(colors[ImGuiEx::M3::SurfaceToken::surface]);
 
-        openPopup = ImGui::ColorButton("##SeedColor", argbToImVec4(colors.SeedArgb()), colorButtonFlags);
+        openPopup =
+            ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(colors.SourceColor()), colorButtonFlags);
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor").data());
     }
-    auto ImU32ToArgb = [](const ImU32 imU32) -> uint32_t {
-        return (imU32 & IM_COL32_A_MASK) | (imU32 & IM_COL32_R_MASK) << ImGuiEx::M3::ARGB_R_SHIFT |
-               (imU32 & IM_COL32_G_MASK) | (imU32 & IM_COL32_B_MASK) >> IM_COL32_B_SHIFT;
-    };
-
     bool edited = false;
     if (openPopup)
     {
@@ -133,8 +123,10 @@ void AppearancePanel::DrawThemeBuilder()
                 Translate("Settings.Appearance.ThemeBuilder").data(), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
             ))
         {
-            using namespace material_color_utilities;
-            static std::unique_ptr<SchemeTonalSpot> scheme = nullptr;
+            using Scheme = material_color_utilities::SchemeTonalSpot;
+            using Hct    = material_color_utilities::Hct;
+
+            static std::unique_ptr<Scheme> scheme = nullptr;
 
             ImGui::BeginGroup();
             {
@@ -166,7 +158,7 @@ void AppearancePanel::DrawThemeBuilder()
                     .Style_FrameRounding(m_styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
                 {
-                    m_styles.RebuildColors(ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
+                    m_styles.RebuildColors(ImGuiEx::M3::ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
                     ApplyM3Theme();
                     scheme.reset();
                     ImGui::CloseCurrentPopup();
@@ -187,10 +179,10 @@ void AppearancePanel::DrawThemeBuilder()
             ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeInThemeBuilder);
             if (edited)
             {
-                m_colorInThemeBuilder    = argbToImVec4(m_styles.Colors().SeedArgb());
+                m_colorInThemeBuilder    = ImGuiEx::M3::ArgbToImVec4(m_styles.Colors().SourceColor());
                 m_darkModeInThemeBuilder = m_styles.Colors().DarkMode();
-                scheme                   = std::make_unique<SchemeTonalSpot>(
-                    Hct(ImU32ToArgb(m_colorInThemeBuilder)), m_darkModeInThemeBuilder, 0.0
+                scheme                   = std::make_unique<Scheme>(
+                    Hct(ImGuiEx::M3::ImU32ToArgb(m_colorInThemeBuilder)), m_darkModeInThemeBuilder, 0.0
                 );
             }
 
@@ -201,8 +193,10 @@ void AppearancePanel::DrawThemeBuilder()
                     .Style_FramePadding({m_styles[ImGuiEx::M3::Spacing::L], m_styles[ImGuiEx::M3::Spacing::L]})
                     .Style_ItemSpacing({0, m_styles[ImGuiEx::M3::Spacing::M]});
 
-                auto draw_palette = [&colorButtonFlags, this](std::string_view label, const TonalPalette &palette) {
-                    ImGui::ColorButton(label.data(), argbToImVec4(palette.get_key_color().ToInt()), colorButtonFlags);
+                auto draw_palette = [&colorButtonFlags, this](std::string_view label, const auto &palette) {
+                    ImGui::ColorButton(
+                        label.data(), ImGuiEx::M3::ArgbToImVec4(palette.get_key_color().ToInt()), colorButtonFlags
+                    );
                     ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::S]);
                     ImGui::TextUnformatted(label.data());
                 };
@@ -221,11 +215,68 @@ void AppearancePanel::DrawThemeBuilder()
     ImGui::PopFont();
 }
 
+void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance)
+{
+    bool clicked = false;
+    if (ImGui::BeginCombo(Translate("Settings.Appearance.Languages").data(), appearance.language.c_str()))
+    {
+        int32_t idx = 0;
+        for (const auto &language : m_translateLanguages)
+        {
+            ImGui::PushID(idx);
+            const bool isSelected = appearance.language == language;
+            if (ImGui::Selectable(language.c_str(), isSelected) && !isSelected)
+            {
+                appearance.language = language;
+                clicked             = true;
+            }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+            ImGui::PopID();
+            idx++;
+        }
+        ImGui::EndCombo();
+    }
+
+    if (clicked)
+    {
+        LoadTranslation(appearance.language);
+    }
+}
+
+void AppearancePanel::ApplySettings(Settings::Appearance &appearance)
+{
+    appearance.zoom = std::min(ZOOM_MAX, appearance.zoom);
+    appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
+    m_styles.UpdateScaling(appearance.zoom);
+
+    const auto dir = CommonUtils::GetInterfacePath() / SIMPLE_IME;
+    TranslationLoader::ScanLanguages(dir, m_translateLanguages);
+
+    if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
+        langIt == m_translateLanguages.end())
+    {
+        appearance.language = "english";
+    }
+
+    if (auto accessorOpt = TranslatorHolder::RequestUpdateHandle())
+    {
+        m_i18nHandle.emplace(accessorOpt.value());
+    }
+    else
+    {
+        throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
+    }
+    LoadTranslation(appearance.language);
+}
+
 void AppearancePanel::ApplyM3Theme()
 {
     auto &colors = m_styles.Colors();
 
-    m_colorInThemeBuilder = ImColor(argbToImVec4(m_styles.Colors().SeedArgb()));
+    m_colorInThemeBuilder = ImColor(ImGuiEx::M3::ArgbToImVec4(m_styles.Colors().SourceColor()));
 
     ImGuiStyle &style = ImGui::GetStyle();
 
@@ -328,6 +379,18 @@ void AppearancePanel::ApplyM3Theme()
 
     style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[ImGuiEx::M3::SurfaceToken::surface];
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
+}
+
+// FIXME: Handle error
+void AppearancePanel::LoadTranslation(std::string_view language) const
+{
+    if (!m_i18nHandle) return;
+    const TranslationLoader loader(CommonUtils::GetInterfacePath() / SIMPLE_IME, "Settings");
+
+    if (auto opt = loader.LoadFrom(language); opt)
+    {
+        m_i18nHandle->Update(std::move(opt.value()));
+    }
 }
 }
 }
