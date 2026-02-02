@@ -204,14 +204,20 @@ public:
     explicit Colors(
         const Argb sourceColor, const bool darkMode, SurfaceColors &&surfaceColors, ContentColors &&contentColors
     )
-        : sourceColor(sourceColor), darkMode(darkMode), surfaceColors(std::move(surfaceColors)),
-          contentColors(std::move(contentColors))
+        : surfaceColors(std::move(surfaceColors)), contentColors(std::move(contentColors)), sourceColor(sourceColor),
+          darkMode(darkMode)
     {
     }
 
-    // clang-format off
-    auto SourceColor() const -> Argb { return sourceColor; }
-    auto DarkMode() const -> bool { return darkMode; }
+    auto SourceColor() const -> Argb
+    {
+        return sourceColor;
+    }
+
+    auto DarkMode() const -> bool
+    {
+        return darkMode;
+    }
 
     auto at(SurfaceToken token) const -> const SurfaceColor &
     {
@@ -232,8 +238,6 @@ public:
     {
         return contentColors.at(static_cast<uint8_t>(token));
     }
-
-    // clang-format on
 };
 
 // Size tips to pass item draw functions
@@ -288,7 +292,7 @@ class M3Styles
      */
     ImFont *iconFont{nullptr};
 
-    Text  smallLabelText = TEXT_LABEL_LARGE;
+    Text  smallLabelText = TEXT_LABEL_SMALL;
     Text  labelText      = TEXT_LABEL_LARGE;
     Text  titleText      = TEXT_TITLE_MEDIUM;
     float iconSize       = ICON_SIZE;

@@ -66,9 +66,9 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
     return true;
 }
 
-void ImeUI::ApplySettings(Settings &settings)
+void ImeUI::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles)
 {
-    m_panelAppearance.ApplySettings(settings.appearance);
+    m_panelAppearance.ApplySettings(appearance, m3Styles);
 }
 
 void ImeUI::DrawInputMethodsCombo() const
@@ -123,7 +123,7 @@ void ImeUI::ShowToolWindow()
     }
 }
 
-void ImeUI::DrawToolWindow(Settings &settings)
+void ImeUI::DrawToolWindow(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
     if (!m_fShowToolWindow)
     {
@@ -137,7 +137,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
     }
     ImGui::Begin(TOOL_WINDOW_NAME.data(), &m_fShowToolWindow, flags);
 
-    DrawSettings(settings);
+    DrawSettings(settings, m3Styles);
 
     ImGui::AlignTextToFramePadding();
     ImGui::Text(ICON_COD_MOVE);
@@ -176,7 +176,7 @@ void ImeUI::DrawToolWindow(Settings &settings)
 
 static auto inactiveColor = ImVec4(0.45F, 0.45F, 0.45F, 0.9F);
 
-void ImeUI::DrawSettings(Settings &settings)
+void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
     if (!settings.appearance.showSettings)
     {
@@ -186,7 +186,7 @@ void ImeUI::DrawSettings(Settings &settings)
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color_Text(m_styles.Colors()[ImGuiEx::M3::ContentToken::onSurface]).Style_WindowPadding({});
+    styleGuard.Color_Text(m3Styles.Colors()[ImGuiEx::M3::ContentToken::onSurface]).Style_WindowPadding({});
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         enum class Menu : int8_t
@@ -200,24 +200,24 @@ void ImeUI::DrawSettings(Settings &settings)
         // Sidebar
         {
             ImGuiEx::StyleGuard styleGuard1;
-            styleGuard1.Color_Text(m_styles.Colors()[ImGuiEx::M3::ContentToken::onSurfaceVariant])
-                .Color_ChildBg(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainer])
-                .Color_FrameBg(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainer])
-                .Color_FrameBgActive(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::secondary])
-                .Color_FrameBgHovered(m_styles.Colors()[ImGuiEx::M3::SurfaceToken::secondaryContainer]);
+            styleGuard1.Color_Text(m3Styles.Colors()[ImGuiEx::M3::ContentToken::onSurfaceVariant])
+                .Color_ChildBg(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainer])
+                .Color_FrameBg(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainer])
+                .Color_FrameBgActive(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::secondary])
+                .Color_FrameBgHovered(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::secondaryContainer]);
 
             if (ImGui::BeginChild(
                     "Sidebar",
-                    {m_styles.GetSize(ImGuiEx::M3::ComponentSize::NAV_RAIL_WIDTH), -FLT_MIN},
+                    {m3Styles.GetSize(ImGuiEx::M3::ComponentSize::NAV_RAIL_WIDTH), -FLT_MIN},
                     ImGuiEx::ChildFlags().Borders()
                 ))
             {
-                ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU, m_styles);
+                ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU, m3Styles);
                 if (ImGuiEx::M3::DrawNavItem(
                         Translate("Settings.Sidebar.Appearance"),
                         currentMenu.first == Menu::Appearance,
                         ICON_MD_PALETTE,
-                        m_styles
+                        m3Styles
                     ))
                 {
                     currentMenu = {Menu::Appearance, true};
@@ -226,7 +226,7 @@ void ImeUI::DrawSettings(Settings &settings)
                         Translate("Settings.Sidebar.FontBuilder"),
                         currentMenu.first == Menu::FontBuilder,
                         ICON_FA_WRENCH,
-                        m_styles
+                        m3Styles
                     ))
                 {
                     currentMenu = {Menu::FontBuilder, true};
@@ -235,7 +235,7 @@ void ImeUI::DrawSettings(Settings &settings)
                         Translate("Settings.Sidebar.Behaviour"),
                         currentMenu.first == Menu::Behaviour,
                         ICON_OCT_GEAR,
-                        m_styles
+                        m3Styles
                     ))
                 {
                     currentMenu = {Menu::Behaviour, true};
@@ -250,10 +250,10 @@ void ImeUI::DrawSettings(Settings &settings)
         switch (currentMenu.first)
         {
             case Menu::Appearance:
-                DrawMenuAppearance(settings);
+                DrawMenuAppearance(settings, m3Styles);
                 break;
             case Menu::FontBuilder:
-                DrawMenuFontBuilder(settings);
+                DrawMenuFontBuilder(settings, m3Styles);
                 break;
             case Menu::Behaviour:
                 DrawMenuBehaviour(settings);
@@ -266,18 +266,18 @@ void ImeUI::DrawSettings(Settings &settings)
     imeManager->SyncImeStateIfDirty();
 }
 
-void ImeUI::DrawMenuAppearance(Settings &settings)
+void ImeUI::DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
-    m_panelAppearance.Draw(settings);
+    m_panelAppearance.Draw(settings, m3Styles);
 
     // sync theme config
-    settings.appearance.themeSourceColor = m_styles.Colors().SourceColor();
-    settings.appearance.themeDarkMode    = m_styles.Colors().DarkMode();
+    settings.appearance.themeSourceColor = m3Styles.Colors().SourceColor();
+    settings.appearance.themeDarkMode    = m3Styles.Colors().DarkMode();
 }
 
-void ImeUI::DrawMenuFontBuilder(Settings &settings)
+void ImeUI::DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    m_fontBuilderView.Draw(m_fontBuilder, settings);
+    m_fontBuilderView.Draw(m_fontBuilder, settings, m3Styles);
 }
 
 void ImeUI::DrawMenuBehaviour(Settings &settings) const

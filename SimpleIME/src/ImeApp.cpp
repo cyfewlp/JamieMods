@@ -274,9 +274,11 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     std::thread childWndThread([&ensureInitialized, this] {
         try
         {
-            m_imeWnd.Initialize(*g_M3Styles);
+            m_imeWnd.Initialize();
+            m_imeWnd.CreateHost(m_hWnd, m_settings);
+            m_imeWnd.ApplyUiSettings(m_settings, *g_M3Styles);
             ensureInitialized.set_value(true);
-            m_imeWnd.Start(m_hWnd, &m_settings);
+            m_imeWnd.Run();
         }
         catch (...)
         {
@@ -348,7 +350,7 @@ void ImeApp::LogAlreadyInitialized() const
 
 void ImeApp::Draw()
 {
-    if (!m_state.IsInitialized())
+    if (!m_state.IsInitialized() || !g_M3Styles)
     {
         return;
     }
@@ -356,7 +358,7 @@ void ImeApp::Draw()
 
     try
     {
-        m_imeWnd.DrawIme(m_settings);
+        m_imeWnd.DrawIme(m_settings, *g_M3Styles);
     }
     catch (std::exception &e)
     {

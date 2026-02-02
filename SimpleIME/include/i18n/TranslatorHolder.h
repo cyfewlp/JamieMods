@@ -55,7 +55,7 @@ public:
     }
 };
 
-constexpr auto Translate(const std::string_view key)
+constexpr auto Translate(const std::string_view key) // FIXME: directly return const char*
 {
     return TranslatorHolder::GetTranslator().Translate(i18n::HashKey(key), key);
 }

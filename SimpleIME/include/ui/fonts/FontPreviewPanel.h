@@ -20,12 +20,11 @@ namespace Ime
 {
 class FontPreviewPanel
 {
-    ImFontWrap             m_imFont{};
-    DebounceTimer          m_previewDebounceTimer{300ms};
-    DebounceTimer          m_searchDebounceTimer{200ms};
-    std::vector<FontInfo>  m_displayFontInfos;
-    ImGuiTextFilter        m_textFilter;
-    ImGuiEx::M3::M3Styles &m_styles;
+    ImFontWrap            m_imFont{};
+    DebounceTimer         m_previewDebounceTimer{300ms};
+    DebounceTimer         m_searchDebounceTimer{200ms};
+    std::vector<FontInfo> m_displayFontInfos;
+    ImGuiTextFilter       m_textFilter;
 
     enum class State : int8_t
     {
@@ -40,7 +39,7 @@ class FontPreviewPanel
     State m_state = State::EMPTY;
 
 public:
-    explicit FontPreviewPanel(ImGuiEx::M3::M3Styles &styles) : m_styles(styles) {}
+    explicit FontPreviewPanel() = default;
 
     struct InteractState
     {
@@ -48,14 +47,14 @@ public:
         int  selectedIndex = -1;
     };
 
-    void DrawFontsView(const std::vector<FontInfo> &fontInfos);
-    void DrawFontsPreviewView() const;
+    void DrawFontsView(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawFontsPreviewView(const ImGuiEx::M3::M3Styles &m3Styles) const;
 
 private:
-    inline void DrawStatusBar() const;
+    inline void DrawStatusBar(const ImGuiEx::M3::M3Styles &m3Styles) const;
 
-    void DrawSearchBox(const std::vector<FontInfo> &fontInfos);
-    void DrawFontsTable(const std::vector<FontInfo> &fontInfos);
+    void DrawSearchBox(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawFontsTable(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles);
     void UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList);
 
 public:

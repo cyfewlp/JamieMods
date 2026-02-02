@@ -22,7 +22,7 @@ namespace LIBC_NAMESPACE_DECL
 {
 namespace Ime
 {
-void ImeWindow::Draw(const Settings &settings)
+void ImeWindow::Draw(const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     static bool shouldRelayout = true;
     static bool imeAppearing   = true;
@@ -50,24 +50,24 @@ void ImeWindow::Draw(const Settings &settings)
         ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Style_WindowPadding({})
-        .Color_Text(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
-        .Color_WindowBg(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
-        .Color_Separator(m_styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
+        .Color_Text(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
+        .Color_WindowBg(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
+        .Color_Separator(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
 
-    ImGui::PushFont(nullptr, m_styles.TitleText().fontSize);
+    ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
     if (ImGui::Begin("IME", nullptr, flags))
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
         if (state.Has(Core::State::IN_COMPOSING))
         {
-            DrawCompWindow();
+            DrawCompWindow(m3Styles);
         }
 
         ImGui::Separator();
         // render ime status window: language,
         if (state.Has(Core::State::IN_CAND_CHOOSING))
         {
-            DrawCandidateWindows();
+            DrawCandidateWindows(m3Styles);
         }
         m_imeWindowSize = ImGui::GetWindowSize();
     }
@@ -79,7 +79,7 @@ void ImeWindow::Draw(const Settings &settings)
     }
 }
 
-void ImeWindow::DrawCompWindow() const
+void ImeWindow::DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const
 {
     static float CursorAnim = 0.F;
 
@@ -106,8 +106,8 @@ void ImeWindow::DrawCompWindow() const
 
     // use frame padding set line height
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style_FramePadding({0, m_styles[ImGuiEx::M3::Spacing::S]});
-    ImGui::SameLine(0, m_styles[ImGuiEx::M3::Spacing::M]);
+    styleGuard.Style_FramePadding({0, m3Styles[ImGuiEx::M3::Spacing::S]});
+    ImGui::SameLine(0, m3Styles[ImGuiEx::M3::Spacing::M]);
     ImGui::AlignTextToFramePadding();
 
     bool success = false;
@@ -126,7 +126,7 @@ void ImeWindow::DrawCompWindow() const
     if (fmodf(CursorAnim, 1.2F) <= 0.8F)
     {
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m_styles[ImGuiEx::M3::Spacing::S]);
+        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m3Styles[ImGuiEx::M3::Spacing::S]);
         ImGui::GetWindowDrawList()->AddLine(
             min, ImVec2(min.x, min.y + ImGui::GetFontSize() - 1.5f), ImGui::GetColorU32(ImGuiCol_InputTextCursor), 1.0f
         );
@@ -150,7 +150,7 @@ void ImeWindow::DrawCompWindow() const
     }
 }
 
-void ImeWindow::DrawCandidateWindows() const
+void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) const
 {
     using Spacing      = ImGuiEx::M3::Spacing;
     using ContentToken = ImGuiEx::M3::ContentToken;
@@ -164,15 +164,15 @@ void ImeWindow::DrawCandidateWindows() const
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style_ItemSpacing({0, 0})
-            .Style_FramePadding({m_styles[Spacing::M], m_styles[Spacing::S]})
-            .Color_Text(m_styles.Colors().at(ContentToken::onSurface))
+            .Style_FramePadding({m3Styles[Spacing::M], m3Styles[Spacing::S]})
+            .Color_Text(m3Styles.Colors().at(ContentToken::onSurface))
             .Color_Button({0, 0, 0, 0})
-            .Color_ButtonHovered(m_styles.Colors()
+            .Color_ButtonHovered(m3Styles.Colors()
                                      .at(SurfaceToken::surfaceContainer)
-                                     .Hovered(m_styles.Colors().at(ContentToken::onSurface)))
-            .Color_ButtonActive(m_styles.Colors()
+                                     .Hovered(m3Styles.Colors().at(ContentToken::onSurface)))
+            .Color_ButtonActive(m3Styles.Colors()
                                     .at(SurfaceToken::surfaceContainer)
-                                    .Pressed(m_styles.Colors().at(ContentToken::onSurface)));
+                                    .Pressed(m3Styles.Colors().at(ContentToken::onSurface)));
 
         for (const auto &candidate : candidateList)
         {
@@ -180,13 +180,13 @@ void ImeWindow::DrawCandidateWindows() const
             ImGuiEx::StyleGuard styleGuard1;
             if (index == candidateUi.Selection())
             {
-                styleGuard1.Color_Button(m_styles.Colors()[SurfaceToken::primaryContainer])
-                    .Color_Text(m_styles.Colors()[ContentToken::onPrimaryContainer])
-                    .Color_ButtonHovered(m_styles.Colors()[SurfaceToken::primaryContainer].Hovered(
-                        m_styles.Colors()[ContentToken::onPrimaryContainer]
+                styleGuard1.Color_Button(m3Styles.Colors()[SurfaceToken::primaryContainer])
+                    .Color_Text(m3Styles.Colors()[ContentToken::onPrimaryContainer])
+                    .Color_ButtonHovered(m3Styles.Colors()[SurfaceToken::primaryContainer].Hovered(
+                        m3Styles.Colors()[ContentToken::onPrimaryContainer]
                     ))
-                    .Color_ButtonActive(m_styles.Colors()[SurfaceToken::primaryContainer].Pressed(
-                        m_styles.Colors()[ContentToken::onPrimaryContainer]
+                    .Color_ButtonActive(m3Styles.Colors()[SurfaceToken::primaryContainer].Pressed(
+                        m3Styles.Colors()[ContentToken::onPrimaryContainer]
                     ));
             }
 

@@ -43,6 +43,8 @@ public:
                     return "Initialization failed";
                 case StateKey::UNINITIALIZED:
                     return "Uninitialized";
+                case StateKey::SHUTDOWN:
+                    return "Shutdown";
                 case StateKey::DORMANCY:
                     return "Dormancy";
             }

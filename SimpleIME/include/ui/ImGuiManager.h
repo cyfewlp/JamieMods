@@ -13,6 +13,11 @@ struct ImFont;
 
 namespace LIBC_NAMESPACE_DECL
 {
+namespace ImGuiEx::M3
+{
+class M3Styles;
+}
+
 namespace Ime
 {
 class ImGuiManager
@@ -42,6 +47,8 @@ public:
     static void EndFrame(Settings &settings);
 
     static void Shutdown();
+
+    static void ApplyM3Theme(ImGuiEx::M3::M3Styles & m3Styles);
 
 private:
     static auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *;

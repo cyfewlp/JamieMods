@@ -17,6 +17,11 @@
 
 namespace LIBC_NAMESPACE_DECL
 {
+namespace ImGuiEx::M3
+{
+class M3Styles;
+}
+
 namespace Ime
 {
 class ImmImeHandler;
@@ -35,7 +40,7 @@ public:
     ImeWnd &operator=(ImeWnd &&a_imeWnd)      = delete;
     ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
-    void Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false);
+    void Initialize() noexcept(false);
     void UnInitialize() const noexcept;
 
     /**
@@ -44,9 +49,10 @@ public:
      * with COINIT_MULTITHREADED(crash logger) to affect our TSF code.
      *
      * @param hWndParent Main window (game window)
-     * @param pSettings
+     * @param settings @Settings
      */
-    void Start(HWND hWndParent, Settings *pSettings);
+    void CreateHost(HWND hWndParent, Settings &settings);
+    void Run() const;
 
     auto Focus() const -> void;
     auto SetTsfFocus(bool focus) const -> bool;
@@ -64,7 +70,7 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings) const;
+    void DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const;
     void ShowToolWindow() const;
 
     bool IsShowingToolWindow() const
@@ -77,7 +83,7 @@ public:
         return m_pImeUi->IsPinedToolWindow();
     }
 
-    void ApplyUiSettings(Settings *pSettings) const;
+    void ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const;
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -86,13 +92,12 @@ private:
     static void OnCompositionResult(const std::wstring &compositionString);
     static void TsfMessageLoop();
 
-    void        OnStart(Settings *pSettings);
-    static auto OnCreate() -> LRESULT;
-    auto        OnDestroy() const -> LRESULT;
-    void        InitializeTextService();
-    void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+    auto OnCreated(Settings &settings) -> void;
+    auto OnDestroy() const -> LRESULT;
+    void InitializeTextService();
+    void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
-    Settings                     &m_settings;
+    Settings                     &m_settings; // TODO: replaced by ptr or reference_wrapper?
     std::unique_ptr<ImeWindow>    m_pImeWindow   = nullptr;
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;

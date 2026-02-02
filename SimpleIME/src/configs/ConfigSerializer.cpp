@@ -171,7 +171,7 @@ void ConfigSerializer::Serialize(const std::filesystem::path &filePath, Settings
         file.open(filePath, std::ios::out | std::ios::trunc);
         file << toml::format(settingsValue);
         file.close();
-        log_info("Configuration saved successfully to {}", filePath);
+        log_info("Configuration saved successfully to {}", filePath.generic_string());
     }
     catch (const std::ios_base::failure &e)
     {

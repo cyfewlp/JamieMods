@@ -1,10 +1,8 @@
 #pragma once
 
 #include "common/i18n/Translator.h"
-#include "common/imgui/Material3.h"
 #include "core/State.h"
 #include "i18n/TranslatorHolder.h"
-#include "imgui.h"
 #include "tsf/LangProfileUtil.h"
 #include "ui/Settings.h"
 #include "ui/fonts/FontBuilder.h"
@@ -26,10 +24,7 @@ class ImeUI
     using State = Core::State;
 
 public:
-    explicit ImeUI(ImeWnd *pImeWnd, ImGuiEx::M3::M3Styles &styles)
-        : m_pImeWnd(pImeWnd), m_styles(styles), m_fontBuilderView(styles), m_panelAppearance(styles)
-    {
-    }
+    explicit ImeUI(ImeWnd *pImeWnd) : m_pImeWnd(pImeWnd) {}
 
     ~ImeUI();
     ImeUI(const ImeUI &other)                = delete;
@@ -38,8 +33,8 @@ public:
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
     bool Initialize(LangProfileUtil *pLangProfileUtil);
-    void ApplySettings(Settings &settings);
-    void DrawToolWindow(Settings &settings);
+    void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawToolWindow(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
     void ShowToolWindow();
 
     bool IsShowingToolWindow() const
@@ -54,9 +49,9 @@ public:
 
 private:
     void        DrawInputMethodsCombo() const;
-    void        DrawSettings(Settings &settings);
-    void        DrawMenuAppearance(Settings &settings);
-    void        DrawMenuFontBuilder(Settings &settings);
+    void        DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
+    void        DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
+    void        DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawMenuBehaviour(Settings &settings) const;
     static void DrawFeatures(Settings &settings);
     void        DrawStates() const;
@@ -68,9 +63,8 @@ private:
     LangProfileUtil         *m_langProfileUtil = nullptr;
     std::vector<std::string> m_translateLanguages;
     FontBuilder              m_fontBuilder;
-    ImGuiEx::M3::M3Styles   &m_styles;
-    FontBuilderPanel         m_fontBuilderView;
-    AppearancePanel          m_panelAppearance;
+    FontBuilderPanel         m_fontBuilderView{};
+    AppearancePanel          m_panelAppearance{};
 
     std::optional<TranslatorHolder::UpdateHandle> m_i18nHandle;
 

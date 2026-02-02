@@ -238,15 +238,15 @@ void ImeController::AddTask(TaskQueue::Task &&task) const
     SendMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
 }
 
-void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings *settings)
+void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings)
 {
     auto *instance = GetInstance();
     if (instance->m_fInited)
     {
         return;
     }
-    instance->m_settings = settings;
-    instance->m_delegate = std::make_unique<ImeManager>(gameHwnd, imeWnd, *settings);
+    instance->m_settings = &settings;
+    instance->m_delegate = std::make_unique<ImeManager>(gameHwnd, imeWnd, settings);
     instance->m_gameHwnd = gameHwnd;
     instance->m_imeWnd   = imeWnd;
     instance->m_fInited  = true;

@@ -72,7 +72,7 @@ static void TryEnableImeWndDpiAware()
 }
 
 // FIXME: ImeUI should not dependency ImeWnd!!!
-void ImeWnd::Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false)
+void ImeWnd::Initialize() noexcept(false)
 {
     TryEnableImeWndDpiAware();
     wc.hInstance = GetModuleHandle(nullptr);
@@ -82,8 +82,8 @@ void ImeWnd::Initialize(ImGuiEx::M3::M3Styles &styles) noexcept(false)
     }
 
     InitializeTextService();
-    m_pImeWindow = std::make_unique<ImeWindow>(*this, m_pTextService.get(), styles);
-    m_pImeUi     = std::make_unique<ImeUI>(this, styles);
+    m_pImeWindow = std::make_unique<ImeWindow>(*this, m_pTextService.get());
+    m_pImeUi     = std::make_unique<ImeUI>(this);
 
     auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
     if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
@@ -108,7 +108,7 @@ void ImeWnd::UnInitialize() const noexcept
     }
 }
 
-void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
+void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 {
     log_info("Start ImeWnd Thread...");
     m_hWnd =
@@ -117,8 +117,11 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
     {
         throw SimpleIMEException("Create ImeWnd failed");
     }
-    OnStart(pSettings);
+    OnCreated(settings);
+}
 
+void ImeWnd::Run() const
+{
     if (m_settings.enableTsf)
     {
         TsfMessageLoop();
@@ -148,12 +151,75 @@ void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
     log_info("Exit ImeWnd Thread...");
 }
 
-void ImeWnd::OnStart(Settings *pSettings)
+auto ImeWnd::Focus() const -> void
 {
-    m_pTextService->OnStart(m_hWnd);
+    if (!IsFocused())
+    {
+        SetFocus(m_hWnd); // The return value only indicates which HWND had the focus previously.
+    }
+}
 
-    ImeController::Init(this, m_hWndParent, pSettings);
-    ApplyUiSettings(pSettings);
+auto ImeWnd::SetTsfFocus(const bool focus) const -> bool
+{
+    return m_pTextService->OnFocus(focus);
+}
+
+auto ImeWnd::IsFocused() const -> bool
+{
+    return m_fFocused;
+}
+
+auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
+{
+    if (m_hWnd == nullptr)
+    {
+        return false;
+    }
+    return SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
+}
+
+auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
+{
+    if (m_hWnd == nullptr)
+    {
+        return true;
+    }
+    return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
+}
+
+auto ImeWnd::GetImeThreadId() const -> DWORD
+{
+    return GetWindowThreadProcessId(m_hWnd, nullptr);
+}
+
+void ImeWnd::AbortIme() const
+{
+    if (State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
+    {
+        SetFocus(m_hWndParent);
+    }
+}
+
+void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
+{
+    ImGui::PushFont(nullptr, settings.state.fontSize);
+    {
+        ErrorNotifier::GetInstance().Show();
+        m_pImeWindow->Draw(settings, m3Styles);
+        m_pImeUi->DrawToolWindow(settings, m3Styles);
+    }
+    ImGui::PopFont();
+}
+
+void ImeWnd::ShowToolWindow() const
+{
+    m_pImeUi->ShowToolWindow();
+}
+
+void ImeWnd::ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
+{
+    m_pImeUi->ApplySettings(settings.appearance, m3Styles);
+    ImeController::GetInstance()->ApplyUiSettings(settings);
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -174,7 +240,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         HANDLE_MSG(hWnd, WM_NCCREATE, OnNccCreate);
         case WM_CREATE: {
             if (pThis == nullptr) break;
-            return pThis->OnCreate();
+            return 0;
         }
         case WM_DESTROY: {
             if (pThis == nullptr) break;
@@ -232,122 +298,6 @@ auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
     return reinterpret_cast<ImeWnd *>(ptr);
 }
 
-auto ImeWnd::OnCreate() -> LRESULT
-{
-    return 0;
-}
-
-void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
-{
-    static DWORD gameThread    = 0;
-    static DWORD currentThread = GetCurrentThreadId();
-    if (gameThread == 0)
-    {
-        gameThread = GetWindowThreadProcessId(m_hWndParent, nullptr);
-    }
-    if (gameThread != currentThread)
-    {
-        if (AttachThreadInput(gameThread, currentThread, TRUE) != FALSE)
-        {
-            switch (uMsg)
-            {
-                case WM_KEYDOWN:
-                case WM_KEYUP:
-                case WM_SYSKEYDOWN:
-                case WM_SYSKEYUP: {
-                    if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
-                    {
-                        log_debug("Post message to game failed.");
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-            AttachThreadInput(gameThread, currentThread, FALSE);
-        }
-    }
-}
-
-auto ImeWnd::OnDestroy() const -> LRESULT
-{
-    log_info("Destroy IME Window");
-    UnInitialize();
-    PostQuitMessage(0);
-    return S_OK;
-}
-
-auto ImeWnd::Focus() const -> void
-{
-    if (!IsFocused())
-    {
-        SetFocus(m_hWnd); // The return value only indicates which HWND had the focus previously.
-    }
-}
-
-auto ImeWnd::SetTsfFocus(const bool focus) const -> bool
-{
-    return m_pTextService->OnFocus(focus);
-}
-
-auto ImeWnd::IsFocused() const -> bool
-{
-    return m_fFocused;
-}
-
-auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
-{
-    if (m_hWnd == nullptr)
-    {
-        return false;
-    }
-    return SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
-}
-
-auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
-{
-    if (m_hWnd == nullptr)
-    {
-        return true;
-    }
-    return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
-}
-
-auto ImeWnd::GetImeThreadId() const -> DWORD
-{
-    return GetWindowThreadProcessId(m_hWnd, nullptr);
-}
-
-void ImeWnd::AbortIme() const
-{
-    if (State::GetInstance().HasAny(State::IN_CAND_CHOOSING, State::IN_COMPOSING))
-    {
-        SetFocus(m_hWndParent);
-    }
-}
-
-void ImeWnd::DrawIme(Settings &settings) const
-{
-    ImGui::PushFont(nullptr, settings.state.fontSize);
-    {
-        ErrorNotifier::GetInstance().Show();
-        m_pImeWindow->Draw(settings);
-        m_pImeUi->DrawToolWindow(settings);
-    }
-    ImGui::PopFont();
-}
-
-void ImeWnd::ShowToolWindow() const
-{
-    m_pImeUi->ShowToolWindow();
-}
-
-void ImeWnd::ApplyUiSettings(Settings *pSettings) const
-{
-    m_pImeUi->ApplySettings(*pSettings);
-    ImeController::GetInstance()->ApplyUiSettings(*pSettings);
-}
-
 auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
 {
     auto *pThis = static_cast<ImeWnd *>(lpCreateStruct->lpCreateParams);
@@ -355,6 +305,11 @@ auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
     pThis->m_hWnd       = hWnd;
     pThis->m_hWndParent = lpCreateStruct->hwndParent;
     return TRUE;
+}
+
+inline void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
+{
+    Utils::SendStringToGame(compositionString);
 }
 
 void ImeWnd::TsfMessageLoop()
@@ -412,9 +367,51 @@ void ImeWnd::TsfMessageLoop()
     }
 }
 
-inline void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
+void ImeWnd::OnCreated(Settings &settings)
 {
-    Utils::SendStringToGame(compositionString);
+    m_pTextService->OnStart(m_hWnd);
+
+    ImeController::Init(this, m_hWndParent, settings);
+}
+
+auto ImeWnd::OnDestroy() const -> LRESULT
+{
+    log_info("Destroy IME Window");
+    UnInitialize();
+    PostQuitMessage(0);
+    return S_OK;
+}
+
+void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
+{
+    static DWORD gameThread    = 0;
+    static DWORD currentThread = GetCurrentThreadId();
+    if (gameThread == 0)
+    {
+        gameThread = GetWindowThreadProcessId(m_hWndParent, nullptr);
+    }
+    if (gameThread != currentThread)
+    {
+        if (AttachThreadInput(gameThread, currentThread, TRUE) != FALSE)
+        {
+            switch (uMsg)
+            {
+                case WM_KEYDOWN:
+                case WM_KEYUP:
+                case WM_SYSKEYDOWN:
+                case WM_SYSKEYUP: {
+                    if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
+                    {
+                        log_debug("Post message to game failed.");
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            AttachThreadInput(gameThread, currentThread, FALSE);
+        }
+    }
 }
 }
 }

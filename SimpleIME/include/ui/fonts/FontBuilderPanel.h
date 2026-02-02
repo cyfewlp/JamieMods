@@ -6,7 +6,6 @@
 
 #include "common/config.h"
 #include "common/imgui/Material3.h"
-#include "ui/Settings.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/FontPreviewPanel.h"
 
@@ -22,20 +21,19 @@ class FontBuilderPanel
     static constexpr auto TITLE_WARNING = "Warning";
 
 public:
-    explicit FontBuilderPanel(ImGuiEx::M3::M3Styles &styles) : m_styles(styles), m_PreviewPanel(styles) {}
+    explicit FontBuilderPanel() = default;
 
-    void Draw(FontBuilder &fontBuilder, Settings &settings);
+    void Draw(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
-    void        DrawAddFontButton(FontBuilder &fontBuilder);
-    void        DrawFontInfoTable(const FontBuilder &fontBuilder) const;
-    void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings);
-    void        DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings);
+    void        DrawAddFontButton(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
+    void        DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles) const;
+    void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
+    void        DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
     static void DrawHelpModal();
     static void DrawWarningsModal();
 
-    ImGuiEx::M3::M3Styles &m_styles;
-    FontPreviewPanel       m_PreviewPanel;
+    FontPreviewPanel m_PreviewPanel{};
 };
 }
 }

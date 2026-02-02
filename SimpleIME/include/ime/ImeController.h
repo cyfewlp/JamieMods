@@ -83,7 +83,7 @@ private:
 
     friend class ImeWnd;
 
-    static void Init(ImeWnd *imeWnd, HWND gameHwnd, Settings *settings);
+    static void Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings);
 };
 }
 }

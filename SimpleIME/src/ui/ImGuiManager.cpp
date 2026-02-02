@@ -4,6 +4,7 @@
 #include "ui/ImGuiManager.h"
 
 #include "common/imgui/ErrorNotifier.h"
+#include "common/imgui/Material3.h"
 #include "common/log.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
@@ -60,9 +61,8 @@ auto ImGuiManager::AddPrimaryFont(const std::vector<std::string> &fontsPathList)
             "Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning
         );
         io.Fonts->Clear();
-         auto defaultFonts = std::vector{
-            std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)
-        };
+        auto defaultFonts =
+            std::vector{std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)};
         imFont = AddFonts(defaultFonts);
     }
     if (imFont == nullptr)
@@ -186,6 +186,113 @@ void ImGuiManager::Shutdown()
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
     }
+}
+
+void ImGuiManager::ApplyM3Theme(ImGuiEx::M3::M3Styles &m3Styles)
+{
+    ImGuiStyle &style = ImGui::GetStyle();
+
+    auto &colors = m3Styles.Colors();
+
+    style.Colors[ImGuiCol_Text]             = colors[ImGuiEx::M3::ContentToken::onSurface];
+    style.Colors[ImGuiCol_TitleBg]          = colors[ImGuiEx::M3::SurfaceToken::surfaceContainer];
+    style.Colors[ImGuiCol_TitleBgActive]    = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TitleBgCollapsed] = colors[ImGuiEx::M3::SurfaceToken::surfaceContainer];
+
+    style.Colors[ImGuiCol_WindowBg] = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_ChildBg]  = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_PopupBg]  = colors[ImGuiEx::M3::SurfaceToken::primaryContainer];
+
+    style.Colors[ImGuiCol_FrameBg]       = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer];
+    style.Colors[ImGuiCol_FrameBgActive] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Pressed(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+    style.Colors[ImGuiCol_FrameBgHovered] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Hovered(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+    style.Colors[ImGuiCol_Border]       = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_BorderShadow] = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+
+    style.Colors[ImGuiCol_SliderGrab] = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_SliderGrabActive] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Pressed(colors[ImGuiEx::M3::ContentToken::onPrimary]);
+
+    style.Colors[ImGuiCol_Button] = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_ButtonHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Hovered(colors[ImGuiEx::M3::ContentToken::onPrimary]);
+    style.Colors[ImGuiCol_ButtonActive] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Pressed(colors[ImGuiEx::M3::ContentToken::onPrimary]);
+
+    style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
+    style.Colors[ImGuiCol_ScrollbarGrab]        = colors[ImGuiEx::M3::SurfaceToken::outline];
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors[ImGuiEx::M3::SurfaceToken::primary];
+
+    style.Colors[ImGuiCol_MenuBarBg] = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh];
+
+    style.Colors[ImGuiCol_Header] = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh];
+    style.Colors[ImGuiCol_HeaderHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh].Hovered(colors[ImGuiEx::M3::ContentToken::onSurface]);
+    style.Colors[ImGuiCol_HeaderActive] =
+        colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh].Pressed(colors[ImGuiEx::M3::ContentToken::onSurface]);
+
+    style.Colors[ImGuiCol_Separator] = colors[ImGuiEx::M3::SurfaceToken::secondary];
+    style.Colors[ImGuiCol_SeparatorHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::secondary].Hovered(colors[ImGuiEx::M3::ContentToken::onSecondary]);
+    style.Colors[ImGuiCol_SeparatorActive] =
+        colors[ImGuiEx::M3::SurfaceToken::secondary].Pressed(colors[ImGuiEx::M3::ContentToken::onSecondary]);
+
+    style.Colors[ImGuiCol_ResizeGrip]        = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer];
+    style.Colors[ImGuiCol_ResizeGripHovered] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Hovered(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+    style.Colors[ImGuiCol_ResizeGripActive] = colors[ImGuiEx::M3::SurfaceToken::secondaryContainer].Pressed(
+        colors[ImGuiEx::M3::ContentToken::onSecondaryContainer]
+    );
+
+    style.Colors[ImGuiCol_InputTextCursor] = colors[ImGuiEx::M3::SurfaceToken::secondary];
+
+    style.Colors[ImGuiCol_Tab] = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TabHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::surface].Hovered(colors[ImGuiEx::M3::ContentToken::onSurface]);
+    style.Colors[ImGuiCol_TabSelected]         = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TabSelectedOverline] = colors[ImGuiEx::M3::SurfaceToken::primary];
+
+    style.Colors[ImGuiCol_TabDimmed] = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TabDimmedSelected] =
+        colors[ImGuiEx::M3::SurfaceToken::surface].Pressed(colors[ImGuiEx::M3::ContentToken::onSurface]);
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+
+    style.Colors[ImGuiCol_PlotLines] = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_PlotLinesHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::primary].Hovered(colors[ImGuiEx::M3::ContentToken::onPrimary]);
+
+    style.Colors[ImGuiCol_PlotHistogram] = colors[ImGuiEx::M3::SurfaceToken::tertiary];
+    style.Colors[ImGuiCol_PlotHistogramHovered] =
+        colors[ImGuiEx::M3::SurfaceToken::tertiary].Hovered(colors[ImGuiEx::M3::ContentToken::onTertiary]);
+
+    style.Colors[ImGuiCol_TableHeaderBg]     = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh];
+    style.Colors[ImGuiCol_TableBorderStrong] = colors[ImGuiEx::M3::SurfaceToken::outline];
+    style.Colors[ImGuiCol_TableBorderLight]  = colors[ImGuiEx::M3::SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_TableRowBg]        = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_TableRowBgAlt]     = colors[ImGuiEx::M3::SurfaceToken::surfaceContainerLowest];
+
+    // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low; // TODO: set this
+    style.Colors[ImGuiCol_TextSelectedBg]   = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
+
+    style.Colors[ImGuiCol_TreeLines] = colors[ImGuiEx::M3::ContentToken::onSurface];
+
+    style.Colors[ImGuiCol_DragDropTarget]   = colors[ImGuiEx::M3::SurfaceToken::primary];
+    style.Colors[ImGuiCol_DragDropTargetBg] = colors[ImGuiEx::M3::SurfaceToken::surface];
+
+    style.Colors[ImGuiCol_UnsavedMarker]         = colors[ImGuiEx::M3::ContentToken::onPrimary];
+    style.Colors[ImGuiCol_NavCursor]             = colors[ImGuiEx::M3::ContentToken::onSecondary];
+    style.Colors[ImGuiCol_NavWindowingHighlight] = colors[ImGuiEx::M3::ContentToken::onPrimary];
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors[ImGuiEx::M3::SurfaceToken::surfaceContainer];
+
+    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[ImGuiEx::M3::SurfaceToken::surface];
+    style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 
 }
