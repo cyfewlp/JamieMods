@@ -5,6 +5,7 @@
 #include "common/common.h"
 #include "common/hook.h"
 #include "common/imgui/ErrorNotifier.h"
+#include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
 #include "common/log.h"
 #include "common/utils.h"
@@ -255,16 +256,16 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
     ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
     const auto iconFile = CommonUtils::GetInterfaceFile(Settings::ICON_FILE);
-    auto      *iconFont = ImGuiManager::AddFont(iconFile);
+    auto      *iconFont = ImGuiManager::AddFont(iconFile); // FIXME:: should move to ImeUI after refactor ImeUI
     if (iconFont == nullptr)
     {
         throw SimpleIMEException("Cannot find icon font. Initialization failed!");
     }
 
-    using M3Colors = ImGuiEx::M3::Colors;
-    using M3Styles = ImGuiEx::M3::M3Styles;
-    auto colors    = M3Colors(m_settings.appearance.themeSourceColor, m_settings.appearance.themeDarkMode);
-    g_M3Styles     = std::make_unique<M3Styles>(colors, iconFont);
+    auto colors = ImGuiEx::M3::ThemeBuilder::BuildThemeFromSeed(
+        m_settings.appearance.themeSourceColor, m_settings.appearance.themeDarkMode
+    );
+    g_M3Styles = std::make_unique<ImGuiEx::M3::M3Styles>(std::move(colors), iconFont);
 
     std::thread childWndThread([&ensureInitialized, this] {
         try

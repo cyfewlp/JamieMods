@@ -30,7 +30,7 @@ public:
 
     void Draw(bool appearing);
 
-    void ApplyM3Theme(uint32_t sourceColor, bool isDark);
+    void ApplyM3Theme();
 
 private:
     void DrawZoomCombo() const;

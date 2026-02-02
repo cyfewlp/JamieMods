@@ -166,7 +166,8 @@ void AppearancePanel::DrawThemeBuilder()
                     .Style_FrameRounding(m_styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
                 {
-                    ApplyM3Theme(ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
+                    m_styles.RebuildColors(ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
+                    ApplyM3Theme();
                     scheme.reset();
                     ImGui::CloseCurrentPopup();
                 }
@@ -220,11 +221,9 @@ void AppearancePanel::DrawThemeBuilder()
     ImGui::PopFont();
 }
 
-void AppearancePanel::ApplyM3Theme(uint32_t sourceColor, const bool isDark)
+void AppearancePanel::ApplyM3Theme()
 {
     auto &colors = m_styles.Colors();
-
-    m_styles.RebuildColors(sourceColor, isDark);
 
     m_colorInThemeBuilder = ImColor(argbToImVec4(m_styles.Colors().SeedArgb()));
 

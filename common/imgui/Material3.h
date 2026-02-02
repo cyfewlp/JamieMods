@@ -169,15 +169,26 @@ enum class ContentToken : std::uint8_t
 
 class Colors
 {
-    std::array<SurfaceColor, static_cast<uint8_t>(SurfaceToken::count)> surfaceColors;
-    std::array<ContentColor, static_cast<uint8_t>(ContentToken::count)> contentColors;
-    uint32_t                                                            seedArgb;
-    bool                                                                darkMode = false;
+public:
+    using SurfaceColors = std::array<SurfaceColor, static_cast<uint8_t>(SurfaceToken::count)>;
+    using ContentColors = std::array<ContentColor, static_cast<uint8_t>(ContentToken::count)>;
+
+private:
+    SurfaceColors surfaceColors;
+    ContentColors contentColors;
+    uint32_t      seedArgb;
+    bool          darkMode = false;
 
     friend class ThemeBuilder;
 
 public:
-    explicit Colors(const uint32_t seedArgb, const bool darkMode) : seedArgb(seedArgb), darkMode(darkMode) {}
+    explicit Colors(
+        const uint32_t seedArgb, const bool darkMode, SurfaceColors &&surfaceColors, ContentColors &&contentColors
+    )
+        : seedArgb(seedArgb), darkMode(darkMode), surfaceColors(std::move(surfaceColors)),
+          contentColors(std::move(contentColors))
+    {
+    }
 
     // clang-format off
     auto SeedArgb() const -> uint32_t { return seedArgb; }
@@ -273,6 +284,11 @@ public:
         UpdateScaling(currentScale);
     }
 
+    constexpr explicit M3Styles(Colors &&colors, ImFont *iconFont) : colors(std::move(colors)), iconFont(iconFont)
+    {
+        UpdateScaling(currentScale);
+    }
+
     void UpdateScaling(const float newScale)
     {
         currentScale = newScale;
@@ -289,7 +305,7 @@ public:
         iconSize = ICON_SIZE * newScale;
     }
 
-    void RebuildColors(const uint32_t sourceColor, const bool isDark);
+    void RebuildColors(uint32_t sourceColor, bool isDark);
 
     auto Colors() const -> const Colors &
     {

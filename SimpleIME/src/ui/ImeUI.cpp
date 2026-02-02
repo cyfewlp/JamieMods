@@ -73,7 +73,7 @@ bool ImeUI::Initialize(LangProfileUtil *pLangProfileUtil)
 void ImeUI::ApplyAppearanceSettings(Settings &settings)
 {
     auto &appearance = settings.appearance;
-    m_panelAppearance.ApplyM3Theme(appearance.themeSourceColor, appearance.themeDarkMode);
+    m_panelAppearance.ApplyM3Theme();
 
     TranslationLoader::ScanLanguages(TRANSLATE_FILES_DIR, m_translateLanguages);
     if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
