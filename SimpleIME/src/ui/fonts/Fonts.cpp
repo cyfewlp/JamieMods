@@ -415,14 +415,14 @@ void FontBuilderPanel::DrawHelpModal()
 {
     bool open = true;
     if (ImGui::BeginPopupModal(
-            Translate("Settings.FontBuilder.HelpTitle").data(),
+            Translate("Settings.FontBuilder.HelpTitle"),
             &open,
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
         ))
     {
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Help1").data());
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Help2").data());
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Help3").data());
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Help1"));
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Help2"));
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Help3"));
         ImGui::EndPopup();
     }
 }
@@ -431,12 +431,12 @@ void FontBuilderPanel::DrawWarningsModal()
 {
     bool open = true;
     if (ImGui::BeginPopupModal(
-            Translate("Settings.FontBuilder.WarningTitle").data(),
+            Translate("Settings.FontBuilder.WarningTitle"),
             &open,
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
         ))
     {
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Warning1").data());
+        ImGui::Text("%s", Translate("Settings.FontBuilder.Warning1"));
         ImGui::EndPopup();
     }
 }

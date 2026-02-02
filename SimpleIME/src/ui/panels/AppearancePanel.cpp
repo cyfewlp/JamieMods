@@ -72,7 +72,7 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
 
     const auto preview = std::format("{}%", zoomList.at(currentZoomIndex) * zoomUnit);
     if (ImGui::BeginCombo(
-            Translate("Settings.Appearance.Zoom").data(), preview.c_str(), ImGuiEx::ComboFlags().NoArrowButton()
+            Translate("Settings.Appearance.Zoom"), preview.c_str(), ImGuiEx::ComboFlags().NoArrowButton()
         ))
     {
         uint8_t index = 0;
@@ -107,7 +107,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(colors.SourceColor()), colorButtonFlags);
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor").data());
+        ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor"));
     }
     bool edited = false;
     if (openPopup)
@@ -121,7 +121,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             .Style_WindowPadding({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::M]})
             .Color_PopupBg(colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh]);
         if (ImGui::BeginPopupModal(
-                Translate("Settings.Appearance.ThemeBuilder").data(), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
+                Translate("Settings.Appearance.ThemeBuilder"), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
             ))
         {
             using Scheme = material_color_utilities::SchemeTonalSpot;
@@ -157,7 +157,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     .Style_FramePadding({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::M]})
                     .Style_ItemSpacing({m3Styles[ImGuiEx::M3::Spacing::L], 0.f})
                     .Style_FrameRounding(m3Styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));
-                if (ImGui::Button(Translate("Settings.Appearance.Apply").data()))
+                if (ImGui::Button(Translate("Settings.Appearance.Apply")))
                 {
                     m3Styles.RebuildColors(ImGuiEx::M3::ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
                     ImGuiManager::ApplyM3Theme(m3Styles);
@@ -166,7 +166,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                 }
 
                 ImGui::SameLine();
-                if (ImGui::Button(Translate("Settings.Appearance.Cancel").data()))
+                if (ImGui::Button(Translate("Settings.Appearance.Cancel")))
                 {
                     scheme.reset();
                     ImGui::CloseCurrentPopup();
@@ -177,7 +177,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             ImGui::SameLine(0, m3Styles[ImGuiEx::M3::Spacing::S]);
 
             ImGui::BeginGroup();
-            ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeInThemeBuilder);
+            ImGui::Checkbox(Translate("Settings.Appearance.DarkMode"), &m_darkModeInThemeBuilder);
             if (edited)
             {
                 m_colorInThemeBuilder    = ImGuiEx::M3::ArgbToImVec4(m3Styles.Colors().SourceColor());
@@ -219,7 +219,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
 {
     bool clicked = false;
-    if (ImGui::BeginCombo(Translate("Settings.Appearance.Languages").data(), appearance.language.c_str()))
+    if (ImGui::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language.c_str()))
     {
         int32_t idx = 0;
         for (const auto &language : m_translateLanguages)

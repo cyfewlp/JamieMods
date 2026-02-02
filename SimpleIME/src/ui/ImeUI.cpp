@@ -159,7 +159,7 @@ void ImeUI::DrawToolWindow(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     {
         settings.appearance.showSettings = true;
     }
-    ImGui::SetItemTooltip("%s", Translate("Settings.Settings").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
 
     ImGui::SameLine();
     DrawInputMethodsCombo();
@@ -283,11 +283,11 @@ void ImeUI::DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles 
 void ImeUI::DrawMenuBehaviour(Settings &settings) const
 {
     bool enableMod = settings.enableMod;
-    if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod").data(), &enableMod))
+    if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod"), &enableMod))
     {
         ImeController::GetInstance()->EnableMod(enableMod);
     }
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableModToolTip").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableModToolTip"));
     if (!settings.enableMod)
     {
         return;
@@ -301,20 +301,20 @@ void ImeUI::DrawFeatures(Settings &settings)
 {
     DrawWindowPosUpdatePolicy(settings);
 
-    ImGui::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste").data(), &settings.input.enableUnicodePaste);
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableUnicodePasteTooltip").data());
+    ImGui::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste"), &settings.input.enableUnicodePaste);
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.EnableUnicodePasteTooltip"));
 
     ImGui::SameLine();
-    if (ImGui::Checkbox(Translate("Settings.Behaviour.KeepImeOpen").data(), &settings.input.keepImeOpen))
+    if (ImGui::Checkbox(Translate("Settings.Behaviour.KeepImeOpen"), &settings.input.keepImeOpen))
     {
         ImeController::GetInstance()->MarkDirty();
     }
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.KeepImeOpenTooltip").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.KeepImeOpenTooltip"));
 }
 
 void ImeUI::DrawStates() const
 {
-    ImGui::SeparatorText(Translate("Settings.Behaviour.States").data());
+    ImGui::SeparatorText(Translate("Settings.Behaviour.States"));
 
     constexpr auto STATE_ACTIVE_COLOR = ImVec4(0.35F, 0.75F, 1.0F, 1.0F);
     const auto    &state              = State::GetInstance();
@@ -324,8 +324,8 @@ void ImeUI::DrawStates() const
     );
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled").data());
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImeEnabledTooltip").data());
+    ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled"));
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImeEnabledTooltip"));
 
     ImGui::SameLine();
 
@@ -333,13 +333,13 @@ void ImeUI::DrawStates() const
     ImGui::TextColored(m_pImeWnd->IsFocused() ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("%s", Translate("Settings.Behaviour.Focus").data());
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.FocusTooltip").data());
+    ImGui::Text("%s", Translate("Settings.Behaviour.Focus"));
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.FocusTooltip"));
 
     ImGui::SameLine(0, ImGui::GetFontSize());
     ImGui::TextDisabled("|");
     ImGui::SameLine(0, ImGui::GetFontSize());
-    if (ImGui::Button(Translate("Settings.Behaviour.ForceFocusIme").data()))
+    if (ImGui::Button(Translate("Settings.Behaviour.ForceFocusIme")))
     {
         ImeController::GetInstance()->ForceFocusIme();
     }
@@ -384,28 +384,28 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
 {
     using Policy = Settings::WindowPosUpdatePolicy;
 
-    ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy").data());
+    ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy"));
 
     RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByCursor").data(),
+        Translate("Settings.Behaviour.ImePos.UpdateByCursor"),
         &settings.input.posUpdatePolicy,
         Policy::BASED_ON_CURSOR
     );
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCursorTooltip").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCursorTooltip"));
 
     ImGui::SameLine();
     RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByCaret").data(),
+        Translate("Settings.Behaviour.ImePos.UpdateByCaret"),
         &settings.input.posUpdatePolicy,
         Policy::BASED_ON_CARET
     );
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCaretTooltip").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCaretTooltip"));
 
     ImGui::SameLine();
     RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByNone").data(), &settings.input.posUpdatePolicy, Policy::NONE
+        Translate("Settings.Behaviour.ImePos.UpdateByNone"), &settings.input.posUpdatePolicy, Policy::NONE
     );
-    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip").data());
+    ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip"));
 }
 
 } // namespace  SimpleIME
