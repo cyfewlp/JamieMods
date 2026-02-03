@@ -10,7 +10,17 @@
 #include <iostream>
 #include <regex>
 
-void Ime::TranslationLoader::ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &languages)
+namespace i18n
+{
+namespace
+{
+auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator>;
+void ProcessTable(
+    toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, Translator::LanguageMap &languageMap
+);
+} // namespace
+
+void ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &languages)
 {
     namespace fs = std::filesystem;
     const std::regex pattern(R"(translate_(\w+)\.toml)", std::regex_constants::icase);
@@ -38,25 +48,25 @@ void Ime::TranslationLoader::ScanLanguages(const std::filesystem::path &dir, std
     }
 }
 
-auto Ime::TranslationLoader::LoadFrom(std::string_view language) const -> std::optional<i18n::Translator>
+auto LoadTranslation(Language language, const std::filesystem::path &dir) -> std::optional<Translator>
 {
-    if (!std::filesystem::is_directory(m_dirTranslateFiles))
+    if (!std::filesystem::is_directory(dir))
     {
         return std::nullopt;
     }
 
-    auto translateFile = m_dirTranslateFiles / std::format("translate_{}.toml", language);
+    auto translateFile = dir / std::format("translate_{}.toml", language);
     if (!std::filesystem::exists(translateFile))
     {
         return std::nullopt;
     }
-
     return LoadFromFile(translateFile);
 }
 
+namespace
+{
 void ProcessTable(
-    toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey,
-    i18n::Translator::LanguageMap &languageMap
+    toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, Translator::LanguageMap &languageMap
 )
 {
     if (!a_table) return;
@@ -83,7 +93,7 @@ void ProcessTable(
     }
 }
 
-auto Ime::TranslationLoader::LoadFromFile(const std::filesystem::path &file) const -> std::optional<i18n::Translator>
+auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator>
 {
     try
     {
@@ -93,11 +103,31 @@ auto Ime::TranslationLoader::LoadFromFile(const std::filesystem::path &file) con
             return std::nullopt;
         }
 
-        i18n::Translator::LanguageMap languageMap;
+        Translator::LanguageMap languageMap;
 
-        ProcessTable(table[m_sectionMain].as_table(), m_sectionMain, languageMap);
+        for (const auto &pair : table)
+        {
+            auto key = pair.first.str();
+            if (pair.second.is_table())
+            {
+                ProcessTable(pair.second.as_table(), std::string(key), languageMap);
+            }
+            else if (pair.second.is_string())
+            {
+                languageMap.emplace(i18n::HashKey(key), pair.second.value_or(""));
+            }
+            else
+            {
+                logger::warn(
+                    "i18n: Unknown value type '{}' encountered for key '{}'. Please check your translation file or "
+                    "update the mod.",
+                    toml::impl::to_sv(pair.second.type()),
+                    key
+                );
+            }
+        }
 
-        return std::optional(i18n::Translator(std::move(languageMap)));
+        return std::optional(Translator(std::move(languageMap)));
     }
     catch (std::exception &e)
     {
@@ -109,3 +139,6 @@ auto Ime::TranslationLoader::LoadFromFile(const std::filesystem::path &file) con
     }
     return std::nullopt;
 }
+
+} // namespace
+} // namespace i18n

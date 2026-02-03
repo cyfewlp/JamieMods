@@ -7,15 +7,13 @@
 #include <random>
 #include <spdlog/common.h>
 
-using namespace LIBC_NAMESPACE::Ime;
-
 namespace fs = std::filesystem;
 
 TEST(ConfigSerializerTest, DeserializeAll)
 {
-    Settings settings;
+    Ime::Settings settings;
 
-    ConfigSerializer::Deserialize("SimpleIME.toml", settings);
+    Ime::ConfigSerializer::Deserialize("SimpleIME.toml", settings);
 
     ASSERT_EQ(settings.shortcutKey, 0x9999);
     ASSERT_EQ(settings.enableMod, false);
@@ -33,7 +31,7 @@ TEST(ConfigSerializerTest, DeserializeAll)
     ASSERT_FLOAT_EQ(settings.appearance.zoom, 1.75f);
 
     // raw value: "xxx"
-    ASSERT_EQ(settings.input.posUpdatePolicy, Settings::WindowPosUpdatePolicy::NONE);
+    ASSERT_EQ(settings.input.posUpdatePolicy, Ime::Settings::WindowPosUpdatePolicy::NONE);
     ASSERT_EQ(settings.input.enableUnicodePaste, false);
     ASSERT_EQ(settings.input.keepImeOpen, true);
 }
@@ -44,9 +42,9 @@ TEST(ConfigSerializerTest, ShouldNoException)
     std::ofstream emptyFile(emptyPath);
     emptyFile.close();
 
-    Settings settings;
-    ASSERT_NO_THROW(ConfigSerializer::Deserialize("empty.toml", settings));
-    ASSERT_NO_THROW(ConfigSerializer::Serialize("empty.toml", settings));
+    Ime::Settings settings;
+    ASSERT_NO_THROW(Ime::ConfigSerializer::Deserialize("empty.toml", settings));
+    ASSERT_NO_THROW(Ime::ConfigSerializer::Serialize("empty.toml", settings));
 
     std::filesystem::remove(emptyPath);
 }
@@ -55,7 +53,7 @@ TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
 {
     ImeTest::RandomUtils random;
 
-    Settings settings;
+    Ime::Settings settings;
     settings.shortcutKey = random.NextInt(0x1, 0xffffff);
     settings.enableMod   = random.NextBool();
     settings.enableTsf   = random.NextBool();
@@ -75,14 +73,14 @@ TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
 
     settings.input.enableUnicodePaste = random.NextBool();
     settings.input.keepImeOpen        = random.NextBool();
-    settings.input.posUpdatePolicy    = static_cast<Settings::WindowPosUpdatePolicy>(random.NextInt(0, 2));
+    settings.input.posUpdatePolicy    = static_cast<Ime::Settings::WindowPosUpdatePolicy>(random.NextInt(0, 2));
 
     const auto testFilePath = fs::path("SerializeTest.toml");
-    ConfigSerializer::Serialize(testFilePath.string(), settings);
+    Ime::ConfigSerializer::Serialize(testFilePath.string(), settings);
 
-    Settings deserialized;
+    Ime::Settings deserialized;
     ASSERT_FALSE(settings == deserialized);
-    ConfigSerializer::Deserialize(testFilePath.string(), deserialized);
+    Ime::ConfigSerializer::Deserialize(testFilePath.string(), deserialized);
 
     ASSERT_EQ(deserialized.enableMod, settings.enableMod);
     ASSERT_EQ(deserialized.enableTsf, settings.enableTsf);

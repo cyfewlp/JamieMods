@@ -6,9 +6,6 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <random>
-#include <spdlog/common.h>
-
-using namespace LIBC_NAMESPACE::Ime;
 
 namespace fs = std::filesystem;
 
@@ -16,20 +13,25 @@ TEST(TranslationLoaderTest, ShouldStoreAsFullQualifyKey)
 {
     const std::filesystem::path tempTranslateFile("translate_fakeLang.toml");
     std::ofstream               tempFile(tempTranslateFile);
-    tempFile << "[Section1]" << "\n";
-    tempFile << R"(k1 = "v1")" << "\n";
-    tempFile << "[Section1.ChildSection]\n";
-    tempFile << R"(k2 = "v2")" << "\n";
+    tempFile << R"([Section1]
+k1 = "v1"
+[Section1.ChildSection]
+k2 = "v2"
+[Section2]
+s2k1 = "s2v1"
+[Section2.Child]
+s2k2 = "s2v2"
+)" << "\n";
     tempFile.close();
 
-    TranslationLoader loader(fs::absolute(fs::path(".")), "Section1");
-
-    auto translatorOpt = loader.LoadFrom("fakeLang");
+    auto translatorOpt = i18n::LoadTranslation("fakeLang", fs::absolute(fs::path(".")));
 
     ASSERT_TRUE(translatorOpt.has_value());
     const auto &translator = translatorOpt.value();
-    ASSERT_EQ(translator.Translate(LIBC_NAMESPACE::i18n::HashKey("Section1.k1"), ""), "v1");
-    ASSERT_EQ(translator.Translate(LIBC_NAMESPACE::i18n::HashKey("Section1.ChildSection.k2"), ""), "v2");
+    ASSERT_EQ(translator.Translate(i18n::HashKey("Section1.k1"), ""), "v1");
+    ASSERT_EQ(translator.Translate(i18n::HashKey("Section1.ChildSection.k2"), ""), "v2");
+    ASSERT_EQ(translator.Translate(i18n::HashKey("Section2.s2k1"), ""), "s2v1");
+    ASSERT_EQ(translator.Translate(i18n::HashKey("Section2.Child.s2k2"), ""), "s2v2");
 
     std::filesystem::remove(tempTranslateFile);
 }
@@ -46,7 +48,7 @@ TEST(TranslationLoaderTest, ShouldScanAllTranslateFiles)
     fakeLang3.close();
 
     std::vector<std::string> languages;
-    TranslationLoader::ScanLanguages(fs::path("."), languages);
+    i18n::ScanLanguages(fs::path("."), languages);
 
     ASSERT_EQ(languages.size(), 3);
     ASSERT_EQ(languages[0], "fakeLang1");

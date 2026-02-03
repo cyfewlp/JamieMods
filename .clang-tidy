@@ -1,4 +1,22 @@
-﻿Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
+﻿#Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
+Checks: >
+  -*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  google-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-type-reinterpret-cast, 
+  -misc-include-cleaner,
+  -google-readability-namespace-comments,
+#  -cppcoreguidelines-pro-type-vararg,
+#  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+#  -readability-braces-around-statements,
+#  -performance-no-automatic-move,
 HeaderFileExtensions:
   - ''
   - h
@@ -10,10 +28,10 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-HeaderFilterRegex: '^(?!.*extern/).*'
-ExcludeHeaderFilterRegex: .*imgui.*|.*RE.*
+HeaderFilterRegex: '^(?!.*(extern|imgui|RE|CommonLibSSE)).*' # 合并排除列表到过滤正则中，效率更高
 CheckOptions:
-  llvmlibc-restrict-system-libc-headers.Includes: '-*'
+  readability-make-member-function-const.IgnorePrototypes: 'false'
+  readability-convert-member-functions-to-static.IgnoreMacros: 'true'
+  readability-function-cognitive-complexity.Threshold: '25'
   cppcoreguidelines-pro-bounds-avoid-unchecked-container-access.ExcludeClasses: '::ImGuiEx::M3::Colors;::ImGuiEx::M3::M3Styles'
 FormatStyle: file
-User: jamie
