@@ -10,4 +10,4 @@ void M3Styles::RebuildColors(const Argb sourceColor, const bool isDark)
 {
     ThemeBuilder::BuildThemeFromSeed(sourceColor, isDark, colors);
 }
-}
+} // namespace ImGuiEx::M3

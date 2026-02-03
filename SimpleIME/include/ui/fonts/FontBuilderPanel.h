@@ -32,4 +32,4 @@ private:
 
     FontPreviewPanel m_PreviewPanel{};
 };
-}
+} // namespace Ime

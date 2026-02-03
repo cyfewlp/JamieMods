@@ -104,4 +104,4 @@ auto BeginModalPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
 auto EndPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
-}
+} // namespace ImGuiEx::M3

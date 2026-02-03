@@ -51,4 +51,4 @@ public:
 private:
     static void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result);
 };
-}
+} // namespace Ime

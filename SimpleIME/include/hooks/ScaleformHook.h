@@ -138,6 +138,6 @@ public:
 
     static void Uninstall();
 };
-}
+} // namespace Hooks
 
 #endif // HOOK_H

@@ -77,4 +77,4 @@ struct Settings
 
     bool operator==(const Settings &other) const = default;
 };
-}
+} // namespace Ime

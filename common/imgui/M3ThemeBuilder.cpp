@@ -15,7 +15,7 @@ void ThemeBuilder::BuildThemeFromSeed(const Argb sourceColor, const bool isDark,
 {
     const Scheme scheme(Hct(sourceColor), isDark, 0.0);
     colors.sourceColor = sourceColor;
-    colors.darkMode = isDark;
+    colors.darkMode    = isDark;
 
     FillSurfaceColors(colors.surfaceColors, scheme);
     FillContentColors(colors.contentColors, scheme);
@@ -92,4 +92,4 @@ void ThemeBuilder::FillContentColors(Colors::ContentColors &contentColors, const
     contentColors.at(static_cast<size_t>(ContentToken::inverseOnSurface))       = ArgbToImVec4(scheme.GetInverseOnSurface());
     // clang-format on
 }
-}
+} // namespace ImGuiEx::M3

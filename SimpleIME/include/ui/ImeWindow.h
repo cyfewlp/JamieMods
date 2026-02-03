@@ -42,4 +42,4 @@ private:
      */
     static void ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos);
 };
-}
+} // namespace Ime

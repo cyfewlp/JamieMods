@@ -53,4 +53,4 @@ private:
     bool                      m_IsWaiting = false;
     bool                      m_Triggered = false;
 };
-}
+} // namespace Ime

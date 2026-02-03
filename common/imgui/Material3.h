@@ -381,4 +381,4 @@ public:
     }
 };
 
-}
+} // namespace ImGuiEx::M3

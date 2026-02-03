@@ -1,10 +1,10 @@
 #include "core/EventHandler.h"
 
 #include "ImeWnd.hpp"
+#include "common/log.h"
 #include "hooks/ScaleformHook.h"
 #include "ime/ImeController.h"
 #include "menu/MenuNames.h"
-#include "common/log.h"
 #include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
@@ -16,22 +16,97 @@
 #include <RE/M/MainMenu.h>
 #include <RE/U/UI.h>
 
-namespace Ime::Core
+namespace Ime::Events
 {
-void EventHandler::InstallEventSink(ImeWnd *imeWnd, const uint32_t shortcutKey)
+
+class InputEventSink : public RE::BSTEventSink<RE::InputEvent *>
 {
-    static InputEventSink g_InputEventSink(imeWnd, shortcutKey);
-    static MenuOpenCloseEventSink g_pMenuOpenCloseEventSink;
-    RE::BSInputDeviceManager::GetSingleton()->AddEventSink<RE::InputEvent *>(&g_InputEventSink);
-    RE::UI::GetSingleton()->AddEventSink(&g_pMenuOpenCloseEventSink);
+    using Event = RE::InputEvent;
+    using Keys  = RE::BSWin32MouseDevice::Keys;
+
+public:
+    explicit InputEventSink(ImeWnd *m_imeWnd, uint32_t shortcutKey) : m_imeWnd(m_imeWnd), m_shortcutKey(shortcutKey) {}
+
+    RE::BSEventNotifyControl ProcessEvent(Event *const *event, RE::BSTEventSource<Event *> * /*eventSource*/) override;
+
+private:
+    ImeWnd  *m_imeWnd;
+    uint32_t m_shortcutKey;
+
+    void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const;
+};
+
+class MenuOpenCloseEventSink final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+{
+    using Event = RE::MenuOpenCloseEvent;
+
+public:
+    RE::BSEventNotifyControl ProcessEvent(const Event *a_event, RE::BSTEventSource<Event> *) override;
+
+private:
+    static void FixInconsistentTextEntryCount(const Event *event);
+};
+
+namespace
+{
+auto &GetInputEventSink()
+{
+    static std::unique_ptr<InputEventSink> instance = nullptr;
+    return instance;
+}
+
+auto &GetMenuOpenCloseEventSink()
+{
+    static std::unique_ptr<MenuOpenCloseEventSink> instance = nullptr;
+    return instance;
+}
+} // namespace
+
+void InstallEventSinks(ImeWnd *imeWnd, const uint32_t shortcutKey)
+{
+    if (auto &inputSink = GetInputEventSink(); inputSink == nullptr)
+    {
+        if (const auto &deviceManager = RE::BSInputDeviceManager::GetSingleton(); deviceManager)
+        {
+            inputSink = std::make_unique<InputEventSink>(imeWnd, shortcutKey);
+            deviceManager->AddEventSink(inputSink.get());
+        }
+    }
+    if (auto &menuSink = GetMenuOpenCloseEventSink(); menuSink == nullptr)
+    {
+        if (auto *ui = RE::UI::GetSingleton(); ui)
+        {
+            menuSink = std::make_unique<MenuOpenCloseEventSink>();
+            ui->AddEventSink(menuSink.get());
+        }
+    }
+}
+
+void UnInstallEventSinks()
+{
+    if (auto &inputSink = GetInputEventSink(); inputSink != nullptr)
+    {
+        if (const auto &deviceManager = RE::BSInputDeviceManager::GetSingleton(); deviceManager)
+        {
+            deviceManager->RemoveEventSink(inputSink.get());
+        }
+        inputSink.reset();
+    }
+    if (auto &menuSink = GetMenuOpenCloseEventSink(); menuSink != nullptr)
+    {
+        if (const auto &ui = RE::UI::GetSingleton(); ui)
+        {
+            ui->RemoveEventSink(menuSink.get());
+        }
+        menuSink.reset();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
 // InputEventSink
 //////////////////////////////////////////////////////////////////////////
 
-RE::BSEventNotifyControl InputEventSink::
-ProcessEvent(Event *const *events, RE::BSTEventSource<Event *> * /*eventSource*/)
+RE::BSEventNotifyControl InputEventSink::ProcessEvent(Event *const *events, RE::BSTEventSource<Event *> *)
 {
     for (auto *event = *events; event != nullptr; event = event->next)
     {
@@ -79,7 +154,7 @@ void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
 //////////////////////////////////////////////////////////////////////////
 
 RE::BSEventNotifyControl MenuOpenCloseEventSink::
-ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
+    ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
 {
     logger::debug("Menu {} open {}", event->menuName.c_str(), event->opening);
     static bool firstOpenMainMenu = true;
@@ -136,4 +211,4 @@ void MenuOpenCloseEventSink::FixInconsistentTextEntryCount(const Event *event)
         manager->EnableIme(false);
     }
 }
-} // namespace Ime::Core
+} // namespace Ime::Events

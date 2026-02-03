@@ -46,4 +46,4 @@ private:
     void LoadTranslation(std::string_view language) const;
 };
 
-}
+} // namespace Ime

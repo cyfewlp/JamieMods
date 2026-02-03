@@ -216,4 +216,4 @@ void ScaleformHooks::Uninstall()
     g_ScaleformHooks = nullptr;
 }
 
-}
+} // namespace Hooks

@@ -52,4 +52,4 @@ private:
     static void UpdateCursorPos();
     static void EnableTextInputIfNeed();
 };
-}
+} // namespace Ime

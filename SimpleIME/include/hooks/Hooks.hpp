@@ -146,6 +146,6 @@ void             InstallWindowsHooks();
 
 auto WINAPI MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM;
 
-}; // namespace SimpleIME
+}; // namespace Hooks
 
 #endif

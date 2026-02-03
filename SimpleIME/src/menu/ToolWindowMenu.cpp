@@ -64,4 +64,4 @@ auto ToolWindowMenu::Creator() -> IMenu *
     return pMenu;
 }
 
-}
+} // namespace Ime

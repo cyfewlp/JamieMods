@@ -90,4 +90,4 @@ public:
         return m_availableThemes;
     }
 };
-}
+} // namespace ImGuiUtil

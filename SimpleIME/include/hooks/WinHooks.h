@@ -49,4 +49,4 @@ private:
     static BOOL    MyOpenClipboardHook(HWND hwnd);
     static HRESULT MyDirectInput8CreateHook(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 };
-}
+} // namespace Hooks

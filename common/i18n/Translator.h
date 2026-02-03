@@ -105,4 +105,4 @@ consteval auto operator""_hash(const char *str, size_t length) -> uint64_t
     return hash;
 }
 
-}
+} // namespace i18n

@@ -894,4 +894,4 @@ constexpr auto HexToU32(std::string_view hex) -> std::optional<ImU32>
     return std::nullopt;
 }
 
-}
+} // namespace ImGuiEx

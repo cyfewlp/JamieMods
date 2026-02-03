@@ -293,4 +293,4 @@ void ImGuiManager::ApplyM3Theme(ImGuiEx::M3::M3Styles &m3Styles)
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 
-}
+} // namespace Ime

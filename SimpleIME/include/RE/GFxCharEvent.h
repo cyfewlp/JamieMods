@@ -9,7 +9,7 @@ enum class GFxEventTypeEx : std::uint32_t
 {
     kImeCharEvent = 0x80000001
 };
-}
+} // namespace Ime
 
 namespace RE
 {
@@ -29,4 +29,4 @@ public:
 };
 
 static_assert(sizeof(GFxCharEvent) == 0x0C);
-}
+} // namespace RE

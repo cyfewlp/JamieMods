@@ -15,8 +15,7 @@ void WinHooks::Install()
         OpenClipboard = std::make_unique<OpenClipboardHook>(realFuncPtr, MyOpenClipboardHook);
     }
 
-    if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_DINPUT8_STRING, "DirectInput8Create");
-        realFuncPtr != nullptr)
+    if (PVOID realFuncPtr = ::DetourFindFunction(MODULE_DINPUT8_STRING, "DirectInput8Create"); realFuncPtr != nullptr)
     {
         DirectInput8Create = std::make_unique<DirectInput8CreateHook>(realFuncPtr, MyDirectInput8CreateHook);
     }
@@ -52,4 +51,4 @@ HRESULT WinHooks::MyDirectInput8CreateHook(
     *reinterpret_cast<IDirectInput8A **>(ppvOut) = new FakeDirectInput(dinput);
     return DI_OK;
 }
-}
+} // namespace Hooks

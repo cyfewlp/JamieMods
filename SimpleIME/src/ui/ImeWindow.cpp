@@ -275,4 +275,4 @@ void ImeWindow::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPo
         }
     }
 }
-}
+} // namespace Ime

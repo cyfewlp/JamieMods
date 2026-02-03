@@ -114,4 +114,4 @@ public:
 private:
     Enumeration<StateKey> m_state;
 };
-}
+} // namespace Ime::Core

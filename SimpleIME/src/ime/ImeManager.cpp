@@ -112,4 +112,4 @@ auto ImeManager::IsShouldEnableIme() const -> bool
     return m_settings.input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
 }
 
-}
+} // namespace Ime

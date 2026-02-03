@@ -105,6 +105,6 @@ private:
     WNDCLASSEXW                   wc{};
     bool                          m_fFocused = false;
 };
-} // namespace SimpleIME
+} // namespace Ime
 
 #endif

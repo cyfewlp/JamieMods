@@ -250,4 +250,4 @@ void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings)
     instance->m_fInited  = true;
 }
 
-}
+} // namespace Ime

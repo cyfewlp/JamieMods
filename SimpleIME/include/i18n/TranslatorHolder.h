@@ -56,4 +56,4 @@ constexpr auto Translate(const std::string_view key) -> const char *
 {
     return TranslatorHolder::GetTranslator().Translate(i18n::HashKey(key), key).data();
 }
-}
+} // namespace Ime

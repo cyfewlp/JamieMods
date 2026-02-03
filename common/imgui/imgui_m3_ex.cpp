@@ -297,4 +297,4 @@ void SetItemToolTip(std::string_view text, const M3Styles &m3Styles)
     ImGui::SetItemTooltip("%s", TextStart(text));
     ImGui::PopFont();
 }
-}
+} // namespace ImGuiEx::M3

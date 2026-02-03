@@ -26,4 +26,4 @@ public:
 private:
     static auto Creator() -> IMenu *;
 };
-}
+} // namespace Ime

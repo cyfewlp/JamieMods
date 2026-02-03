@@ -207,4 +207,4 @@ auto MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM
     return RealRegisterClassExA(wndClass);
 }
 
-}
+} // namespace Hooks

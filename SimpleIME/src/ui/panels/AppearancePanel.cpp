@@ -282,4 +282,4 @@ void AppearancePanel::LoadTranslation(std::string_view language) const
         m_i18nHandle->Update(std::move(opt.value()));
     }
 }
-}
+} // namespace Ime

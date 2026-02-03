@@ -41,9 +41,9 @@ auto GetFontRef(const FontInfo &fontInfo) -> ComPtr<IDWriteFontFaceReference>
 
 auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
 {
-    std::wstring filePath;
+    std::wstring            filePath;
     ComPtr<IDWriteFontFile> dwFontFile;
-    HRESULT hr = fontRef->GetFontFile(&dwFontFile);
+    HRESULT                 hr = fontRef->GetFontFile(&dwFontFile);
     if (FAILED(hr)) return filePath;
 
     ComPtr<IDWriteFontFileLoader> loader;
@@ -53,12 +53,12 @@ auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
     ComPtr<IDWriteLocalFontFileLoader> localLoader;
     if (FAILED(loader.As(&localLoader))) return filePath;
 
-    const void *key = nullptr;
-    UINT32 keySize = 0;
+    const void *key     = nullptr;
+    UINT32      keySize = 0;
     if (SUCCEEDED(dwFontFile->GetReferenceKey(&key, &keySize)) && keySize > 0)
     {
         UINT32 pathLen = 0;
-        hr = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
+        hr             = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
         if (SUCCEEDED(hr) && pathLen > 0)
         {
             hr = localLoader->GetFilePathFromKey(key, keySize, filePath.data(), pathLen + 1);
@@ -70,7 +70,7 @@ auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
     }
     return filePath;
 }
-}
+} // namespace
 
 void FontManager::FindInstalledFonts()
 {
@@ -92,7 +92,7 @@ void FontManager::FindInstalledFonts()
     const UINT32 fontCount = fontSet->GetFontCount();
     for (UINT32 idx = 0; idx < fontCount; idx++)
     {
-        BOOL exists = FALSE;
+        BOOL                            exists = FALSE;
         ComPtr<IDWriteLocalizedStrings> localizedStrings;
 
         if (SUCCEEDED(fontSet->GetPropertyValues(idx, DWRITE_FONT_PROPERTY_ID_FULL_NAME, &exists, &localizedStrings)))
@@ -106,7 +106,6 @@ void FontManager::FindInstalledFonts()
             m_fontList.emplace_back(FontInfo(idx, fontFullName));
         }
     }
-
 }
 
 auto FontManager::GetFontFilePath(const FontInfo &fontInfo) -> std::string
@@ -122,9 +121,9 @@ auto FontManager::GetFontFilePath(const FontInfo &fontInfo) -> std::string
 
 void FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result)
 {
-    HRESULT hr = S_OK;
-    UINT32 index = 0;
-    BOOL exists = false;
+    HRESULT hr     = S_OK;
+    UINT32  index  = 0;
+    BOOL    exists = false;
 
     wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
 
@@ -161,4 +160,4 @@ void FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::str
         result = WCharUtils::ToString(wstring);
     }
 }
-}
+} // namespace Ime

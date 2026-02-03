@@ -28,4 +28,4 @@ public:
 private:
     auto LoadFromFile(const std::filesystem::path &file) const -> std::optional<i18n::Translator>;
 };
-}
+} // namespace Ime

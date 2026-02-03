@@ -399,4 +399,4 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip"));
 }
 
-} // namespace  SimpleIME
+} // namespace Ime

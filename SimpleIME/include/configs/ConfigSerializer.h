@@ -14,4 +14,4 @@ namespace Ime::ConfigSerializer
 void Serialize(const std::filesystem::path &filePath, Settings &settings);
 
 void Deserialize(const std::filesystem::path &filePath, Settings &settings);
-}
+} // namespace Ime::ConfigSerializer

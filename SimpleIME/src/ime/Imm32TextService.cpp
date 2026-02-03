@@ -317,4 +317,4 @@ void Imm32TextService::UpdateConversionMode(HIMC hIMC)
         }
     }
 }
-}
+} // namespace Ime::Imm32

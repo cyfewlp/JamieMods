@@ -64,6 +64,6 @@ private:
     void Reset();
     auto UpdateTextMetrics(const RE::GFxValue &character) -> void;
     void UpdateCaretCharBoundaries(const RE::GFxValue &charBoundaries);
-    void ConvertBoundariesToScreen(RE::GFxMovieView *movieView, const char* path);
+    void ConvertBoundariesToScreen(RE::GFxMovieView *movieView, const char *path);
 };
-}
+} // namespace Ime

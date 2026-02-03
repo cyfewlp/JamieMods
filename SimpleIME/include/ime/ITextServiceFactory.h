@@ -28,6 +28,6 @@ public:
         }
     }
 };
-}
+} // namespace Ime
 
 #endif // ITEXTSERVICEFACTORY_H

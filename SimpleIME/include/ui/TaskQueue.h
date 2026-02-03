@@ -55,6 +55,6 @@ private:
     std::queue<Task> m_imeThreadTasks;
     std::queue<Task> m_mainThreadTasks;
 };
-}
+} // namespace Ime
 
 #endif // TASKQUEUE_H

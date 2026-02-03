@@ -109,9 +109,18 @@ void ImeApp::Initialize()
 #endif
 }
 
+void ImeApp::OnInputLoaded()
+{
+    if (m_state.IsInitialized())
+    {
+        Events::InstallEventSinks(&m_imeWnd, m_settings.shortcutKey);
+    }
+}
+
 void ImeApp::Uninitialize()
 {
     ImGuiManager::Shutdown();
+    Events::UnInstallEventSinks(); // should safe
     if (m_state.IsInitialized())
     {
         ImmAssociateContext(m_hWnd, m_hIMCDefault);
@@ -128,11 +137,6 @@ void ImeApp::Uninitialize()
     }
     ConfigSerializer::Serialize(ConfigFilePath(), m_settings);
     m_state.SetState(State::StateKey::DORMANCY);
-}
-
-void ImeApp::OnInputLoaded()
-{
-    Core::EventHandler::InstallEventSink(&m_imeWnd, m_settings.shortcutKey);
 }
 
 class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>

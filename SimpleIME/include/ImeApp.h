@@ -99,9 +99,9 @@ public:
     static auto GetInstance() -> ImeApp &;
 
     void Initialize();
-    void Uninitialize();
     void OnInputLoaded();
     void Draw();
+    void Uninitialize();
 
     constexpr auto GetGameHWND() const -> HWND
     {

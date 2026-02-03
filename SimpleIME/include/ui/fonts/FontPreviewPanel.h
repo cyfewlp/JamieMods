@@ -95,4 +95,4 @@ public:
 private:
     InteractState m_interactState;
 };
-}
+} // namespace Ime

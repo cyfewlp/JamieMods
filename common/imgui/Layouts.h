@@ -31,4 +31,4 @@ static void EndRightAlign()
 {
     ImGui::EndTable();
 }
-}
+} // namespace ImGuiEx

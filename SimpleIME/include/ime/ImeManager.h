@@ -48,4 +48,4 @@ public:
 private:
     auto IsShouldEnableIme() const -> bool;
 };
-}
+} // namespace Ime

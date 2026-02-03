@@ -686,4 +686,4 @@ void FontPreviewPanel::Cleanup()
     m_state = State::NOT_SELECTED_FONT;
 }
 
-}
+} // namespace Ime

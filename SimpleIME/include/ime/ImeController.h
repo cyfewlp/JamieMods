@@ -83,4 +83,4 @@ private:
 
     static void Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings);
 };
-}
+} // namespace Ime

@@ -122,4 +122,4 @@ public:
 private:
     inline void RemoveFontIfOwned() const;
 };
-}
+} // namespace Ime

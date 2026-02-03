@@ -56,4 +56,4 @@ private:
     ImFontWrap       m_baseFont{};
     std::vector<int> m_usedFontIds; // font index in FontManger#fontInfo list.
 };
-}
+} // namespace Ime

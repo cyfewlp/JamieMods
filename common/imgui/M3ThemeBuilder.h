@@ -12,7 +12,7 @@ namespace material_color_utilities
 {
 struct SchemeTonalSpot;
 class Hct;
-}
+} // namespace material_color_utilities
 
 namespace ImGuiEx::M3
 {
@@ -21,7 +21,7 @@ class Colors;
 class ThemeBuilder
 {
     using Scheme = material_color_utilities::SchemeTonalSpot;
-    using Hct = material_color_utilities::Hct;
+    using Hct    = material_color_utilities::Hct;
 
 public:
     static void BuildThemeFromSeed(uint32_t sourceColor, bool isDark, Colors &colors);
@@ -33,4 +33,4 @@ private:
 
     static void FillContentColors(Colors::ContentColors &contentColors, const Scheme &scheme);
 };
-}
+} // namespace ImGuiEx::M3

@@ -61,7 +61,7 @@ struct from<spdlog::level::level_enum>
     }
 };
 
-} // toml
+} // namespace toml
 
 namespace Ime::ConfigSerializer
 {
@@ -107,36 +107,38 @@ toml::table toTomlTable(Settings &settings)
 {
     using Comments = std::vector<std::string>;
 
-    static Comments const shortcutKeyComment = {" 快捷键配置 (使用标准的 Hex 格式)", " DIK_F1 = 0x3B, DIK_F2 = 0x3C..."};
+    static Comments const shortcutKeyComment = {
+        " 快捷键配置 (使用标准的 Hex 格式)", " DIK_F1 = 0x3B, DIK_F2 = 0x3C..."
+    };
     static Comments enableTsfComment = {" 现代输入法建议开启，旧版输入法可能不兼容"};
     static Comments enableModComment = {" 是否启用 Mod 功能"};
-    static Comments logLevelComment = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
+    static Comments logLevelComment  = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
 
     toml::value shortKey{settings.shortcutKey, shortcutKeyComment};
     shortKey.as_integer_fmt().uppercase = true;
-    shortKey.as_integer_fmt().fmt = toml::integer_format::hex;
+    shortKey.as_integer_fmt().fmt       = toml::integer_format::hex;
 
     toml::table logging{
-        {"level", {toString(settings.logging.level), logLevelComment}},
-        {"flush_level", toString(settings.logging.flushLevel)},
+        {"level",       {toString(settings.logging.level), logLevelComment}},
+        {"flush_level", toString(settings.logging.flushLevel)              },
     };
     return {
-        {"shortcut_key", shortKey},
-        {"enable_tsf", {settings.enableTsf, enableTsfComment}},
-        {"enable_mod", {settings.enableMod, enableModComment}},
-        {"logging", logging}
+        {"shortcut_key", shortKey                              },
+        {"enable_tsf",   {settings.enableTsf, enableTsfComment}},
+        {"enable_mod",   {settings.enableMod, enableModComment}},
+        {"logging",      logging                               }
     };
 }
 
 toml::table toTomlTable(Settings::Appearance &appearance)
 {
     return {
-        {"zoom", {appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25的整数倍"}}},
-        {"language", appearance.language},
-        {"theme_source_color", appearance.themeSourceColor},
-        {"theme_dark_mode", appearance.themeDarkMode},
+        {"zoom",                   {appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25的整数倍"}}                },
+        {"language",               appearance.language                                                               },
+        {"theme_source_color",     appearance.themeSourceColor                                                       },
+        {"theme_dark_mode",        appearance.themeDarkMode                                                          },
         {"error_display_duration", {appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
-        {"show_settings", appearance.showSettings},
+        {"show_settings",          appearance.showSettings                                                           },
     };
 }
 
@@ -144,19 +146,19 @@ toml::table toTomlTable(Settings::Resources &resources)
 {
     return {
         {"translation_dir", {resources.translationDir, {" 翻译文件目录"}}},
-        {"fonts", resources.fontPathList},
+        {"fonts",           resources.fontPathList                       },
     };
 }
 
 toml::table toTomlTable(Settings::Input &input)
 {
     return {
-        {"enable_unicode_paste", input.enableUnicodePaste},
-        {"keep_ime_open", input.keepImeOpen},
-        {"pos_update_policy", toString(input.posUpdatePolicy)},
+        {"enable_unicode_paste", input.enableUnicodePaste       },
+        {"keep_ime_open",        input.keepImeOpen              },
+        {"pos_update_policy",    toString(input.posUpdatePolicy)},
     };
 }
-}
+} // namespace
 
 void DoDeserialize(toml::value &config, Settings &settings);
 
@@ -213,7 +215,7 @@ void DoDeserialize(toml::value &config, Settings &settings)
         findAndSet(core, "shortcut_key", settings.shortcutKey);
         findAndSet(core, "enable_tsf", settings.enableTsf);
         findAndSet(core, "enable_mod", settings.enableMod);
-        settings.logging.level = toml::find_or(core, "logging", "level", settings.logging.level);
+        settings.logging.level      = toml::find_or(core, "logging", "level", settings.logging.level);
         settings.logging.flushLevel = toml::find_or(core, "logging", "flush_level", settings.logging.flushLevel);
     }
 
@@ -252,11 +254,11 @@ auto DoSerialize(Settings &settings) -> toml::value
     toml::value input{toTomlTable(settings.input)};
     return {
         toml::table{
-            {"core", core},
-            {"resources", resources},
-            {"appearance", appearance},
-            {"input", input},
-        }
+                    {"core", core},
+                    {"resources", resources},
+                    {"appearance", appearance},
+                    {"input", input},
+                    }
     };
 }
-}
+} // namespace Ime::ConfigSerializer
