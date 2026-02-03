@@ -154,13 +154,15 @@ void ImGuiManager::EnableTextInputIfNeed()
     {
         controlMap->AllowTextInput(true);
         imeManager->EnableIme(true);
-        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false);
+        controlMap->StoreControls();
+        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false, false);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
         controlMap->AllowTextInput(false);
         imeManager->EnableIme(false);
-        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true);
+        controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true, false);
+        controlMap->LoadStoredControls();
     }
     fWantTextInput = cWantTextInput;
 }

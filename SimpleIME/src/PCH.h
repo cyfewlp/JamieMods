@@ -5,12 +5,9 @@
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/msvc_sink.h>
-
 #define LIBC_NAMESPACE __llvm_libc_simpleime
 
-// NOLINT
+#include <stdexcept>
 
 using namespace std::literals;
 

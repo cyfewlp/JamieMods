@@ -74,7 +74,7 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
         ))
     {
         uint8_t index = 0;
-        for (const uint8_t &zoom : zoomList)
+        for (const int &zoom : zoomList)
         {
             const auto percentage = zoom * zoomUnit;
             if (const bool selected = index == currentZoomIndex;
@@ -251,8 +251,7 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M
     appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
     m3Styles.UpdateScaling(appearance.zoom);
 
-    const auto dir = utils::GetInterfacePath() / SIMPLE_IME;
-    TranslationLoader::ScanLanguages(dir, m_translateLanguages);
+    i18n::ScanLanguages(utils::GetInterfacePath() / SIMPLE_IME, m_translateLanguages);
 
     if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language);
         langIt == m_translateLanguages.end())
@@ -275,9 +274,7 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M
 void AppearancePanel::LoadTranslation(std::string_view language) const
 {
     if (!m_i18nHandle) return;
-    const TranslationLoader loader(utils::GetInterfacePath() / SIMPLE_IME, "Settings");
-
-    if (auto opt = loader.LoadFrom(language); opt)
+    if (auto opt = i18n::LoadTranslation(language, utils::GetInterfacePath() / SIMPLE_IME); opt)
     {
         m_i18nHandle->Update(std::move(opt.value()));
     }

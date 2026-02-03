@@ -36,7 +36,7 @@ auto ControlMap::GetTextEntryCount() const -> uint8_t
 
 ControlMap *ControlMap::GetSingleton()
 {
-    const REL::Relocation<ControlMap **> singleton{RE::Offset::ControlMap::Singleton};
+    static REL::Relocation<ControlMap**> singleton{ RELOCATION_ID(514705, 400863) };
     return *singleton;
 }
 
