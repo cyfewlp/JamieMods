@@ -85,7 +85,7 @@ struct Scaleform_SetScaleModeTypeHook
             return;
         }
 
-        static auto handler = RE::GPtr(new SKSE_AllowTextInputFnHandler());
+        static auto *handler = new SKSE_AllowTextInputFnHandler;
 
         RE::GFxValue skse_fn_AllowTextInput;
         if (skse.GetMember(SKSE_ORIGINAL_FN_AllowTextInput, &skse_fn_AllowTextInput))
@@ -93,7 +93,7 @@ struct Scaleform_SetScaleModeTypeHook
             skse.SetMember(SKSE_BACKUP_FN_AllowTextInput, skse_fn_AllowTextInput);
 
             RE::GFxValue fn_AllowTextInput;
-            pMovieView->CreateFunction(&fn_AllowTextInput, handler.get());
+            pMovieView->CreateFunction(&fn_AllowTextInput, handler);
             skse.SetMember(SKSE_ORIGINAL_FN_AllowTextInput, fn_AllowTextInput);
 
             logger::debug(
@@ -177,12 +177,13 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
         RE::GFxValue backupFn;
         if (skse.GetMember(SKSE_BACKUP_FN_AllowTextInput, &backupFn))
         {
-            RE::GFxValue result;
+            RE::GFxValue result; // this is AS return value, meaningless.
             calledOriginal = skse.Invoke(SKSE_BACKUP_FN_AllowTextInput, &result, params.args, params.argCount);
 
-            if (calledOriginal && result.IsNumber())
+            if (calledOriginal)
             {
-                OnTextEntryCountChanged(static_cast<uint8_t>(result.GetUInt()));
+                const auto entryCount = Ime::ControlMap::GetSingleton()->GetTextEntryCount();
+                OnTextEntryCountChanged(entryCount);
             }
             logger::trace("Called backup skse fn AllowTextInput.");
         }
