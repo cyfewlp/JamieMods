@@ -108,7 +108,7 @@ Solutions:
 ** disable all mod feature and restore focus to game main window.
 ** reset DirectInputDevice keyboard to exclusive mode
 
-* [ ] `TextEntryCount`. Open Map `find location` menu and press `ESC` will to quit will not trigger 
+* [ ] `TextEntryCount`. Open Map `find location` menu and press `ESC` will to quit will not trigger
 `AllowTextInput` with false
 
 === Improvement
@@ -141,7 +141,7 @@ Solutions:
 . Always update ImGui cursor pos in `ImeWnd#NewFrame`
 * [x] detach, uninstall hooks when destory window
 * [x] TextEntry can't input english
-    . Our override SKSE `AllowTextInput` gfx function. And SKSE modify member `allowTextInput` 
+    . Our override SKSE `AllowTextInput` gfx function. And SKSE modify member `allowTextInput`
 in `RE::ControlMap` offset 128. We need sync it.
     . Can we trampline SKSE `AllowTextInput` gfx function?
 
@@ -151,7 +151,7 @@ in `RE::ControlMap` offset 128. We need sync it.
 
 * [x] In some case, game & ime will lost keyboard input at same time.
 ** Refactor Focus & `IME_DISABLED` state manage. Now, no longer associate empty document to tsf.
-Just restore focus to game window. 
+Just restore focus to game window.
 *** Ime enable -> Focus to `ImeWnd`
 *** Ime disable -> Focus to Game window
 * [ ] In some case, TSF may not recived the shift key up event? Can't switch english & chinese mode.
@@ -159,7 +159,7 @@ Just restore focus to game window.
 
 * IME and TSF work at same times and TSF can't get composition string
 ** ❌ Because IME disabled in Game WndProc? No
-** ✅ Because TextService `OnFocus` call? Yes, `onFocus` not call in message `WM_SETFOCUS` 
+** ✅ Because TextService `OnFocus` call? Yes, `onFocus` not call in message `WM_SETFOCUS`
 
 TSF focus when `CooperativeLevel` changed
 ** We should first change `CooperativeLevel`, then change focus?
@@ -188,7 +188,7 @@ Steam overlay.
 *** unlock/restore keyboard when MOD enable/disable
 *** Change focus when IME enable/disable
 ** `SafeImeManager`
-*** more *combatibility*. 
+*** more *combatibility*.
 *** Change focus when IME enable/disable
 *** unlock/restore keyboard when IME enable/disable
 ** Default use `PermanentFocusManager`
@@ -224,7 +224,7 @@ IMPORTANT: Root cause is the `ITfMessagePump` interface is blocked.
 * [x] Modex: Disable send `delete` event to ImGui
 +
 Keep `IsWantCaptureInput` main logic same as `EventHandler#EnableMessageFilter`
-* [*] Fix `RaceMenu` text entry can't use IME.  By hook `AllowTextInput(67252, 68552)`. This alos fixed console, 
+* [*] Fix `RaceMenu` text entry can't use IME.  By hook `AllowTextInput(67252, 68552)`. This alos fixed console,
 so we no longer needed listen console `open/close` event and no longer needed provide pacth for `ReceMenu`
 * [x] Dynamic detect current text entry position
 * [x] Support auto detect caret screen position.

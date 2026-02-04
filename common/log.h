@@ -99,6 +99,6 @@ inline void LogStacktrace()
         logger::error("  at: {}", to_string(stacktraceEntry));
     }
 }
-}
+} // namespace logger
 
 #endif // COMMON_LOG_H

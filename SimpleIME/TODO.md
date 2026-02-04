@@ -13,7 +13,7 @@
 * [ ] ~~Optimize std::string fields ?~~
 * [x] setup `ErrorNotifier` message level
 * [x] Auto hide `ErrorNotifier`;
-* We may unnecessary to check the `SetFocus` caller thread because IME is child window with 
+* We may unnecessary to check the `SetFocus` caller thread because IME is child window with
 	game window. [# Is it legal to have a cross-process parent/child or owner/owned window relationship?](https://devblogs.microsoft.com/oldnewthing/20130412-00/?p=4683&utm_source=chatgpt.com); According to this post introduce the child/parent window will be implicitly associate message queue.
 - [x] filter ←, →, ↑，↓, space, Enter, backspace
 	- Discard keydown/up event when message filter is enabled;
@@ -34,6 +34,5 @@
 [x] BUG with event ImeMenu block;
     * Open/Close ToolWindow will cause IME disable;
 * [[SimpleIME/docs/v2.0.0/Changes#Support choose candidate by mouse wheel]]
-* [[BUGs#Bug with temporary focus]]  
-* [[BUGs#Removal of the Focus Management System done]]  
-
+* [[BUGs#Bug with temporary focus]]
+* [[BUGs#Removal of the Focus Management System done]]

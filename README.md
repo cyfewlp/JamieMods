@@ -44,7 +44,7 @@ git submodule update --init --recursive
        OR [download it as a .zip](https://github.com/microsoft/vcpkg/archive/refs/heads/master.zip)
     2. Go into the `vcpkg` folder and double-click on `bootstrap-vcpkg.bat`
     3. Edit your system or user Environment Variables and add a new one:
-        - Name: `VCPKG_ROOT`    
+        - Name: `VCPKG_ROOT`
           Value: `C:\path\to\wherever\your\vcpkg\folder\is`
 
 <img src="https://raw.githubusercontent.com/SkyrimDev/Images/main/images/screenshots/Setting%20Environment%20Variables/VCPKG_ROOT.png" height="150" alt="">
@@ -60,9 +60,9 @@ project contains python scripts tool. Please configrue your `Python` environment
 1. **Create and Activate Virtual Environment**:
 ```shell
 python -m venv .venv
-# Windows PowerShell 
-.\.venv\Scripts\Activate.ps1 
-# Linux/macOS source 
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+# Linux/macOS source
 .venv/bin/activate
 ```
 
@@ -109,7 +109,7 @@ The project implements a custom `ThemeBuilder` that bridges the Material Color U
 ```cpp
 void ThemeBuilder::BuildThemeFromSeed(uint32_t seedArgb, bool isDark, Colors &colors) {
     using namespace material_color_utilities;
-    
+
     // Generate a Tonal Spot scheme based on the seed color and brightness mode
     SchemeTonalSpot scheme(Hct(seedArgb), isDark, 0.0);
 

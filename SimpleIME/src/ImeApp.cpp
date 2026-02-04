@@ -135,7 +135,7 @@ void ImeApp::Uninitialize()
             RealWndProc = nullptr;
         }
     }
-    ConfigSerializer::Serialize(ConfigFilePath(), m_settings);
+    SaveSettings();
     m_state.SetState(State::StateKey::DORMANCY);
 }
 
@@ -264,12 +264,14 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
     ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
-    ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
-    const auto iconFile = utils::GetInterfaceFile(Settings::ICON_FILE);
-    auto      *iconFont = ImGuiManager::AddFont(iconFile); // FIXME:: should move to ImeUI after refactor ImeUI
+    auto      *primaryFont  = ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
+    const auto iconFontPath = utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE;
+    // FIXME:: should move to ImeUI after refactor ImeUI
+    auto *iconFont = ImGuiManager::AddFont(iconFontPath.generic_string());
     if (iconFont == nullptr)
     {
-        throw SimpleIMEException("Cannot find icon font. Initialization failed!");
+        logger::error("Cannot find icon font. Initialization failed!");
+        iconFont = primaryFont;
     }
 
     auto colors = ImGuiEx::M3::ThemeBuilder::BuildThemeFromSeed(
@@ -281,9 +283,10 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
         try
         {
             m_imeWnd.Initialize();
+            ensureInitialized.set_value(true);
+            // we can't call ensureInitialized after create child window, will cause deadlock.
             m_imeWnd.CreateHost(m_hWnd, m_settings);
             m_imeWnd.ApplyUiSettings(m_settings, *g_M3Styles);
-            ensureInitialized.set_value(true);
             m_imeWnd.Run();
         }
         catch (...)
@@ -305,16 +308,17 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 
         if (childWndThread.joinable())
         {
-            if (m_imeWnd.SendNotifyMessageToIme(WM_CLOSE, 0, 0))
+            if (!m_imeWnd.SendNotifyMessageToIme(WM_CLOSE, 0, 0))
             {
-                const auto future = std::async(std::launch::deferred, [&childWndThread] {
-                    childWndThread.join();
-                });
-                if (future.wait_for(1s) == std::future_status::timeout)
-                {
-                    logger::warn("IME thread did not respond to WM_CLOSE, detaching...");
-                }
+                logger::warn("IME thread did not respond to WM_CLOSE, detaching...");
             }
+            std::thread([t = std::move(childWndThread)]() mutable {
+                if (t.joinable())
+                {
+                    t.join();
+                    logger::info("IME child thread successfully joined after timeout.");
+                }
+            }).detach();
         }
         throw SimpleIMEException("IME Thread initialization timeout.");
     }
@@ -332,6 +336,12 @@ void ImeApp::Shutdown()
         logger::error("Can't close ImeWnd! May IME uninitialized?");
     }
     Uninitialize();
+}
+
+void ImeApp::SaveSettings()
+{
+    ImeController::GetInstance()->SaveSettings(m_settings);
+    ConfigSerializer::Serialize(ConfigFilePath(), m_settings);
 }
 
 void ImeApp::InstallHooks()
@@ -363,16 +373,7 @@ void ImeApp::Draw()
     }
     ImGuiManager::NewFrame();
 
-    try
-    {
-        m_imeWnd.DrawIme(m_settings, *g_M3Styles);
-    }
-    catch (std::exception &e)
-    {
-        logger::warn("Unexpected exception: {}. Quit!", e.what());
-        RE::DebugMessageBox("Unexpected exception. SimpleIME will close.");
-        Shutdown();
-    }
+    m_imeWnd.DrawIme(m_settings, *g_M3Styles);
 
     ImGuiManager::EndFrame(m_settings);
     ImGuiManager::Render();

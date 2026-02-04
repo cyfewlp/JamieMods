@@ -16,7 +16,7 @@ IMenu#ProcessMessage
 
 ### `Console Native UI Menu`
 
-When Open/Close `Steam Overlay` will open/close the "Console Native UI Menu". 
+When Open/Close `Steam Overlay` will open/close the "Console Native UI Menu".
 So, we can according to this menu event to disable IME when `Steam Overlay` is showing;
 
 ## IMenu
@@ -48,4 +48,3 @@ Simplify the input flow by routing all character input through the TSF system an
 1. **Simplified State Management:** No longer need to manually track if the user is "typing" vs "navigating."
 2. **Zero Input Loss:** Ensures that "English-mode" typing within a Chinese IME behaves exactly like a native English keyboard.
 3. **Improved Compatibility:** Fixes edge cases where Shift-combinations or Alt-codes were being dropped or double-processed.
-

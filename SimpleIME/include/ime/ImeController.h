@@ -15,7 +15,12 @@ struct SettingsConfig;
 class ImeController final
 {
 public:
-    void ApplyUiSettings(const Settings &settings);
+    void ApplySettings();
+
+    void SaveSettings(Settings &settings) const
+    {
+        settings.enableMod = m_fEnabledMod;
+    }
 
     void SyncImeStateIfDirty()
     {
@@ -37,7 +42,7 @@ public:
 
     auto IsModEnabled() const -> bool
     {
-        return m_settings->enableMod;
+        return m_fEnabledMod;
     }
 
     //////////////////////////////////////////////////
@@ -60,12 +65,13 @@ public:
     }
 
 private:
-    Settings                   *m_settings = nullptr;
-    std::unique_ptr<ImeManager> m_delegate = nullptr;
-    ImeWnd                     *m_imeWnd   = nullptr;
-    HWND                        m_gameHwnd = nullptr;
-    bool                        m_fDirty   = false;
-    std::atomic_bool            m_fInited  = false;
+    Settings                   *m_settings    = nullptr;
+    std::unique_ptr<ImeManager> m_delegate    = nullptr;
+    ImeWnd                     *m_imeWnd      = nullptr;
+    HWND                        m_gameHwnd    = nullptr;
+    bool                        m_fDirty      = false;
+    bool                        m_fEnabledMod = false;
+    std::atomic_bool            m_fInited     = false;
 
     auto DoEnableMod(bool enable) const -> IImeModule::Result;
     auto DoEnableIme(bool enable) const -> IImeModule::Result;

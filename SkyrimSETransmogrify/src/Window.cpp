@@ -1,4 +1,5 @@
 #include "Window.hpp"
+
 #include "ImeUI.hpp"
 #include "imgui.h"
 
@@ -38,12 +39,21 @@ BOOL Transmogrify::HideWnd::Initialize(HWND a_parent)
 
     RECT rect = {0, 0, 0, 0};
     GetClientRect(a_parent, &rect);
-    m_hWnd = ::CreateWindowExW(0, g_tMainClassName, L"Hide",
-                               //   WS_POPUP | WS_VISIBLE | WS_SYSMENU | WS_CAPTION,
-                               WS_CHILD, 0, 0,                                 //
-                               rect.right - rect.left, rect.bottom - rect.top, // width, height
-                               a_parent,                                       // a_parent,
-                               nullptr, wc.hInstance, (LPVOID)this);
+    m_hWnd = ::CreateWindowExW(
+        0,
+        g_tMainClassName,
+        L"Hide",
+        //   WS_POPUP | WS_VISIBLE | WS_SYSMENU | WS_CAPTION,
+        WS_CHILD,
+        0,
+        0, //
+        rect.right - rect.left,
+        rect.bottom - rect.top, // width, height
+        a_parent,               // a_parent,
+        nullptr,
+        wc.hInstance,
+        (LPVOID)this
+    );
     //
     ImGui::GetPlatformIO().Platform_SetImeDataFn = MyPlatform_SetImeDataFn;
 
@@ -53,8 +63,9 @@ BOOL Transmogrify::HideWnd::Initialize(HWND a_parent)
 
 // we are override WM_COMPOSITION, so the default COMPOSITION window is unavailble,
 // So we need update our ImeUI::m_caretPos to render our COMPOSITION window.
-void Transmogrify::HideWnd::MyPlatform_SetImeDataFn([[maybe_unused]] ImGuiContext *ctx, ImGuiViewport *viewport,
-                                                    ImGuiPlatformImeData *data)
+void Transmogrify::HideWnd::MyPlatform_SetImeDataFn(
+    [[maybe_unused]] ImGuiContext *ctx, ImGuiViewport *viewport, ImGuiPlatformImeData *data
+)
 {
     auto *pThis = (HideWnd *)viewport->PlatformUserData;
     if (nullptr == pThis) return;
@@ -77,45 +88,45 @@ Transmogrify::HideWnd::_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     }
     switch (uMsg)
     {
-    case WM_NCCREATE: {
-        auto lpCs = (LPCREATESTRUCT)lParam;
-        pThis     = (HideWnd *)(lpCs->lpCreateParams);
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pThis);
-        // set the window handle
-        pThis->m_hInst      = lpCs->hInstance;
-        pThis->m_hWnd       = hWnd;
-        pThis->m_hParentWnd = lpCs->hwndParent;
-        break;
-    }
-    case WM_CREATE: {
-        HIMC hIMC = ImmCreateContext();
-        ImmAssociateContextEx(hWnd, hIMC, IACE_IGNORENOCONTEXT);
-        return pThis->OnCreate();
-    }
-    case WM_DESTROY: {
-        ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
-        return pThis->OnDestroy();
-    }
-    case WM_KEYUP:
-    case WM_KEYDOWN:
-        ::SendMessageA(pThis->m_hParentWnd, uMsg, wParam, lParam);
-        return S_OK;
-    case WM_INPUTLANGCHANGE: {
-        pThis->m_pImeUI->UpdateLanguage((HKL)lParam);
-        return S_OK;
-    }
-    case WM_IME_STARTCOMPOSITION:
-        return pThis->OnStartComposition();
-    case WM_IME_ENDCOMPOSITION:
-        return pThis->OnEndComposition();
-    case WM_CUSTOM_IME_COMPPOSITION:
-    case WM_IME_COMPOSITION:
-        return pThis->OnComposition(hWnd, wParam, lParam);
-    case WM_CUSTOM_CHAR:
-    case WM_CHAR: {
-        // never received WM_CHAR msg becaus wo handled WM_IME_COMPOSITION
-        break;
-    }
+        case WM_NCCREATE: {
+            auto lpCs = (LPCREATESTRUCT)lParam;
+            pThis     = (HideWnd *)(lpCs->lpCreateParams);
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pThis);
+            // set the window handle
+            pThis->m_hInst      = lpCs->hInstance;
+            pThis->m_hWnd       = hWnd;
+            pThis->m_hParentWnd = lpCs->hwndParent;
+            break;
+        }
+        case WM_CREATE: {
+            HIMC hIMC = ImmCreateContext();
+            ImmAssociateContextEx(hWnd, hIMC, IACE_IGNORENOCONTEXT);
+            return pThis->OnCreate();
+        }
+        case WM_DESTROY: {
+            ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
+            return pThis->OnDestroy();
+        }
+        case WM_KEYUP:
+        case WM_KEYDOWN:
+            ::SendMessageA(pThis->m_hParentWnd, uMsg, wParam, lParam);
+            return S_OK;
+        case WM_INPUTLANGCHANGE: {
+            pThis->m_pImeUI->UpdateLanguage((HKL)lParam);
+            return S_OK;
+        }
+        case WM_IME_STARTCOMPOSITION:
+            return pThis->OnStartComposition();
+        case WM_IME_ENDCOMPOSITION:
+            return pThis->OnEndComposition();
+        case WM_CUSTOM_IME_COMPPOSITION:
+        case WM_IME_COMPOSITION:
+            return pThis->OnComposition(hWnd, wParam, lParam);
+        case WM_CUSTOM_CHAR:
+        case WM_CHAR: {
+            // never received WM_CHAR msg becaus wo handled WM_IME_COMPOSITION
+            break;
+        }
     }
     return ::DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }

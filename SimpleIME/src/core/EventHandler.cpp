@@ -60,6 +60,41 @@ auto &GetMenuOpenCloseEventSink()
     static std::unique_ptr<MenuOpenCloseEventSink> instance = nullptr;
     return instance;
 }
+
+void OnFirstOpenMainMenu()
+{
+    if (auto *messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue)
+    {
+        messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
+    }
+    // If Ime Wnd alive
+    ImeController::GetInstance()->ApplySettings();
+}
+
+void OnLoadingMenuClose()
+{
+    if (const auto messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue)
+    {
+        messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
+    }
+}
+
+void OnSteamOverlayMenu(bool open)
+{
+    static bool prevModEnabled = false;
+
+    auto *manager = ImeController::GetInstance();
+    if (open)
+    {
+        prevModEnabled = manager->IsModEnabled();
+        manager->EnableMod(false);
+    }
+    else if (prevModEnabled)
+    {
+        manager->EnableMod(true);
+    }
+}
+
 } // namespace
 
 void InstallEventSinks(ImeWnd *imeWnd, const uint32_t shortcutKey)
@@ -163,35 +198,24 @@ RE::BSEventNotifyControl MenuOpenCloseEventSink::
         FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
     }
     // before game load, all menus will be closed;
-    if (event->menuName == RE::LoadingMenu::MENU_NAME && !event->opening)
+    if (event->menuName == RE::LoadingMenu::MENU_NAME)
     {
-        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
+        if (!event->opening)
         {
-            messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
+            OnLoadingMenuClose();
         }
     }
-    if (firstOpenMainMenu && event->menuName == RE::MainMenu::MENU_NAME && event->opening)
+    else if (event->menuName == RE::MainMenu::MENU_NAME)
     {
-        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
+        if (firstOpenMainMenu && event->opening)
         {
-            messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
+            OnFirstOpenMainMenu();
+            firstOpenMainMenu = false;
         }
-        firstOpenMainMenu = false;
     }
     else if (event->menuName == RE::ConsoleNativeUIMenu::MENU_NAME) // Steam Overlay
     {
-        static bool prevModEnabled = false;
-
-        auto *manager = ImeController::GetInstance();
-        if (event->opening)
-        {
-            prevModEnabled = manager->IsModEnabled();
-            manager->EnableMod(false);
-        }
-        else if (prevModEnabled)
-        {
-            manager->EnableMod(true);
-        }
+        OnSteamOverlayMenu(event->opening);
     }
     else
     {

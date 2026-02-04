@@ -34,6 +34,6 @@ constexpr uint8_t HexCharToInt(char c)
     if (c >= 'A' && c <= 'F') return static_cast<uint8_t>(c - 'A' + 10);
     return UINT8_MAX;
 }
-}
+} // namespace utils
 
 #endif // UTILS_H

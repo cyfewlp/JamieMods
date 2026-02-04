@@ -36,7 +36,7 @@ auto ControlMap::GetTextEntryCount() const -> uint8_t
 
 ControlMap *ControlMap::GetSingleton()
 {
-    static REL::Relocation<ControlMap**> singleton{ RELOCATION_ID(514705, 400863) };
+    static REL::Relocation<ControlMap **> singleton{RELOCATION_ID(514705, 400863)};
     return *singleton;
 }
 
@@ -145,7 +145,7 @@ void ScaleformHooks::SetScaleModeTypeHook(RE::GFxMovieView *pMovieView, RE::GFxM
         return;
     }
     RE::GFxValue fn_AllowTextInput;
-    static auto *AllowTextInput = new SKSE_ScaleformAllowTextInput();
+    static auto *AllowTextInput = new SKSE_ScaleformAllowTextInput(); // TODO: don't overhide original AllowTextInput?
     pMovieView->CreateFunction(&fn_AllowTextInput, AllowTextInput);
     skse.SetMember("AllowTextInput", fn_AllowTextInput);
 }

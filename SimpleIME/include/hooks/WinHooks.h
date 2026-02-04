@@ -8,6 +8,7 @@
 
 namespace Hooks
 {
+// nolonger unneccecary: replaced by ImeMenu#SendFakeControlUpEvent
 class OpenClipboardHook : public FunctionHook<BOOL(HWND)>
 {
 public:
@@ -28,7 +29,6 @@ public:
 
 class WinHooks
 {
-    static inline std::unique_ptr<OpenClipboardHook>      OpenClipboard      = nullptr;
     static inline std::unique_ptr<DirectInput8CreateHook> DirectInput8Create = nullptr;
 
     static inline std::atomic_bool g_fDisablePaste       = false;
@@ -46,7 +46,6 @@ public:
     }
 
 private:
-    static BOOL    MyOpenClipboardHook(HWND hwnd);
     static HRESULT MyDirectInput8CreateHook(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 };
 } // namespace Hooks

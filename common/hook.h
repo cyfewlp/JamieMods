@@ -105,6 +105,6 @@ struct DispatchInputEventHookData : HookData<void(RE::BSTEventSource<RE::InputEv
         logger::debug("Installed {}: {}", __func__, ToString());
     }
 };
-}
+} // namespace Hooks
 
 #endif // !COMMON_HOOK_H

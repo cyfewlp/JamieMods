@@ -1,28 +1,30 @@
 #pragma once
 
 #include "Hooks.h"
-namespace Transmogrify {
-    namespace Input {
-        static REL::Relocation<Hooks::DispatchInputEventHook::RealFunc> RealDispatchInputEventFunc;
-        static std::atomic<bool> inputEventsEnabled = true;
 
-        void Install();
+namespace Transmogrify
+{
+namespace Input
+{
+static REL::Relocation<Hooks::DispatchInputEventHook::RealFunc> RealDispatchInputEventFunc;
+static std::atomic<bool>                                        inputEventsEnabled = true;
 
-        static void DispatchInputEvent(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::InputEvent** a_evns);
+void Install();
 
-        class ImGuiInputEventSink
-          : public Singleton<ImGuiInputEventSink>
-          , public RE::BSTEventSink<RE::InputEvent*>
-        {
-            friend class Singleton<ImGuiInputEventSink>;
+static void DispatchInputEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_evns);
 
-        public:
-            RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_evn,
-                                                  RE::BSTEventSource<RE::InputEvent*>*) override;
+class ImGuiInputEventSink : public Singleton<ImGuiInputEventSink>, public RE::BSTEventSink<RE::InputEvent *>
+{
+    friend class Singleton<ImGuiInputEventSink>;
 
-        private:
-            void SendMouseEvent(std::uint32_t key, float value, bool pressed);
-            void SendKeyBoardEvent(std::uint32_t key, float value, bool pressed);
-        };
-    }
+public:
+    RE::BSEventNotifyControl ProcessEvent(
+        RE::InputEvent *const *a_evn, RE::BSTEventSource<RE::InputEvent *> *
+    ) override;
+
+private:
+    void SendMouseEvent(std::uint32_t key, float value, bool pressed);
+    void SendKeyBoardEvent(std::uint32_t key, float value, bool pressed);
 };
+} // namespace Input
+}; // namespace Transmogrify

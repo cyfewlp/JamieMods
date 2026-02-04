@@ -126,6 +126,7 @@ private:
     void OnD3DInit();
     void Start(const RE::BSGraphics::RendererData &renderData);
     void Shutdown();
+    void SaveSettings();
 
     static void InstallHooks();
     static void UninstallHooks();

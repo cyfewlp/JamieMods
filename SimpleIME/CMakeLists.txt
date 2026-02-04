@@ -87,55 +87,54 @@ target_link_libraries(
     MaterialYou
 )
 
-## Install config
+############################################################
+# CPACK
 set(CPACK_GENERATOR "7Z")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_BUILD_TYPE}")
 include(CPack)
 
-install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION SKSE/Plugins
-    COMPONENT dll
+############################################################
+# Install
+set(interface_path interface/${PROJECT_NAME})
+
+install(FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.toml
+        ${CMAKE_SOURCE_DIR}/assets/fonts/SymbolsNerdFontMono-Regular.ttf
+        DESTINATION ${interface_path}
+        COMPONENT mod_interface_files
 )
-# If you perform a "Debug" build, also copy .pdb file (for debug symbols)
+install(DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate/
+        DESTINATION ${interface_path}
+        COMPONENT mod_interface_files
+)
+install(TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION SKSE/Plugins
+        COMPONENT mod_runtime
+)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-      DESTINATION SKSE/Plugins
-      COMPONENT pdb
+          DESTINATION SKSE/Plugins
+          COMPONENT mod_runtime
   )
 endif ()
-install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.ini
-    DESTINATION config
-    COMPONENT configuration
-)
-install(FILES
-    ${CMAKE_SOURCE_DIR}/assets/fonts/SymbolsNerdFontMono-Regular.ttf
-    DESTINATION interface/${PROJECT_NAME}
-    COMPONENT assets
-)
+
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
     ${CMAKE_SOURCE_DIR}/LICENSE
     DESTINATION .
     COMPONENT doc
 )
-install(FILES
-    ${CMAKE_SOURCE_DIR}/common/themes.toml
-    DESTINATION interface/${PROJECT_NAME}
-    COMPONENT doc
-)
 install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod
-    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate
     DESTINATION .
     COMPONENT Distribution
 )
-cpack_add_component(dll)
-cpack_add_component(configuration)
+cpack_add_component(mod_runtime)
+cpack_add_component(mod_interface_files)
 cpack_add_component(doc)
-cpack_add_component(assets)
 cpack_add_component(Distribution)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -146,14 +145,11 @@ endif ()
 
 file(GLOB_RECURSE OUTPUT_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.dll")
 file(GLOB_RECURSE OUTPUT_PDBS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pdb")
-#file(GLOB_RECURSE OUTPUT_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/**/*.pex")
 
 set_property(TARGET ${PROJECT_NAME}
     APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_DLLS}")
 set_property(TARGET ${PROJECT_NAME}
     APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_PDBS}")
-#set_property(TARGET ${PROJECT_NAME}
-#        APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_SCRIPTS}")
 
 if (DEFINED OUTPUT_FOLDER)
   # If you specify an <OUTPUT_FOLDER> (including via environment variables)
@@ -170,16 +166,7 @@ if (DEFINED OUTPUT_FOLDER)
       POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
       COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}$<$<CONFIG:DEBUG>:_debug>.ini" "${DLL_FOLDER}/${PROJECT_NAME}.ini"
-      VERBATIM
-  )
-
-  #Copy themes file
-  add_custom_command(
-      TARGET "${PROJECT_NAME}"
-      POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E make_directory "${INTERFACE_FOLDER}"
-      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/common/themes.toml" "${INTERFACE_FOLDER}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}$<$<CONFIG:DEBUG>:_debug>.toml" "${DLL_FOLDER}/${PROJECT_NAME}.toml"
       VERBATIM
   )
 

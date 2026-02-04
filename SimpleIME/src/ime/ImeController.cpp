@@ -15,17 +15,17 @@
 namespace Ime
 {
 
-void ImeController::ApplyUiSettings(const Settings &settings)
+void ImeController::ApplySettings()
 {
     if (!IsInited())
     {
         ErrorNotifier::GetInstance().Error("Fatal error: IME manager is not initialized.");
         return;
     }
-    EnableMod(settings.enableMod);
+    EnableMod(m_settings->enableMod);
 
     m_fDirty = true;
-    if (settings.enableMod)
+    if (m_fEnabledMod)
     {
         SyncImeStateIfDirty();
     }
@@ -33,21 +33,21 @@ void ImeController::ApplyUiSettings(const Settings &settings)
 
 auto ImeController::EnableMod(bool enable) -> void
 {
-    if (m_settings->enableMod != enable)
+    if (m_fEnabledMod != enable)
     {
         AddTask([this, enable] {
-            const bool prev = m_settings->enableMod;
+            const bool prev = m_fEnabledMod;
             if (!prev)
             {
-                m_settings->enableMod = true;
+                m_fEnabledMod = true;
             }
             if (IImeModule::IsSuccess(DoEnableMod(enable)))
             {
-                m_settings->enableMod = enable;
-                m_fDirty              = enable;
+                m_fEnabledMod = enable;
+                m_fDirty      = enable;
                 return;
             }
-            m_settings->enableMod = prev;
+            m_fEnabledMod = prev;
             ErrorNotifier::GetInstance().Debug(std::format("Unexpected error: EnableMod({}) failed.", enable));
         });
     }
@@ -95,16 +95,10 @@ void ImeController::TryFocusIme() const
 
 auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
 {
-    IImeModule::Result result;
-    if (!enable)
-    {
-        result = DoEnableIme(false);
-    }
-    else
-    {
-        const bool shouldEnableIme = m_settings->input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
-        result                     = DoEnableIme(shouldEnableIme);
-    }
+    const bool shouldEnableIme =
+        enable && (m_settings->input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry());
+
+    auto result = DoEnableIme(shouldEnableIme);
 
     bool fResult = IImeModule::IsSuccess(result);
     if (fResult)
@@ -122,7 +116,7 @@ auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
 
 auto ImeController::DoEnableIme(bool enable) const -> IImeModule::Result
 {
-    if (!m_settings->enableMod)
+    if (!m_fEnabledMod)
     {
         return IImeModule::Result::DISABLED;
     }
@@ -137,7 +131,7 @@ auto ImeController::DoEnableIme(bool enable) const -> IImeModule::Result
 
 auto ImeController::DoForceFocusIme() const -> IImeModule::Result
 {
-    if (!m_settings->enableMod)
+    if (!m_fEnabledMod)
     {
         return IImeModule::Result::DISABLED;
     }
@@ -152,7 +146,7 @@ auto ImeController::DoForceFocusIme() const -> IImeModule::Result
 
 auto ImeController::DoTryFocusIme() const -> IImeModule::Result
 {
-    if (!m_settings->enableMod)
+    if (!m_fEnabledMod)
     {
         return IImeModule::Result::DISABLED;
     }
@@ -167,7 +161,7 @@ auto ImeController::DoTryFocusIme() const -> IImeModule::Result
 
 auto ImeController::DoSyncImeState() -> IImeModule::Result
 {
-    if (!m_settings->enableMod)
+    if (!m_fEnabledMod)
     {
         return IImeModule::Result::DISABLED;
     }

@@ -2,12 +2,10 @@
 
 #include "ImeUI.h"
 #include "Utils.h"
-#include "common/WCharUtils.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "core/State.h"
-#include "hooks/Hooks.hpp"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
 
@@ -217,16 +215,15 @@ void ImeWnd::ShowToolWindow() const
 void ImeWnd::ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
 {
     m_pImeUi->ApplySettings(settings.appearance, m3Styles);
-    ImeController::GetInstance()->ApplyUiSettings(settings);
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
-    // logger::debug("Message: {} {} {}", uMsg, wParam, lParam);
+    logger::debug("Message: {:#X} {} {}", uMsg, wParam, lParam);
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
-        pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
+        // pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
         if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
         {
             return 0;
@@ -367,6 +364,7 @@ void ImeWnd::TsfMessageLoop()
 
 void ImeWnd::OnCreated(Settings &settings)
 {
+    logger::info("Ime window created, init TSF and core...");
     m_pTextService->OnStart(m_hWnd);
 
     ImeController::Init(this, m_hWndParent, settings);

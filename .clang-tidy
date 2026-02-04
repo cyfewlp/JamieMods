@@ -10,7 +10,7 @@ Checks: >
   portability-*,
   readability-*,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
-  -cppcoreguidelines-pro-type-reinterpret-cast, 
+  -cppcoreguidelines-pro-type-reinterpret-cast,
   -misc-include-cleaner,
   -google-readability-namespace-comments,
 #  -cppcoreguidelines-pro-type-vararg,
