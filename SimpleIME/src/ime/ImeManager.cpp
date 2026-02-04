@@ -2,16 +2,14 @@
 
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
+#include "RE/ControlMap.h"
 #include "common/log.h"
-#include "hooks/ScaleformHook.h"
 
 #include <processthreadsapi.h>
 #include <windows.h>
 
 namespace Ime
 {
-
-ImeManager::~ImeManager() {}
 
 auto ImeManager::Focus(const HWND hwnd) -> bool
 {
@@ -109,7 +107,7 @@ auto ImeManager::TryFocusIme() -> Result
 auto ImeManager::IsShouldEnableIme() const -> bool
 {
     // TODO: ? m_settings.input.keepImeOpen
-    return m_settings.input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry();
+    return m_settings.input.keepImeOpen || ControlMap::GetSingleton()->HasTextEntry();
 }
 
 } // namespace Ime

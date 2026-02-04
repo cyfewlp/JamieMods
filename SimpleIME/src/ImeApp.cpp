@@ -338,7 +338,7 @@ void ImeApp::Shutdown()
     Uninitialize();
 }
 
-void ImeApp::SaveSettings()
+void ImeApp::SaveSettings() const
 {
     ImeController::GetInstance()->SaveSettings(m_settings);
     ConfigSerializer::Serialize(ConfigFilePath(), m_settings);
@@ -346,18 +346,12 @@ void ImeApp::SaveSettings()
 
 void ImeApp::InstallHooks()
 {
-    // D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
-    // DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
-
-    Hooks::ScaleformHooks::Install();
+    Hooks::Scaleform::Install();
 }
 
 void ImeApp::UninstallHooks()
 {
-    // D3DPresentHook         = nullptr;
-    // DispatchInputEventHook = nullptr;
-
-    Hooks::ScaleformHooks::Uninstall();
+    Hooks::Scaleform::Uninstall();
 }
 
 void ImeApp::LogAlreadyInitialized() const

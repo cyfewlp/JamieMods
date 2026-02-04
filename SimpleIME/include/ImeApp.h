@@ -28,7 +28,7 @@ public:
         std::atomic<StateKey> m_stateKey = StateKey::UNINITIALIZED;
 
     public:
-        constexpr auto GetStateKetText(StateKey stateKey) const -> std::string
+        static constexpr auto GetStateKetText(StateKey stateKey) -> std::string
         {
             switch (stateKey)
             {
@@ -90,11 +90,11 @@ public:
 
     explicit ImeApp(Settings &settings) : m_settings(settings), m_imeWnd(m_settings) {}
 
-    ~ImeApp()                             = default;
-    ImeApp(const ImeApp &other)           = delete;
-    ImeApp(ImeApp &&other)                = delete;
-    ImeApp operator=(const ImeApp &other) = delete;
-    ImeApp operator=(ImeApp &&other)      = delete;
+    ~ImeApp()                                     = default;
+    ImeApp(const ImeApp &other)                   = delete;
+    ImeApp(ImeApp &&other)                        = delete;
+    auto operator=(const ImeApp &other) -> ImeApp = delete;
+    auto operator=(ImeApp &&other) -> ImeApp      = delete;
 
     static auto GetInstance() -> ImeApp &;
 
@@ -120,13 +120,11 @@ public:
 
 private:
     std::unique_ptr<Hooks::D3DInitHookData> D3DInitHook = nullptr;
-    // std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
-    // std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
 
     void OnD3DInit();
     void Start(const RE::BSGraphics::RendererData &renderData);
     void Shutdown();
-    void SaveSettings();
+    void SaveSettings() const;
 
     static void InstallHooks();
     static void UninstallHooks();
@@ -139,11 +137,8 @@ private:
     ImeWnd    m_imeWnd;
     State     m_state;
 
-    static void D3DInit();
-    void        DoD3DInit();
-    // static void           D3DPresent(std::uint32_t ptr);
-    // static void           DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent
-    // **a_events);
+    static void           D3DInit();
+    void                  DoD3DInit();
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;
 };

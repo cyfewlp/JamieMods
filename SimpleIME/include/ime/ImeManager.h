@@ -25,7 +25,7 @@ public:
     {
     }
 
-    ~ImeManager() override;
+    ~ImeManager() override              = default;
     ImeManager(const ImeManager &other) = delete;
     ImeManager(ImeManager &&other)      = delete;
 

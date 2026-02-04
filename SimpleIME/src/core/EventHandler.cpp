@@ -1,8 +1,8 @@
 #include "core/EventHandler.h"
 
 #include "ImeWnd.hpp"
+#include "RE/ControlMap.h"
 #include "common/log.h"
-#include "hooks/ScaleformHook.h"
 #include "ime/ImeController.h"
 #include "menu/MenuNames.h"
 #include "utils/FocusGFxCharacterInfo.h"
@@ -229,7 +229,7 @@ void MenuOpenCloseEventSink::FixInconsistentTextEntryCount(const Event *event)
     // fix: if CursorMenu hide but text-entry count > 0, try to disable ime;
     // avoid modifying the textEntryCount field
     if (event->menuName == RE::CursorMenu::MENU_NAME && /**/
-        Hooks::ControlMap::GetSingleton()->HasTextEntry() && !event->opening)
+        ControlMap::GetSingleton()->HasTextEntry() && !event->opening)
     {
         const ImeController *manager = ImeController::GetInstance();
         manager->EnableIme(false);

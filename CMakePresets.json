@@ -57,7 +57,7 @@
       },
       "environment": {
         "PROJECT_ARCHITECTURE": "x64",
-        "PROJECT_COMPILER_FLAGS": "/permissive- /Zc:preprocessor /EHsc /MP /W4 /WX /external:anglebrackets /external:W0"
+        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /MP /W4 /WX /external:anglebrackets /external:W0"
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {

@@ -5,10 +5,10 @@
 
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
+#include "RE/ControlMap.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "configs/CustomMessage.h"
 #include "hooks/Hooks.hpp"
-#include "hooks/ScaleformHook.h"
 #include "ui/Settings.h"
 #include "ui/TaskQueue.h"
 
@@ -96,7 +96,7 @@ void ImeController::TryFocusIme() const
 auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
 {
     const bool shouldEnableIme =
-        enable && (m_settings->input.keepImeOpen || Hooks::ControlMap::GetSingleton()->HasTextEntry());
+        enable && (m_settings->input.keepImeOpen || ControlMap::GetSingleton()->HasTextEntry());
 
     auto result = DoEnableIme(shouldEnableIme);
 
