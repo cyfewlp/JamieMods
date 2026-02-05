@@ -41,7 +41,7 @@ auto ConfigFilePath() -> std::filesystem::path
 
 namespace SksePlugin
 {
-bool Initialize()
+auto Initialize() -> bool
 {
     const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     const auto  version = plugin->GetVersion();
@@ -144,9 +144,8 @@ class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEven
     std::queue<std::string> m_message;
 
 public:
-    RE::BSEventNotifyControl ProcessEvent(
-        const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *
-    ) override
+    auto ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *)
+        -> RE::BSEventNotifyControl override
     {
         if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
         {

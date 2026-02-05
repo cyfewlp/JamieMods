@@ -16,7 +16,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ui/TaskQueue.h"
-#include "utils/FocusGFxCharacterInfo.h"
+#include "utils/InputFocusAnchor.h"
 
 namespace Ime
 {
@@ -227,7 +227,6 @@ auto ImeWindow::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) 
             }
             break;
         case Settings::WindowPosUpdatePolicy::BASED_ON_CARET: {
-            FocusGFxCharacterInfo::GetInstance().UpdateCaretCharBoundaries();
             UpdateImeWindowPosByCaret(windowPos);
             break;
         }
@@ -237,11 +236,12 @@ auto ImeWindow::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) 
 
 auto ImeWindow::UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void
 {
-    const auto &instance       = FocusGFxCharacterInfo::GetInstance();
-    const auto &charBoundaries = instance.CharBoundaries();
+    auto &instance = InputFocusAnchor::GetInstance();
+    instance.ComputeScreenMetrics();
+    const auto &bounds = instance.GetLastBounds();
 
-    windowPos.x = charBoundaries.left;
-    windowPos.y = charBoundaries.bottom;
+    windowPos.x = bounds.left;
+    windowPos.y = bounds.bottom;
 }
 
 void ImeWindow::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
@@ -261,15 +261,14 @@ void ImeWindow::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPo
         windowPos.y = viewBottom - windowSize.y;
     }
 
-    const ImVec2 min            = windowPos;
-    const ImVec2 max            = {windowPos.x + windowSize.x, windowPos.y + windowSize.y};
-    const auto  &instance       = FocusGFxCharacterInfo::GetInstance();
-    const auto  &charBoundaries = instance.CharBoundaries();
-    if (charBoundaries.top < max.y && charBoundaries.bottom > min.y && charBoundaries.left < max.x &&
-        charBoundaries.right > min.x) // is overlaps?
+    const ImVec2 min      = windowPos;
+    const ImVec2 max      = {windowPos.x + windowSize.x, windowPos.y + windowSize.y};
+    const auto  &instance = InputFocusAnchor::GetInstance();
+    const auto  &bounds   = instance.GetLastBounds();
+    if (bounds.top < max.y && bounds.bottom > min.y && bounds.left < max.x && bounds.right > min.x) // is overlaps?
     {
         // Move the window above the boundary
-        if (const float newY = charBoundaries.top - windowSize.y; newY >= viewport->Pos.y)
+        if (const float newY = bounds.top - windowSize.y; newY >= viewport->Pos.y)
         {
             windowPos.y = newY;
         }

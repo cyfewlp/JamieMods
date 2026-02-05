@@ -5,6 +5,8 @@
 #ifndef HOOK_H
 #define HOOK_H
 
+#include <cstdint>
+
 namespace Hooks
 {
 namespace Scaleform

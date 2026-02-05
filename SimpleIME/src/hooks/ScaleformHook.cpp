@@ -9,7 +9,7 @@
 #include "common/log.h"
 #include "hooks/Hooks.hpp"
 #include "ime/ImeController.h"
-#include "utils/FocusGFxCharacterInfo.h"
+#include "utils/InputFocusAnchor.h"
 
 #include <memory>
 
@@ -19,18 +19,6 @@ namespace
 {
 constexpr const char *SKSE_ORIGINAL_FN_AllowTextInput = "AllowTextInput";
 constexpr const char *SKSE_BACKUP_FN_AllowTextInput   = "_skse_simple_bk_AllowTextInput";
-
-void UpdateFocusCharacterBound(RE::GFxMovieView *movieView, bool allow)
-{
-    if (!allow || movieView == nullptr)
-    {
-        Ime::FocusGFxCharacterInfo::GetInstance().Update(nullptr);
-    }
-    else
-    {
-        Ime::FocusGFxCharacterInfo::GetInstance().Update(movieView);
-    }
-}
 
 class Scaleform_SetScaleModeTypeHookData : public HookData<void(RE::GFxMovieView *, RE::GFxMovieView::ScaleModeType)>
 {
@@ -85,7 +73,7 @@ struct Scaleform_SetScaleModeTypeHook
             return;
         }
 
-        static auto *handler = new SKSE_AllowTextInputFnHandler;
+        static auto handler = RE::make_gptr<SKSE_AllowTextInputFnHandler>();
 
         RE::GFxValue skse_fn_AllowTextInput;
         if (skse.GetMember(SKSE_ORIGINAL_FN_AllowTextInput, &skse_fn_AllowTextInput))
@@ -93,7 +81,7 @@ struct Scaleform_SetScaleModeTypeHook
             skse.SetMember(SKSE_BACKUP_FN_AllowTextInput, skse_fn_AllowTextInput);
 
             RE::GFxValue fn_AllowTextInput;
-            pMovieView->CreateFunction(&fn_AllowTextInput, handler);
+            pMovieView->CreateFunction(&fn_AllowTextInput, handler.get());
             skse.SetMember(SKSE_ORIGINAL_FN_AllowTextInput, fn_AllowTextInput);
 
             logger::debug(
@@ -118,7 +106,10 @@ struct Scaleform_AllowTextInputHook
         logger::debug("Scaleform_AllowTextInputHook");
         auto result = hookData->Original(self, allow);
 
-        Ime::FocusGFxCharacterInfo::GetInstance().UpdateByTopMenu();
+        if (allow)
+        {
+            Ime::InputFocusAnchor::GetInstance().ComputeScreenMetrics();
+        }
         SKSE_AllowTextInputFnHandler::OnTextEntryCountChanged(result);
         return result;
     }
@@ -200,7 +191,10 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
     {
         AllowTextInput(enable);
     }
-    UpdateFocusCharacterBound(fxMovieView, enable);
+    if (enable)
+    {
+        Ime::InputFocusAnchor::GetInstance().ComputeScreenMetrics();
+    }
 }
 
 void Install()
