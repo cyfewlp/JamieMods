@@ -40,10 +40,17 @@ public:
         return m_fDirty;
     }
 
+    auto IsReady() const -> bool
+    {
+        return m_fInited && m_imeWnd;
+    }
+
     auto IsModEnabled() const -> bool
     {
         return m_fEnabledMod;
     }
+
+    auto CommitCandidate(DWORD index) const -> void;
 
     //////////////////////////////////////////////////
 
@@ -63,6 +70,9 @@ public:
         static ImeController g_instance;
         return &g_instance;
     }
+
+    void Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings);
+    void Shutdown();
 
 private:
     Settings                   *m_settings    = nullptr;
@@ -84,9 +94,5 @@ private:
     bool FocusImeOrGame(bool focusIme) const;
 
     void AddTask(TaskQueue::Task &&task) const;
-
-    friend class ImeWnd;
-
-    static void Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings);
 };
 } // namespace Ime

@@ -22,11 +22,10 @@ class ImeWindow
 {
     ImVec2        m_imeWindowSize = ImVec2(0, 0);
     ImVec2        m_imeWindowPos  = ImVec2(0, 0);
-    ImeWnd       &m_imeWnd;
-    ITextService *m_pTextService = nullptr;
+    ITextService *m_pTextService  = nullptr;
 
 public:
-    explicit ImeWindow(ImeWnd &imeWnd, ITextService *pTextService) : m_imeWnd(imeWnd), m_pTextService(pTextService) {}
+    explicit ImeWindow(ITextService *pTextService) : m_pTextService(pTextService) {}
 
     void Draw(const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
 

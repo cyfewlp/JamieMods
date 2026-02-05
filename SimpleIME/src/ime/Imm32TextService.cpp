@@ -91,7 +91,7 @@ bool Imm32TextService::OnFocus(bool focus)
 auto Imm32TextService::CommitCandidate(DWORD index) -> bool
 {
     logger::debug("CommitCandidate {}", index);
-    HIMC hImc = ImmGetContext(m_imeHwnd);
+    const HIMC hImc = ImmGetContext(m_imeHwnd);
 
     bool result = true;
     if (hImc)

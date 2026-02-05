@@ -17,7 +17,7 @@ namespace Ime
 
 void ImeController::ApplySettings()
 {
-    if (!IsInited())
+    if (!IsReady())
     {
         ErrorNotifier::GetInstance().Error("Fatal error: IME manager is not initialized.");
         return;
@@ -33,6 +33,8 @@ void ImeController::ApplySettings()
 
 auto ImeController::EnableMod(bool enable) -> void
 {
+    if (!IsReady()) return;
+
     if (m_fEnabledMod != enable)
     {
         AddTask([this, enable] {
@@ -53,8 +55,20 @@ auto ImeController::EnableMod(bool enable) -> void
     }
 }
 
+auto ImeController::CommitCandidate(DWORD index) const -> void
+{
+    if (!IsReady()) return;
+
+    AddTask([this, index] {
+        m_imeWnd->CommitCandidate(index);
+    });
+    PostMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
+}
+
 void ImeController::EnableIme(bool enable) const
 {
+    if (!IsReady()) return;
+
     AddTask([this, enable] {
         if (IImeModule::IsFailed(DoEnableIme(enable)))
         {
@@ -65,6 +79,8 @@ void ImeController::EnableIme(bool enable) const
 
 void ImeController::ForceFocusIme() const
 {
+    if (!IsReady()) return;
+
     AddTask([this] {
         if (IImeModule::IsFailed(DoForceFocusIme()))
         {
@@ -75,6 +91,8 @@ void ImeController::ForceFocusIme() const
 
 void ImeController::SyncImeState()
 {
+    if (!IsReady()) return;
+
     AddTask([this] {
         if (IImeModule::IsFailed(DoSyncImeState()))
         {
@@ -85,6 +103,8 @@ void ImeController::SyncImeState()
 
 void ImeController::TryFocusIme() const
 {
+    if (!IsReady()) return;
+
     AddTask([this] {
         if (IImeModule::IsFailed(DoTryFocusIme()))
         {
@@ -232,16 +252,24 @@ void ImeController::AddTask(TaskQueue::Task &&task) const
 
 void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings)
 {
-    auto *instance = GetInstance();
-    if (instance->m_fInited)
+    if (m_fInited)
     {
         return;
     }
-    instance->m_settings = &settings;
-    instance->m_delegate = std::make_unique<ImeManager>(gameHwnd, imeWnd, settings);
-    instance->m_gameHwnd = gameHwnd;
-    instance->m_imeWnd   = imeWnd;
-    instance->m_fInited  = true;
+    m_settings = &settings;
+    m_delegate = std::make_unique<ImeManager>(gameHwnd, imeWnd, settings);
+    m_gameHwnd = gameHwnd;
+    m_imeWnd   = imeWnd;
+    m_fInited  = true;
+}
+
+void ImeController::Shutdown()
+{
+    m_settings = nullptr;
+    m_delegate.release();
+    m_gameHwnd = nullptr;
+    m_imeWnd   = nullptr;
+    m_fInited  = false;
 }
 
 } // namespace Ime

@@ -57,7 +57,14 @@ public:
     auto IsFocused() const -> bool;
     auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
     auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
-    auto GetImeThreadId() const -> DWORD;
+
+    void CommitCandidate(const DWORD index) const
+    {
+        if (m_pTextService)
+        {
+            m_pTextService->CommitCandidate(index);
+        }
+    }
 
     constexpr auto GetHWND() const -> HWND
     {

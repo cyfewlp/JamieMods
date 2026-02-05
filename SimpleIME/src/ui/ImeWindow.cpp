@@ -10,12 +10,11 @@
 #include "RE/M/MenuCursor.h"
 #include "common/WCharUtils.h"
 #include "common/imgui/ImGuiEx.h"
-#include "configs/CustomMessage.h"
 #include "core/State.h"
 #include "ime/ITextService.h"
+#include "ime/ImeController.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "ui/TaskQueue.h"
 #include "utils/InputFocusAnchor.h"
 
 namespace Ime
@@ -190,11 +189,7 @@ void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) cons
         }
         if (clicked < candidateList.size())
         {
-            auto textService = m_pTextService;
-            TaskQueue::GetInstance().AddImeThreadTask([textService, clicked] {
-                textService->CommitCandidate(clicked);
-            });
-            PostMessageA(m_imeWnd.GetHWND(), CM_EXECUTE_TASK, 0, 0);
+            ImeController::GetInstance()->CommitCandidate(clicked);
         }
     }
 }

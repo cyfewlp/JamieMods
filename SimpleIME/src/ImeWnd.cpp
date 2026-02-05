@@ -78,7 +78,7 @@ void ImeWnd::Initialize() noexcept(false)
     }
 
     InitializeTextService();
-    m_pImeWindow = std::make_unique<ImeWindow>(*this, m_pTextService.get());
+    m_pImeWindow = std::make_unique<ImeWindow>(m_pTextService.get());
     m_pImeUi     = std::make_unique<ImeUI>(this);
 
     auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
@@ -181,11 +181,6 @@ auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) con
         return true;
     }
     return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
-}
-
-auto ImeWnd::GetImeThreadId() const -> DWORD
-{
-    return GetWindowThreadProcessId(m_hWnd, nullptr);
 }
 
 void ImeWnd::AbortIme() const
@@ -367,12 +362,13 @@ void ImeWnd::OnCreated(Settings &settings)
     logger::info("Ime window created, init TSF and core...");
     m_pTextService->OnStart(m_hWnd);
 
-    ImeController::Init(this, m_hWndParent, settings);
+    ImeController::GetInstance()->Init(this, m_hWndParent, settings);
 }
 
 auto ImeWnd::OnDestroy() const -> LRESULT
 {
     logger::info("Destroy IME Window");
+    ImeController::GetInstance()->Shutdown();
     UnInitialize();
     PostQuitMessage(0);
     return S_OK;
