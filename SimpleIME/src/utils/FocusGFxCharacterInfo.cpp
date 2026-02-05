@@ -3,148 +3,120 @@
 //
 #include "utils/FocusGFxCharacterInfo.h"
 
-using namespace RE;
-
-auto Ime::FocusGFxCharacterInfo::Update(GFxMovieView *movieView) -> void
+namespace
 {
-    Reset();
-    m_movieView = movieView;
-    if (movieView != nullptr)
+/// Console menu depth: CursorMenu, ImeMenu depth is 13.
+constexpr uint32_t MENU_MAX_EFFECTIVE_DEPTH = 12;
+
+auto GetFocusPath(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GFxValue &focusPath) -> bool
+{
+    return movieView->Invoke("Selection.getFocus", &focusPath, nullptr, 0) && focusPath.IsString();
+}
+
+auto GetFocusCharacter(
+    const RE::GPtr<RE::GFxMovieView> &movieView, const RE::GFxValue &focusPath, RE::GFxValue &focused
+) -> bool
+{
+    return movieView->GetVariable(&focused, focusPath.GetString()) && focused.IsObject();
+}
+
+void ConvertBoundariesToScreen(
+    const RE::GPtr<RE::GFxMovieView> &movieView, RE::GRectF boundaries, const char *focusPath
+)
+{
+    RE::GRenderer::Matrix identity;
+    RE::GPointF           screenPoint;
+
+    const RE::GPointF leftTop{.x = boundaries.left, .y = boundaries.top};
+    const RE::GPointF rightBottom{.x = boundaries.right, .y = boundaries.bottom};
+    if (movieView->TranslateLocalToScreen(focusPath, leftTop, &screenPoint, &identity))
     {
-        GFxValue focusCharacterPath;
-        movieView->Invoke("Selection.getFocus", &focusCharacterPath, nullptr, 0);
-        GFxValue focusCharacter;
-        if (focusCharacterPath.IsString() && movieView->GetVariable(&focusCharacter, focusCharacterPath.GetString()) &&
-            focusCharacter.IsObject())
-        {
-            UpdateTextMetrics(focusCharacter);
-        }
+        boundaries.left = screenPoint.x;
+        boundaries.top  = screenPoint.y;
+    }
+
+    screenPoint = {};
+    if (movieView->TranslateLocalToScreen(focusPath, rightBottom, &screenPoint, &identity))
+    {
+        boundaries.right  = screenPoint.x;
+        boundaries.bottom = screenPoint.y;
     }
 }
 
-auto Ime::FocusGFxCharacterInfo::Update(const std::string &menuName, const bool open) -> void
+void GetBoundariesFrom(const RE::GFxValue &charBoundaries, RE::GRectF &gBoundaries)
 {
-    if (open)
+    if (RE::GFxValue posX; charBoundaries.GetMember("x", &posX) && posX.IsNumber())
     {
-        m_menuStack.push_front(menuName);
-        const auto movieView = UI::GetSingleton()->GetMovieView(menuName);
-        Update(movieView.get());
+        gBoundaries.left = static_cast<float>(posX.GetNumber());
     }
-    else
+    if (RE::GFxValue posY; charBoundaries.GetMember("y", &posY) && posY.IsNumber())
     {
-        std::erase(m_menuStack, menuName);
-        Update(nullptr);
+        gBoundaries.top = static_cast<float>(posY.GetNumber());
     }
+    if (RE::GFxValue width; charBoundaries.GetMember("width", &width) && width.IsNumber())
+    {
+        gBoundaries.right = static_cast<float>(width.GetNumber()) + gBoundaries.left;
+    }
+    if (RE::GFxValue height; charBoundaries.GetMember("height", &height) && height.IsNumber())
+    {
+        gBoundaries.bottom = static_cast<float>(height.GetNumber() + gBoundaries.top);
+    }
+}
+} // namespace
+
+auto Ime::FocusGFxCharacterInfo::Update(RE::GFxMovieView *movieView) -> void
+{
+    Reset();
+    m_currMovieView = RE::GPtr(movieView);
 }
 
 auto Ime::FocusGFxCharacterInfo::UpdateByTopMenu() -> void
 {
-    if (m_menuStack.empty())
+    RE::IMenu *pMenu = nullptr; // NOLINT(*-const-correctness)
+    RE::UI::GetSingleton()->GetTopMostMenu(&pMenu, MENU_MAX_EFFECTIVE_DEPTH);
+    if (pMenu != nullptr)
     {
-        return;
+        Update(pMenu->uiMovie.get());
     }
-    const auto movieView = UI::GetSingleton()->GetMovieView(m_menuStack.front());
-    Update(movieView.get());
 }
 
 void Ime::FocusGFxCharacterInfo::Reset()
 {
-    m_movieView      = nullptr;
-    m_textWidth      = 0.0F;
-    m_textHeight     = 16.0F;
-    m_charBoundaries = {0.0F, 0.0F, 0.0F, 0.0F};
-}
-
-auto Ime::FocusGFxCharacterInfo::UpdateTextMetrics(const GFxValue &character) -> void
-{
-    if (GFxValue textWidth; character.GetMember("textWidth", &textWidth) && textWidth.IsNumber())
-    {
-        m_textWidth = textWidth.GetNumber();
-    }
-    if (GFxValue textHeight; character.GetMember("textHeight", &textHeight) && textHeight.IsNumber())
-    {
-        m_textHeight = textHeight.GetNumber();
-    }
+    m_currMovieView  = nullptr;
+    m_charBoundaries = {.left = 0.0F, .top = 0.0F, .right = 0.0F, .bottom = 0.0F};
 }
 
 auto Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries() -> void
 {
-    if (!m_movieView)
-    {
-        UpdateByTopMenu();
-    }
-
-    if (!m_movieView)
+    if (!m_currMovieView)
     {
         return;
     }
 
-    GFxValue focusCharacterPath;
-    if (!m_movieView->Invoke("Selection.getFocus", &focusCharacterPath, nullptr, 0) || !focusCharacterPath.IsString())
+    RE::GFxValue focusPath;
+    if (!GetFocusPath(m_currMovieView, focusPath))
     {
         return;
     }
 
-    if (GFxValue focusCharacter;
-        m_movieView->GetVariable(&focusCharacter, focusCharacterPath.GetString()) && focusCharacter.IsObject())
+    if (RE::GFxValue focusCharacter; GetFocusCharacter(m_currMovieView, focusPath, focusCharacter))
     {
-        GFxValue caretIndex;
-        m_movieView->Invoke("Selection.getCaretIndex", &caretIndex, nullptr, 0);
+        RE::GFxValue caretIndex;
+        m_currMovieView->Invoke("Selection.getCaretIndex", &caretIndex, nullptr, 0);
         if (caretIndex.IsNumber())
         {
-            GFxValue hScroll;
+            RE::GFxValue hScroll;
             focusCharacter.GetMember("hscroll", &hScroll);
             std::array const args = {caretIndex};
-            if (GFxValue charBoundaries;
+            if (RE::GFxValue charBoundaries;
                 focusCharacter.Invoke("getExactCharBoundaries", &charBoundaries, args) && charBoundaries.IsObject())
             {
-                const float hScrollPos = hScroll.IsNumber() ? hScroll.GetNumber() : 0.0F;
-                UpdateCaretCharBoundaries(charBoundaries);
-                m_charBoundaries.left -= hScrollPos;
+                GetBoundariesFrom(charBoundaries, m_charBoundaries);
 
-                ConvertBoundariesToScreen(m_movieView, focusCharacterPath.GetString());
+                const float hScrollPos = hScroll.IsNumber() ? static_cast<float>(hScroll.GetNumber()) : 0.0F;
+                m_charBoundaries.left -= hScrollPos;
+                ConvertBoundariesToScreen(m_currMovieView, m_charBoundaries, focusPath.GetString());
             }
         }
-    }
-}
-
-void Ime::FocusGFxCharacterInfo::UpdateCaretCharBoundaries(const GFxValue &charBoundaries)
-{
-    if (GFxValue x; charBoundaries.GetMember("x", &x) && x.IsNumber())
-    {
-        m_charBoundaries.left = static_cast<float>(x.GetNumber());
-    }
-    if (GFxValue y; charBoundaries.GetMember("y", &y) && y.IsNumber())
-    {
-        m_charBoundaries.top = static_cast<float>(y.GetNumber());
-    }
-    if (GFxValue width; charBoundaries.GetMember("width", &width) && width.IsNumber())
-    {
-        m_charBoundaries.right = static_cast<float>(width.GetNumber()) + m_charBoundaries.left;
-    }
-    if (GFxValue height; charBoundaries.GetMember("height", &height) && height.IsNumber())
-    {
-        m_charBoundaries.bottom = static_cast<float>(height.GetNumber() + m_charBoundaries.top);
-    }
-}
-
-void Ime::FocusGFxCharacterInfo::ConvertBoundariesToScreen(GFxMovieView *movieView, const char *path)
-{
-    GRenderer::Matrix identity;
-    GPointF           screenPoint;
-
-    const GPointF leftTop{m_charBoundaries.left, m_charBoundaries.top};
-    const GPointF rightBottom{m_charBoundaries.right, m_charBoundaries.bottom};
-    if (movieView->TranslateLocalToScreen(path, leftTop, &screenPoint, &identity))
-    {
-        m_charBoundaries.left = screenPoint.x;
-        m_charBoundaries.top  = screenPoint.y;
-    }
-
-    screenPoint = {};
-    if (movieView->TranslateLocalToScreen(path, rightBottom, &screenPoint, &identity))
-    {
-        m_charBoundaries.right  = screenPoint.x;
-        m_charBoundaries.bottom = screenPoint.y;
     }
 }

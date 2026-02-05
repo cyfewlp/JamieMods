@@ -5,7 +5,6 @@
 #include "common/log.h"
 #include "ime/ImeController.h"
 #include "menu/MenuNames.h"
-#include "utils/FocusGFxCharacterInfo.h"
 
 #include <RE/B/BSInputDeviceManager.h>
 #include <RE/B/BSTEvent.h>
@@ -195,7 +194,7 @@ RE::BSEventNotifyControl MenuOpenCloseEventSink::
     static bool firstOpenMainMenu = true;
     if (event->menuName != RE::CursorMenu::MENU_NAME && event->menuName != RE::HUDMenu::MENU_NAME)
     {
-        FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
+        // FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
     }
     // before game load, all menus will be closed;
     if (event->menuName == RE::LoadingMenu::MENU_NAME)

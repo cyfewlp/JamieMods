@@ -9,38 +9,13 @@ namespace Ime
 {
 class FocusGFxCharacterInfo
 {
-    RE::GFxMovieView *m_movieView = nullptr;
-    float             m_textHeight;
-    float             m_textWidth;
-    RE::GRectF        m_charBoundaries;
-
-    FocusGFxCharacterInfo()  = default;
-    ~FocusGFxCharacterInfo() = default;
+    RE::GRectF                 m_charBoundaries{};
+    RE::GPtr<RE::GFxMovieView> m_currMovieView{nullptr};
 
 public:
-    [[nodiscard]] float TextHeight() const
-    {
-        return m_textHeight;
-    }
-
-    [[nodiscard]] float TextWidth() const
-    {
-        return m_textWidth;
-    }
-
-    [[nodiscard]] auto MovieView() const -> RE::GFxMovieView *
-    {
-        return m_movieView;
-    }
-
     [[nodiscard]] auto CharBoundaries() const -> const RE::GRectF &
     {
         return m_charBoundaries;
-    }
-
-    constexpr auto IsValid() const -> bool
-    {
-        return m_movieView != nullptr;
     }
 
     static auto GetInstance() -> FocusGFxCharacterInfo &
@@ -49,21 +24,15 @@ public:
         return instance;
     }
 
-    // Call when
-    // 1. Exists text entry
-    // 2. Any menu open/close (expect Cursor Menu * HUD Menu)
-    // 3. SKSE_AllowTextInput/Scaleform_AllowTextInput called
+    /// Call when
+    /// 1. Exists text entry
+    /// 2. SKSE_AllowTextInput/Scaleform_AllowTextInput called
     auto Update(RE::GFxMovieView *movieView) -> void;
-    auto Update(const std::string &menuName, bool open) -> void;
+
     auto UpdateByTopMenu() -> void;
     auto UpdateCaretCharBoundaries() -> void;
 
 private:
-    std::list<std::string> m_menuStack{};
-
     void Reset();
-    auto UpdateTextMetrics(const RE::GFxValue &character) -> void;
-    void UpdateCaretCharBoundaries(const RE::GFxValue &charBoundaries);
-    void ConvertBoundariesToScreen(RE::GFxMovieView *movieView, const char *path);
 };
 } // namespace Ime

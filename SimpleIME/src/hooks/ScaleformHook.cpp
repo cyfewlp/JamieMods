@@ -168,7 +168,8 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
         logger::error("AllowInput called with insufficient args");
         return;
     }
-    auto *fxMovieView = reinterpret_cast<RE::GFxMovieView *>(params.movie);
+    auto      *fxMovieView = reinterpret_cast<RE::GFxMovieView *>(params.movie);
+    const bool enable      = params.args[0].GetBool(); // NOLINT(*-pro-bounds-pointer-arithmetic)
 
     RE::GFxValue skse;
     bool         calledOriginal = false;
@@ -197,11 +198,9 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
     }
     if (!calledOriginal)
     {
-        const bool enable         = params.args[0].GetBool(); // NOLINT(*-pro-bounds-pointer-arithmetic)
-        const auto textEntryCount = AllowTextInput(enable);
-        params.retVal->SetNumber(textEntryCount);
-        UpdateFocusCharacterBound(fxMovieView, enable);
+        AllowTextInput(enable);
     }
+    UpdateFocusCharacterBound(fxMovieView, enable);
 }
 
 void Install()
