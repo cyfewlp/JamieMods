@@ -237,6 +237,19 @@ public:
     {
         return contentColors.at(static_cast<uint8_t>(token));
     }
+
+    ////////////////////////////////////////////////////////////////////////
+    /// Helpers
+
+    auto Hovered(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
+    {
+        return at(surfaceToken).Hovered(at(contentToken));
+    }
+
+    auto Pressed(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
+    {
+        return at(surfaceToken).Pressed(at(contentToken));
+    }
 };
 
 // Size tips to pass item draw functions

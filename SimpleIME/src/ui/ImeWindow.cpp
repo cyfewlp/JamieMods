@@ -161,12 +161,8 @@ void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) cons
             .Style_FramePadding({m3Styles[Spacing::M], m3Styles[Spacing::S]})
             .Color_Text(m3Styles.Colors().at(ContentToken::onSurface))
             .Color_Button({0, 0, 0, 0})
-            .Color_ButtonHovered(m3Styles.Colors()
-                                     .at(SurfaceToken::surfaceContainer)
-                                     .Hovered(m3Styles.Colors().at(ContentToken::onSurface)))
-            .Color_ButtonActive(m3Styles.Colors()
-                                    .at(SurfaceToken::surfaceContainer)
-                                    .Pressed(m3Styles.Colors().at(ContentToken::onSurface)));
+            .Color_ButtonHovered(m3Styles.Colors().Hovered(SurfaceToken::surfaceContainer, ContentToken::onSurface))
+            .Color_ButtonActive(m3Styles.Colors().Pressed(SurfaceToken::surfaceContainer, ContentToken::onSurface));
 
         for (const auto &candidate : candidateList)
         {
@@ -176,12 +172,12 @@ void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) cons
             {
                 styleGuard1.Color_Button(m3Styles.Colors()[SurfaceToken::primaryContainer])
                     .Color_Text(m3Styles.Colors()[ContentToken::onPrimaryContainer])
-                    .Color_ButtonHovered(m3Styles.Colors()[SurfaceToken::primaryContainer].Hovered(
-                        m3Styles.Colors()[ContentToken::onPrimaryContainer]
-                    ))
-                    .Color_ButtonActive(m3Styles.Colors()[SurfaceToken::primaryContainer].Pressed(
-                        m3Styles.Colors()[ContentToken::onPrimaryContainer]
-                    ));
+                    .Color_ButtonHovered(
+                        m3Styles.Colors().Hovered(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
+                    )
+                    .Color_ButtonActive(
+                        m3Styles.Colors().Pressed(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
+                    );
             }
 
             if (ImGui::Button(candidate.c_str()))
@@ -194,8 +190,9 @@ void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) cons
         }
         if (clicked < candidateList.size())
         {
-            TaskQueue::GetInstance().AddImeThreadTask([this, clicked] {
-                m_pTextService->CommitCandidate(clicked);
+            auto textService = m_pTextService;
+            TaskQueue::GetInstance().AddImeThreadTask([textService, clicked] {
+                textService->CommitCandidate(clicked);
             });
             PostMessageA(m_imeWnd.GetHWND(), CM_EXECUTE_TASK, 0, 0);
         }

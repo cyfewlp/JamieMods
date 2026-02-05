@@ -111,11 +111,11 @@ auto DrawNavItem(
             SurfaceColor bgColor;
             if (hovered && held)
             {
-                bgColor = colors[SurfaceToken::primary].Pressed(colors[ContentToken::onPrimary]);
+                bgColor = colors.Pressed(SurfaceToken::primary, ContentToken::onPrimary);
             }
             else if (hovered)
             {
-                bgColor = colors[SurfaceToken::secondaryContainer].Hovered(colors[ContentToken::onSecondaryContainer]);
+                bgColor = colors.Hovered(SurfaceToken::secondaryContainer, ContentToken::onSecondaryContainer);
             }
             else
             {

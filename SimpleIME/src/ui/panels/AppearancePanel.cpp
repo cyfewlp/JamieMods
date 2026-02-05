@@ -46,19 +46,18 @@ void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 
 void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
 {
+    using ContentToken = ImGuiEx::M3::ContentToken;
+    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color_Text(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSurfaceVariant))
+    styleGuard.Color_Text(m3Styles.Colors().at(ContentToken::onSurfaceVariant))
         .Style_FrameBorderSize(m3Styles[ImGuiEx::M3::Spacing::XS])
-        .Color_Border(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
-        .Color_FrameBg(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surface))
-        .Color_FrameBgHovered(m3Styles.Colors()
-                                  .at(ImGuiEx::M3::SurfaceToken::surface)
-                                  .Hovered(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSurfaceVariant)))
-        .Color_PopupBg(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
-        .Color_HeaderActive(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::tertiaryContainer))
-        .Color_HeaderHovered(m3Styles.Colors()
-                                 .at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow)
-                                 .Hovered(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSurface)));
+        .Color_Border(m3Styles.Colors().at(SurfaceToken::primary))
+        .Color_FrameBg(m3Styles.Colors().at(SurfaceToken::surface))
+        .Color_FrameBgHovered(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurfaceVariant))
+        .Color_PopupBg(m3Styles.Colors().at(SurfaceToken::surfaceContainerLow))
+        .Color_HeaderActive(m3Styles.Colors().at(SurfaceToken::tertiaryContainer))
+        .Color_HeaderHovered(m3Styles.Colors().Hovered(SurfaceToken::surfaceContainerLow, ContentToken::onSurface));
     const auto availX = ImGui::GetContentRegionAvail().x;
     if (const auto maxWidth = m3Styles.GetSize(ImGuiEx::M3::ComponentSize::MENU_WIDTH); availX > maxWidth)
     {
@@ -91,6 +90,9 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
 
 void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 {
+    using ContentToken = ImGuiEx::M3::ContentToken;
+    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+
     const auto &colors    = m3Styles.Colors();
     bool        openPopup = false;
     ImGui::PushFont(nullptr, m3Styles.LabelText().fontSize);
@@ -117,7 +119,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style_FramePadding({0.f, m3Styles[ImGuiEx::M3::Spacing::S]})
             .Style_WindowPadding({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::M]})
-            .Color_PopupBg(colors[ImGuiEx::M3::SurfaceToken::surfaceContainerHigh]);
+            .Color_PopupBg(colors[SurfaceToken::surfaceContainerHigh]);
         if (ImGui::BeginPopupModal(
                 Translate("Settings.Appearance.ThemeBuilder"), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
             ))
@@ -130,18 +132,14 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             ImGui::BeginGroup();
             {
                 ImGuiEx::StyleGuard styleGuard1;
-                styleGuard1.Color_Text(colors[ImGuiEx::M3::ContentToken::onPrimaryContainer])
-                    .Color_FrameBg(colors[ImGuiEx::M3::SurfaceToken::primaryContainer])
+                styleGuard1.Color_Text(colors[ContentToken::onPrimaryContainer])
+                    .Color_FrameBg(colors[SurfaceToken::primaryContainer])
                     .Color_FrameBgHovered(
-                        colors[ImGuiEx::M3::SurfaceToken::primaryContainer].Hovered(
-                            colors[ImGuiEx::M3::ContentToken::onPrimaryContainer]
-                        )
+                        colors.Hovered(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
                     )
 
                     .Color_FrameBgActive(
-                        colors[ImGuiEx::M3::SurfaceToken::primaryContainer].Pressed(
-                            colors[ImGuiEx::M3::ContentToken::onPrimaryContainer]
-                        )
+                        colors.Pressed(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
                     );
                 if (ImGui::ColorPicker3(
                         "##picker",
@@ -151,7 +149,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                 {
                     edited = true;
                 }
-                styleGuard1.Color_Text(colors[ImGuiEx::M3::ContentToken::onPrimary])
+                styleGuard1.Color_Text(colors[ContentToken::onPrimary])
                     .Style_FramePadding({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::M]})
                     .Style_ItemSpacing({m3Styles[ImGuiEx::M3::Spacing::L], 0.f})
                     .Style_FrameRounding(m3Styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));

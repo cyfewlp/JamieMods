@@ -18,7 +18,7 @@ public:
 
     auto ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS override;
 
-    static constexpr bool IsShowing()
+    static constexpr auto IsShowing() -> bool
     {
         return g_showing;
     }

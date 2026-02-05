@@ -590,12 +590,8 @@ void FontPreviewPanel::DrawFontsTable(const std::vector<FontInfo> &fontInfos, co
             .Style_SelectableTextAlign({0.f, 0.5f})
             .Style_ScrollbarSize(m3Styles[Spacing::XS])
             .Color_Header(m3Styles.Colors().at(SurfaceToken::surface))
-            .Color_HeaderActive(
-                m3Styles.Colors().at(SurfaceToken::surface).Pressed(m3Styles.Colors().at(ContentToken::onSurface))
-            )
-            .Color_HeaderHovered(
-                m3Styles.Colors().at(SurfaceToken::surface).Hovered(m3Styles.Colors().at(ContentToken::onSurface))
-            );
+            .Color_HeaderActive(m3Styles.Colors().Pressed(SurfaceToken::surface, ContentToken::onSurface))
+            .Color_HeaderHovered(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface));
 
         ImGui::Spacing();
         auto &displayFontInfos = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
