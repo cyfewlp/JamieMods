@@ -41,7 +41,7 @@ auto ConfigFilePath() -> std::filesystem::path
 
 namespace SksePlugin
 {
-auto Initialize() -> bool
+static auto Initialize() -> bool
 {
     const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     const auto  version = plugin->GetVersion();
@@ -49,7 +49,7 @@ auto Initialize() -> bool
     static Ime::Settings g_settings;
 
     Ime::ConfigSerializer::Deserialize(ConfigFilePath(), g_settings);
-    InitializeLogging(g_settings.logging.level, g_settings.logging.flushLevel);
+    InitializeLogging(SpdLogSettings(g_settings.logging.level, g_settings.logging.flushLevel));
     g_instance = std::make_unique<Ime::ImeApp>(g_settings);
 
     logger::info("{} {} is loading...", plugin->GetName(), version.string());
@@ -61,7 +61,7 @@ auto Initialize() -> bool
     return true;
 }
 
-void InitializeMessaging()
+static void InitializeMessaging()
 {
     using State = Ime::Core::State;
     // ReSharper disable once CppParameterMayBeConstPtrOrRef
@@ -165,7 +165,7 @@ public:
     }
 };
 
-std::unique_ptr<InitErrorMessageShow> g_pInitErrorMessageShow(nullptr);
+static std::unique_ptr<InitErrorMessageShow> g_pInitErrorMessageShow(nullptr);
 
 void ImeApp::D3DInit()
 {
@@ -229,7 +229,7 @@ void ImeApp::OnD3DInit()
     }
 
     logger::debug("Getting SwapChain desc...");
-    REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
+    REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc{};
     if (pSwapChain->GetDesc(&swapChainDesc) < 0)
     {
         throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
@@ -257,7 +257,7 @@ void ImeApp::OnD3DInit()
 void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 {
     std::promise<bool> ensureInitialized;
-    std::future<bool>  initialized = ensureInitialized.get_future();
+    const auto         initialized = ensureInitialized.get_future();
     // run ImeWnd in a standalone thread
     auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
@@ -276,9 +276,9 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto colors = ImGuiEx::M3::ThemeBuilder::BuildThemeFromSeed(
         m_settings.appearance.themeSourceColor, m_settings.appearance.themeDarkMode
     );
-    g_M3Styles = std::make_unique<ImGuiEx::M3::M3Styles>(std::move(colors), iconFont);
+    g_M3Styles = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);
 
-    std::thread childWndThread([&ensureInitialized, this] {
+    std::thread childWndThread([&ensureInitialized, this] -> void {
         try
         {
             m_imeWnd.Initialize();
@@ -311,7 +311,7 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
             {
                 logger::warn("IME thread did not respond to WM_CLOSE, detaching...");
             }
-            std::thread([t = std::move(childWndThread)]() mutable {
+            std::thread([t = std::move(childWndThread)]() mutable -> void {
                 if (t.joinable())
                 {
                     t.join();
@@ -402,18 +402,3 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
     return RealWndProc(hWnd, uMsg, wParam, lParam);
 }
 } // namespace Ime
-
-BOOL APIENTRY DllMain(HMODULE, DWORD ul_reason, LPVOID)
-{
-    switch (ul_reason)
-    {
-        case DLL_PROCESS_ATTACH:
-            // spdlog::info("DLL_PROCESS_ATTACH");
-            break;
-        case DLL_PROCESS_DETACH:
-            spdlog::shutdown();
-            break;
-        default:;
-    }
-    return TRUE;
-}

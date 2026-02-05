@@ -10,7 +10,7 @@
 
 namespace SksePlugin
 {
-void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::level::level_enum flushLevel)
+void InitializeLogging(SpdLogSettings settings)
 {
     auto path = SKSE::log::log_directory();
     if (!path)
@@ -22,14 +22,14 @@ void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::l
 
     auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
     auto log  = std::make_shared<spdlog::logger>(std::string("global log"), std::move(sink));
-    log->set_level(logLevel);
-    log->flush_on(flushLevel);
+    log->set_level(settings.level);
+    log->flush_on(settings.flushLevel);
 
     spdlog::set_default_logger(std::move(log));
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%#] %v");
 }
 
-bool PluginLoad(const SKSE::LoadInterface *skse)
+auto PluginLoad(const SKSE::LoadInterface *skse) -> bool
 {
     try
     {
@@ -50,7 +50,7 @@ bool PluginLoad(const SKSE::LoadInterface *skse)
     return false;
 }
 
-int ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *)
+auto ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *) -> int
 {
     logger::critical("System exception (code {}) raised during plugin initialization.", code);
     logger::LogStacktrace();
@@ -68,4 +68,19 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse)
     {
     }
     return false;
+}
+
+auto APIENTRY DllMain(HMODULE /*unused*/, DWORD ul_reason, LPVOID /*unused*/) -> BOOL
+{
+    switch (ul_reason)
+    {
+        case DLL_PROCESS_ATTACH:
+            // spdlog::info("DLL_PROCESS_ATTACH");
+            break;
+        case DLL_PROCESS_DETACH:
+            spdlog::shutdown();
+            break;
+        default:;
+    }
+    return TRUE;
 }

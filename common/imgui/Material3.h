@@ -26,11 +26,11 @@ struct Text
     float lineHeight;
 };
 
-static constexpr auto TEXT_LABEL_SMALL    = Text(12.f, 16.f);
-static constexpr auto TEXT_LABEL_LARGE    = Text(14.f, 20.f);
-static constexpr auto TEXT_TITLE_MEDIUM   = Text(16.f, 24.f);
-static constexpr auto TEXT_HEADLINE_SMALL = Text(24.f, 32.f);
-static constexpr auto ICON_SIZE           = 24.f;
+static constexpr auto TEXT_LABEL_SMALL    = Text(12.F, 16.F);
+static constexpr auto TEXT_LABEL_LARGE    = Text(14.F, 20.F);
+static constexpr auto TEXT_TITLE_MEDIUM   = Text(16.F, 24.F);
+static constexpr auto TEXT_HEADLINE_SMALL = Text(24.F, 32.F);
+static constexpr auto ICON_SIZE           = 24.F;
 
 class ColorBase
 {
@@ -39,7 +39,7 @@ class ColorBase
 public:
     constexpr ColorBase() = default;
 
-    constexpr ColorBase(float r, float g, float b, float a = 1.0f) : raw(r, g, b, a) {}
+    constexpr ColorBase(float r, float g, float b, float a = 1.0F) : raw(r, g, b, a) {}
 
     constexpr explicit ColorBase(const ImVec4 &col) : raw(col) {}
 
@@ -67,7 +67,7 @@ struct ContentColor : ColorBase
     using ColorBase::ColorBase;
     using ColorBase::operator=;
 
-    static constexpr float DISABLED_OPACITY = 0.38f;
+    static constexpr float DISABLED_OPACITY = 0.38F;
 };
 
 class SurfaceColor : public ColorBase
@@ -76,25 +76,28 @@ public:
     using ColorBase::ColorBase;
     using ColorBase::operator=;
 
-    static constexpr float HOVER_OPACITY    = 0.08f;
-    static constexpr float PRESSED_OPACITY  = 0.12f;
-    static constexpr float DISABLED_OPACITY = 0.10f;
+    static constexpr float HOVER_OPACITY    = 0.08F;
+    static constexpr float PRESSED_OPACITY  = 0.12F;
+    static constexpr float DISABLED_OPACITY = 0.10F;
 
-    constexpr SurfaceColor GetState(const ContentColor &onColor, const float stateOpacity) const
+    [[nodiscard]] constexpr auto GetState(const ContentColor &onColor, const float stateOpacity) const -> SurfaceColor
     {
         const auto l = static_cast<ImVec4>(*this);
         const auto r = static_cast<ImVec4>(onColor);
-        return SurfaceColor(
-            l.x + (r.x - l.x) * stateOpacity, l.y + (r.y - l.y) * stateOpacity, l.z + (r.z - l.z) * stateOpacity, l.w
-        );
+        return {
+            l.x + ((r.x - l.x) * stateOpacity),
+            l.y + ((r.y - l.y) * stateOpacity),
+            l.z + ((r.z - l.z) * stateOpacity),
+            l.w
+        };
     }
 
-    constexpr SurfaceColor Hovered(const ContentColor &onColor) const
+    [[nodiscard]] constexpr auto Hovered(const ContentColor &onColor) const -> SurfaceColor
     {
         return GetState(onColor, HOVER_OPACITY);
     }
 
-    constexpr SurfaceColor Pressed(const ContentColor &onColor) const
+    [[nodiscard]] constexpr auto Pressed(const ContentColor &onColor) const -> SurfaceColor
     {
         return GetState(onColor, PRESSED_OPACITY);
     }
@@ -189,33 +192,33 @@ public:
     using ContentColors = std::array<ContentColor, static_cast<uint8_t>(ContentToken::count)>;
 
 private:
-    SurfaceColors surfaceColors;
-    ContentColors contentColors;
-    Argb          sourceColor;
+    SurfaceColors surfaceColors{};
+    ContentColors contentColors{};
+    Argb          sourceColor{};
     bool          darkMode = false;
 
     friend class ThemeBuilder;
 
 public:
     explicit Colors(
-        const Argb sourceColor, const bool darkMode, SurfaceColors &&surfaceColors, ContentColors &&contentColors
+        const Argb sourceColor, const bool darkMode, const SurfaceColors &surfaceColors,
+        const ContentColors &contentColors
     )
-        : surfaceColors(std::move(surfaceColors)), contentColors(std::move(contentColors)), sourceColor(sourceColor),
-          darkMode(darkMode)
+        : surfaceColors(surfaceColors), contentColors(contentColors), sourceColor(sourceColor), darkMode(darkMode)
     {
     }
 
-    auto SourceColor() const -> Argb
+    [[nodiscard]] auto SourceColor() const -> Argb
     {
         return sourceColor;
     }
 
-    auto DarkMode() const -> bool
+    [[nodiscard]] auto DarkMode() const -> bool
     {
         return darkMode;
     }
 
-    auto at(SurfaceToken token) const -> const SurfaceColor &
+    [[nodiscard]] auto at(SurfaceToken token) const -> const SurfaceColor &
     {
         return surfaceColors.at(static_cast<uint8_t>(token));
     }
@@ -225,7 +228,7 @@ public:
         return surfaceColors.at(static_cast<uint8_t>(token));
     }
 
-    auto at(ContentToken token) const -> const ContentColor &
+    [[nodiscard]] auto at(ContentToken token) const -> const ContentColor &
     {
         return contentColors.at(static_cast<uint8_t>(token));
     }
@@ -277,7 +280,7 @@ enum class ComponentSize : uint8_t
 
 class M3Styles
 {
-    static constexpr float BASE_UNIT = 4.0f;
+    static constexpr float BASE_UNIT = 4.0F;
 
     Colors colors;
     /**
@@ -295,17 +298,12 @@ class M3Styles
 
     std::array<float, static_cast<size_t>(Spacing::Count)> precomputedPx{};
 
-    float currentScale = 1.0f;
+    float currentScale = 0.0F;
 
 public:
     constexpr explicit M3Styles(const Colors &colors, ImFont *iconFont) : colors(colors), iconFont(iconFont)
     {
-        UpdateScaling(currentScale);
-    }
-
-    constexpr explicit M3Styles(Colors &&colors, ImFont *iconFont) : colors(std::move(colors)), iconFont(iconFont)
-    {
-        UpdateScaling(currentScale);
+        UpdateScaling(1.0F);
     }
 
     void UpdateScaling(const float newScale)
@@ -330,27 +328,27 @@ public:
 
     void RebuildColors(Argb sourceColor, bool isDark);
 
-    auto Colors() const -> const Colors &
+    [[nodiscard]] auto Colors() const -> const Colors &
     {
         return colors;
     }
 
-    auto IconFont() const -> ImFont *
+    [[nodiscard]] auto IconFont() const -> ImFont *
     {
         return iconFont;
     }
 
-    auto Get(Spacing s) const -> float
+    [[nodiscard]] auto Get(Spacing s) const -> float
     {
         return precomputedPx.at(static_cast<uint8_t>(s));
     }
 
-    auto GetUnit(uint8_t units) const -> float
+    [[nodiscard]] auto GetUnit(uint8_t units) const -> float
     {
         return precomputedPx.at(units < 32 ? units : 31);
     }
 
-    auto GetSize(ComponentSize componentSize) const -> float
+    [[nodiscard]] auto GetSize(ComponentSize componentSize) const -> float
     {
         return BASE_UNIT * currentScale * static_cast<float>(componentSize);
     }

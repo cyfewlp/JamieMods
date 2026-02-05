@@ -250,6 +250,7 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M
     appearance.zoom = std::min(ZOOM_MAX, appearance.zoom);
     appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
     m3Styles.UpdateScaling(appearance.zoom);
+    ImGuiManager::ApplyM3Theme(m3Styles);
 
     i18n::ScanLanguages(utils::GetInterfacePath() / SIMPLE_IME, m_translateLanguages);
 
