@@ -21,7 +21,7 @@ auto GetFocusMember(const RE::GPtr<RE::GFxMovieView> &movieView, const RE::GFxVa
     return movieView->GetVariable(&focused, focusPath.GetString()) && focused.IsObject();
 }
 
-void LocalToGlobalRect(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GRectF boundaries, const char *focusPath)
+void LocalToGlobalRect(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GRectF &boundaries, const char *focusPath)
 {
     RE::GRenderer::Matrix identity;
     RE::GPointF           screenPoint;
