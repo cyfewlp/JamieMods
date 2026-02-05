@@ -57,13 +57,10 @@ public:
         return m_tfClientId;
     }
 
-    static auto GetSingleton(bool uiLessMode = true) -> TsfSupport const &
+    static auto GetSingleton() -> TsfSupport &
     {
-        if (!s_instance.m_initialized)
-        {
-            s_instance.InitializeTsf(uiLessMode);
-        }
-        return s_instance;
+        static TsfSupport g_TsfSupport{};
+        return g_TsfSupport;
     }
 
 private:
@@ -73,8 +70,6 @@ private:
 
     TfClientId m_tfClientId{};
     bool       m_initialized = false;
-
-    static TsfSupport s_instance;
 };
 } // namespace Tsf
 

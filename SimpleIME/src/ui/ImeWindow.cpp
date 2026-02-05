@@ -7,83 +7,29 @@
 #include "ui/ImeWindow.h"
 
 #include "ImeWnd.hpp"
+#include "RE/GRectEx.h"
 #include "RE/M/MenuCursor.h"
 #include "common/WCharUtils.h"
 #include "common/imgui/ImGuiEx.h"
 #include "core/State.h"
-#include "ime/ITextService.h"
+#include "ime/CandidateUi.h"
 #include "ime/ImeController.h"
+#include "ime/TextEditor.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "utils/InputFocusAnchor.h"
 
 namespace Ime
 {
-void ImeWindow::Draw(const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
+
+namespace
 {
-    static bool shouldRelayout = true;
-    static bool imeAppearing   = true;
-    const auto &state          = Core::State::GetInstance();
-    if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
-    {
-        imeAppearing   = true;
-        shouldRelayout = true;
-        ImGui::CloseCurrentPopup();
-        return;
-    }
-    if (imeAppearing)
-    {
-        imeAppearing = false;
-        UpdateImeWindowPos(settings, m_imeWindowPos);
-    }
-    if (shouldRelayout)
-    {
-        shouldRelayout = false;
-        ClampWindowToViewport(m_imeWindowSize, m_imeWindowPos);
-        ImGui::SetNextWindowPos(m_imeWindowPos);
-    }
-
-    constexpr auto flags =
-        ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style_WindowPadding({})
-        .Color_Text(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
-        .Color_WindowBg(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
-        .Color_Separator(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
-
-    ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
-    if (ImGui::Begin("IME", nullptr, flags))
-    {
-        ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
-        if (state.Has(Core::State::IN_COMPOSING))
-        {
-            DrawCompWindow(m3Styles);
-        }
-
-        ImGui::Separator();
-        // render ime status window: language,
-        if (state.Has(Core::State::IN_CAND_CHOOSING))
-        {
-            DrawCandidateWindows(m3Styles);
-        }
-        m_imeWindowSize = ImGui::GetWindowSize();
-    }
-    ImGui::End();
-    ImGui::PopFont();
-    if (IsImeNeedRelayout())
-    {
-        shouldRelayout = true;
-    }
-}
-
-void ImeWindow::DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const
+void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    const auto &textEditor = m_pTextService->GetTextEditor();
-
-    const auto &editorText = textEditor.GetText();
+    const auto &editorText = editor.GetText();
     LONG        acpStart   = 0;
     LONG        acpEnd     = 0;
-    textEditor.GetSelection(&acpStart, &acpEnd);
+    editor.GetSelection(&acpStart, &acpEnd);
 
     const size_t textSize = editorText.size();
     acpStart              = std::max(0L, acpStart);
@@ -115,8 +61,8 @@ void ImeWindow::DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const
     }
 
     // caret
-    ImGui::SameLine(0, 1.f);
-    if (fmodf(ImGui::GetTime(), 1.2F) <= 0.8F)
+    ImGui::SameLine(0, 1.F);
+    if (fmod(ImGui::GetTime(), 1.2) <= 0.8) // NOLINT(*-magic-numbers)
     {
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
         ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m3Styles[ImGuiEx::M3::Spacing::S]);
@@ -143,13 +89,12 @@ void ImeWindow::DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const
     }
 }
 
-void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) const
+void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     using Spacing      = ImGuiEx::M3::Spacing;
     using ContentToken = ImGuiEx::M3::ContentToken;
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
 
-    const auto &candidateUi = m_pTextService->GetCandidateUi();
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
         DWORD index   = 0;
@@ -194,15 +139,17 @@ void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) cons
     }
 }
 
-auto ImeWindow::IsImeNeedRelayout() const -> bool
+auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void
 {
-    const auto &viewport    = ImGui::GetMainViewport();
-    const auto  rectMax     = m_imeWindowPos + m_imeWindowSize;
-    const auto  viewportMax = viewport->Size + viewport->Pos;
-    return rectMax.x > viewportMax.x || rectMax.y > viewportMax.y;
+    auto &instance = InputFocusAnchor::GetInstance();
+    instance.ComputeScreenMetrics();
+    const auto &bounds = instance.GetLastBounds();
+
+    windowPos.x = bounds.left;
+    windowPos.y = bounds.bottom;
 }
 
-auto ImeWindow::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
+auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
 {
     switch (settings.input.posUpdatePolicy)
     {
@@ -221,44 +168,105 @@ auto ImeWindow::UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) 
     }
 }
 
-auto ImeWindow::UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void
+/**
+ * @brief Ensure the current ImGui window is fully within the viewport.
+ */
+void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size)
 {
-    auto &instance = InputFocusAnchor::GetInstance();
-    instance.ComputeScreenMetrics();
-    const auto &bounds = instance.GetLastBounds();
+    const auto &viewport = ImGui::GetMainViewport();
 
-    windowPos.x = bounds.left;
-    windowPos.y = bounds.bottom;
-}
+    const RE::GPointF max = {.x = pos.x + size.x, .y = pos.y + size.y};
 
-void ImeWindow::ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos)
-{
-    const auto &viewport   = ImGui::GetMainViewport();
-    const float viewRight  = viewport->Pos.x + viewport->Size.x;
-    const float viewBottom = viewport->Pos.y + viewport->Size.y;
-    windowPos.x            = std::max(windowPos.x, viewport->Pos.x);
-    windowPos.y            = std::max(windowPos.y, viewport->Pos.y);
-
-    if (windowSize.x < viewport->Size.x && windowPos.x + windowSize.x > viewRight)
+    auto maxX = viewport->Pos.x + viewport->Size.x;
+    auto maxY = viewport->Pos.y + viewport->Size.y;
+    if (size.x < viewport->Size.x)
     {
-        windowPos.x = viewRight - windowSize.x;
+        maxX -= size.x;
     }
-    if (windowSize.y < viewport->Size.y && windowPos.y + windowSize.y > viewBottom)
+    if (size.y < viewport->Size.y)
     {
-        windowPos.y = viewBottom - windowSize.y;
+        maxY -= -size.y;
     }
+    pos.x = std::clamp(pos.x, viewport->Pos.x, maxX);
+    pos.y = std::clamp(pos.y, viewport->Pos.y, maxY);
 
-    const ImVec2 min      = windowPos;
-    const ImVec2 max      = {windowPos.x + windowSize.x, windowPos.y + windowSize.y};
-    const auto  &instance = InputFocusAnchor::GetInstance();
-    const auto  &bounds   = instance.GetLastBounds();
-    if (bounds.top < max.y && bounds.bottom > min.y && bounds.left < max.x && bounds.right > min.x) // is overlaps?
+    if (const auto &bounds = InputFocusAnchor::GetInstance().GetLastBounds();
+        Intersects(bounds, RE::GRectF{.left = pos.x, .top = pos.y, .right = max.x, .bottom = max.y})) // is overlaps?
     {
         // Move the window above the boundary
-        if (const float newY = bounds.top - windowSize.y; newY >= viewport->Pos.y)
+        if (const float newY = bounds.top - size.y; newY >= viewport->Pos.y)
         {
-            windowPos.y = newY;
+            pos.y = newY;
         }
     }
+}
+} // namespace
+
+void ImeWindow::Draw(
+    const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings,
+    const ImGuiEx::M3::M3Styles &m3Styles
+)
+{
+    static bool shouldRelayout = true;
+    static bool imeAppearing   = true;
+    const auto &state          = Core::State::GetInstance();
+    if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
+    {
+        imeAppearing   = true;
+        shouldRelayout = true;
+        ImGui::CloseCurrentPopup();
+        return;
+    }
+    if (imeAppearing)
+    {
+        imeAppearing = false;
+        UpdateImeWindowPos(settings, m_imePos);
+    }
+    if (shouldRelayout)
+    {
+        shouldRelayout = false;
+        ClampWindowToViewport(m_imePos, m_imeSize);
+        ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
+    }
+
+    constexpr auto flags =
+        ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
+    ImGuiEx::StyleGuard styleGuard;
+    styleGuard.Style_WindowPadding({})
+        .Color_Text(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
+        .Color_WindowBg(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
+        .Color_Separator(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
+
+    ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
+    if (ImGui::Begin("IME", nullptr, flags))
+    {
+        ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+        if (state.Has(Core::State::IN_COMPOSING))
+        {
+            DrawComposition(textEditor, m3Styles);
+        }
+
+        ImGui::Separator();
+        // render ime status window: language,
+        if (state.Has(Core::State::IN_CAND_CHOOSING))
+        {
+            DrawCandidates(candidateUi, m3Styles);
+        }
+        m_imeSize = ImGui::GetWindowSize();
+    }
+    ImGui::End();
+    ImGui::PopFont();
+    if (IsImeNeedRelayout())
+    {
+        shouldRelayout = true;
+    }
+}
+
+auto ImeWindow::IsImeNeedRelayout() const -> bool
+{
+    const auto &viewport    = ImGui::GetMainViewport();
+    const auto  rectMax     = m_imePos + m_imeSize;
+    const auto  viewportMax = viewport->Size + viewport->Pos;
+    return rectMax.x > viewportMax.x || rectMax.y > viewportMax.y;
 }
 } // namespace Ime

@@ -14,31 +14,21 @@ class M3Styles;
 
 namespace Ime
 {
-class ImeWnd;
-
-class ITextService;
+class CandidateUi;
+class TextEditor;
 
 class ImeWindow
 {
-    ImVec2        m_imeWindowSize = ImVec2(0, 0);
-    ImVec2        m_imeWindowPos  = ImVec2(0, 0);
-    ITextService *m_pTextService  = nullptr;
+    ImVec2 m_imePos;
+    ImVec2 m_imeSize;
 
 public:
-    explicit ImeWindow(ITextService *pTextService) : m_pTextService(pTextService) {}
-
-    void Draw(const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
+    void Draw(
+        const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings,
+        const ImGuiEx::M3::M3Styles &m3Styles
+    );
 
 private:
-    void DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const;
-    void DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) const;
-
-    auto        IsImeNeedRelayout() const -> bool;
-    static auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void;
-    static auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void;
-    /**
-     * @brief Ensure the current ImGui window is fully within the viewport.
-     */
-    static void ClampWindowToViewport(const ImVec2 &windowSize, ImVec2 &windowPos);
+    [[nodiscard]] auto IsImeNeedRelayout() const -> bool;
 };
 } // namespace Ime

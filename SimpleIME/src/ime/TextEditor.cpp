@@ -11,7 +11,7 @@ auto Ime::TextEditor::Select(const TS_SELECTION_ACP *pSelectionAcp) -> void
     m_acpSelection.acpStart           = pSelectionAcp->acpStart;
     m_acpSelection.acpEnd             = pSelectionAcp->acpEnd;
     m_acpSelection.style.fInterimChar = pSelectionAcp->style.fInterimChar;
-    if (m_acpSelection.style.fInterimChar)
+    if (m_acpSelection.style.fInterimChar != FALSE)
     {
         m_acpSelection.style.ase = TS_AE_NONE;
     }

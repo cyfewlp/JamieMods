@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include "ime/ime.h"
-
 #include <TextStor.h>
+#include <shared_mutex>
 #include <string>
 
 namespace Ime
@@ -25,7 +24,7 @@ public:
 
     auto SelectAll()
     {
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
+        const std::unique_lock lock(m_mutex);
         m_acpSelection.acpStart = 0;
         m_acpSelection.acpEnd   = m_editorText.size();
     }
@@ -40,7 +39,7 @@ public:
      */
     constexpr auto GetTextSize(__out long &charSize) const -> void
     {
-        std::shared_lock lock(m_mutex);
+        const std::shared_lock lock(m_mutex);
         charSize = m_editorText.size();
     }
 
@@ -49,7 +48,7 @@ public:
      */
     [[nodiscard]] constexpr auto GetTextSize() const -> uint32_t
     {
-        std::shared_lock lock(m_mutex);
+        const std::shared_lock lock(m_mutex);
         return m_editorText.size();
     }
 
@@ -64,7 +63,7 @@ public:
 
     [[nodiscard]] constexpr auto GetText() const -> std::wstring
     {
-        std::shared_lock lock(m_mutex);
+        const std::shared_lock lock(m_mutex);
         return m_editorText;
     }
 

@@ -5,6 +5,7 @@
 #ifndef IME_ITEXTSERVICE_H
 #define IME_ITEXTSERVICE_H
 
+#include "CandidateUi.h"
 #include "TextEditor.h"
 #include "core/State.h"
 
@@ -14,7 +15,7 @@ using OnEndCompositionCallback = void(const std::wstring &compositionString);
 
 class ITextService
 {
-    using State = Ime::Core::State;
+    using State = Core::State;
 
 public:
     ITextService()                                                  = default;

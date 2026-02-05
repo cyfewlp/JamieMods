@@ -10,24 +10,20 @@
 #include "ITextService.h"
 #include "tsf/TextStore.h"
 
-namespace Ime
+namespace Ime::TextServiceFactory
 {
-class ITextServiceFactory
+inline auto Create(const bool enableTsf) -> std::unique_ptr<ITextService>
 {
-public:
-    static auto CreateInstance(bool enableTsf, ITextService **ppTextService) -> void
+    if (enableTsf)
     {
-        std::unique_ptr<ITextService> pTextService = nullptr;
-        if (enableTsf)
+        if (auto textService = std::make_unique<Tsf::TextService>(); SUCCEEDED(textService->Initialize()))
         {
-            *ppTextService = new Tsf::TextService();
+            return textService;
         }
-        else
-        {
-            *ppTextService = new Imm32::Imm32TextService();
-        }
+        logger::warn("Can't initialize Text Service with TSF. Fallback to IMM32.");
     }
-};
-} // namespace Ime
+    return std::make_unique<Imm32::Imm32TextService>();
+}
+} // namespace Ime::TextServiceFactory
 
 #endif // ITEXTSERVICEFACTORY_H

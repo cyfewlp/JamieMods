@@ -40,15 +40,8 @@ ImeWnd::~ImeWnd()
 
 void ImeWnd::InitializeTextService()
 {
-    ITextService *pTextService = nullptr;
-    ITextServiceFactory::CreateInstance(m_settings.enableTsf, &pTextService);
-    if (FAILED(pTextService->Initialize()))
-    {
-        throw SimpleIMEException("Can't initialize TextService");
-    }
-    m_pTextService.reset(pTextService);
+    m_pTextService = TextServiceFactory::Create(m_settings.enableTsf);
     m_pTextService->RegisterCallback(OnCompositionResult);
-    m_pLangProfileUtil = new LangProfileUtil();
 }
 
 static void TryEnableImeWndDpiAware()
@@ -77,11 +70,18 @@ void ImeWnd::Initialize() noexcept(false)
         throw SimpleIMEException("Can't register class");
     }
 
+    auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
+    if (!tsfSupport.InitializeTsf(true))
+    {
+        m_settings.enableTsf = false;
+    }
+
     InitializeTextService();
-    m_pImeWindow = std::make_unique<ImeWindow>(m_pTextService.get());
+    m_pImeWindow = std::make_unique<ImeWindow>();
     m_pImeUi     = std::make_unique<ImeUI>(this);
 
-    auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
+    // FIXME: may TSF is disabled!
+    m_pLangProfileUtil = new LangProfileUtil();
     if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
@@ -196,7 +196,7 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
-        m_pImeWindow->Draw(settings, m3Styles);
+        m_pImeWindow->Draw(m_pTextService->GetTextEditor(), m_pTextService->GetCandidateUi(), settings, m3Styles);
         m_pImeUi->DrawToolWindow(settings, m3Styles);
     }
     ImGui::PopFont();

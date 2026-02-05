@@ -14,9 +14,9 @@ Checks: >
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -misc-include-cleaner,
   -google-readability-namespace-comments,
+  -readability-braces-around-statements,
 #  -cppcoreguidelines-pro-type-vararg,
 #  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
-#  -readability-braces-around-statements,
 #  -performance-no-automatic-move,
 HeaderFileExtensions:
   - ''

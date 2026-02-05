@@ -5,9 +5,6 @@
 
 #include <comdef.h>
 
-Tsf::TsfSupport Tsf::TsfSupport::s_instance{};
-
-//
 auto Tsf::ToErrorMessage(const HRESULT hresult) -> std::string
 {
     const _com_error err(hresult);

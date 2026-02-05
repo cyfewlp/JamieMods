@@ -17,8 +17,9 @@ struct CandWindowProp
     static constexpr float        PADDING           = 10.0F;
 };
 
-struct CandidateUi
+class CandidateUi
 {
+public:
     CandidateUi()                                                 = default;
     ~CandidateUi()                                                = default;
     CandidateUi(const CandidateUi &other)                         = delete;
@@ -53,19 +54,19 @@ struct CandidateUi
 
     [[nodiscard]] constexpr auto CandidateList() const -> std::list<std::string>
     {
-        std::shared_lock lock(m_mutex);
+        const std::shared_lock lock(m_mutex);
         return m_candidateList;
     }
 
     auto PushBack(const std::string &candidate) -> void
     {
-        std::unique_lock lock(m_mutex);
+        const std::unique_lock lock(m_mutex);
         m_candidateList.push_back(candidate);
     }
 
     auto Swap(std::list<std::string> &candidates) -> void
     {
-        std::unique_lock lock(m_mutex);
+        const std::unique_lock lock(m_mutex);
         m_candidateList.swap(candidates);
     }
 
@@ -74,7 +75,7 @@ struct CandidateUi
      */
     void Close()
     {
-        std::unique_lock lock(m_mutex);
+        const std::unique_lock lock(m_mutex);
         m_dwSelection = 0;
         m_candidateList.clear();
         m_dwPageSize = CandWindowProp::DEFAULT_PAGE_SIZE;
