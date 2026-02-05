@@ -292,7 +292,7 @@ public:
         return SUCCEEDED(hr);
     }
 
-    auto CommitCandidate(HWND /*hwnd*/, DWORD index) -> bool override
+    auto CommitCandidate(DWORD index) -> bool override
     {
         return m_pTextStore->CommitCandidate(index);
     }

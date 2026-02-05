@@ -79,10 +79,6 @@ void ImeWindow::Draw(const Settings &settings, const ImGuiEx::M3::M3Styles &m3St
 
 void ImeWindow::DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const
 {
-    static float CursorAnim = 0.F;
-
-    CursorAnim += ImGui::GetIO().DeltaTime;
-
     const auto &textEditor = m_pTextService->GetTextEditor();
 
     const auto &editorText = textEditor.GetText();
@@ -121,7 +117,7 @@ void ImeWindow::DrawCompWindow(const ImGuiEx::M3::M3Styles &m3Styles) const
 
     // caret
     ImGui::SameLine(0, 1.f);
-    if (fmodf(CursorAnim, 1.2F) <= 0.8F)
+    if (fmodf(ImGui::GetTime(), 1.2F) <= 0.8F)
     {
         ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
         ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m3Styles[ImGuiEx::M3::Spacing::S]);
@@ -199,14 +195,13 @@ void ImeWindow::DrawCandidateWindows(const ImGuiEx::M3::M3Styles &m3Styles) cons
         if (clicked < candidateList.size())
         {
             TaskQueue::GetInstance().AddImeThreadTask([this, clicked] {
-                m_pTextService->CommitCandidate(m_imeWnd.GetHWND(), clicked);
+                m_pTextService->CommitCandidate(clicked);
             });
             PostMessageA(m_imeWnd.GetHWND(), CM_EXECUTE_TASK, 0, 0);
         }
     }
 }
 
-// FIXME: may also check the min position
 auto ImeWindow::IsImeNeedRelayout() const -> bool
 {
     const auto &viewport    = ImGui::GetMainViewport();
