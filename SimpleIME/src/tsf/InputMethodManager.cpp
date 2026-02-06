@@ -1,4 +1,4 @@
-﻿#include "tsf/LangProfileUtil.h"
+﻿#include "tsf/InputMethodManager.h"
 
 #include "common/WCharUtils.h"
 #include "common/log.h"
@@ -8,9 +8,24 @@
 #include <future>
 #include <msctf.h>
 #include <stdexcept>
-#include <unordered_map>
 
-auto Ime::LangProfileUtil::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
+namespace
+{
+auto GetProfileCachedIndex(const std::vector<Ime::LangProfile> &langProfiles, const GUID &guidProfile) -> std::uint32_t
+{
+    const auto it = std::ranges::find_if(langProfiles, [&](const auto &p) {
+        return p.guidProfile == guidProfile;
+    });
+
+    if (it != langProfiles.end())
+    {
+        return static_cast<std::uint32_t>(std::ranges::distance(langProfiles.begin(), it));
+    }
+    return UINT32_MAX;
+}
+} // namespace
+
+auto Ime::InputMethodManager::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
 {
     _ATL_COM_BEGIN
     logger::debug("Initializing LangProfileUtil...");
@@ -25,12 +40,14 @@ auto Ime::LangProfileUtil::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
         hresult = m_tfProfileMgr.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
         ATLENSURE_RETURN(SUCCEEDED(hresult));
         m_initialized = true;
+        RefreshProfiles();
+        UpdateActiveProfile();
         return S_OK;
     }
     _ATL_COM_END
 }
 
-auto Ime::LangProfileUtil::UnInitialize() -> void
+auto Ime::InputMethodManager::UnInitialize() -> void
 {
     if (m_lpThreadMgr != nullptr)
     {
@@ -44,19 +61,14 @@ auto Ime::LangProfileUtil::UnInitialize() -> void
     m_initialized = false;
 }
 
-auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
+auto Ime::InputMethodManager::RefreshProfiles() -> bool
 {
     m_langProfiles.clear();
+    m_langProfiles.push_back(DEFAULT_LANG_PROFILE);
+
     HRESULT hresult = TRUE;
     try
     {
-        LangProfile engProfile    = {};
-        engProfile.clsid          = CLSID_NULL;
-        engProfile.langid         = LANGID_ENG; // english keyboard
-        engProfile.guidProfile    = GUID_NULL;
-        engProfile.desc           = std::string("ENG");
-        m_langProfiles[GUID_NULL] = engProfile;
-
         _tsetlocale(LC_ALL, _T(""));
         CComPtr<ITfInputProcessorProfiles> lpProfiles;
         hresult = lpProfiles.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
@@ -70,8 +82,10 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
         ULONG                    fetched = 0;
         while (lpEnum->Next(1, &profile, &fetched) == S_OK)
         {
+            if ((profile.dwFlags & TF_IPP_FLAG_ENABLED) == 0) continue;
+
             BOOL     bEnabled = FALSE;
-            CComBSTR bstrDesc = nullptr;
+            CComBSTR bStrDesc = nullptr;
 
             // Skip profile that failed to load.
             auto hr =
@@ -80,18 +94,17 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
             if (SUCCEEDED(hr) && bEnabled == TRUE)
             {
                 hr = lpProfiles->GetLanguageProfileDescription(
-                    profile.clsid, profile.langid, profile.guidProfile, &bstrDesc
+                    profile.clsid, profile.langid, profile.guidProfile, &bStrDesc
                 );
                 if (SUCCEEDED(hr))
                 {
-                    LangProfile langProfile = {};
-                    langProfile.clsid       = profile.clsid;
-                    langProfile.langid      = profile.langid;
-                    langProfile.guidProfile = profile.guidProfile;
-                    if (WCharUtils::ToString(bstrDesc, bstrDesc.Length(), langProfile.desc))
+                    std::string desc;
+                    if (WCharUtils::ToString(bStrDesc, bStrDesc.Length(), desc))
                     {
-                        m_langProfiles[profile.guidProfile] = langProfile;
-                        logger::info("Load installed ime: {}", langProfile.desc.c_str());
+                        m_langProfiles.emplace_back(
+                            std::move(desc), profile.clsid, profile.guidProfile, profile.langid
+                        );
+                        logger::info("Load installed ime: {}", desc.c_str());
                     }
                 }
             }
@@ -104,45 +117,14 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
     return SUCCEEDED(hresult);
 }
 
-auto Ime::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) -> bool
+auto Ime::InputMethodManager::UpdateActiveProfile() noexcept -> bool
 {
-    if (guidProfile == nullptr)
-    {
-        return E_INVALIDARG;
-    }
-    if (IsEqualGUID(*guidProfile, m_activatedProfile))
-    {
-        return S_OK;
-    }
-    auto expected = m_langProfiles.find(*guidProfile);
-    if (expected == m_langProfiles.end())
-    {
-        return false;
-    }
-    auto          profile = expected->second;
-    HRESULT const hresult = m_tfProfileMgr->ActivateProfile(
-        TF_PROFILETYPE_INPUTPROCESSOR,
-        profile.langid,
-        profile.clsid,
-        profile.guidProfile,
-        nullptr,
-        TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE
-    );
-    if (FAILED(hresult))
-    {
-        logger::error("Active profile {} failed: {}", profile.desc, Tsf::ToErrorMessage(hresult));
-    }
-    return SUCCEEDED(hresult);
-}
-
-auto Ime::LangProfileUtil::UpdateActiveProfile() noexcept -> bool
-{
-    m_activatedProfile = GUID_NULL;
+    m_activatedProfile = 0;
     TF_INPUTPROCESSORPROFILE profile;
     if (SUCCEEDED(m_tfProfileMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile)))
     {
-        m_activatedProfile = profile.guidProfile;
-        UpdateLangProfileState();
+        m_activatedProfile = GetProfileCachedIndex(m_langProfiles, profile.guidProfile);
+        Core::State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile < m_langProfiles.size());
         return true;
     }
 
@@ -150,17 +132,45 @@ auto Ime::LangProfileUtil::UpdateActiveProfile() noexcept -> bool
     return false;
 }
 
-auto Ime::LangProfileUtil::GetActivatedLangProfile() -> GUID &
+auto Ime::InputMethodManager::ActivateProfile(const GUID &guidProfile) -> HRESULT
 {
-    return m_activatedProfile;
+    const auto index = GetProfileCachedIndex(m_langProfiles, guidProfile);
+    if (index > m_langProfiles.size())
+    {
+        return E_INVALIDARG;
+    }
+    auto &activeLangProfile = GetActiveLangProfile();
+
+    auto &langProfile = m_langProfiles[index];
+    if (IsEqualGUID(langProfile.guidProfile, activeLangProfile.guidProfile))
+    {
+        return S_OK;
+    }
+    const HRESULT hresult = m_tfProfileMgr->ActivateProfile(
+        TF_PROFILETYPE_INPUTPROCESSOR,
+        langProfile.langid,
+        langProfile.clsid,
+        langProfile.guidProfile,
+        nullptr,
+        TF_IPPMF_FORSESSION | TF_IPPMF_DONTCARECURRENTINPUTLANGUAGE
+    );
+    if (FAILED(hresult))
+    {
+        logger::error("Active profile {} failed: {}", langProfile.desc, Tsf::ToErrorMessage(hresult));
+    }
+    return hresult;
 }
 
-auto Ime::LangProfileUtil::GetLangProfiles() -> std::unordered_map<GUID, LangProfile> &
+auto Ime::InputMethodManager::GetActiveLangProfile() -> const LangProfile &
 {
-    return m_langProfiles;
+    if (m_activatedProfile > m_langProfiles.size())
+    {
+        return DEFAULT_LANG_PROFILE;
+    }
+    return m_langProfiles[m_activatedProfile];
 }
 
-auto Ime::LangProfileUtil::QueryInterface(const IID &riid, void **ppvObject) -> HRESULT
+auto Ime::InputMethodManager::QueryInterface(const IID &riid, void **ppvObject) -> HRESULT
 {
     *ppvObject = nullptr;
 
@@ -178,12 +188,12 @@ auto Ime::LangProfileUtil::QueryInterface(const IID &riid, void **ppvObject) -> 
     return E_NOINTERFACE;
 }
 
-auto Ime::LangProfileUtil::AddRef() -> ULONG
+auto Ime::InputMethodManager::AddRef() -> ULONG
 {
     return ++m_refCount;
 }
 
-auto Ime::LangProfileUtil::Release() -> ULONG
+auto Ime::InputMethodManager::Release() -> ULONG
 {
     --m_refCount;
     if (m_refCount == 0)
@@ -194,24 +204,21 @@ auto Ime::LangProfileUtil::Release() -> ULONG
     return m_refCount;
 }
 
-auto Ime::LangProfileUtil::OnActivated(
+auto Ime::InputMethodManager::OnActivated(
     [[maybe_unused]] DWORD dwProfileType, [[maybe_unused]] LANGID langid, [[maybe_unused]] const IID &clsid,
     [[maybe_unused]] const GUID &catid, const GUID &guidProfile, [[maybe_unused]] HKL hkl, DWORD dwFlags
 ) -> HRESULT
 {
     if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
     {
-        m_activatedProfile = guidProfile;
-        auto &state        = State::GetInstance();
-        state.Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile != GUID_NULL);
+        auto &state = State::GetInstance();
+
+        m_activatedProfile = GetProfileCachedIndex(m_langProfiles, guidProfile);
+
+        state.Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile < m_langProfiles.size());
         state.Clear(State::IN_ALPHANUMERIC);
         state.Clear(State::IN_CAND_CHOOSING);
         state.Clear(State::IN_COMPOSING);
     }
     return S_OK;
-}
-
-void Ime::LangProfileUtil::UpdateLangProfileState() const
-{
-    State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile != GUID_NULL);
 }

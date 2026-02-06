@@ -6,6 +6,7 @@
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
+#include "common/WCharUtils.h"
 #include "common/imgui/ErrorNotifier.h"
 #include "configs/CustomMessage.h"
 #include "hooks/Hooks.hpp"
@@ -55,11 +56,21 @@ auto ImeController::EnableMod(bool enable) -> void
     }
 }
 
-void ImeController::ActivateLangProfile(const GUID *langGuid) const
+void ImeController::ActivateLangProfile(const GUID &guidProfile) const
 {
-    if (!IsReady() || langGuid == nullptr) return;
+    if (!IsReady()) return;
 
-    m_imeWnd->SendMessageToIme(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(langGuid));
+    AddTask([&] {
+        if (FAILED(m_imeWnd->ActivateLanguageProfile(guidProfile)))
+        {
+            std::wstring wsGuid;
+            ToStringFromGUID2(guidProfile, wsGuid);
+            auto strGuid = WCharUtils::ToString(wsGuid);
+            auto message = std::format("Can't switch Input Method, profile index {}", strGuid);
+            logger::warn("{}", message);
+            ErrorNotifier::GetInstance().Warning(message);
+        }
+    });
 }
 
 auto ImeController::CommitCandidate(DWORD index) const -> void

@@ -102,14 +102,10 @@ void ImeWnd::Initialize() noexcept(false)
     m_pImeUi     = std::make_unique<ImeUI>(this);
 
     // FIXME: may TSF is disabled!
-    m_pLangProfileUtil = new LangProfileUtil();
-    if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
+    m_pInputMethodManager = new InputMethodManager();
+    if (FAILED(m_pInputMethodManager->Initialize(tsfSupport.GetThreadMgr())))
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
-    }
-    if (!m_pLangProfileUtil->LoadAllLangProfiles() || !m_pLangProfileUtil->UpdateActiveProfile())
-    {
-        ErrorNotifier::GetInstance().Warning("Can't update language profiles.");
     }
     m_pImeUi->Initialize();
 }
@@ -120,9 +116,9 @@ void ImeWnd::UnInitialize() const noexcept
     {
         m_pTextService->UnInitialize();
     }
-    if (m_pLangProfileUtil != nullptr)
+    if (m_pInputMethodManager != nullptr)
     {
-        m_pLangProfileUtil->UnInitialize();
+        m_pInputMethodManager->UnInitialize();
     }
 }
 
@@ -188,13 +184,13 @@ auto ImeWnd::IsFocused() const -> bool
     return m_fFocused;
 }
 
-auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
+auto ImeWnd::SendMessageToIme(const UINT uMsg, const WPARAM wParam, const LPARAM lParam) const -> LRESULT
 {
     if (m_hWnd == nullptr)
     {
-        return false;
+        return FALSE;
     }
-    return SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
+    return SendMessageW(m_hWnd, uMsg, wParam, lParam);
 }
 
 auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
@@ -204,6 +200,11 @@ auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) con
         return true;
     }
     return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
+}
+
+auto ImeWnd::ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT
+{
+    return m_pInputMethodManager->ActivateProfile(guidProfile);
 }
 
 void ImeWnd::AbortIme() const
@@ -222,8 +223,8 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
         m_pImeWindow->Draw(m_pTextService->GetTextEditor(), m_pTextService->GetCandidateUi(), settings, m3Styles);
 
         {
-            const auto &activeLang   = m_pLangProfileUtil->GetActivatedLangProfile();
-            const auto &langProfiles = m_pLangProfileUtil->GetLangProfiles();
+            const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
+            const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
             const auto  state        = LanguageBar::Draw(m_fWantToggleToolWindow, activeLang, langProfiles);
             if (LanguageBar::IsOpenSettings(state))
             {
@@ -282,11 +283,6 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case CM_EXECUTE_TASK: {
             TaskQueue::GetInstance().ExecuteImeThreadTasks();
-            return 0;
-        }
-        case CM_ACTIVATE_PROFILE: {
-            if (pThis == nullptr) break;
-            pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
             return 0;
         }
         case WM_IME_SETCONTEXT:

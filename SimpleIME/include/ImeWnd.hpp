@@ -6,7 +6,7 @@
 #include "ImeUI.h"
 #include "core/State.h"
 #include "ime/ITextService.h"
-#include "tsf/LangProfileUtil.h"
+#include "tsf/InputMethodManager.h"
 #include "ui/ImeWindow.h"
 
 #include <atlcomcli.h>
@@ -56,7 +56,7 @@ public:
     auto Focus() const -> void;
     auto SetTsfFocus(bool focus) const -> bool;
     auto IsFocused() const -> bool;
-    auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
+    auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
     auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
 
     void CommitCandidate(const DWORD index) const
@@ -66,6 +66,8 @@ public:
             m_pTextService->CommitCandidate(index);
         }
     }
+
+    auto ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT;
 
     constexpr auto GetHWND() const -> HWND
     {
@@ -106,7 +108,7 @@ private:
     std::unique_ptr<ImeWindow>    m_pImeWindow   = nullptr;
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
-    CComPtr<LangProfileUtil>      m_pLangProfileUtil;
+    CComPtr<InputMethodManager>   m_pInputMethodManager;
     HWND                          m_hWnd                      = nullptr;
     HWND                          m_hWndParent                = nullptr;
     bool                          m_fFocused : 1              = false;

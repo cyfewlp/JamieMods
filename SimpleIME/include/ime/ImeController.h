@@ -51,7 +51,11 @@ public:
         return m_fEnabledMod;
     }
 
-    void ActivateLangProfile(const GUID *langGuid) const;
+    /**
+     * notify @c ImeWnd activate a @c LangProfile by specify guid.
+     * @param guidProfile the @c LangProfile guid
+     */
+    void ActivateLangProfile(const GUID &guidProfile) const;
     auto CommitCandidate(DWORD index) const -> void;
 
     //////////////////////////////////////////////////

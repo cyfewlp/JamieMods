@@ -24,6 +24,8 @@ struct std::hash<GUID>
 
 namespace Ime
 {
+constexpr auto LANGID_ENG = 0x409;
+
 struct LangProfile
 {
     std::string desc{};
@@ -31,4 +33,13 @@ struct LangProfile
     GUID        guidProfile{};
     LANGID      langid{};
 };
+
+const auto DEFAULT_LANG_PROFILE = LangProfile{"ENG", CLSID_NULL, GUID_NULL, LANGID_ENG};
+
+inline auto ToStringFromGUID2(const GUID &guid, std::wstring &wsGuid) -> void
+{
+    wsGuid.resize(40);
+    StringFromGUID2(guid, wsGuid.data(), wsGuid.size());
+}
+
 } // namespace Ime

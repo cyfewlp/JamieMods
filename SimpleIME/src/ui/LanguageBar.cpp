@@ -14,7 +14,6 @@
 
 #include <RE/U/UIMessage.h>
 #include <RE/U/UIMessageQueue.h>
-#include <cguid.h>
 
 namespace Ime::LanguageBar
 {
@@ -23,26 +22,19 @@ namespace
 {
 constexpr auto LANGUAGE_BAR = "LanguageBar";
 
-void DrawInputMethodsCombo(const GUID &activeLangGuid, const std::unordered_map<GUID, LangProfile> &langProfiles)
+void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
 {
-    GUID currentLangGuid = activeLangGuid;
-    if (!langProfiles.contains(activeLangGuid))
+    uint32_t clicledIndex = UINT32_MAX;
+    if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str()))
     {
-        currentLangGuid = GUID_NULL;
-    }
-    const GUID *clickedLang = nullptr;
-    if (const auto &profile = langProfiles.at(currentLangGuid);
-        ImGui::BeginCombo("###InstalledIME", profile.desc.c_str()))
-    {
-        int32_t idx = 0;
-        for (const std::pair<GUID, LangProfile> pair : langProfiles)
+        uint32_t idx = 0;
+        for (const auto &langProfile : langProfiles)
         {
             ImGui::PushID(idx);
-            const auto &langProfile = pair.second;
-            const bool  isSelected  = langProfile.guidProfile == currentLangGuid;
+            const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile);
             if (ImGui::Selectable(langProfile.desc.c_str()))
             {
-                clickedLang = &pair.first;
+                clicledIndex = idx;
             }
             if (isSelected)
             {
@@ -53,9 +45,9 @@ void DrawInputMethodsCombo(const GUID &activeLangGuid, const std::unordered_map<
         }
         ImGui::EndCombo();
     }
-    if (clickedLang != nullptr)
+    if (clicledIndex != UINT32_MAX)
     {
-        ImeController::GetInstance()->ActivateLangProfile(clickedLang);
+        ImeController::GetInstance()->ActivateLangProfile(langProfiles[clicledIndex].guidProfile);
     }
 }
 
@@ -99,7 +91,7 @@ void SetShowing(State &state, bool showing)
 
 } // namespace
 
-auto Draw(const bool wantToggle, const GUID &activeLangGuid, const std::unordered_map<GUID, LangProfile> &langProfiles)
+auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
     -> State
 {
     static State state;
@@ -139,7 +131,7 @@ auto Draw(const bool wantToggle, const GUID &activeLangGuid, const std::unordere
     ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
 
     ImGui::SameLine();
-    DrawInputMethodsCombo(activeLangGuid, langProfiles);
+    DrawInputMethodsCombo(activeLangProfile, langProfiles);
 
     ImGui::SameLine();
     if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))

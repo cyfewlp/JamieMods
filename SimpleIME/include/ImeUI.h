@@ -30,7 +30,6 @@ public:
 
     void Initialize();
     void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
-    void ShowToolWindow();
     void DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
 
     bool IsShowingToolWindow() const

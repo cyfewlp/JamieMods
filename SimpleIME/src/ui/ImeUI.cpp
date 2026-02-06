@@ -27,8 +27,6 @@
 
 namespace Ime
 {
-constexpr auto TRANSLATE_FILES_DIR = "Data/interface/SimpleIME";
-
 void ImeUI::Initialize()
 {
     logger::debug("Initializing ImeUI...");
@@ -38,25 +36,6 @@ void ImeUI::Initialize()
 void ImeUI::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles)
 {
     m_panelAppearance.ApplySettings(appearance, m3Styles);
-}
-
-void ImeUI::ShowToolWindow()
-{
-    if (m_fPinToolWindow)
-    {
-        m_fPinToolWindow = false;
-        // ImGui::GetIO().MouseDrawCursor = true;
-        ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
-    }
-    else
-    {
-        m_fShowToolWindow = !m_fShowToolWindow;
-        // ImGui::GetIO().MouseDrawCursor = m_fShowToolWindow;
-        if (m_fShowToolWindow)
-        {
-            ImGui::SetWindowFocus(TOOL_WINDOW_NAME.data());
-        }
-    }
 }
 
 static auto inactiveColor = ImVec4(0.45F, 0.45F, 0.45F, 0.9F);

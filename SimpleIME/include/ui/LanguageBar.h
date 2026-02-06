@@ -6,12 +6,7 @@
 
 #include "tsf/LangProfile.h"
 
-#include <unordered_map>
-
-namespace Ime
-{
-
-namespace LanguageBar
+namespace Ime::LanguageBar
 {
 
 enum State : std::uint8_t
@@ -37,9 +32,6 @@ constexpr auto IsOpenSettings(State state) -> bool
     return (state & OPEN_SETTINGS) != 0;
 }
 
-auto Draw(bool wantToggle, const GUID &activeLangGuid, const std::unordered_map<GUID, LangProfile> &langProfiles)
-    -> State;
+auto Draw(bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> State;
 
-} // namespace LanguageBar
-
-} // namespace Ime
+} // namespace Ime::LanguageBar

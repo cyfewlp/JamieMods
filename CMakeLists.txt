@@ -26,7 +26,7 @@ add_subdirectory(extern)
 add_subdirectory(SimpleIME)
 add_subdirectory(SkyrimSETransmogrify)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_SET}/private/CMakeLists.txt")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/CMakeLists.txt")
     add_subdirectory(private)
 else()
     message(STATUS "Private directory not found, skipping...")
