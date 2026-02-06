@@ -19,6 +19,7 @@ language = "a language"
 
 theme_source_color = 0x33333333
 theme_dark_mode = false
+theme_contrast_level = 0.233
 error_display_duration = 9999
 zoom = 1.75
 show_settings = true

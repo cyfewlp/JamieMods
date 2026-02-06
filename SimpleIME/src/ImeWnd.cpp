@@ -62,7 +62,7 @@ ImeWnd::~ImeWnd()
 
 void ImeWnd::InitializeTextService()
 {
-    m_pTextService = TextServiceFactory::Create(m_settings.enableTsf);
+    m_pTextService = TextServiceFactory::Create(m_fEnabledTsf);
     m_pTextService->RegisterCallback(OnCompositionResult);
 }
 
@@ -83,25 +83,26 @@ static void TryEnableImeWndDpiAware()
 }
 
 // FIXME: ImeUI should not dependency ImeWnd!!!
-void ImeWnd::Initialize() noexcept(false)
+void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 {
     TryEnableImeWndDpiAware();
     if (!RegisterImeWindowClass(WndProc))
     {
         throw SimpleIMEException("Can't register class");
     }
+    m_fEnabledTsf = enableTsf;
 
+    // FIXME: refactor initialize flow to support IMM32 and TSF not available.
     auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
     if (SUCCEEDED(tsfSupport.InitializeTsf(true)))
     {
-        m_settings.enableTsf = false;
+        m_fEnabledTsf = false;
     }
 
     InitializeTextService();
     m_pImeWindow = std::make_unique<ImeWindow>();
     m_pImeUi     = std::make_unique<ImeUI>(this);
 
-    // FIXME: may TSF is disabled!
     m_pInputMethodManager = new InputMethodManager();
     if (FAILED(m_pInputMethodManager->Initialize(tsfSupport.GetThreadMgr())))
     {
@@ -137,7 +138,7 @@ void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 
 void ImeWnd::Run() const
 {
-    if (m_settings.enableTsf)
+    if (m_fEnabledTsf)
     {
         TsfMessageLoop();
     }

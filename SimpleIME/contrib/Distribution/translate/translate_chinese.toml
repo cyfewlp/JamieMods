@@ -15,6 +15,7 @@ Languages = "语言"
 Zoom = "缩放"
 ThemeColor = "主题颜色"
 ThemeBuilder = "主题构建器###ThemeBuilder"
+ContrastLevel = "对比度"
 
 [Settings.FontBuilder]
 Add = "添加字体"

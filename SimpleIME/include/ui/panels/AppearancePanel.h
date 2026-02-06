@@ -9,11 +9,6 @@
 #include "imgui.h"
 #include "ui/Settings.h"
 
-namespace ImGuiEx::M3
-{
-class M3Styles;
-}
-
 namespace Ime
 {
 
@@ -21,8 +16,9 @@ class AppearancePanel
 {
     using i18nHandle = std::optional<TranslatorHolder::UpdateHandle>;
 
-    ImColor                  m_colorInThemeBuilder;
-    bool                     m_darkModeInThemeBuilder = false;
+    ImColor                  m_ImColorTemp;
+    float                    m_contrastLevelTemp = 0.0f;
+    bool                     m_darkModeTemp      = false;
     std::vector<std::string> m_translateLanguages;
     i18nHandle               m_i18nHandle;
 

@@ -9,6 +9,7 @@ Languages = "Languages"
 Zoom = "Zoom"
 ThemeColor = "Theme Color"
 ThemeBuilder = "Theme Builder###ThemeBuilder"
+ContrastLevel = "Contrast Level"
 
 [Settings.Behaviour]
 EnableMod = "Enable Mod"

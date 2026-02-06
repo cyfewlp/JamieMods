@@ -45,7 +45,7 @@ public:
 
     static void Shutdown();
 
-    static void ApplyM3Theme(ImGuiEx::M3::M3Styles &m3Styles);
+    static void ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
     static auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *;

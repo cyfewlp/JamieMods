@@ -137,6 +137,7 @@ toml::table toTomlTable(Settings::Appearance &appearance)
         {"language",               appearance.language                                                               },
         {"theme_source_color",     appearance.themeSourceColor                                                       },
         {"theme_dark_mode",        appearance.themeDarkMode                                                          },
+        {"theme_contrast_level",   appearance.themeContrastLevel                                                     },
         {"error_display_duration", {appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
         {"show_settings",          appearance.showSettings                                                           },
     };
@@ -233,6 +234,7 @@ void DoDeserialize(toml::value &config, Settings &settings)
         findAndSet(appearance, "language", settings.appearance.language);
         findAndSet(appearance, "theme_source_color", settings.appearance.themeSourceColor);
         findAndSet(appearance, "theme_dark_mode", settings.appearance.themeDarkMode);
+        findAndSet(appearance, "theme_contrast_level", settings.appearance.themeContrastLevel);
         findAndSet(appearance, "error_display_duration", settings.appearance.errorDisplayDuration);
         findAndSet(appearance, "show_settings", settings.appearance.showSettings);
     }

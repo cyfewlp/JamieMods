@@ -93,27 +93,28 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
     using ContentToken = ImGuiEx::M3::ContentToken;
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
 
-    const auto &colors    = m3Styles.Colors();
-    bool        openPopup = false;
+    const auto &colors       = m3Styles.Colors();
+    const auto &schemeConfig = m3Styles.Colors().GetSchemeConfig();
+    bool        openPopup    = false;
     ImGui::PushFont(nullptr, m3Styles.LabelText().fontSize);
 
     constexpr auto colorButtonFlags = ImGuiEx::ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
     {
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style_FramePadding({0.f, m3Styles[ImGuiEx::M3::Spacing::M]})
-            .Color_ChildBg(colors[ImGuiEx::M3::SurfaceToken::surface]);
+            .Color_ChildBg(colors[SurfaceToken::surface]);
 
         openPopup =
-            ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(colors.SourceColor()), colorButtonFlags);
+            ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor), colorButtonFlags);
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor"));
     }
-    bool edited = false;
     if (openPopup)
     {
         ImGui::OpenPopup("ThemeBuilder");
-        edited = true;
+        m_ImColorTemp  = ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor);
+        m_darkModeTemp = schemeConfig.darkMode;
     }
     {
         ImGuiEx::StyleGuard styleGuard;
@@ -124,6 +125,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                 Translate("Settings.Appearance.ThemeBuilder"), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
             ))
         {
+            bool edited  = false;
             using Scheme = material_color_utilities::SchemeTonalSpot;
             using Hct    = material_color_utilities::Hct;
 
@@ -143,7 +145,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     );
                 if (ImGui::ColorPicker3(
                         "##picker",
-                        reinterpret_cast<float *>(&m_colorInThemeBuilder.Value),
+                        reinterpret_cast<float *>(&m_ImColorTemp.Value),
                         ImGuiEx::ColorEditFlags().NoSmallPreview().NoSidePreview()
                     ))
                 {
@@ -155,7 +157,9 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     .Style_FrameRounding(m3Styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply")))
                 {
-                    m3Styles.RebuildColors(ImGuiEx::M3::ImU32ToArgb(m_colorInThemeBuilder), m_darkModeInThemeBuilder);
+                    m3Styles.RebuildColors(
+                        {m_contrastLevelTemp, ImGuiEx::M3::ImU32ToArgb(m_ImColorTemp), m_darkModeTemp}
+                    );
                     ImGuiManager::ApplyM3Theme(m3Styles);
                     scheme.reset();
                     ImGui::CloseCurrentPopup();
@@ -173,20 +177,24 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             ImGui::SameLine(0, m3Styles[ImGuiEx::M3::Spacing::S]);
 
             ImGui::BeginGroup();
-            ImGui::Checkbox(Translate("Settings.Appearance.DarkMode"), &m_darkModeInThemeBuilder);
+            ImGui::Checkbox(Translate("Settings.Appearance.DarkMode"), &m_darkModeTemp);
             if (edited)
             {
-                m_colorInThemeBuilder    = ImGuiEx::M3::ArgbToImVec4(m3Styles.Colors().SourceColor());
-                m_darkModeInThemeBuilder = m3Styles.Colors().DarkMode();
-                scheme                   = std::make_unique<Scheme>(
-                    Hct(ImGuiEx::M3::ImU32ToArgb(m_colorInThemeBuilder)), m_darkModeInThemeBuilder, 0.0
+                scheme = std::make_unique<Scheme>(
+                    Hct(ImGuiEx::M3::ImU32ToArgb(m_ImColorTemp)), m_darkModeTemp, m_contrastLevelTemp
                 );
             }
+            ImGui::SliderFloat(
+                Translate("Settings.Appearance.ContrastLevel"),
+                &m_contrastLevelTemp,
+                ImGuiEx::M3::CONTRAST_MIN,
+                ImGuiEx::M3::CONTRAST_MAX
+            );
 
             if (scheme)
             {
                 ImGuiEx::StyleGuard styleGuard1;
-                styleGuard1.Color_Text(colors[ImGuiEx::M3::ContentToken::onSurface])
+                styleGuard1.Color_Text(colors[ContentToken::onSurface])
                     .Style_FramePadding({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::L]})
                     .Style_ItemSpacing({0, m3Styles[ImGuiEx::M3::Spacing::M]});
 

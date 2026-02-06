@@ -7,32 +7,14 @@
 #include "Material3.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 
-#include <cstdint>
-
 namespace ImGuiEx::M3
 {
-void ThemeBuilder::BuildThemeFromSeed(const Argb sourceColor, const bool isDark, Colors &colors)
+using Scheme = material_color_utilities::SchemeTonalSpot;
+using Hct    = material_color_utilities::Hct;
+
+namespace
 {
-    const Scheme scheme(Hct(sourceColor), isDark, 0.0);
-    colors.sourceColor = sourceColor;
-    colors.darkMode    = isDark;
-
-    FillSurfaceColors(colors.surfaceColors, scheme);
-    FillContentColors(colors.contentColors, scheme);
-}
-
-auto ThemeBuilder::BuildThemeFromSeed(Argb sourceColor, bool isDark) -> Colors
-{
-    Colors::SurfaceColors surfaceColors;
-    Colors::ContentColors contentColors;
-
-    const Scheme scheme(Hct(sourceColor), isDark, 0.0);
-    FillSurfaceColors(surfaceColors, scheme);
-    FillContentColors(contentColors, scheme);
-    return Colors(sourceColor, isDark, std::move(surfaceColors), std::move(contentColors));
-}
-
-void ThemeBuilder::FillSurfaceColors(Colors::SurfaceColors &surfaceColors, const Scheme &scheme)
+void FillSurfaceColors(Colors::SurfaceColors &surfaceColors, const Scheme &scheme)
 {
     // clang-format off
     surfaceColors.at(static_cast<size_t>(SurfaceToken::primary))                = ArgbToImVec4(scheme.GetPrimary());
@@ -69,7 +51,7 @@ void ThemeBuilder::FillSurfaceColors(Colors::SurfaceColors &surfaceColors, const
     // clang-format on
 }
 
-void ThemeBuilder::FillContentColors(Colors::ContentColors &contentColors, const Scheme &scheme)
+void FillContentColors(Colors::ContentColors &contentColors, const Scheme &scheme)
 {
     // clang-format off
     contentColors.at(static_cast<size_t>(ContentToken::onPrimary))              = ArgbToImVec4(scheme.GetOnPrimary());
@@ -91,5 +73,17 @@ void ThemeBuilder::FillContentColors(Colors::ContentColors &contentColors, const
     contentColors.at(static_cast<size_t>(ContentToken::onTertiaryFixedVariant)) = ArgbToImVec4(scheme.GetOnTertiaryFixedVariant());
     contentColors.at(static_cast<size_t>(ContentToken::inverseOnSurface))       = ArgbToImVec4(scheme.GetInverseOnSurface());
     // clang-format on
+}
+} // namespace
+
+auto ThemeBuilder::Build(const Colors::SchemeConfig &config) -> Colors
+{
+    Colors::SurfaceColors surfaceColors;
+    Colors::ContentColors contentColors;
+
+    const Scheme scheme(Hct(config.sourceColor), config.darkMode, config.contrastLevel);
+    FillSurfaceColors(surfaceColors, scheme);
+    FillContentColors(contentColors, scheme);
+    return Colors(config, std::move(surfaceColors), std::move(contentColors));
 }
 } // namespace ImGuiEx::M3

@@ -19,8 +19,6 @@
 #include <d3d11.h>
 #include <windef.h>
 
-extern auto ImGui_ImplWin32_GetDpiScaleForHwnd(void *hwnd) -> float;
-
 namespace Ime
 {
 
@@ -146,7 +144,7 @@ void ImGuiManager::NewFrame()
 void ImGuiManager::EnableTextInputIfNeed()
 {
     static bool fWantTextInput = false;
-    bool        cWantTextInput = ImGui::GetIO().WantTextInput;
+    const bool  cWantTextInput = ImGui::GetIO().WantTextInput;
     const auto *imeManager     = ImeController::GetInstance();
 
     auto *controlMap = RE::ControlMap::GetSingleton();
@@ -188,13 +186,13 @@ void ImGuiManager::Shutdown()
     }
 }
 
-void ImGuiManager::ApplyM3Theme(ImGuiEx::M3::M3Styles &m3Styles)
+void ImGuiManager::ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
 {
     using ContentToken = ImGuiEx::M3::ContentToken;
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
     ImGuiStyle &style  = ImGui::GetStyle();
 
-    auto &colors = m3Styles.Colors();
+    const auto &colors = m3Styles.Colors();
 
     style.Colors[ImGuiCol_Text]             = colors[ContentToken::onSurface];
     style.Colors[ImGuiCol_TitleBg]          = colors[SurfaceToken::surfaceContainer];

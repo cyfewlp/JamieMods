@@ -26,6 +26,7 @@ TEST(ConfigSerializerTest, DeserializeAll)
     ASSERT_EQ(settings.appearance.language, "a language");
     ASSERT_EQ(settings.appearance.themeSourceColor, 0x33333333);
     ASSERT_EQ(settings.appearance.themeDarkMode, false);
+    ASSERT_EQ(settings.appearance.themeContrastLevel, 0.233);
     ASSERT_EQ(settings.appearance.errorDisplayDuration, 9999);
     ASSERT_EQ(settings.appearance.showSettings, true);
     ASSERT_FLOAT_EQ(settings.appearance.zoom, 1.75f);
@@ -67,6 +68,7 @@ TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
     settings.appearance.zoom                 = std::round(random.NextFloat(1.f, 9999.f) * 100.f) / 100.f;
     settings.appearance.themeSourceColor     = random.NextInt(0, 0xffffff);
     settings.appearance.themeDarkMode        = random.NextBool();
+    settings.appearance.themeContrastLevel   = 0.5;
     settings.appearance.language             = random.NextStrinng(10);
     settings.appearance.errorDisplayDuration = random.NextInt(0, 0xffff);
     settings.appearance.showSettings         = random.NextBool();

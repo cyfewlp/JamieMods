@@ -6,8 +6,8 @@
 
 namespace ImGuiEx::M3
 {
-void M3Styles::RebuildColors(const Argb sourceColor, const bool isDark)
+void M3Styles::RebuildColors(const Colors::SchemeConfig &schemeConfig)
 {
-    ThemeBuilder::BuildThemeFromSeed(sourceColor, isDark, colors);
+    colors = ThemeBuilder::Build(schemeConfig);
 }
 } // namespace ImGuiEx::M3

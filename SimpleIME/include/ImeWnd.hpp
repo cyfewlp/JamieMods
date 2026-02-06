@@ -30,8 +30,7 @@ class ImeWnd
     using State = Core::State;
 
 public:
-    ImeWnd(Settings &settings) : m_settings(settings) {}
-
+    ImeWnd() = default;
     ~ImeWnd();
 
     ImeWnd(ImeWnd &&a_imeWnd)                 = delete;
@@ -39,7 +38,7 @@ public:
     ImeWnd &operator=(ImeWnd &&a_imeWnd)      = delete;
     ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
-    void Initialize() noexcept(false);
+    void Initialize(bool enableTsf) noexcept(false);
     void UnInitialize() const noexcept;
 
     /**
@@ -104,7 +103,6 @@ private:
     void InitializeTextService();
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
-    Settings                     &m_settings; // TODO: replaced by ptr or reference_wrapper?
     std::unique_ptr<ImeWindow>    m_pImeWindow   = nullptr;
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
@@ -113,6 +111,7 @@ private:
     HWND                          m_hWndParent                = nullptr;
     bool                          m_fFocused : 1              = false;
     bool                          m_fWantToggleToolWindow : 1 = false;
+    bool                          m_fEnabledTsf : 1           = true;
 };
 } // namespace Ime
 

@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <imgui.h>
+#include <utility>
 
 /// https://m3.material.io/
 namespace ImGuiEx::M3
@@ -19,6 +20,9 @@ static constexpr auto ARGB_R_MASK  = 0xFF0000;
 static constexpr auto ARGB_G_MASK  = 0xFF00;
 static constexpr auto ARGB_B_MASK  = 0xFF;
 static constexpr auto ARGB_A_MASK  = 0xFF000000;
+
+static constexpr auto CONTRAST_MIN = -1.0;
+static constexpr auto CONTRAST_MAX = 1.0;
 
 struct Text
 {
@@ -102,8 +106,6 @@ public:
         return GetState(onColor, PRESSED_OPACITY);
     }
 };
-
-class ThemeBuilder;
 
 enum class SurfaceToken : std::uint8_t
 {
@@ -191,31 +193,54 @@ public:
     using SurfaceColors = std::array<SurfaceColor, static_cast<uint8_t>(SurfaceToken::count)>;
     using ContentColors = std::array<ContentColor, static_cast<uint8_t>(ContentToken::count)>;
 
+    struct SchemeConfig
+    {
+        double contrastLevel = 0.0;
+        Argb   sourceColor{};
+        bool   darkMode = false;
+    };
+
 private:
     SurfaceColors surfaceColors{};
     ContentColors contentColors{};
-    Argb          sourceColor{};
-    bool          darkMode = false;
-
-    friend class ThemeBuilder;
+    SchemeConfig  schemeConfig;
 
 public:
     explicit Colors(
-        const Argb sourceColor, const bool darkMode, const SurfaceColors &surfaceColors,
-        const ContentColors &contentColors
+        const SchemeConfig &schemeConfig, const SurfaceColors &surfaceColors, const ContentColors &contentColors
     )
-        : surfaceColors(surfaceColors), contentColors(contentColors), sourceColor(sourceColor), darkMode(darkMode)
+        : surfaceColors(surfaceColors), contentColors(contentColors), schemeConfig(schemeConfig)
     {
     }
 
-    [[nodiscard]] auto SourceColor() const -> Argb
+    Colors(const Colors &other) = default;
+
+    Colors(Colors &&other) noexcept
+        : surfaceColors(other.surfaceColors), contentColors(other.contentColors), schemeConfig(other.schemeConfig)
     {
-        return sourceColor;
     }
 
-    [[nodiscard]] auto DarkMode() const -> bool
+    auto operator=(const Colors &other) -> Colors &
     {
-        return darkMode;
+        if (this == &other) return *this;
+        surfaceColors = other.surfaceColors;
+        contentColors = other.contentColors;
+        schemeConfig  = other.schemeConfig;
+        return *this;
+    }
+
+    auto operator=(Colors &&other) noexcept -> Colors &
+    {
+        if (this == &other) return *this;
+        surfaceColors = other.surfaceColors;
+        contentColors = other.contentColors;
+        schemeConfig  = other.schemeConfig;
+        return *this;
+    }
+
+    [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig &
+    {
+        return schemeConfig;
     }
 
     [[nodiscard]] auto at(SurfaceToken token) const -> const SurfaceColor &
@@ -241,12 +266,12 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// Helpers
 
-    auto Hovered(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
+    [[nodiscard]] auto Hovered(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
     {
         return at(surfaceToken).Hovered(at(contentToken));
     }
 
-    auto Pressed(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
+    [[nodiscard]] auto Pressed(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
     {
         return at(surfaceToken).Pressed(at(contentToken));
     }
@@ -315,7 +340,7 @@ class M3Styles
     float currentScale = 0.0F;
 
 public:
-    constexpr explicit M3Styles(const Colors &colors, ImFont *iconFont) : colors(colors), iconFont(iconFont)
+    constexpr explicit M3Styles(Colors colors, ImFont *iconFont) : colors(std::move(colors)), iconFont(iconFont)
     {
         UpdateScaling(1.0F);
     }
@@ -340,7 +365,7 @@ public:
         iconSize = ICON_SIZE * newScale;
     }
 
-    void RebuildColors(Argb sourceColor, bool isDark);
+    void RebuildColors(const Colors::SchemeConfig &schemeConfig);
 
     [[nodiscard]] auto Colors() const -> const Colors &
     {

@@ -273,15 +273,16 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
         iconFont = primaryFont;
     }
 
-    auto colors = ImGuiEx::M3::ThemeBuilder::BuildThemeFromSeed(
-        m_settings.appearance.themeSourceColor, m_settings.appearance.themeDarkMode
+    const auto &appearance = m_settings.appearance;
+    auto        colors     = ImGuiEx::M3::ThemeBuilder::Build(
+        {appearance.themeContrastLevel, appearance.themeSourceColor, appearance.themeDarkMode}
     );
     g_M3Styles = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);
 
     std::thread childWndThread([&ensureInitialized, this] -> void {
         try
         {
-            m_imeWnd.Initialize();
+            m_imeWnd.Initialize(m_settings.enableTsf);
             ensureInitialized.set_value(true);
             // we can't call ensureInitialized after create child window, will cause deadlock.
             m_imeWnd.CreateHost(m_hWnd, m_settings);
