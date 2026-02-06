@@ -89,14 +89,8 @@ void SetShowing(State &state, bool showing)
     }
 }
 
-} // namespace
-
-auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
-    -> State
+auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> State
 {
-    static State state;
-    if (wantToggle) TogglePinned(state);
-
     if (!IsShowing(state)) return state;
 
     auto flags = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
@@ -142,5 +136,20 @@ auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std
     }
     ImGui::End();
     return state;
+}
+
+} // namespace
+
+auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
+    -> State
+{
+    static State state;
+    if (wantToggle) TogglePinned(state);
+
+    DrawImpl(state, activeLangProfile, langProfiles);
+
+    const auto a_copy = state;
+    RemoveState(state, OPEN_SETTINGS);
+    return a_copy;
 }
 } // namespace Ime::LanguageBar
