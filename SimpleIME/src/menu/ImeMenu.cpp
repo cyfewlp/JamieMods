@@ -11,6 +11,7 @@
 #include "Utils.h"
 #include "common/log.h"
 #include "core/State.h"
+#include "ime/ImeController.h"
 #include "menu/MenuNames.h"
 #include "menu/ToolWindowMenu.h"
 
@@ -273,6 +274,12 @@ auto ImeMenu::OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_R
         ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }
+
+    if (!ImeController::GetInstance()->IsModEnabled())
+    {
+        return RE::UI_MESSAGE_RESULTS::kPassOn;
+    }
+
     if (IsPaste(charEvent))
     {
         return SendFakeControlUpEvent() && Paste() ? RE::UI_MESSAGE_RESULTS::kHandled : RE::UI_MESSAGE_RESULTS::kPassOn;

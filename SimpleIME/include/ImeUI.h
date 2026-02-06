@@ -1,9 +1,7 @@
 #pragma once
 
-#include "common/i18n/Translator.h"
 #include "core/State.h"
 #include "i18n/TranslatorHolder.h"
-#include "tsf/LangProfileUtil.h"
 #include "ui/Settings.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/FontBuilderPanel.h"
@@ -24,16 +22,16 @@ class ImeUI
 public:
     explicit ImeUI(ImeWnd *pImeWnd) : m_pImeWnd(pImeWnd) {}
 
-    ~ImeUI();
+    ~ImeUI()                                 = default;
     ImeUI(const ImeUI &other)                = delete;
     ImeUI(ImeUI &&other) noexcept            = delete;
     ImeUI &operator=(const ImeUI &other)     = delete;
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
-    bool Initialize(LangProfileUtil *pLangProfileUtil);
+    void Initialize();
     void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
-    void DrawToolWindow(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
     void ShowToolWindow();
+    void DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
 
     bool IsShowingToolWindow() const
     {
@@ -46,8 +44,6 @@ public:
     }
 
 private:
-    void        DrawInputMethodsCombo() const;
-    void        DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawMenuBehaviour(Settings &settings) const;
@@ -57,8 +53,7 @@ private:
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
-    ImeWnd                  *m_pImeWnd         = nullptr;
-    LangProfileUtil         *m_langProfileUtil = nullptr;
+    ImeWnd                  *m_pImeWnd = nullptr;
     std::vector<std::string> m_translateLanguages;
     FontBuilder              m_fontBuilder;
     FontBuilderPanel         m_fontBuilderView{};

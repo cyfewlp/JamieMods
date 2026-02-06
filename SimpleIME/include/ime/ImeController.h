@@ -26,6 +26,7 @@ public:
     {
         if (m_fDirty)
         {
+            m_fDirty = false;
             SyncImeState();
         }
     }
@@ -50,6 +51,7 @@ public:
         return m_fEnabledMod;
     }
 
+    void ActivateLangProfile(const GUID *langGuid) const;
     auto CommitCandidate(DWORD index) const -> void;
 
     //////////////////////////////////////////////////

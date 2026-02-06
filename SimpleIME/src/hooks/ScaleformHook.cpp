@@ -53,11 +53,17 @@ struct Scaleform_SetScaleModeTypeHook
 {
     static inline std::unique_ptr<Scaleform_SetScaleModeTypeHookData> hookData = nullptr;
 
+    static auto FnHandler() -> RE::GPtr<SKSE_AllowTextInputFnHandler> &
+    {
+        static auto fnHandler = RE::GPtr<SKSE_AllowTextInputFnHandler>();
+        return fnHandler;
+    }
+
     static auto SetScaleModeType(RE::GFxMovieView *pMovieView, RE::GFxMovieView::ScaleModeType scaleMode)
     {
         hookData->Original(pMovieView, scaleMode);
 
-        if (pMovieView == nullptr)
+        if (pMovieView == nullptr || FnHandler() == nullptr)
         {
             return;
         }
@@ -73,15 +79,13 @@ struct Scaleform_SetScaleModeTypeHook
             return;
         }
 
-        static auto handler = RE::make_gptr<SKSE_AllowTextInputFnHandler>();
-
         RE::GFxValue skse_fn_AllowTextInput;
         if (skse.GetMember(SKSE_ORIGINAL_FN_AllowTextInput, &skse_fn_AllowTextInput))
         {
             skse.SetMember(SKSE_BACKUP_FN_AllowTextInput, skse_fn_AllowTextInput);
 
             RE::GFxValue fn_AllowTextInput;
-            pMovieView->CreateFunction(&fn_AllowTextInput, handler.get());
+            pMovieView->CreateFunction(&fn_AllowTextInput, FnHandler().get());
             skse.SetMember(SKSE_ORIGINAL_FN_AllowTextInput, fn_AllowTextInput);
 
             logger::debug(
@@ -94,6 +98,11 @@ struct Scaleform_SetScaleModeTypeHook
     static void Install()
     {
         hookData = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeType);
+    }
+
+    static void Uninstall()
+    {
+        FnHandler().reset();
     }
 };
 
@@ -159,8 +168,8 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
         logger::error("AllowInput called with insufficient args");
         return;
     }
-    auto      *fxMovieView = reinterpret_cast<RE::GFxMovieView *>(params.movie);
-    const bool enable      = params.args[0].GetBool(); // NOLINT(*-pro-bounds-pointer-arithmetic)
+    const auto *fxMovieView = reinterpret_cast<RE::GFxMovieView *>(params.movie);
+    const bool  enable      = params.args[0].GetBool(); // NOLINT(*-pro-bounds-pointer-arithmetic)
 
     RE::GFxValue skse;
     bool         calledOriginal = false;
@@ -211,6 +220,7 @@ void Install()
 
 void Uninstall()
 {
+    Scaleform_SetScaleModeTypeHook::Uninstall();
     Scaleform_AllowTextInputHook::hookData = nullptr;
 }
 } // namespace Hooks::Scaleform

@@ -168,7 +168,7 @@ void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
     if (const auto keyCode = btnEvent->GetIDCode(); /**/
         keyCode == m_shortcutKey && btnEvent->IsDown())
     {
-        m_imeWnd->ShowToolWindow();
+        m_imeWnd->ToggleToolWindow();
         if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
         {
             if (!m_imeWnd->IsPinedToolWindow() && m_imeWnd->IsShowingToolWindow())

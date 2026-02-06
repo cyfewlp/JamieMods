@@ -8,6 +8,7 @@
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
+#include "ui/LanguageBar.h"
 
 #include <codecvt>
 #include <msctf.h>
@@ -16,24 +17,45 @@
 
 namespace Ime
 {
-ImeWnd::ImeWnd(Settings &settings) : m_settings(settings)
+namespace Global
 {
-    wc = {};
-    ZeroMemory(&wc, sizeof(wc));
-    wc.cbSize        = sizeof(wc);
+extern HINSTANCE g_hModule;
+}
+
+namespace
+{
+auto GetThis(HWND hWnd) -> ImeWnd *
+{
+    const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
+    if (ptr == 0) return nullptr;
+    return reinterpret_cast<ImeWnd *>(ptr);
+}
+
+bool RegisterImeWindowClass(const WNDPROC wndProc)
+{
+    WNDCLASSEXW wc{};
+    wc.cbSize        = sizeof(WNDCLASSEXW);
     wc.style         = CS_PARENTDC;
     wc.cbClsExtra    = 0;
-    wc.lpfnWndProc   = WndProc;
+    wc.lpfnWndProc   = wndProc;
     wc.cbWndExtra    = 0;
     wc.lpszClassName = g_tMainClassName;
+    wc.hInstance     = Global::g_hModule;
+
+    WNDCLASSEXW existingClass{};
+    if (!GetClassInfoExW(Global::g_hModule, wc.lpszClassName, &existingClass))
+    {
+        return RegisterClassExW(&wc) != 0;
+    }
+    return true;
 }
+} // namespace
 
 ImeWnd::~ImeWnd()
 {
     UnInitialize();
     if (m_hWnd != nullptr)
     {
-        UnregisterClassW(wc.lpszClassName, wc.hInstance);
         DestroyWindow(m_hWnd);
     }
 }
@@ -49,8 +71,8 @@ static void TryEnableImeWndDpiAware()
     logger::info("Try to enable DPI aware for IME Wnd...");
     using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
 
-    HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
-    auto    pSetThreadDpiAwarenessContext =
+    HMODULE    hUser32 = GetModuleHandleW(L"user32.dll");
+    const auto pSetThreadDpiAwarenessContext =
         reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
 
     if (pSetThreadDpiAwarenessContext)
@@ -64,14 +86,13 @@ static void TryEnableImeWndDpiAware()
 void ImeWnd::Initialize() noexcept(false)
 {
     TryEnableImeWndDpiAware();
-    wc.hInstance = GetModuleHandle(nullptr);
-    if (RegisterClassExW(&wc) == 0U)
+    if (!RegisterImeWindowClass(WndProc))
     {
         throw SimpleIMEException("Can't register class");
     }
 
     auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
-    if (!tsfSupport.InitializeTsf(true))
+    if (SUCCEEDED(tsfSupport.InitializeTsf(true)))
     {
         m_settings.enableTsf = false;
     }
@@ -86,10 +107,11 @@ void ImeWnd::Initialize() noexcept(false)
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
     }
-    if (!m_pImeUi->Initialize(m_pLangProfileUtil))
+    if (!m_pLangProfileUtil->LoadAllLangProfiles() || !m_pLangProfileUtil->UpdateActiveProfile())
     {
-        throw SimpleIMEException("Can't initialize ImeUI");
+        ErrorNotifier::GetInstance().Warning("Can't update language profiles.");
     }
+    m_pImeUi->Initialize();
 }
 
 void ImeWnd::UnInitialize() const noexcept
@@ -107,8 +129,9 @@ void ImeWnd::UnInitialize() const noexcept
 void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 {
     logger::info("Start ImeWnd Thread...");
-    m_hWnd =
-        CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, wc.hInstance, this);
+    m_hWnd = CreateWindowExW(
+        0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, Global::g_hModule, this
+    );
     if (m_hWnd == nullptr)
     {
         throw SimpleIMEException("Create ImeWnd failed");
@@ -191,20 +214,35 @@ void ImeWnd::AbortIme() const
     }
 }
 
-void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
+void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
         m_pImeWindow->Draw(m_pTextService->GetTextEditor(), m_pTextService->GetCandidateUi(), settings, m3Styles);
-        m_pImeUi->DrawToolWindow(settings, m3Styles);
+
+        {
+            const auto &activeLang   = m_pLangProfileUtil->GetActivatedLangProfile();
+            const auto &langProfiles = m_pLangProfileUtil->GetLangProfiles();
+            const auto  state        = LanguageBar::Draw(m_fWantToggleToolWindow, activeLang, langProfiles);
+            if (LanguageBar::IsOpenSettings(state))
+            {
+                settings.appearance.showSettings = true;
+            }
+            m_fWantToggleToolWindow = false;
+
+            if (LanguageBar::IsShowing(state))
+            {
+                m_pImeUi->DrawSettings(settings, m3Styles);
+            }
+        }
     }
     ImGui::PopFont();
 }
 
-void ImeWnd::ShowToolWindow() const
+void ImeWnd::ToggleToolWindow()
 {
-    m_pImeUi->ShowToolWindow();
+    m_fWantToggleToolWindow = true;
 }
 
 void ImeWnd::ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
@@ -218,7 +256,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
-        // pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
+        pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
         if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
         {
             return 0;
@@ -268,7 +306,8 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case WM_CHAR: {
             if (pThis == nullptr) break;
-            if (Core::State::GetInstance().Has(State::LANG_PROFILE_ACTIVATED))
+            if (ImeController::GetInstance()->IsModEnabled() &&
+                Core::State::GetInstance().Has(State::LANG_PROFILE_ACTIVATED))
             {
                 Utils::SendStringToGame(std::wstring(1, wParam));
             }
@@ -279,13 +318,6 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             break;
     }
     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
-}
-
-auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
-{
-    const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
-    if (ptr == 0) return nullptr;
-    return reinterpret_cast<ImeWnd *>(ptr);
 }
 
 auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT

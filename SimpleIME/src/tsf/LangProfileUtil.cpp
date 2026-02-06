@@ -46,9 +46,17 @@ auto Ime::LangProfileUtil::UnInitialize() -> void
 
 auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
 {
+    m_langProfiles.clear();
     HRESULT hresult = TRUE;
     try
     {
+        LangProfile engProfile    = {};
+        engProfile.clsid          = CLSID_NULL;
+        engProfile.langid         = LANGID_ENG; // english keyboard
+        engProfile.guidProfile    = GUID_NULL;
+        engProfile.desc           = std::string("ENG");
+        m_langProfiles[GUID_NULL] = engProfile;
+
         _tsetlocale(LC_ALL, _T(""));
         CComPtr<ITfInputProcessorProfiles> lpProfiles;
         hresult = lpProfiles.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
@@ -88,12 +96,6 @@ auto Ime::LangProfileUtil::LoadAllLangProfiles() -> bool
                 }
             }
         }
-        LangProfile engProfile    = {};
-        engProfile.clsid          = CLSID_NULL;
-        engProfile.langid         = LANGID_ENG; // english keyboard
-        engProfile.guidProfile    = GUID_NULL;
-        engProfile.desc           = std::string("ENG");
-        m_langProfiles[GUID_NULL] = engProfile;
     }
     catch (std::runtime_error &error)
     {
@@ -133,8 +135,9 @@ auto Ime::LangProfileUtil::ActivateProfile(_In_ const GUID *guidProfile) -> bool
     return SUCCEEDED(hresult);
 }
 
-auto Ime::LangProfileUtil::LoadActiveIme() noexcept -> bool
+auto Ime::LangProfileUtil::UpdateActiveProfile() noexcept -> bool
 {
+    m_activatedProfile = GUID_NULL;
     TF_INPUTPROCESSORPROFILE profile;
     if (SUCCEEDED(m_tfProfileMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile)))
     {
@@ -143,7 +146,7 @@ auto Ime::LangProfileUtil::LoadActiveIme() noexcept -> bool
         return true;
     }
 
-    logger::error("Load active IME failed.");
+    logger::error("Load active language profile failed.");
     return false;
 }
 

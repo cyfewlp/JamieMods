@@ -30,7 +30,8 @@ class ImeWnd
     using State = Core::State;
 
 public:
-    ImeWnd(Settings &settings);
+    ImeWnd(Settings &settings) : m_settings(settings) {}
+
     ~ImeWnd();
 
     ImeWnd(ImeWnd &&a_imeWnd)                 = delete;
@@ -75,8 +76,8 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const;
-    void ShowToolWindow() const;
+    void DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
+    void ToggleToolWindow();
 
     bool IsShowingToolWindow() const
     {
@@ -92,7 +93,6 @@ public:
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-    static auto GetThis(HWND hWnd) -> ImeWnd *;
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
     static void OnCompositionResult(const std::wstring &compositionString);
     static void TsfMessageLoop();
@@ -107,10 +107,10 @@ private:
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
     CComPtr<LangProfileUtil>      m_pLangProfileUtil;
-    HWND                          m_hWnd       = nullptr;
-    HWND                          m_hWndParent = nullptr;
-    WNDCLASSEXW                   wc{};
-    bool                          m_fFocused = false;
+    HWND                          m_hWnd                      = nullptr;
+    HWND                          m_hWndParent                = nullptr;
+    bool                          m_fFocused : 1              = false;
+    bool                          m_fWantToggleToolWindow : 1 = false;
 };
 } // namespace Ime
 

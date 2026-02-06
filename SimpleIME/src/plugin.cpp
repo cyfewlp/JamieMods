@@ -5,7 +5,6 @@
 #include "common/log.h"
 #include "configs/ConfigSerializer.h"
 
-#include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
 namespace SksePlugin
@@ -70,12 +69,20 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse)
     return false;
 }
 
-auto APIENTRY DllMain(HMODULE /*unused*/, DWORD ul_reason, LPVOID /*unused*/) -> BOOL
+namespace Ime::Global
+{
+auto g_hModule = HMODULE();
+}
+
+extern "C" auto APIENTRY DllMain(const HMODULE hModule, const DWORD ul_reason, LPVOID /*unused*/) -> BOOL
 {
     switch (ul_reason)
     {
+        case DLL_THREAD_ATTACH:
+        case DLL_THREAD_DETACH:
+            break;
         case DLL_PROCESS_ATTACH:
-            // spdlog::info("DLL_PROCESS_ATTACH");
+            Ime::Global::g_hModule = hModule;
             break;
         case DLL_PROCESS_DETACH:
             spdlog::shutdown();

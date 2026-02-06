@@ -55,6 +55,13 @@ auto ImeController::EnableMod(bool enable) -> void
     }
 }
 
+void ImeController::ActivateLangProfile(const GUID *langGuid) const
+{
+    if (!IsReady() || langGuid == nullptr) return;
+
+    m_imeWnd->SendMessageToIme(CM_ACTIVATE_PROFILE, 0, reinterpret_cast<LPARAM>(langGuid));
+}
+
 auto ImeController::CommitCandidate(DWORD index) const -> void
 {
     if (!IsReady()) return;
