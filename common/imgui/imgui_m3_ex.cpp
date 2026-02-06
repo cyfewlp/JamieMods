@@ -17,6 +17,57 @@
 namespace ImGuiEx::M3
 {
 
+namespace
+{
+struct IconLayout
+{
+    float size;
+    float padding;
+    float rounding;
+    float margin;
+};
+
+auto ComputeIconSize(const IconLayout &layout) -> float
+{
+    return layout.size + (layout.padding + layout.margin) * 2.0f;
+}
+
+auto GetIconLayout(SizeTips sizeTips, const M3Styles &m3Styles) -> IconLayout
+{
+    IconLayout layout{.size = 0.f, .padding = m3Styles[Spacing::XS], .rounding = 0.f, .margin = 0.f};
+    switch (sizeTips)
+    {
+        case SizeTips::XSMALL:
+            layout.margin   = m3Styles[Spacing::S];
+            layout.size     = m3Styles[Spacing::L];
+            layout.rounding = m3Styles.GetUnit(2);
+            break;
+        case SizeTips::SMALL:
+            layout.margin   = m3Styles[Spacing::XS];
+            layout.padding  = m3Styles[Spacing::S];
+            layout.size     = m3Styles[Spacing::XL];
+            layout.rounding = m3Styles.GetUnit(2);
+            break;
+        case SizeTips::MEDIUM:
+            layout.padding  = m3Styles[Spacing::L];
+            layout.size     = m3Styles[Spacing::XL];
+            layout.rounding = m3Styles.GetUnit(3);
+            break;
+        case SizeTips::LARGE:
+            layout.padding  = m3Styles[Spacing::XXL];
+            layout.size     = m3Styles[Spacing::XXL];
+            layout.rounding = m3Styles.GetUnit(4);
+            break;
+        case SizeTips::XLARGE:
+            layout.padding  = m3Styles[Spacing::PADDING_XL];
+            layout.size     = m3Styles.GetUnit(10);
+            layout.rounding = m3Styles[Spacing::L];
+            break;
+    }
+    return layout;
+}
+} // namespace
+
 constexpr float CENTER_ALIGN = 0.5f;
 
 static void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
@@ -161,6 +212,34 @@ auto DrawNavItem(
 
     ImGui::PopFont();
     return pressed;
+}
+
+auto DrawIcon(std::string_view icon, const M3Styles &m3Styles, ContentToken contentToken, const SizeTips sizeTips)
+    -> void
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return;
+
+    auto layout = GetIconLayout(sizeTips, m3Styles);
+
+    const ImVec2 pos   = window->DC.CursorPos;
+    const auto   width = ComputeIconSize(layout);
+    const ImVec2 size  = {width, width};
+
+    const ImRect bb(pos, pos + size);
+
+    const auto contentOffset = layout.padding + layout.margin;
+    ImGui::ItemSize(size, contentOffset);
+
+    const auto textColor = m3Styles.Colors().at(contentToken);
+    window->DrawList->AddText(
+        m3Styles.IconFont(),
+        layout.size,
+        bb.Min + ImVec2(contentOffset, contentOffset),
+        ImGui::ColorConvertFloat4ToU32(textColor),
+        TextStart(icon),
+        TextEnd(icon)
+    );
 }
 
 auto DrawIconButton(

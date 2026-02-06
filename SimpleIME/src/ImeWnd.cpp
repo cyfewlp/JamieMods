@@ -225,7 +225,7 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
         {
             const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
             const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
-            const auto  state        = LanguageBar::Draw(m_fWantToggleToolWindow, activeLang, langProfiles);
+            const auto  state        = LanguageBar::Draw(m_fWantToggleToolWindow, activeLang, langProfiles, m3Styles);
             if (LanguageBar::IsOpenSettings(state))
             {
                 settings.appearance.showSettings = true;

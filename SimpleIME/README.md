@@ -24,6 +24,6 @@ cd build\debug-clangcl-ninjia-vcpkg\SimpleIME && ctest
 
 ## Gallery
 
-### FontBuilder
+### IME Window & Language Bar
 
-![FontBuilder](contrib/Distribution/ToolWindow_FontBuilder.png)
+![ImeWindow_LanguageBar](contrib/Distribution/IME_Languagebar.png)

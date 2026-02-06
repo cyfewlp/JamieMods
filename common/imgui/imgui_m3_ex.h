@@ -64,13 +64,26 @@ void DrawNavMenu(std::string_view icon, const M3Styles &m3Styles);
 auto DrawNavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool;
 
 ////////////////////////////////////////////////////////////////////
-/// BUTTON
+/// ICON
+
+auto DrawIcon(
+    std::string_view icon, const M3Styles &m3Styles, ContentToken contentToken, SizeTips sizeTips = SizeTips::SMALL
+) -> void;
+
 ////////////////////////////////////////////////////////////////////
+/// BUTTON
 
 auto DrawIconButton(
     std::string_view icon, const M3Styles &m3Styles, SurfaceToken surfaceColorToken, ContentToken contentColorToken,
     SizeTips sizeTips = SizeTips::SMALL
 ) -> bool;
+
+inline auto DrawIconButtonSurfaceContainerVariant(
+    std::string_view icon, const M3Styles &m3Styles, SizeTips sizeTips = SizeTips::SMALL
+)
+{
+    return DrawIconButton(icon, m3Styles, SurfaceToken::surfaceContainer, ContentToken::onSurfaceVariant, sizeTips);
+}
 
 /**
  * The toolbar is a container with multiple slots, and you must

@@ -5,6 +5,7 @@
 #include "ui/LanguageBar.h"
 
 #include "common/imgui/ImGuiEx.h"
+#include "common/imgui/imgui_m3_ex.h"
 #include "core/State.h"
 #include "i18n/TranslatorHolder.h"
 #include "icons.h"
@@ -22,10 +23,25 @@ namespace
 {
 constexpr auto LANGUAGE_BAR = "LanguageBar";
 
-void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
+using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+using ContentToken = ImGuiEx::M3::ContentToken;
+using Spacing      = ImGuiEx::M3::Spacing;
+
+void DrawInputMethodsCombo(
+    const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
+    const ImGuiEx::M3::M3Styles &m3Styles
+)
 {
-    uint32_t clicledIndex = UINT32_MAX;
-    if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str()))
+    uint32_t            clickedIndex = UINT32_MAX;
+    ImGuiEx::StyleGuard styleGuard;
+    styleGuard.Style_WindowPadding({})
+        .Style_ItemSpacing({m3Styles[Spacing::M], m3Styles[Spacing::M]})
+        .Color_Text(m3Styles.Colors()[ContentToken::onSurface])
+        .Color_FrameBg(m3Styles.Colors()[SurfaceToken::surface])
+        .Color_FrameBgHovered(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface))
+        .Color_PopupBg(m3Styles.Colors()[SurfaceToken::surfaceContainerLow]);
+
+    if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), ImGuiEx::ComboFlags().NoArrowButton()))
     {
         uint32_t idx = 0;
         for (const auto &langProfile : langProfiles)
@@ -34,7 +50,7 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
             const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile);
             if (ImGui::Selectable(langProfile.desc.c_str()))
             {
-                clicledIndex = idx;
+                clickedIndex = idx;
             }
             if (isSelected)
             {
@@ -45,9 +61,9 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
         }
         ImGui::EndCombo();
     }
-    if (clicledIndex != UINT32_MAX)
+    if (clickedIndex != UINT32_MAX)
     {
-        ImeController::GetInstance()->ActivateLangProfile(langProfiles[clicledIndex].guidProfile);
+        ImeController::GetInstance()->ActivateLangProfile(langProfiles[clickedIndex].guidProfile);
     }
 }
 
@@ -89,7 +105,10 @@ void SetShowing(State &state, bool showing)
     }
 }
 
-auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> State
+auto DrawImpl(
+    State &state, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
+    const ImGuiEx::M3::M3Styles &m3Styles
+) -> State
 {
     if (!IsShowing(state)) return state;
 
@@ -103,11 +122,12 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
     SetShowing(state, showing);
     if (!visible) return state;
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text(ICON_COD_MOVE);
+    ImGuiEx::M3::DrawIcon(ICON_COD_MOVE, m3Styles, ContentToken::onSurfaceVariant);
     ImGui::SameLine();
 
-    if (ImGui::Button(IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE))
+    if (ImGuiEx::M3::DrawIconButtonSurfaceContainerVariant(
+            IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles
+        ))
     {
         state = static_cast<State>(state | PINNED);
 
@@ -118,14 +138,15 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
     }
 
     ImGui::SameLine();
-    if (ImGui::Button(ICON_OCT_GEAR))
+
+    if (ImGuiEx::M3::DrawIconButtonSurfaceContainerVariant(ICON_OCT_GEAR, m3Styles))
     {
         AddState(state, OPEN_SETTINGS);
     }
     ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
 
     ImGui::SameLine();
-    DrawInputMethodsCombo(activeLangProfile, langProfiles);
+    DrawInputMethodsCombo(activeLangProfile, langProfiles, m3Styles);
 
     ImGui::SameLine();
     if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))
@@ -140,13 +161,21 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
 
 } // namespace
 
-auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
-    -> State
+auto Draw(
+    const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
+    const ImGuiEx::M3::M3Styles &m3Styles
+) -> State
 {
     static State state;
     if (wantToggle) TogglePinned(state);
 
-    DrawImpl(state, activeLangProfile, langProfiles);
+    ImGuiEx::StyleGuard styleGuard;
+    styleGuard.Color_WindowBg(m3Styles.Colors()[SurfaceToken::surfaceContainer])
+        .Style_WindowPadding({m3Styles[Spacing::S], m3Styles[Spacing::S]})
+        .Style_WindowRounding(m3Styles.GetSize(ImGuiEx::M3::ComponentSize::TOOLBAR_ROUNDING))
+        .Style_FramePadding({m3Styles[Spacing::M], m3Styles[Spacing::M]})
+        .Style_ItemSpacing({m3Styles[Spacing::XS], 0.f});
+    DrawImpl(state, activeLangProfile, langProfiles, m3Styles);
 
     const auto a_copy = state;
     RemoveState(state, OPEN_SETTINGS);
