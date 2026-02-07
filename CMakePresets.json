@@ -43,6 +43,7 @@
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
         "USE_VCPKG": "ON",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/build/vcpkg_modules",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake",
         "VCPKG_HOST_TRIPLET": "$env{PROJECT_ARCHITECTURE}-$env{PROJECT_PLATFORM}-static-md",
         "VCPKG_TARGET_TRIPLET": "$env{PROJECT_ARCHITECTURE}-$env{PROJECT_PLATFORM}-static-md",
@@ -76,7 +77,7 @@
       },
       "environment": {
         "PROJECT_COMPILER": "clang",
-        "PROJECT_COMPILER_FLAGS": "-Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_consteval -D__cpp_lib_format"
+        "PROJECT_COMPILER_FLAGS": "-Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_consteval"
       }
     },
     {
@@ -89,7 +90,7 @@
       "environment": {
         "CC": "clang-cl",
         "CXX": "clang-cl",
-        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 -Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_lib_format"
+        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 -Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class"
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -123,6 +124,13 @@
       }
     },
     {
+      "name": "builttype-RelWithDebInfo",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
       "name": "builttype-release",
       "hidden": true,
       "cacheVariables": {
@@ -142,7 +150,7 @@
       ]
     },
     {
-      "name": "debug-clang-ninjia-vcpkg",
+      "name": "debug-clang-ninja-vcpkg",
       "inherits": [
         "common",
         "x64",
@@ -154,13 +162,25 @@
       ]
     },
     {
-      "name": "debug-clangcl-ninjia-vcpkg",
+      "name": "debug-clangcl-ninja-vcpkg",
       "inherits": [
         "common",
         "x64",
         "win32-unicode",
         "generator-ninja",
         "builttype-debug",
+        "packaging-vcpkg",
+        "compiler-clang-cl"
+      ]
+    },
+    {
+      "name": "RelWithDebInfo-clangcl-ninja-vcpkg",
+      "inherits": [
+        "common",
+        "x64",
+        "win32-unicode",
+        "generator-ninja",
+        "builttype-RelWithDebInfo",
         "packaging-vcpkg",
         "compiler-clang-cl"
       ]
@@ -176,7 +196,7 @@
       ]
     },
     {
-      "name": "release-clangcl-ninjia-vcpkg",
+      "name": "release-clangcl-ninja-vcpkg",
       "inherits": [
         "common",
         "x64",
@@ -190,16 +210,22 @@
   ],
   "buildPresets": [
     {
-      "name": "build-debug-clangcl-ninjia-vcpkg",
+      "name": "build-debug-clangcl-ninja-vcpkg",
       "description": "build debug with clang-cl",
-      "displayName": "Debug (clang-cl ninjia vcpkg)",
-      "configurePreset": "debug-clangcl-ninjia-vcpkg"
+      "displayName": "Debug (clang-cl ninja vcpkg)",
+      "configurePreset": "debug-clangcl-ninja-vcpkg"
     },
     {
-      "name": "build-release-clangcl-ninjia-vcpkg",
+      "name": "build-release-clangcl-ninja-vcpkg",
       "description": "build release with clang-cl",
-      "displayName": "Release (clang-cl ninjia vcpkg)",
-      "configurePreset": "release-clangcl-ninjia-vcpkg"
+      "displayName": "Release (clang-cl ninja vcpkg)",
+      "configurePreset": "release-clangcl-ninja-vcpkg"
+    },
+    {
+      "name": "build-relwithdebinfo-clangcl-ninja-vcpkg",
+      "description": "build RelWithDebInfo with clang-cl",
+      "displayName": "RelWithDebInfo (clang-cl ninja vcpkg)",
+      "configurePreset": "RelWithDebInfo-clangcl-ninja-vcpkg"
     }
   ]
 }

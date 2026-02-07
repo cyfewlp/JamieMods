@@ -135,8 +135,10 @@ void ImeUI::DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styl
     m_panelAppearance.Draw(settings, m3Styles);
 
     // sync theme config
-    settings.appearance.themeSourceColor = m3Styles.Colors().SourceColor();
-    settings.appearance.themeDarkMode    = m3Styles.Colors().DarkMode();
+    const auto &[contrastLevel, sourceColor, darkMode] = m3Styles.Colors().GetSchemeConfig();
+    settings.appearance.themeSourceColor               = sourceColor;
+    settings.appearance.themeDarkMode                  = darkMode;
+    settings.appearance.themeContrastLevel             = contrastLevel;
 }
 
 void ImeUI::DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)

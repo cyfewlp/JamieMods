@@ -5,8 +5,9 @@
 #include "ui/panels/AppearancePanel.h"
 
 #include "common/imgui/ImGuiEx.h"
-#include "common/imgui/M3ThemeBuilder.h"
 #include "common/imgui/Material3.h"
+#include "common/imgui/imgui_m3_ex.h"
+#include "common/imgui/imguiex_enum_wrap.h"
 #include "common/utils.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "i18n/TranslationLoader.h"
@@ -184,11 +185,12 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     Hct(ImGuiEx::M3::ImU32ToArgb(m_ImColorTemp)), m_darkModeTemp, m_contrastLevelTemp
                 );
             }
-            ImGui::SliderFloat(
+            ImGuiEx::M3::Slider::Draw(
                 Translate("Settings.Appearance.ContrastLevel"),
-                &m_contrastLevelTemp,
+                m_contrastLevelTemp,
                 ImGuiEx::M3::CONTRAST_MIN,
-                ImGuiEx::M3::CONTRAST_MAX
+                ImGuiEx::M3::CONTRAST_MAX,
+                m3Styles
             );
 
             if (scheme)

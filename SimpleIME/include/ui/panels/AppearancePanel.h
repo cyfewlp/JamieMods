@@ -17,7 +17,7 @@ class AppearancePanel
     using i18nHandle = std::optional<TranslatorHolder::UpdateHandle>;
 
     ImColor                  m_ImColorTemp;
-    float                    m_contrastLevelTemp = 0.0f;
+    double                   m_contrastLevelTemp = 0.0;
     bool                     m_darkModeTemp      = false;
     std::vector<std::string> m_translateLanguages;
     i18nHandle               m_i18nHandle;

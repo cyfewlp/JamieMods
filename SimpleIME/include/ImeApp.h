@@ -88,7 +88,7 @@ public:
         }
     };
 
-    explicit ImeApp(Settings &settings) : m_settings(settings), m_imeWnd(m_settings) {}
+    explicit ImeApp(Settings &settings) : m_settings(settings) {}
 
     ~ImeApp()                                     = default;
     ImeApp(const ImeApp &other)                   = delete;
@@ -134,7 +134,7 @@ private:
     HWND      m_hWnd        = nullptr;
     HIMC      m_hIMCDefault = nullptr; // Game main window default HIMC
     Settings &m_settings;
-    ImeWnd    m_imeWnd;
+    ImeWnd    m_imeWnd{};
     State     m_state;
 
     static void           D3DInit();

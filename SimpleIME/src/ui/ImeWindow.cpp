@@ -11,6 +11,7 @@
 #include "RE/M/MenuCursor.h"
 #include "common/WCharUtils.h"
 #include "common/imgui/ImGuiEx.h"
+#include "common/imgui/imguiex_enum_wrap.h"
 #include "core/State.h"
 #include "ime/CandidateUi.h"
 #include "ime/ImeController.h"

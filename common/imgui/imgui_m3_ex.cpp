@@ -376,4 +376,177 @@ void SetItemToolTip(std::string_view text, const M3Styles &m3Styles)
     ImGui::SetItemTooltip("%s", TextStart(text));
     ImGui::PopFont();
 }
+
+namespace Slider
+{
+
+namespace
+{
+struct SliderRects
+{
+    ImRect outer_bb;
+    ImRect frame_bb;
+    ImRect grab_bb; // filled by SliderBehavior
+    ImVec2 label_size;
+    float  height;
+    float  frame_offset;
+};
+
+// Compute bounding rects and do ItemSize/ItemAdd.
+// returns false if item was clipped/culled.
+bool ComputeLayout(
+    const ImVec2 &cursorPos, const ImGuiID id, const std::string_view label, const M3Styles &m3Styles,
+    const float width, SliderRects &out
+)
+{
+    out.height       = m3Styles.GetSize(ComponentSize::SMALL_SLIDER_HEIGHT);
+    out.label_size   = ImGui::CalcTextSize(TextStart(label), TextEnd(label), true);
+    out.outer_bb     = ImRect(cursorPos, cursorPos + ImVec2(width, out.height));
+    out.frame_offset = (out.height - m3Styles[Spacing::L]) * HALF;
+    out.frame_bb =
+        ImRect(out.outer_bb.Min + ImVec2(0, out.frame_offset), out.outer_bb.Max - ImVec2(0, out.frame_offset));
+
+    const ImRect total_bb = ImRect(
+        out.outer_bb.Min,
+        out.outer_bb.Max + ImVec2(out.label_size.x > 0.0F ? m3Styles[Spacing::XS] + out.label_size.x : 0.0F, 0.0F)
+    );
+    ImGui::ItemSize(total_bb);
+    return ImGui::ItemAdd(total_bb, id, &out.frame_bb, 0);
+}
+
+// Handle activation / focus / nav behavior (keeps parity with original)
+void HandleActivation(ImGuiID id, ImGuiWindow *window, const bool hovered)
+{
+    ImGuiContext &g = *GImGui;
+    if (const bool temp_input_is_active = ImGui::TempInputIsActive(id); !temp_input_is_active)
+    {
+        const bool clicked     = hovered && ImGui::IsMouseClicked(0, ImGuiInputFlags_None, id);
+        const bool make_active = (clicked || g.NavActivateId == id);
+        if (make_active && clicked) ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+        if (make_active)
+        {
+            ImGui::SetActiveID(id, window);
+            ImGui::SetFocusID(id, window);
+            ImGui::FocusWindow(window);
+            g.ActiveIdUsingNavDirMask |= (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
+        }
+    }
+}
+
+auto DrawFrame(ImDrawList *drawList, const SliderRects &rects, double value01, const M3Styles &m3Styles)
+{
+    const ImU32 frame_col = ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::secondaryContainer]);
+    const auto  centerX   = (rects.frame_bb.Max.x + rects.frame_bb.Min.x) * HALF;
+    const auto  gap       = m3Styles[Spacing::S];
+    // part1 secondary container
+    if (value01 > 0)
+    {
+        drawList->AddRectFilled(
+            rects.frame_bb.Min,
+            {std::min(centerX - gap, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
+            frame_col,
+            m3Styles[Spacing::S],
+            DrawFlags().RoundCornersTopLeft().RoundCornersBottomLeft()
+        );
+    }
+    // part2 primary
+    drawList->AddRectFilled(
+        {std::min(rects.grab_bb.Max.x, centerX), rects.frame_bb.Min.y},
+        {std::max(centerX - gap, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
+        ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::primary]),
+        m3Styles[Spacing::XS]
+    );
+    // part3 secondary container
+    if (value01 < 1)
+    {
+        drawList->AddRectFilled(
+            {std::max(rects.grab_bb.Max.x, centerX), rects.frame_bb.Min.y},
+            rects.frame_bb.Max,
+            frame_col,
+            m3Styles[Spacing::S],
+            DrawFlags().RoundCornersTopRight().RoundCornersBottomRight()
+        );
+    }
+}
+
+} // namespace
+
+auto detail::Draw(
+    const std::string_view label, ImGuiDataType dataType, void *pValue, const void *pMinValue, const void *pMaxValue,
+    double value01, const M3Styles &m3Styles, const SliderFlags flags
+) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return false;
+
+    ImGuiContext &g  = *GImGui;
+    const ImGuiID id = window->GetID(label.data());
+
+    SliderRects rects;
+    const float width = ImGui::CalcItemWidth();
+    if (!ComputeLayout(window->DC.CursorPos, id, label, m3Styles, width, rects))
+    {
+        return false;
+    }
+
+    const bool hovered = ImGui::ItemHoverable(rects.frame_bb, id, g.LastItemData.ItemFlags);
+    HandleActivation(id, window, hovered);
+
+    const auto format = ImGui::DataTypeGetInfo(dataType)->PrintFmt;
+
+    // Slider behavior
+    auto      &style           = ImGui::GetStyle();
+    const auto prevGrabMinSize = style.GrabMinSize;
+    style.GrabMinSize          = m3Styles[Spacing::XL];
+    const bool value_changed   = ImGui::SliderBehavior(
+        rects.outer_bb, id, dataType, pValue, pMinValue, pMaxValue, format, flags, &rects.grab_bb
+    );
+    style.GrabMinSize = prevGrabMinSize;
+    if (value_changed)
+    {
+        ImGui::MarkItemEdited(id);
+    }
+
+    ImGui::RenderNavCursor(rects.frame_bb, id);
+    DrawFrame(window->DrawList, rects, value01, m3Styles);
+
+    const bool  activated   = g.ActiveId == id;
+    const auto  grabColor   = activated ? m3Styles.Colors().Pressed(SurfaceToken::primary, ContentToken::onPrimary)
+                                        : m3Styles.Colors()[SurfaceToken::primary];
+    const float grab_margin = m3Styles[Spacing::S];
+    window->DrawList->AddRectFilled(
+        {rects.grab_bb.Min.x + grab_margin, rects.grab_bb.Min.y},
+        {rects.grab_bb.Max.x - grab_margin, rects.grab_bb.Max.y},
+        ImGui::ColorConvertFloat4ToU32(grabColor),
+        m3Styles[Spacing::XS] * 0.5f
+    );
+
+    // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
+    if (g.LogEnabled) ImGui::LogSetNextTextDecoration("{", "}");
+    if (activated)
+    {
+        char        value_buf[64];
+        const char *value_buf_end =
+            value_buf + ImGui::DataTypeFormatString(value_buf, IM_COUNTOF(value_buf), dataType, pValue, format);
+        if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
+        {
+            ImGui::TextEx(value_buf, value_buf_end, ImGuiTextFlags_NoWidthForLargeClippedText);
+            ImGui::EndTooltip();
+        }
+    }
+
+    if (rects.label_size.x > 0.0F)
+    {
+        ImGui::RenderText(
+            ImVec2(rects.frame_bb.Max.x + m3Styles[Spacing::XS], rects.frame_bb.Min.y), TextStart(label), TextEnd(label)
+        );
+    }
+
+    IMGUI_TEST_ENGINE_ITEM_INFO(
+        id, label, g.LastItemData.StatusFlags | (temp_input_allowed ? ImGuiItemStatusFlags_Inputable : 0)
+    );
+    return value_changed;
+}
+} // namespace Slider
+
 } // namespace ImGuiEx::M3
