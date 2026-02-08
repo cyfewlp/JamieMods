@@ -61,9 +61,11 @@ auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
         hr             = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
         if (SUCCEEDED(hr) && pathLen > 0)
         {
+            filePath.resize(pathLen + 1);
             hr = localLoader->GetFilePathFromKey(key, keySize, filePath.data(), pathLen + 1);
             if (SUCCEEDED(hr))
             {
+                filePath.resize(pathLen); // remove the extra null terminator
                 return filePath;
             }
         }
