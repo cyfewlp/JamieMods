@@ -61,7 +61,10 @@ void HandleActivation(ImGuiID id, ImGuiWindow *window, const bool hovered)
     }
 }
 
-auto DrawFrame(ImDrawList *drawList, const SliderLayout &rects, double value01, const M3Styles &m3Styles)
+auto DrawFrame(
+    ImDrawList *drawList, const SliderLayout &rects, const double value01, const ImVec4 &activeColor,
+    const M3Styles &m3Styles
+)
 {
     const ImU32 frame_col     = ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::secondaryContainer]);
     const auto  centerX       = (rects.frame_bb.Max.x + rects.frame_bb.Min.x) * HALF;
@@ -83,7 +86,7 @@ auto DrawFrame(ImDrawList *drawList, const SliderLayout &rects, double value01, 
         drawList->AddRectFilled(
             {std::min(rects.grab_bb.Max.x, centerX), rects.frame_bb.Min.y},
             {std::max(centerGapLeft, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
-            ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::primary]),
+            ImGui::ColorConvertFloat4ToU32(activeColor),
             m3Styles[Spacing::XS]
         );
     }
@@ -145,16 +148,18 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
     }
 
     ImGui::RenderNavCursor(layout.frame_bb, id);
-    DrawFrame(window->DrawList, layout, params.value01, m3Styles);
 
-    const bool  activated   = g.ActiveId == id;
-    const auto  grabColor   = activated ? m3Styles.Colors().Pressed(SurfaceToken::primary, ContentToken::onPrimary)
-                                        : m3Styles.Colors()[SurfaceToken::primary];
+    const bool activated   = g.ActiveId == id;
+    const auto activeColor = activated ? m3Styles.Colors().Pressed(SurfaceToken::primary, ContentToken::onPrimary)
+                                       : m3Styles.Colors()[SurfaceToken::primary];
+
+    DrawFrame(window->DrawList, layout, params.value01, activeColor, m3Styles);
+
     const float grab_margin = m3Styles[Spacing::XS];
     window->DrawList->AddRectFilled(
         {layout.grab_bb.Min.x + grab_margin, layout.grab_bb.Min.y},
         {layout.grab_bb.Max.x - grab_margin, layout.grab_bb.Max.y},
-        ImGui::ColorConvertFloat4ToU32(grabColor),
+        ImGui::ColorConvertFloat4ToU32(activeColor),
         m3Styles[Spacing::XS] * HALF
     );
 
