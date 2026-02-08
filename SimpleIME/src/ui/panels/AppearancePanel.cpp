@@ -112,11 +112,13 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor"));
     }
+    bool edited = false;
     if (openPopup)
     {
         ImGui::OpenPopup("ThemeBuilder");
         m_ImColorTemp  = ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor);
         m_darkModeTemp = schemeConfig.darkMode;
+        edited         = true;
     }
     {
         ImGuiEx::StyleGuard styleGuard;
@@ -127,7 +129,6 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                 Translate("Settings.Appearance.ThemeBuilder"), nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()
             ))
         {
-            bool edited  = false;
             using Scheme = material_color_utilities::SchemeTonalSpot;
             using Hct    = material_color_utilities::Hct;
 
