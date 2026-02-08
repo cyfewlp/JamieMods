@@ -6,7 +6,8 @@
 #include "common/i18n/Translator.h"
 #include "common/imgui/ImGuiEx.h"
 #include "common/imgui/Material3.h"
-#include "common/imgui/imgui_m3_ex.h"
+#include "common/imgui/imguiex_enum_wrap.h"
+#include "common/imgui/imguiex_m3.h"
 #include "i18n/TranslatorHolder.h"
 #include "icons.h"
 #include "imgui.h"
@@ -262,7 +263,7 @@ void FontBuilderPanel::DrawAddFontButton(FontBuilder &fontBuilder, const ImGuiEx
     ImGui::EndDisabled();
 }
 
-void FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles) const
+void FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     using Spacing      = ImGuiEx::M3::Spacing;
     using ContentToken = ImGuiEx::M3::ContentToken;

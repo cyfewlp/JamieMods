@@ -5,9 +5,7 @@
 #pragma once
 
 #include "common/imgui/Material3.h"
-#include "imguiex_enum_wrap.h"
 
-#include <algorithm>
 #include <string_view>
 
 namespace ImGuiEx::M3
@@ -111,48 +109,6 @@ auto EndDockedToolbar() -> void;
 ////////////////////////////////////////////////////////////////////
 
 void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
-
-namespace Slider
-{
-
-namespace detail
-{
-
-template <class T>
-constexpr ImGuiDataType ImGuiDataTypeFor() = delete;
-
-// clang-format off
-
-template <> constexpr ImGuiDataType ImGuiDataTypeFor<float>() { return ImGuiDataType_Float; }
-template <> constexpr ImGuiDataType ImGuiDataTypeFor<double>() { return ImGuiDataType_Double; }
-template <> constexpr ImGuiDataType ImGuiDataTypeFor<int>() { return ImGuiDataType_S32; }
-template <> constexpr ImGuiDataType ImGuiDataTypeFor<unsigned int>() { return ImGuiDataType_U32; }
-template <> constexpr ImGuiDataType ImGuiDataTypeFor<long long>() { return ImGuiDataType_S64; }
-template <> constexpr ImGuiDataType ImGuiDataTypeFor<unsigned long long>() { return ImGuiDataType_U64; }
-
-// clang-format on
-
-auto Draw(
-    std::string_view label, ImGuiDataType dataType, void *pValue, const void *pMinValue, const void *pMaxValue,
-    double value01, const M3Styles &m3Styles, SliderFlags flags
-) -> bool;
-} // namespace detail
-
-template <typename T>
-auto Draw(std::string_view label, T &value, T minValue, T maxValue, const M3Styles &m3Styles, SliderFlags flags = {})
-    -> bool
-{
-    const ImGuiDataType dataType = detail::ImGuiDataTypeFor<T>();
-
-    if (minValue > maxValue) std::swap(minValue, maxValue);
-    const double value01 = (maxValue != minValue) ? (static_cast<double>(value) - static_cast<double>(minValue)) /
-                                                        (static_cast<double>(maxValue) - static_cast<double>(minValue))
-                                                  : 0.0;
-
-    return detail::Draw(label, dataType, &value, &minValue, &maxValue, value01, m3Styles, flags);
-}
-
-} // namespace Slider
 
 /// Popup
 

@@ -46,8 +46,9 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${IMGUI_SOURCES}
 #    ${IMGUI_DEMO_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/json/simdjson.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/imgui_m3_ex.cpp
+    ${CMAKE_SOURCE_DIR}/common/imgui/m3.cpp
+    ${CMAKE_SOURCE_DIR}/common/imgui/imguiex_m3.cpp
+    ${CMAKE_SOURCE_DIR}/common/imgui/imguiex_m3_slider.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/M3ThemeBuilder.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
     ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp

@@ -5,7 +5,8 @@
 #include "ui/LanguageBar.h"
 
 #include "common/imgui/ImGuiEx.h"
-#include "common/imgui/imgui_m3_ex.h"
+#include "common/imgui/imguiex_enum_wrap.h"
+#include "common/imgui/imguiex_m3.h"
 #include "core/State.h"
 #include "i18n/TranslatorHolder.h"
 #include "icons.h"

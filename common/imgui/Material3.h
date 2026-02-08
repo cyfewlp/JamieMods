@@ -310,13 +310,12 @@ enum class Spacing : uint8_t
 
 enum class ComponentSize : uint8_t
 {
-    LIST_WIDTH          = 70, // 280dp
-    NAV_RAIL_WIDTH      = 24, // 96dp
-    MENU_WIDTH          = 52, // 208dp
-    BUTTON_ROUNDING     = 25, // 100dp
-    TOOLBAR_ROUNDING    = 8,  // 32dp
-    ICON_BUTTON         = 12, // 48dp
-    SMALL_SLIDER_HEIGHT = 11, // 44dp
+    LIST_WIDTH       = 70, // 280dp
+    NAV_RAIL_WIDTH   = 24, // 96dp
+    MENU_WIDTH       = 52, // 208dp
+    BUTTON_ROUNDING  = 25, // 100dp
+    TOOLBAR_ROUNDING = 8,  // 32dp
+    ICON_BUTTON      = 12, // 48dp
 };
 
 class M3Styles
