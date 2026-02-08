@@ -435,27 +435,31 @@ void HandleActivation(ImGuiID id, ImGuiWindow *window, const bool hovered)
 
 auto DrawFrame(ImDrawList *drawList, const SliderRects &rects, double value01, const M3Styles &m3Styles)
 {
-    const ImU32 frame_col = ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::secondaryContainer]);
-    const auto  centerX   = (rects.frame_bb.Max.x + rects.frame_bb.Min.x) * HALF;
-    const auto  gap       = m3Styles[Spacing::S];
+    const ImU32 frame_col     = ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::secondaryContainer]);
+    const auto  centerX       = (rects.frame_bb.Max.x + rects.frame_bb.Min.x) * HALF;
+    const auto  centerGapLeft = centerX - m3Styles[Spacing::S];
     // part1 secondary container
     if (value01 > 0)
     {
         drawList->AddRectFilled(
             rects.frame_bb.Min,
-            {std::min(centerX - gap, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
+            {std::min(centerGapLeft, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
             frame_col,
             m3Styles[Spacing::S],
             DrawFlags().RoundCornersTopLeft().RoundCornersBottomLeft()
         );
     }
     // part2 primary
-    drawList->AddRectFilled(
-        {std::min(rects.grab_bb.Max.x, centerX), rects.frame_bb.Min.y},
-        {std::max(centerX - gap, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
-        ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::primary]),
-        m3Styles[Spacing::XS]
-    );
+    if (rects.grab_bb.Min.x > centerX || rects.grab_bb.Max.x < centerGapLeft)
+    {
+        drawList->AddRectFilled(
+            {std::min(rects.grab_bb.Max.x, centerX), rects.frame_bb.Min.y},
+            {std::max(centerGapLeft, rects.grab_bb.Min.x), rects.frame_bb.Max.y},
+            ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::primary]),
+            m3Styles[Spacing::XS]
+        );
+    }
+
     // part3 secondary container
     if (value01 < 1)
     {

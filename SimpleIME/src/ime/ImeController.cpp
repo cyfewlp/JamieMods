@@ -265,7 +265,11 @@ bool ImeController::FocusImeOrGame(const bool focusIme) const
 void ImeController::AddTask(TaskQueue::Task &&task) const
 {
     TaskQueue::GetInstance().AddImeThreadTask(std::move(task));
-    SendMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
+
+    if (!PostMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0))
+    {
+        logger::error("Failed to post CM_EXECUTE_TASK to ImeWnd.");
+    }
 }
 
 void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings)

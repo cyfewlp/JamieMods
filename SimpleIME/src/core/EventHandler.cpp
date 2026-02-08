@@ -66,7 +66,6 @@ void OnFirstOpenMainMenu()
     {
         messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
     }
-    // If Ime Wnd alive
     ImeController::GetInstance()->ApplySettings();
 }
 
