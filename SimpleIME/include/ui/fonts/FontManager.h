@@ -12,11 +12,15 @@ namespace Ime
 {
 class FontInfo
 {
-    int32_t     index = -1; // index in font set
+public:
+    using Index = int32_t;
+
+private:
+    Index       index = -1; // index in font set
     std::string name;
 
 public:
-    FontInfo(const int32_t index, const std::string &name) : index(index), name(name) {}
+    FontInfo(const Index index, const std::string &name) : index(index), name(name) {}
 
     bool IsInvalid() const
     {
@@ -28,7 +32,7 @@ public:
         return name;
     }
 
-    auto GetIndex() const -> int32_t
+    auto GetIndex() const -> Index
     {
         return index;
     }

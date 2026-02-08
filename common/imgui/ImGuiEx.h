@@ -12,6 +12,10 @@
 namespace ImGuiEx
 {
 
+constexpr float ALIGN_LEFT   = 0.0F;
+constexpr float ALIGN_RIGHT  = 1.0F;
+constexpr float ALIGN_CENTER = 0.5F;
+
 class FontScope
 {
     bool Pushed = false;

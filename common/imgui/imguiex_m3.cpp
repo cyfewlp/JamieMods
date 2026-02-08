@@ -68,8 +68,6 @@ auto GetIconLayout(SizeTips sizeTips, const M3Styles &m3Styles) -> IconLayout
 }
 } // namespace
 
-constexpr float CENTER_ALIGN = 0.5f;
-
 static void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
 {
     // copy from imgui.cpp#3857
@@ -116,7 +114,7 @@ void LineTextUnformatted(const std::string_view &text, const float lineHeight)
 void DrawNavMenu(std::string_view icon, const M3Styles &m3Styles)
 {
     ImGui::Dummy({0.f, m3Styles[Spacing::L]});
-    ImGui::TextAligned(CENTER_ALIGN, -FLT_MIN, "%s", TextStart(icon));
+    ImGui::TextAligned(ALIGN_CENTER, -FLT_MIN, "%s", TextStart(icon));
     ImGui::Dummy({0.f, m3Styles[Spacing::L]});
 }
 
@@ -151,7 +149,7 @@ auto DrawNavItem(
     {
         auto fineClipOpt = TextClip(iconSize, iconPosMin, bb);
         // modify iconPosMin
-        AlignText(iconPosMin, {CENTER_ALIGN, CENTER_ALIGN}, iconPosMax, iconSize);
+        AlignText(iconPosMin, {ALIGN_CENTER, ALIGN_CENTER}, iconPosMax, iconSize);
         iconPosMax = iconPosMin + iconSize;
         // icon bg rect
         if (selected || hovered || held)
@@ -195,7 +193,7 @@ auto DrawNavItem(
         const auto   textSize    = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
         const auto   fineClipOpt = TextClip(textSize, labelMin, bb);
         // modify labelMin
-        AlignText(labelMin, {CENTER_ALIGN, CENTER_ALIGN}, labelMax, textSize);
+        AlignText(labelMin, {ALIGN_CENTER, ALIGN_CENTER}, labelMax, textSize);
         const ColorBase &textColor = selected ? static_cast<const ColorBase &>(colors[SurfaceToken::secondary])
                                               : static_cast<const ColorBase &>(colors[ContentToken::onSurfaceVariant]);
         drawList->AddText(
@@ -326,7 +324,7 @@ auto DrawIconButton(
     ImGui::RenderFrame(contentMin, contentMax, ImGui::ColorConvertFloat4ToU32(frameColor), true, rounding);
 
     ImVec2 posMin = contentMin;
-    AlignText(posMin, {CENTER_ALIGN, CENTER_ALIGN}, contentMax, ImVec2(iconSize, iconSize));
+    AlignText(posMin, {ALIGN_CENTER, ALIGN_CENTER}, contentMax, ImVec2(iconSize, iconSize));
     window->DrawList->AddText(
         m3Styles.IconFont(), iconSize, posMin, ImGui::ColorConvertFloat4ToU32(textColor), TextStart(icon), TextEnd(icon)
     );

@@ -50,8 +50,6 @@ public:
 private:
     inline void DrawStatusBar(const ImGuiEx::M3::M3Styles &m3Styles) const;
 
-    void DrawSearchBox(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles);
-    void DrawFontsTable(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles);
     void UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList);
 
 public:
