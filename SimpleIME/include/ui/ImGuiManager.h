@@ -17,6 +17,7 @@ class M3Styles;
 
 namespace Ime
 {
+//! \todo should be refactor to namespace + free functions if the state is not needed to be stored in this class.
 class ImGuiManager
 {
     inline static bool g_initialized = false;

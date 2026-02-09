@@ -6,6 +6,7 @@
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
+#include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
 #include "log.h"
 #include "ui/LanguageBar.h"
@@ -49,6 +50,25 @@ bool RegisterImeWindowClass(const WNDPROC wndProc)
     }
     return true;
 }
+
+//! DPI awareness for support different monitor that has different physical DPI, avoid blurry when move between
+//! monitors.
+// ！@see WndProc::WM_DIPCHANGED
+void TryEnableImeWndDpiAware()
+{
+    logger::info("Try to enable DPI aware for IME Wnd...");
+    using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
+
+    HMODULE    hUser32 = GetModuleHandleW(L"user32.dll");
+    const auto pSetThreadDpiAwarenessContext =
+        reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
+
+    if (pSetThreadDpiAwarenessContext)
+    {
+        pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        logger::info("Enable DPI aware successful!");
+    }
+}
 } // namespace
 
 ImeWnd::~ImeWnd()
@@ -64,22 +84,6 @@ void ImeWnd::InitializeTextService()
 {
     m_pTextService = TextServiceFactory::Create(m_fEnabledTsf);
     m_pTextService->RegisterCallback(OnCompositionResult);
-}
-
-static void TryEnableImeWndDpiAware()
-{
-    logger::info("Try to enable DPI aware for IME Wnd...");
-    using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
-
-    HMODULE    hUser32 = GetModuleHandleW(L"user32.dll");
-    const auto pSetThreadDpiAwarenessContext =
-        reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
-
-    if (pSetThreadDpiAwarenessContext)
-    {
-        pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-        logger::info("Enable DPI aware successful!");
-    }
 }
 
 // FIXME: ImeUI should not dependency ImeWnd!!!
@@ -218,6 +222,7 @@ void ImeWnd::AbortIme() const
 
 void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
+    m3Styles.UpdateScaling(m_dpiScale);
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
@@ -277,9 +282,16 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
             return pThis->OnDestroy();
         }
+        case WM_SETTINGCHANGE: {
+            if (pThis == nullptr) break;
+            pThis->m_dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+            return 0;
+        }
         case WM_DPICHANGED: {
             if (pThis == nullptr) break;
-            // pThis->OnDpiChanged(hWnd);
+            const float g_dpi = HIWORD(wParam);
+            const auto  scale = g_dpi / USER_DEFAULT_SCREEN_DPI;
+            pThis->m_dpiScale = scale;
             return 0;
         }
         case CM_EXECUTE_TASK: {
@@ -390,6 +402,7 @@ void ImeWnd::OnCreated(Settings &settings)
 {
     logger::info("Ime window created, init TSF and core...");
     m_pTextService->OnStart(m_hWnd);
+    m_dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
 
     ImeController::GetInstance()->Init(this, m_hWndParent, settings);
 }

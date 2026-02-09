@@ -27,7 +27,6 @@ struct Settings
     struct RuntimeState
     {
         float fontSize       = 20.F;
-        float dpiScale       = 1.0F;
         bool  wantResizeFont = false;
 
         bool operator==(const RuntimeState &other) const = default;

@@ -109,6 +109,7 @@ private:
     CComPtr<InputMethodManager>   m_pInputMethodManager;
     HWND                          m_hWnd                      = nullptr;
     HWND                          m_hWndParent                = nullptr;
+    float                         m_dpiScale                  = 1.0F;
     bool                          m_fFocused : 1              = false;
     bool                          m_fWantToggleToolWindow : 1 = false;
     bool                          m_fEnabledTsf : 1           = true;

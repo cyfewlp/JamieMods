@@ -342,7 +342,7 @@ class M3Styles
 
     std::array<float, static_cast<size_t>(Spacing::Count)> precomputedPx{};
 
-    float currentScale = 0.0F;
+    float m_currentScale = 0.0F;
 
     struct TextState
     {
@@ -356,14 +356,17 @@ public:
     {
     }
 
-    //! \todo missing dpi scaling support
+    /**
+     * You can call this before frame. Only re-compute size when the scale factor changes.
+     * @param newScale the new scale factor.
+     */
     void UpdateScaling(const float newScale)
     {
-        if (currentScale == newScale)
+        if (m_currentScale == newScale)
         {
             return;
         }
-        currentScale = newScale;
+        m_currentScale = newScale;
         for (size_t i = 0; i < precomputedPx.size(); ++i)
         {
             precomputedPx.at(i) = std::floor(static_cast<float>(i) * BASE_UNIT * newScale);
@@ -401,7 +404,7 @@ public:
             return {};
         }
         m_stateText.currentRole   = Role;
-        m_stateText.currentFontPx = Spec::Text<Role>::fontSize * currentScale;
+        m_stateText.currentFontPx = Spec::Text<Role>::fontSize * m_currentScale;
         return FontScope(nullptr, m_stateText.currentFontPx);
     }
 
@@ -433,7 +436,7 @@ public:
         {
             return precomputedPx[units];
         }
-        return units * BASE_UNIT * currentScale;
+        return units * BASE_UNIT * m_currentScale;
     }
 
     auto operator[](Spacing s) const -> float
