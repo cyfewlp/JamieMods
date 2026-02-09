@@ -15,8 +15,8 @@
 #include "imguiex/m3/facade/button.h"
 #include "imguiex/m3/spec/others.h"
 #include "path_utils.h"
-#include "ui/ImGuiManager.h"
 #include "ui/Settings.h"
+#include "ui/imgui_system.h"
 
 #include <imgui.h>
 
@@ -172,7 +172,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     m3Styles.RebuildColors(
                         {m_contrastLevelTemp, ImGuiEx::M3::ImU32ToArgb(m_ImColorTemp), m_darkModeTemp}
                     );
-                    ImGuiManager::ApplyM3Theme(m3Styles);
+                    UI::ApplyM3Theme(m3Styles);
                     scheme.reset();
                     ImGui::CloseCurrentPopup();
                 }
@@ -268,7 +268,7 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M
     appearance.zoom = std::min(ZOOM_MAX, appearance.zoom);
     appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
     m3Styles.UpdateScaling(appearance.zoom);
-    ImGuiManager::ApplyM3Theme(m3Styles);
+    UI::ApplyM3Theme(m3Styles);
 
     i18n::ScanLanguages(utils::GetInterfacePath() / SIMPLE_IME, m_translateLanguages);
 

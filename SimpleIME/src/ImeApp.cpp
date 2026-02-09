@@ -17,8 +17,8 @@
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
 #include "path_utils.h"
-#include "ui/ImGuiManager.h"
 #include "ui/Settings.h"
+#include "ui/imgui_system.h"
 
 #include <basetsd.h>
 #include <future>
@@ -119,7 +119,7 @@ void ImeApp::OnInputLoaded()
 
 void ImeApp::Uninitialize()
 {
-    ImGuiManager::Shutdown();
+    UI::Shutdown();
     Events::UnInstallEventSinks(); // should safe
     if (m_state.IsInitialized())
     {
@@ -262,11 +262,11 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
-    ImGuiManager::Initialize(m_hWnd, device, context, m_settings);
-    auto      *primaryFont  = ImGuiManager::AddPrimaryFont(m_settings.resources.fontPathList);
+    UI::Initialize(m_hWnd, device, context);
+    auto      *primaryFont  = UI::AddPrimaryFont(m_settings.resources.fontPathList);
     const auto iconFontPath = utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE;
     // FIXME:: should move to ImeUI after refactor ImeUI
-    auto *iconFont = ImGuiManager::AddFont(iconFontPath.generic_string());
+    auto *iconFont = UI::AddFont(iconFontPath.generic_string());
     if (iconFont == nullptr)
     {
         logger::error("Cannot find icon font. Initialization failed!");
@@ -365,12 +365,12 @@ void ImeApp::Draw()
     {
         return;
     }
-    ImGuiManager::NewFrame();
+    UI::NewFrame();
 
     m_imeWnd.DrawIme(m_settings, *g_M3Styles);
 
-    ImGuiManager::EndFrame();
-    ImGuiManager::Render();
+    UI::EndFrame();
+    UI::Render();
 }
 
 auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

@@ -1,7 +1,7 @@
 //
 // Created by jamie on 2026/1/16.
 //
-#include "ui/ImGuiManager.h"
+#include "ui/imgui_system.h"
 
 #include "ime/ImeController.h"
 #include "imgui.h"
@@ -19,60 +19,14 @@
 #include <d3d11.h>
 #include <windef.h>
 
-namespace Ime
+namespace Ime::UI
 {
 
-void ImGuiManager::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings)
+namespace
 {
-    if (g_initialized)
-    {
-        logger::warn("ImGui already initialized!");
-        return;
-    }
-    g_initialized = false;
+bool g_initialized = false;
 
-    logger::info("Initializing ImGui...");
-    ImGui::CreateContext();
-    ImGui_ImplWin32_Init(hWnd);
-    ImGui_ImplDX11_Init(device, context);
-
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.ConfigNavMoveSetMousePos = false;
-
-    g_initialized = true;
-    logger::info("ImGui initialized!");
-}
-
-auto ImGuiManager::AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
-{
-    ImFont *imFont = AddFonts(fontsPathList);
-    auto   &io     = ImGui::GetIO();
-    if (imFont == nullptr)
-    {
-        ErrorNotifier::GetInstance().addError(
-            "Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning
-        );
-        io.Fonts->Clear();
-        auto defaultFonts =
-            std::vector{std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)};
-        imFont = AddFonts(defaultFonts);
-    }
-    if (imFont == nullptr)
-    {
-        ErrorNotifier::GetInstance().addError(
-            "Can't load fonts! Fallback to ImGui embedded font...", ErrorMsg::Level::warning
-        );
-        io.Fonts->Clear();
-        imFont = io.Fonts->AddFontDefault();
-    }
-
-    io.FontDefault = imFont;
-    return imFont;
-}
-
-auto ImGuiManager::AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *
+auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *
 {
     ImFont *imFont = nullptr;
     if (fontPaths.empty())
@@ -101,7 +55,7 @@ auto ImGuiManager::AddFonts(const std::vector<std::string> &fontPaths) -> ImFont
 /**
  * If Game cursor no showing/update, update ImGui cursor from system cursor pos
  */
-void ImGuiManager::UpdateCursorPos()
+void UpdateCursorPos()
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
@@ -118,28 +72,13 @@ void ImGuiManager::UpdateCursorPos()
     }
 }
 
-auto ImGuiManager::AddFont(const std::string &filePath) -> ImFont *
-{
-    return ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
-}
-
-void ImGuiManager::NewFrame()
-{
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    UpdateCursorPos();
-    ImGui::NewFrame();
-
-    EnableTextInputIfNeed();
-}
-
 /**
  * @brief Notifies SkyrimSE to direct character events to ImeMenu.
  * We call @c ControlMap::AllowTextInput and @c ImeController::EnableIme to manage focus correctly.
  * This avoids the IME remaining enabled if the underlying menu
  * also has a text entry field.
  */
-void ImGuiManager::EnableTextInputIfNeed()
+void EnableTextInputIfNeed()
 {
     static bool fWantTextInput = false;
     const bool  cWantTextInput = ImGui::GetIO().WantTextInput;
@@ -163,15 +102,82 @@ void ImGuiManager::EnableTextInputIfNeed()
     fWantTextInput = cWantTextInput;
 }
 
-void ImGuiManager::EndFrame() {}
+} // namespace
 
-void ImGuiManager::Render()
+void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
+{
+    if (g_initialized)
+    {
+        logger::warn("ImGui already initialized!");
+        return;
+    }
+    g_initialized = false;
+
+    logger::info("Initializing ImGui...");
+    ImGui::CreateContext();
+    ImGui_ImplWin32_Init(hWnd);
+    ImGui_ImplDX11_Init(device, context);
+
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.ConfigNavMoveSetMousePos = false;
+
+    g_initialized = true;
+    logger::info("ImGui initialized!");
+}
+
+auto AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
+{
+    ImFont *imFont = AddFonts(fontsPathList);
+    auto   &io     = ImGui::GetIO();
+    if (imFont == nullptr)
+    {
+        ErrorNotifier::GetInstance().addError(
+            "Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning
+        );
+        io.Fonts->Clear();
+        auto defaultFonts =
+            std::vector{std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)};
+        imFont = AddFonts(defaultFonts);
+    }
+    if (imFont == nullptr)
+    {
+        ErrorNotifier::GetInstance().addError(
+            "Can't load fonts! Fallback to ImGui embedded font...", ErrorMsg::Level::warning
+        );
+        io.Fonts->Clear();
+        imFont = io.Fonts->AddFontDefault();
+    }
+
+    io.FontDefault = imFont;
+    return imFont;
+}
+
+auto AddFont(const std::string &filePath) -> ImFont *
+{
+    return ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
+}
+
+void NewFrame()
+{
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    UpdateCursorPos();
+    ImGui::NewFrame();
+
+    EnableTextInputIfNeed();
+}
+
+void EndFrame() {}
+
+void Render()
 {
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ImGuiManager::Shutdown()
+void Shutdown()
 {
     if (g_initialized)
     {
@@ -179,9 +185,10 @@ void ImGuiManager::Shutdown()
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
     }
+    g_initialized = false;
 }
 
-void ImGuiManager::ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
+void ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
 {
     using ContentToken = ImGuiEx::M3::ContentToken;
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
@@ -275,4 +282,4 @@ void ImGuiManager::ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 
-} // namespace Ime
+} // namespace Ime::UI
