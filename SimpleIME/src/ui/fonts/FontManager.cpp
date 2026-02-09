@@ -3,9 +3,9 @@
 //
 #include "ui/fonts/FontManager.h"
 
-#include "common/WCharUtils.h"
-#include "common/log.h"
-#include "common/toml/toml.hpp"
+#include "WCharUtils.h"
+#include "log.h"
+#include "toml/toml.hpp"
 
 #include <dwrite_3.h>
 #include <windows.h>

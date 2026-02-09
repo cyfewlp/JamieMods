@@ -4,7 +4,7 @@
 
 #include "RE/ControlMap.h"
 
-#include "common/log.h"
+#include "log.h"
 
 namespace Ime
 {

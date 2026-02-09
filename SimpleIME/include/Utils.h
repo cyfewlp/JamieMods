@@ -2,13 +2,11 @@
 // Created by jamie on 2025/3/1.
 //
 
-#ifndef GAMESTRINGSENDER_H
-#define GAMESTRINGSENDER_H
+#pragma once
 
 #include "RE/GFxCharEvent.h"
-#include "common/log.h"
 #include "core/State.h"
-#include "ui/Settings.h"
+#include "log.h"
 
 namespace Ime
 {
@@ -25,37 +23,10 @@ public:
         return reinterpret_cast<LONG_PTR>(ptr);
     }
 
-    static constexpr auto IsVkCodeDown(uint32_t vkCode) -> bool
-    {
-        return (::GetKeyState(vkCode) & 0x8000) != 0;
-    }
-
     static constexpr auto IsCapsLockOn() -> bool
     {
         SHORT capsState = GetKeyState(VK_CAPITAL);
         return (capsState & 0x0001) != 0;
-    }
-
-    static constexpr bool IsModifierDown()
-    {
-        return IsVkCodeDown(VK_CONTROL) || IsVkCodeDown(VK_SHIFT) || IsVkCodeDown(VK_MENU) || IsVkCodeDown(VK_LWIN) ||
-               IsVkCodeDown(VK_RWIN);
-    }
-
-    static constexpr auto IsKeyWillTriggerIme(const uint32_t keycode) -> bool
-    {
-        if (IsVkCodeDown(VK_CONTROL) || IsVkCodeDown(VK_SHIFT) || IsVkCodeDown(VK_MENU) || IsVkCodeDown(VK_LWIN) ||
-            IsVkCodeDown(VK_RWIN))
-        {
-            return false;
-        }
-
-        bool result = false;
-        using Key   = RE::BSKeyboardDevice::Keys::Key;
-        result      = result || (keycode >= Key::kQ && keycode <= Key::kP);
-        result      = result || (keycode >= Key::kA && keycode <= Key::kL);
-        result      = result || (keycode >= Key::kZ && keycode <= Key::kM);
-        return result;
     }
 
     template <typename String>
@@ -111,5 +82,3 @@ private:
     }
 };
 } // namespace Ime
-
-#endif // GAMESTRINGSENDER_H

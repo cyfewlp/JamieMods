@@ -6,7 +6,7 @@
 
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
-#include "m3_specs.h"
+#include "m3/spec/slider.h"
 
 #include <cstdint>
 #include <string_view>

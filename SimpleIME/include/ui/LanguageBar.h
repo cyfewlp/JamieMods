@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "common/imgui/Material3.h"
+#include "imguiex/Material3.h"
 #include "tsf/LangProfile.h"
 
 #include <vector>
@@ -37,7 +37,7 @@ constexpr auto IsOpenSettings(State state) -> bool
 
 auto Draw(
     bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
-    const ImGuiEx::M3::M3Styles &m3Styles
+    ImGuiEx::M3::M3Styles &m3Styles
 ) -> State;
 
 } // namespace Ime::LanguageBar

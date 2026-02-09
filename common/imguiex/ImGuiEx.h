@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "common/utils.h"
+#include "../path_utils.h"
 
 #include <imgui.h>
 #include <utility>
@@ -15,6 +15,17 @@ namespace ImGuiEx
 constexpr float ALIGN_LEFT   = 0.0F;
 constexpr float ALIGN_RIGHT  = 1.0F;
 constexpr float ALIGN_CENTER = 0.5F;
+
+inline auto TextStart(const std::string_view text) -> const char *
+{
+    // ReSharper disable once CppDFALocalValueEscapesFunction
+    return text.data();
+}
+
+inline auto TextEnd(const std::string_view text) -> const char *
+{
+    return text.data() + text.size(); // NOLINT(*-pro-bounds-pointer-arithmetic)
+}
 
 class FontScope
 {
@@ -709,38 +720,4 @@ public:
         }
     }
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////
-/// Fluent wrappers for ImGui flags designed for optimized developer experience.
-/// These utilities leverage IDE Intellisense and concise method chaining to simplify
-/// flag construction. All builders are marked 'constexpr', ensuring that the bitwise logic
-/// is evaluated at compile-time, resulting in zero runtime overhead compared to manual
-/// bitwise OR operations.
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-#define CONFIG_COLOR(colorName) ColorConvert(colorsNode[#colorName].value_or(""), style.Colors[ImGuiCol_##colorName])
-
-constexpr auto HexToU32(std::string_view hex) -> std::optional<ImU32>
-{
-    if (hex.size() != 7 || !hex.starts_with("#")) return std::nullopt;
-
-    auto hexSv1 = hex.substr(1);
-
-    auto get_byte = [&](size_t idx, uint32_t &col) -> bool {
-        auto p1 = utils::HexCharToInt(hexSv1[idx * 2]);
-        if (p1 == UINT8_MAX) return false;
-        auto p2 = utils::HexCharToInt(hexSv1[idx * 2 + 1]);
-        if (p2 == UINT8_MAX) return false;
-        col = p1 << 4 | p2;
-        return true;
-    };
-
-    uint32_t r = 0, g = 0, b = 0;
-    if (get_byte(0, r) && get_byte(1, g) && get_byte(2, b))
-    {
-        return IM_COL32_A_MASK | b << IM_COL32_B_SHIFT | g << IM_COL32_G_SHIFT | r;
-    }
-    return std::nullopt;
-}
-
 } // namespace ImGuiEx

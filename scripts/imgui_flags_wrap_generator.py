@@ -3,8 +3,6 @@ import re
 import sys
 from pathlib import Path
 
-IMGUI_FLAG_PATTERN = r"^\s*ImGui{}_(\w+)\s*"
-
 IMGUIEX_WRAP_BLOCK_COMMENT_FORMAT = """/////////////////////////////////////////////////
 /// ... {} ...
 /////////////////////////////////////////////////
@@ -55,9 +53,6 @@ def wrap_enum_flags(header_file: Path, wrap_flags_file: Path, no_obsolete: bool)
     with open(header_file, 'r', encoding='utf-8') as imgui_header:
         lines = imgui_header.readlines()
 
-    def write_class_body(wrap_file, enum_name, class_name):
-        wrap_file.write(IMGUIEX_WRAP_CLASS_BODY_FORMAT.format(class_name, class_name, enum_name))
-
     in_enum_flags_definition = False
     is_in_obsolete_block = False
     with open(wrap_flags_file, "w") as wrap_file:
@@ -84,7 +79,7 @@ def wrap_enum_flags(header_file: Path, wrap_flags_file: Path, no_obsolete: bool)
             if "#endif" in line and is_in_obsolete_block:
                 is_in_obsolete_block = False
 
-            if not no_obsolete and is_in_obsolete_block: continue
+            if no_obsolete and is_in_obsolete_block: continue
 
             current_pattern = r"^\s*{}_(\w+)".format(enum_name)
             if in_enum_flags_definition:
@@ -99,9 +94,10 @@ def wrap_enum_flags(header_file: Path, wrap_flags_file: Path, no_obsolete: bool)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scripts for Auto scan and wrap all ImGui enum flags.")
-    parser.add_argument("--no-obsolete", default=False, help="Should obsolete flags be included?")
+    parser.add_argument("--no-obsolete", action ='store_false', help="Should obsolete flags be included?")
     parser.add_argument("--src", default=f"{sys.prefix}/../extern/imgui/imgui.h", help="The input imgui.h file path.")
-    parser.add_argument("--out", default=f"{sys.prefix}/../common/imgui/imguiex_enum_wrap.h", help="The output header file path")
+    parser.add_argument("--out", default=f"{sys.prefix}/../common/imguiex/imguiex_enum_wrap.h",
+                        help="The output header file path")
 
     args = parser.parse_args()
     wrap_enum_flags(Path(args.src), Path(args.out), args.no_obsolete)

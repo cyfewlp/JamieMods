@@ -5,10 +5,10 @@
 #include "hooks/ScaleformHook.h"
 
 #include "RE/ControlMap.h"
-#include "common/hook.h"
-#include "common/log.h"
+#include "hook.h"
 #include "hooks/Hooks.hpp"
 #include "ime/ImeController.h"
+#include "log.h"
 #include "utils/InputFocusAnchor.h"
 
 #include <memory>

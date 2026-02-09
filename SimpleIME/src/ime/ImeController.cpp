@@ -6,10 +6,10 @@
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
-#include "common/WCharUtils.h"
-#include "common/imgui/ErrorNotifier.h"
+#include "WCharUtils.h"
 #include "configs/CustomMessage.h"
 #include "hooks/Hooks.hpp"
+#include "imguiex/ErrorNotifier.h"
 #include "ui/Settings.h"
 #include "ui/TaskQueue.h"
 

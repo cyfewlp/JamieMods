@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "common/i18n/Translator.h"
+#include "i18n/Translator.h"
 
 #include <atomic>
 #include <memory>

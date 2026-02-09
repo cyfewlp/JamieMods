@@ -1,8 +1,8 @@
 #include "tsf/TextStore.h"
 
-#include "common/WCharUtils.h"
-#include "common/log.h"
+#include "WCharUtils.h"
 #include "core/State.h"
+#include "log.h"
 #include "tsf/TsfSupport.h"
 
 #include <InputScope.h>

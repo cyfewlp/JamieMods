@@ -2,12 +2,12 @@
 
 #include "ImeUI.h"
 #include "Utils.h"
-#include "common/imgui/ErrorNotifier.h"
-#include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "core/State.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
+#include "imguiex/ErrorNotifier.h"
+#include "log.h"
 #include "ui/LanguageBar.h"
 
 #include <codecvt>

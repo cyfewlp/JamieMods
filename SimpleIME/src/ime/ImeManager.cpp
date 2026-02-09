@@ -3,7 +3,7 @@
 #include "FakeDirectInputDevice.h"
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
-#include "common/log.h"
+#include "log.h"
 
 #include <processthreadsapi.h>
 #include <windows.h>

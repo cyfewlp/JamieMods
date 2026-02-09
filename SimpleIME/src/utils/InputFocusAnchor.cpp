@@ -3,7 +3,7 @@
 //
 #include "utils/InputFocusAnchor.h"
 
-#include "common/log.h"
+#include "log.h"
 
 namespace
 {

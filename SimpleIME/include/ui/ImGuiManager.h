@@ -41,7 +41,7 @@ public:
 
     static void Render();
 
-    static void EndFrame(Settings &settings);
+    static void EndFrame();
 
     static void Shutdown();
 

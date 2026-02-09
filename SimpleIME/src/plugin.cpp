@@ -1,9 +1,9 @@
 //
 // Created by jamie on 25-1-22.
 //
-#include "common/common.h"
-#include "common/log.h"
+#include "common.h"
 #include "configs/ConfigSerializer.h"
+#include "log.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 

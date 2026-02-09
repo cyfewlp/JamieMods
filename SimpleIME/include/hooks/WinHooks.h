@@ -1,14 +1,14 @@
 #pragma once
 
-#include "common/log.h"
 #include "hooks/Hooks.hpp"
+#include "log.h"
 
 #include <Unknwnbase.h>
 #include <guiddef.h>
 
 namespace Hooks
 {
-// nolonger unneccecary: replaced by ImeMenu#SendFakeControlUpEvent
+// no longer unnecessary: replaced by ImeMenu#SendFakeControlUpEvent
 class OpenClipboardHook : public FunctionHook<BOOL(HWND)>
 {
 public:

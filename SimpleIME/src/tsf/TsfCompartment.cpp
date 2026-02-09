@@ -1,6 +1,6 @@
 #include "tsf/TsfCompartment.h"
 
-#include "common/log.h"
+#include "log.h"
 
 #include <atlcomcli.h>
 

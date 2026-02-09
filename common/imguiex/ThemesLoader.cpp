@@ -4,9 +4,9 @@
 
 #include "ThemesLoader.h"
 
-#include "common/log.h"
-#include "common/toml++/toml.hpp"
 #include "imgui.h"
+#include "log.h"
+#include "toml++/toml.hpp"
 
 #include <algorithm>
 #include <cstdint>

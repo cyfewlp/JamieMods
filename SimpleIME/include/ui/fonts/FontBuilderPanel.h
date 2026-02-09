@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include "common/imgui/Material3.h"
+#include "imguiex/Material3.h"
 #include "ui/fonts/FontBuilder.h"
-#include "ui/fonts/FontPreviewPanel.h"
+#include "ui/fonts/preview_panel.h"
 
 struct ImGuiTextFilter;
 
-namespace Ime
+namespace Ime::UI
 {
 class FontBuilderPanel
 {
@@ -24,7 +24,6 @@ public:
 
 private:
     // FIXME: refactor
-    void        DrawAddFontButton(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
     static void DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
@@ -33,4 +32,4 @@ private:
 
     FontPreviewPanel m_PreviewPanel{};
 };
-} // namespace Ime
+} // namespace Ime::UI

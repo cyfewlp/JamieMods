@@ -46,12 +46,12 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${IMGUI_SOURCES}
 #    ${IMGUI_DEMO_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/json/simdjson.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/m3.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/imguiex_m3.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/imguiex_m3_slider.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/M3ThemeBuilder.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/ErrorNotifier.cpp
-    ${CMAKE_SOURCE_DIR}/common/imgui/ThemesLoader.cpp
+    ${CMAKE_SOURCE_DIR}/common/imguiex/m3.cpp
+    ${CMAKE_SOURCE_DIR}/common/imguiex/imguiex_m3.cpp
+    ${CMAKE_SOURCE_DIR}/common/imguiex/imguiex_m3_slider.cpp
+    ${CMAKE_SOURCE_DIR}/common/imguiex/M3ThemeBuilder.cpp
+    ${CMAKE_SOURCE_DIR}/common/imguiex/ErrorNotifier.cpp
+    ${CMAKE_SOURCE_DIR}/common/imguiex/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
@@ -72,7 +72,7 @@ target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
     ${DETOURS_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/common
     ${IMGUI_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}

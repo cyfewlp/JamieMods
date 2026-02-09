@@ -4,15 +4,17 @@
 
 #include "ui/panels/AppearancePanel.h"
 
-#include "common/imgui/ImGuiEx.h"
-#include "common/imgui/Material3.h"
-#include "common/imgui/imguiex_enum_wrap.h"
-#include "common/imgui/imguiex_m3.h"
-#include "common/imgui/imguiex_m3_slider.h"
-#include "common/utils.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "i18n/TranslationLoader.h"
 #include "i18n/TranslatorHolder.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/Material3.h"
+#include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
+#include "imguiex/imguiex_m3_slider.h"
+#include "imguiex/m3/facade/button.h"
+#include "imguiex/m3/spec/others.h"
+#include "path_utils.h"
 #include "ui/ImGuiManager.h"
 #include "ui/Settings.h"
 
@@ -51,9 +53,12 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
     using ContentToken = ImGuiEx::M3::ContentToken;
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
 
+    const auto _ = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Color_Text(m3Styles.Colors().at(ContentToken::onSurfaceVariant))
         .Style_FrameBorderSize(m3Styles[ImGuiEx::M3::Spacing::XS])
+        .Style_WindowPadding({m3Styles.GetPixels(M3Spec::Menu::paddingX), m3Styles.GetPixels(M3Spec::Menu::paddingY)})
         .Color_Border(m3Styles.Colors().at(SurfaceToken::primary))
         .Color_FrameBg(m3Styles.Colors().at(SurfaceToken::surface))
         .Color_FrameBgHovered(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurfaceVariant))
@@ -61,7 +66,7 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
         .Color_HeaderActive(m3Styles.Colors().at(SurfaceToken::tertiaryContainer))
         .Color_HeaderHovered(m3Styles.Colors().Hovered(SurfaceToken::surfaceContainerLow, ContentToken::onSurface));
     const auto availX = ImGui::GetContentRegionAvail().x;
-    if (const auto maxWidth = m3Styles.GetSize(ImGuiEx::M3::ComponentSize::MENU_WIDTH); availX > maxWidth)
+    if (const auto maxWidth = m3Styles.GetPixels(M3Spec::Menu::width); availX > maxWidth)
     {
         ImGui::SetNextItemWidth(maxWidth);
     }
@@ -75,17 +80,21 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
         ))
     {
         uint8_t index = 0;
+        ImGuiEx::M3::BeginMenu(m3Styles);
+        const auto itemHeight = m3Styles.GetPixels(M3Spec::Menu::itemHeight);
         for (const int &zoom : zoomList)
         {
             const auto percentage = zoom * zoomUnit;
             if (const bool selected = index == currentZoomIndex;
-                ImGui::Selectable(std::format("{}%", zoom * zoomUnit).c_str(), selected) && !selected)
+                ImGui::Selectable(std::format("{}%", zoom * zoomUnit).c_str(), selected, 0, {0, itemHeight}) &&
+                !selected)
             {
                 m3Styles.UpdateScaling(static_cast<float>(percentage) / 100.f);
                 currentZoomIndex = index;
             }
             index++;
         }
+        ImGuiEx::M3::EndMenu(m3Styles);
         ImGui::EndCombo();
     }
 }
@@ -157,7 +166,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                 styleGuard1.Color_Text(colors[ContentToken::onPrimary])
                     .Style_FramePadding({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::M]})
                     .Style_ItemSpacing({m3Styles[ImGuiEx::M3::Spacing::L], 0.f})
-                    .Style_FrameRounding(m3Styles.GetSize(ImGuiEx::M3::ComponentSize::BUTTON_ROUNDING));
+                    .Style_FrameRounding(m3Styles.GetPixels(M3Spec::SmallButton::rounding));
                 if (ImGui::Button(Translate("Settings.Appearance.Apply")))
                 {
                     m3Styles.RebuildColors(

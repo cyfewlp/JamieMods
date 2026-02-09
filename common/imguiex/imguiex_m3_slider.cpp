@@ -4,6 +4,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imguiex_m3_slider.h"
 
+#include "ImGuiEx.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imguiex_m3.h"
@@ -28,11 +29,11 @@ auto ComputeLayout(
 ) -> bool
 {
     const auto width  = ImGui::CalcItemWidth();
-    const auto height = m3Styles.GetUnit(params.grabHeight);
+    const auto height = m3Styles.GetPixels(params.grabHeight);
 
     out.label_size          = ImGui::CalcTextSize(TextStart(label), TextEnd(label), true);
     out.outer_bb            = ImRect(window->DC.CursorPos, window->DC.CursorPos + ImVec2(width, height));
-    const auto frame_offset = (height - m3Styles.GetUnit(params.frameHeight)) * HALF;
+    const auto frame_offset = (height - m3Styles.GetPixels(params.frameHeight)) * HALF;
     out.frame_bb = ImRect(out.outer_bb.Min + ImVec2(0, frame_offset), out.outer_bb.Max - ImVec2(0, frame_offset));
     const ImRect total_bb = ImRect(
         out.outer_bb.Min,
@@ -129,7 +130,7 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
     // Slider behavior
     auto      &style           = ImGui::GetStyle();
     const auto prevGrabMinSize = style.GrabMinSize;
-    style.GrabMinSize          = m3Styles.GetUnit(params.grabOuterWidth);
+    style.GrabMinSize          = m3Styles.GetPixels(params.grabOuterWidth);
     const bool value_changed   = ImGui::SliderBehavior(
         layout.outer_bb,
         id,

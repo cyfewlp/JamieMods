@@ -1,22 +1,22 @@
 #include "ImeApp.h"
 
 #include "ImeWnd.hpp"
-#include "common/common.h"
-#include "common/hook.h"
-#include "common/imgui/ErrorNotifier.h"
-#include "common/imgui/M3ThemeBuilder.h"
-#include "common/imgui/Material3.h"
-#include "common/log.h"
-#include "common/utils.h"
+#include "common.h"
 #include "configs/ConfigSerializer.h"
 #include "configs/CustomMessage.h"
 #include "core/EventHandler.h"
 #include "core/State.h"
+#include "hook.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/WinHooks.h"
 #include "ime/ImeController.h"
+#include "imguiex/ErrorNotifier.h"
+#include "imguiex/M3ThemeBuilder.h"
+#include "imguiex/Material3.h"
+#include "log.h"
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
+#include "path_utils.h"
 #include "ui/ImGuiManager.h"
 #include "ui/Settings.h"
 
@@ -369,7 +369,7 @@ void ImeApp::Draw()
 
     m_imeWnd.DrawIme(m_settings, *g_M3Styles);
 
-    ImGuiManager::EndFrame(m_settings);
+    ImGuiManager::EndFrame();
     ImGuiManager::Render();
 }
 

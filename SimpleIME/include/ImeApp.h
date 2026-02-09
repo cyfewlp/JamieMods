@@ -4,7 +4,7 @@
 #pragma once
 
 #include "ImeWnd.hpp"
-#include "common/hook.h"
+#include "hook.h"
 #include "ui/Settings.h"
 
 namespace Ime

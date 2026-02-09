@@ -3,12 +3,12 @@
 //
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "common/imgui/imguiex_m3.h"
+#include "imguiex/imguiex_m3.h"
 
-#include "common/imgui/ImGuiEx.h"
-#include "common/imgui/Material3.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/Material3.h"
 
 #if IMGUI_VERSION_NUM != 19259
     #error "ImGui version changed! imguiex_m3 only supports v1.92.6WIP"
@@ -19,64 +19,15 @@ namespace ImGuiEx::M3
 
 namespace
 {
-struct IconLayout
-{
-    float size;
-    float padding;
-    float rounding;
-    float margin;
-};
 
-auto ComputeIconSize(const IconLayout &layout) -> float
-{
-    return layout.size + (layout.padding + layout.margin) * 2.0f;
-}
-
-auto GetIconLayout(SizeTips sizeTips, const M3Styles &m3Styles) -> IconLayout
-{
-    IconLayout layout{.size = 0.f, .padding = m3Styles[Spacing::XS], .rounding = 0.f, .margin = 0.f};
-    switch (sizeTips)
-    {
-        case SizeTips::XSMALL:
-            layout.margin   = m3Styles[Spacing::S];
-            layout.size     = m3Styles[Spacing::L];
-            layout.rounding = m3Styles.GetUnit(2);
-            break;
-        case SizeTips::SMALL:
-            layout.margin   = m3Styles[Spacing::XS];
-            layout.padding  = m3Styles[Spacing::S];
-            layout.size     = m3Styles[Spacing::XL];
-            layout.rounding = m3Styles.GetUnit(2);
-            break;
-        case SizeTips::MEDIUM:
-            layout.padding  = m3Styles[Spacing::L];
-            layout.size     = m3Styles[Spacing::XL];
-            layout.rounding = m3Styles.GetUnit(3);
-            break;
-        case SizeTips::LARGE:
-            layout.padding  = m3Styles[Spacing::XXL];
-            layout.size     = m3Styles[Spacing::XXL];
-            layout.rounding = m3Styles.GetUnit(4);
-            break;
-        case SizeTips::XLARGE:
-            layout.padding  = m3Styles[Spacing::PADDING_XL];
-            layout.size     = m3Styles.GetUnit(10);
-            layout.rounding = m3Styles[Spacing::L];
-            break;
-    }
-    return layout;
-}
-} // namespace
-
-static void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
+void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
 {
     // copy from imgui.cpp#3857
-    if (align.x > 0.0f) posMin.x = ImMax(posMin.x, posMin.x + (posMax.x - posMin.x - textSize.x) * align.x);
-    if (align.y > 0.0f) posMin.y = ImMax(posMin.y, posMin.y + (posMax.y - posMin.y - textSize.y) * align.y);
+    if (align.x > 0.0F) posMin.x = ImMax(posMin.x, posMin.x + ((posMax.x - posMin.x - textSize.x) * align.x));
+    if (align.y > 0.0F) posMin.y = ImMax(posMin.y, posMin.y + ((posMax.y - posMin.y - textSize.y) * align.y));
 }
 
-[[nodiscard]] static auto TextClip(const ImVec2 &textSize, const ImVec2 &pos, const ImRect &clipRect)
-    -> std::optional<ImVec4>
+[[nodiscard]] auto TextClip(const ImVec2 &textSize, const ImVec2 &pos, const ImRect &clipRect) -> std::optional<ImVec4>
 {
     // copy from imgui.cpp#3847
     // Perform CPU side clipping for single clipped element to avoid using scissor state
@@ -88,20 +39,21 @@ static void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax,
     }
     return std::nullopt;
 }
+} // namespace
 
 void LineTextUnformatted(const std::string_view &text, const float lineHeight)
 {
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    auto *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return;
 
-    auto &g = *GImGui;
-    if (auto offset = lineHeight - g.FontSize; offset <= 0)
+    const auto &g = *GImGui;
+    if (const auto offset = lineHeight - g.FontSize; offset <= 0)
     {
         ImGui::TextUnformatted(TextStart(text), TextEnd(text));
     }
     else
     {
-        auto backup                       = window->DC.CurrLineTextBaseOffset;
+        const auto backup                 = window->DC.CurrLineTextBaseOffset;
         window->DC.CurrLineTextBaseOffset = offset * HALF;
         ImGui::TextUnformatted(TextStart(text), TextEnd(text));
         window->DC.PrevLineTextBaseOffset = backup;
@@ -111,11 +63,11 @@ void LineTextUnformatted(const std::string_view &text, const float lineHeight)
 /**
  * Since the width of the navigation track is locked, a simple centered layout is all that's needed.
  */
-void DrawNavMenu(std::string_view icon, const M3Styles &m3Styles)
+void DrawNavMenu(const std::string_view icon, const M3Styles &m3Styles) // TODO: may should replace by Icon()
 {
-    ImGui::Dummy({0.f, m3Styles[Spacing::L]});
+    ImGui::Dummy({0.F, m3Styles[Spacing::L]});
     ImGui::TextAligned(ALIGN_CENTER, -FLT_MIN, "%s", TextStart(icon));
-    ImGui::Dummy({0.f, m3Styles[Spacing::L]});
+    ImGui::Dummy({0.F, m3Styles[Spacing::L]});
 }
 
 auto DrawNavItem(
@@ -123,11 +75,11 @@ auto DrawNavItem(
 ) -> bool
 {
     StyleGuard styleGuard;
-    styleGuard.Style_ItemSpacing({0.f, m3Styles[Spacing::XS]});
+    styleGuard.Style_ItemSpacing({0.F, m3Styles[Spacing::XS]});
     const auto   regionLT   = ImGui::GetCursorScreenPos();
     const float  itemWidth  = ImGui::GetContentRegionAvail().x;
     const auto   iconSize   = ImVec2{m3Styles.IconSize(), m3Styles.IconSize()};
-    const float  itemHeight = m3Styles.LabelText().fontSize + iconSize.y + m3Styles[Spacing::XS] * 4;
+    const float  itemHeight = m3Styles.LabelText().fontSize + iconSize.y + (m3Styles[Spacing::XS] * 4);
     const ImRect bb(regionLT, {regionLT.x + itemWidth, regionLT.y + itemHeight});
     const auto   id = ImGui::GetID(TextStart(label));
     ImGui::ItemSize({itemWidth, itemHeight}, m3Styles[Spacing::XS]);
@@ -136,18 +88,19 @@ auto DrawNavItem(
         return false;
     }
 
-    bool       hovered = false, held = false;
+    bool       hovered = false;
+    bool       held    = false;
     const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-    auto &colors    = m3Styles.Colors();
-    auto  iconColor = colors[ContentToken::onSurfaceVariant];
+    const auto &colors    = m3Styles.Colors();
+    auto        iconColor = colors[ContentToken::onSurfaceVariant];
 
     ImVec2 iconPosMin{bb.Min.x, bb.Min.y + m3Styles[Spacing::XS]};
     ImVec2 iconPosMax{bb.Max.x, iconPosMin.y + iconSize.y};
     {
-        auto fineClipOpt = TextClip(iconSize, iconPosMin, bb);
+        const auto fineClipOpt = TextClip(iconSize, iconPosMin, bb);
         // modify iconPosMin
         AlignText(iconPosMin, {ALIGN_CENTER, ALIGN_CENTER}, iconPosMax, iconSize);
         iconPosMax = iconPosMin + iconSize;
@@ -181,7 +134,7 @@ auto DrawNavItem(
             static_cast<ImU32>(iconColor),
             TextStart(icon),
             TextEnd(icon),
-            0.0f,
+            0.0F,
             fineClipOpt ? &fineClipOpt.value() : nullptr
         );
     }
@@ -198,12 +151,12 @@ auto DrawNavItem(
                                               : static_cast<const ColorBase &>(colors[ContentToken::onSurfaceVariant]);
         drawList->AddText(
             nullptr,
-            0.f,
+            0.F,
             labelMin,
             ImGui::ColorConvertFloat4ToU32(textColor),
             TextStart(label),
             TextEnd(label),
-            0.0f,
+            0.0F,
             fineClipOpt ? &fineClipOpt.value() : nullptr
         );
     }
@@ -212,27 +165,30 @@ auto DrawNavItem(
     return pressed;
 }
 
-auto DrawIcon(std::string_view icon, const M3Styles &m3Styles, ContentToken contentToken, const SizeTips sizeTips)
-    -> void
+auto detail::Icon(
+    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, const ContentToken contentToken
+) -> void
 {
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    const ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return;
 
-    auto layout = GetIconLayout(sizeTips, m3Styles);
-
     const ImVec2 pos   = window->DC.CursorPos;
-    const auto   width = ComputeIconSize(layout);
+    const auto   width = layout.size + (layout.margin * 2);
     const ImVec2 size  = {width, width};
-
     const ImRect bb(pos, pos + size);
 
-    const auto contentOffset = layout.padding + layout.margin;
+    const auto padding       = (layout.size - layout.iconSize) * 0.5F;
+    const auto contentOffset = padding + layout.margin;
     ImGui::ItemSize(size, contentOffset);
+    if (!ImGui::ItemAdd(bb, 0))
+    {
+        return;
+    }
 
     const auto textColor = m3Styles.Colors().at(contentToken);
     window->DrawList->AddText(
         m3Styles.IconFont(),
-        layout.size,
+        layout.iconSize,
         bb.Min + ImVec2(contentOffset, contentOffset),
         ImGui::ColorConvertFloat4ToU32(textColor),
         TextStart(icon),
@@ -240,70 +196,37 @@ auto DrawIcon(std::string_view icon, const M3Styles &m3Styles, ContentToken cont
     );
 }
 
-auto DrawIconButton(
-    const std::string_view icon, const M3Styles &m3Styles, SurfaceToken surfaceColorToken,
-    ContentToken contentColorToken, const SizeTips sizeTips
+auto detail::IconButton(
+    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout,
+    const SurfaceToken surfaceColorToken, const ContentToken contentColorToken
 ) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return false;
 
-    auto padding  = m3Styles[Spacing::XS];
-    auto margin   = 0.f;
-    auto iconSize = 0.f;
-    auto rounding = 0.f;
-    switch (sizeTips)
-    {
-        case SizeTips::XSMALL:
-            margin   = m3Styles[Spacing::S];
-            iconSize = m3Styles[Spacing::L];
-            rounding = m3Styles.GetUnit(2);
-            break;
-        case SizeTips::SMALL:
-            margin   = m3Styles[Spacing::XS];
-            padding  = m3Styles[Spacing::S];
-            iconSize = m3Styles[Spacing::XL];
-            rounding = m3Styles.GetUnit(2);
-            break;
-        case SizeTips::MEDIUM:
-            padding  = m3Styles[Spacing::L];
-            iconSize = m3Styles[Spacing::XL];
-            rounding = m3Styles.GetUnit(3);
-            break;
-        case SizeTips::LARGE:
-            padding  = m3Styles[Spacing::XXL];
-            iconSize = m3Styles[Spacing::XXL];
-            rounding = m3Styles.GetUnit(4);
-            break;
-        case SizeTips::XLARGE:
-            padding  = m3Styles[Spacing::PADDING_XL];
-            iconSize = m3Styles.GetUnit(10);
-            rounding = m3Styles[Spacing::L];
-            break;
-    }
-
     const ImGuiID id    = window->GetID(TextStart(icon));
     const ImVec2  pos   = window->DC.CursorPos;
-    const auto    width = iconSize + padding * 2 + margin * 2;
+    const auto    width = layout.size + (layout.margin * 2);
     const ImVec2  size  = {width, width};
+    const ImRect  bb(pos, pos + size);
 
-    const ImRect bb(pos, pos + size);
-    ImGui::ItemSize(size, padding + margin);
+    const auto padding       = (layout.size - layout.iconSize) * 0.5F;
+    const auto contentOffset = padding + layout.margin;
+    ImGui::ItemSize(size, contentOffset);
     if (!ImGui::ItemAdd(bb, id)) return false;
 
-    bool       hovered = false, held = false;
+    bool       hovered = false;
+    bool       held    = false;
     const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
-    // Render
-    auto containerColor = m3Styles.Colors().at(surfaceColorToken);
-    auto textColor      = m3Styles.Colors().at(contentColorToken);
+    const auto containerColor = m3Styles.Colors().at(surfaceColorToken);
+    auto       textColor      = m3Styles.Colors().at(contentColorToken);
 
     ImVec4 frameColor;
     if (const ImGuiContext &g = *GImGui; g.CurrentItemFlags & ImGuiItemFlags_Disabled)
     {
-        textColor  = m3Styles.Colors().at(ContentToken::onSurface);
-        frameColor = m3Styles.Colors().at(ContentToken::onSurface) * SurfaceColor::DISABLED_OPACITY;
-        textColor  = ContentColor(textColor * ContentColor::DISABLED_OPACITY);
+        textColor  = m3Styles.Colors().DisabledContent();
+        frameColor = m3Styles.Colors().DisabledSurface();
     }
     else if (hovered && held)
     {
@@ -318,15 +241,17 @@ auto DrawIconButton(
         frameColor = containerColor;
     }
 
-    const ImVec2 contentMin = bb.Min + ImVec2{margin, margin};
-    const ImVec2 contentMax = bb.Max - ImVec2{margin, margin};
+    const ImVec2 contentMin = bb.Min + ImVec2{layout.margin, layout.margin};
+    const ImVec2 contentMax = bb.Max - ImVec2{layout.margin, layout.margin};
     ImGui::RenderNavCursor(bb, id);
-    ImGui::RenderFrame(contentMin, contentMax, ImGui::ColorConvertFloat4ToU32(frameColor), true, rounding);
-
-    ImVec2 posMin = contentMin;
-    AlignText(posMin, {ALIGN_CENTER, ALIGN_CENTER}, contentMax, ImVec2(iconSize, iconSize));
+    ImGui::RenderFrame(contentMin, contentMax, ImGui::ColorConvertFloat4ToU32(frameColor), true, layout.rounding);
     window->DrawList->AddText(
-        m3Styles.IconFont(), iconSize, posMin, ImGui::ColorConvertFloat4ToU32(textColor), TextStart(icon), TextEnd(icon)
+        m3Styles.IconFont(),
+        layout.iconSize,
+        contentMin + ImVec2(padding, padding),
+        ImGui::ColorConvertFloat4ToU32(textColor),
+        TextStart(icon),
+        TextEnd(icon)
     );
     return pressed;
 }
@@ -339,8 +264,9 @@ auto BeginDockedToolbar(
     if (window->SkipItems) return false;
 
     const auto margin = m3Styles[Spacing::M];
-    const auto size = ImVec2{ImGui::GetContentRegionAvail().x, buttonSize.y + m3Styles[Spacing::Double_S] + margin * 2};
-    ImRect     bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const auto size =
+        ImVec2{ImGui::GetContentRegionAvail().x, buttonSize.y + m3Styles[Spacing::Double_S] + (margin * 2)};
+    ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, 0)) return false;
 
@@ -350,7 +276,7 @@ auto BeginDockedToolbar(
 
     const auto minWidth = buttonSize.x * static_cast<float>(count);
     auto       gap      = (size.x - minWidth - m3Styles[Spacing::Double_L]) / (count - 1);
-    gap                 = std::max(gap, 0.f);
+    gap                 = std::max(gap, 0.F);
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, gap);
     ImGui::SetNextItemAllowOverlap();
 
@@ -363,15 +289,25 @@ auto EndDockedToolbar() -> void
     ImGui::PopStyleVar();
 }
 
-void SetItemToolTip(std::string_view text, const M3Styles &m3Styles)
+void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
 {
     const auto &labelText = m3Styles.LabelText();
     StyleGuard  styleGuard;
     styleGuard.Color_Text(m3Styles.Colors().at(ContentToken::inverseOnSurface))
         .Color_PopupBg(m3Styles.Colors().at(SurfaceToken::inverseSurface))
         .Style_WindowPadding({m3Styles[Spacing::S], m3Styles[Spacing::XS] + HalfLineGap(labelText)});
+
+    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+    {
+        return;
+    }
+
     ImGui::PushFont(nullptr, labelText.fontSize);
-    ImGui::SetItemTooltip("%s", TextStart(text));
+    if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
+    {
+        ImGui::TextUnformatted(TextStart(text), TextEnd(text));
+        ImGui::EndTooltip();
+    }
     ImGui::PopFont();
 }
 } // namespace ImGuiEx::M3

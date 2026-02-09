@@ -2,8 +2,8 @@
 
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
-#include "common/log.h"
 #include "ime/ImeController.h"
+#include "log.h"
 #include "menu/MenuNames.h"
 
 #include <RE/B/BSInputDeviceManager.h>

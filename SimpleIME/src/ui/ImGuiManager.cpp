@@ -3,13 +3,13 @@
 //
 #include "ui/ImGuiManager.h"
 
-#include "common/imgui/ErrorNotifier.h"
-#include "common/imgui/Material3.h"
-#include "common/log.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "imguiex/ErrorNotifier.h"
+#include "imguiex/Material3.h"
+#include "log.h"
 
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>

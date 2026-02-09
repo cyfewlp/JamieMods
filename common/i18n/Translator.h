@@ -8,7 +8,7 @@
     #define RECORD_KEY
 #endif
 
-#include "common/log.h"
+#include "log.h"
 
 #include <cstdint>
 #include <string>

@@ -1,8 +1,8 @@
 #include "hooks/Hooks.hpp"
 
-#include "common/log.h"
 #include "configs/CustomMessage.h"
 #include "detours/detours.h"
+#include "log.h"
 
 #include <errhandlingapi.h>
 #include <processthreadsapi.h>

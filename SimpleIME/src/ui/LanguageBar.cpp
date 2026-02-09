@@ -4,14 +4,15 @@
 
 #include "ui/LanguageBar.h"
 
-#include "common/imgui/ImGuiEx.h"
-#include "common/imgui/imguiex_enum_wrap.h"
-#include "common/imgui/imguiex_m3.h"
 #include "core/State.h"
 #include "i18n/TranslatorHolder.h"
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
+#include "imguiex/m3/facade/button.h"
 #include "menu/MenuNames.h"
 
 #include <RE/U/UIMessage.h>
@@ -123,12 +124,10 @@ auto DrawImpl(
     SetShowing(state, showing);
     if (!visible) return state;
 
-    ImGuiEx::M3::DrawIcon(ICON_COD_MOVE, m3Styles, ContentToken::onSurfaceVariant);
+    ImGuiEx::M3::Icon(ICON_COD_MOVE, m3Styles, ContentToken::onSurfaceVariant);
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::DrawIconButtonSurfaceContainerVariant(
-            IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles
-        ))
+    if (ImGuiEx::M3::IconButtonSurfaceContainerVariant(IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles))
     {
         state = static_cast<State>(state | PINNED);
 
@@ -140,7 +139,7 @@ auto DrawImpl(
 
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::DrawIconButtonSurfaceContainerVariant(ICON_OCT_GEAR, m3Styles))
+    if (ImGuiEx::M3::IconButtonSurfaceContainerVariant(ICON_OCT_GEAR, m3Styles))
     {
         AddState(state, OPEN_SETTINGS);
     }
@@ -164,18 +163,21 @@ auto DrawImpl(
 
 auto Draw(
     const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
-    const ImGuiEx::M3::M3Styles &m3Styles
+    ImGuiEx::M3::M3Styles &m3Styles
 ) -> State
 {
     static State state;
     if (wantToggle) TogglePinned(state);
 
+    const auto _ = m3Styles.UseTextRole<M3Spec::SmallButton::textRole>();
+
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Color_WindowBg(m3Styles.Colors()[SurfaceToken::surfaceContainer])
-        .Style_WindowPadding({m3Styles[Spacing::S], m3Styles[Spacing::S]})
-        .Style_WindowRounding(m3Styles.GetSize(ImGuiEx::M3::ComponentSize::TOOLBAR_ROUNDING))
-        .Style_FramePadding({m3Styles[Spacing::M], m3Styles[Spacing::M]})
-        .Style_ItemSpacing({m3Styles[Spacing::XS], 0.f});
+        .Style_WindowRounding(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
+        .Style_FramePadding(
+            {m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)}
+        )
+        .Style_ItemSpacing({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
     DrawImpl(state, activeLangProfile, langProfiles, m3Styles);
 
     const auto a_copy = state;

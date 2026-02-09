@@ -1,8 +1,8 @@
 //
 // Created by jamie on 2025/2/22.
 //
-#include "common/log.h"
 #include "core/State.h"
+#include "log.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfSupport.h"
 

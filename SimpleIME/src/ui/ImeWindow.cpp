@@ -9,15 +9,15 @@
 #include "ImeWnd.hpp"
 #include "RE/GRectEx.h"
 #include "RE/M/MenuCursor.h"
-#include "common/WCharUtils.h"
-#include "common/imgui/ImGuiEx.h"
-#include "common/imgui/imguiex_enum_wrap.h"
+#include "WCharUtils.h"
 #include "core/State.h"
 #include "ime/CandidateUi.h"
 #include "ime/ImeController.h"
 #include "ime/TextEditor.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/imguiex_enum_wrap.h"
 #include "utils/InputFocusAnchor.h"
 
 namespace Ime

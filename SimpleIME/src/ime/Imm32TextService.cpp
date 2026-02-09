@@ -2,10 +2,10 @@
 // Created by jamie on 2025/2/21.
 //
 
-#include "common/WCharUtils.h"
-#include "common/log.h"
+#include "WCharUtils.h"
 #include "configs/CustomMessage.h"
 #include "ime/ITextService.h"
+#include "log.h"
 
 #include <imm.h>
 

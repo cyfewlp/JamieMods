@@ -1,8 +1,8 @@
 #include "hooks/WinHooks.h"
 
 #include "FakeDirectInputDevice.h"
-#include "common/log.h"
 #include "detours/detours.h"
+#include "log.h"
 
 #include <dinput.h>
 

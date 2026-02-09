@@ -1,8 +1,8 @@
 ﻿#include "tsf/InputMethodManager.h"
 
-#include "common/WCharUtils.h"
-#include "common/log.h"
+#include "WCharUtils.h"
 #include "core/State.h"
+#include "log.h"
 
 #include <atlcomcli.h>
 #include <future>
@@ -135,7 +135,7 @@ auto Ime::InputMethodManager::UpdateActiveProfile() noexcept -> bool
 auto Ime::InputMethodManager::ActivateProfile(const GUID &guidProfile) -> HRESULT
 {
     const auto index = GetProfileCachedIndex(m_langProfiles, guidProfile);
-    if (index > m_langProfiles.size())
+    if (index >= m_langProfiles.size())
     {
         return E_INVALIDARG;
     }
@@ -163,7 +163,7 @@ auto Ime::InputMethodManager::ActivateProfile(const GUID &guidProfile) -> HRESUL
 
 auto Ime::InputMethodManager::GetActiveLangProfile() -> const LangProfile &
 {
-    if (m_activatedProfile > m_langProfiles.size())
+    if (m_activatedProfile >= m_langProfiles.size())
     {
         return DEFAULT_LANG_PROFILE;
     }

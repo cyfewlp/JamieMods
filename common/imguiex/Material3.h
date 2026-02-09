@@ -4,7 +4,12 @@
 
 #pragma once
 
+#include "ImGuiEx.h"
+#include "m3/spec/base.h"
+#include "m3/spec/text_role.h"
+
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <imgui.h>
 #include <utility>
@@ -54,14 +59,14 @@ public:
         return *this;
     }
 
-    constexpr explicit ColorBase(ImU32 rgba) : raw(ImGui::ColorConvertU32ToFloat4(rgba)) {}
+    explicit ColorBase(ImU32 rgba) : raw(ImGui::ColorConvertU32ToFloat4(rgba)) {}
 
     constexpr operator ImVec4() const // NOLINT(*-explicit-constructor)
     {
         return raw;
     }
 
-    constexpr explicit operator ImU32() const
+    explicit operator ImU32() const
     {
         return ImGui::ColorConvertFloat4ToU32(raw);
     }
@@ -216,10 +221,7 @@ public:
 
     Colors(const Colors &other) = default;
 
-    Colors(Colors &&other) noexcept
-        : surfaceColors(other.surfaceColors), contentColors(other.contentColors), schemeConfig(other.schemeConfig)
-    {
-    }
+    Colors(Colors &&other) noexcept = default;
 
     auto operator=(const Colors &other) -> Colors &
     {
@@ -230,20 +232,14 @@ public:
         return *this;
     }
 
-    auto operator=(Colors &&other) noexcept -> Colors &
-    {
-        if (this == &other) return *this;
-        surfaceColors = other.surfaceColors;
-        contentColors = other.contentColors;
-        schemeConfig  = other.schemeConfig;
-        return *this;
-    }
+    auto operator=(Colors &&other) noexcept -> Colors & = default;
 
     [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig &
     {
         return schemeConfig;
     }
 
+    //! \todo should refactor color system. All components colors should be defined in Specs.
     [[nodiscard]] auto at(SurfaceToken token) const -> const SurfaceColor &
     {
         return surfaceColors.at(static_cast<uint8_t>(token));
@@ -251,7 +247,7 @@ public:
 
     auto operator[](SurfaceToken token) const -> const SurfaceColor &
     {
-        return surfaceColors.at(static_cast<uint8_t>(token));
+        return surfaceColors[static_cast<uint8_t>(token)];
     }
 
     [[nodiscard]] auto at(ContentToken token) const -> const ContentColor &
@@ -261,7 +257,7 @@ public:
 
     auto operator[](ContentToken token) const -> const ContentColor &
     {
-        return contentColors.at(static_cast<uint8_t>(token));
+        return contentColors[static_cast<uint8_t>(token)];
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -276,16 +272,24 @@ public:
     {
         return at(surfaceToken).Pressed(at(contentToken));
     }
-};
 
-// Size tips to pass item draw functions
-enum class SizeTips : uint8_t
-{
-    XSMALL = 0,
-    SMALL  = 1,
-    MEDIUM = 2,
-    LARGE  = 4,
-    XLARGE = 8
+    [[nodiscard]] auto DisabledSurface() const -> SurfaceColor
+    {
+        const ImVec4 baseColor = at(ContentToken::onSurface);
+        const ImVec4 onColor   = at(ContentToken::onSurface);
+        return {
+            baseColor.x + ((onColor.x - baseColor.x) * SurfaceColor::DISABLED_OPACITY),
+            baseColor.y + ((onColor.y - baseColor.y) * SurfaceColor::DISABLED_OPACITY),
+            baseColor.z + ((onColor.z - baseColor.z) * SurfaceColor::DISABLED_OPACITY),
+            baseColor.w
+        };
+    }
+
+    [[nodiscard]] auto DisabledContent() const -> ContentColor
+    {
+        const ImVec4 onColor = at(ContentToken::onSurface);
+        return {onColor.x, onColor.y, onColor.z, onColor.w * ContentColor::DISABLED_OPACITY};
+    }
 };
 
 enum class Spacing : uint8_t
@@ -340,12 +344,19 @@ class M3Styles
 
     float currentScale = 0.0F;
 
-public:
-    constexpr explicit M3Styles(Colors colors, ImFont *iconFont) : colors(std::move(colors)), iconFont(iconFont)
+    struct TextState
     {
-        UpdateScaling(1.0F);
+        Spec::TextRole currentRole;
+        float          currentFontPx;
+    } m_stateText;
+
+public:
+    constexpr explicit M3Styles(Colors colors, ImFont *iconFont)
+        : colors(std::move(colors)), iconFont(iconFont), m_stateText()
+    {
     }
 
+    //! \todo missing dpi scaling support
     void UpdateScaling(const float newScale)
     {
         if (currentScale == newScale)
@@ -366,7 +377,33 @@ public:
         iconSize = ICON_SIZE * newScale;
     }
 
+    /**
+     * rebuild colors according to the new scheme config.
+     * DON'T call this frequently, as it is a heavy operation.
+     * @param schemeConfig A simple struct. see Colors::SchemeConfig
+     */
     void RebuildColors(const Colors::SchemeConfig &schemeConfig);
+
+    /**
+     * Sets the current text role and adjusts font size accordingly.
+     *
+     * **Usage Note:** To suppress `[[nodiscard]]` or unused return value warnings, use:
+     * @code const auto _ =  m3Styles.UseTextRole<Role>() @endcode
+     * @tparam Role The text role to use.
+     * @return A FontScope that manages the font lifecycle. Returns an inert FontScope if the role remains unchanged,
+     * ensuring no unnecessary state changes on destruction.
+     */
+    template <Spec::TextRole Role>
+    [[nodiscard]] auto UseTextRole() -> const FontScope
+    {
+        if (m_stateText.currentRole == Role)
+        {
+            return {};
+        }
+        m_stateText.currentRole   = Role;
+        m_stateText.currentFontPx = Spec::Text<Role>::fontSize * currentScale;
+        return FontScope(nullptr, m_stateText.currentFontPx);
+    }
 
     [[nodiscard]] auto Colors() const -> const Colors &
     {
@@ -378,19 +415,25 @@ public:
         return iconFont;
     }
 
-    [[nodiscard]] auto Get(Spacing s) const -> float
+    [[deprecated("Pleause use GetPixels.")]] [[nodiscard]] auto Get(Spacing s) const -> float
     {
         return precomputedPx.at(static_cast<uint8_t>(s));
     }
 
-    [[nodiscard]] auto GetUnit(uint8_t units) const -> float
+    /**
+     * The 0 - 31 is precomputed for better performance, and the rest will be calculated on the fly. It is recommended
+     * to use the precomputed ones as much as possible.
+     * @param units the unit of spacing or component size. 1unit = 4dp * currentScale.
+     * @return the pixel value of the given units after scaling. If the units is less than 32, it will return the
+     * precomputed
+     */
+    [[nodiscard]] auto GetPixels(const Spec::Unit units) const -> float
     {
-        return precomputedPx.at(units < 32 ? units : 31);
-    }
-
-    [[nodiscard]] auto GetSize(ComponentSize componentSize) const -> float
-    {
-        return BASE_UNIT * currentScale * static_cast<float>(componentSize);
+        if (precomputedPx.size() > units)
+        {
+            return precomputedPx[units];
+        }
+        return units * BASE_UNIT * currentScale;
     }
 
     auto operator[](Spacing s) const -> float

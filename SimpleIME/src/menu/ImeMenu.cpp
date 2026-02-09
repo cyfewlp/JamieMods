@@ -9,9 +9,9 @@
 #include "RE/U/UI.h"
 #include "RE/U/UIMessage.h"
 #include "Utils.h"
-#include "common/log.h"
 #include "core/State.h"
 #include "ime/ImeController.h"
+#include "log.h"
 #include "menu/MenuNames.h"
 #include "menu/ToolWindowMenu.h"
 
@@ -293,7 +293,7 @@ auto ImeMenu::OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_R
     return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
-bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent)
+bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent) const
 {
     return charEvent->wcharCode == 'v' && ctrlDown;
 }

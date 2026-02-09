@@ -3,8 +3,8 @@
 //
 #include "configs/ConfigSerializer.h"
 
-#include "common/log.h"
-#include "common/toml/toml.hpp"
+#include "log.h"
+#include "toml/toml.hpp"
 #include "ui/Settings.h"
 
 #include <algorithm>

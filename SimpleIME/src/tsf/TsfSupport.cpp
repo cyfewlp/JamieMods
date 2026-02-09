@@ -1,7 +1,7 @@
 #include "tsf/TsfSupport.h"
 
-#include "common/WCharUtils.h"
-#include "common/log.h"
+#include "WCharUtils.h"
+#include "log.h"
 
 #include <comdef.h>
 

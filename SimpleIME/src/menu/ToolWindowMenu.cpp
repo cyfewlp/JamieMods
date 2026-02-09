@@ -4,8 +4,8 @@
 #include "menu/ToolWindowMenu.h"
 
 #include "ImeApp.h"
-#include "common/log.h"
 #include "ime/ImeController.h"
+#include "log.h"
 #include "menu/MenuNames.h"
 
 namespace Ime

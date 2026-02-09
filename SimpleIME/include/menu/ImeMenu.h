@@ -40,7 +40,7 @@ private:
     static auto OnMouseWheelEvent(RE::GFxEvent *event) -> RE::UI_MESSAGE_RESULTS;
     auto        OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
 
-    bool        IsPaste(const RE::GFxCharEvent *charEvent);
+    bool        IsPaste(const RE::GFxCharEvent *charEvent) const;
     static bool Paste();
 };
 } // namespace Ime

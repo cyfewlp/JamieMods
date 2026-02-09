@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "common/log.h"
+#include "log.h"
 
 #include <dinput.h>
 

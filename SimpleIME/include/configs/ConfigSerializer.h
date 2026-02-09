@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "common/toml/toml.hpp"
+#include "toml/toml.hpp"
 #include "ui/Settings.h"
 
 #include <filesystem>

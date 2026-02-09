@@ -1,4 +1,4 @@
-#include "common/WCharUtils.h"
+#include "WCharUtils.h"
 
 #include <SimpleIni.h>
 #include <gtest/gtest.h>

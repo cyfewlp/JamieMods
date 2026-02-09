@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "common/log.h"
+#include "log.h"
 
 #include <cstdint>
 #include <type_traits>

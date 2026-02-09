@@ -55,7 +55,7 @@ private:
     ImeWnd                  *m_pImeWnd = nullptr;
     std::vector<std::string> m_translateLanguages;
     FontBuilder              m_fontBuilder;
-    FontBuilderPanel         m_fontBuilderView{};
+    UI::FontBuilderPanel     m_fontBuilderView{};
     AppearancePanel          m_panelAppearance{};
 
     std::optional<TranslatorHolder::UpdateHandle> m_i18nHandle;

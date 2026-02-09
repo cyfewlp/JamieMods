@@ -7,16 +7,17 @@
 #include "ImeUI.h"
 
 #include "ImeWnd.hpp"
-#include "common/imgui/ImGuiEx.h"
-#include "common/imgui/Material3.h"
-#include "common/imgui/imguiex_enum_wrap.h"
-#include "common/imgui/imguiex_m3.h"
-#include "common/log.h"
 #include "core/State.h"
 #include "i18n/TranslatorHolder.h"
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/Material3.h"
+#include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
+#include "imguiex/m3/facade/others.h"
+#include "log.h"
 #include "ui/Settings.h"
 
 #include <cstdint>
@@ -72,9 +73,7 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
                 .Color_FrameBgHovered(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::secondaryContainer]);
 
             if (ImGui::BeginChild(
-                    "Sidebar",
-                    {m3Styles.GetSize(ImGuiEx::M3::ComponentSize::NAV_RAIL_WIDTH), -FLT_MIN},
-                    ImGuiEx::ChildFlags().Borders()
+                    "Sidebar", {m3Styles.GetPixels(M3Spec::NavRail::width), -FLT_MIN}, ImGuiEx::ChildFlags().Borders()
                 ))
             {
                 ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU, m3Styles);
