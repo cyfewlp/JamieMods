@@ -165,10 +165,7 @@ void ImGuiManager::EnableTextInputIfNeed()
     fWantTextInput = cWantTextInput;
 }
 
-void ImGuiManager::EndFrame(Settings &settings)
-{
-    // settings.appearance.fontSizeScale = ImGui::GetStyle().FontScaleMain;
-}
+void ImGuiManager::EndFrame() {}
 
 void ImGuiManager::Render()
 {
