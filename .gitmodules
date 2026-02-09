@@ -10,3 +10,6 @@
 	path = extern/material-color-utilities
 	url = https://github.com/material-foundation/material-color-utilities.git
 	branch = main
+[submodule "extern/doxygen-awesome-css"]
+	path = extern/doxygen-awesome-css
+	url = https://github.com/jothepro/doxygen-awesome-css.git
