@@ -5,43 +5,47 @@ from pathlib import Path
 
 IMGUI_FLAG_PATTERN = r"^\s*ImGui{}_(\w+)\s*"
 
-IMGUIEX_WRAP_BLOCK_COMMENT_FORMAT = """
-//////////////////////////////////////////////////
-/// {}
+IMGUIEX_WRAP_BLOCK_COMMENT_FORMAT = """/////////////////////////////////////////////////
+/// ... {} ...
+/////////////////////////////////////////////////
 
 """
 IMGUIEX_WRAP_MARCOS = r"""#pragma once
 
 namespace ImGuiEx
 {
-#define FLAGS_CLASS_BODY(className, enumName)                                                                                    \
-    class className                                                                                                    \
-    {                                                                                                                  \
-        enumName flags = 0;                                                                                    \
-                                                                                                                       \
-    public:                                                                                                            \
-        constexpr className() = default;                                                                               \
-        constexpr explicit className(enumName f) : flags(f) {}
+template <typename Derived, typename EnumType>
+class FlagBuilder
+{
+    EnumType flags_ = static_cast<EnumType>(0);
 
-#define FLAGS_CLASS_FUNCTION(className, enumName, flagName, is_deprecated)                                                                      \
-    IMGUI_OPTIONAL_DEPRECATED(is_deprecated)                                                                           \
-    constexpr auto flagName() -> className &                                                                           \
-    {                                                                                                                  \
-        flags |= enumName##_##flagName;                                                                        \
-        return *this;                                                                                                  \
+public:
+    constexpr FlagBuilder() = default;
+
+    constexpr explicit FlagBuilder(EnumType f) : flags_(f) {}
+
+    constexpr operator EnumType() const
+    {
+        return flags_;
     }
 
-#define FLAGS_CLASS_END(enumName)                                                                                     \
-    constexpr operator enumName() const                                                                        \
-    {                                                                                                                  \
-        return flags;                                                                                                  \
-    }                                                                                                                  \
-    }                                                                                                                  \
-    ;
+    constexpr Derived set(EnumType f) const {
+        return Derived(static_cast<EnumType>(flags_ | f));
+    }
+};
+"""
+IMGUIEX_WRAP_CLASS_BODY_FORMAT = """class {} : public FlagBuilder<{}, {}> {{
+    using FlagBuilder::FlagBuilder;
+public:
+    // clang-format off
+"""
+IMGUIEX_WRAP_CLASS_FUNCTION_FORMAT = """    //! {}
+    {}constexpr auto {}() const -> {} {{ return set({}); }}
+"""
+IMGUIEX_WRAP_CLASS_END = """
+    // clang-format on
+};
 
-#define IMGUI_OPTIONAL_DEPRECATED(is_deprecated) IMGUI_DEPRECATED_##is_deprecated
-#define IMGUI_DEPRECATED_True [[deprecated("This flag is obsolete in ImGui.")]]
-#define IMGUI_DEPRECATED_False
 """
 
 
@@ -50,6 +54,9 @@ def wrap_enum_flags(header_file: Path, wrap_flags_file: Path, no_obsolete: bool)
         return
     with open(header_file, 'r', encoding='utf-8') as imgui_header:
         lines = imgui_header.readlines()
+
+    def write_class_body(wrap_file, enum_name, class_name):
+        wrap_file.write(IMGUIEX_WRAP_CLASS_BODY_FORMAT.format(class_name, class_name, enum_name))
 
     in_enum_flags_definition = False
     is_in_obsolete_block = False
@@ -64,10 +71,10 @@ def wrap_enum_flags(header_file: Path, wrap_flags_file: Path, no_obsolete: bool)
                 class_name = start_enum_flags_definition_match[2]
                 print(f"start wrap: {enum_name}")
                 wrap_file.write(IMGUIEX_WRAP_BLOCK_COMMENT_FORMAT.format(enum_name))
-                wrap_file.write(f"FLAGS_CLASS_BODY({class_name}, {enum_name})\n")
+                wrap_file.write(IMGUIEX_WRAP_CLASS_BODY_FORMAT.format(class_name, class_name, enum_name))
                 in_enum_flags_definition = True
             if in_enum_flags_definition and re.match(r"\s*}.*", line):
-                wrap_file.write(f"FLAGS_CLASS_END({enum_name})\n\n")
+                wrap_file.write(IMGUIEX_WRAP_CLASS_END)
                 in_enum_flags_definition = False
             if not in_enum_flags_definition:
                 continue
@@ -84,8 +91,9 @@ def wrap_enum_flags(header_file: Path, wrap_flags_file: Path, no_obsolete: bool)
                 match = re.search(current_pattern, line)
                 if match:
                     flag_name = match.group(1)
-                    is_deprecated = "True" if (is_in_obsolete_block) else "False"
-                    wrap_file.write(f"FLAGS_CLASS_FUNCTION({class_name}, {enum_name}, {flag_name}, {is_deprecated})\n")
+                    deprecated_attr = '[[deprecated("Obsolete in ImGui")]] ' if is_in_obsolete_block else ""
+                    raw_flag_name = f"{enum_name}_{flag_name}"
+                    wrap_file.write(IMGUIEX_WRAP_CLASS_FUNCTION_FORMAT.format(raw_flag_name, deprecated_attr, flag_name, class_name, raw_flag_name))
         wrap_file.write("}")
 
 
