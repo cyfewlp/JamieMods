@@ -68,9 +68,9 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
         ImGui::SameLine(0, m3Styles.GetPixels(SearchSpec::gap));
 
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Style_FramePadding({0, m3Styles.GetPixels(SearchSpec::paddingY)})
-            .Color_Text(m3Styles.Colors().at(ContentToken::onSurface))
-            .Color_FrameBg({0, 0, 0, 0});
+        styleGuard.Style<ImGuiStyleVar_FramePadding>({0, m3Styles.GetPixels(SearchSpec::paddingY)})
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurface))
+            .Color<ImGuiCol_FrameBg>({0, 0, 0, 0});
         edited = ImGui::InputTextWithHint(
             "##Filter",
             "search by name",
@@ -121,12 +121,12 @@ auto FontsTable(
 
     ImGuiEx::StyleGuard styleGuard;
     styleGuard
-        .Style_ItemSpacing(itemSpacing) // Selectable used
-        .Style_SelectableTextAlign({ImGuiEx::ALIGN_LEFT, ImGuiEx::ALIGN_CENTER})
-        .Style_ScrollbarSize(m3Styles[Spacing::XS])
-        .Color_Header(m3Styles.Colors().at(SurfaceToken::surface))
-        .Color_HeaderActive(m3Styles.Colors().Pressed(SurfaceToken::surface, ContentToken::onSurface))
-        .Color_HeaderHovered(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface));
+        .Style<ImGuiStyleVar_ItemSpacing>(itemSpacing) // Selectable used
+        .Style<ImGuiStyleVar_SelectableTextAlign>({ImGuiEx::ALIGN_LEFT, ImGuiEx::ALIGN_CENTER})
+        .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS])
+        .Color<ImGuiCol_Header>(m3Styles.Colors().at(SurfaceToken::surface))
+        .Color<ImGuiCol_HeaderActive>(m3Styles.Colors().Pressed(SurfaceToken::surface, ContentToken::onSurface))
+        .Color<ImGuiCol_HeaderHovered>(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface));
 
     ImGui::Spacing();
 
@@ -171,7 +171,7 @@ auto FontsTable(
 void DrawStatusBar(const StatusBar &statusBar, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color_Text(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSecondaryContainer));
+    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSecondaryContainer));
     ImGuiEx::M3::Icon(statusBar.icon, m3Styles, ImGuiEx::M3::ContentToken::onSecondaryContainer);
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
@@ -267,7 +267,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
 
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Color_WindowBg(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerHighest]);
+        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerHighest]);
         if (ImGui::BeginChild("FontsView", {width, 0}, ImGuiEx::ChildFlags().Borders()))
         {
             DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList(), m3Styles);
@@ -309,7 +309,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
     }
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color_WindowBg(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerLowest]);
+    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerLowest]);
     if (ImGui::BeginChild("PreviewPanel", {}, ImGuiEx::ChildFlags().AutoResizeX()))
     {
         DrawStatusBar(statusBar, m3Styles);

@@ -418,7 +418,7 @@ public:
         return iconFont;
     }
 
-    [[deprecated("Pleause use GetPixels.")]] [[nodiscard]] auto Get(Spacing s) const -> float
+    [[deprecated("Please use GetPixels.")]] [[nodiscard]] auto Get(Spacing s) const -> float
     {
         return precomputedPx.at(static_cast<uint8_t>(s));
     }

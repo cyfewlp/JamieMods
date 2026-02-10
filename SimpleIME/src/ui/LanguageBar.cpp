@@ -36,12 +36,12 @@ void DrawInputMethodsCombo(
 {
     uint32_t            clickedIndex = UINT32_MAX;
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style_WindowPadding({})
-        .Style_ItemSpacing({m3Styles[Spacing::M], m3Styles[Spacing::M]})
-        .Color_Text(m3Styles.Colors()[ContentToken::onSurface])
-        .Color_FrameBg(m3Styles.Colors()[SurfaceToken::surface])
-        .Color_FrameBgHovered(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface))
-        .Color_PopupBg(m3Styles.Colors()[SurfaceToken::surfaceContainerLow]);
+    styleGuard.Style<ImGuiStyleVar_WindowPadding>({})
+        .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[Spacing::M], m3Styles[Spacing::M]})
+        .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onSurface])
+        .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[SurfaceToken::surface])
+        .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface))
+        .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[SurfaceToken::surfaceContainerLow]);
 
     if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), ImGuiEx::ComboFlags().NoArrowButton()))
     {
@@ -172,12 +172,12 @@ auto Draw(
     const auto _ = m3Styles.UseTextRole<M3Spec::SmallButton::textRole>();
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color_WindowBg(m3Styles.Colors()[SurfaceToken::surfaceContainer])
-        .Style_WindowRounding(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
-        .Style_FramePadding(
+    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[SurfaceToken::surfaceContainer])
+        .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
+        .Style<ImGuiStyleVar_FramePadding>(
             {m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)}
         )
-        .Style_ItemSpacing({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
+        .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
     DrawImpl(state, activeLangProfile, langProfiles, m3Styles);
 
     const auto a_copy = state;

@@ -167,7 +167,7 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
     ImGui::SameLine(0, 0);
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Color_WindowBg(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerHighest]);
+        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerHighest]);
 
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
         if (ImGui::BeginChild("FontBuilderFontInfo", {-width, -FLT_MIN}, ImGuiEx::ChildFlags()))
@@ -194,10 +194,10 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
         return;
     }
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color_Border(m3Styles.Colors().at(SurfaceToken::outlineVariant))
-        .Color_TableRowBg(m3Styles.Colors().at(SurfaceToken::surface))
-        .Color_TableRowBgAlt(m3Styles.Colors().at(SurfaceToken::surface))
-        .Style_ScrollbarSize(m3Styles[Spacing::XS]);
+    styleGuard.Color<ImGuiCol_Border>(m3Styles.Colors().at(SurfaceToken::outlineVariant))
+        .Color<ImGuiCol_TableRowBg>(m3Styles.Colors().at(SurfaceToken::surface))
+        .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(SurfaceToken::surface))
+        .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS]);
     ImGui::Indent(m3Styles[Spacing::L]);
     if (ImGui::BeginTable(
             "BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()
@@ -220,7 +220,7 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
                 ImGui::Text("%s", names.at(idx).c_str());
                 {
                     ImGuiEx::StyleGuard styleGuard1;
-                    styleGuard1.Color_Text(m3Styles.Colors().at(ContentToken::onSurfaceVariant));
+                    styleGuard1.Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurfaceVariant));
                     ImGui::PushFont(nullptr, m3Styles.SmallLabelText().fontSize);
                     ImGui::Text("%s", paths.at(idx).c_str());
                     ImGui::PopFont();

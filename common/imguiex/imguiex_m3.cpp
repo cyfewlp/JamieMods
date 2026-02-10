@@ -75,7 +75,7 @@ auto DrawNavItem(
 ) -> bool
 {
     StyleGuard styleGuard;
-    styleGuard.Style_ItemSpacing({0.F, m3Styles[Spacing::XS]});
+    styleGuard.Style<ImGuiStyleVar_ItemSpacing>({0.F, m3Styles[Spacing::XS]});
     const auto   regionLT   = ImGui::GetCursorScreenPos();
     const float  itemWidth  = ImGui::GetContentRegionAvail().x;
     const auto   iconSize   = ImVec2{m3Styles.IconSize(), m3Styles.IconSize()};
@@ -275,8 +275,12 @@ auto BeginDockedToolbar(
     window->DrawList->AddRectFilled(bb.Min, bb.Max, static_cast<ImU32>(m3Styles.Colors().at(surfaceToken)));
 
     const auto minWidth = buttonSize.x * static_cast<float>(count);
-    auto       gap      = (size.x - minWidth - m3Styles[Spacing::Double_L]) / (count - 1);
-    gap                 = std::max(gap, 0.F);
+    float      gap      = 0.0F;
+    if (count > 1)
+    {
+        gap = (size.x - minWidth - m3Styles[Spacing::Double_L]) / (count - 1);
+        gap = std::max(gap, 0.F);
+    }
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, gap);
     ImGui::SetNextItemAllowOverlap();
 
@@ -293,9 +297,9 @@ void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
 {
     const auto &labelText = m3Styles.LabelText();
     StyleGuard  styleGuard;
-    styleGuard.Color_Text(m3Styles.Colors().at(ContentToken::inverseOnSurface))
-        .Color_PopupBg(m3Styles.Colors().at(SurfaceToken::inverseSurface))
-        .Style_WindowPadding({m3Styles[Spacing::S], m3Styles[Spacing::XS] + HalfLineGap(labelText)});
+    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::inverseOnSurface))
+        .Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(SurfaceToken::inverseSurface))
+        .Style<ImGuiStyleVar_WindowPadding>({m3Styles[Spacing::S], m3Styles[Spacing::XS] + HalfLineGap(labelText)});
 
     if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
     {

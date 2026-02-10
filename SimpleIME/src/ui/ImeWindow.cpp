@@ -46,7 +46,7 @@ void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3St
 
     // use frame padding set line height
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style_FramePadding({0, m3Styles[ImGuiEx::M3::Spacing::S]});
+    styleGuard.Style<ImGuiStyleVar_FramePadding>({0, m3Styles[ImGuiEx::M3::Spacing::S]});
     ImGui::SameLine(0, m3Styles[ImGuiEx::M3::Spacing::M]);
     ImGui::AlignTextToFramePadding();
 
@@ -102,12 +102,16 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
         DWORD clicked = candidateList.size();
 
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Style_ItemSpacing({0, 0})
-            .Style_FramePadding({m3Styles[Spacing::M], m3Styles[Spacing::S]})
-            .Color_Text(m3Styles.Colors().at(ContentToken::onSurface))
-            .Color_Button({0, 0, 0, 0})
-            .Color_ButtonHovered(m3Styles.Colors().Hovered(SurfaceToken::surfaceContainer, ContentToken::onSurface))
-            .Color_ButtonActive(m3Styles.Colors().Pressed(SurfaceToken::surfaceContainer, ContentToken::onSurface));
+        styleGuard.Style<ImGuiStyleVar_ItemSpacing>({0, 0})
+            .Style<ImGuiStyleVar_FramePadding>({m3Styles[Spacing::M], m3Styles[Spacing::S]})
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurface))
+            .Color<ImGuiCol_Button>({0, 0, 0, 0})
+            .Color<ImGuiCol_ButtonHovered>(
+                m3Styles.Colors().Hovered(SurfaceToken::surfaceContainer, ContentToken::onSurface)
+            )
+            .Color<ImGuiCol_ButtonActive>(
+                m3Styles.Colors().Pressed(SurfaceToken::surfaceContainer, ContentToken::onSurface)
+            );
 
         for (const auto &candidate : candidateList)
         {
@@ -115,12 +119,12 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
             ImGuiEx::StyleGuard styleGuard1;
             if (index == candidateUi.Selection())
             {
-                styleGuard1.Color_Button(m3Styles.Colors()[SurfaceToken::primaryContainer])
-                    .Color_Text(m3Styles.Colors()[ContentToken::onPrimaryContainer])
-                    .Color_ButtonHovered(
+                styleGuard1.Color<ImGuiCol_Button>(m3Styles.Colors()[SurfaceToken::primaryContainer])
+                    .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onPrimaryContainer])
+                    .Color<ImGuiCol_ButtonHovered>(
                         m3Styles.Colors().Hovered(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
                     )
-                    .Color_ButtonActive(
+                    .Color<ImGuiCol_ButtonActive>(
                         m3Styles.Colors().Pressed(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
                     );
             }
@@ -186,7 +190,7 @@ void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size)
     }
     if (size.y < viewport->Size.y)
     {
-        maxY -= -size.y;
+        maxY -= size.y;
     }
     pos.x = std::clamp(pos.x, viewport->Pos.x, maxX);
     pos.y = std::clamp(pos.y, viewport->Pos.y, maxY);
@@ -233,10 +237,10 @@ void ImeWindow::Draw(
     constexpr auto flags =
         ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style_WindowPadding({})
-        .Color_Text(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
-        .Color_WindowBg(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
-        .Color_Separator(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
+    styleGuard.Style<ImGuiStyleVar_WindowPadding>({})
+        .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
+        .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
+        .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
 
     ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
     if (ImGui::Begin("IME", nullptr, flags))
