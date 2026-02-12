@@ -246,7 +246,7 @@ inline auto MenuItem(
     return ImGui::Selectable(TextStart(label), selected, flags, {0, m3Styles.GetPixels(Spec::Menu::itemHeight)});
 }
 
-void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
+void SetItemToolTip(std::string_view text, M3Styles &m3Styles);
 
 /// Popup
 

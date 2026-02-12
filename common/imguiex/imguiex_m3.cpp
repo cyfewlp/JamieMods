@@ -391,7 +391,7 @@ auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlag
                      .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[SurfaceToken::surface])
                      .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onSurface])
                      .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetGap<Spec::List>(), 0});
-    if (!ImGui::BeginChild("##ListChild", {width, 0.F}, false, childFlags.AutoResizeY()))
+    if (!ImGui::BeginChild("##ListChild", {width, 0.F}, childFlags.AutoResizeY()))
     {
         return {};
     }
@@ -435,24 +435,19 @@ auto EndDockedToolbar() -> void
     ImGui::PopStyleVar();
 }
 
-// \todo add tooltip spec
-void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
+void SetItemToolTip(const std::string_view text, M3Styles &m3Styles)
 {
-    const auto &labelText = m3Styles.LabelText();
-    StyleGuard  styleGuard;
-    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::inverseOnSurface))
-        .Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(SurfaceToken::inverseSurface))
-        .Style<ImGuiStyleVar_WindowPadding>({m3Styles[Spacing::S], m3Styles[Spacing::XS] + HalfLineGap(labelText)});
+    StyleGuard styleGuard;
+    styleGuard.Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(SurfaceToken::inverseSurface))
+        .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<Spec::Tooltips>());
 
-    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
-    {
-        return;
-    }
+    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) return;
 
+    const auto _ = m3Styles.UseTextRole<Spec::Tooltips::textRole>();
     ImGui::PushFont(nullptr, m3Styles.GetLastText().currText.textSize);
     if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
     {
-        ImGui::TextUnformatted(TextStart(text), TextEnd(text));
+        TextUnformatted(text, m3Styles, ContentToken::inverseOnSurface);
         ImGui::EndTooltip();
     }
     ImGui::PopFont();

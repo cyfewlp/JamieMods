@@ -269,7 +269,8 @@ public:
     [[nodiscard]] auto GetPadding() const -> ImVec2
     {
         return {
-            GetPixels(Component::paddingX), (GetPixels(Component::height) - m_cachedTypeScale.currText.textSize) * 0.5F
+            GetPixels(Component::paddingX),
+            (GetPixels(Component::height) - m_cachedTypeScale.currText.lineHeight) * HALF
         };
     }
 

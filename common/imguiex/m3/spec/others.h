@@ -81,4 +81,11 @@ struct NavRail
     static constexpr Unit width = dp<96>(); ///< collapsed
 };
 
+struct Tooltips
+{
+    static constexpr auto textRole = TextRole::BodySmall;
+    static constexpr Unit height   = dp<24>();
+    static constexpr Unit paddingX = dp<8>();
+};
+
 } // namespace ImGuiEx::M3::Spec

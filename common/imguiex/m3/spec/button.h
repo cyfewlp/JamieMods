@@ -5,7 +5,7 @@
 #pragma once
 
 #include "base.h"
-#include "typogrphy.h"
+#include "typography.h"
 
 namespace ImGuiEx::M3::Spec
 {
