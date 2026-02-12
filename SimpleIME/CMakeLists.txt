@@ -43,7 +43,9 @@ include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
     ${headers}
-    ${IMGUI_SOURCES}
+    ${ImGui_Basic_Sources}
+    ${ImGui_Backend_Win32_Dx11_Sources}
+    ${ImGui_FreeType_Sources}
 #    ${IMGUI_DEMO_SOURCES}
     ${CMAKE_SOURCE_DIR}/common/json/simdjson.cpp
     ${CMAKE_SOURCE_DIR}/common/imguiex/m3.cpp

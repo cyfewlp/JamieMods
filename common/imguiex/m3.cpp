@@ -4,9 +4,11 @@
 #include "M3ThemeBuilder.h"
 #include "Material3.h"
 
+#include <cmath>
+
 namespace ImGuiEx::M3
 {
-void M3Styles::UpdateTypeScaleScaling(const float newScale)
+void M3Styles::UpdateTypeScaleScaling(const float newScale) const
 {
     m_cachedTypeScale.currText.textSize   = m_cachedTypeScale.unScaledText.textSize * newScale;
     m_cachedTypeScale.currText.lineHeight = m_cachedTypeScale.unScaledText.lineHeight * newScale;

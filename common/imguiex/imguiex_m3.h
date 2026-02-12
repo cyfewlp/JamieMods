@@ -9,6 +9,7 @@
 #include "imguiex_enum_wrap.h"
 #include "m3/spec/specs.h"
 
+#include <functional>
 #include <string_view>
 
 namespace ImGuiEx::M3
@@ -182,7 +183,7 @@ using Func = std::function<void()>;
  * @see M3Styles for available styling options.
  * @see Spec namespace for Material Design 3 specifications.
  */
-auto ListItem(std::string_view strId, M3Styles &m3Styles, Func &&contentFunc) -> bool;
+auto ListItem(std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc) -> bool;
 
 //! Render a single-line label aligned to the current line’s text baseline.
 //! Works inside ListItem content and also for any line where you want centered text alignment.
@@ -190,6 +191,9 @@ auto ListItem(std::string_view strId, M3Styles &m3Styles, Func &&contentFunc) ->
 void AlignedLabel(
     std::string_view label, const M3Styles &m3Styles, ContentToken contentToken = ContentToken::onSurface
 );
+
+//! adjust cursor position.y for the leading color button in ListItem.
+void ListLayoutLeadingColorButton(float height = 0.F);
 
 struct ListScope
 {
@@ -209,6 +213,12 @@ inline auto EndList()
 inline void ListDivider()
 {
     ImGui::Separator();
+}
+
+inline auto ListLeadingImageSize(const M3Styles &m3Styles) -> ImVec2
+{
+    const auto size = m3Styles.GetPixels(Spec::List::leadingImageSize);
+    return {size, size};
 }
 
 /**
@@ -235,7 +245,7 @@ inline void BeginMenu(const M3Styles &m3Styles)
 
 inline void EndMenu(const M3Styles &m3Styles)
 {
-    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
     ImGui::Unindent(m3Styles.GetPixels(Spec::Menu::itemPaddingX));
 }
 
@@ -246,7 +256,7 @@ inline auto MenuItem(
     return ImGui::Selectable(TextStart(label), selected, flags, {0, m3Styles.GetPixels(Spec::Menu::itemHeight)});
 }
 
-void SetItemToolTip(std::string_view text, M3Styles &m3Styles);
+void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
 
 /// Popup
 

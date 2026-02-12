@@ -6,6 +6,7 @@
 
 #include <concepts>
 #include <cstdint>
+#include <limits>
 
 namespace ImGuiEx::M3::Spec
 {

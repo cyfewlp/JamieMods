@@ -1,4 +1,4 @@
-# add MaterialYOu
+# add MaterialYou
 set(MATERIAL_YOU_PATH ${CMAKE_CURRENT_SOURCE_DIR}/material-color-utilities)
 set(MCU_SOURCES
     "${MATERIAL_YOU_PATH}/cpp/cam/cam.cc"
@@ -17,7 +17,7 @@ set(MCU_SOURCES
 
 add_library(MaterialYou STATIC ${MCU_SOURCES})
 
-target_compile_features(MaterialYou PUBLIC cxx_std_26)
+target_compile_features(MaterialYou PUBLIC cxx_std_23)
 target_include_directories(MaterialYou PUBLIC ${MATERIAL_YOU_PATH})
 if(MSVC)
   target_compile_definitions(MaterialYou PUBLIC _USE_MATH_DEFINES)

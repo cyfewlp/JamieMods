@@ -35,15 +35,15 @@ struct Search
 //! @note Text will be vertically centered by calling `AlignTextToFramePadding()` prior to rendering.
 struct List
 {
-    static constexpr auto textRole     = TextRole::BodyLarge;
-    static constexpr auto iconSize     = TypeScale<TextRole::BodyLarge>::lineHeight;
-    static constexpr Unit paddingY     = dp<12>();
-    static constexpr Unit paddingX     = dp<16>();
-    static constexpr Unit height       = dp<56>();
-    static constexpr Unit width        = dp<280>();
-    static constexpr Unit gap          = dp<12>();
-    //! Already merged to paddingY: 10 -> 12.
-    static constexpr Unit segmentedGap = dp<2>(); ///< md.comp.list.segmented.gap
+    static constexpr auto textRole         = TextRole::BodyLarge;
+    static constexpr auto iconSize         = TypeScale<TextRole::BodyLarge>::lineHeight;
+    static constexpr Unit leadingImageSize = dp<56>();
+    static constexpr Unit paddingY         = dp<10>();
+    static constexpr Unit paddingX         = dp<16>();
+    static constexpr Unit minHeight        = dp<52>();
+    static constexpr Unit width            = dp<280>();
+    static constexpr Unit gap              = dp<12>();
+    static constexpr Unit segmentedGap     = dp<2>(); ///< md.comp.list.segmented.gap
 };
 
 /**

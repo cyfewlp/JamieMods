@@ -11,6 +11,7 @@
 #include "log.h"
 #include "ui/LanguageBar.h"
 
+#include <chrono>
 #include <codecvt>
 #include <msctf.h>
 #include <windows.h>
@@ -222,6 +223,10 @@ void ImeWnd::AbortIme() const
 
 void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
+#ifdef DEBUG
+    const auto frameStart = std::chrono::high_resolution_clock::now();
+#endif
+
     m3Styles.UpdateScaling(m_dpiScale);
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
@@ -245,6 +250,22 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
         }
     }
     ImGui::PopFont();
+
+#ifdef DEBUG
+    const auto      frameEnd     = std::chrono::high_resolution_clock::now();
+    const auto      frameUs      = std::chrono::duration_cast<std::chrono::microseconds>(frameEnd - frameStart).count();
+    static uint64_t s_frameCount = 0;
+    static int64_t  s_accumUs    = 0;
+    s_accumUs += frameUs;
+    double avgMs = 0;
+    if (++s_frameCount % 60 == 0)
+    {
+        avgMs = (s_accumUs / 60.0) / 1000.0;
+
+        s_accumUs = 0;
+    }
+    ImGui::Value("Avg frame: ", static_cast<float>(avgMs));
+#endif
 }
 
 void ImeWnd::ToggleToolWindow()

@@ -13,3 +13,6 @@
 [submodule "extern/doxygen-awesome-css"]
 	path = extern/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
+[submodule "extern/imgui_test_engine"]
+	path = extern/imgui_test_engine
+	url = https://github.com/ocornut/imgui_test_engine.git

@@ -242,7 +242,7 @@ void ImeWindow::Draw(
         .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
         .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
 
-    ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
+    ImGui::PushFont(nullptr, m3Styles.TitleText().textSize);
     if (ImGui::Begin("IME", nullptr, flags))
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());

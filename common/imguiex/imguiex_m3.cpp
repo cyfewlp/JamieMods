@@ -300,7 +300,7 @@ auto detail::IconButton(
     return pressed;
 }
 
-auto ListItem(const std::string_view strId, M3Styles &m3Styles, Func &&contentFunc) -> bool
+auto ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return false;
@@ -320,38 +320,45 @@ auto ListItem(const std::string_view strId, M3Styles &m3Styles, Func &&contentFu
     ImGui::BeginGroup();
     {
         ImGui::SetCursorScreenPos(contentRect.Min);
-        // Explicitly sets DC.CurrLineSize.y to constrain or initialize the content height.
+        // Submit a Dummy item to apply CursorPos and set the current line min height.
         // Helper components (e.g., ListItemLabel) rely on this value for vertical text centering.
         // Additionally, since ListItems have a minHeight requirement, if contentFunc emits
         // a component exceeding this height, ImGui will dynamically expand DC.CurrLineSize.y,
         // ensuring the layout remains consistent with the actual content.
-        window->DC.CurrLineSize.y = m3Styles.GetHeight<Spec::List>() - (contentOffset.y * 2);
+        const auto minContentHeight = m3Styles.GetPixels(Spec::List::minHeight) - (contentOffset.y * 2);
+        ImGui::Dummy({0, minContentHeight});
+        ImGui::SameLine(0, 0);
         contentFunc();
     }
     ImGui::EndGroup();
     ImGui::PopID();
+    const auto contentClicked = ImGui::IsItemClicked();
+    const auto contentActive  = ImGui::IsItemActive();
+    bool       pressed        = contentClicked;
 
-    // check is submit any items
     contentRect.Max = ImGui::GetItemRectMax();
     window->DrawList->ChannelsSetCurrent(CHANNEL_BG);
-    bool pressed = false;
-    if (contentRect.Max.x > contentRect.Min.x && contentRect.Max.y > contentRect.Min.y)
+    bb.Max = contentRect.Max + contentOffset;
+    ImGui::SetCursorScreenPos(bb.Min);
+
+    if (const auto availX = ImGui::GetContentRegionAvail().x; availX > bb.GetWidth())
     {
-        bb.Max = contentRect.Max + contentOffset;
-        ImGui::SetCursorScreenPos(bb.Min);
+        bb.Max.x = bb.Min.x + availX;
+    }
 
-        if (const auto availX = ImGui::GetContentRegionAvail().x; availX > bb.GetWidth())
+    ImGui::ItemSize(bb);
+    if (ImGui::ItemAdd(bb, id))
+    {
+        // skip click/hover behavior and background rendering if content is empty, to avoid unnecessary overdraw and
+        // interaction on empty space.
+        if (contentRect.Max.x > contentRect.Min.x)
         {
-            bb.Max.x = bb.Min.x + availX;
-        }
-        bb.Max.y = bb.Min.y + ImMax(bb.GetHeight(), m3Styles.GetHeight<Spec::List>()); // limit min height
-
-        ImGui::ItemSize(bb);
-        if (ImGui::ItemAdd(bb, id))
-        {
-            bool hovered = false;
-            bool held    = false;
-            pressed      = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+            bool hovered = contentClicked;
+            bool held    = contentActive;
+            if (!hovered && !held)
+            {
+                pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+            }
 
             auto surfaceColor = m3Styles.Colors()[SurfaceToken::surface];
             if (hovered && held)
@@ -366,7 +373,7 @@ auto ListItem(const std::string_view strId, M3Styles &m3Styles, Func &&contentFu
         }
     }
     window->DrawList->ChannelsMerge();
-    return pressed;
+    return contentClicked || pressed;
 }
 
 void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const ContentToken contentToken)
@@ -381,8 +388,25 @@ void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const 
         // center align
         const auto offset = HalfLineGap({.textSize = lineHeight, .lineHeight = window->DC.CurrLineSize.y});
         window->DC.CursorPos.y += offset;
+        window->DC.IsSetPos = true;
     }
     TextUnformatted(label, m3Styles, contentToken);
+}
+
+void ListLayoutLeadingColorButton(float height)
+{
+    const float default_size = ImGui::GetFrameHeight();
+    if (height == 0.F)
+    {
+        height = default_size;
+    }
+
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (height < window->DC.CurrLineSize.y)
+    {
+        window->DC.CursorPos.y += (window->DC.CurrLineSize.y - height) * HALF;
+        window->DC.IsSetPos = true;
+    }
 }
 
 auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlags) -> ListScope
@@ -390,7 +414,9 @@ auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlag
     auto guard = StyleGuard()
                      .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[SurfaceToken::surface])
                      .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onSurface])
-                     .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetGap<Spec::List>(), 0});
+                     .Style<ImGuiStyleVar_ItemSpacing>(
+                         {m3Styles.GetGap<Spec::List>(), m3Styles.GetPixels(Spec::List::segmentedGap)}
+                     );
     if (!ImGui::BeginChild("##ListChild", {width, 0.F}, childFlags.AutoResizeY()))
     {
         return {};
@@ -435,7 +461,7 @@ auto EndDockedToolbar() -> void
     ImGui::PopStyleVar();
 }
 
-void SetItemToolTip(const std::string_view text, M3Styles &m3Styles)
+void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
 {
     StyleGuard styleGuard;
     styleGuard.Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(SurfaceToken::inverseSurface))

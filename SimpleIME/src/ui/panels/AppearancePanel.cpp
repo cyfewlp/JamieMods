@@ -106,6 +106,7 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
     }
 }
 
+//! \todo need refactor ColorPicker style. maybe we can add a HUE wheel in the future.
 void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 {
     using ContentToken = ImGuiEx::M3::ContentToken;
@@ -122,11 +123,14 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
         styleGuard.Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::M]})
             .Color<ImGuiCol_ChildBg>(colors[SurfaceToken::surface]);
 
-        openPopup =
-            ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor), colorButtonFlags);
-        ImGui::SameLine();
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(Translate("Settings.Appearance.ThemeColor"));
+        openPopup = ImGuiEx::M3::ListItem("ThemeBuilderList", m3Styles, [&] {
+            const auto size = ImGuiEx::M3::ListLeadingImageSize(m3Styles);
+            ImGui::ColorButton(
+                "##SourceColor", ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor), colorButtonFlags, size
+            );
+            ImGui::SameLine();
+            ImGuiEx::M3::AlignedLabel(Translate("Settings.Appearance.ThemeColor"), m3Styles);
+        });
     }
     bool edited = false;
     if (openPopup)
@@ -152,6 +156,11 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 
             ImGui::BeginGroup();
             {
+                // --------------------
+                // |      picker      |
+                // --------------------
+                // |  apply  | cancel |
+                // --------------------
                 ImGuiEx::StyleGuard styleGuard1;
                 styleGuard1.Color<ImGuiCol_Text>(colors[ContentToken::onPrimaryContainer])
                     .Color<ImGuiCol_FrameBg>(colors[SurfaceToken::primaryContainer])
@@ -170,12 +179,10 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                 {
                     edited = true;
                 }
+
                 styleGuard1.Color<ImGuiCol_Text>(colors[ContentToken::onPrimary])
-                    .Style<ImGuiStyleVar_FramePadding>(
-                        {m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::M]}
-                    )
-                    .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[ImGuiEx::M3::Spacing::L], 0.f})
-                    .Style<ImGuiStyleVar_FrameRounding>(m3Styles.GetPixels(M3Spec::SmallButton::rounding));
+                    .Style<ImGuiStyleVar_FramePadding>(m3Styles.GetPadding<M3Spec::SmallButton>())
+                    .Style<ImGuiStyleVar_FrameRounding>(m3Styles.GetRounding<M3Spec::SmallButton>());
                 if (ImGui::Button(Translate("Settings.Appearance.Apply")))
                 {
                     m3Styles.RebuildColors(
@@ -186,7 +193,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     ImGui::CloseCurrentPopup();
                 }
 
-                ImGui::SameLine();
+                ImGui::SameLine(0, m3Styles.GetGap<M3Spec::SmallButtonGroup>());
                 if (ImGui::Button(Translate("Settings.Appearance.Cancel")))
                 {
                     scheme.reset();
@@ -214,19 +221,20 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 
             if (scheme)
             {
-                ImGuiEx::StyleGuard styleGuard1;
-                styleGuard1.Color<ImGuiCol_Text>(colors[ContentToken::onSurface])
-                    .Style<ImGuiStyleVar_FramePadding>(
-                        {m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::L]}
-                    )
-                    .Style<ImGuiStyleVar_ItemSpacing>({0, m3Styles[ImGuiEx::M3::Spacing::M]});
 
-                auto draw_palette = [&colorButtonFlags, &m3Styles](std::string_view label, const auto &palette) {
-                    ImGui::ColorButton(
-                        label.data(), ImGuiEx::M3::ArgbToImVec4(palette.get_key_color().ToInt()), colorButtonFlags
-                    );
-                    ImGui::SameLine(0, m3Styles[ImGuiEx::M3::Spacing::S]);
-                    ImGui::TextUnformatted(label.data());
+                const auto paletteSize = ImGuiEx::M3::ListLeadingImageSize(m3Styles);
+
+                auto draw_palette = [&](std::string_view label, const auto &palette) {
+                    ImGuiEx::M3::ListItem(label, m3Styles, [&] {
+                        ImGui::ColorButton(
+                            label.data(),
+                            ImGuiEx::M3::ArgbToImVec4(palette.get_key_color().ToInt()),
+                            colorButtonFlags,
+                            paletteSize
+                        );
+                        ImGui::SameLine();
+                        ImGuiEx::M3::AlignedLabel(label, m3Styles);
+                    });
                 };
                 draw_palette("Primary", scheme->primary_palette);
                 draw_palette("Secondary", scheme->secondary_palette);

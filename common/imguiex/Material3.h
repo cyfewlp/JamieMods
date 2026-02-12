@@ -122,11 +122,12 @@ class M3Styles
 {
 public:
     /**
-     * The expected maximum unit is 70 (Spec::List::width), which is 280dp. Precompute the pixel values for 0-70 units
-     * to improve performance.
+     * The expected maximum unit is deduced from `Spec::List::width`, which is 280dp. The actual size depends on the
+     * BASE_UNIT defined in the spec(default is 2dp, so the maximum unit is 280 / 2 = 140).
      *
-     * If require unit more than 70, should check if the layout is correct, and then calculate on the fly. It is
-     * recommended to use the precomputed ones as much as possible.
+     * For better performance, the 0 - (Spec::List::width / BASE_UNIT) units are precomputed into a lookup table. If you
+     * require units beyond this range, you should verify the layout and calculate the pixel values on the fly. It is
+     * recommended to use the precomputed values as much as possible for optimal performance.
      */
     using GridUnitsPx = std::array<float, static_cast<size_t>(Spec::List::width)>;
 
@@ -144,18 +145,18 @@ public:
 
 private:
     alignas(16) Colors colors;
-    GridUnitsPx     precomputedPx{};
+    GridUnitsPx             precomputedPx{};
     //! The pixels size will not calculate until the first call to UseTextRole or UpdateScaling.
     //! @see UseTextRole
-    CachedTypeScale m_cachedTypeScale;
+    mutable CachedTypeScale m_cachedTypeScale;
     /**
      * It is highly recommended to provide a standalone ImFont pointer that has NOT been merged with other fonts.
      * Merging icon fonts often causes "Ascent" and "Descent" metrics to be re-calculated or corrupted to fit the
      * primary font's baseline, leading to vertical misalignment and "bleeding" outside the glyph bounding box. For
      * pixel-perfect grid alignment, use an independently loaded font.
      */
-    ImFont         *iconFont{nullptr};
-    float           m_currentScale = 0.0F;
+    ImFont                 *iconFont{nullptr};
+    float                   m_currentScale = 0.0F;
 
     Text  smallLabelText = TEXT_LABEL_SMALL;
     Text  labelText      = TEXT_LABEL_LARGE;
@@ -166,7 +167,7 @@ public:
     constexpr explicit M3Styles(Colors colors, ImFont *iconFont) : colors(std::move(colors)), iconFont(iconFont) {}
 
 private:
-    void UpdateTypeScaleScaling(float newScale);
+    void UpdateTypeScaleScaling(float newScale) const;
 
 public:
     /**
@@ -207,7 +208,7 @@ public:
      * @return A FontScope that manages the font lifecycle.
      */
     template <Spec::TextRole Role>
-    [[nodiscard]] auto UseTextRole() -> detail::FontScope
+    [[nodiscard]] auto UseTextRole() const -> detail::FontScope
     {
         if (m_cachedTypeScale.currRole != Role)
         {
@@ -234,11 +235,15 @@ public:
     }
 
     /**
-     * The 0 - 140(list width 280dp / BASE_UNIT(2dp)) is precomputed for better performance, and the rest will be
-     * calculated on the fly. It is recommended to use the precomputed ones as much as possible.
-     * @param units the unit of spacing or component size. 1unit = 2ddp * currentScale.
-     * @return the pixel value of the given units after scaling. If the units is less than 32, it will return the
-     * precomputed
+     * Get the pixels with current scale applied for the given units. The units are defined in the spec and represent a
+     * multiple of the base unit (e.g., 4dp, 8dp, etc.). The method first checks if the pixel value for the given units
+     * has been precomputed and stored in the `precomputedPx` array. If it has, it returns the precomputed value for
+     * optimal performance. If not, it calculates the pixel value on the fly using the formula: `units * Spec::BASE_UNIT
+     * * m_currentScale`. This allows for dynamic scaling while still providing fast access to commonly used spacing
+     * values.
+     *
+     * @param units the unit of spacing or component size. 1unit = Spec::BASE_UNIT * currentScale.
+     * @return the pixel value of the given units after scaling. If the units
      */
     [[nodiscard]] auto GetPixels(const Spec::Unit units) const -> float
     {

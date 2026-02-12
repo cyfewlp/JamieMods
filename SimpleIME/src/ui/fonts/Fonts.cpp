@@ -207,8 +207,8 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
         auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
         if (names.size() == paths.size())
         {
-            ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
-            const auto col1LineHeight = m3Styles.TitleText().fontSize + m3Styles.SmallLabelText().fontSize;
+            ImGui::PushFont(nullptr, m3Styles.TitleText().textSize);
+            const auto col1LineHeight = m3Styles.TitleText().textSize + m3Styles.SmallLabelText().textSize;
             for (size_t idx = 0; idx < names.size(); idx++)
             {
                 ImGui::TableNextRow();
@@ -221,7 +221,7 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
                 {
                     ImGuiEx::StyleGuard styleGuard1;
                     styleGuard1.Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurfaceVariant));
-                    ImGui::PushFont(nullptr, m3Styles.SmallLabelText().fontSize);
+                    ImGui::PushFont(nullptr, m3Styles.SmallLabelText().textSize);
                     ImGui::Text("%s", paths.at(idx).c_str());
                     ImGui::PopFont();
                 }
