@@ -41,11 +41,11 @@ AlignArrayOfStructures: Left
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: false
-  AcrossComments: false
+  AcrossComments: true
 AlignConsecutiveDeclarations:
   Enabled: true
   AcrossEmptyLines: false
-  AcrossComments: false
+  AcrossComments: true
 AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
@@ -57,7 +57,7 @@ AlignConsecutiveMacros:
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: Empty
 AllowShortBlocksOnASingleLine : Empty
-AllowShortFunctionsOnASingleLine : Empty
+AllowShortFunctionsOnASingleLine : Inline
 
 # namespace
 NamespaceIndentation: None
