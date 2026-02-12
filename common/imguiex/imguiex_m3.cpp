@@ -60,10 +60,54 @@ void LineTextUnformatted(const std::string_view &text, const float lineHeight)
     }
 }
 
+void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, const ContentToken contentToken)
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return;
+    const ImGuiContext &g = *GImGui;
+
+    const float wrap_pos_x   = window->DC.TextWrapPos;
+    const bool  wrap_enabled = (wrap_pos_x >= 0.0f);
+    if (text.size() <= 2000 || wrap_enabled)
+    {
+        // Common case
+        const float wrap_width    = wrap_enabled ? ImGui::CalcWrapWidthForPos(window->DC.CursorPos, wrap_pos_x) : 0.0f;
+        const auto *const textEnd = TextEnd(text);
+        const ImVec2      text_size = ImGui::CalcTextSize(TextStart(text), textEnd, false, wrap_width);
+
+        const auto   halfGap = ImMax(0.0F, m3Styles.GetLastText().currHalfLineGap);
+        const auto   size    = text_size + ImVec2(0, halfGap * 2.0F);
+        const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+        ImGui::ItemSize(size, 0.0f);
+        if (!ImGui::ItemAdd(bb, 0)) return;
+
+        // Render (we don't hide text after ## in this end-user function)
+        if (!text.empty())
+        {
+            const auto pos = ImVec2{bb.Min.x, bb.Min.y + halfGap};
+            window->DrawList->AddText(
+                g.Font,
+                m3Styles.GetLastText().currText.textSize,
+                pos,
+                ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentToken]),
+                TextStart(text),
+                textEnd,
+                wrap_width
+            );
+            if (g.LogEnabled) ImGui::LogRenderedText(&pos, TextStart(text), textEnd);
+        }
+    }
+    else
+    {
+        IM_ASSERT(false && "ImGuiEx::M3 not designed for long text! Use ImGui::TextWrapped instead.");
+        ImGui::TextWrapped("%.*s", static_cast<int>(text.size()), TextStart(text));
+    }
+}
+
 /**
  * Since the width of the navigation track is locked, a simple centered layout is all that's needed.
  */
-void DrawNavMenu(const std::string_view icon, const M3Styles &m3Styles) // TODO: may should replace by Icon()
+void DrawNavMenu(const std::string_view icon, const M3Styles &m3Styles) // TODO: maybe replace with Icon()
 {
     ImGui::Dummy({0.F, m3Styles[Spacing::L]});
     ImGui::TextAligned(ALIGN_CENTER, -FLT_MIN, "%s", TextStart(icon));
@@ -79,7 +123,7 @@ auto DrawNavItem(
     const auto   regionLT   = ImGui::GetCursorScreenPos();
     const float  itemWidth  = ImGui::GetContentRegionAvail().x;
     const auto   iconSize   = ImVec2{m3Styles.IconSize(), m3Styles.IconSize()};
-    const float  itemHeight = m3Styles.LabelText().fontSize + iconSize.y + (m3Styles[Spacing::XS] * 4);
+    const float  itemHeight = m3Styles.LabelText().textSize + iconSize.y + (m3Styles[Spacing::XS] * 4);
     const ImRect bb(regionLT, {regionLT.x + itemWidth, regionLT.y + itemHeight});
     const auto   id = ImGui::GetID(TextStart(label));
     ImGui::ItemSize({itemWidth, itemHeight}, m3Styles[Spacing::XS]);
@@ -139,10 +183,10 @@ auto DrawNavItem(
         );
     }
 
-    ImGui::PushFont(nullptr, m3Styles.LabelText().fontSize);
+    ImGui::PushFont(nullptr, m3Styles.LabelText().textSize);
     {
         ImVec2       labelMin{bb.Min.x, iconPosMax.y + m3Styles[Spacing::Double_XS]};
-        const ImVec2 labelMax{bb.Max.x, labelMin.y + m3Styles.LabelText().fontSize};
+        const ImVec2 labelMax{bb.Max.x, labelMin.y + m3Styles.LabelText().textSize};
         const auto   textSize    = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
         const auto   fineClipOpt = TextClip(textSize, labelMin, bb);
         // modify labelMin
@@ -256,6 +300,104 @@ auto detail::IconButton(
     return pressed;
 }
 
+auto ListItem(const std::string_view strId, M3Styles &m3Styles, Func &&contentFunc) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return false;
+
+    const auto _ = m3Styles.UseTextRole<Spec::List::textRole>();
+
+    const ImVec2 contentOffset = m3Styles.GetPadding<Spec::List>();
+
+    ImRect bb(window->DC.CursorPos, {});
+    ImRect contentRect(bb.Min + contentOffset, {});
+
+    window->DrawList->ChannelsSplit(2);
+    const auto id = window->GetID(TextStart(strId), TextEnd(strId));
+
+    window->DrawList->ChannelsSetCurrent(CHANNEL_FG);
+    ImGui::PushID(static_cast<int>(id)); // avoid id conflict in `contentFunc`.
+    ImGui::BeginGroup();
+    {
+        ImGui::SetCursorScreenPos(contentRect.Min);
+        // Explicitly sets DC.CurrLineSize.y to constrain or initialize the content height.
+        // Helper components (e.g., ListItemLabel) rely on this value for vertical text centering.
+        // Additionally, since ListItems have a minHeight requirement, if contentFunc emits
+        // a component exceeding this height, ImGui will dynamically expand DC.CurrLineSize.y,
+        // ensuring the layout remains consistent with the actual content.
+        window->DC.CurrLineSize.y = m3Styles.GetHeight<Spec::List>() - (contentOffset.y * 2);
+        contentFunc();
+    }
+    ImGui::EndGroup();
+    ImGui::PopID();
+
+    // check is submit any items
+    contentRect.Max = ImGui::GetItemRectMax();
+    window->DrawList->ChannelsSetCurrent(CHANNEL_BG);
+    bool pressed = false;
+    if (contentRect.Max.x > contentRect.Min.x && contentRect.Max.y > contentRect.Min.y)
+    {
+        bb.Max = contentRect.Max + contentOffset;
+        ImGui::SetCursorScreenPos(bb.Min);
+
+        if (const auto availX = ImGui::GetContentRegionAvail().x; availX > bb.GetWidth())
+        {
+            bb.Max.x = bb.Min.x + availX;
+        }
+        bb.Max.y = bb.Min.y + ImMax(bb.GetHeight(), m3Styles.GetHeight<Spec::List>()); // limit min height
+
+        ImGui::ItemSize(bb);
+        if (ImGui::ItemAdd(bb, id))
+        {
+            bool hovered = false;
+            bool held    = false;
+            pressed      = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+
+            auto surfaceColor = m3Styles.Colors()[SurfaceToken::surface];
+            if (hovered && held)
+            {
+                surfaceColor = surfaceColor.Pressed(m3Styles.Colors()[ContentToken::onSurface]);
+            }
+            else if (hovered)
+            {
+                surfaceColor = surfaceColor.Hovered(m3Styles.Colors()[ContentToken::onSurface]);
+            }
+            window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(surfaceColor));
+        }
+    }
+    window->DrawList->ChannelsMerge();
+    return pressed;
+}
+
+void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const ContentToken contentToken)
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return;
+
+    // calculate the offset caused by ImGui current layout line with the text line height.
+    const auto lineHeight = m3Styles.GetLastText().currText.lineHeight;
+    if (lineHeight > 0.F && lineHeight < window->DC.CurrLineSize.y)
+    {
+        // center align
+        const auto offset = HalfLineGap({.textSize = lineHeight, .lineHeight = window->DC.CurrLineSize.y});
+        window->DC.CursorPos.y += offset;
+    }
+    TextUnformatted(label, m3Styles, contentToken);
+}
+
+auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlags) -> ListScope
+{
+    auto guard = StyleGuard()
+                     .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[SurfaceToken::surface])
+                     .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onSurface])
+                     .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetGap<Spec::List>(), 0});
+    if (!ImGui::BeginChild("##ListChild", {width, 0.F}, false, childFlags.AutoResizeY()))
+    {
+        return {};
+    }
+    return ListScope{true, std::move(guard)};
+}
+
 auto BeginDockedToolbar(
     const ImVec2 &buttonSize, const uint8_t count, const SurfaceToken surfaceToken, const M3Styles &m3Styles
 ) -> bool
@@ -293,6 +435,7 @@ auto EndDockedToolbar() -> void
     ImGui::PopStyleVar();
 }
 
+// \todo add tooltip spec
 void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
 {
     const auto &labelText = m3Styles.LabelText();
@@ -306,7 +449,7 @@ void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
         return;
     }
 
-    ImGui::PushFont(nullptr, labelText.fontSize);
+    ImGui::PushFont(nullptr, m3Styles.GetLastText().currText.textSize);
     if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
     {
         ImGui::TextUnformatted(TextStart(text), TextEnd(text));

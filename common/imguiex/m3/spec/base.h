@@ -4,16 +4,42 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 
 namespace ImGuiEx::M3::Spec
 {
+
 /**
- * Base unit for all sizes in Material Design 3. 1 unit = 4dp.
- * The range is limit to uint8_t if you need a greate size that may mean your layout is broken, you should consider
- * refactor your layout instead of just increase the size.
+ *  **Material Design 3 Core Unit**
+ *
+ * Represents the base measurement unit where:
+ *
+ * @code px=units×BASE_UNIT×currentScale @endcode
+ *
+ * **Constraints:**
+ *
+ * @note Range is restricted to `uint8_t`. Exceeding this limit suggests a
+ * layout design flaw; refactoring is recommended over expanding the type.
+ *
+ * @details Using units facilitates pre-computing common sizes into lookup
+ * tables for performance while improving code maintainability.
+ *
  */
 using Unit = std::uint8_t;
+
+/**
+ * Some size not respect the 4dp grid unit, such as ButtonGroup::gap.
+ */
+static constexpr uint32_t BASE_UNIT = 2;
+
+template <uint32_t dpValue>
+consteval auto dp() -> uint8_t
+{
+    static_assert(dpValue % BASE_UNIT == 0, "dp value must be a multiple of BASE_UNIT");
+    static_assert(dpValue / BASE_UNIT <= std::numeric_limits<Unit>::max(), "Too many units!");
+    return static_cast<uint8_t>(dpValue / BASE_UNIT);
+}
 
 /**
  * NOTE: some components only have a subset of these sizes.
@@ -26,4 +52,32 @@ enum class SizeTips : uint8_t
     LARGE  = 4,
     XLARGE = 8
 };
+
+template <typename T>
+concept HasPaddingY = requires { T::paddingY; } && std::same_as<decltype(T::paddingY), const Unit>;
+
+template <typename T>
+concept HasPaddingX = requires { T::paddingX; } && std::same_as<decltype(T::paddingX), const Unit>;
+
+template <typename T>
+concept HasExactPadding = HasPaddingX<T> && HasPaddingY<T>;
+
+template <typename T>
+concept LacksPaddingX = !HasPaddingX<T>;
+
+template <typename T>
+concept LacksPaddingY = !HasPaddingY<T>;
+
+template <typename T>
+concept HasRounding = requires { T::rounding; } && std::same_as<decltype(T::rounding), const Unit>;
+
+template <typename T>
+concept HasGap = requires { T::gap; } && std::same_as<decltype(T::gap), const Unit>;
+
+template <typename T>
+concept HasWidth = requires { T::width; } && std::same_as<decltype(T::width), const Unit>;
+
+template <typename T>
+concept HasHeight = requires { T::height; } && std::same_as<decltype(T::height), const Unit>;
+
 } // namespace ImGuiEx::M3::Spec

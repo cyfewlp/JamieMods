@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ImGuiEx.h"
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
 #include "m3/spec/specs.h"
@@ -12,14 +13,8 @@
 
 namespace ImGuiEx::M3
 {
-constexpr int  CHANNEL_FG = 1;
-constexpr int  CHANNEL_BG = 0;
-constexpr auto HALF       = 0.5F;
-
-inline auto HalfLineGap(const Text &text) -> float
-{
-    return (text.lineHeight - text.fontSize) * HALF;
-}
+constexpr int CHANNEL_FG = 1;
+constexpr int CHANNEL_BG = 0;
 
 /**
  * @brief Renders unformatted text with vertical alignment compensation.
@@ -32,6 +27,12 @@ inline auto HalfLineGap(const Text &text) -> float
  * @param lineHeight The desired total height of the line.
  */
 void LineTextUnformatted(const std::string_view &text, float lineHeight = 0.0F);
+
+//! Support line height with last used TextRole's line height. If the line height is not set or less than font size, it
+//! will fall back to normal text rendering.
+void TextUnformatted(
+    const std::string_view &text, const M3Styles &m3Styles, ContentToken contentToken = ContentToken::onSurface
+);
 
 /**
  * Currently, the menu button on the navigation rail is meaningless; this method only handles padding, layout, and
@@ -154,6 +155,60 @@ auto FAB(
         surfaceToken,
         contentToken
     );
+}
+
+using Func = std::function<void()>;
+
+/**
+ * @brief Renders a Material Design 3 list item with a scoped layout and custom content.
+ *
+ * Combines background rendering, interaction handling, and content scoping into a single call.
+ * It automatically manages state layers (Hover/Pressed) based on M3 specifications.
+ *
+ * @param strId Unique identifier for ImGui state management.
+ * @param m3Styles Theme configuration and layout tokens.
+ * @param contentFunc Lambda/Callable for inner content. Note: Content is vertically centered
+ * based on m3Styles.GetPadding<Spec::List>().
+ *
+ * @return true if the item was clicked during the current frame.
+ *
+ * @note
+ * - **Clipping**: Content is strictly clipped to the M3-defined height.
+ * - **Layout**: Internally uses `BeginGroup` and `SetCursorScreenPos` to reset the local
+ * coordinate system, ensuring `contentFunc` starts at the correctly padded origin.
+ * - **Interaction**: The entire rectangular area (including padding) acts as a single
+ * ButtonBehavior hotlink.
+ *
+ * @see M3Styles for available styling options.
+ * @see Spec namespace for Material Design 3 specifications.
+ */
+auto ListItem(std::string_view strId, M3Styles &m3Styles, Func &&contentFunc) -> bool;
+
+//! Render a single-line label aligned to the current line’s text baseline.
+//! Works inside ListItem content and also for any line where you want centered text alignment.
+//! Requires calling `m3Styles.UseTextRole<Spec::List::textRole>()` (or an equivalent role) beforehand.
+void AlignedLabel(
+    std::string_view label, const M3Styles &m3Styles, ContentToken contentToken = ContentToken::onSurface
+);
+
+struct ListScope
+{
+    bool       visible;
+    StyleGuard styleGuard;
+
+    operator bool() const { return visible; }
+};
+
+[[nodiscard]] auto BeginList(const M3Styles &m3Styles, float width = 0.F, ChildFlags childFlags = {}) -> ListScope;
+
+inline auto EndList()
+{
+    ImGui::EndChild();
+}
+
+inline void ListDivider()
+{
+    ImGui::Separator();
 }
 
 /**

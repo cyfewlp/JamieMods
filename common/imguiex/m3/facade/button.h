@@ -20,4 +20,10 @@ using SmallButton      = Button<SizeTips::SMALL>;
 using MediumButton     = Button<SizeTips::MEDIUM>;
 using LargeButton      = Button<SizeTips::LARGE>;
 using ExtraButton      = Button<SizeTips::XLARGE>;
+
+using ExtraSmallButtonGroup = ButtonGroup<SizeTips::XSMALL>;
+using SmallButtonGroup      = ButtonGroup<SizeTips::SMALL>;
+using MediumButtonGroup     = ButtonGroup<SizeTips::MEDIUM>;
+using LargeButtonGroup      = ButtonGroup<SizeTips::LARGE>;
+using ExtraButtonGroup      = ButtonGroup<SizeTips::XLARGE>;
 } // namespace ImGuiEx::M3::Spec

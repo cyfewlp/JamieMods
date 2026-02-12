@@ -14,40 +14,40 @@ struct Slider;
 template <>
 struct Slider<SizeTips::XSMALL>
 {
-    static constexpr Unit grabOuterWidth = 4;  ///< 16dp
-    static constexpr Unit grabHeight     = 11; ///< 44dp
-    static constexpr Unit frameHeight    = 4;  ///< 16dp
+    static constexpr Unit grabOuterWidth = dp<16>();
+    static constexpr Unit grabHeight     = dp<44>();
+    static constexpr Unit frameHeight    = dp<16>();
 };
 
 template <>
 struct Slider<SizeTips::SMALL>
 {
-    static constexpr Unit grabOuterWidth = 4;  ///< 16dp
-    static constexpr Unit grabHeight     = 11; ///< 44dp
-    static constexpr Unit frameHeight    = 6;  ///< 24dp
+    static constexpr Unit grabOuterWidth = dp<16>();
+    static constexpr Unit grabHeight     = dp<44>();
+    static constexpr Unit frameHeight    = dp<24>();
 };
 
 template <>
 struct Slider<SizeTips::MEDIUM>
 {
-    static constexpr Unit grabOuterWidth = 4;  ///< 16dp
-    static constexpr Unit grabHeight     = 13; ///< 52dp
-    static constexpr Unit frameHeight    = 10; ///< 40dp
+    static constexpr Unit grabOuterWidth = dp<16>();
+    static constexpr Unit grabHeight     = dp<52>();
+    static constexpr Unit frameHeight    = dp<40>();
 };
 
 template <>
 struct Slider<SizeTips::LARGE>
 {
-    static constexpr Unit grabOuterWidth = 4;  ///< 16dp
-    static constexpr Unit grabHeight     = 17; ///< 68dp
-    static constexpr Unit frameHeight    = 14; ///< 56dp
+    static constexpr Unit grabOuterWidth = dp<16>();
+    static constexpr Unit grabHeight     = dp<68>();
+    static constexpr Unit frameHeight    = dp<56>();
 };
 
 template <>
 struct Slider<SizeTips::XLARGE>
 {
-    static constexpr Unit grabOuterWidth = 4;  ///< 16dp
-    static constexpr Unit grabHeight     = 27; ///< 108dp
-    static constexpr Unit frameHeight    = 24; ///< 96dp
+    static constexpr Unit grabOuterWidth = dp<16>();
+    static constexpr Unit grabHeight     = dp<108>();
+    static constexpr Unit frameHeight    = dp<96>();
 };
 } // namespace ImGuiEx::M3::Spec

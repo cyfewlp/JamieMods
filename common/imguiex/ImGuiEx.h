@@ -27,42 +27,6 @@ inline auto TextEnd(const std::string_view text) -> const char *
     return text.data() + text.size(); // NOLINT(*-pro-bounds-pointer-arithmetic)
 }
 
-class FontScope
-{
-    bool Pushed = false;
-
-public:
-    FontScope() = default;
-
-    explicit FontScope(ImFont *font, float fontSize = 0.f) : Pushed(true)
-    {
-        ImGui::PushFont(font, fontSize);
-    }
-
-    FontScope(const FontScope &other)      = delete;
-    FontScope &operator=(FontScope &other) = delete;
-
-    FontScope &operator=(FontScope &&other) noexcept
-    {
-        Pushed       = other.Pushed;
-        other.Pushed = false;
-        return *this;
-    }
-
-    FontScope(FontScope &&other) noexcept : Pushed(other.Pushed)
-    {
-        other.Pushed = false;
-    }
-
-    ~FontScope()
-    {
-        if (Pushed)
-        {
-            ImGui::PopFont();
-        }
-    }
-};
-
 class StyleGuard
 {
     int m_varCount   = 0;
@@ -151,9 +115,8 @@ public:
         }
     }
 
-    ~StyleGuard()
-    {
-        Pop();
-    }
+    operator bool() const { return true; }
+
+    ~StyleGuard() { Pop(); }
 };
 } // namespace ImGuiEx

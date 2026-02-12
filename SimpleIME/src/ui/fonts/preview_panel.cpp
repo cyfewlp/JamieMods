@@ -54,7 +54,7 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
     drawList->ChannelsSplit(2);
 
     drawList->ChannelsSetCurrent(1);
-    ImGui::PushFont(nullptr, m3Styles.TitleText().fontSize);
+    ImGui::PushFont(nullptr, m3Styles.TitleText().textSize);
 
     ImRect bb(ImGui::GetCursorScreenPos(), {});
     ImGui::SetCursorScreenPos(
@@ -114,7 +114,7 @@ auto FontsTable(
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
 
     const auto &text = m3Styles.TitleText();
-    ImGui::PushFont(nullptr, text.fontSize);
+    ImGui::PushFont(nullptr, text.textSize);
     const auto paddingX    = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingX);
     const auto paddingY    = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingY);
     const auto itemSpacing = ImVec2(paddingX, paddingY);
