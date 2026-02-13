@@ -20,38 +20,38 @@ namespace ImGuiEx::M3::Spec
  *
  * **Constraints:**
  *
- * @note Range is restricted to `uint8_t`. Exceeding this limit suggests a
+ * @note Range is restricted to `UINT8_MAX` by static assert. Exceeding this limit suggests a
  * layout design flaw; refactoring is recommended over expanding the type.
  *
  * @details Using units facilitates pre-computing common sizes into lookup
  * tables for performance while improving code maintainability.
  *
  */
-using Unit = std::uint8_t;
+using Unit = std::uint32_t;
 
 /**
  * Some size not respect the 4dp grid unit, such as ButtonGroup::gap.
  */
-static constexpr uint32_t BASE_UNIT = 2;
+static constexpr uint32_t BASE_UNIT = 2U;
 
 template <uint32_t dpValue>
-consteval auto dp() -> uint8_t
+consteval auto dp() -> uint32_t
 {
-    static_assert(dpValue % BASE_UNIT == 0, "dp value must be a multiple of BASE_UNIT");
-    static_assert(dpValue / BASE_UNIT <= std::numeric_limits<Unit>::max(), "Too many units!");
-    return static_cast<uint8_t>(dpValue / BASE_UNIT);
+    static_assert(dpValue % BASE_UNIT == 0U, "dp value must be a multiple of BASE_UNIT");
+    static_assert(dpValue / BASE_UNIT <= std::numeric_limits<uint8_t>::max(), "Too many units!");
+    return dpValue / BASE_UNIT;
 }
 
 /**
  * NOTE: some components only have a subset of these sizes.
  */
-enum class SizeTips : uint8_t
+enum class SizeTips : std::uint8_t
 {
-    XSMALL = 0,
-    SMALL  = 1,
-    MEDIUM = 2,
-    LARGE  = 4,
-    XLARGE = 8
+    XSMALL,
+    SMALL,
+    MEDIUM,
+    LARGE,
+    XLARGE,
 };
 
 template <typename T>

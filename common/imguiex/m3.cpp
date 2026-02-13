@@ -22,16 +22,13 @@ void M3Styles::UpdateScaling(const float newScale)
         return;
     }
     m_currentScale = newScale;
-    for (size_t i = 0; i < precomputedPx.size(); ++i)
+    for (size_t i = 0U; i < precomputedPx.size(); ++i)
     {
-        precomputedPx[i] = std::floor(static_cast<float>(i) * Spec::BASE_UNIT * newScale);
+        precomputedPx[i] = std::floor(static_cast<float>(i * Spec::BASE_UNIT) * newScale);
     }
     UpdateTypeScaleScaling(m_currentScale);
     labelText.textSize   = TEXT_LABEL_LARGE.textSize * newScale;
     labelText.lineHeight = TEXT_LABEL_LARGE.lineHeight * newScale;
-
-    titleText.textSize   = TEXT_TITLE_MEDIUM.textSize * newScale;
-    titleText.lineHeight = TEXT_TITLE_MEDIUM.lineHeight * newScale;
 
     iconSize = ICON_SIZE * newScale;
 }

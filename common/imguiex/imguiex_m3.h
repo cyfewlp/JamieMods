@@ -170,8 +170,7 @@ using Func = std::function<void()>;
  * @param m3Styles Theme configuration and layout tokens.
  * @param contentFunc Lambda/Callable for inner content. Note: Content is vertically centered
  * based on m3Styles.GetPadding<Spec::List>().
- *
- * @return true if the item was clicked during the current frame.
+ * @param plain set true to ignore hovered staus.
  *
  * @note
  * - **Clipping**: Content is strictly clipped to the M3-defined height.
@@ -183,7 +182,12 @@ using Func = std::function<void()>;
  * @see M3Styles for available styling options.
  * @see Spec namespace for Material Design 3 specifications.
  */
-auto ListItem(std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc) -> bool;
+void ListItem(std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc, bool plain = false);
+
+inline void ListItemPlain(std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc)
+{
+    ListItem(strId, m3Styles, std::forward<Func>(contentFunc), true);
+}
 
 //! Render a single-line label aligned to the current line’s text baseline.
 //! Works inside ListItem content and also for any line where you want centered text alignment.
@@ -263,5 +267,8 @@ void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
 auto BeginModalPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
 auto EndPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
+
+// \todo implement M3 style TextField iteme
+// auto TextField();
 
 } // namespace ImGuiEx::M3

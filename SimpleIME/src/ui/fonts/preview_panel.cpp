@@ -54,7 +54,7 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
     drawList->ChannelsSplit(2);
 
     drawList->ChannelsSetCurrent(1);
-    ImGui::PushFont(nullptr, m3Styles.TitleText().textSize);
+    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::BodyLarge>();
 
     ImRect bb(ImGui::GetCursorScreenPos(), {});
     ImGui::SetCursorScreenPos(
@@ -81,7 +81,6 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
         ImGui::PopItemFlag();
     }
     ImGui::EndGroup();
-    ImGui::PopFont();
     drawList->ChannelsSetCurrent(0);
 
     if (ImGui::IsItemVisible())
@@ -113,11 +112,10 @@ auto FontsTable(
     using ContentToken = ImGuiEx::M3::ContentToken;
     using SurfaceToken = ImGuiEx::M3::SurfaceToken;
 
-    const auto &text = m3Styles.TitleText();
-    ImGui::PushFont(nullptr, text.textSize);
-    const auto paddingX    = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingX);
-    const auto paddingY    = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingY);
-    const auto itemSpacing = ImVec2(paddingX, paddingY);
+    const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+    const auto paddingX        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingX);
+    const auto paddingY        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingY);
+    const auto itemSpacing     = ImVec2(paddingX, paddingY);
 
     ImGuiEx::StyleGuard styleGuard;
     styleGuard
@@ -148,7 +146,7 @@ auto FontsTable(
                 fontInfo.GetName().c_str(),
                 selected,
                 ImGuiEx::SelectableFlags().SpanAllColumns(),
-                {0.F, text.lineHeight}
+                {0.F, m3Styles.GetLastText().currText.lineHeight}
             );
             if (clicked && !selected)
             {
@@ -163,7 +161,6 @@ auto FontsTable(
         }
     }
     ImGui::Unindent(paddingX);
-    ImGui::PopFont();
 
     return selectedNew;
 }

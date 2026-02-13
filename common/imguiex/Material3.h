@@ -21,11 +21,8 @@ struct Text
     float lineHeight;
 };
 
-static constexpr auto TEXT_LABEL_SMALL    = Text(12.F, 16.F);
-static constexpr auto TEXT_LABEL_LARGE    = Text(14.F, 20.F);
-static constexpr auto TEXT_TITLE_MEDIUM   = Text(16.F, 24.F);
-static constexpr auto TEXT_HEADLINE_SMALL = Text(24.F, 32.F);
-static constexpr auto ICON_SIZE           = 24.F;
+static constexpr auto TEXT_LABEL_LARGE = Text(14.F, 20.F);
+static constexpr auto ICON_SIZE        = 24.F;
 
 constexpr auto HALF = 0.5F;
 
@@ -158,10 +155,9 @@ private:
     ImFont                 *iconFont{nullptr};
     float                   m_currentScale = 0.0F;
 
-    Text  smallLabelText = TEXT_LABEL_SMALL;
-    Text  labelText      = TEXT_LABEL_LARGE;
-    Text  titleText      = TEXT_TITLE_MEDIUM;
-    float iconSize       = ICON_SIZE;
+    //\todo should be removed!
+    Text  labelText = TEXT_LABEL_LARGE;
+    float iconSize  = ICON_SIZE;
 
 public:
     constexpr explicit M3Styles(Colors colors, ImFont *iconFont) : colors(std::move(colors)), iconFont(iconFont) {}
@@ -251,16 +247,12 @@ public:
         {
             return precomputedPx[units];
         }
-        return static_cast<float>(units) * Spec::BASE_UNIT * m_currentScale;
+        return static_cast<float>(units) * static_cast<float>(Spec::BASE_UNIT) * m_currentScale;
     }
 
     [[deprecated("Please use GetPixels.")]] auto operator[](Spacing s) const -> float { return Get(s); }
 
-    [[nodiscard]] auto SmallLabelText() const -> const Text & { return smallLabelText; }
-
     [[nodiscard]] auto LabelText() const -> const Text & { return labelText; }
-
-    [[nodiscard]] auto TitleText() const -> const Text & { return titleText; }
 
     [[nodiscard]] auto IconSize() const -> float { return iconSize; }
 
@@ -317,4 +309,4 @@ public:
 
 static_assert(alignof(M3Styles) >= 16, "M3Styles must be 16-byte aligned to support SIMD optimizations.");
 
-}; // namespace ImGuiEx::M3
+} // namespace ImGuiEx::M3

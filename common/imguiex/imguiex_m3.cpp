@@ -300,12 +300,15 @@ auto detail::IconButton(
     return pressed;
 }
 
-auto ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc) -> bool
+void ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc, const bool plain)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
-    if (window->SkipItems) return false;
+    if (window->SkipItems)
+    {
+        return;
+    }
 
-    const auto _ = m3Styles.UseTextRole<Spec::List::textRole>();
+    const auto listTextScope = m3Styles.UseTextRole<Spec::List::textRole>();
 
     const ImVec2 contentOffset = m3Styles.GetPadding<Spec::List>();
 
@@ -326,15 +329,12 @@ auto ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&con
         // a component exceeding this height, ImGui will dynamically expand DC.CurrLineSize.y,
         // ensuring the layout remains consistent with the actual content.
         const auto minContentHeight = m3Styles.GetPixels(Spec::List::minHeight) - (contentOffset.y * 2);
-        ImGui::Dummy({0, minContentHeight});
-        ImGui::SameLine(0, 0);
+        ImGui::Dummy({0.F, minContentHeight});
+        ImGui::SameLine(0.F, 0.F);
         contentFunc();
     }
     ImGui::EndGroup();
     ImGui::PopID();
-    const auto contentClicked = ImGui::IsItemClicked();
-    const auto contentActive  = ImGui::IsItemActive();
-    bool       pressed        = contentClicked;
 
     contentRect.Max = ImGui::GetItemRectMax();
     window->DrawList->ChannelsSetCurrent(CHANNEL_BG);
@@ -349,23 +349,14 @@ auto ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&con
     ImGui::ItemSize(bb);
     if (ImGui::ItemAdd(bb, id))
     {
-        // skip click/hover behavior and background rendering if content is empty, to avoid unnecessary overdraw and
-        // interaction on empty space.
+        // only handle hover staus because the click should handled by inner content.
         if (contentRect.Max.x > contentRect.Min.x)
         {
-            bool hovered = contentClicked;
-            bool held    = contentActive;
-            if (!hovered && !held)
-            {
-                pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
-            }
+            auto &g       = *GImGui;
+            bool  hovered = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
 
             auto surfaceColor = m3Styles.Colors()[SurfaceToken::surface];
-            if (hovered && held)
-            {
-                surfaceColor = surfaceColor.Pressed(m3Styles.Colors()[ContentToken::onSurface]);
-            }
-            else if (hovered)
+            if (!plain && hovered)
             {
                 surfaceColor = surfaceColor.Hovered(m3Styles.Colors()[ContentToken::onSurface]);
             }
@@ -373,7 +364,6 @@ auto ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&con
         }
     }
     window->DrawList->ChannelsMerge();
-    return contentClicked || pressed;
 }
 
 void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const ContentToken contentToken)

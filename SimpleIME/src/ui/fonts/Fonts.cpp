@@ -207,26 +207,26 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
         auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
         if (names.size() == paths.size())
         {
-            ImGui::PushFont(nullptr, m3Styles.TitleText().textSize);
-            const auto col1LineHeight = m3Styles.TitleText().textSize + m3Styles.SmallLabelText().textSize;
-            for (size_t idx = 0; idx < names.size(); idx++)
+            const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+            for (size_t idx = 0U; idx < names.size(); idx++)
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGuiEx::M3::LineTextUnformatted(std::format("{}", idx + 1), col1LineHeight);
+                ImGuiEx::M3::LineTextUnformatted(
+                    std::format("{}", idx + 1U), m3Styles.GetLastText().currText.lineHeight
+                );
 
                 ImGui::TableNextColumn();
 
                 ImGui::Text("%s", names.at(idx).c_str());
                 {
-                    ImGuiEx::StyleGuard styleGuard1;
-                    styleGuard1.Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurfaceVariant));
-                    ImGui::PushFont(nullptr, m3Styles.SmallLabelText().textSize);
+                    const auto supportTextStyleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(
+                        m3Styles.Colors().at(ContentToken::onSurfaceVariant)
+                    );
+                    const auto labelSmallScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelSmall>();
                     ImGui::Text("%s", paths.at(idx).c_str());
-                    ImGui::PopFont();
                 }
             }
-            ImGui::PopFont();
         }
         ImGui::EndTable();
     }

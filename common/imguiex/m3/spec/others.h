@@ -88,4 +88,13 @@ struct Tooltips
     static constexpr Unit paddingX = dp<8>();
 };
 
+struct TextField
+{
+    static constexpr auto textRole        = TextRole::BodyLarge;
+    static constexpr auto supportTextRole = TextRole::BodySmall;
+    static constexpr Unit height          = dp<56>();
+    static constexpr Unit paddingX        = dp<16>();
+    static constexpr Unit paddingY        = dp<8>();
+};
+
 } // namespace ImGuiEx::M3::Spec

@@ -236,13 +236,14 @@ void ImeWindow::Draw(
 
     constexpr auto flags =
         ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style<ImGuiStyleVar_WindowPadding>({})
-        .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
-        .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
-        .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
+    const auto mainStyleGuard =
+        ImGuiEx::StyleGuard()
+            .Style<ImGuiStyleVar_WindowPadding>({})
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
+            .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
+            .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
 
-    ImGui::PushFont(nullptr, m3Styles.TitleText().textSize);
+    const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     if (ImGui::Begin("IME", nullptr, flags))
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
@@ -260,7 +261,6 @@ void ImeWindow::Draw(
         m_imeSize = ImGui::GetWindowSize();
     }
     ImGui::End();
-    ImGui::PopFont();
     if (IsImeNeedRelayout())
     {
         shouldRelayout = true;
