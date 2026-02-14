@@ -167,7 +167,7 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
     ImGui::SameLine(0, 0);
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerHighest]);
+        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::ColorRole::surfaceContainerHighest]);
 
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
         if (ImGui::BeginChild("FontBuilderFontInfo", {-width, -FLT_MIN}, ImGuiEx::ChildFlags()))
@@ -185,18 +185,17 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
 
 void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    using Spacing      = ImGuiEx::M3::Spacing;
-    using ContentToken = ImGuiEx::M3::ContentToken;
-    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+    using Spacing   = ImGuiEx::M3::Spacing;
+    using ColorRole = ImGuiEx::M3::ColorRole;
 
     if (!fontBuilder.IsBuilding())
     {
         return;
     }
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_Border>(m3Styles.Colors().at(SurfaceToken::outlineVariant))
-        .Color<ImGuiCol_TableRowBg>(m3Styles.Colors().at(SurfaceToken::surface))
-        .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(SurfaceToken::surface))
+    styleGuard.Color<ImGuiCol_Border>(m3Styles.Colors().at(ColorRole::outlineVariant))
+        .Color<ImGuiCol_TableRowBg>(m3Styles.Colors().at(ColorRole::surface))
+        .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(ColorRole::surface))
         .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS]);
     ImGui::Indent(m3Styles[Spacing::L]);
     if (ImGui::BeginTable(
@@ -212,17 +211,14 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGuiEx::M3::LineTextUnformatted(
-                    std::format("{}", idx + 1U), m3Styles.GetLastText().currText.lineHeight
-                );
+                ImGuiEx::M3::TextUnformatted(std::format("{}", idx + 1U), m3Styles);
 
                 ImGui::TableNextColumn();
 
                 ImGui::Text("%s", names.at(idx).c_str());
                 {
-                    const auto supportTextStyleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(
-                        m3Styles.Colors().at(ContentToken::onSurfaceVariant)
-                    );
+                    const auto supportTextStyleGuard =
+                        ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurfaceVariant));
                     const auto labelSmallScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelSmall>();
                     ImGui::Text("%s", paths.at(idx).c_str());
                 }
@@ -238,7 +234,7 @@ void UI::FontBuilderPanel::DrawToolBar(
 )
 {
     if (ImGuiEx::M3::BeginDockedToolbar(
-            m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, ImGuiEx::M3::SurfaceToken::surfaceContainer, m3Styles
+            m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, ImGuiEx::M3::ColorRole::surfaceContainer, m3Styles
         ))
     {
         DrawToolBarButtons(fontBuilder, settings, m3Styles);
@@ -256,12 +252,12 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
     auto Button = [&m3Styles](const std::string_view &icon) -> bool {
         return ImGuiEx::M3::IconButtonXS(
-            icon, m3Styles, ImGuiEx::M3::SurfaceToken::surfaceContainer, ImGuiEx::M3::ContentToken::onSurfaceVariant
+            icon, m3Styles, ImGuiEx::M3::ColorRole::surfaceContainer, ImGuiEx::M3::ColorRole::onSurfaceVariant
         );
     };
 
     if (ImGuiEx::M3::IconButtonXS(
-            ICON_FA_WRENCH, m3Styles, ImGuiEx::M3::SurfaceToken::primary, ImGuiEx::M3::ContentToken::onPrimary
+            ICON_FA_WRENCH, m3Styles, ImGuiEx::M3::ColorRole::primary, ImGuiEx::M3::ColorRole::onPrimary
         ))
     {
         fontBuilder.ApplyFont(settings);
@@ -299,8 +295,8 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     if (ImGuiEx::M3::IconButtonXS(
             ICON_MD_ALERT_CIRCLE_OUTLINE,
             m3Styles,
-            ImGuiEx::M3::SurfaceToken::tertiaryContainer,
-            ImGuiEx::M3::ContentToken::onTertiaryContainer
+            ImGuiEx::M3::ColorRole::tertiaryContainer,
+            ImGuiEx::M3::ColorRole::onTertiaryContainer
         ))
     {
         centerPopup(TITLE_WARNING);
@@ -310,8 +306,8 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     if (ImGuiEx::M3::IconButtonXS(
             ICON_MD_HELP_CIRCLE_OUTLINE,
             m3Styles,
-            ImGuiEx::M3::SurfaceToken::secondaryContainer,
-            ImGuiEx::M3::ContentToken::onSecondaryContainer
+            ImGuiEx::M3::ColorRole::secondaryContainer,
+            ImGuiEx::M3::ColorRole::onSecondaryContainer
         ))
     {
         centerPopup(TITLE_HELP);

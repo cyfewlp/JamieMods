@@ -17,22 +17,10 @@ namespace ImGuiEx::M3
 constexpr int CHANNEL_FG = 1;
 constexpr int CHANNEL_BG = 0;
 
-/**
- * @brief Renders unformatted text with vertical alignment compensation.
- * * This helper calculates the vertical offset needed to position text within a
- * custom line height. It modifies the internal 'CurrLineTextBaseOffset' to
- * push the text baseline down.
- * * @note This uses ImGui internal APIs (imgui_internal.h).
- * @warning Do not rely on this for general-purpose text rendering.
- * * @param text The string view to render.
- * @param lineHeight The desired total height of the line.
- */
-void LineTextUnformatted(const std::string_view &text, float lineHeight = 0.0F);
-
 //! Support line height with last used TextRole's line height. If the line height is not set or less than font size, it
 //! will fall back to normal text rendering.
 void TextUnformatted(
-    const std::string_view &text, const M3Styles &m3Styles, ContentToken contentToken = ContentToken::onSurface
+    const std::string_view &text, const M3Styles &m3Styles, ColorRole contentRole = ColorRole::onSurface
 );
 
 /**
@@ -67,11 +55,11 @@ struct IconLayout
     float rounding;
 };
 
-auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, ContentToken contentToken) -> void;
+auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, ColorRole contentRole) -> void;
 } // namespace detail
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto Icon(std::string_view icon, const M3Styles &m3Styles, ContentToken contentToken) -> void
+auto Icon(std::string_view icon, const M3Styles &m3Styles, ColorRole contentRole) -> void
 {
     detail::Icon(
         icon,
@@ -82,7 +70,7 @@ auto Icon(std::string_view icon, const M3Styles &m3Styles, ContentToken contentT
             .margin   = m3Styles.GetPixels(Spec::IconButton<Size>::margin),
             .rounding = m3Styles.GetPixels(Spec::IconButton<Size>::rounding),
         },
-        contentToken
+        contentRole
     );
 }
 
@@ -93,14 +81,13 @@ auto Icon(std::string_view icon, const M3Styles &m3Styles, ContentToken contentT
 namespace detail
 {
 auto IconButton(
-    std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, SurfaceToken surfaceColorToken,
-    ContentToken contentColorToken
+    std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, ColorRole surfaceRole,
+    ColorRole contentRole
 ) -> bool;
 }
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto IconButton(std::string_view icon, const M3Styles &m3Styles, SurfaceToken surfaceToken, ContentToken contentToken)
-    -> bool
+auto IconButton(std::string_view icon, const M3Styles &m3Styles, ColorRole surfaceRole, ColorRole contentRole) -> bool
 {
     return detail::IconButton(
         icon,
@@ -111,37 +98,35 @@ auto IconButton(std::string_view icon, const M3Styles &m3Styles, SurfaceToken su
             .margin   = m3Styles.GetPixels(Spec::IconButton<Size>::margin),
             .rounding = m3Styles.GetPixels(Spec::IconButton<Size>::rounding),
         },
-        surfaceToken,
-        contentToken
+        surfaceRole,
+        contentRole
     );
 }
 
 inline auto IconButtonXS(
-    const std::string_view icon, const M3Styles &m3Styles, const SurfaceToken surfaceToken,
-    const ContentToken contentToken
+    const std::string_view icon, const M3Styles &m3Styles, const ColorRole surfaceRole, const ColorRole contentRole
 ) -> bool
 {
-    return IconButton<Spec::SizeTips::XSMALL>(icon, m3Styles, surfaceToken, contentToken);
+    return IconButton<Spec::SizeTips::XSMALL>(icon, m3Styles, surfaceRole, contentRole);
 }
 
 inline auto IconButtonM(
-    const std::string_view icon, const M3Styles &m3Styles, const SurfaceToken surfaceToken,
-    const ContentToken contentToken
+    const std::string_view icon, const M3Styles &m3Styles, const ColorRole surfaceRole, const ColorRole contentRole
 ) -> bool
 {
-    return IconButton<Spec::SizeTips::MEDIUM>(icon, m3Styles, surfaceToken, contentToken);
+    return IconButton<Spec::SizeTips::MEDIUM>(icon, m3Styles, surfaceRole, contentRole);
 }
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
 auto IconButtonSurfaceContainerVariant(std::string_view icon, const M3Styles &m3Styles)
 {
-    return IconButton<Size>(icon, m3Styles, SurfaceToken::surfaceContainer, ContentToken::onSurfaceVariant);
+    return IconButton<Size>(icon, m3Styles, ColorRole::surfaceContainer, ColorRole::onSurfaceVariant);
 }
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
 auto FAB(
-    std::string_view icon, const M3Styles &m3Styles, SurfaceToken surfaceToken = SurfaceToken::primary,
-    ContentToken contentToken = ContentToken::onPrimary
+    std::string_view icon, const M3Styles &m3Styles, ColorRole surfaceRole = ColorRole::primary,
+    ColorRole contentRole = ColorRole::onPrimary
 ) -> bool
 {
     return detail::IconButton(
@@ -153,8 +138,8 @@ auto FAB(
             .margin   = 0.0F,
             .rounding = m3Styles.GetPixels(Spec::FAB<Size>::rounding),
         },
-        surfaceToken,
-        contentToken
+        surfaceRole,
+        contentRole
     );
 }
 
@@ -192,9 +177,7 @@ inline void ListItemPlain(std::string_view strId, const M3Styles &m3Styles, Func
 //! Render a single-line label aligned to the current line’s text baseline.
 //! Works inside ListItem content and also for any line where you want centered text alignment.
 //! Requires calling `m3Styles.UseTextRole<Spec::List::textRole>()` (or an equivalent role) beforehand.
-void AlignedLabel(
-    std::string_view label, const M3Styles &m3Styles, ContentToken contentToken = ContentToken::onSurface
-);
+void AlignedLabel(std::string_view label, const M3Styles &m3Styles, ColorRole contentRole = ColorRole::onSurface);
 
 //! adjust cursor position.y for the leading color button in ListItem.
 void ListLayoutLeadingColorButton(float height = 0.F);
@@ -230,13 +213,12 @@ inline auto ListLeadingImageSize(const M3Styles &m3Styles) -> ImVec2
  * provide your expected dimensions and draw your button according to the agreement.
  * @return true is Toolbar visible
  */
-auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, SurfaceToken surfaceToken, const M3Styles &m3Styles)
+auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, ColorRole surfaceRole, const M3Styles &m3Styles)
     -> bool;
 
-inline auto BeginDockedToolbar(float buttonSize, uint8_t count, SurfaceToken surfaceToken, const M3Styles &m3Styles)
-    -> bool
+inline auto BeginDockedToolbar(float buttonSize, uint8_t count, ColorRole surfaceRole, const M3Styles &m3Styles) -> bool
 {
-    return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceToken, m3Styles);
+    return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceRole, m3Styles);
 }
 
 auto EndDockedToolbar() -> void;

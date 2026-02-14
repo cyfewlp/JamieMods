@@ -15,7 +15,7 @@
 #include "imguiex/m3/facade/button.h"
 #include "imguiex/m3/facade/slider.h"
 #include "imguiex/m3/spec/layout.h"
-#include "imguiex/m3/spec/others.h"
+#include "imguiex/m3/spec/text_field.h"
 #include "path_utils.h"
 #include "ui/Settings.h"
 #include "ui/imgui_system.h"
@@ -25,8 +25,7 @@
 namespace Ime
 {
 
-using ContentToken = ImGuiEx::M3::ContentToken;
-using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+using ColorRole = ImGuiEx::M3::ColorRole;
 
 namespace
 {
@@ -46,7 +45,7 @@ void HandlerPickerCursor(
 )
 {
     const float cursor_x = pickerPos.x + ((value / maxValue) * size.x);
-    const float radius   = size.y * 0.5f;
+    const float radius   = size.y * 0.5F;
     drawList->AddCircleFilled(ImVec2(cursor_x, pickerPos.y + radius), radius, COL_WHITE);
 
     const auto ratio = (ImGui::GetIO().MousePos.x - pickerPos.x) / size.x;
@@ -161,15 +160,15 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
     const auto styleGuard =
         ImGuiEx::StyleGuard()
             .Style<ImGuiStyleVar_FramePadding>(
-                {m3Styles.GetPixels(M3Spec::TextField::paddingX),
-                 m3Styles.GetPixels(M3Spec::TextField::paddingY) + m3Styles.GetLastText().currHalfLineGap}
+                {m3Styles.GetPixels(M3Spec::TextFieldBase::paddingX),
+                 m3Styles.GetPixels(M3Spec::TextFieldBase::paddingY) + m3Styles.GetLastText().currHalfLineGap}
             )
-            .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[SurfaceToken::surfaceContainerHighest])
+            .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest])
             .Color<ImGuiCol_FrameBgHovered>(
-                m3Styles.Colors().Hovered(SurfaceToken::surfaceContainerHighest, ContentToken::onSurface)
+                m3Styles.Colors().Hovered(ColorRole::surfaceContainerHighest, ColorRole::onSurface)
             )
             .Color<ImGuiCol_FrameBgActive>(
-                m3Styles.Colors().Pressed(SurfaceToken::surfaceContainerHighest, ContentToken::onSurface)
+                m3Styles.Colors().Pressed(ColorRole::surfaceContainerHighest, ColorRole::onSurface)
             );
     constexpr size_t BUFFER_SIZE = 64U;
     buffer.reserve(BUFFER_SIZE);
@@ -219,7 +218,7 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
 {
     bool       applied = false;
     const auto popupStyleGuard =
-        ImGuiEx::StyleGuard().Color<ImGuiCol_PopupBg>(m3Styles.Colors()[SurfaceToken::surfaceContainerHighest]);
+        ImGuiEx::StyleGuard().Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest]);
     if (!ImGui::BeginPopup(strId))
     {
         return applied;
@@ -241,7 +240,7 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
     {
         const auto buttonStyleGuard =
             ImGuiEx::StyleGuard()
-                .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onPrimary])
+                .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onPrimary])
                 .Style<ImGuiStyleVar_FramePadding>(m3Styles.GetPadding<M3Spec::SmallButton>())
                 .Style<ImGuiStyleVar_FrameRounding>(m3Styles.GetRounding<M3Spec::SmallButton>());
         if (ImGui::Button(Translate("Settings.Appearance.Apply")))
@@ -269,8 +268,8 @@ void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     styleGuard
         .Style<ImGuiStyleVar_WindowPadding>({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::L]})
         .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::Double_M]})
-        .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSurface))
-        .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surface));
+        .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::onSurface))
+        .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::surface));
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
     {
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))
@@ -295,21 +294,17 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
     const auto _ = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurfaceVariant))
+    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurfaceVariant))
         .Style<ImGuiStyleVar_FrameBorderSize>(m3Styles[ImGuiEx::M3::Spacing::XS])
         .Style<ImGuiStyleVar_WindowPadding>(
             {m3Styles.GetPixels(M3Spec::Menu::paddingX), m3Styles.GetPixels(M3Spec::Menu::paddingY)}
         )
-        .Color<ImGuiCol_Border>(m3Styles.Colors().at(SurfaceToken::primary))
-        .Color<ImGuiCol_FrameBg>(m3Styles.Colors().at(SurfaceToken::surface))
-        .Color<ImGuiCol_FrameBgHovered>(
-            m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurfaceVariant)
-        )
-        .Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(SurfaceToken::surfaceContainerLow))
-        .Color<ImGuiCol_HeaderActive>(m3Styles.Colors().at(SurfaceToken::tertiaryContainer))
-        .Color<ImGuiCol_HeaderHovered>(
-            m3Styles.Colors().Hovered(SurfaceToken::surfaceContainerLow, ContentToken::onSurface)
-        );
+        .Color<ImGuiCol_Border>(m3Styles.Colors().at(ColorRole::primary))
+        .Color<ImGuiCol_FrameBg>(m3Styles.Colors().at(ColorRole::surface))
+        .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurfaceVariant))
+        .Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(ColorRole::surfaceContainerLow))
+        .Color<ImGuiCol_HeaderActive>(m3Styles.Colors().at(ColorRole::tertiaryContainer))
+        .Color<ImGuiCol_HeaderHovered>(m3Styles.Colors().Hovered(ColorRole::surfaceContainerLow, ColorRole::onSurface));
     const auto availX = ImGui::GetContentRegionAvail().x;
     if (const auto maxWidth = m3Styles.GetPixels(M3Spec::Menu::width); availX > maxWidth)
     {
@@ -356,7 +351,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
     {
         const auto s = ImGuiEx::StyleGuard()
                            .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::M]})
-                           .Color<ImGuiCol_ChildBg>(colors[SurfaceToken::surface]);
+                           .Color<ImGuiCol_ChildBg>(colors[ColorRole::surface]);
 
         ImGuiEx::M3::ListItem("ThemeBuilderList", m3Styles, [&] {
             const auto size = ImGuiEx::M3::ListLeadingImageSize(m3Styles);
@@ -386,7 +381,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
         ImGuiEx::StyleGuard()
             .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::S]})
             .Style<ImGuiStyleVar_WindowPadding>({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::M]})
-            .Color<ImGuiCol_PopupBg>(colors[SurfaceToken::surfaceContainerHigh]);
+            .Color<ImGuiCol_PopupBg>(colors[ColorRole::surfaceContainerHigh]);
     bool open = true;
     if (ImGui::BeginPopupModal(Translate("Settings.Appearance.ThemeBuilder"), &open, ImGuiEx::WindowFlags()))
     {

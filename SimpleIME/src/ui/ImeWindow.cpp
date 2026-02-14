@@ -92,9 +92,8 @@ void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3St
 
 void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    using Spacing      = ImGuiEx::M3::Spacing;
-    using ContentToken = ImGuiEx::M3::ContentToken;
-    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+    using Spacing   = ImGuiEx::M3::Spacing;
+    using ColorRole = ImGuiEx::M3::ColorRole;
 
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
@@ -104,14 +103,10 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style<ImGuiStyleVar_ItemSpacing>({0, 0})
             .Style<ImGuiStyleVar_FramePadding>({m3Styles[Spacing::M], m3Styles[Spacing::S]})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurface))
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurface))
             .Color<ImGuiCol_Button>({0, 0, 0, 0})
-            .Color<ImGuiCol_ButtonHovered>(
-                m3Styles.Colors().Hovered(SurfaceToken::surfaceContainer, ContentToken::onSurface)
-            )
-            .Color<ImGuiCol_ButtonActive>(
-                m3Styles.Colors().Pressed(SurfaceToken::surfaceContainer, ContentToken::onSurface)
-            );
+            .Color<ImGuiCol_ButtonHovered>(m3Styles.Colors().Hovered(ColorRole::surfaceContainer, ColorRole::onSurface))
+            .Color<ImGuiCol_ButtonActive>(m3Styles.Colors().Pressed(ColorRole::surfaceContainer, ColorRole::onSurface));
 
         for (const auto &candidate : candidateList)
         {
@@ -119,13 +114,13 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
             ImGuiEx::StyleGuard styleGuard1;
             if (index == candidateUi.Selection())
             {
-                styleGuard1.Color<ImGuiCol_Button>(m3Styles.Colors()[SurfaceToken::primaryContainer])
-                    .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onPrimaryContainer])
+                styleGuard1.Color<ImGuiCol_Button>(m3Styles.Colors()[ColorRole::primaryContainer])
+                    .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onPrimaryContainer])
                     .Color<ImGuiCol_ButtonHovered>(
-                        m3Styles.Colors().Hovered(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
+                        m3Styles.Colors().Hovered(ColorRole::primaryContainer, ColorRole::onPrimaryContainer)
                     )
                     .Color<ImGuiCol_ButtonActive>(
-                        m3Styles.Colors().Pressed(SurfaceToken::primaryContainer, ContentToken::onPrimaryContainer)
+                        m3Styles.Colors().Pressed(ColorRole::primaryContainer, ColorRole::onPrimaryContainer)
                     );
             }
 
@@ -239,9 +234,9 @@ void ImeWindow::Draw(
     const auto mainStyleGuard =
         ImGuiEx::StyleGuard()
             .Style<ImGuiStyleVar_WindowPadding>({})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::primary))
-            .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::surfaceContainerLow))
-            .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::SurfaceToken::outlineVariant));
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::primary))
+            .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::surfaceContainerLow))
+            .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::outlineVariant));
 
     const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     if (ImGui::Begin("IME", nullptr, flags))

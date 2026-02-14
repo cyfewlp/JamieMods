@@ -46,9 +46,8 @@ struct StatusBar
 
 auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -> bool
 {
-    using ContentToken = ImGuiEx::M3::ContentToken;
-    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
-    using SearchSpec   = ImGuiEx::M3::Spec::Search;
+    using ColorRole  = ImGuiEx::M3::ColorRole;
+    using SearchSpec = ImGuiEx::M3::Spec::Search;
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
     drawList->ChannelsSplit(2);
@@ -64,12 +63,12 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
     bool edited = false;
     {
         ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-        ImGuiEx::M3::Icon(ICON_OCT_SEARCH, m3Styles, ContentToken::onSurfaceVariant);
+        ImGuiEx::M3::Icon(ICON_OCT_SEARCH, m3Styles, ColorRole::onSurfaceVariant);
         ImGui::SameLine(0, m3Styles.GetPixels(SearchSpec::gap));
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style<ImGuiStyleVar_FramePadding>({0, m3Styles.GetPixels(SearchSpec::paddingY)})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ContentToken::onSurface))
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurface))
             .Color<ImGuiCol_FrameBg>({0, 0, 0, 0});
         edited = ImGui::InputTextWithHint(
             "##Filter",
@@ -90,7 +89,7 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
         drawList->AddRectFilled(
             bb.Min,
             bb.Max,
-            ImGui::ColorConvertFloat4ToU32(m3Styles.Colors().at(SurfaceToken::surfaceContainerHigh)),
+            ImGui::ColorConvertFloat4ToU32(m3Styles.Colors().at(ColorRole::surfaceContainerHigh)),
             m3Styles.GetPixels(SearchSpec::rounding)
         );
         ImGui::ItemSize(bb);
@@ -108,9 +107,8 @@ auto FontsTable(
     FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles
 ) -> bool
 {
-    using Spacing      = ImGuiEx::M3::Spacing;
-    using ContentToken = ImGuiEx::M3::ContentToken;
-    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
+    using Spacing   = ImGuiEx::M3::Spacing;
+    using ColorRole = ImGuiEx::M3::ColorRole;
 
     const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     const auto paddingX        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingX);
@@ -122,9 +120,9 @@ auto FontsTable(
         .Style<ImGuiStyleVar_ItemSpacing>(itemSpacing) // Selectable used
         .Style<ImGuiStyleVar_SelectableTextAlign>({ImGuiEx::ALIGN_LEFT, ImGuiEx::ALIGN_CENTER})
         .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS])
-        .Color<ImGuiCol_Header>(m3Styles.Colors().at(SurfaceToken::surface))
-        .Color<ImGuiCol_HeaderActive>(m3Styles.Colors().Pressed(SurfaceToken::surface, ContentToken::onSurface))
-        .Color<ImGuiCol_HeaderHovered>(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface));
+        .Color<ImGuiCol_Header>(m3Styles.Colors().at(ColorRole::surface))
+        .Color<ImGuiCol_HeaderActive>(m3Styles.Colors().Pressed(ColorRole::surface, ColorRole::onSurface))
+        .Color<ImGuiCol_HeaderHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface));
 
     ImGui::Spacing();
 
@@ -168,8 +166,8 @@ auto FontsTable(
 void DrawStatusBar(const StatusBar &statusBar, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ContentToken::onSecondaryContainer));
-    ImGuiEx::M3::Icon(statusBar.icon, m3Styles, ImGuiEx::M3::ContentToken::onSecondaryContainer);
+    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::onSecondaryContainer));
+    ImGuiEx::M3::Icon(statusBar.icon, m3Styles, ImGuiEx::M3::ColorRole::onSecondaryContainer);
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
     ImGui::PushTextWrapPos(0.0F);
@@ -264,7 +262,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
 
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerHighest]);
+        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::ColorRole::surfaceContainerHighest]);
         if (ImGui::BeginChild("FontsView", {width, 0}, ImGuiEx::ChildFlags().Borders()))
         {
             DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList(), m3Styles);
@@ -306,7 +304,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
     }
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::SurfaceToken::surfaceContainerLowest]);
+    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::ColorRole::surfaceContainerLowest]);
     if (ImGui::BeginChild("PreviewPanel", {}, ImGuiEx::ChildFlags().AutoResizeX()))
     {
         DrawStatusBar(statusBar, m3Styles);

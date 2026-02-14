@@ -32,7 +32,7 @@ void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const 
     // copy from imgui.cpp#3847
     // Perform CPU side clipping for single clipped element to avoid using scissor state
     bool need_clipping = pos.x + textSize.x >= clipRect.Max.x || pos.y + textSize.y >= clipRect.Max.y;
-    need_clipping |= pos.x < clipRect.Min.x || pos.y < clipRect.Min.y;
+    need_clipping      = need_clipping || pos.x < clipRect.Min.x || pos.y < clipRect.Min.y;
     if (need_clipping)
     {
         return ImVec4(clipRect.Min.x, clipRect.Min.y, clipRect.Max.x, clipRect.Max.y);
@@ -41,26 +41,7 @@ void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const 
 }
 } // namespace
 
-void LineTextUnformatted(const std::string_view &text, const float lineHeight)
-{
-    auto *window = ImGui::GetCurrentWindow();
-    if (window->SkipItems) return;
-
-    const auto &g = *GImGui;
-    if (const auto offset = lineHeight - g.FontSize; offset <= 0)
-    {
-        ImGui::TextUnformatted(TextStart(text), TextEnd(text));
-    }
-    else
-    {
-        const auto backup                 = window->DC.CurrLineTextBaseOffset;
-        window->DC.CurrLineTextBaseOffset = offset * HALF;
-        ImGui::TextUnformatted(TextStart(text), TextEnd(text));
-        window->DC.PrevLineTextBaseOffset = backup;
-    }
-}
-
-void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, const ContentToken contentToken)
+void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, const ColorRole contentRole)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return;
@@ -89,7 +70,7 @@ void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, con
                 g.Font,
                 m3Styles.GetLastText().currText.textSize,
                 pos,
-                ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentToken]),
+                ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentRole]),
                 TextStart(text),
                 textEnd,
                 wrap_width
@@ -139,7 +120,7 @@ auto DrawNavItem(
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
     const auto &colors    = m3Styles.Colors();
-    auto        iconColor = colors[ContentToken::onSurfaceVariant];
+    auto        iconColor = colors[ColorRole::onSurfaceVariant];
 
     ImVec2 iconPosMin{bb.Min.x, bb.Min.y + m3Styles[Spacing::XS]};
     ImVec2 iconPosMax{bb.Max.x, iconPosMin.y + iconSize.y};
@@ -153,19 +134,19 @@ auto DrawNavItem(
         {
             const auto offset     = ImVec2(m3Styles[Spacing::L], m3Styles[Spacing::XS]);
             const auto iconBgRect = ImRect(iconPosMin - offset, iconPosMin + iconSize + offset);
-            if (selected) iconColor = colors[ContentToken::onPrimary];
-            SurfaceColor bgColor;
+            if (selected) iconColor = colors[ColorRole::onPrimary];
+            ImVec4 bgColor;
             if (hovered && held)
             {
-                bgColor = colors.Pressed(SurfaceToken::primary, ContentToken::onPrimary);
+                bgColor = colors.Pressed(ColorRole::primary, ColorRole::onPrimary);
             }
             else if (hovered)
             {
-                bgColor = colors.Hovered(SurfaceToken::secondaryContainer, ContentToken::onSecondaryContainer);
+                bgColor = colors.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
             }
             else
             {
-                bgColor = selected ? colors[SurfaceToken::primary] : colors[SurfaceToken::secondaryContainer];
+                bgColor = selected ? colors[ColorRole::primary] : colors[ColorRole::secondaryContainer];
             }
             ImGui::RenderFrame(
                 iconBgRect.Min, iconBgRect.Max, ImGui::ColorConvertFloat4ToU32(bgColor), true, iconSize.x
@@ -175,7 +156,7 @@ auto DrawNavItem(
             m3Styles.IconFont(),
             m3Styles.IconSize(),
             iconPosMin,
-            static_cast<ImU32>(iconColor),
+            ImGui::ColorConvertFloat4ToU32(iconColor),
             TextStart(icon),
             TextEnd(icon),
             0.0F,
@@ -191,8 +172,7 @@ auto DrawNavItem(
         const auto   fineClipOpt = TextClip(textSize, labelMin, bb);
         // modify labelMin
         AlignText(labelMin, {ALIGN_CENTER, ALIGN_CENTER}, labelMax, textSize);
-        const ColorBase &textColor = selected ? static_cast<const ColorBase &>(colors[SurfaceToken::secondary])
-                                              : static_cast<const ColorBase &>(colors[ContentToken::onSurfaceVariant]);
+        const auto &textColor = selected ? colors[ColorRole::secondary] : colors[ColorRole::onSurfaceVariant];
         drawList->AddText(
             nullptr,
             0.F,
@@ -210,7 +190,7 @@ auto DrawNavItem(
 }
 
 auto detail::Icon(
-    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, const ContentToken contentToken
+    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, const ColorRole contentRole
 ) -> void
 {
     const ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -229,7 +209,7 @@ auto detail::Icon(
         return;
     }
 
-    const auto textColor = m3Styles.Colors().at(contentToken);
+    const auto textColor = m3Styles.Colors().at(contentRole);
     window->DrawList->AddText(
         m3Styles.IconFont(),
         layout.iconSize,
@@ -241,8 +221,8 @@ auto detail::Icon(
 }
 
 auto detail::IconButton(
-    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout,
-    const SurfaceToken surfaceColorToken, const ContentToken contentColorToken
+    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, const ColorRole surfaceRole,
+    const ColorRole contentRole
 ) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -263,22 +243,22 @@ auto detail::IconButton(
     bool       held    = false;
     const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
-    const auto containerColor = m3Styles.Colors().at(surfaceColorToken);
-    auto       textColor      = m3Styles.Colors().at(contentColorToken);
+    const auto containerColor = m3Styles.Colors().at(surfaceRole);
+    auto       textColor      = m3Styles.Colors().at(contentRole);
 
     ImVec4 frameColor;
     if (const ImGuiContext &g = *GImGui; g.CurrentItemFlags & ImGuiItemFlags_Disabled)
     {
-        textColor  = m3Styles.Colors().DisabledContent();
-        frameColor = m3Styles.Colors().DisabledSurface();
+        textColor  = m3Styles.Colors().DisabledContent(contentRole);
+        frameColor = m3Styles.Colors().DisabledSurface(surfaceRole);
     }
     else if (hovered && held)
     {
-        frameColor = containerColor.Pressed(textColor);
+        frameColor = m3Styles.Colors().Pressed(surfaceRole, contentRole);
     }
     else if (hovered)
     {
-        frameColor = containerColor.Hovered(textColor);
+        frameColor = m3Styles.Colors().Hovered(surfaceRole, contentRole);
     }
     else
     {
@@ -355,10 +335,10 @@ void ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&con
             auto &g       = *GImGui;
             bool  hovered = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
 
-            auto surfaceColor = m3Styles.Colors()[SurfaceToken::surface];
+            auto surfaceColor = m3Styles.Colors()[ColorRole::surface];
             if (!plain && hovered)
             {
-                surfaceColor = surfaceColor.Hovered(m3Styles.Colors()[ContentToken::onSurface]);
+                surfaceColor = m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface);
             }
             window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(surfaceColor));
         }
@@ -366,7 +346,7 @@ void ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&con
     window->DrawList->ChannelsMerge();
 }
 
-void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const ContentToken contentToken)
+void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const ColorRole contentRole)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return;
@@ -380,7 +360,7 @@ void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const 
         window->DC.CursorPos.y += offset;
         window->DC.IsSetPos = true;
     }
-    TextUnformatted(label, m3Styles, contentToken);
+    TextUnformatted(label, m3Styles, contentRole);
 }
 
 void ListLayoutLeadingColorButton(float height)
@@ -402,8 +382,8 @@ void ListLayoutLeadingColorButton(float height)
 auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlags) -> ListScope
 {
     auto guard = StyleGuard()
-                     .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[SurfaceToken::surface])
-                     .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onSurface])
+                     .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[ColorRole::surface])
+                     .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onSurface])
                      .Style<ImGuiStyleVar_ItemSpacing>(
                          {m3Styles.GetGap<Spec::List>(), m3Styles.GetPixels(Spec::List::segmentedGap)}
                      );
@@ -415,7 +395,7 @@ auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlag
 }
 
 auto BeginDockedToolbar(
-    const ImVec2 &buttonSize, const uint8_t count, const SurfaceToken surfaceToken, const M3Styles &m3Styles
+    const ImVec2 &buttonSize, const uint8_t count, const ColorRole surfaceRole, const M3Styles &m3Styles
 ) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -430,11 +410,11 @@ auto BeginDockedToolbar(
 
     bb.Min.y += margin;
     bb.Max.y -= margin;
-    window->DrawList->AddRectFilled(bb.Min, bb.Max, static_cast<ImU32>(m3Styles.Colors().at(surfaceToken)));
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[surfaceRole]));
 
     const auto minWidth = buttonSize.x * static_cast<float>(count);
     float      gap      = 0.0F;
-    if (count > 1)
+    if (count > 1U)
     {
         gap = (size.x - minWidth - m3Styles[Spacing::Double_L]) / (count - 1);
         gap = std::max(gap, 0.F);
@@ -453,17 +433,17 @@ auto EndDockedToolbar() -> void
 
 void SetItemToolTip(const std::string_view text, const M3Styles &m3Styles)
 {
-    StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(SurfaceToken::inverseSurface))
-        .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<Spec::Tooltips>());
+    const auto guard = StyleGuard()
+                           .Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(ColorRole::inverseSurface))
+                           .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<Spec::Tooltips>());
 
     if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) return;
 
-    const auto _ = m3Styles.UseTextRole<Spec::Tooltips::textRole>();
+    const auto tooltipFontScope = m3Styles.UseTextRole<Spec::Tooltips::textRole>();
     ImGui::PushFont(nullptr, m3Styles.GetLastText().currText.textSize);
     if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
     {
-        TextUnformatted(text, m3Styles, ContentToken::inverseOnSurface);
+        TextUnformatted(text, m3Styles, ColorRole::inverseOnSurface);
         ImGui::EndTooltip();
     }
     ImGui::PopFont();

@@ -36,14 +36,16 @@ struct TextFieldBase
 };
 
 template <>
-struct TextField<TextFieldStyle::Filled, TextFieldState::Enabled>
+struct TextField<TextFieldStyle::Filled, TextFieldState::Enabled> : public TextFieldBase
 {
+    using TextFieldBase::TextFieldBase;
     static constexpr float activeIndicatorHeight = 1.0F;
 };
 
 template <>
-struct TextField<TextFieldStyle::Filled, TextFieldState::Focused>
+struct TextField<TextFieldStyle::Filled, TextFieldState::Focused> : public TextFieldBase
 {
+    using TextFieldBase::TextFieldBase;
     static constexpr float activeIndicatorThickness = 3.0F;
     static constexpr float activeIndicatorHeight    = 2.0F;
 };

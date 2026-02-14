@@ -25,9 +25,8 @@ namespace
 {
 constexpr auto LANGUAGE_BAR = "LanguageBar";
 
-using SurfaceToken = ImGuiEx::M3::SurfaceToken;
-using ContentToken = ImGuiEx::M3::ContentToken;
-using Spacing      = ImGuiEx::M3::Spacing;
+using ColorRole = ImGuiEx::M3::ColorRole;
+using Spacing   = ImGuiEx::M3::Spacing;
 
 void DrawInputMethodsCombo(
     const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
@@ -38,10 +37,10 @@ void DrawInputMethodsCombo(
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Style<ImGuiStyleVar_WindowPadding>({})
         .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[Spacing::M], m3Styles[Spacing::M]})
-        .Color<ImGuiCol_Text>(m3Styles.Colors()[ContentToken::onSurface])
-        .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[SurfaceToken::surface])
-        .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(SurfaceToken::surface, ContentToken::onSurface))
-        .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[SurfaceToken::surfaceContainerLow]);
+        .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onSurface])
+        .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[ColorRole::surface])
+        .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface))
+        .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerLow]);
 
     if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), ImGuiEx::ComboFlags().NoArrowButton()))
     {
@@ -124,7 +123,7 @@ auto DrawImpl(
     SetShowing(state, showing);
     if (!visible) return state;
 
-    ImGuiEx::M3::Icon(ICON_COD_MOVE, m3Styles, ContentToken::onSurfaceVariant);
+    ImGuiEx::M3::Icon(ICON_COD_MOVE, m3Styles, ColorRole::onSurfaceVariant);
     ImGui::SameLine();
 
     if (ImGuiEx::M3::IconButtonSurfaceContainerVariant(IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles))
@@ -172,7 +171,7 @@ auto Draw(
     const auto _ = m3Styles.UseTextRole<M3Spec::SmallButton::textRole>();
 
     ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[SurfaceToken::surfaceContainer])
+    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
         .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
         .Style<ImGuiStyleVar_FramePadding>(
             {m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)}

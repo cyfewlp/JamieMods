@@ -190,95 +190,94 @@ void Shutdown()
 
 void ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    using ContentToken = ImGuiEx::M3::ContentToken;
-    using SurfaceToken = ImGuiEx::M3::SurfaceToken;
-    ImGuiStyle &style  = ImGui::GetStyle();
+    using ColorRole   = ImGuiEx::M3::ColorRole;
+    ImGuiStyle &style = ImGui::GetStyle();
 
     const auto &colors = m3Styles.Colors();
 
-    style.Colors[ImGuiCol_Text]             = colors[ContentToken::onSurface];
-    style.Colors[ImGuiCol_TitleBg]          = colors[SurfaceToken::surfaceContainer];
-    style.Colors[ImGuiCol_TitleBgActive]    = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TitleBgCollapsed] = colors[SurfaceToken::surfaceContainer];
+    style.Colors[ImGuiCol_Text]             = colors[ColorRole::onSurface];
+    style.Colors[ImGuiCol_TitleBg]          = colors[ColorRole::surfaceContainer];
+    style.Colors[ImGuiCol_TitleBgActive]    = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_TitleBgCollapsed] = colors[ColorRole::surfaceContainer];
 
-    style.Colors[ImGuiCol_WindowBg] = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_ChildBg]  = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_PopupBg]  = colors[SurfaceToken::primaryContainer];
+    style.Colors[ImGuiCol_WindowBg] = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_ChildBg]  = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_PopupBg]  = colors[ColorRole::primaryContainer];
 
-    style.Colors[ImGuiCol_FrameBg] = colors[SurfaceToken::secondaryContainer];
+    style.Colors[ImGuiCol_FrameBg] = colors[ColorRole::secondaryContainer];
     style.Colors[ImGuiCol_FrameBgActive] =
-        colors.Pressed(SurfaceToken::secondaryContainer, ContentToken::onSecondaryContainer);
+        colors.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
     style.Colors[ImGuiCol_FrameBgHovered] =
-        colors.Hovered(SurfaceToken::secondaryContainer, ContentToken::onSecondaryContainer);
-    style.Colors[ImGuiCol_Border]       = colors[SurfaceToken::outlineVariant];
-    style.Colors[ImGuiCol_BorderShadow] = colors[SurfaceToken::outlineVariant];
+        colors.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
+    style.Colors[ImGuiCol_Border]       = colors[ColorRole::outlineVariant];
+    style.Colors[ImGuiCol_BorderShadow] = colors[ColorRole::outlineVariant];
 
-    style.Colors[ImGuiCol_SliderGrab]       = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_SliderGrabActive] = colors.Pressed(SurfaceToken::primary, ContentToken::onPrimary);
+    style.Colors[ImGuiCol_SliderGrab]       = colors[ColorRole::primary];
+    style.Colors[ImGuiCol_SliderGrabActive] = colors.Pressed(ColorRole::primary, ColorRole::onPrimary);
 
-    style.Colors[ImGuiCol_Button]        = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_ButtonHovered] = colors.Hovered(SurfaceToken::primary, ContentToken::onPrimary);
-    style.Colors[ImGuiCol_ButtonActive]  = colors.Pressed(SurfaceToken::primary, ContentToken::onPrimary);
+    style.Colors[ImGuiCol_Button]        = colors[ColorRole::primary];
+    style.Colors[ImGuiCol_ButtonHovered] = colors.Hovered(ColorRole::primary, ColorRole::onPrimary);
+    style.Colors[ImGuiCol_ButtonActive]  = colors.Pressed(ColorRole::primary, ColorRole::onPrimary);
 
     style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
-    style.Colors[ImGuiCol_ScrollbarGrab]        = colors[SurfaceToken::outline];
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors[SurfaceToken::outlineVariant];
-    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors[SurfaceToken::primary];
+    style.Colors[ImGuiCol_ScrollbarGrab]        = colors[ColorRole::outline];
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors[ColorRole::outlineVariant];
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors[ColorRole::primary];
 
-    style.Colors[ImGuiCol_MenuBarBg] = colors[SurfaceToken::surfaceContainerHigh];
+    style.Colors[ImGuiCol_MenuBarBg] = colors[ColorRole::surfaceContainerHigh];
 
-    style.Colors[ImGuiCol_Header]        = colors[SurfaceToken::surfaceContainerHigh];
-    style.Colors[ImGuiCol_HeaderHovered] = colors.Hovered(SurfaceToken::surfaceContainerHigh, ContentToken::onSurface);
-    style.Colors[ImGuiCol_HeaderActive]  = colors.Pressed(SurfaceToken::surfaceContainerHigh, ContentToken::onSurface);
+    style.Colors[ImGuiCol_Header]        = colors[ColorRole::surfaceContainerHigh];
+    style.Colors[ImGuiCol_HeaderHovered] = colors.Hovered(ColorRole::surfaceContainerHigh, ColorRole::onSurface);
+    style.Colors[ImGuiCol_HeaderActive]  = colors.Pressed(ColorRole::surfaceContainerHigh, ColorRole::onSurface);
 
-    style.Colors[ImGuiCol_Separator]        = colors[SurfaceToken::secondary];
-    style.Colors[ImGuiCol_SeparatorHovered] = colors.Hovered(SurfaceToken::secondary, ContentToken::onSecondary);
-    style.Colors[ImGuiCol_SeparatorActive]  = colors.Pressed(SurfaceToken::secondary, ContentToken::onSecondary);
+    style.Colors[ImGuiCol_Separator]        = colors[ColorRole::secondary];
+    style.Colors[ImGuiCol_SeparatorHovered] = colors.Hovered(ColorRole::secondary, ColorRole::onSecondary);
+    style.Colors[ImGuiCol_SeparatorActive]  = colors.Pressed(ColorRole::secondary, ColorRole::onSecondary);
 
-    style.Colors[ImGuiCol_ResizeGrip] = colors[SurfaceToken::secondaryContainer];
+    style.Colors[ImGuiCol_ResizeGrip] = colors[ColorRole::secondaryContainer];
     style.Colors[ImGuiCol_ResizeGripHovered] =
-        colors.Hovered(SurfaceToken::secondaryContainer, ContentToken::onSecondaryContainer);
+        colors.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
     style.Colors[ImGuiCol_ResizeGripActive] =
-        colors.Pressed(SurfaceToken::secondaryContainer, ContentToken::onSecondaryContainer);
+        colors.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
 
-    style.Colors[ImGuiCol_InputTextCursor] = colors[SurfaceToken::secondary];
+    style.Colors[ImGuiCol_InputTextCursor] = colors[ColorRole::secondary];
 
-    style.Colors[ImGuiCol_Tab]                 = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TabHovered]          = colors.Hovered(SurfaceToken::surface, ContentToken::onSurface);
-    style.Colors[ImGuiCol_TabSelected]         = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TabSelectedOverline] = colors[SurfaceToken::primary];
+    style.Colors[ImGuiCol_Tab]                 = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_TabHovered]          = colors.Hovered(ColorRole::surface, ColorRole::onSurface);
+    style.Colors[ImGuiCol_TabSelected]         = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_TabSelectedOverline] = colors[ColorRole::primary];
 
-    style.Colors[ImGuiCol_TabDimmed]                 = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TabDimmedSelected]         = colors.Pressed(SurfaceToken::surface, ContentToken::onSurface);
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors[SurfaceToken::outlineVariant];
+    style.Colors[ImGuiCol_TabDimmed]                 = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_TabDimmedSelected]         = colors.Pressed(ColorRole::surface, ColorRole::onSurface);
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors[ColorRole::outlineVariant];
 
-    style.Colors[ImGuiCol_PlotLines]        = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_PlotLinesHovered] = colors.Hovered(SurfaceToken::primary, ContentToken::onPrimary);
+    style.Colors[ImGuiCol_PlotLines]        = colors[ColorRole::primary];
+    style.Colors[ImGuiCol_PlotLinesHovered] = colors.Hovered(ColorRole::primary, ColorRole::onPrimary);
 
-    style.Colors[ImGuiCol_PlotHistogram]        = colors[SurfaceToken::tertiary];
-    style.Colors[ImGuiCol_PlotHistogramHovered] = colors.Hovered(SurfaceToken::tertiary, ContentToken::onTertiary);
+    style.Colors[ImGuiCol_PlotHistogram]        = colors[ColorRole::tertiary];
+    style.Colors[ImGuiCol_PlotHistogramHovered] = colors.Hovered(ColorRole::tertiary, ColorRole::onTertiary);
 
-    style.Colors[ImGuiCol_TableHeaderBg]     = colors[SurfaceToken::surfaceContainerHigh];
-    style.Colors[ImGuiCol_TableBorderStrong] = colors[SurfaceToken::outline];
-    style.Colors[ImGuiCol_TableBorderLight]  = colors[SurfaceToken::outlineVariant];
-    style.Colors[ImGuiCol_TableRowBg]        = colors[SurfaceToken::surface];
-    style.Colors[ImGuiCol_TableRowBgAlt]     = colors[SurfaceToken::surfaceContainerLowest];
+    style.Colors[ImGuiCol_TableHeaderBg]     = colors[ColorRole::surfaceContainerHigh];
+    style.Colors[ImGuiCol_TableBorderStrong] = colors[ColorRole::outline];
+    style.Colors[ImGuiCol_TableBorderLight]  = colors[ColorRole::outlineVariant];
+    style.Colors[ImGuiCol_TableRowBg]        = colors[ColorRole::surface];
+    style.Colors[ImGuiCol_TableRowBgAlt]     = colors[ColorRole::surfaceContainerLowest];
 
     // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low; // TODO: set this
-    style.Colors[ImGuiCol_TextSelectedBg]   = colors[SurfaceToken::primary];
+    style.Colors[ImGuiCol_TextSelectedBg]   = colors[ColorRole::primary];
     style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
 
-    style.Colors[ImGuiCol_TreeLines] = colors[ContentToken::onSurface];
+    style.Colors[ImGuiCol_TreeLines] = colors[ColorRole::onSurface];
 
-    style.Colors[ImGuiCol_DragDropTarget]   = colors[SurfaceToken::primary];
-    style.Colors[ImGuiCol_DragDropTargetBg] = colors[SurfaceToken::surface];
+    style.Colors[ImGuiCol_DragDropTarget]   = colors[ColorRole::primary];
+    style.Colors[ImGuiCol_DragDropTargetBg] = colors[ColorRole::surface];
 
-    style.Colors[ImGuiCol_UnsavedMarker]         = colors[ContentToken::onPrimary];
-    style.Colors[ImGuiCol_NavCursor]             = colors[ContentToken::onSecondary];
-    style.Colors[ImGuiCol_NavWindowingHighlight] = colors[ContentToken::onPrimary];
-    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors[SurfaceToken::surfaceContainer];
+    style.Colors[ImGuiCol_UnsavedMarker]         = colors[ColorRole::onPrimary];
+    style.Colors[ImGuiCol_NavCursor]             = colors[ColorRole::onSecondary];
+    style.Colors[ImGuiCol_NavWindowingHighlight] = colors[ColorRole::onPrimary];
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors[ColorRole::surfaceContainer];
 
-    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[SurfaceToken::surface];
+    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[ColorRole::surface];
     style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 

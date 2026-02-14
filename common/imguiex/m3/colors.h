@@ -24,77 +24,9 @@ static constexpr auto ARGB_A_MASK  = 0xFF000000;
 static constexpr auto CONTRAST_MIN = -1.0;
 static constexpr auto CONTRAST_MAX = 1.0;
 
-class ColorBase
+enum class ColorRole : std::uint8_t
 {
-    ImVec4 raw{0, 0, 0, 0};
-
-public:
-    constexpr ColorBase() = default;
-
-    constexpr ColorBase(float r, float g, float b, float a = 1.0F) : raw(r, g, b, a) {}
-
-    constexpr explicit ColorBase(const ImVec4 &col) : raw(col) {}
-
-    constexpr auto operator=(const ImVec4 &col) -> ColorBase &
-    {
-        raw = col;
-        return *this;
-    }
-
-    explicit ColorBase(ImU32 rgba) : raw(ImGui::ColorConvertU32ToFloat4(rgba)) {}
-
-    constexpr operator ImVec4() const // NOLINT(*-explicit-constructor)
-    {
-        return raw;
-    }
-
-    explicit operator ImU32() const { return ImGui::ColorConvertFloat4ToU32(raw); }
-};
-
-struct ContentColor : ColorBase
-{
-    using ColorBase::ColorBase;
-    using ColorBase::operator=;
-
-    static constexpr float DISABLED_OPACITY = 0.38F;
-};
-
-class SurfaceColor : public ColorBase
-{
-public:
-    using ColorBase::ColorBase;
-    using ColorBase::operator=;
-
-    static constexpr float HOVER_OPACITY    = 0.08F;
-    static constexpr float PRESSED_OPACITY  = 0.12F;
-    static constexpr float DISABLED_OPACITY = 0.10F;
-
-    [[nodiscard]] constexpr auto GetState(const ContentColor &onColor, const float stateOpacity) const -> SurfaceColor
-    {
-        const auto l = static_cast<ImVec4>(*this);
-        const auto r = static_cast<ImVec4>(onColor);
-        return {
-            l.x + ((r.x - l.x) * stateOpacity),
-            l.y + ((r.y - l.y) * stateOpacity),
-            l.z + ((r.z - l.z) * stateOpacity),
-            l.w
-        };
-    }
-
-    [[nodiscard]] constexpr auto Hovered(const ContentColor &onColor) const -> SurfaceColor
-    {
-        return GetState(onColor, HOVER_OPACITY);
-    }
-
-    [[nodiscard]] constexpr auto Pressed(const ContentColor &onColor) const -> SurfaceColor
-    {
-        return GetState(onColor, PRESSED_OPACITY);
-    }
-};
-
-enum class SurfaceToken : std::uint8_t
-{
-    background = 0,
+    background,
     error,
     errorContainer,
     inversePrimary,
@@ -125,12 +57,7 @@ enum class SurfaceToken : std::uint8_t
     tertiaryContainer,
     tertiaryFixed,
     tertiaryFixedDim,
-    count
-};
-
-enum class ContentToken : std::uint8_t
-{
-    onBackground = 0,
+    onBackground,
     onError,
     onErrorContainer,
     onPrimary,
@@ -157,6 +84,13 @@ static constexpr auto IM_COL32_R_MASK = 0xFF;
 static constexpr auto IM_COL32_G_MASK = 0xFF00;
 static constexpr auto IM_COL32_B_MASK = 0xFF0000;
 
+static constexpr float HOVER_OPACITY      = 0.08F;
+static constexpr float PRESSED_OPACITY    = 0.12F;
+static constexpr float FOCUS_OPACITY      = 0.12F;
+static constexpr float DRAGGED_OPACITY    = 0.16F;
+static constexpr float DISABLED_CONTENT   = 0.38F;
+static constexpr float DISABLED_CONTAINER = 0.12F;
+
 constexpr auto ImU32ToArgb(const ImU32 imU32) -> Argb
 {
     return (imU32 & IM_COL32_A_MASK) | (imU32 & IM_COL32_R_MASK) << ARGB_R_SHIFT | (imU32 & IM_COL32_G_MASK) |
@@ -175,26 +109,22 @@ constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
 class ColorScheme
 {
 public:
-    using SurfaceColors = std::array<SurfaceColor, static_cast<uint8_t>(SurfaceToken::count)>;
-    using ContentColors = std::array<ContentColor, static_cast<uint8_t>(ContentToken::count)>;
-
     struct SchemeConfig
     {
-        double contrastLevel = 0.0;
-        Argb   sourceColor{};
-        bool   darkMode = false;
+        double contrastLevel;
+        Argb   sourceColor;
+        bool   darkMode;
     };
 
+    using Colors = std::array<ImVec4, static_cast<uint8_t>(ColorRole::count)>;
+
 private:
-    alignas(16) SurfaceColors surfaceColors{};
-    ContentColors contentColors{};
-    SchemeConfig  schemeConfig;
+    alignas(16) Colors m_colors{};
+    SchemeConfig m_schemeConfig;
 
 public:
-    explicit ColorScheme(
-        const SchemeConfig &schemeConfig, const SurfaceColors &surfaceColors, const ContentColors &contentColors
-    )
-        : surfaceColors(surfaceColors), contentColors(contentColors), schemeConfig(schemeConfig)
+    explicit ColorScheme(const Colors &colors, const SchemeConfig &schemeConfig)
+        : m_colors(colors), m_schemeConfig(schemeConfig)
     {
     }
 
@@ -204,67 +134,56 @@ public:
 
     auto operator=(const ColorScheme &other) -> ColorScheme &
     {
-        if (this == &other) return *this;
-        surfaceColors = other.surfaceColors;
-        contentColors = other.contentColors;
-        schemeConfig  = other.schemeConfig;
+        if (this != &other)
+        {
+            m_colors       = other.m_colors;
+            m_schemeConfig = other.m_schemeConfig;
+        }
         return *this;
     }
 
     auto operator=(ColorScheme &&other) noexcept -> ColorScheme & = default;
 
-    [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return schemeConfig; }
+    [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return m_schemeConfig; }
 
     //! \todo should refactor color system. All components colors should be defined in Specs.
-    [[nodiscard]] auto at(SurfaceToken token) const -> const SurfaceColor &
-    {
-        return surfaceColors.at(static_cast<uint8_t>(token));
-    }
+    [[nodiscard]] auto at(ColorRole role) const -> const ImVec4 & { return m_colors.at(static_cast<size_t>(role)); }
 
-    auto operator[](SurfaceToken token) const -> const SurfaceColor &
-    {
-        return surfaceColors[static_cast<uint8_t>(token)];
-    }
-
-    [[nodiscard]] auto at(ContentToken token) const -> const ContentColor &
-    {
-        return contentColors.at(static_cast<uint8_t>(token));
-    }
-
-    auto operator[](ContentToken token) const -> const ContentColor &
-    {
-        return contentColors[static_cast<uint8_t>(token)];
-    }
+    auto operator[](ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }
 
     ////////////////////////////////////////////////////////////////////////
     /// Helpers
 
-    [[nodiscard]] auto Hovered(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
+    [[nodiscard]] auto Hovered(ColorRole surfaceRole, ColorRole contentRole) const -> ImVec4
     {
-        return at(surfaceToken).Hovered(at(contentToken));
+        return BlendState(at(surfaceRole), at(contentRole), HOVER_OPACITY);
     }
 
-    [[nodiscard]] auto Pressed(SurfaceToken surfaceToken, ContentToken contentToken) const -> SurfaceColor
+    [[nodiscard]] auto Pressed(ColorRole surfaceRole, ColorRole contentRole) const -> ImVec4
     {
-        return at(surfaceToken).Pressed(at(contentToken));
+        return BlendState(at(surfaceRole), at(contentRole), PRESSED_OPACITY);
     }
 
-    [[nodiscard]] auto DisabledSurface() const -> SurfaceColor
+    [[nodiscard]] auto DisabledSurface(ColorRole containerRole, ColorRole onSurfaceRole = ColorRole::onSurface) const
+        -> ImVec4
     {
-        const ImVec4 baseColor = at(SurfaceToken::surface);
-        const ImVec4 onColor   = at(ContentToken::onSurface);
+        return BlendState(at(containerRole), at(onSurfaceRole), DISABLED_CONTAINER);
+    }
+
+    [[nodiscard]] auto DisabledContent(ColorRole contentRole) const -> ImVec4
+    {
+        const ImVec4 onColor = at(contentRole);
+        return {onColor.x, onColor.y, onColor.z, onColor.w * DISABLED_CONTENT};
+    }
+
+    static ImVec4 BlendState(ImVec4 base, ImVec4 overlay, float opacity)
+    {
         return {
-            baseColor.x + ((onColor.x - baseColor.x) * SurfaceColor::DISABLED_OPACITY),
-            baseColor.y + ((onColor.y - baseColor.y) * SurfaceColor::DISABLED_OPACITY),
-            baseColor.z + ((onColor.z - baseColor.z) * SurfaceColor::DISABLED_OPACITY),
-            baseColor.w
+            base.x + (overlay.x - base.x) * opacity,
+            base.y + (overlay.y - base.y) * opacity,
+            base.z + (overlay.z - base.z) * opacity,
+            base.w
         };
-    }
-
-    [[nodiscard]] auto DisabledContent() const -> ContentColor
-    {
-        const ImVec4 onColor = at(ContentToken::onSurface);
-        return {onColor.x, onColor.y, onColor.z, onColor.w * ContentColor::DISABLED_OPACITY};
     }
 };
 } // namespace ImGuiEx::M3

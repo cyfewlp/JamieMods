@@ -14,76 +14,75 @@ using Hct    = material_color_utilities::Hct;
 
 namespace
 {
-void FillSurfaceColors(ColorScheme::SurfaceColors &surfaceColors, const Scheme &scheme)
+void FillSurfaceColors(ColorScheme::Colors &colors, const Scheme &scheme)
 {
     // clang-format off
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::primary))                = ArgbToImVec4(scheme.GetPrimary());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceTint))            = ArgbToImVec4(scheme.GetSurfaceTint());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::primaryContainer))       = ArgbToImVec4(scheme.GetPrimaryContainer());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::secondary))              = ArgbToImVec4(scheme.GetSecondary());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::secondaryContainer))     = ArgbToImVec4(scheme.GetSecondaryContainer());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::tertiary))               = ArgbToImVec4(scheme.GetTertiary());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::tertiaryContainer))      = ArgbToImVec4(scheme.GetTertiaryContainer());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::error))                  = ArgbToImVec4(scheme.GetError());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::errorContainer))         = ArgbToImVec4(scheme.GetErrorContainer());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::background))             = ArgbToImVec4(scheme.GetBackground());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surface))                = ArgbToImVec4(scheme.GetSurface());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceVariant))         = ArgbToImVec4(scheme.GetSurfaceVariant());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::outline))                = ArgbToImVec4(scheme.GetOutline());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::outlineVariant))         = ArgbToImVec4(scheme.GetOutlineVariant());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::shadow))                 = ArgbToImVec4(scheme.GetShadow());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::scrim))                  = ArgbToImVec4(scheme.GetScrim());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::inverseSurface))         = ArgbToImVec4(scheme.GetInverseSurface());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::inversePrimary))         = ArgbToImVec4(scheme.GetInversePrimary());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::primaryFixed))           = ArgbToImVec4(scheme.GetPrimaryFixed());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::primaryFixedDim))        = ArgbToImVec4(scheme.GetPrimaryFixedDim());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::secondaryFixed))         = ArgbToImVec4(scheme.GetSecondaryFixed());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::secondaryFixedDim))      = ArgbToImVec4(scheme.GetSecondaryFixedDim());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::tertiaryFixed))          = ArgbToImVec4(scheme.GetTertiaryFixed());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::tertiaryFixedDim))       = ArgbToImVec4(scheme.GetTertiaryFixedDim());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceDim))             = ArgbToImVec4(scheme.GetSurfaceDim());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceBright))          = ArgbToImVec4(scheme.GetSurfaceBright());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceContainerLowest)) = ArgbToImVec4(scheme.GetSurfaceContainerLowest());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceContainerLow))    = ArgbToImVec4(scheme.GetSurfaceContainerLow());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceContainer))       = ArgbToImVec4(scheme.GetSurfaceContainer());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceContainerHigh))   = ArgbToImVec4(scheme.GetSurfaceContainerHigh());
-    surfaceColors.at(static_cast<size_t>(SurfaceToken::surfaceContainerHighest))= ArgbToImVec4(scheme.GetSurfaceContainerHighest());
+    colors.at(static_cast<size_t>(ColorRole::primary))                = ArgbToImVec4(scheme.GetPrimary());
+    colors.at(static_cast<size_t>(ColorRole::surfaceTint))            = ArgbToImVec4(scheme.GetSurfaceTint());
+    colors.at(static_cast<size_t>(ColorRole::primaryContainer))       = ArgbToImVec4(scheme.GetPrimaryContainer());
+    colors.at(static_cast<size_t>(ColorRole::secondary))              = ArgbToImVec4(scheme.GetSecondary());
+    colors.at(static_cast<size_t>(ColorRole::secondaryContainer))     = ArgbToImVec4(scheme.GetSecondaryContainer());
+    colors.at(static_cast<size_t>(ColorRole::tertiary))               = ArgbToImVec4(scheme.GetTertiary());
+    colors.at(static_cast<size_t>(ColorRole::tertiaryContainer))      = ArgbToImVec4(scheme.GetTertiaryContainer());
+    colors.at(static_cast<size_t>(ColorRole::error))                  = ArgbToImVec4(scheme.GetError());
+    colors.at(static_cast<size_t>(ColorRole::errorContainer))         = ArgbToImVec4(scheme.GetErrorContainer());
+    colors.at(static_cast<size_t>(ColorRole::background))             = ArgbToImVec4(scheme.GetBackground());
+    colors.at(static_cast<size_t>(ColorRole::surface))                = ArgbToImVec4(scheme.GetSurface());
+    colors.at(static_cast<size_t>(ColorRole::surfaceVariant))         = ArgbToImVec4(scheme.GetSurfaceVariant());
+    colors.at(static_cast<size_t>(ColorRole::outline))                = ArgbToImVec4(scheme.GetOutline());
+    colors.at(static_cast<size_t>(ColorRole::outlineVariant))         = ArgbToImVec4(scheme.GetOutlineVariant());
+    colors.at(static_cast<size_t>(ColorRole::shadow))                 = ArgbToImVec4(scheme.GetShadow());
+    colors.at(static_cast<size_t>(ColorRole::scrim))                  = ArgbToImVec4(scheme.GetScrim());
+    colors.at(static_cast<size_t>(ColorRole::inverseSurface))         = ArgbToImVec4(scheme.GetInverseSurface());
+    colors.at(static_cast<size_t>(ColorRole::inversePrimary))         = ArgbToImVec4(scheme.GetInversePrimary());
+    colors.at(static_cast<size_t>(ColorRole::primaryFixed))           = ArgbToImVec4(scheme.GetPrimaryFixed());
+    colors.at(static_cast<size_t>(ColorRole::primaryFixedDim))        = ArgbToImVec4(scheme.GetPrimaryFixedDim());
+    colors.at(static_cast<size_t>(ColorRole::secondaryFixed))         = ArgbToImVec4(scheme.GetSecondaryFixed());
+    colors.at(static_cast<size_t>(ColorRole::secondaryFixedDim))      = ArgbToImVec4(scheme.GetSecondaryFixedDim());
+    colors.at(static_cast<size_t>(ColorRole::tertiaryFixed))          = ArgbToImVec4(scheme.GetTertiaryFixed());
+    colors.at(static_cast<size_t>(ColorRole::tertiaryFixedDim))       = ArgbToImVec4(scheme.GetTertiaryFixedDim());
+    colors.at(static_cast<size_t>(ColorRole::surfaceDim))             = ArgbToImVec4(scheme.GetSurfaceDim());
+    colors.at(static_cast<size_t>(ColorRole::surfaceBright))          = ArgbToImVec4(scheme.GetSurfaceBright());
+    colors.at(static_cast<size_t>(ColorRole::surfaceContainerLowest)) = ArgbToImVec4(scheme.GetSurfaceContainerLowest());
+    colors.at(static_cast<size_t>(ColorRole::surfaceContainerLow))    = ArgbToImVec4(scheme.GetSurfaceContainerLow());
+    colors.at(static_cast<size_t>(ColorRole::surfaceContainer))       = ArgbToImVec4(scheme.GetSurfaceContainer());
+    colors.at(static_cast<size_t>(ColorRole::surfaceContainerHigh))   = ArgbToImVec4(scheme.GetSurfaceContainerHigh());
+    colors.at(static_cast<size_t>(ColorRole::surfaceContainerHighest))= ArgbToImVec4(scheme.GetSurfaceContainerHighest());
     // clang-format on
 }
 
-void FillContentColors(ColorScheme::ContentColors &contentColors, const Scheme &scheme)
+void FillContentColors(ColorScheme::Colors &colors, const Scheme &scheme)
 {
     // clang-format off
-    contentColors.at(static_cast<size_t>(ContentToken::onPrimary))              = ArgbToImVec4(scheme.GetOnPrimary());
-    contentColors.at(static_cast<size_t>(ContentToken::onPrimaryContainer))     = ArgbToImVec4(scheme.GetOnPrimaryContainer());
-    contentColors.at(static_cast<size_t>(ContentToken::onSecondary))            = ArgbToImVec4(scheme.GetOnSecondary());
-    contentColors.at(static_cast<size_t>(ContentToken::onSecondaryContainer))   = ArgbToImVec4(scheme.GetOnSecondaryContainer());
-    contentColors.at(static_cast<size_t>(ContentToken::onTertiary))             = ArgbToImVec4(scheme.GetOnTertiary());
-    contentColors.at(static_cast<size_t>(ContentToken::onTertiaryContainer))    = ArgbToImVec4(scheme.GetOnTertiaryContainer());
-    contentColors.at(static_cast<size_t>(ContentToken::onError))                = ArgbToImVec4(scheme.GetOnError());
-    contentColors.at(static_cast<size_t>(ContentToken::onErrorContainer))       = ArgbToImVec4(scheme.GetOnErrorContainer());
-    contentColors.at(static_cast<size_t>(ContentToken::onBackground))           = ArgbToImVec4(scheme.GetOnBackground());
-    contentColors.at(static_cast<size_t>(ContentToken::onSurface))              = ArgbToImVec4(scheme.GetOnSurface());
-    contentColors.at(static_cast<size_t>(ContentToken::onSurfaceVariant))       = ArgbToImVec4(scheme.GetOnSurfaceVariant());
-    contentColors.at(static_cast<size_t>(ContentToken::onPrimaryFixed))         = ArgbToImVec4(scheme.GetOnPrimaryFixed());
-    contentColors.at(static_cast<size_t>(ContentToken::onPrimaryFixedVariant))  = ArgbToImVec4(scheme.GetOnPrimaryFixedVariant());
-    contentColors.at(static_cast<size_t>(ContentToken::onSecondaryFixed))       = ArgbToImVec4(scheme.GetOnSecondaryFixed());
-    contentColors.at(static_cast<size_t>(ContentToken::onSecondaryFixedVariant))= ArgbToImVec4(scheme.GetOnSecondaryFixedVariant());
-    contentColors.at(static_cast<size_t>(ContentToken::onTertiaryFixed))        = ArgbToImVec4(scheme.GetOnTertiaryFixed());
-    contentColors.at(static_cast<size_t>(ContentToken::onTertiaryFixedVariant)) = ArgbToImVec4(scheme.GetOnTertiaryFixedVariant());
-    contentColors.at(static_cast<size_t>(ContentToken::inverseOnSurface))       = ArgbToImVec4(scheme.GetInverseOnSurface());
+    colors.at(static_cast<size_t>(ColorRole::onPrimary))              = ArgbToImVec4(scheme.GetOnPrimary());
+    colors.at(static_cast<size_t>(ColorRole::onPrimaryContainer))     = ArgbToImVec4(scheme.GetOnPrimaryContainer());
+    colors.at(static_cast<size_t>(ColorRole::onSecondary))            = ArgbToImVec4(scheme.GetOnSecondary());
+    colors.at(static_cast<size_t>(ColorRole::onSecondaryContainer))   = ArgbToImVec4(scheme.GetOnSecondaryContainer());
+    colors.at(static_cast<size_t>(ColorRole::onTertiary))             = ArgbToImVec4(scheme.GetOnTertiary());
+    colors.at(static_cast<size_t>(ColorRole::onTertiaryContainer))    = ArgbToImVec4(scheme.GetOnTertiaryContainer());
+    colors.at(static_cast<size_t>(ColorRole::onError))                = ArgbToImVec4(scheme.GetOnError());
+    colors.at(static_cast<size_t>(ColorRole::onErrorContainer))       = ArgbToImVec4(scheme.GetOnErrorContainer());
+    colors.at(static_cast<size_t>(ColorRole::onBackground))           = ArgbToImVec4(scheme.GetOnBackground());
+    colors.at(static_cast<size_t>(ColorRole::onSurface))              = ArgbToImVec4(scheme.GetOnSurface());
+    colors.at(static_cast<size_t>(ColorRole::onSurfaceVariant))       = ArgbToImVec4(scheme.GetOnSurfaceVariant());
+    colors.at(static_cast<size_t>(ColorRole::onPrimaryFixed))         = ArgbToImVec4(scheme.GetOnPrimaryFixed());
+    colors.at(static_cast<size_t>(ColorRole::onPrimaryFixedVariant))  = ArgbToImVec4(scheme.GetOnPrimaryFixedVariant());
+    colors.at(static_cast<size_t>(ColorRole::onSecondaryFixed))       = ArgbToImVec4(scheme.GetOnSecondaryFixed());
+    colors.at(static_cast<size_t>(ColorRole::onSecondaryFixedVariant))= ArgbToImVec4(scheme.GetOnSecondaryFixedVariant());
+    colors.at(static_cast<size_t>(ColorRole::onTertiaryFixed))        = ArgbToImVec4(scheme.GetOnTertiaryFixed());
+    colors.at(static_cast<size_t>(ColorRole::onTertiaryFixedVariant)) = ArgbToImVec4(scheme.GetOnTertiaryFixedVariant());
+    colors.at(static_cast<size_t>(ColorRole::inverseOnSurface))       = ArgbToImVec4(scheme.GetInverseOnSurface());
     // clang-format on
 }
 } // namespace
 
 auto ThemeBuilder::Build(const ColorScheme::SchemeConfig &config) -> ColorScheme
 {
-    ColorScheme::SurfaceColors surfaceColors;
-    ColorScheme::ContentColors contentColors;
+    ColorScheme::Colors colors;
 
     const Scheme scheme(Hct(config.sourceColor), config.darkMode, config.contrastLevel);
-    FillSurfaceColors(surfaceColors, scheme);
-    FillContentColors(contentColors, scheme);
-    return ColorScheme(config, std::move(surfaceColors), std::move(contentColors));
+    FillSurfaceColors(colors, scheme);
+    FillContentColors(colors, scheme);
+    return ColorScheme(std::move(colors), config);
 }
 } // namespace ImGuiEx::M3

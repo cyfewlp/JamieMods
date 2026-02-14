@@ -67,7 +67,7 @@ auto DrawFrame(
     const M3Styles &m3Styles
 )
 {
-    const ImU32 frame_col     = ImGui::GetColorU32(m3Styles.Colors()[SurfaceToken::secondaryContainer]);
+    const ImU32 frame_col     = ImGui::GetColorU32(m3Styles.Colors()[ColorRole::secondaryContainer]);
     const auto  centerX       = (rects.frame_bb.Max.x + rects.frame_bb.Min.x) * HALF;
     const auto  centerGapLeft = centerX - m3Styles[Spacing::S];
     // part1 secondary container
@@ -151,8 +151,8 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
     ImGui::RenderNavCursor(layout.frame_bb, id);
 
     const bool activated   = g.ActiveId == id;
-    const auto activeColor = activated ? m3Styles.Colors().Pressed(SurfaceToken::primary, ContentToken::onPrimary)
-                                       : m3Styles.Colors()[SurfaceToken::primary];
+    const auto activeColor = activated ? m3Styles.Colors().Pressed(ColorRole::primary, ColorRole::onPrimary)
+                                       : m3Styles.Colors()[ColorRole::primary];
 
     DrawFrame(window->DrawList, layout, params.value01, activeColor, m3Styles);
 
