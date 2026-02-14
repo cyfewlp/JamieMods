@@ -268,7 +268,4 @@ auto BeginModalPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
 auto EndPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
-// \todo implement M3 style TextField iteme
-// auto TextField();
-
 } // namespace ImGuiEx::M3

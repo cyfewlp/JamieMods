@@ -14,11 +14,11 @@ class Hct;
 
 namespace ImGuiEx::M3
 {
-class Colors;
+class ColorScheme;
 
 namespace ThemeBuilder
 {
-auto Build(const Colors::SchemeConfig &config) -> Colors;
+auto Build(const ColorScheme::SchemeConfig &config) -> ColorScheme;
 } // namespace ThemeBuilder
 
 } // namespace ImGuiEx::M3

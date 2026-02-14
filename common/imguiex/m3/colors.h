@@ -172,7 +172,7 @@ constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
     return ImColor(r, g, b, a);
 }
 
-class Colors
+class ColorScheme
 {
 public:
     using SurfaceColors = std::array<SurfaceColor, static_cast<uint8_t>(SurfaceToken::count)>;
@@ -191,18 +191,18 @@ private:
     SchemeConfig  schemeConfig;
 
 public:
-    explicit Colors(
+    explicit ColorScheme(
         const SchemeConfig &schemeConfig, const SurfaceColors &surfaceColors, const ContentColors &contentColors
     )
         : surfaceColors(surfaceColors), contentColors(contentColors), schemeConfig(schemeConfig)
     {
     }
 
-    Colors(const Colors &other) = default;
+    ColorScheme(const ColorScheme &other) = default;
 
-    Colors(Colors &&other) noexcept = default;
+    ColorScheme(ColorScheme &&other) noexcept = default;
 
-    auto operator=(const Colors &other) -> Colors &
+    auto operator=(const ColorScheme &other) -> ColorScheme &
     {
         if (this == &other) return *this;
         surfaceColors = other.surfaceColors;
@@ -211,7 +211,7 @@ public:
         return *this;
     }
 
-    auto operator=(Colors &&other) noexcept -> Colors & = default;
+    auto operator=(ColorScheme &&other) noexcept -> ColorScheme & = default;
 
     [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return schemeConfig; }
 

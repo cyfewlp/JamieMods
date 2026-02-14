@@ -8,11 +8,11 @@
 
 namespace ImGuiEx::M3
 {
-void M3Styles::UpdateTypeScaleScaling(const float newScale) const
+void M3Styles::UpdateTypeScaleScaling(detail::CachedTypeScale &cachedTypeScale, const float newScale)
 {
-    m_cachedTypeScale.currText.textSize   = m_cachedTypeScale.unScaledText.textSize * newScale;
-    m_cachedTypeScale.currText.lineHeight = m_cachedTypeScale.unScaledText.lineHeight * newScale;
-    m_cachedTypeScale.currHalfLineGap     = HalfLineGap(m_cachedTypeScale.currText);
+    cachedTypeScale.currText.textSize   = cachedTypeScale.unScaledText.textSize * newScale;
+    cachedTypeScale.currText.lineHeight = cachedTypeScale.unScaledText.lineHeight * newScale;
+    cachedTypeScale.currHalfLineGap     = HalfLineGap(cachedTypeScale.currText);
 }
 
 void M3Styles::UpdateScaling(const float newScale)
@@ -22,19 +22,19 @@ void M3Styles::UpdateScaling(const float newScale)
         return;
     }
     m_currentScale = newScale;
-    for (size_t i = 0U; i < precomputedPx.size(); ++i)
+    for (size_t i = 0U; i < m_precomputedPx.size(); ++i)
     {
-        precomputedPx[i] = std::floor(static_cast<float>(i * Spec::BASE_UNIT) * newScale);
+        m_precomputedPx[i] = std::floor(static_cast<float>(i * Spec::BASE_UNIT) * newScale);
     }
-    UpdateTypeScaleScaling(m_currentScale);
+    UpdateTypeScaleScaling(m_cachedTypeScale, m_currentScale);
     labelText.textSize   = TEXT_LABEL_LARGE.textSize * newScale;
     labelText.lineHeight = TEXT_LABEL_LARGE.lineHeight * newScale;
 
     iconSize = ICON_SIZE * newScale;
 }
 
-void M3Styles::RebuildColors(const Colors::SchemeConfig &schemeConfig)
+void M3Styles::RebuildColors(const ColorScheme::SchemeConfig &schemeConfig)
 {
-    colors = ThemeBuilder::Build(schemeConfig);
+    m_scheme = ThemeBuilder::Build(schemeConfig);
 }
 } // namespace ImGuiEx::M3

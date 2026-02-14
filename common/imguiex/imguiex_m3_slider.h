@@ -38,9 +38,9 @@ struct Params
     const M3Styles &m3Styles;
     double          value01;
     ImGuiDataType   dataType;
-    uint8_t         grabOuterWidth;
-    uint8_t         grabHeight;
-    uint8_t         frameHeight;
+    uint32_t        grabOuterWidth;
+    uint32_t        grabHeight;
+    uint32_t        frameHeight;
 };
 
 auto Draw(std::string_view label, const Params &params, SliderFlags flags) -> bool;

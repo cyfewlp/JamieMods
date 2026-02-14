@@ -14,7 +14,7 @@ using Hct    = material_color_utilities::Hct;
 
 namespace
 {
-void FillSurfaceColors(Colors::SurfaceColors &surfaceColors, const Scheme &scheme)
+void FillSurfaceColors(ColorScheme::SurfaceColors &surfaceColors, const Scheme &scheme)
 {
     // clang-format off
     surfaceColors.at(static_cast<size_t>(SurfaceToken::primary))                = ArgbToImVec4(scheme.GetPrimary());
@@ -51,7 +51,7 @@ void FillSurfaceColors(Colors::SurfaceColors &surfaceColors, const Scheme &schem
     // clang-format on
 }
 
-void FillContentColors(Colors::ContentColors &contentColors, const Scheme &scheme)
+void FillContentColors(ColorScheme::ContentColors &contentColors, const Scheme &scheme)
 {
     // clang-format off
     contentColors.at(static_cast<size_t>(ContentToken::onPrimary))              = ArgbToImVec4(scheme.GetOnPrimary());
@@ -76,14 +76,14 @@ void FillContentColors(Colors::ContentColors &contentColors, const Scheme &schem
 }
 } // namespace
 
-auto ThemeBuilder::Build(const Colors::SchemeConfig &config) -> Colors
+auto ThemeBuilder::Build(const ColorScheme::SchemeConfig &config) -> ColorScheme
 {
-    Colors::SurfaceColors surfaceColors;
-    Colors::ContentColors contentColors;
+    ColorScheme::SurfaceColors surfaceColors;
+    ColorScheme::ContentColors contentColors;
 
     const Scheme scheme(Hct(config.sourceColor), config.darkMode, config.contrastLevel);
     FillSurfaceColors(surfaceColors, scheme);
     FillContentColors(contentColors, scheme);
-    return Colors(config, std::move(surfaceColors), std::move(contentColors));
+    return ColorScheme(config, std::move(surfaceColors), std::move(contentColors));
 }
 } // namespace ImGuiEx::M3
