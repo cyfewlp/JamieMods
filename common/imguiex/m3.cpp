@@ -3,6 +3,7 @@
 //
 #include "M3ThemeBuilder.h"
 #include "Material3.h"
+#include "log.h"
 
 #include <cmath>
 

@@ -34,5 +34,5 @@ CheckOptions:
   readability-make-member-function-const.IgnorePrototypes: 'false'
   readability-convert-member-functions-to-static.IgnoreMacros: 'true'
   readability-function-cognitive-complexity.Threshold: '25'
-  cppcoreguidelines-pro-bounds-avoid-unchecked-container-access.ExcludeClasses: '::ImGuiEx::M3::Colors;::ImGuiEx::M3::M3Styles'
+  cppcoreguidelines-pro-bounds-avoid-unchecked-container-access.ExcludeClasses: '::ImGuiEx::M3::ColorScheme;::ImGuiEx::M3::M3Styles'
 FormatStyle: file

@@ -164,10 +164,10 @@ bool FontBuilder::ApplyFont(Settings &settings)
 void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     m_PreviewPanel.Draw(fontBuilder, m3Styles);
-    ImGui::SameLine(0, 0);
+    ImGui::SameLine(0.0F, 0.0F);
     {
-        ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerHighest]);
+        const auto styleGuard =
+            ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
 
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
         if (ImGui::BeginChild("FontBuilderFontInfo", {-width, -FLT_MIN}, ImGuiEx::ChildFlags()))

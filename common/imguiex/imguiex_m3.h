@@ -85,7 +85,24 @@ auto IconButton(
     std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole surfaceRole,
     Spec::ColorRole contentRole
 ) -> bool;
-}
+
+/**
+ * @brief Resolves a raw width value into final layout pixels, supporting relative and absolute values.
+ * * This internal helper converts unscaled units to pixels and handles ImGui-style
+ *
+ * sizing logic:
+ * - Positive values: Treated as absolute width (scaled by current DPI/Theme scale).
+ * - Negative values: Treated as relative to the current available content region.
+ * - Zero: Replaces the input with the provided @p defaultWidth before resolution.
+ *
+ * @param width        Unscaled width (positive for absolute, negative for relative).
+ * @param defaultWidth Width to use if @p width is 0.
+ * @param m3Styles     Reference used to scale units to pixels.
+ * @return float       The resolved width in pixels, clamped to available space if necessary.
+ */
+auto ResolveItemWidth(float width, float defaultWidth, const M3Styles &m3Styles) -> float;
+
+} // namespace detail
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
 inline auto IconButton(
@@ -147,6 +164,16 @@ auto FAB(
         contentRole
     );
 }
+
+/**
+ * @brief A filled text field that follows Material Design 3 specifications.
+ *
+ * Implemented by ImGui::TempInputText and custom Item style.
+ * @return true if edited, false otherwise.
+ */
+auto FilledTextField(
+    std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles, float width = 0.0F
+) -> bool;
 
 using Func = std::function<void()>;
 
@@ -247,15 +274,9 @@ inline auto MenuItem(
     const std::string_view label, bool selected, const M3Styles &m3Styles, const SelectableFlags flags = {}
 ) -> bool
 {
-    return ImGui::Selectable(TextStart(label), selected, flags, {0, m3Styles.GetPixels(Spec::Menu::itemHeight)});
+    return ImGui::Selectable(TextStart(label), selected, flags, {0.0F, m3Styles.GetPixels(Spec::Menu::itemHeight)});
 }
 
 void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
-
-/// Popup
-
-auto BeginModalPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
-
-auto EndPopup(std::string_view title, const M3Styles &m3Styles) -> bool;
 
 } // namespace ImGuiEx::M3

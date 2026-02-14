@@ -44,6 +44,8 @@ struct List
     static constexpr Unit width            = dp<280>();
     static constexpr Unit gap              = dp<12>();
     static constexpr Unit segmentedGap     = dp<2>(); ///< md.comp.list.segmented.gap
+    //! extended field
+    static constexpr Unit minContentHeight = minHeight - paddingY * 2U;
 };
 
 /**
@@ -86,6 +88,16 @@ struct Tooltips
     static constexpr auto textRole = TextRole::BodySmall;
     static constexpr Unit height   = dp<24>();
     static constexpr Unit paddingX = dp<8>();
+};
+
+//! https://m3.material.io/components/dialogs/specs
+struct Dialogs
+{
+    static constexpr auto  textRole = TextRole::BodySmall;
+    static constexpr Unit  paddingX = dp<24>();
+    static constexpr Unit  paddingY = dp<24>();
+    static constexpr Unit  minWidth = dp<280>();
+    static constexpr float maxWidth = 560.0F;
 };
 
 } // namespace ImGuiEx::M3::Spec

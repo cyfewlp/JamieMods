@@ -51,9 +51,9 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurface])
-        .Style<ImGuiStyleVar_WindowPadding>({});
+    const auto styleGuard = ImGuiEx::StyleGuard()
+                                .Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurface])
+                                .Style<ImGuiStyleVar_WindowPadding>({});
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         enum class Menu : int8_t
@@ -66,12 +66,13 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 
         // Sidebar
         {
-            ImGuiEx::StyleGuard styleGuard1;
-            styleGuard1.Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurfaceVariant])
-                .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer])
-                .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer])
-                .Color<ImGuiCol_FrameBgActive>(m3Styles.Colors()[M3Spec::ColorRole::secondary])
-                .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors()[M3Spec::ColorRole::secondaryContainer]);
+            const auto styleGuard1 =
+                ImGuiEx::StyleGuard()
+                    .Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurfaceVariant])
+                    .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer])
+                    .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer])
+                    .Color<ImGuiCol_FrameBgActive>(m3Styles.Colors()[M3Spec::ColorRole::secondary])
+                    .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors()[M3Spec::ColorRole::secondaryContainer]);
 
             if (ImGui::BeginChild(
                     "Sidebar", {m3Styles.GetPixels(M3Spec::NavRail::width), -FLT_MIN}, ImGuiEx::ChildFlags().Borders()

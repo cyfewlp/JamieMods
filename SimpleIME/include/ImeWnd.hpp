@@ -68,10 +68,7 @@ public:
 
     auto ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT;
 
-    constexpr auto GetHWND() const -> HWND
-    {
-        return m_hWnd;
-    }
+    auto GetHWND() const -> HWND { return m_hWnd; }
 
     /**
      * Focus to a parent window to abort IME
@@ -80,15 +77,9 @@ public:
     void DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
     void ToggleToolWindow();
 
-    bool IsShowingToolWindow() const
-    {
-        return m_pImeUi->IsShowingToolWindow();
-    }
+    bool IsShowingToolWindow() const { return m_pImeUi->IsShowingToolWindow(); }
 
-    bool IsPinedToolWindow() const
-    {
-        return m_pImeUi->IsPinedToolWindow();
-    }
+    bool IsPinedToolWindow() const { return m_pImeUi->IsPinedToolWindow(); }
 
     void ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const;
 
@@ -107,12 +98,13 @@ private:
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
     CComPtr<InputMethodManager>   m_pInputMethodManager;
-    HWND                          m_hWnd                      = nullptr;
-    HWND                          m_hWndParent                = nullptr;
-    float                         m_dpiScale                  = 1.0F;
-    bool                          m_fFocused : 1              = false;
-    bool                          m_fWantToggleToolWindow : 1 = false;
-    bool                          m_fEnabledTsf : 1           = true;
+    HWND                          m_hWnd                  = nullptr;
+    HWND                          m_hWndParent            = nullptr;
+    float                         m_dpiScale              = 1.0F;
+    bool                          m_fFocused              = false;
+    bool                          m_fEnabledTsf           = true;
+    bool                          m_fWantToggleToolWindow = false;
+    bool                          m_fWantUpdateUiScale    = false;
 };
 } // namespace Ime
 

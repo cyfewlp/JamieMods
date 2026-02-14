@@ -30,15 +30,9 @@ struct format_string_loc
     {
     }
 
-    [[nodiscard]] constexpr auto GetValue() const noexcept -> const std::string_view &
-    {
-        return m_value;
-    }
+    [[nodiscard]] constexpr auto GetValue() const noexcept -> const std::string_view & { return m_value; }
 
-    [[nodiscard]] constexpr auto GetLoc() const noexcept -> const spdlog::source_loc &
-    {
-        return m_loc;
-    }
+    [[nodiscard]] constexpr auto GetLoc() const noexcept -> const spdlog::source_loc & { return m_loc; }
 
 private:
     std::string_view   m_value;
@@ -46,7 +40,7 @@ private:
 } __attribute__((aligned(64)));
 
 template <typename EnumType, typename... Args>
-static constexpr auto logd(EnumType level, const format_string_loc &fsl, Args &&...args) noexcept
+static constexpr void logd(EnumType level, const format_string_loc &fsl, Args &&...args) noexcept
     requires(std::same_as<EnumType, spdlog::level::level_enum>)
 {
     if (spdlog::should_log(level))
@@ -57,37 +51,37 @@ static constexpr auto logd(EnumType level, const format_string_loc &fsl, Args &&
 }
 
 template <typename... Args>
-static constexpr auto critical(const format_string_loc fsl, Args &&...args) noexcept
+static constexpr void critical(const format_string_loc fsl, Args &&...args) noexcept
 {
     logd(spdlog::level::critical, fsl, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-static constexpr auto error(const format_string_loc fsl, Args &&...args) noexcept
+static constexpr void error(const format_string_loc fsl, Args &&...args) noexcept
 {
     logd(spdlog::level::err, fsl, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-static constexpr auto warn(const format_string_loc fsl, Args &&...args) noexcept
+static constexpr void warn(const format_string_loc fsl, Args &&...args) noexcept
 {
     logd(spdlog::level::warn, fsl, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-static constexpr auto info(const format_string_loc fsl, Args &&...args) noexcept
+static constexpr void info(const format_string_loc fsl, Args &&...args) noexcept
 {
     logd(spdlog::level::info, fsl, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-static constexpr auto debug(const format_string_loc fsl, Args &&...args) noexcept
+static constexpr void debug(const format_string_loc fsl, Args &&...args) noexcept
 {
     logd(spdlog::level::debug, fsl, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-static constexpr auto trace(const format_string_loc &&fsl, Args &&...args) noexcept
+static constexpr void trace(const format_string_loc &&fsl, Args &&...args) noexcept
 {
     logd(spdlog::level::trace, fsl, std::forward<Args>(args)...);
 }

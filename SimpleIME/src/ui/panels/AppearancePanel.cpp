@@ -69,7 +69,7 @@ void DrawColorBar(ImDrawList *drawList, const ImVec2 &pos, const ImVec2 &size, c
     );
 }
 
-void DrawHuePicker(float &hue, float chroma, const float pickerHeight)
+void DrawHuePicker(float &hue, float chroma, const ImVec2 &pickerSize)
 {
     constexpr int   kHueSegments = 6;
     constexpr float kHueMax      = 360.0F;
@@ -84,56 +84,50 @@ void DrawHuePicker(float &hue, float chroma, const float pickerHeight)
         Hct(0xFFFF0000)
     };
 
-    auto       *draw_list = ImGui::GetWindowDrawList();
-    const float avail_x   = ImGui::GetContentRegionAvail().x;
+    auto *draw_list = ImGui::GetWindowDrawList();
 
-    const ImVec2 picker_pos = ImGui::GetCursorScreenPos();
-    const ImVec2 size(avail_x, pickerHeight);
-    const float  segment_w    = avail_x / static_cast<float>(kHueSegments);
+    const ImVec2 picker_pos   = ImGui::GetCursorScreenPos();
+    const float  segment_w    = pickerSize.x / static_cast<float>(kHueSegments);
     float        segment_minX = picker_pos.x;
     for (int i = 0; i < kHueSegments; ++i)
     {
         const auto col1 = Hct(col_hues[i].get_hue(), chroma, kToneDefault);
         const auto col2 = Hct(col_hues[i + 1].get_hue(), chroma, kToneDefault);
 
-        DrawColorBar(draw_list, ImVec2(segment_minX, picker_pos.y), ImVec2(segment_w, size.y), col1, col2);
+        DrawColorBar(draw_list, ImVec2(segment_minX, picker_pos.y), ImVec2(segment_w, pickerSize.y), col1, col2);
 
         segment_minX += segment_w;
     }
 
-    HandlerPickerCursor(draw_list, "hue", hue, kHueMax, picker_pos, size);
+    HandlerPickerCursor(draw_list, "hue", hue, kHueMax, picker_pos, pickerSize);
 }
 
-void DrawChromaPicker(const float hue, float &chroma, const float pickerHeight)
+void DrawChromaPicker(const float hue, float &chroma, const ImVec2 &pickerSize)
 {
     constexpr float kChromaMin = 0.0F;
     constexpr float kChromaMax = 150.0F;
 
-    auto       *draw_list = ImGui::GetWindowDrawList();
-    const float avail_x   = ImGui::GetContentRegionAvail().x;
+    auto *draw_list = ImGui::GetWindowDrawList();
 
     const ImVec2 picker_pos = ImGui::GetCursorScreenPos();
-    const ImVec2 size(avail_x, pickerHeight);
 
     const auto col1 = Hct(hue, kChromaMin, kToneDefault);
     const auto col2 = Hct(hue, kChromaMax, kToneDefault);
-    DrawColorBar(draw_list, picker_pos, size, col1, col2);
-    HandlerPickerCursor(draw_list, "chroma", chroma, kChromaMax, picker_pos, size);
+    DrawColorBar(draw_list, picker_pos, pickerSize, col1, col2);
+    HandlerPickerCursor(draw_list, "chroma", chroma, kChromaMax, picker_pos, pickerSize);
 }
 
-void DrawTonePicker(const float hue, const float chroma, float &tone, const float pickerHeight)
+void DrawTonePicker(const float hue, const float chroma, float &tone, const ImVec2 &pickerSize)
 {
     constexpr float kToneMin = 0.0F;
     constexpr float kToneMax = 100.0F;
     constexpr int   segments = 3;
     constexpr float toneStep = kToneMax / static_cast<float>(segments);
 
-    auto       *draw_list = ImGui::GetWindowDrawList();
-    const float avail_x   = ImGui::GetContentRegionAvail().x;
+    auto *draw_list = ImGui::GetWindowDrawList();
 
     const ImVec2 picker_pos = ImGui::GetCursorScreenPos();
-    const ImVec2 size(avail_x, pickerHeight);
-    const float  segment_w = avail_x / static_cast<float>(segments);
+    const float  segment_w  = pickerSize.x / static_cast<float>(segments);
 
     float segment_minX = picker_pos.x;
     float tone0        = kToneMin;
@@ -142,13 +136,13 @@ void DrawTonePicker(const float hue, const float chroma, float &tone, const floa
         const auto col1 = Hct(hue, chroma, tone0);
         const auto col2 = Hct(hue, chroma, tone0 + toneStep);
 
-        DrawColorBar(draw_list, {segment_minX, picker_pos.y}, {segment_w, size.y}, col1, col2);
+        DrawColorBar(draw_list, {segment_minX, picker_pos.y}, {segment_w, pickerSize.y}, col1, col2);
 
         tone0 += toneStep;
         segment_minX += segment_w;
     }
 
-    HandlerPickerCursor(draw_list, "tone", tone, kToneMax, picker_pos, size);
+    HandlerPickerCursor(draw_list, "tone", tone, kToneMax, picker_pos, pickerSize);
 }
 
 void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3Styles &m3Styles)
@@ -156,23 +150,10 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
     const Hct   hct(hctCache.hue, hctCache.chroma, hctCache.tone);
     std::string buffer = std::format("#{:06X}", hct.ToInt() & 0xFFFFFFU);
 
-    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::BodyLarge>();
-    const auto styleGuard =
-        ImGuiEx::StyleGuard()
-            .Style<ImGuiStyleVar_FramePadding>(
-                {m3Styles.GetPixels(M3Spec::TextFieldBase::paddingX),
-                 m3Styles.GetPixels(M3Spec::TextFieldBase::paddingY) + m3Styles.GetLastText().currHalfLineGap}
-            )
-            .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest])
-            .Color<ImGuiCol_FrameBgHovered>(
-                m3Styles.Colors().Hovered(ColorRole::surfaceContainerHighest, ColorRole::onSurface)
-            )
-            .Color<ImGuiCol_FrameBgActive>(
-                m3Styles.Colors().Pressed(ColorRole::surfaceContainerHighest, ColorRole::onSurface)
-            );
     constexpr size_t BUFFER_SIZE = 64U;
     buffer.reserve(BUFFER_SIZE);
-    if (ImGui::InputText("##Text", buffer.data(), buffer.capacity(), ImGuiInputTextFlags_CharsUppercase))
+
+    if (ImGuiEx::M3::FilledTextField("RGB", buffer.data(), buffer.capacity(), m3Styles))
     {
         std::string_view view = buffer;
         for (auto &c : view)
@@ -216,9 +197,11 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
 auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3Styles &m3Styles)
     -> bool
 {
-    bool       applied = false;
-    const auto popupStyleGuard =
-        ImGuiEx::StyleGuard().Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest]);
+    bool applied = false;
+
+    const auto popupStyleGuard = ImGuiEx::StyleGuard()
+                                     .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest])
+                                     .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<M3Spec::Dialogs>());
     if (!ImGui::BeginPopup(strId))
     {
         return applied;
@@ -226,16 +209,19 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
 
     HexRgbInputText(hctCache, m3Styles);
 
-    const auto pickerHeight = m3Styles.GetPixels(M3Spec::SmallSlider::frameHeight);
+    const auto   fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+    const ImVec2 pickerSSize(
+        m3Styles.GetPixels(M3Spec::Dialogs::minWidth), m3Styles.GetPixels(M3Spec::SmallSlider::frameHeight)
+    );
 
     ImGuiEx::M3::TextUnformatted(std::format("Hue: {:.3f}", hctCache.hue), m3Styles);
-    DrawHuePicker(hctCache.hue, hctCache.chroma, pickerHeight);
+    DrawHuePicker(hctCache.hue, hctCache.chroma, pickerSSize);
 
     ImGuiEx::M3::TextUnformatted(std::format("Chroma: {:.3f}", hctCache.chroma), m3Styles);
-    DrawChromaPicker(hctCache.hue, hctCache.chroma, pickerHeight);
+    DrawChromaPicker(hctCache.hue, hctCache.chroma, pickerSSize);
 
     ImGuiEx::M3::TextUnformatted(std::format("Tone: {:.3f}", hctCache.tone), m3Styles);
-    DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerHeight);
+    DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerSSize);
 
     {
         const auto buttonStyleGuard =
@@ -264,12 +250,9 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
 
 void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 {
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard
-        .Style<ImGuiStyleVar_WindowPadding>({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::L]})
-        .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::Double_M]})
-        .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::onSurface))
-        .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(M3Spec::ColorRole::surface));
+    const auto mainStyleGuard = ImGuiEx::StyleGuard()
+                                    .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::onSurface))
+                                    .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(M3Spec::ColorRole::surface));
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
     {
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))
@@ -329,7 +312,7 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
                 ImGui::Selectable(std::format("{}%", zoom * zoomUnit).c_str(), selected, 0, {0, itemHeight}) &&
                 !selected)
             {
-                m3Styles.UpdateScaling(static_cast<float>(percentage) / 100.f);
+                m3Styles.UpdateScaling(static_cast<float>(percentage) / 100.F);
                 currentZoomIndex = index;
             }
             index++;
@@ -345,7 +328,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
     const auto &colors       = m3Styles.Colors();
     const auto &schemeConfig = m3Styles.Colors().GetSchemeConfig();
     bool        openPopup    = false;
-    const auto  _            = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+    const auto  fontScope    = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
 
     constexpr auto colorButtonFlags = ImGuiEx::ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
     {
@@ -381,7 +364,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
         ImGuiEx::StyleGuard()
             .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::S]})
             .Style<ImGuiStyleVar_WindowPadding>({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::M]})
-            .Color<ImGuiCol_PopupBg>(colors[ColorRole::surfaceContainerHigh]);
+            .Color<ImGuiCol_PopupBg>(colors[ColorRole::surfaceContainer]);
     bool open = true;
     if (ImGui::BeginPopupModal(Translate("Settings.Appearance.ThemeBuilder"), &open, ImGuiEx::WindowFlags()))
     {

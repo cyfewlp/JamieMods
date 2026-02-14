@@ -227,7 +227,11 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     const auto frameStart = std::chrono::high_resolution_clock::now();
 #endif
 
-    m3Styles.UpdateScaling(m_dpiScale);
+    if (m_fWantUpdateUiScale)
+    {
+        m_fWantUpdateUiScale = false;
+        m3Styles.UpdateScaling(m_dpiScale);
+    }
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
@@ -305,14 +309,16 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case WM_SETTINGCHANGE: {
             if (pThis == nullptr) break;
-            pThis->m_dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+            pThis->m_dpiScale           = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+            pThis->m_fWantUpdateUiScale = true;
             return 0;
         }
         case WM_DPICHANGED: {
             if (pThis == nullptr) break;
-            const float g_dpi = HIWORD(wParam);
-            const auto  scale = g_dpi / USER_DEFAULT_SCREEN_DPI;
-            pThis->m_dpiScale = scale;
+            const float g_dpi           = HIWORD(wParam);
+            const auto  scale           = g_dpi / USER_DEFAULT_SCREEN_DPI;
+            pThis->m_dpiScale           = scale;
+            pThis->m_fWantUpdateUiScale = true;
             return 0;
         }
         case CM_EXECUTE_TASK: {
