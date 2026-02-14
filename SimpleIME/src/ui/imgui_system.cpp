@@ -9,6 +9,8 @@
 #include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
 #include "imguiex/Material3.h"
+#include "imguiex/m3/facade/base.h"
+#include "imguiex/m3/spec/color_roles.h"
 #include "log.h"
 
 #include <RE/C/ControlMap.h>
@@ -190,7 +192,7 @@ void Shutdown()
 
 void ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    using ColorRole   = ImGuiEx::M3::ColorRole;
+    using ColorRole   = M3Spec::ColorRole;
     ImGuiStyle &style = ImGui::GetStyle();
 
     const auto &colors = m3Styles.Colors();

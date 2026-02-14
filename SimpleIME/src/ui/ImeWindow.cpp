@@ -18,6 +18,7 @@
 #include "imgui_internal.h"
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/m3/facade/base.h"
 #include "utils/InputFocusAnchor.h"
 
 namespace Ime
@@ -93,7 +94,7 @@ void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3St
 void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     using Spacing   = ImGuiEx::M3::Spacing;
-    using ColorRole = ImGuiEx::M3::ColorRole;
+    using ColorRole = M3Spec::ColorRole;
 
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
@@ -234,9 +235,9 @@ void ImeWindow::Draw(
     const auto mainStyleGuard =
         ImGuiEx::StyleGuard()
             .Style<ImGuiStyleVar_WindowPadding>({})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::primary))
-            .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::surfaceContainerLow))
-            .Color<ImGuiCol_Separator>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::outlineVariant));
+            .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::primary))
+            .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(M3Spec::ColorRole::surfaceContainerLow))
+            .Color<ImGuiCol_Separator>(m3Styles.Colors().at(M3Spec::ColorRole::outlineVariant));
 
     const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     if (ImGui::Begin("IME", nullptr, flags))

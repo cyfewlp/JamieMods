@@ -5,6 +5,7 @@
 #pragma once
 
 #include "imgui.h"
+#include "spec/color_roles.h"
 
 #include <array>
 #include <cstdint>
@@ -23,60 +24,6 @@ static constexpr auto ARGB_A_MASK  = 0xFF000000;
 
 static constexpr auto CONTRAST_MIN = -1.0;
 static constexpr auto CONTRAST_MAX = 1.0;
-
-enum class ColorRole : std::uint8_t
-{
-    background,
-    error,
-    errorContainer,
-    inversePrimary,
-    inverseSurface,
-    outline,
-    outlineVariant,
-    primary,
-    primaryContainer,
-    primaryFixed,
-    primaryFixedDim,
-    scrim,
-    secondary,
-    secondaryContainer,
-    secondaryFixed,
-    secondaryFixedDim,
-    shadow,
-    surface,
-    surfaceBright,
-    surfaceContainer,
-    surfaceContainerHigh,
-    surfaceContainerHighest,
-    surfaceContainerLow,
-    surfaceContainerLowest,
-    surfaceDim,
-    surfaceTint,
-    surfaceVariant,
-    tertiary,
-    tertiaryContainer,
-    tertiaryFixed,
-    tertiaryFixedDim,
-    onBackground,
-    onError,
-    onErrorContainer,
-    onPrimary,
-    onPrimaryContainer,
-    onPrimaryFixed,
-    onPrimaryFixedVariant,
-    onSecondary,
-    onSecondaryContainer,
-    onSecondaryFixed,
-    onSecondaryFixedVariant,
-    onSurface,
-    onSurfaceVariant,
-    onTertiary,
-    onTertiaryContainer,
-    onTertiaryFixed,
-    onTertiaryFixedVariant,
-    inverseOnSurface,
-    count
-};
 
 using Argb = std::uint32_t;
 
@@ -116,7 +63,7 @@ public:
         bool   darkMode;
     };
 
-    using Colors = std::array<ImVec4, static_cast<uint8_t>(ColorRole::count)>;
+    using Colors = std::array<ImVec4, static_cast<uint8_t>(Spec::ColorRole::count)>;
 
 private:
     alignas(16) Colors m_colors{};
@@ -147,30 +94,34 @@ public:
     [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return m_schemeConfig; }
 
     //! \todo should refactor color system. All components colors should be defined in Specs.
-    [[nodiscard]] auto at(ColorRole role) const -> const ImVec4 & { return m_colors.at(static_cast<size_t>(role)); }
+    [[nodiscard]] auto at(Spec::ColorRole role) const -> const ImVec4 &
+    {
+        return m_colors.at(static_cast<size_t>(role));
+    }
 
-    auto operator[](ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }
+    auto operator[](Spec::ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }
 
     ////////////////////////////////////////////////////////////////////////
     /// Helpers
 
-    [[nodiscard]] auto Hovered(ColorRole surfaceRole, ColorRole contentRole) const -> ImVec4
+    [[nodiscard]] auto Hovered(Spec::ColorRole surfaceRole, Spec::ColorRole contentRole) const -> ImVec4
     {
         return BlendState(at(surfaceRole), at(contentRole), HOVER_OPACITY);
     }
 
-    [[nodiscard]] auto Pressed(ColorRole surfaceRole, ColorRole contentRole) const -> ImVec4
+    [[nodiscard]] auto Pressed(Spec::ColorRole surfaceRole, Spec::ColorRole contentRole) const -> ImVec4
     {
         return BlendState(at(surfaceRole), at(contentRole), PRESSED_OPACITY);
     }
 
-    [[nodiscard]] auto DisabledSurface(ColorRole containerRole, ColorRole onSurfaceRole = ColorRole::onSurface) const
-        -> ImVec4
+    [[nodiscard]] auto DisabledSurface(
+        Spec::ColorRole containerRole, Spec::ColorRole onSurfaceRole = Spec::ColorRole::onSurface
+    ) const -> ImVec4
     {
         return BlendState(at(containerRole), at(onSurfaceRole), DISABLED_CONTAINER);
     }
 
-    [[nodiscard]] auto DisabledContent(ColorRole contentRole) const -> ImVec4
+    [[nodiscard]] auto DisabledContent(Spec::ColorRole contentRole) const -> ImVec4
     {
         const ImVec4 onColor = at(contentRole);
         return {onColor.x, onColor.y, onColor.z, onColor.w * DISABLED_CONTENT};

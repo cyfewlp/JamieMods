@@ -25,7 +25,7 @@
 namespace Ime
 {
 
-using ColorRole = ImGuiEx::M3::ColorRole;
+using ColorRole = M3Spec::ColorRole;
 
 namespace
 {
@@ -268,8 +268,8 @@ void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     styleGuard
         .Style<ImGuiStyleVar_WindowPadding>({m3Styles[ImGuiEx::M3::Spacing::L], m3Styles[ImGuiEx::M3::Spacing::L]})
         .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::Double_M]})
-        .Color<ImGuiCol_Text>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::onSurface))
-        .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(ImGuiEx::M3::ColorRole::surface));
+        .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::onSurface))
+        .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(M3Spec::ColorRole::surface));
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
     {
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))

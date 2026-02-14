@@ -25,7 +25,7 @@ namespace
 {
 constexpr auto LANGUAGE_BAR = "LanguageBar";
 
-using ColorRole = ImGuiEx::M3::ColorRole;
+using ColorRole = M3Spec::ColorRole;
 using Spacing   = ImGuiEx::M3::Spacing;
 
 void DrawInputMethodsCombo(

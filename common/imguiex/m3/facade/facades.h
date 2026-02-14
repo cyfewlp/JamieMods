@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include "../spec/color_roles.h"
+#include "../spec/layout.h"
 #include "button.h"
+#include "others.h"
 #include "slider.h"
+#include "text_field.h"
 #include "typography.h"

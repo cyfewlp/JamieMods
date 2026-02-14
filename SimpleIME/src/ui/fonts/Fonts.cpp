@@ -167,7 +167,7 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
     ImGui::SameLine(0, 0);
     {
         ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ImGuiEx::M3::ColorRole::surfaceContainerHighest]);
+        styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerHighest]);
 
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
         if (ImGui::BeginChild("FontBuilderFontInfo", {-width, -FLT_MIN}, ImGuiEx::ChildFlags()))
@@ -186,7 +186,7 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
 void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     using Spacing   = ImGuiEx::M3::Spacing;
-    using ColorRole = ImGuiEx::M3::ColorRole;
+    using ColorRole = M3Spec::ColorRole;
 
     if (!fontBuilder.IsBuilding())
     {
@@ -234,7 +234,7 @@ void UI::FontBuilderPanel::DrawToolBar(
 )
 {
     if (ImGuiEx::M3::BeginDockedToolbar(
-            m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, ImGuiEx::M3::ColorRole::surfaceContainer, m3Styles
+            m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, M3Spec::ColorRole::surfaceContainer, m3Styles
         ))
     {
         DrawToolBarButtons(fontBuilder, settings, m3Styles);
@@ -252,13 +252,11 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
     auto Button = [&m3Styles](const std::string_view &icon) -> bool {
         return ImGuiEx::M3::IconButtonXS(
-            icon, m3Styles, ImGuiEx::M3::ColorRole::surfaceContainer, ImGuiEx::M3::ColorRole::onSurfaceVariant
+            icon, m3Styles, M3Spec::ColorRole::surfaceContainer, M3Spec::ColorRole::onSurfaceVariant
         );
     };
 
-    if (ImGuiEx::M3::IconButtonXS(
-            ICON_FA_WRENCH, m3Styles, ImGuiEx::M3::ColorRole::primary, ImGuiEx::M3::ColorRole::onPrimary
-        ))
+    if (ImGuiEx::M3::IconButtonXS(ICON_FA_WRENCH, m3Styles, M3Spec::ColorRole::primary, M3Spec::ColorRole::onPrimary))
     {
         fontBuilder.ApplyFont(settings);
     }
@@ -295,8 +293,8 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     if (ImGuiEx::M3::IconButtonXS(
             ICON_MD_ALERT_CIRCLE_OUTLINE,
             m3Styles,
-            ImGuiEx::M3::ColorRole::tertiaryContainer,
-            ImGuiEx::M3::ColorRole::onTertiaryContainer
+            M3Spec::ColorRole::tertiaryContainer,
+            M3Spec::ColorRole::onTertiaryContainer
         ))
     {
         centerPopup(TITLE_WARNING);
@@ -306,8 +304,8 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     if (ImGuiEx::M3::IconButtonXS(
             ICON_MD_HELP_CIRCLE_OUTLINE,
             m3Styles,
-            ImGuiEx::M3::ColorRole::secondaryContainer,
-            ImGuiEx::M3::ColorRole::onSecondaryContainer
+            M3Spec::ColorRole::secondaryContainer,
+            M3Spec::ColorRole::onSecondaryContainer
         ))
     {
         centerPopup(TITLE_HELP);

@@ -20,7 +20,7 @@ constexpr int CHANNEL_BG = 0;
 //! Support line height with last used TextRole's line height. If the line height is not set or less than font size, it
 //! will fall back to normal text rendering.
 void TextUnformatted(
-    const std::string_view &text, const M3Styles &m3Styles, ColorRole contentRole = ColorRole::onSurface
+    const std::string_view &text, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface
 );
 
 /**
@@ -55,11 +55,12 @@ struct IconLayout
     float rounding;
 };
 
-auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, ColorRole contentRole) -> void;
+auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole contentRole)
+    -> void;
 } // namespace detail
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto Icon(std::string_view icon, const M3Styles &m3Styles, ColorRole contentRole) -> void
+auto Icon(std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole contentRole) -> void
 {
     detail::Icon(
         icon,
@@ -81,13 +82,15 @@ auto Icon(std::string_view icon, const M3Styles &m3Styles, ColorRole contentRole
 namespace detail
 {
 auto IconButton(
-    std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, ColorRole surfaceRole,
-    ColorRole contentRole
+    std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole surfaceRole,
+    Spec::ColorRole contentRole
 ) -> bool;
 }
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto IconButton(std::string_view icon, const M3Styles &m3Styles, ColorRole surfaceRole, ColorRole contentRole) -> bool
+inline auto IconButton(
+    std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole surfaceRole, Spec::ColorRole contentRole
+) -> bool
 {
     return detail::IconButton(
         icon,
@@ -104,14 +107,16 @@ auto IconButton(std::string_view icon, const M3Styles &m3Styles, ColorRole surfa
 }
 
 inline auto IconButtonXS(
-    const std::string_view icon, const M3Styles &m3Styles, const ColorRole surfaceRole, const ColorRole contentRole
+    const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole,
+    const Spec::ColorRole contentRole
 ) -> bool
 {
     return IconButton<Spec::SizeTips::XSMALL>(icon, m3Styles, surfaceRole, contentRole);
 }
 
 inline auto IconButtonM(
-    const std::string_view icon, const M3Styles &m3Styles, const ColorRole surfaceRole, const ColorRole contentRole
+    const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole,
+    const Spec::ColorRole contentRole
 ) -> bool
 {
     return IconButton<Spec::SizeTips::MEDIUM>(icon, m3Styles, surfaceRole, contentRole);
@@ -120,13 +125,13 @@ inline auto IconButtonM(
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
 auto IconButtonSurfaceContainerVariant(std::string_view icon, const M3Styles &m3Styles)
 {
-    return IconButton<Size>(icon, m3Styles, ColorRole::surfaceContainer, ColorRole::onSurfaceVariant);
+    return IconButton<Size>(icon, m3Styles, Spec::ColorRole::surfaceContainer, Spec::ColorRole::onSurfaceVariant);
 }
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
 auto FAB(
-    std::string_view icon, const M3Styles &m3Styles, ColorRole surfaceRole = ColorRole::primary,
-    ColorRole contentRole = ColorRole::onPrimary
+    std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole surfaceRole = Spec::ColorRole::primary,
+    Spec::ColorRole contentRole = Spec::ColorRole::onPrimary
 ) -> bool
 {
     return detail::IconButton(
@@ -177,7 +182,9 @@ inline void ListItemPlain(std::string_view strId, const M3Styles &m3Styles, Func
 //! Render a single-line label aligned to the current line’s text baseline.
 //! Works inside ListItem content and also for any line where you want centered text alignment.
 //! Requires calling `m3Styles.UseTextRole<Spec::List::textRole>()` (or an equivalent role) beforehand.
-void AlignedLabel(std::string_view label, const M3Styles &m3Styles, ColorRole contentRole = ColorRole::onSurface);
+void AlignedLabel(
+    std::string_view label, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface
+);
 
 //! adjust cursor position.y for the leading color button in ListItem.
 void ListLayoutLeadingColorButton(float height = 0.F);
@@ -213,10 +220,11 @@ inline auto ListLeadingImageSize(const M3Styles &m3Styles) -> ImVec2
  * provide your expected dimensions and draw your button according to the agreement.
  * @return true is Toolbar visible
  */
-auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, ColorRole surfaceRole, const M3Styles &m3Styles)
+auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles)
     -> bool;
 
-inline auto BeginDockedToolbar(float buttonSize, uint8_t count, ColorRole surfaceRole, const M3Styles &m3Styles) -> bool
+inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles)
+    -> bool
 {
     return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceRole, m3Styles);
 }
