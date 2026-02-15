@@ -32,7 +32,7 @@ struct TextFieldBase
     static constexpr Unit paddingX        = dp<16>();
     static constexpr Unit paddingY        = dp<8>();
     //! extra field
-    static constexpr Unit contentHeight   = height - paddingY * 2U;
+    static constexpr Unit contentHeight   = height - (paddingY * 2U);
 };
 
 template <>
@@ -48,6 +48,21 @@ struct TextField<TextFieldStyle::Filled, TextFieldState::Focused> : public TextF
     using TextFieldBase::TextFieldBase;
     static constexpr float activeIndicatorThickness = 3.0F;
     static constexpr float activeIndicatorHeight    = 2.0F;
+};
+
+template <>
+struct TextField<TextFieldStyle::Outlined, TextFieldState::Enabled> : public TextFieldBase
+{
+    using TextFieldBase::TextFieldBase;
+    static constexpr float outlineWidth = 1.0F;
+};
+
+template <>
+struct TextField<TextFieldStyle::Outlined, TextFieldState::Focused> : public TextFieldBase
+{
+    using TextFieldBase::TextFieldBase;
+    static constexpr float outlineWidth  = 3.0F;
+    static constexpr Unit  labelPaddingX = dp<4>();
 };
 
 } // namespace ImGuiEx::M3::Spec

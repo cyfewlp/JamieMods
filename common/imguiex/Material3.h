@@ -31,6 +31,11 @@ inline auto HalfLineGap(const Text &text) -> float
     return (text.lineHeight - text.textSize) * HALF;
 }
 
+inline auto HalfDiff(float v1, float v2) -> float
+{
+    return std::abs((v2 - v1) * HALF);
+}
+
 enum class Spacing : uint8_t
 {
     None       = 0,

@@ -8,6 +8,7 @@
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
 #include "m3/spec/specs.h"
+#include "m3/spec/text_field.h"
 
 #include <functional>
 #include <string_view>
@@ -165,15 +166,30 @@ auto FAB(
     );
 }
 
+auto TextField(
+    std::string_view label, Spec::TextFieldStyle tfStyle, char *buffer, size_t bufferSize, const M3Styles &m3Styles,
+    float width
+) -> bool;
+
 /**
  * @brief A filled text field that follows Material Design 3 specifications.
  *
  * Implemented by ImGui::TempInputText and custom Item style.
  * @return true if edited, false otherwise.
  */
-auto FilledTextField(
+inline auto FilledTextField(
     std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles, float width = 0.0F
-) -> bool;
+) -> bool
+{
+    return TextField(label, Spec::TextFieldStyle::Filled, buffer, bufferSize, m3Styles, width);
+}
+
+inline auto OutlinedTextField(
+    std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles, float width = 0.0F
+) -> bool
+{
+    return TextField(label, Spec::TextFieldStyle::Outlined, buffer, bufferSize, m3Styles, width);
+}
 
 using Func = std::function<void()>;
 
@@ -221,7 +237,7 @@ struct ListScope
     bool       visible;
     StyleGuard styleGuard;
 
-    operator bool() const { return visible; }
+    explicit operator bool() const { return visible; }
 };
 
 [[nodiscard]] auto BeginList(const M3Styles &m3Styles, float width = 0.F, ChildFlags childFlags = {}) -> ListScope;

@@ -21,6 +21,7 @@ namespace ImGuiEx::M3
 namespace
 {
 
+// \todo remove it and replace by M3::TextUnformated or AligendLabel
 void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const ImVec2 &textSize)
 {
     // copy from imgui.cpp#3857
@@ -40,6 +41,69 @@ void AlignText(ImVec2 &posMin, const ImVec2 &align, const ImVec2 &posMax, const 
     }
     return std::nullopt;
 }
+
+struct LayoutInfo
+{
+    ImVec2 size;
+    ImVec2 contentOffset;
+    ImRect bb;
+};
+
+//! Always use the max width. deduced from [min, max] and `GetContentRegionAvail.x`
+template <typename Component>
+auto ComputeLayout(std::pair<float, float> widthRange, const M3Styles &m3Styles) -> LayoutInfo
+{
+    const ImGuiWindow *window = ImGui::GetCurrentWindow();
+
+    const ImVec2 contentOffset = m3Styles.GetPadding<Component>();
+    const float  height        = m3Styles.GetHeight<Component>();
+    float        minWidth      = widthRange.first;
+    float        maxWidth      = widthRange.second;
+    if (minWidth <= 0.0F)
+    {
+        minWidth += ImGui::GetContentRegionAvail().x;
+    }
+    if (maxWidth <= 0.0F)
+    {
+        maxWidth += ImGui::GetContentRegionAvail().x;
+    }
+    const ImVec2 size((ImMax(minWidth, maxWidth)), height);
+    return LayoutInfo{
+        .size = size, .contentOffset = contentOffset, .bb = ImRect(window->DC.CursorPos, window->DC.CursorPos + size)
+    };
+}
+
+//! @brief Try to make the text field active and return whether the input is active.
+auto TryActiveTextField(const ImGuiID id, ImGuiWindow *window) -> bool
+{
+    ImGuiContext &g = *GImGui;
+
+    const auto hovered     = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
+    const auto clicked     = hovered && ImGui::IsMouseClicked(0, 0, id);
+    const bool makeActive  = clicked || (g.ActiveId == id);
+    bool       inputActive = ImGui::TempInputIsActive(id);
+    if (makeActive && clicked)
+    {
+        ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+    }
+    if (makeActive && !inputActive)
+    {
+        ImGui::SetActiveID(id, window);
+        ImGui::SetFocusID(id, window);
+        ImGui::FocusWindow(window);
+
+        g.NavActivateId    = id;
+        g.NavActivateFlags = ImGuiActivateFlags_PreferInput;
+    }
+    if (clicked || (g.NavActivateId == id && (g.NavActivateFlags & ImGuiActivateFlags_PreferInput) != 0))
+    {
+        inputActive = true;
+    }
+
+    bool const focused = (g.NavId == id) && g.NavCursorVisible && !window->DC.NavHideHighlightOneFrame;
+    return inputActive || focused;
+}
+
 } // namespace
 
 void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, const Spec::ColorRole contentRole)
@@ -96,6 +160,7 @@ void DrawNavMenu(const std::string_view icon, const M3Styles &m3Styles) // TODO:
     ImGui::Dummy({0.F, m3Styles[Spacing::L]});
 }
 
+// \todo : need refactor. Use new API GetPixels/UseTextRole/GetLastText
 auto DrawNavItem(
     const std::string_view label, const bool selected, const std::string_view icon, const M3Styles &m3Styles
 ) -> bool
@@ -298,95 +363,120 @@ auto detail::ResolveItemWidth(float width, float defaultWidth, const M3Styles &m
     return width;
 }
 
-auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles, float width)
-    -> bool
+namespace
+{
+void DrawFocusedLabelAndIndicator(
+    ImGuiWindow *window, std::string_view label, const ImRect &bb, const M3Styles &m3Styles
+)
+{
+    const auto backUpCursorPosX = window->DC.CursorPos.x;
+    {
+        const auto supportFontScope = m3Styles.UseTextRole<Spec::TextFieldBase::supportTextRole>();
+        ImGuiEx::M3::TextUnformatted(label, m3Styles, Spec::ColorRole::primary);
+    }
+    const auto indicatorHeight = m3Styles.GetPixels(M3Spec::FilledTextFieldFocused::activeIndicatorHeight);
+    const auto thickness       = m3Styles.GetPixels(M3Spec::FilledTextFieldFocused::activeIndicatorThickness);
+    window->DrawList->PathLineTo({bb.Min.x, bb.Max.y});
+    window->DrawList->PathLineTo({bb.Max.x, bb.Max.y + indicatorHeight});
+    window->DrawList->PathStroke(
+        ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[M3Spec::ColorRole::primary]), 0, thickness
+    );
+    window->DC.CursorPos.x = backUpCursorPosX;
+}
+
+void DrawFocusedLabelAndOutline(
+    ImGuiWindow *window, std::string_view label, const LayoutInfo &layoutInfo, const M3Styles &m3Styles
+)
+{
+    const auto &bb               = layoutInfo.bb;
+    const auto  backUpCursorPosX = window->DC.CursorPos.x;
+    const auto  labelPaddingX    = m3Styles.GetPixels(Spec::OutlinedTextFieldFocused::labelPaddingX);
+    {
+        const auto supportFontScope = m3Styles.UseTextRole<M3Spec::TextFieldBase::supportTextRole>();
+        window->DC.CursorPos.y      = bb.Min.y - (m3Styles.GetLastText().currText.lineHeight * HALF);
+        ImGuiEx::M3::TextUnformatted(label, m3Styles, M3Spec::ColorRole::primary);
+    }
+
+    window->DrawList->PathLineTo(ImVec2{ImGui::GetItemRectMax().x + labelPaddingX, bb.Min.y});
+    window->DrawList->PathLineTo(bb.GetTR());
+    window->DrawList->PathLineTo(bb.GetBR());
+    window->DrawList->PathLineTo(bb.GetBL());
+    window->DrawList->PathLineTo(bb.GetTL());
+    window->DrawList->PathLineTo({backUpCursorPosX - labelPaddingX, bb.Min.y});
+    window->DrawList->PathStroke(
+        ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::ColorRole::primary]),
+        0,
+        Spec::OutlinedTextFieldFocused::outlineWidth
+    );
+    window->DC.CursorPos.x = backUpCursorPosX;
+}
+} // namespace
+
+auto TextField(
+    std::string_view label, Spec::TextFieldStyle tfStyle, char *buffer, size_t bufferSize, const M3Styles &m3Styles,
+    float width
+) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
     {
         return false;
     }
-    const auto            fontScope = m3Styles.UseTextRole<Spec::TextFieldBase::textRole>();
-    constexpr const char *idLabel   = "##FilledTextField";
+    const auto idLabel = std::format("##TextField{}", label);
 
-    ImGuiContext &g = *GImGui;
+    const auto id = window->GetID(idLabel.c_str());
 
-    const auto   labelSize     = ImGui::CalcTextSize(ImGuiEx::TextStart(label), ImGuiEx::TextEnd(label));
-    const float  height        = m3Styles.GetHeight<Spec::TextFieldBase>();
-    const ImVec2 contentOffset = m3Styles.GetPadding<Spec::TextFieldBase>();
-    width                      = detail::ResolveItemWidth(width, ImGui::GetContentRegionAvail().x, m3Styles);
-    width                      = ImMax(width, labelSize.x + (contentOffset.x * 2.0F));
+    const auto layoutInfo = ComputeLayout<Spec::TextFieldBase>({m3Styles.GetPixels(width), 0.0F}, m3Styles);
 
-    const ImVec2 size(width, height);
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
-    ImGui::ItemSize(bb);
-    const auto id = window->GetID(idLabel);
+    const auto bb            = layoutInfo.bb;
+    const auto contentOffset = layoutInfo.contentOffset;
 
     bool edited = false;
-    if (ImGui::ItemAdd(bb, id, nullptr, ImGuiItemFlags_Inputable))
+    ImGui::ItemSize(bb);
+    if (!ImGui::ItemAdd(bb, id, nullptr, ImGuiItemFlags_Inputable))
     {
-        const auto nextLineCursorPos = ImGui::GetCursorScreenPos();
-        window->DrawList->AddRectFilled(
-            bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::ColorRole::surfaceContainerHighest])
-        );
+        return edited;
+    }
 
-        const auto hovered     = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
-        const auto clicked     = hovered && ImGui::IsMouseClicked(0, 0, id);
-        const bool makeActive  = clicked || (g.ActiveId == id);
-        bool       inputActive = ImGui::TempInputIsActive(id);
-        if (makeActive && clicked)
-        {
-            ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
-        }
-        if (makeActive && !inputActive)
-        {
-            ImGui::SetActiveID(id, window);
-            ImGui::SetFocusID(id, window);
-            ImGui::FocusWindow(window);
+    const auto nextLineCursorPos = ImGui::GetCursorScreenPos();
 
-            g.NavActivateId    = id;
-            g.NavActivateFlags = ImGuiActivateFlags_PreferInput;
-        }
-        if (clicked || (g.NavActivateId == id && (g.NavActivateFlags & ImGuiActivateFlags_PreferInput) != 0))
-        {
-            inputActive = true;
-        }
+    const bool focused = TryActiveTextField(id, window);
 
-        ImGui::SetCursorScreenPos(bb.Min + contentOffset);
+    window->DrawList->AddRectFilled(
+        bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::ColorRole::surfaceContainerHighest])
+    );
 
-        const bool navCursorVisible = (g.NavId == id) && g.NavCursorVisible && !window->DC.NavHideHighlightOneFrame;
-        if (inputActive || navCursorVisible)
+    window->DC.CursorPos = bb.Min + contentOffset;
+    if (focused)
+    {
+        if (tfStyle == Spec::TextFieldStyle::Filled)
         {
-            const auto indicatorHeight = m3Styles.GetPixels(M3Spec::FilledTextFieldFocused::activeIndicatorHeight);
-            const auto thickness       = m3Styles.GetPixels(M3Spec::FilledTextFieldFocused::activeIndicatorThickness);
-            window->DrawList->PathLineTo({bb.Min.x, bb.Max.y});
-            window->DrawList->PathLineTo({bb.Max.x, bb.Max.y + indicatorHeight});
-            window->DrawList->PathStroke(
-                ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[M3Spec::ColorRole::primary]), 0, thickness
-            );
-        }
-
-        if (inputActive)
-        {
-            const auto styleGuard =
-                StyleGuard()
-                    .Style<ImGuiStyleVar_FramePadding>({0.0F, m3Styles.GetLastText().currHalfLineGap})
-                    .Style<ImGuiStyleVar_ItemSpacing>(ImVec2())
-                    .Color<ImGuiCol_FrameBg>(ImVec4{})
-                    .Color<ImGuiCol_Border>(ImVec4{})
-                    .Color<ImGuiCol_NavCursor>(ImVec4{})
-                    .Color<ImGuiCol_InputTextCursor>(m3Styles.Colors()[Spec::ColorRole::primary]);
-            {
-                const auto supportFontScope = m3Styles.UseTextRole<Spec::TextFieldBase::supportTextRole>();
-                ImGuiEx::M3::TextUnformatted(label, m3Styles, Spec::ColorRole::primary);
-            }
-            const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AutoSelectAll;
-            const ImRect contentBB({bb.Min.x + contentOffset.x, window->DC.CursorPos.y}, bb.Max - contentOffset);
-            edited = ImGui::TempInputText(contentBB, id, idLabel, buffer, static_cast<int>(bufferSize), flags);
-            // We not compare buffer with previous value. Keep it simple because TempInputText already has the logic to
-            // avoid marking edited when the text is not changed.
+            DrawFocusedLabelAndIndicator(window, label, bb, m3Styles);
         }
         else
+        {
+            DrawFocusedLabelAndOutline(window, label, layoutInfo, m3Styles);
+        }
+
+        const ImRect contentBB(window->DC.CursorPos, bb.Max - contentOffset);
+        const auto   styleGuard =
+            StyleGuard()
+                .Style<ImGuiStyleVar_FramePadding>(
+                    {0.0F, HalfDiff(m3Styles.GetLastText().currText.textSize, contentBB.GetHeight())}
+                )
+                .Style<ImGuiStyleVar_ItemSpacing>(ImVec2())
+                .Color<ImGuiCol_FrameBg>(ImVec4{})
+                .Color<ImGuiCol_Border>(ImVec4{})
+                .Color<ImGuiCol_NavCursor>(ImVec4{})
+                .Color<ImGuiCol_InputTextCursor>(m3Styles.Colors()[Spec::ColorRole::primary]);
+        const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AutoSelectAll;
+        edited = ImGui::TempInputText(contentBB, id, idLabel.c_str(), buffer, static_cast<int>(bufferSize), flags);
+        // We not compare buffer with previous value. Keep it simple because TempInputText already has the logic to
+        // avoid marking edited when the text is not changed.
+    }
+    else
+    {
+        if (tfStyle == Spec::TextFieldStyle::Filled)
         {
             const auto indicatorHeight = m3Styles.GetPixels(Spec::FilledTextFieldEnabled::activeIndicatorHeight);
             window->DrawList->AddLine(
@@ -395,18 +485,24 @@ auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, co
                 ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[M3Spec::ColorRole::outline]),
                 indicatorHeight
             );
-
-            const ImGuiInputTextState *state = ImGui::GetInputTextState(id);
-            ImGui::Dummy({0.0F, m3Styles.GetPixels(Spec::TextFieldBase::contentHeight)});
-            ImGui::SameLine(0.0F, 0.0F);
-            const bool inputIsEmpty = state == nullptr || state->TextLen <= 0;
-            ImGuiEx::M3::AlignedLabel(
-                inputIsEmpty ? label : std::string_view(buffer, static_cast<size_t>(state->TextLen)), m3Styles
+        }
+        else
+        {
+            window->DrawList->AddRect(
+                bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[M3Spec::ColorRole::outline])
             );
         }
-        // reset cursor.
-        ImGui::SetCursorScreenPos(nextLineCursorPos);
+
+        const ImGuiInputTextState *state = ImGui::GetInputTextState(id);
+        ImGui::Dummy({0.0F, m3Styles.GetPixels(Spec::TextFieldBase::contentHeight)});
+        ImGui::SameLine(0.0F, 0.0F);
+        const bool inputIsEmpty = state == nullptr || state->TextLen <= 0;
+        ImGuiEx::M3::AlignedLabel(
+            inputIsEmpty ? label : std::string_view(buffer, static_cast<size_t>(state->TextLen)), m3Styles
+        );
     }
+    // reset cursor.
+    ImGui::SetCursorScreenPos(nextLineCursorPos);
     return edited;
 }
 
@@ -462,8 +558,8 @@ void ListItem(const std::string_view strId, const M3Styles &m3Styles, Func &&con
         // only handle hover staus because the click should be handled by inner content.
         if (contentRect.Max.x > contentRect.Min.x)
         {
-            auto &g       = *GImGui;
-            bool  hovered = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
+            auto      &g       = *GImGui;
+            const bool hovered = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
 
             auto surfaceColor = m3Styles.Colors()[Spec::ColorRole::surface];
             if (!plain && hovered)
@@ -486,7 +582,7 @@ void AlignedLabel(const std::string_view label, const M3Styles &m3Styles, const 
     if (lineHeight > 0.F && lineHeight < window->DC.CurrLineSize.y)
     {
         // center align
-        const auto offset = HalfLineGap({.textSize = lineHeight, .lineHeight = window->DC.CurrLineSize.y});
+        const auto offset = HalfDiff(lineHeight, window->DC.CurrLineSize.y);
         window->DC.CursorPos.y += offset;
         window->DC.IsSetPos = true;
     }

@@ -12,24 +12,23 @@
 
 namespace ImGuiEx::M3
 {
-
 static constexpr auto ARGB_R_SHIFT = 16;
 static constexpr auto ARGB_G_SHIFT = 8;
 static constexpr auto ARGB_B_SHIFT = 0;
 static constexpr auto ARGB_A_SHIFT = 24;
-static constexpr auto ARGB_R_MASK  = 0xFF0000;
-static constexpr auto ARGB_G_MASK  = 0xFF00;
-static constexpr auto ARGB_B_MASK  = 0xFF;
-static constexpr auto ARGB_A_MASK  = 0xFF000000;
+static constexpr auto ARGB_R_MASK  = 0x00FF0000U;
+static constexpr auto ARGB_G_MASK  = 0x0000FF00U;
+static constexpr auto ARGB_B_MASK  = 0x000000FFU;
+static constexpr auto ARGB_A_MASK  = 0xFF000000U;
 
 static constexpr auto CONTRAST_MIN = -1.0;
 static constexpr auto CONTRAST_MAX = 1.0;
 
 using Argb = std::uint32_t;
 
-static constexpr auto IM_COL32_R_MASK = 0xFF;
-static constexpr auto IM_COL32_G_MASK = 0xFF00;
-static constexpr auto IM_COL32_B_MASK = 0xFF0000;
+static constexpr auto IM_COL32_R_MASK = 0x000000FFU;
+static constexpr auto IM_COL32_G_MASK = 0x0000FF00U;
+static constexpr auto IM_COL32_B_MASK = 0x00FF0000U;
 
 static constexpr float HOVER_OPACITY      = 0.08F;
 static constexpr float PRESSED_OPACITY    = 0.12F;
@@ -43,6 +42,11 @@ constexpr auto ImU32ToArgb(const ImU32 imU32) -> Argb
     return (imU32 & IM_COL32_A_MASK) | (imU32 & IM_COL32_R_MASK) << ARGB_R_SHIFT | (imU32 & IM_COL32_G_MASK) |
            (imU32 & IM_COL32_B_MASK) >> IM_COL32_B_SHIFT;
 }
+
+constexpr auto ArgbToImU32(uint32_t argb) -> ImU32
+{
+    return (argb & ARGB_A_MASK) | (argb & ARGB_B_MASK) << 16 | (argb & ARGB_G_MASK) | (argb & ARGB_R_MASK) >> 16;
+};
 
 constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
 {
@@ -75,8 +79,8 @@ public:
     {
     }
 
-    ColorScheme(const ColorScheme &other) = default;
-
+    ~ColorScheme()                            = default;
+    ColorScheme(const ColorScheme &other)     = default;
     ColorScheme(ColorScheme &&other) noexcept = default;
 
     auto operator=(const ColorScheme &other) -> ColorScheme &
@@ -127,12 +131,12 @@ public:
         return {onColor.x, onColor.y, onColor.z, onColor.w * DISABLED_CONTENT};
     }
 
-    static ImVec4 BlendState(ImVec4 base, ImVec4 overlay, float opacity)
+    static auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
     {
         return {
-            base.x + (overlay.x - base.x) * opacity,
-            base.y + (overlay.y - base.y) * opacity,
-            base.z + (overlay.z - base.z) * opacity,
+            base.x + ((overlay.x - base.x) * opacity),
+            base.y + ((overlay.y - base.y) * opacity),
+            base.z + ((overlay.z - base.z) * opacity),
             base.w
         };
     }

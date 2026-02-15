@@ -35,11 +35,6 @@ using Hct    = material_color_utilities::Hct;
 constexpr float kToneDefault = 50.F;
 constexpr ImU32 COL_WHITE    = 0xFFFFFFFF;
 
-constexpr auto ArgbToImU32(uint32_t argb) -> ImU32
-{
-    return (argb & 0xFF000000U) | (argb & 0x000000FFU) << 16 | (argb & 0x0000FF00U) | (argb & 0x00FF0000U) >> 16;
-};
-
 void HandlerPickerCursor(
     ImDrawList *drawList, const char *strId, float &value, float maxValue, const ImVec2 &pickerPos, const ImVec2 &size
 )
@@ -153,10 +148,10 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
     constexpr size_t BUFFER_SIZE = 64U;
     buffer.reserve(BUFFER_SIZE);
 
-    if (ImGuiEx::M3::FilledTextField("RGB", buffer.data(), buffer.capacity(), m3Styles))
+    if (ImGuiEx::M3::OutlinedTextField("RGB", buffer.data(), buffer.capacity(), m3Styles))
     {
         std::string_view view = buffer;
-        for (auto &c : view)
+        for (const auto &c : view)
         {
             if (c == '#' || std::isspace(c) != 0)
             {
@@ -166,7 +161,10 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
             break;
         }
 
-        std::array<int, 3U> color;
+        std::array<int, 3U> color{};
+        constexpr size_t    col_r_idx = 0U;
+        constexpr size_t    col_g_idx = 0U;
+        constexpr size_t    col_b_idx = 0U;
 
         const char *pHexColor = view.data();
         size_t      j         = 0U;
@@ -181,7 +179,8 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
         }
         if (j == color.size())
         {
-            auto new_Hct    = Hct(material_color_utilities::ArgbFromRgb(color[0U], color[1U], color[2U]));
+            auto new_Hct =
+                Hct(material_color_utilities::ArgbFromRgb(color[col_r_idx], color[col_g_idx], color[col_b_idx]));
             hctCache.hue    = static_cast<float>(new_Hct.get_hue());
             hctCache.chroma = static_cast<float>(new_Hct.get_chroma());
             hctCache.tone   = static_cast<float>(new_Hct.get_tone());
@@ -398,7 +397,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     ImGui::GetWindowDrawList()->AddRectFilled(
                         cursorPos,
                         {cursorPos.x + paletteSize.x, cursorPos.y + paletteSize.y},
-                        ArgbToImU32(palette.get_key_color().ToInt())
+                        ImGuiEx::M3::ArgbToImU32(palette.get_key_color().ToInt())
                     );
                     ImGui::Dummy(paletteSize);
                     ImGui::SameLine();
