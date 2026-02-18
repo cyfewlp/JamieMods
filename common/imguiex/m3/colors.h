@@ -57,6 +57,53 @@ constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
     return ImColor(r, g, b, a);
 }
 
+namespace ColorUtils
+{
+
+//! Standard sRGB -> Linear conversion
+inline float SrgbToLinear(float c)
+{
+    return c <= 0.04045F ? c / 12.92F : powf((c + 0.055F) / 1.055F, 2.4F);
+}
+
+//! Standard Linear -> sRGB conversion
+inline float LinearToSrgb(float c)
+{
+    return c <= 0.0031308F ? c * 12.92F : 1.055F * powf(c, 1.0F / 2.4F) - 0.055F;
+}
+
+/**
+ * @brief A fast approximation of sRGB -> Linear conversion. It is not accurate, but it is fast.
+ */
+inline float FastToLinear(float s)
+{
+    return s * s;
+}
+
+/**
+ * @brief A fast approximation of Linear -> sRGB conversion. It is not accurate, but it is fast.
+ */
+inline float FastFromLinear(float l)
+{
+    return sqrtf(l);
+}
+
+inline auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
+{
+
+    ImVec4 bL = {FastToLinear(base.x), FastToLinear(base.y), FastToLinear(base.z), base.w};
+    ImVec4 oL = {FastToLinear(overlay.x), FastToLinear(overlay.y), FastToLinear(overlay.z), overlay.w};
+
+    return {
+        FastFromLinear(bL.x + (oL.x - bL.x) * opacity),
+        FastFromLinear(bL.y + (oL.y - bL.y) * opacity),
+        FastFromLinear(bL.z + (oL.z - bL.z) * opacity),
+        1.0F // The alpha of the blended color is always 1.0F, as it is used for blending state layers on top of surface
+             // colors.
+    };
+}
+} // namespace ColorUtils
+
 class ColorScheme
 {
 public:
@@ -97,7 +144,6 @@ public:
 
     [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return m_schemeConfig; }
 
-    //! \todo should refactor color system. All components colors should be defined in Specs.
     [[nodiscard]] auto at(Spec::ColorRole role) const -> const ImVec4 &
     {
         return m_colors.at(static_cast<size_t>(role));
@@ -105,40 +151,48 @@ public:
 
     auto operator[](Spec::ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }
 
-    ////////////////////////////////////////////////////////////////////////
-    /// Helpers
-
+    /**
+     * @brief Helper function. Add a hovered state layer on top of a surface color.
+     *
+     * @param surfaceRole container color role, used as the base color for blending.
+     * @param contentRole content color role, used as the overlay color for blending.
+     * @return the blended color for the hovered state.
+     */
     [[nodiscard]] auto Hovered(Spec::ColorRole surfaceRole, Spec::ColorRole contentRole) const -> ImVec4
     {
-        return BlendState(at(surfaceRole), at(contentRole), HOVER_OPACITY);
+        return ColorUtils::BlendState(at(surfaceRole), at(contentRole), HOVER_OPACITY);
     }
 
+    /**
+     * @brief Helper function. Add a pressed state layer on top of a surface color.
+     *
+     * @param surfaceRole container color role, used as the base color for blending.
+     * @param contentRole content color role, used as the overlay color for blending.
+     * @return the blended color for the pressed state.
+     */
     [[nodiscard]] auto Pressed(Spec::ColorRole surfaceRole, Spec::ColorRole contentRole) const -> ImVec4
     {
-        return BlendState(at(surfaceRole), at(contentRole), PRESSED_OPACITY);
+        return ColorUtils::BlendState(at(surfaceRole), at(contentRole), PRESSED_OPACITY);
     }
 
+    /**
+     * @brief Helper function. Add a disabled state layer on top of a surface color.
+     *
+     * @param surfaceRole container color role, used as the base color for blending.
+     * @param contentRole content color role, used as the overlay color for blending.
+     * @return the blended color for the disabled state.
+     */
     [[nodiscard]] auto DisabledSurface(
         Spec::ColorRole containerRole, Spec::ColorRole onSurfaceRole = Spec::ColorRole::onSurface
     ) const -> ImVec4
     {
-        return BlendState(at(containerRole), at(onSurfaceRole), DISABLED_CONTAINER);
+        return ColorUtils::BlendState(at(containerRole), at(onSurfaceRole), DISABLED_CONTAINER);
     }
 
     [[nodiscard]] auto DisabledContent(Spec::ColorRole contentRole) const -> ImVec4
     {
         const ImVec4 onColor = at(contentRole);
         return {onColor.x, onColor.y, onColor.z, onColor.w * DISABLED_CONTENT};
-    }
-
-    static auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
-    {
-        return {
-            base.x + ((overlay.x - base.x) * opacity),
-            base.y + ((overlay.y - base.y) * opacity),
-            base.z + ((overlay.z - base.z) * opacity),
-            base.w + ((overlay.w - base.w) * opacity)
-        };
     }
 };
 } // namespace ImGuiEx::M3

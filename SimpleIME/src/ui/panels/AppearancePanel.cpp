@@ -57,10 +57,10 @@ void DrawColorBar(ImDrawList *drawList, const ImVec2 &pos, const ImVec2 &size, c
     drawList->AddRectFilledMultiColor(
         pos,
         ImVec2(pos.x + size.x, pos.y + size.y),
-        ArgbToImU32(col1.ToInt()),
-        ArgbToImU32(col2.ToInt()),
-        ArgbToImU32(col2.ToInt()),
-        ArgbToImU32(col1.ToInt())
+        ImGuiEx::M3::ArgbToImU32(col1.ToInt()),
+        ImGuiEx::M3::ArgbToImU32(col2.ToInt()),
+        ImGuiEx::M3::ArgbToImU32(col2.ToInt()),
+        ImGuiEx::M3::ArgbToImU32(col1.ToInt())
     );
 }
 
