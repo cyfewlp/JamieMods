@@ -137,7 +137,7 @@ public:
             base.x + ((overlay.x - base.x) * opacity),
             base.y + ((overlay.y - base.y) * opacity),
             base.z + ((overlay.z - base.z) * opacity),
-            base.w
+            base.w + ((overlay.w - base.w) * opacity)
         };
     }
 };

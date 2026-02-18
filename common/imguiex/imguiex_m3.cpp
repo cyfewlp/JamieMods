@@ -9,6 +9,7 @@
 #include "imgui_internal.h"
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/Material3.h"
+#include "m3/facade/nav_rail.h"
 #include "m3/facade/text_field.h"
 
 #if IMGUI_VERSION_NUM != 19259
@@ -150,34 +151,28 @@ void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, con
     }
 }
 
-/**
- * Since the width of the navigation track is locked, a simple centered layout is all that's needed.
- */
-void DrawNavMenu(const std::string_view icon, const M3Styles &m3Styles) // TODO: maybe replace with Icon()
+auto NavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool
 {
-    ImGui::Dummy({0.F, m3Styles[Spacing::L]});
-    ImGui::TextAligned(ALIGN_CENTER, -FLT_MIN, "%s", TextStart(icon));
-    ImGui::Dummy({0.F, m3Styles[Spacing::L]});
-}
+    const float itemVerticalSpace = m3Styles.GetPixels(Spec::CollapsedNavRail::ItemVerticalSpace);
+    const auto  styleGuard        = StyleGuard().Style<ImGuiStyleVar_ItemSpacing>({0.F, itemVerticalSpace});
 
-// \todo : need refactor. Use new API GetPixels/UseTextRole/GetLastText
-auto DrawNavItem(
-    const std::string_view label, const bool selected, const std::string_view icon, const M3Styles &m3Styles
-) -> bool
-{
-    StyleGuard styleGuard;
-    styleGuard.Style<ImGuiStyleVar_ItemSpacing>({0.F, m3Styles[Spacing::XS]});
-    const auto   regionLT   = ImGui::GetCursorScreenPos();
-    const float  itemWidth  = ImGui::GetContentRegionAvail().x;
-    const auto   iconSize   = ImVec2{m3Styles.IconSize(), m3Styles.IconSize()};
-    const float  itemHeight = m3Styles.LabelText().textSize + iconSize.y + (m3Styles[Spacing::XS] * 4);
-    const ImRect bb(regionLT, {regionLT.x + itemWidth, regionLT.y + itemHeight});
-    const auto   id = ImGui::GetID(TextStart(label));
-    ImGui::ItemSize({itemWidth, itemHeight}, m3Styles[Spacing::XS]);
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+
+    const ImVec2 size(ImGui::GetContentRegionAvail().x, m3Styles.GetPixels(Spec::NavRailItem::ContainerHeight));
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const auto   id = ImGui::GetID(TextStart(label), TextEnd(label));
+    ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, id))
     {
         return false;
     }
+    const auto nextLineCursorPos = window->DC.CursorPos;
+    window->DC.CursorPos         = bb.Min;
+
+    const ImVec2 ActiveIndicatorSize(
+        m3Styles.GetPixels(Spec::NavRailItemVertical::ActiveIndicatorWidth),
+        m3Styles.GetPixels(Spec::NavRailItemVertical::ActiveIndicatorHeight)
+    );
 
     bool       hovered = false;
     bool       held    = false;
@@ -185,75 +180,104 @@ auto DrawNavItem(
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-    const auto &colors    = m3Styles.Colors();
-    auto        iconColor = colors[Spec::ColorRole::onSurfaceVariant];
+    const ImVec2 ActiveIndicatorOffset = ImVec2(HalfDiff(ActiveIndicatorSize.x, size.x), itemVerticalSpace);
+    window->DC.CursorPos += ActiveIndicatorOffset;
 
-    ImVec2 iconPosMin{bb.Min.x, bb.Min.y + m3Styles[Spacing::XS]};
-    ImVec2 iconPosMax{bb.Max.x, iconPosMin.y + iconSize.y};
+    const ImRect ActiveIndicatorBB(window->DC.CursorPos, window->DC.CursorPos + ActiveIndicatorSize);
+
+    const auto &colors = m3Styles.Colors();
     {
-        const auto fineClipOpt = TextClip(iconSize, iconPosMin, bb);
-        // modify iconPosMin
-        AlignText(iconPosMin, {ALIGN_CENTER, ALIGN_CENTER}, iconPosMax, iconSize);
-        iconPosMax = iconPosMin + iconSize;
+        const Spec::ColorRole bgColorRole =
+            selected ? Spec::NavRailCommon::ActiveIndicatorColor : Spec::ColorRole::none;
         // icon bg rect
         if (selected || hovered || held)
         {
-            const auto offset     = ImVec2(m3Styles[Spacing::L], m3Styles[Spacing::XS]);
-            const auto iconBgRect = ImRect(iconPosMin - offset, iconPosMin + iconSize + offset);
-            if (selected) iconColor = colors[Spec::ColorRole::onPrimary];
             ImVec4 bgColor;
             if (hovered && held)
             {
-                bgColor = colors.Pressed(Spec::ColorRole::primary, Spec::ColorRole::onPrimary);
+                bgColor = colors.Pressed(bgColorRole, Spec::NavRailCommon::ActiveIconColor);
             }
             else if (hovered)
             {
-                bgColor = colors.Hovered(Spec::ColorRole::secondaryContainer, Spec::ColorRole::onSecondaryContainer);
+                bgColor = colors.Hovered(bgColorRole, Spec::NavRailCommon::ActiveIconColor);
             }
             else
             {
-                bgColor = selected ? colors[Spec::ColorRole::primary] : colors[Spec::ColorRole::secondaryContainer];
+                bgColor = colors[bgColorRole];
             }
             ImGui::RenderFrame(
-                iconBgRect.Min, iconBgRect.Max, ImGui::ColorConvertFloat4ToU32(bgColor), true, iconSize.x
+                ActiveIndicatorBB.Min,
+                ActiveIndicatorBB.Max,
+                ImGui::ColorConvertFloat4ToU32(bgColor),
+                true,
+                m3Styles.GetPixels(Spec::NavRailItem::ActiveIndicatorLeadingSpace) // full shape
             );
         }
+        window->DC.CursorPos.x += m3Styles.GetPixels(Spec::NavRailItem::ActiveIndicatorLeadingSpace);
+        window->DC.CursorPos.y += itemVerticalSpace;
+        const Spec::ColorRole iconRole =
+            selected ? Spec::NavRailCommon::ActiveIconColor : Spec::NavRailCommon::InactiveIconColor;
         drawList->AddText(
             m3Styles.IconFont(),
-            m3Styles.IconSize(),
-            iconPosMin,
-            ImGui::ColorConvertFloat4ToU32(iconColor),
+            m3Styles.GetPixels(Spec::NavRailItem::IconSize),
+            window->DC.CursorPos,
+            ImGui::ColorConvertFloat4ToU32(colors[iconRole]),
             TextStart(icon),
-            TextEnd(icon),
-            0.0F,
-            fineClipOpt ? &fineClipOpt.value() : nullptr
+            TextEnd(icon)
         );
     }
 
-    ImGui::PushFont(nullptr, m3Styles.LabelText().textSize);
+    window->DC.CursorPos.y = ActiveIndicatorBB.Max.y + itemVerticalSpace;
+    const auto labelRole   = m3Styles.UseTextRole<Spec::NavRailItemVertical::LabelTextRole>();
     {
-        ImVec2       labelMin{bb.Min.x, iconPosMax.y + m3Styles[Spacing::Double_XS]};
-        const ImVec2 labelMax{bb.Max.x, labelMin.y + m3Styles.LabelText().textSize};
-        const auto   textSize    = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
-        const auto   fineClipOpt = TextClip(textSize, labelMin, bb);
-        // modify labelMin
-        AlignText(labelMin, {ALIGN_CENTER, ALIGN_CENTER}, labelMax, textSize);
-        const auto &textColor =
-            selected ? colors[Spec::ColorRole::secondary] : colors[Spec::ColorRole::onSurfaceVariant];
+        const auto textSize = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
+        if (textSize.x > size.x)
+        {
+            window->DC.CursorPos.x =
+                bb.Min.x; // align left when text is too long, avoid it looks weird when center aligned with ellipsis;
+        }
+        else
+        {
+            window->DC.CursorPos.x = bb.Min.x + HalfDiff(size.x, textSize.x); // horizontal center align.
+        }
+        // need add half line gap because we not call our TextUnformatted function to render text,
+        // which will add half line gap as vertical padding.
+        window->DC.CursorPos.y += m3Styles.GetLastText().currHalfLineGap;
+
+        const auto &textColor = selected ? colors[Spec::NavRailCommon::ActiveLabelTextColor]
+                                         : colors[Spec::NavRailCommon::InactiveLabelTextColor];
         drawList->AddText(
             nullptr,
             0.F,
-            labelMin,
+            window->DC.CursorPos,
             ImGui::ColorConvertFloat4ToU32(textColor),
             TextStart(label),
             TextEnd(label),
-            0.0F,
-            fineClipOpt ? &fineClipOpt.value() : nullptr
+            0.0F
         );
     }
-
-    ImGui::PopFont();
+    window->DC.CursorPos = nextLineCursorPos; // restore cursor pos.
     return pressed;
+}
+
+auto BeginNavRail(
+    std::string_view strId, const M3Styles &m3Styles, ImGuiEx::ChildFlags childFlags, Spec::ColorRole containerColor
+) -> bool
+{
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[containerColor]));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.F, 0.F});
+    const bool visible = ImGui::BeginChild(
+        TextStart(strId), {m3Styles.GetPixels(Spec::CollapsedNavRail::ContainerWidth), 0.0F}, childFlags
+    );
+    ImGui::Dummy({0.F, m3Styles.GetPixels(Spec::CollapsedNavRail::TopSpace)});
+    return visible;
+}
+
+auto EndNavRail() -> void
+{
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
 }
 
 auto detail::Icon(

@@ -9,6 +9,7 @@ namespace ImGuiEx::M3::Spec
 {
 enum class ColorRole : std::uint8_t
 {
+    none, ///< transparent color
     background,
     error,
     errorContainer,

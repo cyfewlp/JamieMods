@@ -83,6 +83,8 @@ auto ThemeBuilder::Build(const ColorScheme::SchemeConfig &config) -> ColorScheme
     const Scheme scheme(Hct(config.sourceColor), config.darkMode, config.contrastLevel);
     FillSurfaceColors(colors, scheme);
     FillContentColors(colors, scheme);
-    return ColorScheme(std::move(colors), config);
+
+    colors[0U] = ImVec4();
+    return ColorScheme(colors, config);
 }
 } // namespace ImGuiEx::M3

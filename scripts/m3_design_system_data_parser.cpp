@@ -1,3 +1,10 @@
+// Internal helper script - Personal Use Only.
+// -----------------------------------------------------------------------------
+// This is a quick-and-dirty utility maintained for specific local tasks.
+// It is NOT a production-grade tool and will not receive regular updates.
+// If it breaks, you get to keep both pieces.
+// -----------------------------------------------------------------------------
+
 #include "../common/json/simdjson.h"
 
 #include <filesystem>
@@ -26,6 +33,59 @@ constexpr auto values_prefix_length        = tokens_prefix_length + id_length + 
 
 constexpr auto DisplayGroup_Deprecated_Prefix = std::string_view{"[Deprecated]"};
 
+auto normalize_token_value(std::string_view tokenName) -> std::string
+{
+    std::string memberDef = "static constexpr auto ";
+    bool        toUpper   = false;
+    for (size_t index = 0; index < tokenName.length(); index++)
+    {
+        if (tokenName[index] == '-' || tokenName[index] == '.')
+        {
+            toUpper = true;
+        }
+        else if (toUpper)
+        {
+            memberDef.push_back(static_cast<char>(std::toupper(tokenName[index])));
+            toUpper = false;
+        }
+        else
+        {
+            memberDef.push_back(tokenName[index]);
+        }
+    }
+    return memberDef;
+}
+
+auto normalize_color_value(std::string_view colorValue) -> std::string
+{
+    auto lastDotPos = colorValue.rfind('.');
+
+    if (lastDotPos != std::string_view::npos)
+    {
+        auto        colorName = colorValue.substr(lastDotPos + 1);
+        std::string colorRole = "ColorRole::";
+        bool        toUpper   = false;
+        for (size_t index = 0; index < colorName.length(); index++)
+        {
+            if (colorName[index] == '-')
+            {
+                toUpper = true;
+            }
+            else if (toUpper)
+            {
+                colorRole.push_back(static_cast<char>(std::toupper(colorName[index])));
+                toUpper = false;
+            }
+            else
+            {
+                colorRole.push_back(colorName[index]);
+            }
+        }
+        return colorRole;
+    }
+    return std::string(colorValue);
+}
+
 enum class token_type
 {
     color,
@@ -51,24 +111,30 @@ struct TokenMetadata
 
 struct Token
 {
-    std::string             name;
-    std::string             tokenName;
-    std::string             displayName;
-    std::string             type;
-    std::vector<TokenValue> values;
+    std::string name;
+    std::string tokenName;
+    std::string displayName;
+    std::string type;
+    TokenValue  value;
+
+    void normalize()
+    {
+        if (type == "COLOR")
+        {
+            value.value = normalize_color_value(value.value);
+        }
+        tokenName = normalize_token_value(tokenName);
+    }
 
     auto toString() const -> std::string
     {
         return std::format(
-            R"(    {}
-    tokenName: {}
-    {}
-    {}
+            R"(    //! {}
+   {} = {};
 )",
             displayName,
             tokenName,
-            type,
-            values.empty() ? "" : values[0].value
+            value.value
         );
     }
 };
@@ -185,6 +251,11 @@ auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet
         Token token;
         if (jToken["name"].get(token.name) == SUCCESS)
         {
+            if (jToken["deprecationMessage"].has_value())
+            {
+                printf("[Warning] Token deprecated: %s \n", token.name.data());
+                continue;
+            }
             auto tokenSetId = token.name.substr(token_set_prefix_length, 16U);
             auto tokenId    = token.name.substr(tokens_prefix_length, 16U);
             if (tokenSetCache.contains(tokenSetId))
@@ -241,7 +312,7 @@ auto parse_contextualReferenceTrees(
                     }
                     if (parseSuccess)
                     {
-                        token.values.push_back(std::move(tokenValue));
+                        token.value = std::move(tokenValue);
                     }
                 }
             }
@@ -282,6 +353,14 @@ int main(int argc, char **argv)
     TokenValueCache valueCache = parse_values(doc["system"]["values"]);
     parse_contextualReferenceTrees(doc["system"]["contextualReferenceTrees"], tokenSets, valueCache);
     valueCache.clear();
+
+    for (auto &tokenSet : tokenSets)
+    {
+        for (auto &token : tokenSet.tokens)
+        {
+            token.normalize();
+        }
+    }
 
     std::ofstream outputFile;
     outputFile.open(outputFilePath, std::ios::out | std::ios::trunc);

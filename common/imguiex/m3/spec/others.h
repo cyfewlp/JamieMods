@@ -78,11 +78,6 @@ struct Menu
     static constexpr Unit itemPaddingY = dp<12>(); ///< item inner padding.
 };
 
-struct NavRail
-{
-    static constexpr Unit width = dp<96>(); ///< collapsed
-};
-
 struct Tooltips
 {
     static constexpr auto textRole = TextRole::BodySmall;

@@ -66,20 +66,9 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 
         // Sidebar
         {
-            const auto styleGuard1 =
-                ImGuiEx::StyleGuard()
-                    .Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurfaceVariant])
-                    .Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer])
-                    .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer])
-                    .Color<ImGuiCol_FrameBgActive>(m3Styles.Colors()[M3Spec::ColorRole::secondary])
-                    .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors()[M3Spec::ColorRole::secondaryContainer]);
-
-            if (ImGui::BeginChild(
-                    "Sidebar", {m3Styles.GetPixels(M3Spec::NavRail::width), -FLT_MIN}, ImGuiEx::ChildFlags().Borders()
-                ))
+            if (ImGuiEx::M3::BeginNavRail("Sidebar", m3Styles))
             {
-                ImGuiEx::M3::DrawNavMenu(ICON_MD_MENU, m3Styles);
-                if (ImGuiEx::M3::DrawNavItem(
+                if (ImGuiEx::M3::NavItem(
                         Translate("Settings.Sidebar.Appearance"),
                         currentMenu.first == Menu::Appearance,
                         ICON_MD_PALETTE,
@@ -88,7 +77,7 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
                 {
                     currentMenu = {Menu::Appearance, true};
                 }
-                if (ImGuiEx::M3::DrawNavItem(
+                if (ImGuiEx::M3::NavItem(
                         Translate("Settings.Sidebar.FontBuilder"),
                         currentMenu.first == Menu::FontBuilder,
                         ICON_FA_WRENCH,
@@ -97,7 +86,7 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
                 {
                     currentMenu = {Menu::FontBuilder, true};
                 }
-                if (ImGuiEx::M3::DrawNavItem(
+                if (ImGuiEx::M3::NavItem(
                         Translate("Settings.Sidebar.Behaviour"),
                         currentMenu.first == Menu::Behaviour,
                         ICON_OCT_GEAR,
@@ -107,7 +96,7 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
                     currentMenu = {Menu::Behaviour, true};
                 }
             }
-            ImGui::EndChild();
+            ImGuiEx::M3::EndNavRail();
         }
 
         ImGui::SameLine(0, 0);

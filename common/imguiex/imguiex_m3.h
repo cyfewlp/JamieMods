@@ -25,26 +25,29 @@ void TextUnformatted(
 );
 
 /**
- * Currently, the menu button on the navigation rail is meaningless; this method only handles padding, layout, and
- * simply renders the icon.
- * @param icon Due to the different icon fonts used ultimately, you need to provide the icon string for "menu" by
- * yourself.
- * @param m3Styles
+ * @brief Renders a Material Design 3 style Navigation Rail item.
+ * * Draws an interactive element comprising an active indicator (background), an icon,  and a label.
+ *
+ * @note **Layout Constraint:** By design, this component is "width-unaware" and
+ * fills all available X-space. This is a **strict requirement** to force usage
+ * inside a `ChildWindow` (like a Navigation Rail or Drawer), preventing
+ * non-compliant full-screen-width navigation items.
+ *
+ * @param label     The text label displayed below or beside the icon.
+ * @param selected  Whether the item is in the active state, affecting colors and indicator visibility.
+ * @param icon      The icon glyph (typically a UTF-8 string literal from an icon font).
+ * @param m3Styles  Reference to @c ImGuiEx::M3Styles for theme and scaling.
+ * @return true if the item was clicked; otherwise false.
  */
-void DrawNavMenu(std::string_view icon, const M3Styles &m3Styles);
+auto NavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool;
 
-/**
- * @brief Renders a custom navigation item in Material Design 3 style.
- * * This component draws an interactive navigation element consisting of an icon and a label.
- * It uses a multi-layered rendering approach (via ImDrawList channels) to ensure proper
- * background/foreground depth and precise alignment.
- * @param label    The text label associated with the navigation item.
- * @param selected    is this nav item selected? Used to determine the colors needed for drawing.
- * @param icon     The icon glyph to render (typically a UTF-8 string literal).
- * @param m3Styles see @c ImGuiEx::M3Styles
- * @return true if the item is clicked, false otherwise.
- */
-auto DrawNavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool;
+auto BeginNavRail(
+    std::string_view strId, const M3Styles &m3Styles, ImGuiEx::ChildFlags childFlags = {},
+    Spec::ColorRole containerColor = Spec::ColorRole::surfaceContainer
+) -> bool;
+
+//! Like ImGui::EndChild: You always need to call it after BeginNavRail.
+auto EndNavRail() -> void;
 
 namespace detail
 {

@@ -1,3 +1,10 @@
+# Internal helper script - Personal Use Only.
+# -----------------------------------------------------------------------------
+# This is a quick-and-dirty utility maintained for specific local tasks.
+# It is NOT a production-grade tool and will not receive regular updates.
+# If it breaks, you get to keep both pieces.
+# -----------------------------------------------------------------------------
+
 import asyncio
 import re
 
