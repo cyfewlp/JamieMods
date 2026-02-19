@@ -33,10 +33,9 @@ constexpr auto values_prefix_length        = tokens_prefix_length + id_length + 
 
 constexpr auto DisplayGroup_Deprecated_Prefix = std::string_view{"[Deprecated]"};
 
-auto normalize_token_value(std::string_view tokenName) -> std::string
+auto token_name_to_camelCase(std::string_view tokenName, std::string &out)
 {
-    std::string memberDef = "static constexpr auto ";
-    bool        toUpper   = false;
+    bool toUpper = false;
     for (size_t index = 0; index < tokenName.length(); index++)
     {
         if (tokenName[index] == '-' || tokenName[index] == '.')
@@ -45,14 +44,20 @@ auto normalize_token_value(std::string_view tokenName) -> std::string
         }
         else if (toUpper)
         {
-            memberDef.push_back(static_cast<char>(std::toupper(tokenName[index])));
+            out.push_back(static_cast<char>(std::toupper(tokenName[index])));
             toUpper = false;
         }
         else
         {
-            memberDef.push_back(tokenName[index]);
+            out.push_back(tokenName[index]);
         }
     }
+}
+
+auto normalize_token_value(std::string_view tokenName) -> std::string
+{
+    std::string memberDef = "static constexpr auto ";
+    token_name_to_camelCase(tokenName, memberDef);
     return memberDef;
 }
 
@@ -144,6 +149,18 @@ struct TokenSet
     std::string        name;
     std::string        tokenSetName;
     std::vector<Token> tokens;
+
+    void normalize()
+    {
+        std::string def = "struct ";
+        if (tokenSetName.starts_with("md.comp"))
+        {
+            tokenSetName.erase(0, std::string_view{"md.comp."}.length());
+        }
+        tokenSetName[0] = std::toupper(tokenSetName[0]);
+        token_name_to_camelCase(tokenSetName, def);
+        tokenSetName = def;
+    }
 };
 
 using TokenId = std::string;
@@ -202,8 +219,9 @@ std::ostream &operator<<(std::ostream &os, const Token &token)
 
 std::ostream &operator<<(std::ostream &os, const TokenSet &tokenSet)
 {
-    auto &os1 = os << tokenSet.name << ": " << tokenSet.tokenSetName << '\n';
+    auto &os1 = os << tokenSet.tokenSetName << "\n{\n";
     std::ranges::copy(tokenSet.tokens, std::ostream_iterator<Token>(os1, "\n"));
+    os1 << "};\n";
     return os1;
 }
 
@@ -356,6 +374,7 @@ int main(int argc, char **argv)
 
     for (auto &tokenSet : tokenSets)
     {
+        tokenSet.normalize();
         for (auto &token : tokenSet.tokens)
         {
             token.normalize();
