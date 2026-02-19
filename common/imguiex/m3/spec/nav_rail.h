@@ -41,10 +41,15 @@ struct NavRailItem
 
     //! Nav rail item short container height
     static constexpr auto ShortContainerHeight = dp<56>();
+
+    //! Extent field
+    static constexpr auto ActiveIndicatorOffsetXEx = dp<20>();
 };
 
-struct NavRailItemVertical
+struct NavRailItemVertical : public NavRailItem
 {
+    using NavRailItem::NavRailItem;
+
     //! Nav rail item vertical active indicator height
     static constexpr auto ActiveIndicatorHeight = dp<32>();
 
@@ -63,6 +68,31 @@ struct NavRailItemVertical
     //! Nav rail item vertical label text
     // static constexpr auto LabelTextFont = md.sys.typescale.label - medium;
     static constexpr auto LabelTextRole = TextRole::LabelMedium;
+};
+
+struct NavRailItemHorizontal : public NavRailItem
+{
+    using NavRailItem::NavRailItem;
+
+    //! Nav rail item horizontal label text
+    static constexpr auto LabelTextRole = TextRole::LabelLarge;
+
+    //! Nav rail item horizontal active indicator height
+    static constexpr auto ActiveIndicatorHeight = dp<56>();
+
+    //! Nav rail item horizontal full width leading space
+    static constexpr auto FullWidthLeadingSpace = dp<16>();
+
+    //! Nav rail item horizontal full width trailing space
+    static constexpr auto FullWidthTrailingSpace = dp<16>();
+
+    //! Nav rail item horizontal icon-label-space
+    static constexpr auto IconLabelSpace = dp<8>();
+
+    //! Extend field. Not contain label size, only contain icon size and related space.
+    static constexpr auto ActiveIndicatorMinWidthEx = NavRailItem::ActiveIndicatorLeadingSpace +
+                                                      NavRailItem::ActiveIndicatorTrailingSpace +
+                                                      NavRailItem::IconSize + IconLabelSpace;
 };
 
 struct NavRailCommon
@@ -120,8 +150,10 @@ template <NavRailState State>
 struct NavRail;
 
 template <>
-struct NavRail<NavRailState::Collapsed>
+struct NavRail<NavRailState::Collapsed> : public NavRailCommon
 {
+    using NavRailCommon::NavRailCommon;
+
     //! Nav rail collapsed container color
     static constexpr auto ContainerColor = ColorRole::surface;
 
@@ -145,8 +177,10 @@ struct NavRail<NavRailState::Collapsed>
 };
 
 template <>
-struct NavRail<NavRailState::Expanded>
+struct NavRail<NavRailState::Expanded> : public NavRailCommon
 {
+    using NavRailCommon::NavRailCommon;
+
     //! Nav rail expanded modal container color
     static constexpr auto ModalContainerColor = ColorRole::surfaceContainer;
 
@@ -158,9 +192,6 @@ struct NavRail<NavRailState::Expanded>
 
     //! Nav rail expanded container shape
     // static constexpr auto ContainerShape = md.sys.shape.corner.none;
-
-    //! Nav rail expanded vertical trailing space
-    static constexpr auto VerticalTrailingSpace = dp<20>();
 
     //! Nav rail expanded between item space
     static constexpr auto BetweenItemSpace = dp<0>();

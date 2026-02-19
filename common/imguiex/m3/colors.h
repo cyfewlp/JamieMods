@@ -194,5 +194,32 @@ public:
         const ImVec4 onColor = at(contentRole);
         return {onColor.x, onColor.y, onColor.z, onColor.w * DISABLED_CONTENT};
     }
+
+    /**
+     * @brief Helper function to get the color for a specific state. It will automatically blend the state layer on top
+     * of the surface color based on the state flags.
+     * @see ColorUtils::BlendState for more details on how the blending works.
+     */
+    auto GetStateColor(
+        Spec::ColorRole surfaceRole, Spec::ColorRole contentRole, bool hovered, bool pressed, bool disabled = false
+    ) const -> ImVec4
+    {
+        if (disabled)
+        {
+            return DisabledSurface(surfaceRole, contentRole);
+        }
+        else if (pressed)
+        {
+            return Pressed(surfaceRole, contentRole);
+        }
+        else if (hovered)
+        {
+            return Hovered(surfaceRole, contentRole);
+        }
+        else
+        {
+            return at(surfaceRole);
+        }
+    }
 };
 } // namespace ImGuiEx::M3

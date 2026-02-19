@@ -41,10 +41,9 @@ void TextUnformatted(
  */
 auto NavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool;
 
-auto BeginNavRail(
-    std::string_view strId, const M3Styles &m3Styles, ImGuiEx::ChildFlags childFlags = {},
-    Spec::ColorRole containerColor = Spec::ColorRole::surfaceContainer
-) -> bool;
+auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles, bool expanded) -> bool;
+
+auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles) -> bool;
 
 //! Like ImGui::EndChild: You always need to call it after BeginNavRail.
 auto EndNavRail() -> void;

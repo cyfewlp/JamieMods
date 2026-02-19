@@ -10,8 +10,8 @@ namespace ImGuiEx::M3::Spec
 {
 struct Layout
 {
-    static constexpr uint32_t breakpointMedium = 600U;
-    static constexpr uint32_t breakpointLarge  = 840U;
+    static constexpr float breakpointMedium = 600.0F;
+    static constexpr float breakpointLarge  = 840.0F;
 
     struct Medium
     {

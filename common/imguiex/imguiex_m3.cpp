@@ -11,6 +11,7 @@
 #include "imguiex/Material3.h"
 #include "m3/facade/nav_rail.h"
 #include "m3/facade/text_field.h"
+#include "m3/spec/layout.h"
 
 #if IMGUI_VERSION_NUM != 19259
     #error "ImGui version changed! imguiex_m3 only supports v1.92.6WIP"
@@ -151,14 +152,106 @@ void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, con
     }
 }
 
+namespace
+{
+
+inline void DrawIcon(
+    ImDrawList *drawList, float iconSize, const ImVec2 &iconPos, std::string_view icon, const M3Styles &m3Styles,
+    const Spec::ColorRole contentRole
+)
+{
+    drawList->AddText(
+        m3Styles.IconFont(),
+        iconSize,
+        iconPos,
+        ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentRole]),
+        TextStart(icon),
+        TextEnd(icon)
+    );
+}
+
+inline void DrawText(
+    ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const M3Styles &m3Styles,
+    const Spec::ColorRole contentRole
+)
+{
+    drawList->AddText(
+        nullptr,
+        0.F,
+        textPos,
+        ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentRole]),
+        TextStart(text),
+        TextEnd(text)
+    );
+}
+
+//! Internal used by NavItem when the nav rail is expanded.
+auto HoriazontalNavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    using NavItemSpecH = Spec::NavRailItemHorizontal;
+
+    ImGuiWindow *window   = ImGui::GetCurrentWindow();
+    const auto   textSize = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
+    const auto   width    = textSize.x + m3Styles.GetPixels(NavItemSpecH::ActiveIndicatorMinWidthEx);
+    const ImVec2 size(width, m3Styles.GetPixels(NavItemSpecH::ActiveIndicatorHeight));
+
+    window->DC.CursorPos.x += m3Styles.GetPixels(NavItemSpecH::ActiveIndicatorOffsetXEx);
+    const auto   id = ImGui::GetID(TextStart(label), TextEnd(label));
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    ImGui::ItemSize(size, 0.0F);
+    if (!ImGui::ItemAdd(bb, id))
+    {
+        return false;
+    }
+    const auto &colors  = m3Styles.Colors();
+    bool        hovered = false;
+    bool        held    = false;
+    const bool  pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    const auto  bgColorRole =
+        selected ? Spec::ExpandedNavRail::ActiveIndicatorColor : Spec::ExpandedNavRail::ContainerColor;
+    if (selected || hovered || held)
+    {
+        const ImVec4 bgColor = colors.GetStateColor(bgColorRole, Spec::ExpandedNavRail::ActiveIconColor, hovered, held);
+        ImGui::RenderFrame(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), false, size.y * HALF);
+    }
+    const ImVec2 iconPos = bb.Min + ImVec2(
+                                        m3Styles.GetPixels(NavItemSpecH::ActiveIndicatorLeadingSpace),
+                                        m3Styles.GetPixels(NavItemSpecH::FullWidthLeadingSpace)
+                                    );
+    const auto iconSize = m3Styles.GetPixels(NavItemSpecH::IconSize);
+    const auto iconRole = selected ? Spec::ExpandedNavRail::ActiveIconColor : Spec::ExpandedNavRail::InactiveIconColor;
+    DrawIcon(window->DrawList, iconSize, iconPos, icon, m3Styles, iconRole);
+    const auto   labelScope = m3Styles.UseTextRole<NavItemSpecH::LabelTextRole>();
+    const ImVec2 textPos(
+        iconPos.x + iconSize + m3Styles.GetPixels(Spec::NavRailItemHorizontal::IconLabelSpace),
+        bb.Min.y + HalfDiff(size.y, m3Styles.GetLastText().currText.textSize)
+    );
+    const auto &textRole =
+        selected ? Spec::ExpandedNavRail::ActiveLabelTextColor : Spec::ExpandedNavRail::InactiveLabelTextColor;
+    DrawText(window->DrawList, textPos, label, m3Styles, textRole);
+    return pressed;
+}
+} // namespace
+
 auto NavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool
 {
+    using NavItemSpecV = Spec::NavRailItemVertical;
+
+    const ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+    const auto availX   = ImGui::GetContentRegionAvail().x;
+    const bool expanded = availX > m3Styles.GetPixels(Spec::CollapsedNavRail::ContainerWidth);
+    if (expanded)
+    {
+        return HoriazontalNavItem(label, selected, icon, m3Styles);
+    }
+
     const float itemVerticalSpace = m3Styles.GetPixels(Spec::CollapsedNavRail::ItemVerticalSpace);
-    const auto  styleGuard        = StyleGuard().Style<ImGuiStyleVar_ItemSpacing>({0.F, itemVerticalSpace});
 
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
-
-    const ImVec2 size(ImGui::GetContentRegionAvail().x, m3Styles.GetPixels(Spec::NavRailItem::ContainerHeight));
+    const ImVec2 size(ImGui::GetContentRegionAvail().x, m3Styles.GetPixels(NavItemSpecV::ContainerHeight));
     const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
     const auto   id = ImGui::GetID(TextStart(label), TextEnd(label));
     ImGui::ItemSize(size);
@@ -166,12 +259,9 @@ auto NavItem(std::string_view label, bool selected, std::string_view icon, const
     {
         return false;
     }
-    const auto nextLineCursorPos = window->DC.CursorPos;
-    window->DC.CursorPos         = bb.Min;
 
     const ImVec2 ActiveIndicatorSize(
-        m3Styles.GetPixels(Spec::NavRailItemVertical::ActiveIndicatorWidth),
-        m3Styles.GetPixels(Spec::NavRailItemVertical::ActiveIndicatorHeight)
+        m3Styles.GetPixels(NavItemSpecV::ActiveIndicatorWidth), m3Styles.GetPixels(NavItemSpecV::ActiveIndicatorHeight)
     );
 
     bool       hovered = false;
@@ -180,97 +270,86 @@ auto NavItem(std::string_view label, bool selected, std::string_view icon, const
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-    const ImVec2 ActiveIndicatorOffset = ImVec2(HalfDiff(ActiveIndicatorSize.x, size.x), itemVerticalSpace);
-    window->DC.CursorPos += ActiveIndicatorOffset;
-
-    const ImRect ActiveIndicatorBB(window->DC.CursorPos, window->DC.CursorPos + ActiveIndicatorSize);
+    const ImVec2 ActiveIndicatorOffset(m3Styles.GetPixels(NavItemSpecV::ActiveIndicatorOffsetXEx), itemVerticalSpace);
+    const ImVec2 ActiveIndicatorMin = bb.Min + ActiveIndicatorOffset;
+    const ImVec2 ActiveIndicatorMax = ActiveIndicatorMin + ActiveIndicatorSize;
 
     const auto &colors = m3Styles.Colors();
     {
         const Spec::ColorRole bgColorRole =
-            selected ? Spec::NavRailCommon::ActiveIndicatorColor : Spec::ColorRole::none;
+            selected ? Spec::CollapsedNavRail::ActiveIndicatorColor : Spec::CollapsedNavRail::ContainerColor;
         // icon bg rect
         if (selected || hovered || held)
         {
-            ImVec4 bgColor;
-            if (hovered && held)
-            {
-                bgColor = colors.Pressed(bgColorRole, Spec::NavRailCommon::ActiveIconColor);
-            }
-            else if (hovered)
-            {
-                bgColor = colors.Hovered(bgColorRole, Spec::NavRailCommon::ActiveIconColor);
-            }
-            else
-            {
-                bgColor = colors[bgColorRole];
-            }
+            const ImVec4 bgColor =
+                colors.GetStateColor(bgColorRole, Spec::ExpandedNavRail::ActiveIconColor, hovered, held);
             ImGui::RenderFrame(
-                ActiveIndicatorBB.Min,
-                ActiveIndicatorBB.Max,
+                ActiveIndicatorMin,
+                ActiveIndicatorMax,
                 ImGui::ColorConvertFloat4ToU32(bgColor),
-                true,
-                m3Styles.GetPixels(Spec::NavRailItem::ActiveIndicatorLeadingSpace) // full shape
+                false,
+                size.y * HALF // full shape
             );
         }
-        window->DC.CursorPos.x += m3Styles.GetPixels(Spec::NavRailItem::ActiveIndicatorLeadingSpace);
-        window->DC.CursorPos.y += itemVerticalSpace;
+        const ImVec2 iconPos = ActiveIndicatorMin +
+                               ImVec2(m3Styles.GetPixels(NavItemSpecV::ActiveIndicatorLeadingSpace), itemVerticalSpace);
         const Spec::ColorRole iconRole =
-            selected ? Spec::NavRailCommon::ActiveIconColor : Spec::NavRailCommon::InactiveIconColor;
-        drawList->AddText(
-            m3Styles.IconFont(),
-            m3Styles.GetPixels(Spec::NavRailItem::IconSize),
-            window->DC.CursorPos,
-            ImGui::ColorConvertFloat4ToU32(colors[iconRole]),
-            TextStart(icon),
-            TextEnd(icon)
-        );
+            selected ? Spec::CollapsedNavRail::ActiveIconColor : Spec::CollapsedNavRail::InactiveIconColor;
+        DrawIcon(drawList, m3Styles.GetPixels(NavItemSpecV::IconSize), iconPos, icon, m3Styles, iconRole);
     }
 
-    window->DC.CursorPos.y = ActiveIndicatorBB.Max.y + itemVerticalSpace;
-    const auto labelRole   = m3Styles.UseTextRole<Spec::NavRailItemVertical::LabelTextRole>();
+    const auto labelTextRole = m3Styles.UseTextRole<NavItemSpecV::LabelTextRole>();
     {
         const auto textSize = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
-        if (textSize.x > size.x)
+        // align left when text is too long, avoid it looks weird when center aligned with ellipsis;
+        ImVec2 labelPos(bb.Min.x, ActiveIndicatorMax.y + itemVerticalSpace + m3Styles.GetLastText().currHalfLineGap);
+        if (textSize.x <= size.x)
         {
-            window->DC.CursorPos.x =
-                bb.Min.x; // align left when text is too long, avoid it looks weird when center aligned with ellipsis;
+            labelPos.x = bb.Min.x + HalfDiff(size.x, textSize.x); // horizontal center align.
         }
-        else
-        {
-            window->DC.CursorPos.x = bb.Min.x + HalfDiff(size.x, textSize.x); // horizontal center align.
-        }
-        // need add half line gap because we not call our TextUnformatted function to render text,
-        // which will add half line gap as vertical padding.
-        window->DC.CursorPos.y += m3Styles.GetLastText().currHalfLineGap;
 
-        const auto &textColor = selected ? colors[Spec::NavRailCommon::ActiveLabelTextColor]
-                                         : colors[Spec::NavRailCommon::InactiveLabelTextColor];
-        drawList->AddText(
-            nullptr,
-            0.F,
-            window->DC.CursorPos,
-            ImGui::ColorConvertFloat4ToU32(textColor),
-            TextStart(label),
-            TextEnd(label),
-            0.0F
-        );
+        const auto &labelColorRole =
+            selected ? Spec::CollapsedNavRail::ActiveLabelTextColor : Spec::CollapsedNavRail::InactiveLabelTextColor;
+        DrawText(drawList, labelPos, label, m3Styles, labelColorRole);
     }
-    window->DC.CursorPos = nextLineCursorPos; // restore cursor pos.
     return pressed;
 }
 
-auto BeginNavRail(
-    std::string_view strId, const M3Styles &m3Styles, ImGuiEx::ChildFlags childFlags, Spec::ColorRole containerColor
-) -> bool
+auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles, const bool expanded) -> bool
 {
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[containerColor]));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.F, 0.F});
-    const bool visible = ImGui::BeginChild(
-        TextStart(strId), {m3Styles.GetPixels(Spec::CollapsedNavRail::ContainerWidth), 0.0F}, childFlags
+    ImGui::PushStyleColor(
+        ImGuiCol_ChildBg, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::CollapsedNavRail::ContainerColor])
     );
-    ImGui::Dummy({0.F, m3Styles.GetPixels(Spec::CollapsedNavRail::TopSpace)});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.F, 0.F});
+    auto       width   = m3Styles.GetPixels(Spec::CollapsedNavRail::ContainerWidth);
+    bool       visible = false;
+    ChildFlags flags{};
+    if (expanded)
+    {
+        const auto minWidth = m3Styles.GetPixels(Spec::ExpandedNavRail::ContainerWidthMinimum);
+        const auto maxWidth = m3Styles.GetPixels(Spec::ExpandedNavRail::ContainerWidthMaximum);
+        width               = minWidth;
+        ImGui::SetNextWindowSizeConstraints({minWidth, -FLT_MIN}, {maxWidth, -FLT_MIN});
+        flags = flags.ResizeX();
+    }
+    visible = ImGui::BeginChild(TextStart(strId), {width, 0.0F}, flags);
+    if (!visible)
+    {
+        ImGui::EndChild();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+    }
+    else
+    {
+        ImGui::Dummy({0.F, m3Styles.GetPixels(Spec::CollapsedNavRail::TopSpace)});
+    }
     return visible;
+}
+
+auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles) -> bool
+{
+    const bool expanded = ImGui::GetContentRegionAvail().x > m3Styles.GetPixels(Spec::Layout::breakpointLarge);
+    return BeginNavRail(strId, m3Styles, expanded);
 }
 
 auto EndNavRail() -> void
