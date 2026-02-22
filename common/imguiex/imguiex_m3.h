@@ -151,13 +151,21 @@ auto FAB(
     );
 }
 
-auto TextField(
-    std::string_view label, Spec::TextFieldVariant tfStyle, char *buffer, size_t bufferSize, const M3Styles &m3Styles,
-    float width
-) -> bool;
-
-auto TextField(std::string_view label, std::string_view text, Spec::TextFieldVariant tfStyle, const M3Styles &m3Styles)
-    -> bool;
+/**
+ * @brief Content model for Material Design 3 text fields.
+ *
+ * Encapsulates the label and optional leading/trailing icon glyphs used when
+ * rendering filled or outlined text fields in the M3 style helpers.
+ */
+struct TextFieldContent
+{
+    //! Optional icon glyph rendered before the text field's label or input text.
+    std::string_view leadingIcon;
+    //! The label text associated with the text field.
+    std::string_view label;
+    //! Optional icon glyph rendered after the text field's label or input text.
+    std::string_view trailingIcon;
+};
 
 /**
  * @brief A filled text field that follows Material Design 3 specifications.
@@ -165,11 +173,20 @@ auto TextField(std::string_view label, std::string_view text, Spec::TextFieldVar
  * Implemented by ImGui::TempInputText and custom Item style.
  * @return true if edited, false otherwise.
  */
-auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
-auto FilledTextField(std::string_view label, std::string_view inputText, const M3Styles &m3Styles) -> bool;
+auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles)
+    -> bool;
 
-auto OutlinedTextField(std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
-auto OutlinedTextField(std::string_view label, std::string_view inputText, const M3Styles &m3Styles) -> bool;
+//! @brief Overload for read-only or pre-populated text fields. The presence of inputText determines if the field is
+//! "populated".
+auto FilledTextField(const TextFieldContent &tfContent, std::string_view inputText, const M3Styles &m3Styles) -> bool;
+
+//! @brief An outlined text field that follows Material Design 3 specifications.
+auto OutlinedTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles)
+    -> bool;
+
+//! @brief Overload for read-only or pre-populated outlined text fields. The presence of inputText determines if the
+//! field is "populated".
+auto OutlinedTextField(const TextFieldContent &tfContent, std::string_view inputText, const M3Styles &m3Styles) -> bool;
 
 using Func = std::function<void()>;
 
