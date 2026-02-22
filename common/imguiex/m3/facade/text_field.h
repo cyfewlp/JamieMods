@@ -8,8 +8,12 @@
 
 namespace ImGuiEx::M3::Spec
 {
-using FilledTextFieldEnabled   = TextField<TextFieldStyle::Filled, TextFieldState::Enabled>;
-using FilledTextFieldFocused   = TextField<TextFieldStyle::Filled, TextFieldState::Focused>;
-using OutlinedTextFieldEnabled = TextField<TextFieldStyle::Outlined, TextFieldState::Enabled>;
-using OutlinedTextFieldFocused = TextField<TextFieldStyle::Outlined, TextFieldState::Focused>;
+using FilledTextFieldEnabled    = TextField<TextFieldVariant::Filled, TextFieldState::Enabled>;
+using FilledTextFieldHovered    = TextField<TextFieldVariant::Filled, TextFieldState::Hovered>;
+using FilledTextFieldFocused    = TextField<TextFieldVariant::Filled, TextFieldState::Focused>;
+using FilledTextFieldDisabled   = TextField<TextFieldVariant::Filled, TextFieldState::Disabled>;
+using OutlinedTextFieldEnabled  = TextField<TextFieldVariant::Outlined, TextFieldState::Enabled>;
+using OutlinedTextFieldHovered  = TextField<TextFieldVariant::Outlined, TextFieldState::Hovered>;
+using OutlinedTextFieldFocused  = TextField<TextFieldVariant::Outlined, TextFieldState::Focused>;
+using OutlinedTextFieldDisabled = TextField<TextFieldVariant::Outlined, TextFieldState::Disabled>;
 } // namespace ImGuiEx::M3::Spec

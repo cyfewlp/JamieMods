@@ -30,12 +30,11 @@ static constexpr auto IM_COL32_R_MASK = 0x000000FFU;
 static constexpr auto IM_COL32_G_MASK = 0x0000FF00U;
 static constexpr auto IM_COL32_B_MASK = 0x00FF0000U;
 
-static constexpr float HOVER_OPACITY      = 0.08F;
-static constexpr float PRESSED_OPACITY    = 0.12F;
-static constexpr float FOCUS_OPACITY      = 0.12F;
-static constexpr float DRAGGED_OPACITY    = 0.16F;
-static constexpr float DISABLED_CONTENT   = 0.38F;
-static constexpr float DISABLED_CONTAINER = 0.12F;
+static constexpr float HOVER_OPACITY    = 0.08F;
+static constexpr float PRESSED_OPACITY  = 0.10F;
+static constexpr float FOCUS_OPACITY    = 0.10F;
+static constexpr float DRAGGED_OPACITY  = 0.16F;
+static constexpr float DISABLED_CONTENT = 0.38F;
 
 constexpr auto ImU32ToArgb(const ImU32 imU32) -> Argb
 {
@@ -59,7 +58,6 @@ constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
 
 namespace ColorUtils
 {
-
 //! Standard sRGB -> Linear conversion
 inline float SrgbToLinear(float c)
 {
@@ -90,7 +88,6 @@ inline float FastFromLinear(float l)
 
 inline auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
 {
-
     ImVec4 bL = {FastToLinear(base.x), FastToLinear(base.y), FastToLinear(base.z), base.w};
     ImVec4 oL = {FastToLinear(overlay.x), FastToLinear(overlay.y), FastToLinear(overlay.z), overlay.w};
 
@@ -102,6 +99,17 @@ inline auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
              // colors.
     };
 }
+
+inline auto BlendHovered(ImVec4 color, ImVec4 overlay) -> ImVec4
+{
+    return BlendState(color, overlay, HOVER_OPACITY);
+}
+
+inline auto BlendState(ImVec4 color, ImVec4 overlay, bool pressed, bool focused, bool hovered) -> ImVec4
+{
+    return BlendState(color, overlay, (pressed || focused) ? PRESSED_OPACITY : (hovered ? HOVER_OPACITY : 0.0F));
+}
+
 } // namespace ColorUtils
 
 class ColorScheme
@@ -151,6 +159,12 @@ public:
 
     auto operator[](Spec::ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }
 
+    [[nodiscard]] auto BlendState(Spec::ColorRole containerRole, Spec::ColorRole contentRole, const float opacity) const
+        -> ImVec4
+    {
+        return ColorUtils::BlendState(at(containerRole), at(contentRole), opacity);
+    }
+
     /**
      * @brief Helper function. Add a hovered state layer on top of a surface color.
      *
@@ -176,49 +190,24 @@ public:
     }
 
     /**
-     * @brief Helper function. Add a disabled state layer on top of a surface color.
-     *
-     * @param surfaceRole container color role, used as the base color for blending.
-     * @param contentRole content color role, used as the overlay color for blending.
-     * @return the blended color for the disabled state.
-     */
-    [[nodiscard]] auto DisabledSurface(
-        Spec::ColorRole containerRole, Spec::ColorRole onSurfaceRole = Spec::ColorRole::onSurface
-    ) const -> ImVec4
-    {
-        return ColorUtils::BlendState(at(containerRole), at(onSurfaceRole), DISABLED_CONTAINER);
-    }
-
-    [[nodiscard]] auto DisabledContent(Spec::ColorRole contentRole) const -> ImVec4
-    {
-        const ImVec4 onColor = at(contentRole);
-        return {onColor.x, onColor.y, onColor.z, onColor.w * DISABLED_CONTENT};
-    }
-
-    /**
      * @brief Helper function to get the color for a specific state. It will automatically blend the state layer on top
      * of the surface color based on the state flags.
      * @see ColorUtils::BlendState for more details on how the blending works.
      */
-    auto GetStateColor(
-        Spec::ColorRole surfaceRole, Spec::ColorRole contentRole, bool hovered, bool pressed, bool disabled = false
-    ) const -> ImVec4
+    auto GetStateColor(Spec::ColorRole containerRole, Spec::ColorRole contentRole, bool hovered, bool pressed) const
+        -> ImVec4
     {
-        if (disabled)
+        if (pressed)
         {
-            return DisabledSurface(surfaceRole, contentRole);
-        }
-        else if (pressed)
-        {
-            return Pressed(surfaceRole, contentRole);
+            return Pressed(containerRole, contentRole);
         }
         else if (hovered)
         {
-            return Hovered(surfaceRole, contentRole);
+            return Hovered(containerRole, contentRole);
         }
         else
         {
-            return at(surfaceRole);
+            return at(containerRole);
         }
     }
 };

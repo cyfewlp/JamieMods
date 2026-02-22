@@ -61,23 +61,6 @@ struct ToolBar
     static constexpr Unit gap      = dp<4>();
 };
 
-struct Menu
-{
-    static constexpr auto textRole     = TextRole::LabelLarge;
-    //! The expected width of the menu.
-    //!
-    //! This size can be used to set the ChildWindow minimum width when implementing the menu, but it is not mandatory.
-    //! You can also choose to let the menu width adapt to the content, but it is recommended to ensure that the minimum
-    //! width of the menu is not less than this value for better visual consistency.
-    static constexpr Unit width        = dp<208>();
-    static constexpr Unit paddingX     = dp<4>();
-    static constexpr Unit paddingY     = dp<4>();
-    static constexpr Unit gapY         = dp<4>();
-    static constexpr Unit itemHeight   = dp<44>();
-    static constexpr Unit itemPaddingX = dp<12>(); ///< item inner padding.
-    static constexpr Unit itemPaddingY = dp<12>(); ///< item inner padding.
-};
-
 struct Tooltips
 {
     static constexpr auto textRole = TextRole::BodySmall;

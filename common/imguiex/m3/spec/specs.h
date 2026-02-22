@@ -5,8 +5,11 @@
 #pragma once
 
 #include "button.h"
+#include "menu.h"
+#include "nav_rail.h"
 #include "others.h"
 #include "slider.h"
+#include "text_field.h"
 
 /**
  * This namespace defines size specifications for various Material Design 3 components.

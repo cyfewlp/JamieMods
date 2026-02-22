@@ -7,7 +7,7 @@
 #include "ImGuiEx.h"
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
-#include "m3/spec/specs.h"
+#include "m3/spec/button.h"
 #include "m3/spec/text_field.h"
 
 #include <functional>
@@ -88,23 +88,6 @@ auto IconButton(
     std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole surfaceRole,
     Spec::ColorRole contentRole
 ) -> bool;
-
-/**
- * @brief Resolves a raw width value into final layout pixels, supporting relative and absolute values.
- * * This internal helper converts unscaled units to pixels and handles ImGui-style
- *
- * sizing logic:
- * - Positive values: Treated as absolute width (scaled by current DPI/Theme scale).
- * - Negative values: Treated as relative to the current available content region.
- * - Zero: Replaces the input with the provided @p defaultWidth before resolution.
- *
- * @param width        Unscaled width (positive for absolute, negative for relative).
- * @param defaultWidth Width to use if @p width is 0.
- * @param m3Styles     Reference used to scale units to pixels.
- * @return float       The resolved width in pixels, clamped to available space if necessary.
- */
-auto ResolveItemWidth(float width, float defaultWidth, const M3Styles &m3Styles) -> float;
-
 } // namespace detail
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
@@ -169,9 +152,12 @@ auto FAB(
 }
 
 auto TextField(
-    std::string_view label, Spec::TextFieldStyle tfStyle, char *buffer, size_t bufferSize, const M3Styles &m3Styles,
+    std::string_view label, Spec::TextFieldVariant tfStyle, char *buffer, size_t bufferSize, const M3Styles &m3Styles,
     float width
 ) -> bool;
+
+auto TextField(std::string_view label, std::string_view text, Spec::TextFieldVariant tfStyle, const M3Styles &m3Styles)
+    -> bool;
 
 /**
  * @brief A filled text field that follows Material Design 3 specifications.
@@ -179,19 +165,11 @@ auto TextField(
  * Implemented by ImGui::TempInputText and custom Item style.
  * @return true if edited, false otherwise.
  */
-inline auto FilledTextField(
-    std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles, float width = 0.0F
-) -> bool
-{
-    return TextField(label, Spec::TextFieldStyle::Filled, buffer, bufferSize, m3Styles, width);
-}
+auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
+auto FilledTextField(std::string_view label, std::string_view inputText, const M3Styles &m3Styles) -> bool;
 
-inline auto OutlinedTextField(
-    std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles, float width = 0.0F
-) -> bool
-{
-    return TextField(label, Spec::TextFieldStyle::Outlined, buffer, bufferSize, m3Styles, width);
-}
+auto OutlinedTextField(std::string_view label, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
+auto OutlinedTextField(std::string_view label, std::string_view inputText, const M3Styles &m3Styles) -> bool;
 
 using Func = std::function<void()>;
 
@@ -276,24 +254,29 @@ inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole 
 
 auto EndDockedToolbar() -> void;
 
-inline void BeginMenu(const M3Styles &m3Styles)
-{
-    ImGui::Indent(m3Styles.GetPixels(Spec::Menu::itemPaddingX));
-    ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, m3Styles.GetPixels(Spec::Menu::gapY));
-}
+auto MenuItem(std::string_view label, bool selected, const M3Styles &m3Styles, bool vibrant = false) -> bool;
 
-inline void EndMenu(const M3Styles &m3Styles)
-{
-    ImGui::PopStyleVar();
-    ImGui::Unindent(m3Styles.GetPixels(Spec::Menu::itemPaddingX));
-}
+constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4U;
+constexpr int32_t MEDIUM_MAX_MENU_ITEM_COUNT = 8U;
+constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16U;
 
-inline auto MenuItem(
-    const std::string_view label, bool selected, const M3Styles &m3Styles, const SelectableFlags flags = {}
-) -> bool
-{
-    return ImGui::Selectable(TextStart(label), selected, flags, {0.0F, m3Styles.GetPixels(Spec::Menu::itemHeight)});
-}
+/**
+ * @brief M3-styled Menu popup (Internal wrapper of ImGui::BeginComboPopup).
+ * * @note **Concept:** This follows the Material Design 3 Menu spec, not the
+ * traditional ImGui/Windows menu system. It provides a modern popup surface.
+ * * @note **Implementation:** Reuses `BeginComboPopup` for stable positioning logic.
+ *
+ * @param strId      Popup ID.
+ * @param m3Styles   M3 style configuration.
+ * @param maxItemCount Optional limit for visible items before scrolling. Pass a negative value for no limit.
+ * @return true if the menu is open and ready for item rendering; false if the popup is closed or failed to open.
+ */
+auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT)
+    -> bool;
+void EndMenu();
+
+auto BeginCombo(std::string_view label, std::string_view previewValue, const M3Styles &m3Styles);
+void EndCombo();
 
 void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
 

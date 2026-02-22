@@ -245,7 +245,9 @@ auto parse_tokenSets(simdjson_result<ondemand::value> jTokenSets) -> std::vector
     return tokenSets;
 }
 
-auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet> &tokenSets)
+auto parse_tokens(
+    simdjson_result<ondemand::value> jTokens, std::vector<TokenSet> &tokenSets, bool containDeprecatedToken
+)
 {
     if (jTokens.error() != SUCCESS)
     {
@@ -272,7 +274,10 @@ auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet
             if (jToken["deprecationMessage"].has_value())
             {
                 printf("[Warning] Token deprecated: %s \n", token.name.data());
-                continue;
+                if (!containDeprecatedToken)
+                {
+                    continue;
+                }
             }
             auto tokenSetId = token.name.substr(token_set_prefix_length, 16U);
             auto tokenId    = token.name.substr(tokens_prefix_length, 16U);
@@ -342,14 +347,44 @@ auto parse_contextualReferenceTrees(
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc < 2)
     {
         std::cout << "Usage: m3_design_system_data_parser.exe spec.json" << std::endl;
         return -1;
     }
 
-    std::filesystem::path filePath(argv[1]);
+    bool                  containDeprecatedToken = false;
+    std::filesystem::path filePath;
     std::filesystem::path outputFilePath;
+
+    for (size_t i = 1; i < argc; i++)
+    {
+        std::string_view arg = argv[i];
+        if (arg == "--help" || arg == "-h")
+        {
+            std::cout << "Usage: m3_design_system_data_parser.exe spec.json" << std::endl;
+            return 0;
+        }
+        if (arg == "--deprecated" || arg == "-d")
+        {
+            std::cout << "Deprecated tokens will also be parsed, but with a warning." << std::endl;
+            containDeprecatedToken = true;
+        }
+        else
+        {
+            // try to parse file path.
+            std::filesystem::path path(arg);
+            if (std::filesystem::exists(path))
+            {
+                filePath = path;
+            }
+            else
+            {
+                std::cout << "File not found: " << arg << std::endl;
+                return -1;
+            }
+        }
+    }
 
     if (filePath.has_parent_path())
     {
@@ -367,7 +402,7 @@ int main(int argc, char **argv)
     auto doc = parser.iterate(json_result);
 
     auto tokenSets = parse_tokenSets(doc["system"]["tokenSets"]);
-    parse_tokens(doc["system"]["tokens"], tokenSets);
+    parse_tokens(doc["system"]["tokens"], tokenSets, containDeprecatedToken);
     TokenValueCache valueCache = parse_values(doc["system"]["values"]);
     parse_contextualReferenceTrees(doc["system"]["contextualReferenceTrees"], tokenSets, valueCache);
     valueCache.clear();
