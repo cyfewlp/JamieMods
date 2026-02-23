@@ -20,9 +20,7 @@ constexpr int CHANNEL_BG = 0;
 
 //! Support line height with last used TextRole's line height. If the line height is not set or less than font size, it
 //! will fall back to normal text rendering.
-void TextUnformatted(
-    const std::string_view &text, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface
-);
+void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
 
 /**
  * @brief Renders a Material Design 3 style Navigation Rail item.
@@ -58,8 +56,7 @@ struct IconLayout
     float rounding;
 };
 
-auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole contentRole)
-    -> void;
+auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole contentRole) -> void;
 } // namespace detail
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
@@ -84,16 +81,12 @@ auto Icon(std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole conte
 
 namespace detail
 {
-auto IconButton(
-    std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole surfaceRole,
-    Spec::ColorRole contentRole
-) -> bool;
+auto IconButton(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole surfaceRole, Spec::ColorRole contentRole)
+    -> bool;
 } // namespace detail
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-inline auto IconButton(
-    std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole surfaceRole, Spec::ColorRole contentRole
-) -> bool
+inline auto IconButton(std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole surfaceRole, Spec::ColorRole contentRole) -> bool
 {
     return detail::IconButton(
         icon,
@@ -109,18 +102,14 @@ inline auto IconButton(
     );
 }
 
-inline auto IconButtonXS(
-    const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole,
-    const Spec::ColorRole contentRole
-) -> bool
+inline auto IconButtonXS(const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole, const Spec::ColorRole contentRole)
+    -> bool
 {
     return IconButton<Spec::SizeTips::XSMALL>(icon, m3Styles, surfaceRole, contentRole);
 }
 
-inline auto IconButtonM(
-    const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole,
-    const Spec::ColorRole contentRole
-) -> bool
+inline auto IconButtonM(const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole, const Spec::ColorRole contentRole)
+    -> bool
 {
     return IconButton<Spec::SizeTips::MEDIUM>(icon, m3Styles, surfaceRole, contentRole);
 }
@@ -173,16 +162,14 @@ struct TextFieldContent
  * Implemented by ImGui::TempInputText and custom Item style.
  * @return true if edited, false otherwise.
  */
-auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles)
-    -> bool;
+auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
 
 //! @brief Overload for read-only or pre-populated text fields. The presence of inputText determines if the field is
 //! "populated".
 auto FilledTextField(const TextFieldContent &tfContent, std::string_view inputText, const M3Styles &m3Styles) -> bool;
 
 //! @brief An outlined text field that follows Material Design 3 specifications.
-auto OutlinedTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles)
-    -> bool;
+auto OutlinedTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
 
 //! @brief Overload for read-only or pre-populated outlined text fields. The presence of inputText determines if the
 //! field is "populated".
@@ -222,9 +209,7 @@ inline void ListItemPlain(std::string_view strId, const M3Styles &m3Styles, Func
 //! Render a single-line label aligned to the current line’s text baseline.
 //! Works inside ListItem content and also for any line where you want centered text alignment.
 //! Requires calling `m3Styles.UseTextRole<Spec::List::textRole>()` (or an equivalent role) beforehand.
-void AlignedLabel(
-    std::string_view label, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface
-);
+void AlignedLabel(std::string_view label, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
 
 //! adjust cursor position.y for the leading color button in ListItem.
 void ListLayoutLeadingColorButton(float height = 0.F);
@@ -260,11 +245,9 @@ inline auto ListLeadingImageSize(const M3Styles &m3Styles) -> ImVec2
  * provide your expected dimensions and draw your button according to the agreement.
  * @return true is Toolbar visible
  */
-auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles)
-    -> bool;
+auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles) -> bool;
 
-inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles)
-    -> bool
+inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles) -> bool
 {
     return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceRole, m3Styles);
 }
@@ -273,9 +256,9 @@ auto EndDockedToolbar() -> void;
 
 auto MenuItem(std::string_view label, bool selected, const M3Styles &m3Styles, bool vibrant = false) -> bool;
 
-constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4U;
-constexpr int32_t MEDIUM_MAX_MENU_ITEM_COUNT = 8U;
-constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16U;
+constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4;
+constexpr int32_t MEDIUM_MAX_MENU_ITEM_COUNT = 8;
+constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16;
 
 /**
  * @brief M3-styled Menu popup (Internal wrapper of ImGui::BeginComboPopup).
@@ -288,11 +271,10 @@ constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16U;
  * @param maxItemCount Optional limit for visible items before scrolling. Pass a negative value for no limit.
  * @return true if the menu is open and ready for item rendering; false if the popup is closed or failed to open.
  */
-auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT)
-    -> bool;
+auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool;
 void EndMenu();
 
-auto BeginCombo(std::string_view label, std::string_view previewValue, const M3Styles &m3Styles);
+auto BeginCombo(std::string_view label, std::string_view previewValue, const M3Styles &m3Styles) -> bool;
 void EndCombo();
 
 void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
