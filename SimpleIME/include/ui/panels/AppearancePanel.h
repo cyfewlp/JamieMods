@@ -16,6 +16,11 @@ class AppearancePanel
 {
     using i18nHandle = std::optional<TranslatorHolder::UpdateHandle>;
 
+    static constexpr uint32_t ZOOM_STEP_PERCENT    = 25U;
+    static constexpr uint32_t ZOOM_MIN_PERCENT     = 50U;
+    static constexpr uint32_t ZOOM_MAX_PERCENT     = 200U;
+    static constexpr uint32_t ZOOM_DEFAULT_PERCENT = 100U;
+
 public:
     //! Cache each component of HCT separately, because each component may abruptly
     //! change at the boundary, such as: HUE 360 -> 0.
@@ -30,8 +35,9 @@ private:
     std::vector<std::string> m_translateLanguages;
     i18nHandle               m_i18nHandle;
     HctCache                 m_hctCache;
-    double                   m_contrastLevelTemp = 0.0;
-    bool                     m_darkModeTemp      = false;
+    double                   m_contrastLevelTemp  = 0.0;
+    uint32_t                 m_currentZoomPercent = ZOOM_DEFAULT_PERCENT;
+    bool                     m_darkModeTemp       = false;
 
 public:
     static constexpr auto ZOOM_MAX = 2.0f;
@@ -42,9 +48,9 @@ public:
     void Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
-    static void DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawLanguagesCombo(Settings::Appearance &appearance) const;
+    void DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawLanguagesCombo(Settings::Appearance &appearance) const;
 
 public:
     void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);

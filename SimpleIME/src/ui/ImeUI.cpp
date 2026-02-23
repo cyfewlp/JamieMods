@@ -51,9 +51,8 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
-    const auto styleGuard = ImGuiEx::StyleGuard()
-                                .Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurface])
-                                .Style<ImGuiStyleVar_WindowPadding>({});
+    const auto styleGuard =
+        ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::ColorRole::onSurface]).Style<ImGuiStyleVar_WindowPadding>({});
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
     {
         enum class Menu : int8_t
@@ -68,30 +67,15 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
         {
             if (ImGuiEx::M3::BeginNavRail("Sidebar", m3Styles))
             {
-                if (ImGuiEx::M3::NavItem(
-                        Translate("Settings.Sidebar.Appearance"),
-                        currentMenu.first == Menu::Appearance,
-                        ICON_MD_PALETTE,
-                        m3Styles
-                    ))
+                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Appearance"), currentMenu.first == Menu::Appearance, ICON_MD_PALETTE, m3Styles))
                 {
                     currentMenu = {Menu::Appearance, true};
                 }
-                if (ImGuiEx::M3::NavItem(
-                        Translate("Settings.Sidebar.FontBuilder"),
-                        currentMenu.first == Menu::FontBuilder,
-                        ICON_FA_WRENCH,
-                        m3Styles
-                    ))
+                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.FontBuilder"), currentMenu.first == Menu::FontBuilder, ICON_FA_WRENCH, m3Styles))
                 {
                     currentMenu = {Menu::FontBuilder, true};
                 }
-                if (ImGuiEx::M3::NavItem(
-                        Translate("Settings.Sidebar.Behaviour"),
-                        currentMenu.first == Menu::Behaviour,
-                        ICON_OCT_GEAR,
-                        m3Styles
-                    ))
+                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Behaviour"), currentMenu.first == Menu::Behaviour, ICON_OCT_GEAR, m3Styles))
                 {
                     currentMenu = {Menu::Behaviour, true};
                 }
@@ -176,9 +160,7 @@ void ImeUI::DrawStates() const
     constexpr auto STATE_ACTIVE_COLOR = ImVec4(0.35F, 0.75F, 1.0F, 1.0F);
     const auto    &state              = State::GetInstance();
     ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(
-        state.NotHas(State::IME_DISABLED) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_KEYBOARD
-    );
+    ImGui::TextColored(state.NotHas(State::IME_DISABLED) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_KEYBOARD);
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled"));
@@ -243,15 +225,11 @@ void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
 
     ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy"));
 
-    RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByCursor"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CURSOR
-    );
+    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByCursor"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CURSOR);
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCursorTooltip"));
 
     ImGui::SameLine();
-    RadioButton(
-        Translate("Settings.Behaviour.ImePos.UpdateByCaret"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CARET
-    );
+    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByCaret"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CARET);
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImePos.UpdateByCaretTooltip"));
 
     ImGui::SameLine();
