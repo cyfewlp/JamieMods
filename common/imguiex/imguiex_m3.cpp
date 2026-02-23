@@ -882,6 +882,11 @@ auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Sty
         pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
     }
 
+    if (pressed && (window->Flags & ImGuiWindowFlags_Popup) != 0 && (GImGui->LastItemData.ItemFlags & ImGuiItemFlags_AutoClosePopups) != 0)
+    {
+        ImGui::CloseCurrentPopup();
+    }
+
     const ImVec2 contentOffset((m3Styles.GetPixels(MenuItemSpec::OffsetXEx)), m3Styles.GetPixels(MenusSpec::Gap));
     const ImRect contentBB(bb.Min + contentOffset, bb.Max - contentOffset);
     Spec::Unit   rounding = 0U;
