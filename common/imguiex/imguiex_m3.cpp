@@ -587,11 +587,10 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
     }
     else
     {
-        auto      &g            = *GImGui;
-        const auto hovered      = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
-        const auto mouseClicked = ImGui::IsMouseClicked(0, 0, id);
-        const auto clicked      = hovered && mouseClicked;
-        const bool makeActive   = clicked || (g.ActiveId == id);
+        auto      &g          = *GImGui;
+        const bool hovered    = ImGui::ItemHoverable(bb, id, g.LastItemData.ItemFlags);
+        const auto clicked    = hovered && ImGui::IsMouseClicked(0, 0, id);
+        const bool makeActive = clicked || (g.ActiveId == id);
 
         // The logic here is somewhat complex.
         // 1. For editable: click or tab(nav) will activate the text field.
@@ -635,7 +634,7 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
         {
             tfState = Spec::TextFieldState::Focused;
         }
-        else if (ImGui::ItemHoverable(bb, id, 0))
+        else if (hovered)
         {
             tfState = Spec::TextFieldState::Hovered;
         }
