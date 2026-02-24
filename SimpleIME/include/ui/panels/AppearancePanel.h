@@ -50,7 +50,7 @@ public:
 private:
     void DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles);
     void DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles);
-    void DrawLanguagesCombo(Settings::Appearance &appearance) const;
+    void DrawLanguagesCombo(Settings::Appearance &appearance, const ImGuiEx::M3::M3Styles &m3Styles) const;
 
 public:
     void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);

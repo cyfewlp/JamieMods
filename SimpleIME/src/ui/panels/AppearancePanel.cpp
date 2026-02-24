@@ -247,7 +247,7 @@ void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
             DrawZoomCombo(m3Styles);
             ImGui::Spacing();
             DrawThemeBuilder(m3Styles);
-            DrawLanguagesCombo(settings.appearance);
+            DrawLanguagesCombo(settings.appearance, m3Styles);
             ImGui::TableNextColumn();
             ImGui::EndTable();
         }
@@ -384,17 +384,17 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
     }
 }
 
-void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
+void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance, const ImGuiEx::M3::M3Styles &m3Styles) const
 {
     bool clicked = false;
-    if (ImGui::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language.c_str()))
+    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language.c_str(), m3Styles))
     {
         int32_t idx = 0;
         for (const auto &language : m_translateLanguages)
         {
             ImGui::PushID(idx);
             const bool isSelected = appearance.language == language;
-            if (ImGui::Selectable(language.c_str(), isSelected) && !isSelected)
+            if (ImGuiEx::M3::MenuItem(language.c_str(), isSelected, m3Styles) && !isSelected)
             {
                 appearance.language = language;
                 clicked             = true;
@@ -406,7 +406,7 @@ void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
             ImGui::PopID();
             idx++;
         }
-        ImGui::EndCombo();
+        ImGuiEx::M3::EndCombo();
     }
 
     if (clicked)

@@ -116,13 +116,29 @@ set(ICON_GEN_DIR ${CMAKE_BINARY_DIR}/generated/icons)
 set(ICON_OUT_TTF ${ICON_GEN_DIR}/${ICON_FILE})
 set(ICON_OUT_HEADER ${ICON_GEN_DIR}/icons.h)
 
+# Read icon names and build a list of SVG dependencies
+file(STRINGS "${ICON_LIST_FILE}" ICON_NAMES)
+set(ICON_SVG_DEPS "")
+foreach(name IN LISTS ICON_NAMES)
+  string(STRIP "${name}" name)
+  if(name STREQUAL "")
+    continue()
+  endif()
+  # allow comments
+  string(SUBSTRING "${name}" 0 1 first_char)
+  if(first_char STREQUAL "#")
+    continue()
+  endif()
+  list(APPEND ICON_SVG_DEPS "${ICONS_DIR}/${name}.svg")
+endforeach()
+
 add_custom_command(
         OUTPUT ${ICON_OUT_TTF} ${ICON_OUT_HEADER}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${ICON_GEN_DIR}
 
         COMMAND ${FONTFORGE_EXECUTABLE} -script ${ICON_BUILD_SCRIPT}  --icons_dir ${ICONS_DIR} --list ${ICON_LIST_FILE} --out ${ICON_GEN_DIR}
 
-        DEPENDS ${ICON_LIST_FILE} ${ICON_BUILD_SCRIPT}
+        DEPENDS ${ICON_LIST_FILE} ${ICON_BUILD_SCRIPT} ${ICON_SVG_DEPS}
         COMMENT "Generating icon font from Lucide (fetched via FetchContent)"
         VERBATIM
 )
