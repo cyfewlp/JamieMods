@@ -128,6 +128,7 @@ add_custom_command(
 )
 
 add_custom_target(icons DEPENDS ${ICON_OUT_TTF} ${ICON_OUT_HEADER})
+add_dependencies(${PROJECT_NAME} icons)
 
 ############################################################
 # CPACK
