@@ -7,7 +7,8 @@
 #include "ImGuiEx.h"
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
-#include "m3/spec/button.h"
+#include "m3/facade/icon_button.h"
+#include "m3/spec/menu.h"
 #include "m3/spec/text_field.h"
 
 #include <functional>
@@ -46,98 +47,95 @@ auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles) -> bool;
 //! Like ImGui::EndChild: You always need to call it after BeginNavRail.
 auto EndNavRail() -> void;
 
-namespace detail
-{
-struct IconLayout
-{
-    float iconSize;
-    float size;
-    float margin;
-    float rounding;
-};
+//! @brief Icon only, no interaction.
+//! This is the Standard `IconButton` special case: no bg and interaction, only render the icon with correct size and color.
+auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> void;
 
-auto Icon(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole contentRole) -> void;
-} // namespace detail
-
-template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto Icon(std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole contentRole) -> void
+inline auto XSmallIcon(std::string_view icon, const M3Styles &m3Styles) -> void
 {
-    detail::Icon(
-        icon,
-        m3Styles,
-        detail::IconLayout{
-            .iconSize = m3Styles.GetPixels(Spec::IconButton<Size>::iconSize),
-            .size     = m3Styles.GetPixels(Spec::IconButton<Size>::size),
-            .margin   = m3Styles.GetPixels(Spec::IconButton<Size>::margin),
-            .rounding = m3Styles.GetPixels(Spec::IconButton<Size>::rounding),
-        },
-        contentRole
-    );
+    Icon(icon, Spec::SizeTips::XSMALL, m3Styles);
 }
 
-/////////////////////////////////////////////////
-/// ... Buttons ...
-/////////////////////////////////////////////////
-
-namespace detail
+inline auto SmallIcon(std::string_view icon, const M3Styles &m3Styles) -> void
 {
-auto IconButton(std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, Spec::ColorRole surfaceRole, Spec::ColorRole contentRole)
-    -> bool;
-} // namespace detail
-
-template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-inline auto IconButton(std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole surfaceRole, Spec::ColorRole contentRole) -> bool
-{
-    return detail::IconButton(
-        icon,
-        m3Styles,
-        detail::IconLayout{
-            .iconSize = m3Styles.GetPixels(Spec::IconButton<Size>::iconSize),
-            .size     = m3Styles.GetPixels(Spec::IconButton<Size>::size),
-            .margin   = m3Styles.GetPixels(Spec::IconButton<Size>::margin),
-            .rounding = m3Styles.GetPixels(Spec::IconButton<Size>::rounding),
-        },
-        surfaceRole,
-        contentRole
-    );
+    Icon(icon, Spec::SizeTips::SMALL, m3Styles);
 }
 
-inline auto IconButtonXS(const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole, const Spec::ColorRole contentRole)
+inline auto MediumIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+{
+    Icon(icon, Spec::SizeTips::MEDIUM, m3Styles);
+}
+
+inline auto LargeIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+{
+    Icon(icon, Spec::SizeTips::LARGE, m3Styles);
+}
+
+inline auto XLargeIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+{
+    Icon(icon, Spec::SizeTips::XLARGE, m3Styles);
+}
+
+//! @brief IconButtons
+//! Pass `Spec::IconButtonColors` to specify the color scheme for the icon button.
+//! The default is `Filled`, which applies the standard filled style.
+auto IconButton(
+    std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled
+) -> bool;
+
+inline auto XSmallIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
     -> bool
 {
-    return IconButton<Spec::SizeTips::XSMALL>(icon, m3Styles, surfaceRole, contentRole);
+    return IconButton(icon, Spec::SizeTips::XSMALL, m3Styles, ibColors);
 }
 
-inline auto IconButtonM(const std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole surfaceRole, const Spec::ColorRole contentRole)
+inline auto SmallIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
+{
+    return IconButton(icon, Spec::SizeTips::SMALL, m3Styles, ibColors);
+}
+
+inline auto MediumIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
     -> bool
 {
-    return IconButton<Spec::SizeTips::MEDIUM>(icon, m3Styles, surfaceRole, contentRole);
+    return IconButton(icon, Spec::SizeTips::MEDIUM, m3Styles, ibColors);
 }
 
-template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto IconButtonSurfaceContainerVariant(std::string_view icon, const M3Styles &m3Styles)
+inline auto LargeIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton<Size>(icon, m3Styles, Spec::ColorRole::surfaceContainer, Spec::ColorRole::onSurfaceVariant);
+    return IconButton(icon, Spec::SizeTips::LARGE, m3Styles, ibColors);
 }
 
-template <Spec::SizeTips Size = Spec::SizeTips::SMALL>
-auto FAB(
-    std::string_view icon, const M3Styles &m3Styles, Spec::ColorRole surfaceRole = Spec::ColorRole::primary,
-    Spec::ColorRole contentRole = Spec::ColorRole::onPrimary
-) -> bool
+inline auto XLargeIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
 {
-    return detail::IconButton(
-        icon,
-        m3Styles,
-        detail::IconLayout{
-            .iconSize = m3Styles.GetPixels(Spec::FAB<Size>::iconSize),
-            .size     = m3Styles.GetPixels(Spec::FAB<Size>::size),
-            .margin   = 0.0F,
-            .rounding = m3Styles.GetPixels(Spec::FAB<Size>::rounding),
-        },
-        surfaceRole,
-        contentRole
-    );
+    return IconButton(icon, Spec::SizeTips::XLARGE, m3Styles, ibColors);
+}
+
+auto Button(std::string_view label, std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> bool;
+
+inline auto XSmallButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    return Button(label, icon, Spec::SizeTips::XSMALL, m3Styles);
+}
+
+inline auto SmallButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    return Button(label, icon, Spec::SizeTips::SMALL, m3Styles);
+}
+
+inline auto MediumButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    return Button(label, icon, Spec::SizeTips::MEDIUM, m3Styles);
+}
+
+inline auto LargeButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    return Button(label, icon, Spec::SizeTips::LARGE, m3Styles);
+}
+
+inline auto XLargeButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+{
+    return Button(label, icon, Spec::SizeTips::XLARGE, m3Styles);
 }
 
 /**
@@ -254,7 +252,17 @@ inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole 
 
 auto EndDockedToolbar() -> void;
 
-auto MenuItem(std::string_view label, bool selected, const M3Styles &m3Styles, bool vibrant = false) -> bool;
+auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors, const M3Styles &m3Styles) -> bool;
+
+inline auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Styles) -> bool
+{
+    return MenuItem(label, selected, Spec::MenuColors::Standard, m3Styles);
+}
+
+inline auto MenuItemVibrant(std::string_view label, const bool selected, const M3Styles &m3Styles) -> bool
+{
+    return MenuItem(label, selected, Spec::MenuColors::Vibrant, m3Styles);
+}
 
 constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4;
 constexpr int32_t MEDIUM_MAX_MENU_ITEM_COUNT = 8;
@@ -262,16 +270,29 @@ constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16;
 
 /**
  * @brief M3-styled Menu popup (Internal wrapper of ImGui::BeginComboPopup).
- * * @note **Concept:** This follows the Material Design 3 Menu spec, not the
+ * @note **Concept:** This follows the Material Design 3 Menu spec, not the
  * traditional ImGui/Windows menu system. It provides a modern popup surface.
- * * @note **Implementation:** Reuses `BeginComboPopup` for stable positioning logic.
+ * @note **Implementation:** Reuses `BeginComboPopup` for stable positioning logic.
  *
  * @param strId      Popup ID.
  * @param m3Styles   M3 style configuration.
+ * @param menuitemColors  Color scheme for menu items, affecting background.
  * @param maxItemCount Optional limit for visible items before scrolling. Pass a negative value for no limit.
  * @return true if the menu is open and ready for item rendering; false if the popup is closed or failed to open.
  */
-auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool;
+auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, Spec::MenuColors menuitemColors, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT)
+    -> bool;
+
+inline auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
+{
+    return BeginMenu(strId, m3Styles, Spec::MenuColors::Standard, maxItemCount);
+}
+
+inline auto BeginMenuVibrant(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
+{
+    return BeginMenu(strId, m3Styles, Spec::MenuColors::Vibrant, maxItemCount);
+}
+
 void EndMenu();
 
 auto BeginCombo(std::string_view label, std::string_view previewValue, const M3Styles &m3Styles) -> bool;

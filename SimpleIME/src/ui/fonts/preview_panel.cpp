@@ -57,27 +57,20 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
     const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::BodyLarge>();
 
     ImRect bb(ImGui::GetCursorScreenPos(), {});
-    ImGui::SetCursorScreenPos(
-        {bb.Min.x + m3Styles.GetPixels(SearchSpec::paddingX), bb.Min.y + m3Styles.GetPixels(SearchSpec::paddingY)}
-    );
+    ImGui::SetCursorScreenPos({bb.Min.x + m3Styles.GetPixels(SearchSpec::paddingX), bb.Min.y + m3Styles.GetPixels(SearchSpec::paddingY)});
     ImGui::BeginGroup();
     bool edited = false;
     {
         ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-        ImGuiEx::M3::Icon(ICON_OCT_SEARCH, m3Styles, ColorRole::onSurfaceVariant);
+        ImGuiEx::M3::SmallIcon(ICON_OCT_SEARCH, m3Styles);
         ImGui::SameLine(0, m3Styles.GetPixels(SearchSpec::gap));
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style<ImGuiStyleVar_FramePadding>({0, m3Styles.GetPixels(SearchSpec::paddingY)})
             .Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurface))
             .Color<ImGuiCol_FrameBg>({0, 0, 0, 0});
-        edited = ImGui::InputTextWithHint(
-            "##Filter",
-            "search by name",
-            filter.InputBuf,
-            IM_COUNTOF(filter.InputBuf),
-            ImGuiInputTextFlags_EscapeClearsAll
-        );
+        edited =
+            ImGui::InputTextWithHint("##Filter", "search by name", filter.InputBuf, IM_COUNTOF(filter.InputBuf), ImGuiInputTextFlags_EscapeClearsAll);
         ImGui::PopItemFlag();
     }
     ImGui::EndGroup();
@@ -104,9 +97,7 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
  * @param selectedIndex current selected FontInfo index. will be set if select a new.
  * @return is select a new row.
  */
-auto FontsTable(
-    FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles
-) -> bool
+auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles) -> bool
 {
     using Spacing   = ImGuiEx::M3::Spacing;
     using ColorRole = M3Spec::ColorRole;
@@ -142,10 +133,7 @@ auto FontsTable(
 
             const bool selected = selectedIndex == fontInfo.GetIndex();
             const bool clicked  = ImGui::Selectable(
-                fontInfo.GetName().c_str(),
-                selected,
-                ImGuiEx::SelectableFlags().SpanAllColumns(),
-                {0.F, m3Styles.GetLastText().currText.lineHeight}
+                fontInfo.GetName().c_str(), selected, ImGuiEx::SelectableFlags().SpanAllColumns(), {0.F, m3Styles.GetLastText().currText.lineHeight}
             );
             if (clicked && !selected)
             {
@@ -166,13 +154,11 @@ auto FontsTable(
 
 void DrawStatusBar(const StatusBar &statusBar, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::onSecondaryContainer));
-    ImGuiEx::M3::Icon(statusBar.icon, m3Styles, M3Spec::ColorRole::onSecondaryContainer);
+    ImGuiEx::M3::SmallIcon(statusBar.icon, m3Styles);
     ImGui::SameLine();
-    ImGui::AlignTextToFramePadding();
+    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     ImGui::PushTextWrapPos(0.0F);
-    ImGui::TextUnformatted(ImGuiEx::TextStart(statusBar.text), ImGuiEx::TextEnd(statusBar.text));
+    ImGuiEx::M3::TextUnformatted(statusBar.text, m3Styles, M3Spec::ColorRole::onSecondaryContainer);
     ImGui::PopTextWrapPos();
 
     ImGui::Separator();
@@ -262,8 +248,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
     {
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
 
-        const auto styleGuard =
-            ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
+        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
         if (ImGui::BeginChild("FontsView", {width, 0}, ImGuiEx::ChildFlags().Borders()))
         {
             DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList(), m3Styles);
@@ -304,8 +289,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
         default:;
     }
 
-    const auto styleGuard =
-        ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
+    const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
     if (ImGui::BeginChild("PreviewPanel", {}, ImGuiEx::ChildFlags().AutoResizeX()))
     {
         DrawStatusBar(statusBar, m3Styles);

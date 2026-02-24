@@ -32,6 +32,7 @@ constexpr auto tokens_prefix_length        = token_set_prefix_length + id_length
 constexpr auto values_prefix_length        = tokens_prefix_length + id_length + values_length;
 
 constexpr auto DisplayGroup_Deprecated_Prefix = std::string_view{"[Deprecated]"};
+constexpr auto Motion_Token_Prefix            = std::string_view{"md.sys.motion"};
 
 auto token_name_to_camelCase(std::string_view tokenName, std::string &out)
 {
@@ -91,6 +92,36 @@ auto normalize_color_value(std::string_view colorValue) -> std::string
     return std::string(colorValue);
 }
 
+auto normalize_shape_value(std::string_view shapeValue) -> std::string
+{
+    auto lastDotPos = shapeValue.rfind('.');
+
+    if (lastDotPos != std::string_view::npos)
+    {
+        auto        shapeName = shapeValue.substr(lastDotPos + 1);
+        std::string shape     = "ShapeCorner::";
+        bool        toUpper   = true; // first char is upper case.
+        for (size_t index = 0; index < shapeName.length(); index++)
+        {
+            if (shapeName[index] == '-')
+            {
+                toUpper = true;
+            }
+            else if (toUpper)
+            {
+                shape.push_back(static_cast<char>(std::toupper(shapeName[index])));
+                toUpper = false;
+            }
+            else
+            {
+                shape.push_back(shapeName[index]);
+            }
+        }
+        return shape;
+    }
+    return std::string(shapeValue);
+}
+
 enum class token_type
 {
     color,
@@ -127,6 +158,10 @@ struct Token
         if (type == "COLOR")
         {
             value.value = normalize_color_value(value.value);
+        }
+        else if (type == "SHAPE")
+        {
+            value.value = normalize_shape_value(value.value);
         }
         tokenName = normalize_token_value(tokenName);
     }
@@ -214,6 +249,11 @@ auto parse_values(simdjson_result<ondemand::value> jValues) -> TokenValueCache
 
 std::ostream &operator<<(std::ostream &os, const Token &token)
 {
+    if (token.value.value.starts_with(Motion_Token_Prefix))
+    {
+        printf("[Warning] Motion token is not supported yet: %s \n", token.tokenName.data());
+        return os;
+    }
     return os << token.toString();
 }
 
@@ -235,8 +275,7 @@ auto parse_tokenSets(simdjson_result<ondemand::value> jTokenSets) -> std::vector
     for (auto jTokenSet : jTokenSets.get_array())
     {
         TokenSet tokenSet;
-        if (SUCCESS == jTokenSet["name"].get(tokenSet.name) &&
-            SUCCESS == jTokenSet["tokenSetName"].get(tokenSet.tokenSetName))
+        if (SUCCESS == jTokenSet["name"].get(tokenSet.name) && SUCCESS == jTokenSet["tokenSetName"].get(tokenSet.tokenSetName))
         {
             tokenSet.name.erase(0, token_set_prefix_length);
             tokenSets.push_back(std::move(tokenSet));
@@ -245,9 +284,7 @@ auto parse_tokenSets(simdjson_result<ondemand::value> jTokenSets) -> std::vector
     return tokenSets;
 }
 
-auto parse_tokens(
-    simdjson_result<ondemand::value> jTokens, std::vector<TokenSet> &tokenSets, bool containDeprecatedToken
-)
+auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet> &tokenSets, bool containDeprecatedToken)
 {
     if (jTokens.error() != SUCCESS)
     {
@@ -284,8 +321,7 @@ auto parse_tokens(
             if (tokenSetCache.contains(tokenSetId))
             {
                 auto tokenSetIndex = tokenSetCache[tokenSetId];
-                if (SUCCESS == jToken["tokenName"].get(token.tokenName) &&
-                    SUCCESS == jToken["displayName"].get(token.displayName) &&
+                if (SUCCESS == jToken["tokenName"].get(token.tokenName) && SUCCESS == jToken["displayName"].get(token.displayName) &&
                     SUCCESS == jToken["tokenValueType"].get(token.type))
                 {
                     tokenSets[tokenSetIndex].tokens.push_back(std::move(token));
@@ -303,9 +339,7 @@ auto parse_tokens(
     }
 }
 
-auto parse_contextualReferenceTrees(
-    simdjson_result<ondemand::value> jRefTrees, std::vector<TokenSet> &tokenSets, TokenValueCache &valueCache
-)
+auto parse_contextualReferenceTrees(simdjson_result<ondemand::value> jRefTrees, std::vector<TokenSet> &tokenSets, TokenValueCache &valueCache)
 {
     for (auto &tokenSet : tokenSets)
     {
@@ -410,6 +444,12 @@ int main(int argc, char **argv)
     for (auto &tokenSet : tokenSets)
     {
         tokenSet.normalize();
+        // sort tokens by reverse lexicographical order of their names (compare from the end)
+        // using rbegin()/rend() makes tokens with similar suffixes group together; this is intentional
+        std::ranges::sort(tokenSet.tokens, [](const Token &a, const Token &b) {
+            return std::lexicographical_compare(a.tokenName.rbegin(), a.tokenName.rend(), b.tokenName.rbegin(), b.tokenName.rend());
+        });
+
         for (auto &token : tokenSet.tokens)
         {
             token.normalize();

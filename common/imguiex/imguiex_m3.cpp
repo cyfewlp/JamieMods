@@ -9,6 +9,8 @@
 #include "imgui_internal.h"
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/Material3.h"
+#include "m3/facade/buttons.h"
+#include "m3/facade/icon_button.h"
 #include "m3/facade/menu.h"
 #include "m3/facade/nav_rail.h"
 #include "m3/facade/text_field.h"
@@ -45,6 +47,30 @@ inline auto GetPixels(const M3Styles &m3Styles, Units... units) -> float
     float totalPixels = 0.0F;
     ((totalPixels += m3Styles.GetPixels(units)), ...);
     return totalPixels;
+}
+
+inline void DrawIcon(
+    ImDrawList *drawList, float iconSize, const ImVec2 &iconPos, std::string_view icon, const M3Styles &m3Styles, const ImVec4 &iconColor
+)
+{
+    drawList->AddText(m3Styles.IconFont(), iconSize, iconPos, ImGui::ColorConvertFloat4ToU32(iconColor), TextStart(icon), TextEnd(icon));
+}
+
+inline void DrawIcon(
+    ImDrawList *drawList, float iconSize, const ImVec2 &iconPos, std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole contentRole
+)
+{
+    DrawIcon(drawList, iconSize, iconPos, icon, m3Styles, m3Styles.Colors()[contentRole]);
+}
+
+inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const ImVec4 &contentColor)
+{
+    drawList->AddText(nullptr, 0.F, textPos, ImGui::ColorConvertFloat4ToU32(contentColor), TextStart(text), TextEnd(text));
+}
+
+inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const M3Styles &m3Styles, const Spec::ColorRole contentRole)
+{
+    DrawText(drawList, textPos, text, m3Styles.Colors()[contentRole]);
 }
 
 } // namespace
@@ -95,30 +121,6 @@ void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, con
 
 namespace
 {
-
-inline void DrawIcon(
-    ImDrawList *drawList, float iconSize, const ImVec2 &iconPos, std::string_view icon, const M3Styles &m3Styles, const ImVec4 &iconColor
-)
-{
-    drawList->AddText(m3Styles.IconFont(), iconSize, iconPos, ImGui::ColorConvertFloat4ToU32(iconColor), TextStart(icon), TextEnd(icon));
-}
-
-inline void DrawIcon(
-    ImDrawList *drawList, float iconSize, const ImVec2 &iconPos, std::string_view icon, const M3Styles &m3Styles, const Spec::ColorRole contentRole
-)
-{
-    DrawIcon(drawList, iconSize, iconPos, icon, m3Styles, m3Styles.Colors()[contentRole]);
-}
-
-inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const ImVec4 &contentColor)
-{
-    drawList->AddText(nullptr, 0.F, textPos, ImGui::ColorConvertFloat4ToU32(contentColor), TextStart(text), TextEnd(text));
-}
-
-inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const M3Styles &m3Styles, const Spec::ColorRole contentRole)
-{
-    DrawText(drawList, textPos, text, m3Styles.Colors()[contentRole]);
-}
 
 //! Internal used by NavItem when the nav rail is expanded.
 auto HoriazontalNavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool
@@ -279,95 +281,6 @@ auto EndNavRail() -> void
     ImGui::EndChild();
     ImGui::PopStyleVar();
     ImGui::PopStyleColor();
-}
-
-auto detail::Icon(const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, const Spec::ColorRole contentRole) -> void
-{
-    const ImGuiWindow *window = ImGui::GetCurrentWindow();
-    if (window->SkipItems) return;
-
-    const ImVec2 pos   = window->DC.CursorPos;
-    const auto   width = layout.size + (layout.margin * 2.0F);
-    const ImVec2 size  = {width, width};
-    const ImRect bb(pos, pos + size);
-
-    const auto padding       = (layout.size - layout.iconSize) * 0.5F;
-    const auto contentOffset = padding + layout.margin;
-    ImGui::ItemSize(size, contentOffset);
-    if (!ImGui::ItemAdd(bb, 0U))
-    {
-        return;
-    }
-
-    const auto textColor = m3Styles.Colors().at(contentRole);
-    window->DrawList->AddText(
-        m3Styles.IconFont(),
-        layout.iconSize,
-        bb.Min + ImVec2(contentOffset, contentOffset),
-        ImGui::ColorConvertFloat4ToU32(textColor),
-        TextStart(icon),
-        TextEnd(icon)
-    );
-}
-
-auto detail::IconButton(
-    const std::string_view icon, const M3Styles &m3Styles, const IconLayout &layout, const Spec::ColorRole surfaceRole,
-    const Spec::ColorRole contentRole
-) -> bool
-{
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
-    if (window->SkipItems) return false;
-
-    const ImGuiID id    = window->GetID(TextStart(icon));
-    const ImVec2  pos   = window->DC.CursorPos;
-    const auto    width = layout.size + (layout.margin * 2.0F);
-    const ImVec2  size  = {width, width};
-    const ImRect  bb(pos, pos + size);
-
-    const auto padding       = (layout.size - layout.iconSize) * 0.5F;
-    const auto contentOffset = padding + layout.margin;
-    ImGui::ItemSize(size, contentOffset);
-    if (!ImGui::ItemAdd(bb, id)) return false;
-
-    bool       hovered = false;
-    bool       held    = false;
-    const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
-
-    const auto containerColor = m3Styles.Colors().at(surfaceRole);
-    auto       textColor      = m3Styles.Colors().at(contentRole);
-
-    ImVec4 frameColor;
-    if (IsItemDisabled())
-    {
-        textColor.w  = DISABLED_CONTENT;
-        frameColor.w = 0.10F;
-    }
-    else if (hovered && held)
-    {
-        frameColor = m3Styles.Colors().Pressed(surfaceRole, contentRole);
-    }
-    else if (hovered)
-    {
-        frameColor = m3Styles.Colors().Hovered(surfaceRole, contentRole);
-    }
-    else
-    {
-        frameColor = containerColor;
-    }
-
-    const ImVec2 contentMin = bb.Min + ImVec2{layout.margin, layout.margin};
-    const ImVec2 contentMax = bb.Max - ImVec2{layout.margin, layout.margin};
-    ImGui::RenderNavCursor(bb, id);
-    ImGui::RenderFrame(contentMin, contentMax, ImGui::ColorConvertFloat4ToU32(frameColor), true, layout.rounding);
-    window->DrawList->AddText(
-        m3Styles.IconFont(),
-        layout.iconSize,
-        contentMin + ImVec2(padding, padding),
-        ImGui::ColorConvertFloat4ToU32(textColor),
-        TextStart(icon),
-        TextEnd(icon)
-    );
-    return pressed;
 }
 
 namespace
@@ -678,6 +591,201 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
 }
 } // namespace
 
+auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> void
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return;
+    }
+
+    const auto sizing = Spec::GetIconButtonSizing(sizeTips);
+
+    const auto   height = GetPixels(m3Styles, sizing.containerHeight);
+    const ImVec2 size   = {height, height};
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, 0U))
+    {
+        return;
+    }
+
+    ImVec4 iconColor;
+    if (IsItemDisabled())
+    {
+        iconColor   = m3Styles.Colors()[Spec::StandardIconButtonDisabled::IconColor];
+        iconColor.w = DISABLED_CONTENT;
+    }
+    else
+    {
+        iconColor = m3Styles.Colors()[Spec::StandardIconButtonEnabled::IconColor];
+    }
+
+    const auto offsetX  = GetPixels(m3Styles, sizing.defaultLeadingSpace);
+    const auto iconSize = GetPixels(m3Styles, sizing.iconSize);
+    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
+}
+
+auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::IconButtonColors ibColors) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+
+    const auto sizing = Spec::GetIconButtonSizing(sizeTips);
+
+    const ImGuiID id = window->GetID(TextStart(icon), TextEnd(icon));
+
+    const auto   height = GetPixels(m3Styles, sizing.containerHeight);
+    const ImVec2 size   = {height, height};
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, id))
+    {
+        return false;
+    }
+
+    auto &g = *GImGui;
+
+    bool       hovered  = false;
+    bool       held     = false;
+    const bool pressed  = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    const bool disabled = IsItemDisabled();
+    const bool active   = hovered && held;
+
+    const auto colors       = Spec::GetIconButtonColorsValues(ibColors, disabled);
+    ImVec4     bgColor      = m3Styles.Colors()[colors.containerColor];
+    ImVec4     iconColor    = m3Styles.Colors()[colors.iconColor];
+    ImVec4     outlineColor = m3Styles.Colors()[colors.outlineColor];
+
+    if (disabled)
+    {
+        bgColor.w      = colors.containerOpacity;
+        iconColor.w    = DISABLED_CONTENT;
+        outlineColor.w = DISABLED_CONTENT;
+    }
+    else
+    {
+        if (hovered)
+        {
+            bgColor = ColorUtils::BlendHovered(bgColor, iconColor);
+        }
+        else if (active)
+        {
+            bgColor = ColorUtils::BlendPressed(bgColor, iconColor);
+        }
+    }
+
+    const auto rounding = m3Styles.GetPixels(active ? sizing.pressedContainerShape : sizing.containerShapeSquare);
+    {
+        const auto backupFrameRounding = g.Style.FrameRounding;
+        g.Style.FrameRounding          = rounding;
+        ImGui::RenderNavCursor(bb, id);
+        g.Style.FrameRounding = backupFrameRounding;
+    }
+
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
+
+    if (ibColors == Spec::IconButtonColors::Outlined)
+    {
+        const float outlineWidth = sizing.outlinedOutlineWidth;
+        window->DrawList->AddRect(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(outlineColor), rounding, 0, outlineWidth);
+    }
+
+    const auto offsetX  = GetPixels(m3Styles, sizing.defaultLeadingSpace);
+    const auto iconSize = GetPixels(m3Styles, sizing.iconSize);
+    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
+    return pressed;
+}
+
+auto Button(std::string_view label, std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+
+    const auto sizing       = Spec::GetButtonSizing(sizeTips);
+    float      width        = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
+    const auto PaddingSpace = m3Styles.GetPixels(sizing.leadingSpace);
+    width += PaddingSpace * 2.0F;
+    const auto iconSize       = m3Styles.GetPixels(sizing.iconSize);
+    const auto iconLabelSpace = m3Styles.GetPixels(sizing.iconLabelSpace);
+    if (!icon.empty())
+    {
+        width += iconSize + iconLabelSpace;
+    }
+    const auto   height = m3Styles.GetPixels(sizing.containerHeight);
+    const ImVec2 size(width, height);
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+
+    const auto id = window->GetID(TextStart(label), TextEnd(label));
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, id))
+    {
+        return false;
+    }
+    auto &g = *GImGui;
+
+    bool       hovered = false;
+    bool       held    = false;
+    const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    const bool active  = hovered && held;
+
+    ImVec4 bgColor;
+    ImVec4 textColor;
+    ImVec4 iconColor;
+    if (IsItemDisabled())
+    {
+        bgColor     = m3Styles.Colors()[Spec::FilledButtonDisabled::DisabledContainerColor];
+        textColor   = m3Styles.Colors()[Spec::FilledButtonDisabled::DisabledLabelTextColor];
+        iconColor   = m3Styles.Colors()[Spec::FilledButtonDisabled::DisabledIconColor];
+        bgColor.w   = Spec::FilledButtonDisabled::DisabledContainerOpacity;
+        textColor.w = DISABLED_CONTENT;
+        iconColor.w = DISABLED_CONTENT;
+    }
+    else
+    {
+        bgColor   = m3Styles.Colors()[Spec::FilledButtonEnabled::ContainerColor];
+        textColor = m3Styles.Colors()[Spec::FilledButtonEnabled::LabelTextColor];
+        iconColor = m3Styles.Colors()[Spec::FilledButtonEnabled::IconColor];
+        if (hovered)
+        {
+            bgColor = ColorUtils::BlendHovered(bgColor, textColor);
+        }
+        else if (active)
+        {
+            bgColor = ColorUtils::BlendPressed(bgColor, textColor);
+        }
+    }
+
+    const auto rounding = m3Styles.GetPixels(active ? sizing.pressedContainerShape : sizing.containerShapeSquare);
+    {
+        const auto backupFrameRounding = g.Style.FrameRounding;
+        g.Style.FrameRounding          = rounding;
+        ImGui::RenderNavCursor(bb, id);
+        g.Style.FrameRounding = backupFrameRounding;
+    }
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
+
+    float labelTextOffsetX = PaddingSpace;
+    if (!icon.empty())
+    {
+        const ImVec2 iconPos = bb.Min + ImVec2(labelTextOffsetX, HalfDiff(size.y, iconSize));
+        DrawIcon(window->DrawList, iconSize, iconPos, icon, m3Styles, iconColor);
+        labelTextOffsetX += iconSize + iconLabelSpace;
+    }
+
+    const auto   fontScope = m3Styles.UseTextRole(sizing.labelText);
+    const ImVec2 textPos   = bb.Min + ImVec2(labelTextOffsetX, HalfDiff(size.y, m3Styles.GetLastText().currText.textSize));
+    DrawText(window->DrawList, textPos, label, textColor);
+    return pressed;
+}
+
 auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool
 {
     return TextField<Spec::TextFieldVariant::Filled>(tfContent, buffer, bufferSize, "", m3Styles);
@@ -846,10 +954,40 @@ auto EndDockedToolbar() -> void
 
 namespace
 {
-template <Spec::MenuVariant Variant>
-auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Styles) -> bool
+auto BeginMenu(ImGuiID id, const ImRect &avoidBB, const M3Styles &m3Styles, Spec::MenuColors menuColors, const int32_t maxItemCount) -> bool
 {
-    using MenusSpec    = Spec::Menus<Spec::MenuLayout::Standard, Variant>;
+    if (ImGui::IsPopupOpen(id, ImGuiPopupFlags_None))
+    {
+        ImVec2 max(FLT_MAX, FLT_MAX);
+        if (maxItemCount > 0)
+        {
+            max.y = m3Styles.GetPixels(Spec::MenuItemSizingStandard::OuterHeightEx) * static_cast<float>(maxItemCount);
+        }
+        ImGui::SetNextWindowSizeConstraints({avoidBB.GetWidth(), 0.F}, max);
+    }
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.F, 0.F});
+
+    Spec::ColorRole containerRole = menuColors == Spec::MenuColors::Standard ? Spec::Menus<Spec::MenuColors::Standard>::ContainerColor
+                                                                             : Spec::Menus<Spec::MenuColors::Vibrant>::ContainerColor;
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, m3Styles.Colors()[containerRole]);
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m3Styles.GetPixels(Spec::Menu::ContainerShape));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
+    const auto visible = ImGui::BeginComboPopup(id, avoidBB, 0);
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+    if (!visible)
+    {
+        ImGui::PopStyleVar();
+    }
+    return visible;
+}
+
+} // namespace
+
+auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors, const M3Styles &m3Styles) -> bool
+{
+    using MenusSpec    = Spec::MenusSizing<Spec::MenuLayout::Standard>;
     using MenuItemSpec = MenusSpec::Item;
 
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -857,8 +995,7 @@ auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Sty
     {
         return false;
     }
-    // is first
-    // is last
+    // \todo is first/last?
     const auto   labelFontScope = m3Styles.UseTextRole<MenuItemSpec::LabelTextRole>();
     const auto   minWidth       = m3Styles.GetPixels(MenuItemSpec::MinWidthEx);
     const auto   contentWidth   = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
@@ -892,21 +1029,25 @@ auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Sty
     Spec::Unit   rounding = 0U;
     ImVec4       textColor;
     ImVec4       bgColor;
+    const auto   colors = Spec::GetMenuItemColors(menuitemColors, disabled);
     if (selected)
     {
-        bgColor   = m3Styles.Colors()[MenuItemSpec::SelectedContainerColor];
-        textColor = m3Styles.Colors()[MenuItemSpec::SelectedLabelTextColor];
+        bgColor   = m3Styles.Colors()[colors.selectedContainerColor];
+        textColor = m3Styles.Colors()[colors.selectedLabelTextColor];
         rounding  = MenuItemSpec::SelectedShape;
     }
     else
     {
-        bgColor   = m3Styles.Colors()[MenuItemSpec::ContainerColor];
-        textColor = m3Styles.Colors()[MenuItemSpec::LabelTextColor];
+        bgColor   = m3Styles.Colors()[colors.containerColor];
+        textColor = m3Styles.Colors()[colors.labelTextColor];
         rounding  = MenuItemSpec::Shape;
     }
     if (disabled)
     {
-        bgColor.w   = MenuItemSpec::DisabledContainerOpacity;
+        if (selected)
+        {
+            bgColor.w = colors.selectedcontainerOpacity;
+        }
         textColor.w = DISABLED_CONTENT;
     }
     else
@@ -924,49 +1065,11 @@ auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Sty
     return pressed;
 }
 
-auto BeginMenu(ImGuiID id, const ImRect &avoidBB, const M3Styles &m3Styles, const int32_t maxItemCount) -> bool
-{
-    if (ImGui::IsPopupOpen(id, ImGuiPopupFlags_None))
-    {
-        ImVec2 max(FLT_MAX, FLT_MAX);
-        if (maxItemCount > 0)
-        {
-            max.y = m3Styles.GetPixels(Spec::MenuItemStandard::OuterHeightEx) * static_cast<float>(maxItemCount);
-        }
-        ImGui::SetNextWindowSizeConstraints({avoidBB.GetWidth(), 0.F}, max);
-    }
-
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.F, 0.F});
-
-    ImGui::PushStyleColor(ImGuiCol_PopupBg, m3Styles.Colors()[Spec::Menu::ContainerColor]);
-    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m3Styles.GetPixels(Spec::Menu::ContainerShape));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
-    const auto visible = ImGui::BeginComboPopup(id, avoidBB, 0);
-    ImGui::PopStyleVar(2);
-    ImGui::PopStyleColor();
-    if (!visible)
-    {
-        ImGui::PopStyleVar();
-    }
-    return visible;
-}
-
-} // namespace
-
-auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Styles, const bool vibrant) -> bool
-{
-    if (vibrant)
-    {
-        return MenuItem<Spec::MenuVariant::Vibrant>(label, selected, m3Styles);
-    }
-    return MenuItem<Spec::MenuVariant::Standard>(label, selected, m3Styles);
-}
-
-auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, const int32_t maxItemCount) -> bool
+auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, Spec::MenuColors menuitemColors, const int32_t maxItemCount) -> bool
 {
     const auto avoidRect = ImRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos());
     const auto popupId   = ImGui::GetID(TextStart(strId), TextEnd(strId));
-    return BeginMenu(popupId, avoidRect, m3Styles, maxItemCount);
+    return BeginMenu(popupId, avoidRect, m3Styles, menuitemColors, maxItemCount);
 }
 
 void EndMenu()
@@ -981,14 +1084,14 @@ auto BeginCombo(std::string_view label, std::string_view previewValue, const M3S
     (void)TextField<Spec::TextFieldVariant::Outlined>({.label = label}, nullptr, 0U, previewValue, m3Styles);
 
     const ImGuiContext &g         = *GImGui;
-    const auto          popupId   = ImHashStr("##m3_combo", 0, g.LastItemData.ID);
+    const auto          popupId   = ImHashStr("##m3_combo", 0U, g.LastItemData.ID);
     bool                popupOpen = ImGui::IsPopupOpen(popupId, ImGuiPopupFlags_None);
     if (!popupOpen && ImGui::IsItemClicked())
     {
         ImGui::OpenPopupEx(popupId);
         popupOpen = true;
     }
-    return popupOpen && BeginMenu(popupId, g.LastItemData.Rect, m3Styles, SMALL_MAX_MENU_ITEM_COUNT);
+    return popupOpen && BeginMenu(popupId, g.LastItemData.Rect, m3Styles, Spec::MenuColors::Standard, SMALL_MAX_MENU_ITEM_COUNT);
 }
 
 void EndCombo()

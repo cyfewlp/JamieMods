@@ -14,5 +14,6 @@ struct ShapeCorner
     static constexpr auto Small      = dp<8>();
     static constexpr auto Medium     = dp<12>();
     static constexpr auto Large      = dp<16>();
+    static constexpr auto ExtraLarge = dp<28>();
 };
 } // namespace ImGuiEx::M3::Spec

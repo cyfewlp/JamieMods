@@ -28,10 +28,7 @@ constexpr auto LANGUAGE_BAR = "LanguageBar";
 using ColorRole = M3Spec::ColorRole;
 using Spacing   = ImGuiEx::M3::Spacing;
 
-void DrawInputMethodsCombo(
-    const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
-    const ImGuiEx::M3::M3Styles &m3Styles
-)
+void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     uint32_t            clickedIndex = UINT32_MAX;
     ImGuiEx::StyleGuard styleGuard;
@@ -106,27 +103,31 @@ void SetShowing(State &state, bool showing)
     }
 }
 
-auto DrawImpl(
-    State &state, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
-    const ImGuiEx::M3::M3Styles &m3Styles
-) -> State
+auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
+    -> void
 {
-    if (!IsShowing(state)) return state;
+    if (!IsShowing(state))
+    {
+        return;
+    }
 
     auto flags = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
     if (IsPinned(state))
     {
         flags = flags.NoInputs();
     }
-    bool showing = IsShowing(state);
-    bool visible = ImGui::Begin(LANGUAGE_BAR, &showing, flags);
+    bool       showing = IsShowing(state);
+    const bool visible = ImGui::Begin(LANGUAGE_BAR, &showing, flags);
     SetShowing(state, showing);
-    if (!visible) return state;
+    if (!visible)
+    {
+        return;
+    }
 
-    ImGuiEx::M3::Icon(ICON_COD_MOVE, m3Styles, ColorRole::onSurfaceVariant);
+    ImGuiEx::M3::SmallIcon(ICON_COD_MOVE, m3Styles);
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::IconButtonSurfaceContainerVariant(IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles))
+    if (ImGuiEx::M3::SmallIconButton(IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles))
     {
         state = static_cast<State>(state | PINNED);
 
@@ -138,7 +139,7 @@ auto DrawImpl(
 
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::IconButtonSurfaceContainerVariant(ICON_OCT_GEAR, m3Styles))
+    if (ImGuiEx::M3::SmallIconButton(ICON_OCT_GEAR, m3Styles))
     {
         AddState(state, OPEN_SETTINGS);
     }
@@ -151,19 +152,16 @@ auto DrawImpl(
     if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))
     {
         ImGui::AlignTextToFramePadding();
-        ImGui::Text("ENG");
+        ImGui::TextUnformatted("ENG");
         ImGui::SameLine();
     }
     ImGui::End();
-    return state;
 }
 
 } // namespace
 
-auto Draw(
-    const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
-    ImGuiEx::M3::M3Styles &m3Styles
-) -> State
+auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, ImGuiEx::M3::M3Styles &m3Styles)
+    -> State
 {
     static State state;
     if (wantToggle) TogglePinned(state);
@@ -173,9 +171,7 @@ auto Draw(
     ImGuiEx::StyleGuard styleGuard;
     styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
         .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
-        .Style<ImGuiStyleVar_FramePadding>(
-            {m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)}
-        )
+        .Style<ImGuiStyleVar_FramePadding>({m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)})
         .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
     DrawImpl(state, activeLangProfile, langProfiles, m3Styles);
 

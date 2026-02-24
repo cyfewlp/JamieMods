@@ -105,6 +105,11 @@ inline auto BlendHovered(ImVec4 color, ImVec4 overlay) -> ImVec4
     return BlendState(color, overlay, HOVER_OPACITY);
 }
 
+inline auto BlendPressed(ImVec4 color, ImVec4 overlay) -> ImVec4
+{
+    return BlendState(color, overlay, PRESSED_OPACITY);
+}
+
 inline auto BlendState(ImVec4 color, ImVec4 overlay, bool pressed, bool focused, bool hovered) -> ImVec4
 {
     return BlendState(color, overlay, (pressed || focused) ? PRESSED_OPACITY : (hovered ? HOVER_OPACITY : 0.0F));
@@ -129,10 +134,7 @@ private:
     SchemeConfig m_schemeConfig;
 
 public:
-    explicit ColorScheme(const Colors &colors, const SchemeConfig &schemeConfig)
-        : m_colors(colors), m_schemeConfig(schemeConfig)
-    {
-    }
+    explicit ColorScheme(const Colors &colors, const SchemeConfig &schemeConfig) : m_colors(colors), m_schemeConfig(schemeConfig) {}
 
     ~ColorScheme()                            = default;
     ColorScheme(const ColorScheme &other)     = default;
@@ -152,15 +154,11 @@ public:
 
     [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return m_schemeConfig; }
 
-    [[nodiscard]] auto at(Spec::ColorRole role) const -> const ImVec4 &
-    {
-        return m_colors.at(static_cast<size_t>(role));
-    }
+    [[nodiscard]] auto at(Spec::ColorRole role) const -> const ImVec4 & { return m_colors.at(static_cast<size_t>(role)); }
 
     auto operator[](Spec::ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }
 
-    [[nodiscard]] auto BlendState(Spec::ColorRole containerRole, Spec::ColorRole contentRole, const float opacity) const
-        -> ImVec4
+    [[nodiscard]] auto BlendState(Spec::ColorRole containerRole, Spec::ColorRole contentRole, const float opacity) const -> ImVec4
     {
         return ColorUtils::BlendState(at(containerRole), at(contentRole), opacity);
     }
@@ -194,8 +192,7 @@ public:
      * of the surface color based on the state flags.
      * @see ColorUtils::BlendState for more details on how the blending works.
      */
-    auto GetStateColor(Spec::ColorRole containerRole, Spec::ColorRole contentRole, bool hovered, bool pressed) const
-        -> ImVec4
+    auto GetStateColor(Spec::ColorRole containerRole, Spec::ColorRole contentRole, bool hovered, bool pressed) const -> ImVec4
     {
         if (pressed)
         {

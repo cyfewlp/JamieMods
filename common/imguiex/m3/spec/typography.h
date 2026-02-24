@@ -142,4 +142,17 @@ struct TypeScale<TextRole::DisplayLarge>
     static constexpr float lineHeight = 64.F;
 };
 
+struct TypeScaleValue
+{
+    TextRole role;
+    float    textSize;
+    float    lineHeight;
+
+    template <TextRole Role>
+    static constexpr auto of() -> TypeScaleValue
+    {
+        return {.role = Role, .textSize = TypeScale<Role>::textSize, .lineHeight = TypeScale<Role>::lineHeight};
+    }
+};
+
 } // namespace ImGuiEx::M3::Spec

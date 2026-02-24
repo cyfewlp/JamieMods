@@ -9,45 +9,10 @@
 
 namespace ImGuiEx::M3::Spec
 {
-using MenusVibrant    = Menus<MenuLayout::Standard, MenuVariant::Vibrant>;
-using MenuItemVibrant = Menus<MenuLayout::Standard, MenuVariant::Vibrant>::Item;
+using MenusVibrant    = Menus<MenuColors::Vibrant>;
+using MenuItemVibrant = Menus<MenuColors::Vibrant>::Item;
 
-using MenusHorizontalIconOnly    = Menus<MenuLayout::HorizontalIconOnly, MenuVariant::Standard>;
-using MenuItemHorizontalIconOnly = Menus<MenuLayout::HorizontalIconOnly, MenuVariant::Standard>::Item;
-
-template <>
-struct Menus<MenuLayout::HorizontalIconOnly, MenuVariant::Vibrant> : public MenusVibrant, MenusHorizontalIconOnly
-{
-    using MenusHorizontalIconOnly::MenusHorizontalIconOnly;
-    using MenusVibrant::MenusVibrant;
-
-    struct Item : public MenuItemVibrant, MenuItemHorizontalIconOnly
-    {
-        using MenuItemHorizontalIconOnly::MenuItemHorizontalIconOnly;
-        using MenuItemVibrant::MenuItemVibrant;
-    };
-};
-
-using MenusHorizontalIconOnlyVibrant    = Menus<MenuLayout::HorizontalIconOnly, MenuVariant::Vibrant>;
-using MenuItemHorizontalIconOnlyVibrant = Menus<MenuLayout::HorizontalIconOnly, MenuVariant::Vibrant>::Item;
-
-using MenusHorizontal    = Menus<MenuLayout::Horizontal, MenuVariant::Standard>;
-using MenuItemHorizontal = Menus<MenuLayout::Horizontal, MenuVariant::Standard>::Item;
-
-template <>
-struct Menus<MenuLayout::Horizontal, MenuVariant::Vibrant> : public MenusVibrant, MenuItemHorizontal
-{
-    using MenuItemHorizontal::MenuItemHorizontal;
-    using MenusVibrant::MenusVibrant;
-
-    struct Item : public MenuItemVibrant, MenuItemHorizontal
-    {
-        using MenuItemHorizontal::MenuItemHorizontal;
-        using MenuItemVibrant::MenuItemVibrant;
-    };
-};
-
-using MenusHorizontalVibrant    = Menus<MenuLayout::Horizontal, MenuVariant::Vibrant>;
-using MenuItemHorizontalVibrant = Menus<MenuLayout::Horizontal, MenuVariant::Vibrant>::Item;
+using MenusHorizontalIconOnly    = MenusSizing<MenuLayout::HorizontalIconOnly>;
+using MenuItemHorizontalIconOnly = MenusSizing<MenuLayout::HorizontalIconOnly>::Item;
 
 } // namespace ImGuiEx::M3::Spec

@@ -72,13 +72,13 @@ namespace detail
 struct CachedTypeScale
 {
     Spec::TextRole currRole;
-    Text  unScaledText; //! The original text size and line height defined in the spec, without scaling applied.
+    Text           unScaledText; //! The original text size and line height defined in the spec, without scaling applied.
     //! The text size and line height after applying the current scale factor. Updated whenever the text role
     //! changes or scaling is updated.
-    Text  currText;
+    Text           currText;
     //! A derived value calculated as `(currText.lineHeight - currText.textSize) / 2`, used for vertical centering
     //! of text elements.
-    float currHalfLineGap;
+    float          currHalfLineGap;
 };
 
 class FontScope
@@ -92,9 +92,7 @@ public:
 
     explicit FontScope(ImFont *font, const float fontSize = 0.F) : m_pushed(true) { ImGui::PushFont(font, fontSize); }
 
-    explicit FontScope(
-        const CachedTypeScale lastTypeScale, CachedTypeScale *role, ImFont *font, const float fontSize = 0.F
-    )
+    explicit FontScope(const CachedTypeScale lastTypeScale, CachedTypeScale *role, ImFont *font, const float fontSize = 0.F)
         : m_pushed(true), m_lastTypeScale(lastTypeScale), m_currTypeScale(role)
     {
         ImGui::PushFont(font, fontSize);
@@ -103,8 +101,7 @@ public:
     FontScope(const FontScope &other)               = delete;
     auto operator=(FontScope &other) -> FontScope & = delete;
 
-    FontScope(FontScope &&other) noexcept
-        : m_pushed(other.m_pushed), m_lastTypeScale(other.m_lastTypeScale), m_currTypeScale(other.m_currTypeScale)
+    FontScope(FontScope &&other) noexcept : m_pushed(other.m_pushed), m_lastTypeScale(other.m_lastTypeScale), m_currTypeScale(other.m_currTypeScale)
     {
         other.m_pushed        = false;
         other.m_currTypeScale = nullptr;
@@ -168,9 +165,7 @@ private:
     float iconSize  = ICON_SIZE;
 
 public:
-    constexpr explicit M3Styles(ColorScheme colors, ImFont *iconFont) : m_scheme(std::move(colors)), iconFont(iconFont)
-    {
-    }
+    constexpr explicit M3Styles(ColorScheme colors, ImFont *iconFont) : m_scheme(std::move(colors)), iconFont(iconFont) {}
 
 private:
     static void UpdateTypeScaleScaling(detail::CachedTypeScale &cachedTypeScale, float newScale);
@@ -195,9 +190,9 @@ public:
      * Designed to align with ImGui's dynamic font API. Calling this at the start of a window
      * or container ensures all nested elements inherit the same role without redundant calls.
      *
-     * @tparam Role The text role to apply.
+     * @param value The type scale value containing role, text size, and line height.
      * @return A FontScope that automatically pops the font when it leaves scope.
-     * * @code
+     * @code
      * {
      * const auto _ = m3Styles.UseTextRole<Spec::TextRole::LabelLarge>();
      * ImGui::Text("This uses LabelLarge styling.");
@@ -207,19 +202,29 @@ public:
      * @note **Warning Suppression:** If the return value is not needed, use `const auto _ = ...`
      * to satisfy `[[nodiscard]]`.
      */
-    template <Spec::TextRole Role>
-    [[nodiscard]] auto UseTextRole() const -> detail::FontScope
+    [[nodiscard]] auto UseTextRole(const Spec::TypeScaleValue &value) const -> detail::FontScope
     {
-        if (m_cachedTypeScale.currRole != Role)
+        if (m_cachedTypeScale.currRole != value.role)
         {
             detail::CachedTypeScale cachedTypeScale   = m_cachedTypeScale;
-            m_cachedTypeScale.currRole                = Role;
-            m_cachedTypeScale.unScaledText.textSize   = Spec::TypeScale<Role>::textSize;
-            m_cachedTypeScale.unScaledText.lineHeight = Spec::TypeScale<Role>::lineHeight;
+            m_cachedTypeScale.currRole                = value.role;
+            m_cachedTypeScale.unScaledText.textSize   = value.textSize;
+            m_cachedTypeScale.unScaledText.lineHeight = value.lineHeight;
             UpdateTypeScaleScaling(m_cachedTypeScale, m_currentScale);
             return detail::FontScope(cachedTypeScale, &m_cachedTypeScale, nullptr, m_cachedTypeScale.currText.textSize);
         }
         return {};
+    }
+
+    /**
+     * @brief Sets the text role and returns an RAII FontScope to manage font lifecycle.
+     *
+     * @tparam Role The text role to apply.
+     */
+    template <Spec::TextRole Role>
+    [[nodiscard]] auto UseTextRole() const -> detail::FontScope
+    {
+        return UseTextRole(Spec::TypeScaleValue::of<Role>());
     }
 
     [[nodiscard]] auto GetLastText() const -> const detail::CachedTypeScale & { return m_cachedTypeScale; }
@@ -228,10 +233,7 @@ public:
 
     [[nodiscard]] auto IconFont() const -> ImFont * { return iconFont; }
 
-    [[deprecated("Please use GetPixels.")]] [[nodiscard]] auto Get(Spacing s) const -> float
-    {
-        return m_precomputedPx.at(static_cast<uint8_t>(s));
-    }
+    [[deprecated("Please use GetPixels.")]] [[nodiscard]] auto Get(Spacing s) const -> float { return m_precomputedPx.at(static_cast<uint8_t>(s)); }
 
     /**
      * Get the pixels with current scale applied for the given units. The units are defined in the spec and represent a
@@ -276,10 +278,7 @@ public:
     template <Spec::HasPaddingX Component>
     [[nodiscard]] auto GetPadding() const -> ImVec2
     {
-        return {
-            GetPixels(Component::paddingX),
-            (GetPixels(Component::height) - m_cachedTypeScale.currText.lineHeight) * HALF
-        };
+        return {GetPixels(Component::paddingX), (GetPixels(Component::height) - m_cachedTypeScale.currText.lineHeight) * HALF};
     }
 
     /**

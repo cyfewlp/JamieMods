@@ -54,6 +54,15 @@ enum class SizeTips : std::uint8_t
     XLARGE,
 };
 
+enum class States : std::uint8_t
+{
+    Enabled,
+    Focused,
+    Disabled,
+    Hovered,
+    Pressed,
+};
+
 template <typename T>
 concept HasPaddingY = requires { T::paddingY; } && std::same_as<decltype(T::paddingY), const Unit>;
 

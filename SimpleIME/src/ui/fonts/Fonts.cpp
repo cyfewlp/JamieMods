@@ -166,8 +166,7 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
     m_PreviewPanel.Draw(fontBuilder, m3Styles);
     ImGui::SameLine(0.0F, 0.0F);
     {
-        const auto styleGuard =
-            ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
+        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
 
         const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
         if (ImGui::BeginChild("FontBuilderFontInfo", {-width, -FLT_MIN}, ImGuiEx::ChildFlags()))
@@ -198,9 +197,7 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
         .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(ColorRole::surface))
         .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS]);
     ImGui::Indent(m3Styles[Spacing::L]);
-    if (ImGui::BeginTable(
-            "BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()
-        ))
+    if (ImGui::BeginTable("BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()))
     {
         auto &names = fontBuilder.GetBaseFont().GetFontNames();
         auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
@@ -217,9 +214,8 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
 
                 ImGui::Text("%s", names.at(idx).c_str());
                 {
-                    const auto supportTextStyleGuard =
-                        ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurfaceVariant));
-                    const auto labelSmallScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelSmall>();
+                    const auto supportTextStyleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurfaceVariant));
+                    const auto labelSmallScope       = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelSmall>();
                     ImGui::Text("%s", paths.at(idx).c_str());
                 }
             }
@@ -229,13 +225,9 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
     ImGui::Indent(m3Styles[Spacing::L]);
 }
 
-void UI::FontBuilderPanel::DrawToolBar(
-    FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles
-)
+void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    if (ImGuiEx::M3::BeginDockedToolbar(
-            m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, M3Spec::ColorRole::surfaceContainer, m3Styles
-        ))
+    if (ImGuiEx::M3::BeginDockedToolbar(m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, M3Spec::ColorRole::surfaceContainer, m3Styles))
     {
         DrawToolBarButtons(fontBuilder, settings, m3Styles);
         ImGuiEx::M3::EndDockedToolbar();
@@ -245,18 +237,14 @@ void UI::FontBuilderPanel::DrawToolBar(
     DrawWarningsModal();
 }
 
-void UI::FontBuilderPanel::DrawToolBarButtons(
-    FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles
-)
+void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
     auto Button = [&m3Styles](const std::string_view &icon) -> bool {
-        return ImGuiEx::M3::IconButtonXS(
-            icon, m3Styles, M3Spec::ColorRole::surfaceContainer, M3Spec::ColorRole::onSurfaceVariant
-        );
+        return ImGuiEx::M3::XSmallIconButton(icon, m3Styles);
     };
 
-    if (ImGuiEx::M3::IconButtonXS(ICON_FA_WRENCH, m3Styles, M3Spec::ColorRole::primary, M3Spec::ColorRole::onPrimary))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_FA_WRENCH, m3Styles))
     {
         fontBuilder.ApplyFont(settings);
     }
@@ -282,7 +270,7 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
     ImGui::EndDisabled();
 
     ImGui::SameLine();
-    auto centerPopup = [](std::string_view name) {
+    auto centerPopup = [](std::string_view name) -> void {
         ImGui::OpenPopup(name.data());
         constexpr auto CENTER_PIVOT = ImVec2(0.5f, 0.5f);
 
@@ -290,23 +278,13 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
         ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
         ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
     };
-    if (ImGuiEx::M3::IconButtonXS(
-            ICON_MD_ALERT_CIRCLE_OUTLINE,
-            m3Styles,
-            M3Spec::ColorRole::tertiaryContainer,
-            M3Spec::ColorRole::onTertiaryContainer
-        ))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_MD_ALERT_CIRCLE_OUTLINE, m3Styles))
     {
         centerPopup(TITLE_WARNING);
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"), m3Styles);
     ImGui::SameLine();
-    if (ImGuiEx::M3::IconButtonXS(
-            ICON_MD_HELP_CIRCLE_OUTLINE,
-            m3Styles,
-            M3Spec::ColorRole::secondaryContainer,
-            M3Spec::ColorRole::onSecondaryContainer
-        ))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_MD_HELP_CIRCLE_OUTLINE, m3Styles))
     {
         centerPopup(TITLE_HELP);
     }
@@ -316,11 +294,7 @@ void UI::FontBuilderPanel::DrawToolBarButtons(
 void UI::FontBuilderPanel::DrawHelpModal()
 {
     bool open = true;
-    if (ImGui::BeginPopupModal(
-            Translate("Settings.FontBuilder.HelpTitle"),
-            &open,
-            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
-        ))
+    if (ImGui::BeginPopupModal(Translate("Settings.FontBuilder.HelpTitle"), &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
     {
         ImGui::Text("%s", Translate("Settings.FontBuilder.Help1"));
         ImGui::Text("%s", Translate("Settings.FontBuilder.Help2"));
@@ -333,9 +307,7 @@ void UI::FontBuilderPanel::DrawWarningsModal()
 {
     bool open = true;
     if (ImGui::BeginPopupModal(
-            Translate("Settings.FontBuilder.WarningTitle"),
-            &open,
-            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
+            Translate("Settings.FontBuilder.WarningTitle"), &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
         ))
     {
         ImGui::Text("%s", Translate("Settings.FontBuilder.Warning1"));
