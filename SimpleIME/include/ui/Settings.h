@@ -20,7 +20,7 @@ struct Settings
     };
     static constexpr std::string_view DEFAULT_MAIN_FONT_PATH  = "C:/Windows/Fonts/simsun.ttc";
     static constexpr std::string_view DEFAULT_EMOJI_FONT_PATH = "C:/Windows/Fonts/seguiemj.ttf";
-    static constexpr std::string_view ICON_FILE               = "SymbolsNerdFontMono-Regular.ttf";
+    static constexpr std::string_view ICON_FILE               = "simple-ime-icons.ttf";
     static constexpr float            MIN_FONT_SIZE_SCALE     = 0.1F;
     static constexpr float            MAX_FONT_SIZE_SCALE     = 5.0F;
 

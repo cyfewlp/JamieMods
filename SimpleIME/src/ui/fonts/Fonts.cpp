@@ -12,7 +12,6 @@
 #include "imguiex/Material3.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
-#include "imguiex/m3/facade/button.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/FontBuilderPanel.h"
 #include "ui/fonts/ImFontWrap.h"
@@ -227,7 +226,9 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
 
 void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    if (ImGuiEx::M3::BeginDockedToolbar(m3Styles.GetPixels(M3Spec::SmallIconButton::size), 5, M3Spec::ColorRole::surfaceContainer, m3Styles))
+    if (ImGuiEx::M3::BeginDockedToolbar(
+            m3Styles.GetPixels(M3Spec::SmallIconButton::ContainerHeight), 5, M3Spec::ColorRole::surfaceContainer, m3Styles
+        ))
     {
         DrawToolBarButtons(fontBuilder, settings, m3Styles);
         ImGuiEx::M3::EndDockedToolbar();
@@ -244,14 +245,14 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
         return ImGuiEx::M3::XSmallIconButton(icon, m3Styles);
     };
 
-    if (ImGuiEx::M3::XSmallIconButton(ICON_FA_WRENCH, m3Styles))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_WRENCH, m3Styles))
     {
         fontBuilder.ApplyFont(settings);
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.SetAsDefault"), m3Styles);
 
     ImGui::SameLine();
-    if (Button(ICON_MD_RESTORE))
+    if (Button(ICON_ROTATE_CCW))
     {
         if (fontBuilder.GetBaseFont() == m_PreviewPanel.GetImFont())
         {
@@ -262,7 +263,7 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Reset"), m3Styles);
 
     ImGui::SameLine();
-    if (Button(ICON_MD_EYE))
+    if (Button(ICON_EYE))
     {
         m_PreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
     }
@@ -278,13 +279,13 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
         ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
         ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
     };
-    if (ImGuiEx::M3::XSmallIconButton(ICON_MD_ALERT_CIRCLE_OUTLINE, m3Styles))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_ALERT, m3Styles))
     {
         centerPopup(TITLE_WARNING);
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"), m3Styles);
     ImGui::SameLine();
-    if (ImGuiEx::M3::XSmallIconButton(ICON_MD_HELP_CIRCLE_OUTLINE, m3Styles))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_QUESTION_MARK, m3Styles))
     {
         centerPopup(TITLE_HELP);
     }

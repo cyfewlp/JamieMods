@@ -164,5 +164,6 @@ Please check [[TAGGING_GUIDE]]
 * [Dear ImGui](https://github.com/ocornut/imgui): Used for in-game overlays.
 * [ImThemes](https://github.com/Patitotective/ImThemes): ImGui styling browser.
 * [material-color-utilities](https://github.com/material-foundation/material-color-utilities.git): Color libraries for Material You
-* [SimpleIni](https://github.com/brofield/simpleini): Configuration file parser.
-* [Nerd Font](https://github.com/ryanoasis/nerd-fonts): Iconic font aggregator.
+* [Lucide](https://github.com/lucide-icons/lucide): Beautiful & consistent icon toolkit made by the community.
+  Open-source project and a fork of Feather Icons.
+  * We **repackaged** some of its SVG icons to build the _minimal_ TTF file we needed.

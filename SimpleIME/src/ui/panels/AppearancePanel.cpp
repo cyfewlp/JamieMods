@@ -7,12 +7,13 @@
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "i18n/TranslationLoader.h"
 #include "i18n/TranslatorHolder.h"
+#include "icons.h"
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/Material3.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
 #include "imguiex/imguiex_m3_slider.h"
-#include "imguiex/m3/facade/button.h"
+#include "imguiex/m3/facade/button_groups.h"
 #include "imguiex/m3/facade/slider.h"
 #include "imguiex/m3/spec/layout.h"
 #include "imguiex/m3/spec/text_field.h"
@@ -211,18 +212,14 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
     DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerSSize);
 
     {
-        const auto buttonStyleGuard = ImGuiEx::StyleGuard()
-                                          .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onPrimary])
-                                          .Style<ImGuiStyleVar_FramePadding>(m3Styles.GetPadding<M3Spec::SmallButton>())
-                                          .Style<ImGuiStyleVar_FrameRounding>(m3Styles.GetRounding<M3Spec::SmallButton>());
-        if (ImGui::Button(Translate("Settings.Appearance.Apply")))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK, m3Styles))
         {
             applied = true;
             ImGui::CloseCurrentPopup();
         }
 
-        ImGui::SameLine(0.0F, m3Styles.GetGap<M3Spec::SmallButtonGroup>());
-        if (ImGui::Button(Translate("Settings.Appearance.Cancel")))
+        ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X, m3Styles))
         {
             ImGui::CloseCurrentPopup();
         }
@@ -369,7 +366,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             draw_palette("Error", scheme->error_palette);
         }
 
-        if (ImGui::Button(Translate("Settings.Appearance.Apply")))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK, m3Styles))
         {
             m3Styles.RebuildColors({m_contrastLevelTemp, Hct(m_hctCache.hue, m_hctCache.chroma, m_hctCache.tone).ToInt(), m_darkModeTemp});
             UI::ApplyM3Theme(m3Styles);
@@ -377,8 +374,8 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             ImGui::CloseCurrentPopup();
         }
 
-        ImGui::SameLine(0.0F, m3Styles.GetGap<M3Spec::SmallButtonGroup>());
-        if (ImGui::Button(Translate("Settings.Appearance.Cancel")))
+        ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X, m3Styles))
         {
             ImGui::CloseCurrentPopup();
         }

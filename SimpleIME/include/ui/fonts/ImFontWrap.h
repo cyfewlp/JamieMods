@@ -18,10 +18,7 @@ class ImFontWrap
     std::vector<std::string> m_fontPathList;
 
 public:
-    explicit ImFontWrap(ImFont *imFont = nullptr, bool a_owner = false)
-        : font(imFont), owner(a_owner && imFont != nullptr)
-    {
-    }
+    explicit ImFontWrap(ImFont *imFont = nullptr, bool a_owner = false) : font(imFont), owner(a_owner && imFont != nullptr) {}
 
     explicit ImFontWrap(ImFont *imFont, std::string_view fontName, std::string_view fontPath, bool a_owner = false);
 
@@ -49,33 +46,18 @@ public:
         m_fontPathList.emplace_back(fontPath);
     }
 
-    bool IsOwner() const
-    {
-        return owner;
-    }
+    bool IsOwner() const { return owner; }
 
     bool IsCommittable() const;
     bool IsCommittableSingleFont() const;
 
-    auto GetFontNames() const -> const std::vector<std::string> &
-    {
-        return m_fontNames;
-    }
+    auto GetFontNames() const -> const std::vector<std::string> & { return m_fontNames; }
 
-    auto GetFontNames() -> std::vector<std::string> &
-    {
-        return m_fontNames;
-    }
+    auto GetFontNames() -> std::vector<std::string> & { return m_fontNames; }
 
-    auto GetFontPathList() const -> const std::vector<std::string> &
-    {
-        return m_fontPathList;
-    }
+    auto GetFontPathList() const -> const std::vector<std::string> & { return m_fontPathList; }
 
-    auto GetFontPathList() -> std::vector<std::string> &
-    {
-        return m_fontPathList;
-    }
+    auto GetFontPathList() -> std::vector<std::string> & { return m_fontPathList; }
 
     auto GetFontNameOr(size_t index, const std::string &value = "") const -> const std::string &
     {
@@ -89,20 +71,13 @@ public:
         return m_fontPathList[index];
     }
 
-    operator bool() const
-    {
-        return font != nullptr;
-    }
+    // operator bool() const { return font != nullptr; }
 
-    auto GetFont() const -> const ImFont *
-    {
-        return font;
-    }
+    friend bool operator==(const ImFontWrap &lhs, const ImFontWrap &rhs) { return lhs.font == rhs.font; }
 
-    auto UnsafeGetFont() const -> ImFont *
-    {
-        return font;
-    }
+    auto GetFont() const -> const ImFont * { return font; }
+
+    auto UnsafeGetFont() const -> ImFont * { return font; }
 
     auto TakeFont() -> ImFont *
     {
@@ -112,10 +87,7 @@ public:
         return ptr;
     }
 
-    ImFont *operator->() const
-    {
-        return font;
-    }
+    ImFont *operator->() const { return font; }
 
     void Cleanup();
 

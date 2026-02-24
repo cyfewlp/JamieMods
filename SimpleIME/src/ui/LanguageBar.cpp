@@ -12,7 +12,6 @@
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
-#include "imguiex/m3/facade/button.h"
 #include "menu/MenuNames.h"
 
 #include <RE/U/UIMessage.h>
@@ -30,21 +29,21 @@ using Spacing   = ImGuiEx::M3::Spacing;
 
 void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    uint32_t            clickedIndex = UINT32_MAX;
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style<ImGuiStyleVar_WindowPadding>({})
-        .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[Spacing::M], m3Styles[Spacing::M]})
-        .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onSurface])
-        .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[ColorRole::surface])
-        .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface))
-        .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerLow]);
+    uint32_t   clickedIndex = UINT32_MAX;
+    const auto styleGuard   = ImGuiEx::StyleGuard()
+                                .Style<ImGuiStyleVar_WindowPadding>({})
+                                .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[Spacing::M], m3Styles[Spacing::M]})
+                                .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onSurface])
+                                .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[ColorRole::surface])
+                                .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface))
+                                .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerLow]);
 
     if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), ImGuiEx::ComboFlags().NoArrowButton()))
     {
         uint32_t idx = 0;
         for (const auto &langProfile : langProfiles)
         {
-            ImGui::PushID(idx);
+            ImGui::PushID(static_cast<int>(idx));
             const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile);
             if (ImGui::Selectable(langProfile.desc.c_str()))
             {
@@ -124,10 +123,10 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
         return;
     }
 
-    ImGuiEx::M3::SmallIcon(ICON_COD_MOVE, m3Styles);
+    ImGuiEx::M3::SmallIcon(ICON_MOVE, m3Styles);
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::SmallIconButton(IsPinned(state) ? ICON_MD_PIN : ICON_MD_PIN_OUTLINE, m3Styles))
+    if (ImGuiEx::M3::SmallIconButton(IsPinned(state) ? static_cast<std::string_view>(ICON_PIN) : ICON_PIN_OFF, m3Styles))
     {
         state = static_cast<State>(state | PINNED);
 
@@ -139,7 +138,7 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
 
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::SmallIconButton(ICON_OCT_GEAR, m3Styles))
+    if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, m3Styles))
     {
         AddState(state, OPEN_SETTINGS);
     }
@@ -166,13 +165,12 @@ auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std
     static State state;
     if (wantToggle) TogglePinned(state);
 
-    const auto _ = m3Styles.UseTextRole<M3Spec::SmallButton::textRole>();
-
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
-        .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
-        .Style<ImGuiStyleVar_FramePadding>({m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)})
-        .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
+    const auto styleGuard =
+        ImGuiEx::StyleGuard()
+            .Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
+            .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
+            .Style<ImGuiStyleVar_FramePadding>({m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)})
+            .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
     DrawImpl(state, activeLangProfile, langProfiles, m3Styles);
 
     const auto a_copy = state;

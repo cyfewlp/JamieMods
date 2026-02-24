@@ -8,6 +8,7 @@
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
 #include "m3/facade/icon_button.h"
+#include "m3/spec/fab.h"
 #include "m3/spec/menu.h"
 #include "m3/spec/text_field.h"
 
@@ -80,38 +81,111 @@ inline auto XLargeIcon(std::string_view icon, const M3Styles &m3Styles) -> void
 //! Pass `Spec::IconButtonColors` to specify the color scheme for the icon button.
 //! The default is `Filled`, which applies the standard filled style.
 auto IconButton(
-    std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled
+    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonWidths widths, const M3Styles &m3Styles,
+    Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled
 ) -> bool;
 
 inline auto XSmallIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
     -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XSMALL, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Default, m3Styles, ibColors);
 }
 
 inline auto SmallIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::SMALL, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Default, m3Styles, ibColors);
 }
 
 inline auto MediumIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
     -> bool
 {
-    return IconButton(icon, Spec::SizeTips::MEDIUM, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Default, m3Styles, ibColors);
 }
 
 inline auto LargeIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::LARGE, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Default, m3Styles, ibColors);
 }
 
 inline auto XLargeIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
     -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XLARGE, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Default, m3Styles, ibColors);
 }
 
-auto Button(std::string_view label, std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> bool;
+inline auto XSmallNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+}
+
+inline auto SmallNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+}
+
+inline auto MediumNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+}
+
+inline auto LargeNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+}
+
+inline auto XLargeNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+}
+
+inline auto XSmallWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+}
+
+inline auto SmallWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+}
+
+inline auto MediumWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+}
+
+inline auto LargeWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+}
+
+inline auto XLargeWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
+    -> bool
+{
+    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+}
+
+auto Fab(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool;
+
+inline auto Fab(std::string_view icon, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool
+{
+    return Fab(icon, Spec::SizeTips::MEDIUM, m3Styles, fabColors);
+}
+
+inline auto FabLarge(std::string_view icon, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool
+{
+    return Fab(icon, Spec::SizeTips::LARGE, m3Styles, fabColors);
+}
+
+auto Button(std::string_view label, std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> bool;
 
 inline auto XSmallButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
 {

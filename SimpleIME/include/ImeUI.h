@@ -32,22 +32,16 @@ public:
     void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
     void DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
 
-    bool IsShowingToolWindow() const
-    {
-        return m_fShowToolWindow;
-    }
+    bool IsShowingToolWindow() const { return m_fShowToolWindow; }
 
-    bool IsPinedToolWindow() const
-    {
-        return m_fPinToolWindow;
-    }
+    bool IsPinedToolWindow() const { return m_fPinToolWindow; }
 
 private:
     void        DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
     void        DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawMenuBehaviour(Settings &settings) const;
+    void        DrawMenuBehaviour(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles) const;
     static void DrawFeatures(Settings &settings);
-    void        DrawStates() const;
+    void        DrawStates(const ImGuiEx::M3::M3Styles &m3Styles) const;
     static void DrawWindowPosUpdatePolicy(Settings &settings);
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");

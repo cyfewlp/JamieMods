@@ -67,15 +67,17 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
         {
             if (ImGuiEx::M3::BeginNavRail("Sidebar", m3Styles))
             {
-                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Appearance"), currentMenu.first == Menu::Appearance, ICON_MD_PALETTE, m3Styles))
+                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Appearance"), currentMenu.first == Menu::Appearance, ICON_PALETTE, m3Styles))
                 {
                     currentMenu = {Menu::Appearance, true};
                 }
-                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.FontBuilder"), currentMenu.first == Menu::FontBuilder, ICON_FA_WRENCH, m3Styles))
+                if (ImGuiEx::M3::NavItem(
+                        Translate("Settings.Sidebar.FontBuilder"), currentMenu.first == Menu::FontBuilder, ICON_CASE_UPPER, m3Styles
+                    ))
                 {
                     currentMenu = {Menu::FontBuilder, true};
                 }
-                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Behaviour"), currentMenu.first == Menu::Behaviour, ICON_OCT_GEAR, m3Styles))
+                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Behaviour"), currentMenu.first == Menu::Behaviour, ICON_SETTINGS, m3Styles))
                 {
                     currentMenu = {Menu::Behaviour, true};
                 }
@@ -95,7 +97,7 @@ void ImeUI::DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
                 DrawMenuFontBuilder(settings, m3Styles);
                 break;
             case Menu::Behaviour:
-                DrawMenuBehaviour(settings);
+                DrawMenuBehaviour(settings, m3Styles);
                 break;
         }
         ImGui::EndGroup();
@@ -121,7 +123,7 @@ void ImeUI::DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles 
     m_fontBuilderView.Draw(m_fontBuilder, settings, m3Styles);
 }
 
-void ImeUI::DrawMenuBehaviour(Settings &settings) const
+void ImeUI::DrawMenuBehaviour(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles) const
 {
     bool enableMod = settings.enableMod;
     if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod"), &enableMod))
@@ -134,7 +136,7 @@ void ImeUI::DrawMenuBehaviour(Settings &settings) const
         return;
     }
 
-    DrawStates();
+    DrawStates(m3Styles);
     DrawFeatures(settings);
 }
 
@@ -153,25 +155,21 @@ void ImeUI::DrawFeatures(Settings &settings)
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.KeepImeOpenTooltip"));
 }
 
-void ImeUI::DrawStates() const
+void ImeUI::DrawStates(const ImGuiEx::M3::M3Styles &m3Styles) const
 {
     ImGui::SeparatorText(Translate("Settings.Behaviour.States"));
 
     constexpr auto STATE_ACTIVE_COLOR = ImVec4(0.35F, 0.75F, 1.0F, 1.0F);
     const auto    &state              = State::GetInstance();
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(state.NotHas(State::IME_DISABLED) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_KEYBOARD);
+    ImGuiEx::M3::XSmallIcon(ICON_KEYBOARD, m3Styles);
     ImGui::SameLine();
-    ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled"));
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.ImeEnabledTooltip"));
 
     ImGui::SameLine();
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(m_pImeWnd->IsFocused() ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
+    ImGuiEx::M3::XSmallIcon(ICON_FOCUS, m3Styles);
     ImGui::SameLine();
-    ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", Translate("Settings.Behaviour.Focus"));
     ImGui::SetItemTooltip("%s", Translate("Settings.Behaviour.FocusTooltip"));
 
@@ -185,7 +183,7 @@ void ImeUI::DrawStates() const
 #ifdef SIMPLE_IME_DEBUG
     auto action = [&state, &STATE_ACTIVE_COLOR](const State::StateKey stateKey) {
         ImGui::SameLine();
-        ImGui::TextColored(state.Has(stateKey) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", ICON_FA_CROSSHAIR);
+        ImGui::TextColored(state.Has(stateKey) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", static_cast<std::string_view>(ICON_FOCUS).data());
     };
     ImGui::Text("IN_COMPOSING: ");
     action(State::IN_COMPOSING);

@@ -10,6 +10,7 @@
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/Material3.h"
 #include "m3/facade/buttons.h"
+#include "m3/facade/fab.h"
 #include "m3/facade/icon_button.h"
 #include "m3/facade/menu.h"
 #include "m3/facade/nav_rail.h"
@@ -32,13 +33,6 @@ namespace
 inline auto IsItemDisabled() -> bool
 {
     return (ImGui::GetCurrentContext()->CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
-}
-
-inline auto IsFocusedAndNavVisible(ImGuiID id) -> bool
-{
-    const ImGuiContext &g      = *GImGui;
-    const ImGuiWindow  *window = g.CurrentWindow;
-    return (g.NavId == id) && g.NavCursorVisible && !window->DC.NavHideHighlightOneFrame;
 }
 
 template <std::same_as<Spec::Unit>... Units>
@@ -452,6 +446,7 @@ auto DrawTextField(
  * this function support readonly text field (buffer == nullptr) and editable text field (buffer != nullptr). For read
  * only text field, the inputText is used to determine whether the text field is populated, which will affect the label
  * text position.
+ * \todo only the TextFieldContent::label required, other fields may cause compiler warning if not set
  */
 template <Spec::TextFieldVariant Style>
 auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, std::string_view inputText, const M3Styles &m3Styles) -> bool
@@ -488,11 +483,10 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
     {
         return false;
     }
-    const auto          *state        = ImGui::GetInputTextState(id);
-    const bool           inputIsEmpty = state == nullptr || state->TextLen <= 0;
-    const bool           populated    = editable ? (state != nullptr && state->TextLen > 0) : !inputText.empty();
-    bool                 inputActive  = false;
-    Spec::TextFieldState tfState      = Spec::TextFieldState::Enabled;
+    const auto          *state       = ImGui::GetInputTextState(id);
+    const bool           populated   = editable ? (state != nullptr && state->TextLen > 0) : !inputText.empty();
+    bool                 inputActive = false;
+    Spec::TextFieldState tfState     = Spec::TextFieldState::Enabled;
 
     if (IsItemDisabled())
     {
@@ -593,13 +587,13 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
 
 auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> void
 {
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    const ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
     {
         return;
     }
 
-    const auto sizing = Spec::GetIconButtonSizing(sizeTips);
+    const auto sizing = Spec::GetIconButtonSizing(sizeTips, Spec::IconButtonWidths::Default);
 
     const auto   height = GetPixels(m3Styles, sizing.containerHeight);
     const ImVec2 size   = {height, height};
@@ -621,12 +615,14 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, const M3St
         iconColor = m3Styles.Colors()[Spec::StandardIconButtonEnabled::IconColor];
     }
 
-    const auto offsetX  = GetPixels(m3Styles, sizing.defaultLeadingSpace);
+    const auto offsetX  = GetPixels(m3Styles, sizing.leadingSpace);
     const auto iconSize = GetPixels(m3Styles, sizing.iconSize);
     DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
 }
 
-auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::IconButtonColors ibColors) -> bool
+auto IconButton(
+    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonWidths widths, const M3Styles &m3Styles, Spec::IconButtonColors ibColors
+) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -634,7 +630,7 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &
         return false;
     }
 
-    const auto sizing = Spec::GetIconButtonSizing(sizeTips);
+    const auto sizing = Spec::GetIconButtonSizing(sizeTips, widths);
 
     const ImGuiID id = window->GetID(TextStart(icon), TextEnd(icon));
 
@@ -695,9 +691,68 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &
         window->DrawList->AddRect(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(outlineColor), rounding, 0, outlineWidth);
     }
 
-    const auto offsetX  = GetPixels(m3Styles, sizing.defaultLeadingSpace);
+    const auto offsetX  = GetPixels(m3Styles, sizing.leadingSpace);
     const auto iconSize = GetPixels(m3Styles, sizing.iconSize);
     DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
+    return pressed;
+}
+
+auto Fab(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+
+    const auto    sizing = Spec::GetFabSizingValues(sizeTips);
+    const ImGuiID id     = window->GetID(TextStart(icon), TextEnd(icon));
+    const auto    height = m3Styles.GetPixels(Spec::FabMedium::ContainerHeight);
+    const ImVec2  size   = {height, height};
+    const ImRect  bb(window->DC.CursorPos, window->DC.CursorPos + size);
+
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, id))
+    {
+        return false;
+    }
+
+    auto &g = *GImGui;
+
+    bool       hovered = false;
+    bool       held    = false;
+    const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    const bool active  = hovered && held;
+
+    IM_ASSERT(!IsItemDisabled() && "FAB doesn't have disabled state in spec, IconButton should be used instead when disabled state is needed.");
+
+    const auto   colors    = Spec::GetFabColorsValue(fabColors);
+    ImVec4       bgColor   = m3Styles.Colors()[colors.containerColor];
+    const ImVec4 iconColor = m3Styles.Colors()[colors.iconColor];
+
+    if (hovered)
+    {
+        bgColor = ColorUtils::BlendHovered(bgColor, iconColor);
+    }
+    else if (active)
+    {
+        bgColor = ColorUtils::BlendPressed(bgColor, iconColor);
+    }
+
+    const auto iconSize = m3Styles.GetPixels(sizing.iconSize);
+
+    const auto rounding = m3Styles.GetPixels(sizing.containerShape);
+    {
+        const auto backupFrameRounding = g.Style.FrameRounding;
+        g.Style.FrameRounding          = rounding;
+        ImGui::RenderNavCursor(bb, id);
+        g.Style.FrameRounding = backupFrameRounding;
+    }
+
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
+
+    const auto offset = HalfDiff(size.x, iconSize);
+    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offset, offset}, icon, m3Styles, iconColor);
     return pressed;
 }
 

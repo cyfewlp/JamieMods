@@ -20,6 +20,13 @@ enum class IconButtonColors : std::uint8_t
     Standard  ///< No container, only icon color
 };
 
+enum class IconButtonWidths : std::uint8_t
+{
+    Narrow,
+    Default,
+    Wide
+};
+
 template <States State>
 struct IconButtonFilled;
 
@@ -396,64 +403,125 @@ struct IconButtonSizingValues
 {
     Spec::Unit containerHeight;
     Spec::Unit iconSize;
-    Spec::Unit defaultLeadingSpace;
+    Spec::Unit leadingSpace;
     Spec::Unit containerShapeSquare;
     Spec::Unit pressedContainerShape;
     float      outlinedOutlineWidth;
 };
 
-constexpr auto GetIconButtonSizing(Spec::SizeTips size) -> IconButtonSizingValues
+constexpr auto GetIconButtonSizing(Spec::SizeTips size, IconButtonWidths widths) -> IconButtonSizingValues
 {
+    IconButtonSizingValues values{};
     switch (size)
     {
         using enum Spec::SizeTips;
-        case XSMALL:
-            return {
-                .containerHeight       = IconButtonSizing<XSMALL>::ContainerHeight,
-                .iconSize              = IconButtonSizing<XSMALL>::IconSize,
-                .defaultLeadingSpace   = IconButtonSizing<XSMALL>::DefaultLeadingSpace,
-                .containerShapeSquare  = IconButtonSizing<XSMALL>::ContainerShapeSquare,
-                .pressedContainerShape = IconButtonSizing<XSMALL>::PressedContainerShape,
-                .outlinedOutlineWidth  = IconButtonSizing<XSMALL>::OutlinedOutlineWidth
-            };
-        case SMALL:
-            return {
-                .containerHeight       = IconButtonSizing<SMALL>::ContainerHeight,
-                .iconSize              = IconButtonSizing<SMALL>::IconSize,
-                .defaultLeadingSpace   = IconButtonSizing<SMALL>::DefaultLeadingSpace,
-                .containerShapeSquare  = IconButtonSizing<SMALL>::ContainerShapeSquare,
-                .pressedContainerShape = IconButtonSizing<SMALL>::PressedContainerShape,
-                .outlinedOutlineWidth  = IconButtonSizing<SMALL>::OutlinedOutlineWidth
-            };
-        case MEDIUM:
-            return {
-                .containerHeight       = IconButtonSizing<MEDIUM>::ContainerHeight,
-                .iconSize              = IconButtonSizing<MEDIUM>::IconSize,
-                .defaultLeadingSpace   = IconButtonSizing<MEDIUM>::DefaultLeadingSpace,
-                .containerShapeSquare  = IconButtonSizing<MEDIUM>::ContainerShapeSquare,
-                .pressedContainerShape = IconButtonSizing<MEDIUM>::PressedContainerShape,
-                .outlinedOutlineWidth  = IconButtonSizing<MEDIUM>::OutlinedOutlineWidth
-            };
-        case LARGE:
-            return {
-                .containerHeight       = IconButtonSizing<LARGE>::ContainerHeight,
-                .iconSize              = IconButtonSizing<LARGE>::IconSize,
-                .defaultLeadingSpace   = IconButtonSizing<LARGE>::DefaultLeadingSpace,
-                .containerShapeSquare  = IconButtonSizing<LARGE>::ContainerShapeSquare,
-                .pressedContainerShape = IconButtonSizing<LARGE>::PressedContainerShape,
-                .outlinedOutlineWidth  = IconButtonSizing<LARGE>::OutlinedOutlineWidth
-            };
-        case XLARGE:
-            return {
-                .containerHeight       = IconButtonSizing<XLARGE>::ContainerHeight,
-                .iconSize              = IconButtonSizing<XLARGE>::IconSize,
-                .defaultLeadingSpace   = IconButtonSizing<XLARGE>::DefaultLeadingSpace,
-                .containerShapeSquare  = IconButtonSizing<XLARGE>::ContainerShapeSquare,
-                .pressedContainerShape = IconButtonSizing<XLARGE>::PressedContainerShape,
-                .outlinedOutlineWidth  = IconButtonSizing<XLARGE>::OutlinedOutlineWidth
-            };
+        case XSMALL: {
+            using IconButtonSpec         = IconButtonSizing<XSMALL>;
+            values.containerHeight       = IconButtonSpec::ContainerHeight;
+            values.iconSize              = IconButtonSpec::IconSize;
+            values.containerShapeSquare  = IconButtonSpec::ContainerShapeSquare;
+            values.pressedContainerShape = IconButtonSpec::PressedContainerShape;
+            values.outlinedOutlineWidth  = IconButtonSpec::OutlinedOutlineWidth;
+            if (widths == IconButtonWidths::Default)
+            {
+                values.leadingSpace = IconButtonSpec::DefaultLeadingSpace;
+            }
+            else if (widths == IconButtonWidths::Wide)
+            {
+                values.leadingSpace = IconButtonSpec::WideLeadingSpace;
+            }
+            else
+            {
+                values.leadingSpace = IconButtonSpec::NarrowLeadingSpace;
+            }
+            break;
+        }
+        case SMALL: {
+            using IconButtonSpec         = IconButtonSizing<SMALL>;
+            values.containerHeight       = IconButtonSpec::ContainerHeight;
+            values.iconSize              = IconButtonSpec::IconSize;
+            values.containerShapeSquare  = IconButtonSpec::ContainerShapeSquare;
+            values.pressedContainerShape = IconButtonSpec::PressedContainerShape;
+            values.outlinedOutlineWidth  = IconButtonSpec::OutlinedOutlineWidth;
+            if (widths == IconButtonWidths::Default)
+            {
+                values.leadingSpace = IconButtonSpec::DefaultLeadingSpace;
+            }
+            else if (widths == IconButtonWidths::Wide)
+            {
+                values.leadingSpace = IconButtonSpec::WideLeadingSpace;
+            }
+            else
+            {
+                values.leadingSpace = IconButtonSpec::NarrowLeadingSpace;
+            }
+            break;
+        }
+        case MEDIUM: {
+            using IconButtonSpec         = IconButtonSizing<MEDIUM>;
+            values.containerHeight       = IconButtonSpec::ContainerHeight;
+            values.iconSize              = IconButtonSpec::IconSize;
+            values.containerShapeSquare  = IconButtonSpec::ContainerShapeSquare;
+            values.pressedContainerShape = IconButtonSpec::PressedContainerShape;
+            values.outlinedOutlineWidth  = IconButtonSpec::OutlinedOutlineWidth;
+            if (widths == IconButtonWidths::Default)
+            {
+                values.leadingSpace = IconButtonSpec::DefaultLeadingSpace;
+            }
+            else if (widths == IconButtonWidths::Wide)
+            {
+                values.leadingSpace = IconButtonSpec::WideLeadingSpace;
+            }
+            else
+            {
+                values.leadingSpace = IconButtonSpec::NarrowLeadingSpace;
+            }
+            break;
+        }
+        case LARGE: {
+            using IconButtonSpec         = IconButtonSizing<LARGE>;
+            values.containerHeight       = IconButtonSpec::ContainerHeight;
+            values.iconSize              = IconButtonSpec::IconSize;
+            values.containerShapeSquare  = IconButtonSpec::ContainerShapeSquare;
+            values.pressedContainerShape = IconButtonSpec::PressedContainerShape;
+            values.outlinedOutlineWidth  = IconButtonSpec::OutlinedOutlineWidth;
+            if (widths == IconButtonWidths::Default)
+            {
+                values.leadingSpace = IconButtonSpec::DefaultLeadingSpace;
+            }
+            else if (widths == IconButtonWidths::Wide)
+            {
+                values.leadingSpace = IconButtonSpec::WideLeadingSpace;
+            }
+            else
+            {
+                values.leadingSpace = IconButtonSpec::NarrowLeadingSpace;
+            }
+            break;
+        }
+        case XLARGE: {
+            using IconButtonSpec         = IconButtonSizing<XLARGE>;
+            values.containerHeight       = IconButtonSpec::ContainerHeight;
+            values.iconSize              = IconButtonSpec::IconSize;
+            values.containerShapeSquare  = IconButtonSpec::ContainerShapeSquare;
+            values.pressedContainerShape = IconButtonSpec::PressedContainerShape;
+            values.outlinedOutlineWidth  = IconButtonSpec::OutlinedOutlineWidth;
+            if (widths == IconButtonWidths::Default)
+            {
+                values.leadingSpace = IconButtonSpec::DefaultLeadingSpace;
+            }
+            else if (widths == IconButtonWidths::Wide)
+            {
+                values.leadingSpace = IconButtonSpec::WideLeadingSpace;
+            }
+            else
+            {
+                values.leadingSpace = IconButtonSpec::NarrowLeadingSpace;
+            }
+            break;
+        }
     }
-    return {};
+    return values;
 }
 
 struct IconButtonColorsValues

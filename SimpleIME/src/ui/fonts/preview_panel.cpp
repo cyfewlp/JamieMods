@@ -62,7 +62,7 @@ auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -
     bool edited = false;
     {
         ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-        ImGuiEx::M3::SmallIcon(ICON_OCT_SEARCH, m3Styles);
+        ImGuiEx::M3::SmallIcon(ICON_SEARCH, m3Styles);
         ImGui::SameLine(0, m3Styles.GetPixels(SearchSpec::gap));
 
         ImGuiEx::StyleGuard styleGuard;
@@ -178,17 +178,16 @@ auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles) -> bool
     const auto &avail   = ImGui::GetContentRegionAvail();
     const auto  marginY = m3Styles[ImGuiEx::M3::Spacing::L];
     ImGui::Dummy({0, marginY});
-    constexpr auto fabSizeUnit = ImGuiEx::M3::Spec::FAB<ImGuiEx::M3::Spec::SizeTips::MEDIUM>::size;
+    constexpr auto fabSizeUnit = ImGuiEx::M3::Spec::FabSizing<ImGuiEx::M3::Spec::SizeTips::MEDIUM>::ContainerHeight;
     const auto     fabSize     = m3Styles.GetPixels(fabSizeUnit);
     if (const auto space = fabSize + marginY; avail.y > space)
     {
         ImGui::Dummy({0, avail.y - space});
     }
-    const auto indent     = (avail.x - fabSize) * 0.5F;
-    const auto safeIndent = ImMax(indent, 0.0F);
+    const auto safeIndent = ImMax(ImGuiEx::M3::HalfDiff(avail.x, fabSize), 0.0F);
     ImGui::Indent(safeIndent);
 
-    const bool clicked = ImGuiEx::M3::FAB<ImGuiEx::M3::Spec::SizeTips::MEDIUM>(ICON_MD_TRANSFER_RIGHT, m3Styles);
+    const bool clicked = ImGuiEx::M3::Fab(ICON_PLUS, m3Styles, ImGuiEx::M3::Spec::FabColors::TonalPrimary);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Add"), m3Styles);
 
     ImGui::Unindent(safeIndent);
@@ -262,31 +261,32 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
     }
 
     StatusBar statusBar;
-    statusBar.icon = ICON_FA_FILE;
+    statusBar.icon = ICON_FILE_CHECK;
     switch (m_state)
     {
         case State::DEBOUNCING:
-            statusBar.icon = ICON_MD_REFRESH;
+            statusBar.icon = ICON_REFRESH_CW;
             statusBar.text = Translate("Settings.FontBuilder.PreviewPanel.Debouncing");
             break;
         case State::PREVIEW_BUILDER_FONT:
-            statusBar.icon = ICON_MD_EYE;
+            statusBar.icon = ICON_EYE;
             statusBar.text = Translate("Settings.FontBuilder.PreviewPanel.BuilderFont");
             break;
         case State::NOT_SELECTED_FONT: {
-            statusBar.icon = ICON_FA_CIRCLE_INFO;
+            statusBar.icon = ICON_CIRCLE_ALERT;
             statusBar.text = Translate("Settings.FontBuilder.PreviewPanel.NotSelectedFont");
             break;
         }
         case State::NOT_SUPPORTED_FONTS: {
-            statusBar.icon = ICON_FA_CIRCLE_EXCLAMATION;
+            statusBar.icon = ICON_FILE_QUESTION_MARK;
             statusBar.text = Translate("Settings.FontBuilder.PreviewPanel.NotSupportedFont");
             break;
         }
         case State::PREVIEWING:
             statusBar.text = m_imFont.GetFontPathOr(0);
             break;
-        default:;
+        default:
+            break;
     }
 
     const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
