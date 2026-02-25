@@ -21,6 +21,7 @@ void ErrorNotifier::addError(const std::string &txt, const ErrorMsg::Level level
     errors.push_back({txt, false, level});
 }
 
+// \todo restyle by M3
 void ErrorNotifier::Show()
 {
     if (errors.empty())
@@ -34,8 +35,7 @@ void ErrorNotifier::Show()
     if (!ImGui::Begin(
             "ErrorNotifier",
             nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-                ImGuiWindowFlags_NoFocusOnAppearing
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing
         ))
     {
         ImGui::End();
@@ -54,10 +54,11 @@ void ErrorNotifier::Show()
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
-            auto &message = errors[i];
+            const auto typeSafeIndex = static_cast<size_t>(i);
+            auto      &message       = errors[typeSafeIndex];
             if (message.level >= m_currentLevel)
             {
-                renderMessage(message, i);
+                renderMessage(message, typeSafeIndex);
                 if (current - message.timestamp >= m_duration)
                 {
                     message.confirmed = true;
@@ -71,7 +72,7 @@ void ErrorNotifier::Show()
     ImGui::End();
 }
 
-void ErrorNotifier::renderMessage(const ErrorMsg &msg, int idx)
+void ErrorNotifier::renderMessage(const ErrorMsg &msg, size_t idx)
 {
     ImGui::Text("%s", msg.text.c_str());
     ImGui::SameLine();

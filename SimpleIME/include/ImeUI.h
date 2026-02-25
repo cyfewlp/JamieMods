@@ -20,7 +20,7 @@ class ImeUI
     using State = Core::State;
 
 public:
-    explicit ImeUI(ImeWnd *pImeWnd) : m_pImeWnd(pImeWnd) {}
+    explicit ImeUI() = default;
 
     ~ImeUI()                                 = default;
     ImeUI(const ImeUI &other)                = delete;
@@ -32,9 +32,9 @@ public:
     void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
     void DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
 
-    bool IsShowingToolWindow() const { return m_fShowToolWindow; }
+    auto IsShowingToolWindow() const -> bool { return m_fShowToolWindow; }
 
-    bool IsPinedToolWindow() const { return m_fPinToolWindow; }
+    auto IsPinedToolWindow() const -> bool { return m_fPinToolWindow; }
 
 private:
     void        DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
@@ -46,7 +46,6 @@ private:
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");
 
-    ImeWnd                  *m_pImeWnd = nullptr;
     std::vector<std::string> m_translateLanguages;
     FontBuilder              m_fontBuilder;
     UI::FontBuilderPanel     m_fontBuilderView{};

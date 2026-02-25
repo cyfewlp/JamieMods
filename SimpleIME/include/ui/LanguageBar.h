@@ -9,35 +9,26 @@
 
 #include <vector>
 
-namespace Ime::LanguageBar
+namespace Ime
 {
 
-enum State : std::uint8_t
+class LanguageBar
 {
-    NONE          = 0,
-    OPEN_SETTINGS = 0x1,
-    PINNED        = 0x2,
-    SHOWING       = 0x4,
+    bool m_pinned  = false;
+    bool m_showing = false;
+
+public:
+    auto Draw(bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, ImGuiEx::M3::M3Styles &m3Styles)
+        -> bool;
+
+    [[nodiscard]] auto IsPinned() const -> bool { return m_pinned; }
+
+    [[nodiscard]] auto IsShowing() const -> bool { return m_showing; }
+
+private:
+    auto DoDraw(
+        bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles
+    ) -> void;
 };
 
-constexpr auto IsPinned(State state) -> bool
-{
-    return (state & PINNED) != 0;
-}
-
-constexpr auto IsShowing(State state) -> bool
-{
-    return (state & SHOWING) != 0;
-}
-
-constexpr auto IsOpenSettings(State state) -> bool
-{
-    return (state & OPEN_SETTINGS) != 0;
-}
-
-auto Draw(
-    bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles,
-    ImGuiEx::M3::M3Styles &m3Styles
-) -> State;
-
-} // namespace Ime::LanguageBar
+} // namespace Ime

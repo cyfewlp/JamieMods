@@ -105,7 +105,7 @@ void FontManager::FindInstalledFonts()
             {
                 continue;
             }
-            m_fontList.emplace_back(FontInfo(idx, fontFullName));
+            m_fontList.emplace_back(FontInfo(static_cast<int32_t>(idx), fontFullName));
         }
     }
 }

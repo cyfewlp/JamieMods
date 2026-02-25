@@ -305,14 +305,12 @@ auto TextStore::GetStatus(TS_STATUS *pdcs) -> HRESULT
     return S_OK;
 }
 
-auto TextStore::QueryInsert(
-    LONG acpTestStart, LONG acpTestEnd, ULONG /*cch*/, LONG *pacpResultStart, LONG *pacpResultEnd
-) -> HRESULT
+auto TextStore::QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG /*cch*/, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
-    if (const uint32_t lTextLength = m_pTextEditor->GetTextSize();
-        acpTestStart > acpTestEnd || static_cast<ULONG>(acpTestEnd) > lTextLength)
+    if (const size_t lTextLength = m_pTextEditor->GetTextSize(); //
+        acpTestStart > acpTestEnd || static_cast<size_t>(acpTestEnd) > lTextLength)
     {
         return E_INVALIDARG;
     }
@@ -323,8 +321,7 @@ auto TextStore::QueryInsert(
     return S_OK;
 }
 
-auto TextStore::GetSelection(ULONG ulIndex, ULONG /*ulCount*/, TS_SELECTION_ACP *pSelection, ULONG *pcFetched)
-    -> HRESULT
+auto TextStore::GetSelection(ULONG ulIndex, ULONG /*ulCount*/, TS_SELECTION_ACP *pSelection, ULONG *pcFetched) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     if (nullptr == pSelection || nullptr == pcFetched)
@@ -373,8 +370,8 @@ auto TextStore::SetSelection(const ULONG ulCount, const TS_SELECTION_ACP *pSelec
 }
 
 auto TextStore::GetText(
-    const LONG acpStart, const LONG acpEnd, WCHAR *pchPlain, const ULONG cchPlainReq, ULONG *pcchPlainRet,
-    TS_RUNINFO *prgRunInfo, ULONG ulRunInfoReq, ULONG *pcRunInfoRet, LONG *pacpNext
+    const LONG acpStart, const LONG acpEnd, WCHAR *pchPlain, const ULONG cchPlainReq, ULONG *pcchPlainRet, TS_RUNINFO *prgRunInfo, ULONG ulRunInfoReq,
+    ULONG *pcRunInfoRet, LONG *pacpNext
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}, {}, {}", __func__, acpStart, acpEnd);
@@ -398,33 +395,36 @@ auto TextStore::GetText(
         *pacpNext = acpStart;
     }
 
-    LONG charSize = 0;
+    size_t charSize = 0;
     m_pTextEditor->GetTextSize(charSize);
 
+    const auto uAcpStart = static_cast<uint32_t>(acpStart);
+    const auto uAcpEnd   = static_cast<uint32_t>(acpEnd);
+
     // validate the start pos
-    if (acpStart < 0 || acpStart > charSize)
+    if (uAcpStart > charSize)
     {
         return TS_E_INVALIDPOS;
     }
 
-    if (acpStart == charSize)
+    if (uAcpStart == charSize)
     {
         return S_OK;
     }
     ULONG cchToCopy = 0;
-    if (acpEnd >= acpStart)
+    if (uAcpEnd >= uAcpStart)
     {
-        cchToCopy = acpEnd - acpStart;
+        cchToCopy = uAcpEnd - uAcpStart;
     }
     else // acpEnd will be -1 if all the text up to the end is being requested.
     {
-        cchToCopy = charSize - acpStart;
+        cchToCopy = static_cast<ULONG>(charSize - uAcpStart);
     }
 
-    if (cchPlainReq > 0)
+    if (pchPlain != nullptr && cchPlainReq > 0)
     {
         cchToCopy = std::min(cchToCopy, cchPlainReq);
-        m_pTextEditor->UnsafeGetText(pchPlain, cchPlainReq, acpStart, cchToCopy);
+        m_pTextEditor->UnsafeGetText(pchPlain, cchPlainReq, uAcpStart, cchToCopy);
     }
 
     if (pcchPlainRet != nullptr)
@@ -441,15 +441,13 @@ auto TextStore::GetText(
 
     if (pacpNext != nullptr)
     {
-        *pacpNext = acpStart + static_cast<LONG>(cchToCopy);
+        *pacpNext = static_cast<int32_t>(uAcpStart + cchToCopy);
     }
 
     return S_OK;
 }
 
-auto TextStore::SetText(
-    DWORD /*dwFlags*/, LONG acpStart, LONG acpEnd, const WCHAR *pchText, ULONG cch, TS_TEXTCHANGE *pChange
-) -> HRESULT
+auto TextStore::SetText(DWORD /*dwFlags*/, LONG acpStart, LONG acpEnd, const WCHAR *pchText, ULONG cch, TS_TEXTCHANGE *pChange) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     tracer.log("acpStart {}, acpEnd {}", acpStart, acpEnd);
@@ -470,9 +468,8 @@ auto TextStore::SetText(
     return hresult;
 }
 
-auto TextStore::InsertTextAtSelection(
-    DWORD dwFlags, const WCHAR *pwszText, ULONG cch, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
-) -> HRESULT
+auto TextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR *pwszText, ULONG cch, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange)
+    -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     LONG lTemp  = 0;
@@ -507,7 +504,12 @@ auto TextStore::InsertTextAtSelection(
         return E_INVALIDARG;
     }
 
-    LONG acpNewEnd = m_pTextEditor->InsertText(pwszText, cch);
+    if (!m_pTextEditor->InsertText(pwszText, cch))
+    {
+        return E_FAIL;
+    }
+
+    auto acpNewEnd = acpStart + static_cast<LONG>(cch);
     logger::trace("TextStore::{} {}, {}, {}, count {}", __func__, acpStart, acpOldEnd, acpNewEnd, cch);
 
     if ((dwFlags & TS_IAS_NOQUERY) != TS_IAS_NOQUERY)
@@ -541,8 +543,7 @@ auto TextStore::GetFormattedText(LONG /*acpStart*/, LONG /*acpEnd*/, IDataObject
     return E_NOTIMPL;
 }
 
-auto TextStore::GetEmbedded(LONG /*acpPos*/, REFGUID /*rguidService*/, REFIID /*riid*/, IUnknown ** /*ppunk*/)
-    -> HRESULT
+auto TextStore::GetEmbedded(LONG /*acpPos*/, REFGUID /*rguidService*/, REFIID /*riid*/, IUnknown ** /*ppunk*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
@@ -550,8 +551,7 @@ auto TextStore::GetEmbedded(LONG /*acpPos*/, REFGUID /*rguidService*/, REFIID /*
     return E_NOTIMPL;
 }
 
-auto TextStore::QueryInsertEmbedded(const GUID * /*pguidService*/, const FORMATETC * /*pFormatEtc*/, BOOL *pfInsertable)
-    -> HRESULT
+auto TextStore::QueryInsertEmbedded(const GUID * /*pguidService*/, const FORMATETC * /*pFormatEtc*/, BOOL *pfInsertable) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
@@ -571,8 +571,7 @@ auto TextStore::InsertEmbedded(
     return E_NOTIMPL;
 }
 
-auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/)
-    -> HRESULT
+auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
@@ -598,8 +597,8 @@ auto TextStore::RequestAttrsTransitioningAtPosition(
 }
 
 auto TextStore::FindNextAttrTransition(
-    LONG /*acpStart*/, LONG /*acpHalt*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/, DWORD /*dwFlags*/,
-    LONG * /*pacpNext*/, BOOL * /*pfFound*/, LONG * /*plFoundOffset*/
+    LONG /*acpStart*/, LONG /*acpHalt*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/, DWORD /*dwFlags*/, LONG * /*pacpNext*/,
+    BOOL * /*pfFound*/, LONG * /*plFoundOffset*/
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
@@ -638,8 +637,7 @@ auto TextStore::GetActiveView(TsViewCookie *pvcView) -> HRESULT
     return S_OK;
 }
 
-auto TextStore::GetACPFromPoint(TsViewCookie /*vcView*/, const POINT * /*pt*/, DWORD /*dwFlags*/, LONG * /*pacp*/)
-    -> HRESULT
+auto TextStore::GetACPFromPoint(TsViewCookie /*vcView*/, const POINT * /*pt*/, DWORD /*dwFlags*/, LONG * /*pacp*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     return E_NOTIMPL;
@@ -703,8 +701,7 @@ auto TextStore::GetWnd(TsViewCookie vcView, HWND *phwnd) -> HRESULT
 }
 
 auto TextStore::InsertEmbeddedAtSelection(
-    DWORD /*dwFlags*/, IDataObject * /*pDataObject*/, LONG * /*pacpStart*/, LONG * /*pacpEnd*/,
-    TS_TEXTCHANGE * /*pChange*/
+    DWORD /*dwFlags*/, IDataObject * /*pDataObject*/, LONG * /*pacpStart*/, LONG * /*pacpEnd*/, TS_TEXTCHANGE * /*pChange*/
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
@@ -823,8 +820,7 @@ bool TextStore::CommitCandidate(UINT index) const
     return false;
 }
 
-auto TextStore::GetCandidateInterface(const DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const
-    -> HRESULT
+auto TextStore::GetCandidateInterface(const DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const -> HRESULT
 {
     CComPtr<ITfUIElement> tfUiElement;
     const HRESULT         hresult = m_uiElementMgr->GetUIElement(dwUIElementId, &tfUiElement);

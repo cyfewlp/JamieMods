@@ -13,7 +13,7 @@ namespace
 {
 auto GetProfileCachedIndex(const std::vector<Ime::LangProfile> &langProfiles, const GUID &guidProfile) -> std::uint32_t
 {
-    const auto it = std::ranges::find_if(langProfiles, [&](const auto &p) {
+    const auto it = std::ranges::find_if(langProfiles, [&](const auto &p) -> bool {
         return p.guidProfile == guidProfile;
     });
 
@@ -88,22 +88,17 @@ auto Ime::InputMethodManager::RefreshProfiles() -> bool
             CComBSTR bStrDesc = nullptr;
 
             // Skip profile that failed to load.
-            auto hr =
-                lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled);
+            auto hr = lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled);
 
             if (SUCCEEDED(hr) && bEnabled == TRUE)
             {
-                hr = lpProfiles->GetLanguageProfileDescription(
-                    profile.clsid, profile.langid, profile.guidProfile, &bStrDesc
-                );
+                hr = lpProfiles->GetLanguageProfileDescription(profile.clsid, profile.langid, profile.guidProfile, &bStrDesc);
                 if (SUCCEEDED(hr))
                 {
                     std::string desc;
-                    if (WCharUtils::ToString(bStrDesc, bStrDesc.Length(), desc))
+                    if (WCharUtils::ToString(bStrDesc, static_cast<int>(bStrDesc.Length()), desc))
                     {
-                        m_langProfiles.emplace_back(
-                            std::move(desc), profile.clsid, profile.guidProfile, profile.langid
-                        );
+                        m_langProfiles.emplace_back(std::move(desc), profile.clsid, profile.guidProfile, profile.langid);
                         logger::info("Load installed ime: {}", desc.c_str());
                     }
                 }
@@ -139,10 +134,10 @@ auto Ime::InputMethodManager::ActivateProfile(const GUID &guidProfile) -> HRESUL
     {
         return E_INVALIDARG;
     }
-    auto &activeLangProfile = GetActiveLangProfile();
+    const auto &activeLangProfile = GetActiveLangProfile();
 
     auto &langProfile = m_langProfiles[index];
-    if (IsEqualGUID(langProfile.guidProfile, activeLangProfile.guidProfile))
+    if (IsEqualGUID(langProfile.guidProfile, activeLangProfile.guidProfile) == TRUE)
     {
         return S_OK;
     }
@@ -205,8 +200,8 @@ auto Ime::InputMethodManager::Release() -> ULONG
 }
 
 auto Ime::InputMethodManager::OnActivated(
-    [[maybe_unused]] DWORD dwProfileType, [[maybe_unused]] LANGID langid, [[maybe_unused]] const IID &clsid,
-    [[maybe_unused]] const GUID &catid, const GUID &guidProfile, [[maybe_unused]] HKL hkl, DWORD dwFlags
+    [[maybe_unused]] DWORD dwProfileType, [[maybe_unused]] LANGID langid, [[maybe_unused]] const IID &clsid, [[maybe_unused]] const GUID &catid,
+    const GUID &guidProfile, [[maybe_unused]] HKL hkl, DWORD dwFlags
 ) -> HRESULT
 {
     if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)

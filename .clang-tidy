@@ -1,7 +1,9 @@
 ﻿#Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*performance-*,portability-*,-cppcoreguidelines-pro-type-vararg,-misc-include-cleaner,-google-readability-namespace-comments'
 Checks: >
   -*,
+  clang-analyzer-*,
   bugprone-*,
+  cert-*,
   cppcoreguidelines-*,
   google-*,
   misc-*,

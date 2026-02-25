@@ -21,10 +21,7 @@ class FakeDirectInputDevice : public IDirectInputDevice8A
     static inline FakeDirectInputDevice *g_pFakeDirectInputDevice = nullptr;
 
 public:
-    explicit FakeDirectInputDevice(IDirectInputDevice8A *device) : m_realDevice(device)
-    {
-        g_pFakeDirectInputDevice = this;
-    }
+    explicit FakeDirectInputDevice(IDirectInputDevice8A *device) : m_realDevice(device) { g_pFakeDirectInputDevice = this; }
 
     FakeDirectInputDevice(const FakeDirectInputDevice &other)                = delete;
     FakeDirectInputDevice(FakeDirectInputDevice &&other) noexcept            = delete;
@@ -33,21 +30,12 @@ public:
 
     virtual ~FakeDirectInputDevice() = default;
 
-    static auto GetInstance() -> FakeDirectInputDevice *
-    {
-        return g_pFakeDirectInputDevice;
-    }
+    static auto GetInstance() -> FakeDirectInputDevice * { return g_pFakeDirectInputDevice; }
 
     /*** IUnknown methods ***/
-    STDMETHOD(QueryInterface)(THIS_ REFIID riid, LPVOID *ppvObj)
-    {
-        return m_realDevice->QueryInterface(riid, ppvObj);
-    }
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, LPVOID *ppvObj) { return m_realDevice->QueryInterface(riid, ppvObj); }
 
-    STDMETHOD_(ULONG, AddRef)(THIS)
-    {
-        return m_realDevice->AddRef();
-    }
+    STDMETHOD_(ULONG, AddRef)(THIS) { return m_realDevice->AddRef(); }
 
     STDMETHOD_(ULONG, Release)(THIS)
     {
@@ -60,55 +48,31 @@ public:
     }
 
     /*** IDirectInputDevice8W methods ***/
-    STDMETHOD(GetCapabilities)(THIS_ LPDIDEVCAPS lpDIDevCaps)
-    {
-        return m_realDevice->GetCapabilities(lpDIDevCaps);
-    }
+    STDMETHOD(GetCapabilities)(THIS_ LPDIDEVCAPS lpDIDevCaps) { return m_realDevice->GetCapabilities(lpDIDevCaps); }
 
     STDMETHOD(EnumObjects)(THIS_ LPDIENUMDEVICEOBJECTSCALLBACKA lpCallback, LPVOID pvRef, DWORD dwFlags)
     {
         return m_realDevice->EnumObjects(lpCallback, pvRef, dwFlags);
     }
 
-    STDMETHOD(GetProperty)(THIS_ REFGUID rguidProp, LPDIPROPHEADER pdiph)
-    {
-        return m_realDevice->GetProperty(rguidProp, pdiph);
-    }
+    STDMETHOD(GetProperty)(THIS_ REFGUID rguidProp, LPDIPROPHEADER pdiph) { return m_realDevice->GetProperty(rguidProp, pdiph); }
 
-    STDMETHOD(SetProperty)(THIS_ REFGUID rguidProp, LPCDIPROPHEADER pdiph)
-    {
-        return m_realDevice->SetProperty(rguidProp, pdiph);
-    }
+    STDMETHOD(SetProperty)(THIS_ REFGUID rguidProp, LPCDIPROPHEADER pdiph) { return m_realDevice->SetProperty(rguidProp, pdiph); }
 
-    STDMETHOD(Acquire)(THIS)
-    {
-        return m_realDevice->Acquire();
-    }
+    STDMETHOD(Acquire)(THIS) { return m_realDevice->Acquire(); }
 
-    STDMETHOD(Unacquire)(THIS)
-    {
-        return m_realDevice->Unacquire();
-    }
+    STDMETHOD(Unacquire)(THIS) { return m_realDevice->Unacquire(); }
 
-    STDMETHOD(GetDeviceState)(THIS_ DWORD cbData, LPVOID lpvData)
-    {
-        return m_realDevice->GetDeviceState(cbData, lpvData);
-    }
+    STDMETHOD(GetDeviceState)(THIS_ DWORD cbData, LPVOID lpvData) { return m_realDevice->GetDeviceState(cbData, lpvData); }
 
     STDMETHOD(GetDeviceData)(THIS_ DWORD cbObjectData, LPDIDEVICEOBJECTDATA rgdod, LPDWORD pdwInOut, DWORD dwFlags)
     {
         return m_realDevice->GetDeviceData(cbObjectData, rgdod, pdwInOut, dwFlags);
     }
 
-    STDMETHOD(SetDataFormat)(THIS_ LPCDIDATAFORMAT lpdf)
-    {
-        return m_realDevice->SetDataFormat(lpdf);
-    }
+    STDMETHOD(SetDataFormat)(THIS_ LPCDIDATAFORMAT lpdf) { return m_realDevice->SetDataFormat(lpdf); }
 
-    STDMETHOD(SetEventNotification)(THIS_ HANDLE hEvent)
-    {
-        return m_realDevice->SetEventNotification(hEvent);
-    }
+    STDMETHOD(SetEventNotification)(THIS_ HANDLE hEvent) { return m_realDevice->SetEventNotification(hEvent); }
 
 private:
     DWORD m_realCooperativeLevelFlags = 0;
@@ -120,7 +84,7 @@ public:
     {
         m_realCooperativeLevelFlags = dwFlags;
         logger::debug("Real CooperativeLevel {:#x}, {}", dwFlags, dwFlags & DISCL_EXCLUSIVE);
-        dwFlags &= ~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+        dwFlags &= static_cast<DWORD>(~(DISCL_EXCLUSIVE | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY));
         dwFlags |= DISCL_NONEXCLUSIVE;
         m_cooperativeLevelFlags = dwFlags;
         m_hWndCooperative       = hwnd;
@@ -161,20 +125,11 @@ public:
         return m_realDevice->GetObjectInfo(pdidoi, dwObj, dwHow);
     }
 
-    STDMETHOD(GetDeviceInfo)(THIS_ LPDIDEVICEINSTANCEA pdidi)
-    {
-        return m_realDevice->GetDeviceInfo(pdidi);
-    }
+    STDMETHOD(GetDeviceInfo)(THIS_ LPDIDEVICEINSTANCEA pdidi) { return m_realDevice->GetDeviceInfo(pdidi); }
 
-    STDMETHOD(RunControlPanel)(THIS_ HWND hwndOwner, DWORD dwFlags)
-    {
-        return m_realDevice->RunControlPanel(hwndOwner, dwFlags);
-    }
+    STDMETHOD(RunControlPanel)(THIS_ HWND hwndOwner, DWORD dwFlags) { return m_realDevice->RunControlPanel(hwndOwner, dwFlags); }
 
-    STDMETHOD(Initialize)(THIS_ HINSTANCE hinst, DWORD dwVersion, REFGUID rguid)
-    {
-        return m_realDevice->Initialize(hinst, dwVersion, rguid);
-    }
+    STDMETHOD(Initialize)(THIS_ HINSTANCE hinst, DWORD dwVersion, REFGUID rguid) { return m_realDevice->Initialize(hinst, dwVersion, rguid); }
 
     STDMETHOD(CreateEffect)(THIS_ REFGUID rguid, LPCDIEFFECT lpeff, LPDIRECTINPUTEFFECT *ppdeff, LPUNKNOWN punkOuter)
     {
@@ -186,45 +141,27 @@ public:
         return m_realDevice->EnumEffects(lpCallback, pvRef, dwEffType);
     }
 
-    STDMETHOD(GetEffectInfo)(THIS_ LPDIEFFECTINFOA pdei, REFGUID rguid)
-    {
+    STDMETHOD(GetEffectInfo)(THIS_ LPDIEFFECTINFOA pdei, REFGUID rguid) { return m_realDevice->GetEffectInfo(pdei, rguid); }
 
-        return m_realDevice->GetEffectInfo(pdei, rguid);
-    }
+    STDMETHOD(GetForceFeedbackState)(THIS_ LPDWORD pdwOut) { return m_realDevice->GetForceFeedbackState(pdwOut); }
 
-    STDMETHOD(GetForceFeedbackState)(THIS_ LPDWORD pdwOut)
-    {
-        return m_realDevice->GetForceFeedbackState(pdwOut);
-    }
-
-    STDMETHOD(SendForceFeedbackCommand)(THIS_ DWORD dwFlags)
-    {
-        return m_realDevice->SendForceFeedbackCommand(dwFlags);
-    }
+    STDMETHOD(SendForceFeedbackCommand)(THIS_ DWORD dwFlags) { return m_realDevice->SendForceFeedbackCommand(dwFlags); }
 
     STDMETHOD(EnumCreatedEffectObjects)(THIS_ LPDIENUMCREATEDEFFECTOBJECTSCALLBACK lpCallback, LPVOID pvRef, DWORD fl)
     {
         return m_realDevice->EnumCreatedEffectObjects(lpCallback, pvRef, fl);
     }
 
-    STDMETHOD(Escape)(THIS_ LPDIEFFESCAPE pesc)
-    {
-        return m_realDevice->Escape(pesc);
-    }
+    STDMETHOD(Escape)(THIS_ LPDIEFFESCAPE pesc) { return m_realDevice->Escape(pesc); }
 
-    STDMETHOD(Poll)(THIS)
-    {
-        return m_realDevice->Poll();
-    }
+    STDMETHOD(Poll)(THIS) { return m_realDevice->Poll(); }
 
     STDMETHOD(SendDeviceData)(THIS_ DWORD cbObjectData, LPCDIDEVICEOBJECTDATA rgdod, LPDWORD pdwInOut, DWORD fl)
     {
         return m_realDevice->SendDeviceData(cbObjectData, rgdod, pdwInOut, fl);
     }
 
-    STDMETHOD(EnumEffectsInFile)(
-        THIS_ LPCSTR lpszFileName, LPDIENUMEFFECTSINFILECALLBACK pec, LPVOID pvRef, DWORD dwFlags
-    )
+    STDMETHOD(EnumEffectsInFile)(THIS_ LPCSTR lpszFileName, LPDIENUMEFFECTSINFILECALLBACK pec, LPVOID pvRef, DWORD dwFlags)
     {
         return m_realDevice->EnumEffectsInFile(lpszFileName, pec, pvRef, dwFlags);
     }
@@ -244,10 +181,7 @@ public:
         return m_realDevice->SetActionMap(lpdiActionFormat, lptszUserName, dwFlags);
     }
 
-    STDMETHOD(GetImageInfo)(THIS_ LPDIDEVICEIMAGEINFOHEADERA lpdiDevImageInfoHeader)
-    {
-        return m_realDevice->GetImageInfo(lpdiDevImageInfoHeader);
-    }
+    STDMETHOD(GetImageInfo)(THIS_ LPDIDEVICEIMAGEINFOHEADERA lpdiDevImageInfoHeader) { return m_realDevice->GetImageInfo(lpdiDevImageInfoHeader); }
 
 private:
     IDirectInputDevice8A *m_realDevice;
@@ -261,15 +195,9 @@ public:
     virtual ~FakeDirectInput() = default;
 
     /*** IUnknown methods ***/
-    STDMETHOD(QueryInterface)(THIS_ REFIID riid, LPVOID *ppvObj)
-    {
-        return m_realDInput->QueryInterface(riid, ppvObj);
-    }
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, LPVOID *ppvObj) { return m_realDInput->QueryInterface(riid, ppvObj); }
 
-    STDMETHOD_(ULONG, AddRef)(THIS)
-    {
-        return m_realDInput->AddRef();
-    }
+    STDMETHOD_(ULONG, AddRef)(THIS) { return m_realDInput->AddRef(); }
 
     STDMETHOD_(ULONG, Release)(THIS)
     {
@@ -301,20 +229,11 @@ public:
         return m_realDInput->EnumDevices(dwDevType, lpCallback, pvRef, dwFlags);
     }
 
-    STDMETHOD(GetDeviceStatus)(THIS_ REFGUID rguidInstance)
-    {
-        return m_realDInput->GetDeviceStatus(rguidInstance);
-    }
+    STDMETHOD(GetDeviceStatus)(THIS_ REFGUID rguidInstance) { return m_realDInput->GetDeviceStatus(rguidInstance); }
 
-    STDMETHOD(RunControlPanel)(THIS_ HWND hwndOwner, DWORD dwFlags)
-    {
-        return m_realDInput->RunControlPanel(hwndOwner, dwFlags);
-    }
+    STDMETHOD(RunControlPanel)(THIS_ HWND hwndOwner, DWORD dwFlags) { return m_realDInput->RunControlPanel(hwndOwner, dwFlags); }
 
-    STDMETHOD(Initialize)(THIS_ HINSTANCE hinst, DWORD dwVersion)
-    {
-        return m_realDInput->Initialize(hinst, dwVersion);
-    }
+    STDMETHOD(Initialize)(THIS_ HINSTANCE hinst, DWORD dwVersion) { return m_realDInput->Initialize(hinst, dwVersion); }
 
     STDMETHOD(FindDevice)(THIS_ REFGUID rguidClass, LPCSTR ptszName, LPGUID pguidInstance)
     {
@@ -322,16 +241,14 @@ public:
     }
 
     STDMETHOD(EnumDevicesBySemantics)(
-        THIS_ LPCSTR ptszUserName, LPDIACTIONFORMATA lpdiActionFormat, LPDIENUMDEVICESBYSEMANTICSCBA lpCallback,
-        LPVOID pvRef, DWORD dwFlags
+        THIS_ LPCSTR ptszUserName, LPDIACTIONFORMATA lpdiActionFormat, LPDIENUMDEVICESBYSEMANTICSCBA lpCallback, LPVOID pvRef, DWORD dwFlags
     )
     {
         return m_realDInput->EnumDevicesBySemantics(ptszUserName, lpdiActionFormat, lpCallback, pvRef, dwFlags);
     }
 
     STDMETHOD(ConfigureDevices)(
-        THIS_ LPDICONFIGUREDEVICESCALLBACK lpdiCallback, LPDICONFIGUREDEVICESPARAMSA lpdiCDParams, DWORD dwFlags,
-        LPVOID pvRefData
+        THIS_ LPDICONFIGUREDEVICESCALLBACK lpdiCallback, LPDICONFIGUREDEVICESPARAMSA lpdiCDParams, DWORD dwFlags, LPVOID pvRefData
     )
     {
         return m_realDInput->ConfigureDevices(lpdiCallback, lpdiCDParams, dwFlags, pvRefData);

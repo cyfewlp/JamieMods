@@ -41,7 +41,7 @@ auto ConfigFilePath() -> std::filesystem::path
 
 namespace SksePlugin
 {
-static auto Initialize() -> bool
+auto Initialize() -> bool
 {
     const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     const auto  version = plugin->GetVersion();
@@ -61,7 +61,7 @@ static auto Initialize() -> bool
     return true;
 }
 
-static void InitializeMessaging()
+void InitializeMessaging()
 {
     using State = Ime::Core::State;
     // ReSharper disable once CppParameterMayBeConstPtrOrRef
@@ -144,8 +144,7 @@ class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEven
     std::queue<std::string> m_message;
 
 public:
-    auto ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *)
-        -> RE::BSEventNotifyControl override
+    auto ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *) -> RE::BSEventNotifyControl override
     {
         if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
         {
@@ -159,10 +158,7 @@ public:
         return RE::BSEventNotifyControl::kContinue;
     }
 
-    void PushMessage(std::string &&message)
-    {
-        m_message.emplace(std::move(message));
-    }
+    void PushMessage(std::string &&message) { m_message.emplace(std::move(message)); }
 };
 
 static std::unique_ptr<InitErrorMessageShow> g_pInitErrorMessageShow(nullptr);
@@ -241,8 +237,7 @@ void ImeApp::OnD3DInit()
     Start(renderData);
 
     logger::debug("Hooking Skyrim WndProc...");
-    RealWndProc =
-        reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
+    RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
     if (RealWndProc == nullptr)
     {
         throw SimpleIMEException("Hook WndProc failed!");
@@ -259,14 +254,14 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     std::promise<bool> ensureInitialized;
     const auto         initialized = ensureInitialized.get_future();
     // run ImeWnd in a standalone thread
-    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
-    auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
+    auto              *device      = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+    auto              *context     = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
     UI::Initialize(m_hWnd, device, context);
     auto      *primaryFont  = UI::AddPrimaryFont(m_settings.resources.fontPathList);
     const auto iconFontPath = utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE;
     // FIXME:: should move to ImeUI after refactor ImeUI
-    auto *iconFont = UI::AddFont(iconFontPath.generic_string());
+    auto      *iconFont     = UI::AddFont(iconFontPath.generic_string());
     if (iconFont == nullptr)
     {
         logger::error("Cannot find icon font. Initialization failed!");
@@ -274,10 +269,8 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     }
 
     const auto &appearance = m_settings.appearance;
-    auto        colors     = ImGuiEx::M3::ThemeBuilder::Build(
-        {appearance.themeContrastLevel, appearance.themeSourceColor, appearance.themeDarkMode}
-    );
-    g_M3Styles = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);
+    auto        colors     = ImGuiEx::M3::ThemeBuilder::Build({appearance.themeContrastLevel, appearance.themeSourceColor, appearance.themeDarkMode});
+    g_M3Styles             = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);
 
     std::thread childWndThread([&ensureInitialized, this] -> void {
         try

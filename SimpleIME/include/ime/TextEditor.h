@@ -9,6 +9,13 @@
 
 namespace Ime
 {
+/**
+ * @class TextEditor
+ * @brief A simple text editor to manage the composition text.
+ *
+ * The `acpStart` and `acpEnd` in `TS_SELECTION_ACP` defined with LONG type.
+ * As agreed, the negative value of `acpStart` and `acpEnd` will be treated as the end of the text.
+ */
 class TextEditor
 {
 public:
@@ -19,25 +26,28 @@ public:
     auto operator=(const TextEditor &other) -> TextEditor &     = delete;
     auto operator=(TextEditor &&other) noexcept -> TextEditor & = delete;
 
-    auto Select(long acpStart, long acpEnd) -> void;
+    auto Select(int32_t acpStart, int32_t acpEnd) -> void;
     auto Select(const TS_SELECTION_ACP *pSelectionAcp) -> void;
 
     auto SelectAll()
     {
         const std::unique_lock lock(m_mutex);
         m_acpSelection.acpStart = 0;
-        m_acpSelection.acpEnd   = m_editorText.size();
+        m_acpSelection.acpEnd   = -1;
     }
 
     void GetSelection(LONG *pAcpStart, LONG *pAcpEnd) const;
     auto GetSelection(TS_SELECTION_ACP *pSelectionAcp) const -> void;
-    auto InsertText(const wchar_t *pwszText, uint32_t cch) -> long;
+    auto InsertText(const wchar_t *pwszText, size_t cch) -> bool;
+
+    auto InsertText(std::wstring_view wsTextView) -> bool { return InsertText(wsTextView.data(), wsTextView.size()); }
+
     void ClearText();
 
     /**
      * @return The editor text size in characters
      */
-    constexpr auto GetTextSize(__out long &charSize) const -> void
+    constexpr auto GetTextSize(size_t &charSize) const -> void
     {
         const std::shared_lock lock(m_mutex);
         charSize = m_editorText.size();
@@ -46,7 +56,7 @@ public:
     /**
      * @return The editor text size in characters
      */
-    [[nodiscard]] constexpr auto GetTextSize() const -> uint32_t
+    [[nodiscard]] constexpr auto GetTextSize() const -> size_t
     {
         const std::shared_lock lock(m_mutex);
         return m_editorText.size();
@@ -59,7 +69,7 @@ public:
      * @param offset the offset that want copied first char
      * @param cchRequire require copied text size in chars
      */
-    auto UnsafeGetText(LPWCH lpWch, uint32_t bufferSize, uint32_t offset, uint32_t cchRequire) const -> void;
+    auto UnsafeGetText(LPWCH lpWch, size_t bufferSize, size_t offset, size_t cchRequire) const -> void;
 
     [[nodiscard]] constexpr auto GetText() const -> std::wstring
     {

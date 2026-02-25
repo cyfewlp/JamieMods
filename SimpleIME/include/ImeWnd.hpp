@@ -8,6 +8,7 @@
 #include "ime/ITextService.h"
 #include "tsf/InputMethodManager.h"
 #include "ui/ImeWindow.h"
+#include "ui/LanguageBar.h"
 
 #include <atlcomcli.h>
 #include <windows.h>
@@ -98,9 +99,10 @@ private:
     std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
     std::unique_ptr<ITextService> m_pTextService = nullptr;
     CComPtr<InputMethodManager>   m_pInputMethodManager;
-    HWND                          m_hWnd                  = nullptr;
-    HWND                          m_hWndParent            = nullptr;
-    float                         m_dpiScale              = 1.0F;
+    HWND                          m_hWnd       = nullptr;
+    HWND                          m_hWndParent = nullptr;
+    float                         m_dpiScale   = 1.0F;
+    LanguageBar                   m_languageBar;
     bool                          m_fFocused              = false;
     bool                          m_fEnabledTsf           = true;
     bool                          m_fWantToggleToolWindow = false;

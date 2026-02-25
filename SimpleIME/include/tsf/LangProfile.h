@@ -39,7 +39,7 @@ const auto DEFAULT_LANG_PROFILE = LangProfile{"ENG", CLSID_NULL, GUID_NULL, LANG
 inline auto ToStringFromGUID2(const GUID &guid, std::wstring &wsGuid) -> void
 {
     wsGuid.resize(40);
-    StringFromGUID2(guid, wsGuid.data(), wsGuid.size());
+    StringFromGUID2(guid, wsGuid.data(), static_cast<int>(wsGuid.size()));
 }
 
 } // namespace Ime

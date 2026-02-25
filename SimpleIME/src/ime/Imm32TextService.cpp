@@ -7,12 +7,68 @@
 #include "ime/ITextService.h"
 #include "log.h"
 
+#include <algorithm>
 #include <imm.h>
 
 #pragma comment(lib, "imm32.lib")
 
 namespace Ime::Imm32
 {
+using State = Ime::Core::State;
+
+namespace
+{
+
+void UpdateConversionMode(HIMC hIMC)
+{
+    DWORD conversion = 0;
+    DWORD sentence   = 0;
+    if (ImmGetConversionStatus(hIMC, &conversion, &sentence) != 0)
+    {
+        switch (conversion & IME_CMODE_LANGUAGE)
+        {
+            case IME_CMODE_ALPHANUMERIC:
+                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
+                logger::debug("CMODE:ALPHANUMERIC, Disable IME");
+                break;
+            default:
+                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
+                break;
+        }
+    }
+}
+
+void OnSetOpenStatus(HIMC hIMC)
+{
+    if (ImmGetOpenStatus(hIMC) != 0)
+    {
+        State::GetInstance().Set(State::IME_OPEN);
+        UpdateConversionMode(hIMC);
+    }
+    else
+    {
+        State::GetInstance().Clear(State::IME_OPEN);
+    }
+}
+
+auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool
+{
+    if ((compFlag & flagToCheck) != 0)
+    {
+        const LONG bufLenInBytes = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
+        if (bufLenInBytes > 0)
+        {
+            const auto dBufLenInBytes = static_cast<DWORD>(bufLenInBytes);
+            pWcharBuf.resize((dBufLenInBytes / sizeof(WCHAR)) + 1);
+            ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf.data(), dBufLenInBytes);
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
 void Imm32TextService::OnStartComposition()
 {
     State::GetInstance().Set(State::IN_COMPOSING);
@@ -70,11 +126,11 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
     return false;
 }
 
-bool Imm32TextService::OnFocus(bool focus)
+auto Imm32TextService::OnFocus(bool focus) -> bool
 {
     if (focus)
     {
-        if (!m_hIMC)
+        if (m_hIMC == nullptr)
         {
             m_hIMC = ImmCreateContext();
         }
@@ -91,10 +147,10 @@ bool Imm32TextService::OnFocus(bool focus)
 auto Imm32TextService::CommitCandidate(DWORD index) -> bool
 {
     logger::debug("CommitCandidate {}", index);
-    const HIMC hImc = ImmGetContext(m_imeHwnd);
+    HIMC hImc = ImmGetContext(m_imeHwnd);
 
     bool result = true;
-    if (hImc)
+    if (hImc != nullptr)
     {
         result = ImmNotifyIME(hImc, NI_SELECTCANDIDATESTR, 0, index) != FALSE;
     }
@@ -115,7 +171,7 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, compositionSting))
     {
         m_textEditor.SelectAll();
-        m_textEditor.InsertText(compositionSting.c_str(), compositionSting.length());
+        m_textEditor.InsertText(compositionSting);
         if (spdlog::should_log(spdlog::level::trace))
         {
             const auto str = WCharUtils::ToString(compositionSting);
@@ -124,29 +180,36 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     }
     else if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, compositionSting))
     {
-        const long cursorPos  = ImmGetCompositionStringW(hIMC, GCS_CURSORPOS, nullptr, 0);
-        const long deltaStart = ImmGetCompositionStringW(hIMC, GCS_DELTASTART, nullptr, 0);
-        UpdateComposition(compositionSting, cursorPos, deltaStart);
+        const int32_t cursorPos  = ImmGetCompositionStringW(hIMC, GCS_CURSORPOS, nullptr, 0);
+        const int32_t deltaStart = ImmGetCompositionStringW(hIMC, GCS_DELTASTART, nullptr, 0);
+        // IMM_ERROR_NODATA or IMM_ERROR_GENERAL
+        if (cursorPos == IMM_ERROR_GENERAL || deltaStart == IMM_ERROR_GENERAL)
+        {
+            logger::error("Get composition cursor position or delta start failed.");
+            return;
+        }
+        if (cursorPos >= 0 && deltaStart >= 0)
+        {
+            UpdateComposition(compositionSting, static_cast<size_t>(cursorPos), static_cast<size_t>(deltaStart));
+        }
     }
     ImmReleaseContext(hWnd, hIMC);
 }
 
-void Imm32TextService::UpdateComposition(const std::wstring &compStr, long cursorPos, long deltaStart)
+void Imm32TextService::UpdateComposition(const std::wstring &compStr, size_t cursorPos, size_t deltaStart)
 {
-    if (cursorPos < 0) cursorPos = 0;
-    if (deltaStart < 0) deltaStart = 0;
+    const auto prevSize = m_textEditor.GetTextSize();
 
-    const long prevSize = static_cast<long>(m_textEditor.GetTextSize());
-    if (deltaStart > prevSize) deltaStart = prevSize;
+    deltaStart = std::clamp(deltaStart, 0LLU, prevSize);
 
-    m_textEditor.Select(deltaStart, prevSize);
+    m_textEditor.Select(static_cast<int32_t>(deltaStart), -1);
 
-    const auto length = static_cast<long>(compStr.length());
-    if (deltaStart > length) deltaStart = length;
-    m_textEditor.InsertText(compStr.c_str() + deltaStart, length - deltaStart);
+    const auto length = compStr.length();
+    deltaStart        = std::min(deltaStart, length);
+    m_textEditor.InsertText(compStr.substr(deltaStart));
 
-    cursorPos = std::min(cursorPos, static_cast<long>(m_textEditor.GetTextSize()));
-    m_textEditor.Select(cursorPos, cursorPos);
+    cursorPos = std::clamp(cursorPos, 0LLU, m_textEditor.GetTextSize());
+    m_textEditor.Select(static_cast<int32_t>(cursorPos), static_cast<int32_t>(cursorPos));
 
     if (spdlog::should_log(spdlog::level::trace))
     {
@@ -155,22 +218,7 @@ void Imm32TextService::UpdateComposition(const std::wstring &compStr, long curso
     }
 }
 
-auto Imm32TextService::GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool
-{
-    if ((compFlag & flagToCheck) != 0)
-    {
-        const LONG bufLenInBytes = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
-        if (bufLenInBytes > 0)
-        {
-            pWcharBuf.resize(bufLenInBytes / sizeof(WCHAR) + 1);
-            ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf.data(), bufLenInBytes);
-            return true;
-        }
-    }
-    return false;
-}
-
-auto Imm32TextService::ImeNotify(const HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool
+auto Imm32TextService::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM /*lParam*/) -> bool
 {
     // logger::debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
     switch (wParam)
@@ -232,12 +280,12 @@ void Imm32TextService::CloseCandidate()
     m_candidateUi.Close();
 }
 
-void Imm32TextService::ChangeCandidate(const HIMC hIMC)
+void Imm32TextService::ChangeCandidate(HIMC hIMC)
 {
     ChangeCandidateAt(hIMC);
 }
 
-void Imm32TextService::ChangeCandidateAt(const HIMC hIMC)
+void Imm32TextService::ChangeCandidateAt(HIMC hIMC)
 {
     DWORD bufLen = ImmGetCandidateListW(hIMC, 0, nullptr, 0);
     if (bufLen == 0)
@@ -250,7 +298,7 @@ void Imm32TextService::ChangeCandidateAt(const HIMC hIMC)
         logger::warn("Global alloc {} failed.", bufLen);
         return;
     }
-    const auto lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
+    auto *lpCandList = static_cast<LPCANDIDATELIST>(GlobalLock(hGlobal));
     if (lpCandList == nullptr)
     {
         logger::error("Candidate alloc memory failed.");
@@ -264,7 +312,7 @@ void Imm32TextService::ChangeCandidateAt(const HIMC hIMC)
     GlobalFree(hGlobal);
 }
 
-void Imm32TextService::DoUpdateCandidateList(const LPCANDIDATELIST lpCandList)
+void Imm32TextService::DoUpdateCandidateList(LPCANDIDATELIST lpCandList)
 {
     DWORD dwStartIndex = lpCandList->dwPageStart;
     DWORD dwEndIndex   = dwStartIndex + lpCandList->dwPageSize;
@@ -275,46 +323,13 @@ void Imm32TextService::DoUpdateCandidateList(const LPCANDIDATELIST lpCandList)
     auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);
     for (DWORD index = 0; dwStartIndex < dwEndIndex; ++index, ++dwStartIndex)
     {
-        auto        pcCandidate  = lpCandListByte + lpCandList->dwOffset[dwStartIndex];
+        auto       *pcCandidate  = lpCandListByte + lpCandList->dwOffset[dwStartIndex];
         auto       *pwcCandidate = reinterpret_cast<LPWCH>(pcCandidate);
-        auto        sizeInBytes  = WCharUtils::RequiredByteLength(pwcCandidate);
-        std::string ansiStr(sizeInBytes, 0);
-        WCharUtils::ToString(pwcCandidate, ansiStr.data(), sizeInBytes);
+        std::string ansiStr      = WCharUtils::ToString(pwcCandidate, -1);
         ansiStr.insert_range(ansiStr.begin(), std::format("{}. ", index + 1));
         m_candidateUi.PushBack(ansiStr);
     }
     m_candidateUi.SetSelection(lpCandList->dwSelection);
 }
 
-void Imm32TextService::OnSetOpenStatus(const HIMC hIMC)
-{
-    if (ImmGetOpenStatus(hIMC) != 0)
-    {
-        State::GetInstance().Set(State::IME_OPEN);
-        UpdateConversionMode(hIMC);
-    }
-    else
-    {
-        State::GetInstance().Clear(State::IME_OPEN);
-    }
-}
-
-void Imm32TextService::UpdateConversionMode(HIMC hIMC)
-{
-    DWORD conversion = 0;
-    DWORD sentence   = 0;
-    if (ImmGetConversionStatus(hIMC, &conversion, &sentence) != 0)
-    {
-        switch (conversion & IME_CMODE_LANGUAGE)
-        {
-            case IME_CMODE_ALPHANUMERIC:
-                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
-                logger::debug("CMODE:ALPHANUMERIC, Disable IME");
-                break;
-            default:
-                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
-                break;
-        }
-    }
-}
 } // namespace Ime::Imm32

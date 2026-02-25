@@ -35,20 +35,11 @@ class ErrorNotifier
 public:
     void addError(const std::string &txt, ErrorMsg::Level level = ErrorMsg::Level::debug);
 
-    constexpr void Debug(const std::string &txt)
-    {
-        addError(txt, ErrorMsg::Level::debug);
-    }
+    constexpr void Debug(const std::string &txt) { addError(txt, ErrorMsg::Level::debug); }
 
-    constexpr void Warning(const std::string &txt)
-    {
-        addError(txt, ErrorMsg::Level::warning);
-    }
+    constexpr void Warning(const std::string &txt) { addError(txt, ErrorMsg::Level::warning); }
 
-    constexpr void Error(const std::string &txt)
-    {
-        addError(txt, ErrorMsg::Level::error);
-    }
+    constexpr void Error(const std::string &txt) { addError(txt, ErrorMsg::Level::error); }
 
     constexpr void clearConfirmed()
     {
@@ -65,14 +56,11 @@ public:
 
     void Show();
 
-    void SetMessageLevel(ErrorMsg::Level level)
-    {
-        m_currentLevel = level;
-    }
+    void SetMessageLevel(ErrorMsg::Level level) { m_currentLevel = level; }
 
     void SetMessageDuration(const int seconds)
     {
-        size_t seconds1 = seconds < 0 ? ULONG_LONG_MAX : seconds;
+        size_t seconds1 = seconds < 0 ? ULONG_LONG_MAX : static_cast<size_t>(seconds);
         m_duration      = std::chrono::seconds(seconds1);
     }
 
@@ -83,7 +71,7 @@ public:
     }
 
 private:
-    void renderMessage(const ErrorMsg &msg, int idx);
+    void renderMessage(const ErrorMsg &msg, size_t idx);
 
     static std::string currentTime();
 };

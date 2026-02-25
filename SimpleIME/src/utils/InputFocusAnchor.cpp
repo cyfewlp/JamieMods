@@ -15,8 +15,7 @@ auto QueryFocusPath(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GFxValue &f
     return movieView->Invoke("Selection.getFocus", &focusPath, nullptr, 0) && focusPath.IsString();
 }
 
-auto GetFocusMember(const RE::GPtr<RE::GFxMovieView> &movieView, const RE::GFxValue &focusPath, RE::GFxValue &focused)
-    -> bool
+auto GetFocusMember(const RE::GPtr<RE::GFxMovieView> &movieView, const RE::GFxValue &focusPath, RE::GFxValue &focused) -> bool
 {
     return movieView->GetVariable(&focused, focusPath.GetString()) && focused.IsObject();
 }
@@ -69,7 +68,8 @@ auto FindActiveInputMovie(RE::GPtr<RE::GFxMovieView> &movieView) -> void
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
-        for (size_t i = ui->menuStack.size() - 1; i > 0; --i)
+        using size_type = typename RE::BSTArrayBase::size_type;
+        for (size_type i = ui->menuStack.size() - 1; i > 0; --i)
         {
             auto &menu = ui->menuStack[i];
             if (menu->depthPriority <= MENU_MAX_EFFECTIVE_DEPTH && menu->uiMovie != nullptr)
@@ -103,8 +103,7 @@ auto ComputeScreenMetrics(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GRect
             RE::GFxValue hScroll;
             focusCharacter.GetMember("hscroll", &hScroll);
             std::array const args = {caretIndex};
-            if (RE::GFxValue charBoundaries;
-                focusCharacter.Invoke("getExactCharBoundaries", &charBoundaries, args) && charBoundaries.IsObject())
+            if (RE::GFxValue charBoundaries; focusCharacter.Invoke("getExactCharBoundaries", &charBoundaries, args) && charBoundaries.IsObject())
             {
                 GetBoundsRectFrom(charBoundaries, boundariesCache);
 

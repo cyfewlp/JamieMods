@@ -15,8 +15,6 @@ using OnEndCompositionCallback = void(const std::wstring &compositionString);
 
 class ITextService
 {
-    using State = Core::State;
-
 public:
     ITextService()                                                  = default;
     virtual ~ITextService()                                         = default;
@@ -25,29 +23,20 @@ public:
     auto operator=(const ITextService &other) -> ITextService &     = delete;
     auto operator=(ITextService &&other) noexcept -> ITextService & = delete;
 
-    virtual auto Initialize() -> HRESULT
-    {
-        return S_OK;
-    }
+    virtual auto Initialize() -> HRESULT { return S_OK; }
 
     virtual void UnInitialize() {}
 
     virtual void OnStart([[maybe_unused]] HWND hWnd) {}
 
-    virtual bool OnFocus([[maybe_unused]] bool focus)
-    {
-        return true;
-    }
+    virtual auto OnFocus([[maybe_unused]] bool focus) -> bool { return true; }
 
     virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
     virtual auto GetCandidateUi() -> CandidateUi &                                                = 0;
     virtual auto CommitCandidate(DWORD index) -> bool                                             = 0;
     virtual auto GetTextEditor() -> TextEditor &                                                  = 0;
 
-    virtual void RegisterCallback(OnEndCompositionCallback *callback)
-    {
-        m_OnEndCompositionCallback = callback;
-    }
+    virtual void RegisterCallback(OnEndCompositionCallback *callback) { m_OnEndCompositionCallback = callback; }
 
 protected:
     OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
@@ -57,8 +46,6 @@ namespace Imm32
 {
 class Imm32TextService final : public ITextService
 {
-    using State = Ime::Core::State;
-
 public:
     Imm32TextService()                                                      = default;
     ~Imm32TextService() override                                            = default;
@@ -72,32 +59,21 @@ public:
      */
     auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool override;
 
-    void OnStart(HWND hWnd) override
-    {
-        m_imeHwnd = hWnd;
-    }
+    void OnStart(HWND hWnd) override { m_imeHwnd = hWnd; }
 
     bool OnFocus(bool focus) override;
 
-    [[nodiscard]] auto GetCandidateUi() -> CandidateUi & override
-    {
-        return m_candidateUi;
-    }
+    [[nodiscard]] auto GetCandidateUi() -> CandidateUi & override { return m_candidateUi; }
 
     auto CommitCandidate(DWORD index) -> bool override;
 
-    [[nodiscard]] auto GetTextEditor() -> TextEditor & override
-    {
-        return m_textEditor;
-    }
+    [[nodiscard]] auto GetTextEditor() -> TextEditor & override { return m_textEditor; }
 
 private:
     static void OnStartComposition();
-    static void UpdateConversionMode(HIMC hIMC);
     void        OnEndComposition();
     void        OnComposition(HWND hWnd, LPARAM compFlag);
-    void        UpdateComposition(const std::wstring &compStr, long cursorPos, long deltaStart);
-    static auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool;
+    void        UpdateComposition(const std::wstring &compStr, size_t cursorPos, size_t deltaStart);
     auto        ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
 
     void OpenCandidate(HIMC hIMC);
@@ -105,7 +81,6 @@ private:
     void ChangeCandidate(HIMC hIMC);
     void ChangeCandidateAt(HIMC hIMC);
     void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
-    void OnSetOpenStatus(HIMC hIMC);
 
     HWND m_imeHwnd = nullptr;
     HIMC m_hIMC    = nullptr;

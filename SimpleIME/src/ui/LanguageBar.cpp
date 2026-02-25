@@ -12,12 +12,13 @@
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
+#include "imguiex/m3/facade/button_groups.h"
 #include "menu/MenuNames.h"
 
 #include <RE/U/UIMessage.h>
 #include <RE/U/UIMessageQueue.h>
 
-namespace Ime::LanguageBar
+namespace Ime
 {
 
 namespace
@@ -29,23 +30,15 @@ using Spacing   = ImGuiEx::M3::Spacing;
 
 void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    uint32_t   clickedIndex = UINT32_MAX;
-    const auto styleGuard   = ImGuiEx::StyleGuard()
-                                .Style<ImGuiStyleVar_WindowPadding>({})
-                                .Style<ImGuiStyleVar_ItemSpacing>({m3Styles[Spacing::M], m3Styles[Spacing::M]})
-                                .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onSurface])
-                                .Color<ImGuiCol_FrameBg>(m3Styles.Colors()[ColorRole::surface])
-                                .Color<ImGuiCol_FrameBgHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface))
-                                .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerLow]);
-
-    if (ImGui::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), ImGuiEx::ComboFlags().NoArrowButton()))
+    uint32_t clickedIndex = UINT32_MAX;
+    if (ImGuiEx::M3::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), m3Styles))
     {
         uint32_t idx = 0;
         for (const auto &langProfile : langProfiles)
         {
             ImGui::PushID(static_cast<int>(idx));
-            const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile);
-            if (ImGui::Selectable(langProfile.desc.c_str()))
+            const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile) == TRUE;
+            if (ImGuiEx::M3::MenuItem(langProfile.desc.c_str(), isSelected, m3Styles) && !isSelected)
             {
                 clickedIndex = idx;
             }
@@ -56,7 +49,7 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
             ImGui::PopID();
             idx++;
         }
-        ImGui::EndCombo();
+        ImGuiEx::M3::EndCombo();
     }
     if (clickedIndex != UINT32_MAX)
     {
@@ -64,61 +57,52 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
     }
 }
 
-void AddState(State &state, const State newState)
+void TogglePinned(bool &pinned, bool &showing)
 {
-    state = static_cast<State>(state | newState);
-}
-
-void RemoveState(State &state, const State newState)
-{
-    state = static_cast<State>(state & ~newState);
-}
-
-void TogglePinned(State &state)
-{
-    if (IsPinned(state))
+    if (pinned)
     {
-        RemoveState(state, PINNED);
+        pinned = false;
     }
-    else if (IsShowing(state))
+    else if (showing)
     {
-        RemoveState(state, SHOWING);
+        showing = false;
     }
     else
     {
-        AddState(state, SHOWING);
+        showing = true;
     }
 }
+} // namespace
 
-void SetShowing(State &state, bool showing)
+auto LanguageBar::Draw(
+    const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, ImGuiEx::M3::M3Styles &m3Styles
+) -> bool
 {
-    if (showing)
+    if (wantToggle) TogglePinned(m_pinned, m_showing);
+
+    bool openSettings = false;
+    if (m_showing)
     {
-        AddState(state, SHOWING);
+        const auto styleGuard = ImGuiEx::StyleGuard()
+                                    .Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
+                                    .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
+                                    .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace), 0.F});
+
+        DoDraw(openSettings, activeLangProfile, langProfiles, m3Styles);
     }
-    else
-    {
-        RemoveState(state, SHOWING);
-    }
+    return openSettings;
 }
 
-auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
-    -> void
+auto LanguageBar::DoDraw(
+    bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles
+) -> void
 {
-    if (!IsShowing(state))
-    {
-        return;
-    }
-
     auto flags = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
-    if (IsPinned(state))
+    if (m_pinned)
     {
         flags = flags.NoInputs();
     }
-    bool       showing = IsShowing(state);
-    const bool visible = ImGui::Begin(LANGUAGE_BAR, &showing, flags);
-    SetShowing(state, showing);
-    if (!visible)
+    if (!ImGui::Begin(LANGUAGE_BAR, &m_showing, flags))
     {
         return;
     }
@@ -126,9 +110,9 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
     ImGuiEx::M3::SmallIcon(ICON_MOVE, m3Styles);
     ImGui::SameLine();
 
-    if (ImGuiEx::M3::SmallIconButton(IsPinned(state) ? static_cast<std::string_view>(ICON_PIN) : ICON_PIN_OFF, m3Styles))
+    if (ImGuiEx::M3::SmallIconButton(m_pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, m3Styles))
     {
-        state = static_cast<State>(state | PINNED);
+        m_pinned = true;
 
         if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton())
         {
@@ -140,7 +124,7 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
 
     if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, m3Styles))
     {
-        AddState(state, OPEN_SETTINGS);
+        openSettings = true;
     }
     ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
 
@@ -157,24 +141,4 @@ auto DrawImpl(State &state, const LangProfile &activeLangProfile, const std::vec
     ImGui::End();
 }
 
-} // namespace
-
-auto Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, ImGuiEx::M3::M3Styles &m3Styles)
-    -> State
-{
-    static State state;
-    if (wantToggle) TogglePinned(state);
-
-    const auto styleGuard =
-        ImGuiEx::StyleGuard()
-            .Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
-            .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
-            .Style<ImGuiStyleVar_FramePadding>({m3Styles.GetPixels(M3Spec::ToolBar::paddingX), m3Styles.GetPixels(M3Spec::ToolBar::paddingY)})
-            .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::ToolBar::gap), 0.f});
-    DrawImpl(state, activeLangProfile, langProfiles, m3Styles);
-
-    const auto a_copy = state;
-    RemoveState(state, OPEN_SETTINGS);
-    return a_copy;
-}
-} // namespace Ime::LanguageBar
+} // namespace Ime

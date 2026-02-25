@@ -29,16 +29,16 @@ namespace
 void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     const auto &editorText = editor.GetText();
-    LONG        acpStart   = 0;
-    LONG        acpEnd     = 0;
-    editor.GetSelection(&acpStart, &acpEnd);
+    LONG        acpStart0  = 0;
+    LONG        acpEnd0    = 0;
+    editor.GetSelection(&acpStart0, &acpEnd0);
 
-    const size_t textSize = editorText.size();
-    acpStart              = std::max(0L, acpStart);
-    acpEnd                = std::max(0L, acpEnd);
+    const auto textSize = editorText.size();
+    auto       acpStart = static_cast<size_t>(std::max(0L, acpStart0));
+    auto       acpEnd   = static_cast<size_t>(std::max(0L, acpEnd0));
 
-    acpStart = std::min(static_cast<long>(textSize), acpStart);
-    acpEnd   = std::min(static_cast<long>(textSize), acpEnd);
+    acpStart = std::min(textSize, acpStart);
+    acpEnd   = std::min(textSize, acpEnd);
 
     if (acpEnd < acpStart)
     {
@@ -55,7 +55,7 @@ void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3St
     if (acpStart > 0)
     {
         std::string startToCaret;
-        success = WCharUtils::ToString(editorText.c_str(), acpStart, startToCaret);
+        success = WCharUtils::ToString(editorText.c_str(), static_cast<int>(acpStart), startToCaret);
         if (success)
         {
             ImGui::TextUnformatted(startToCaret.c_str());
@@ -95,11 +95,12 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
 {
     using Spacing   = ImGuiEx::M3::Spacing;
     using ColorRole = M3Spec::ColorRole;
+    using size_type = CandidateUi::size_type;
 
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
-        DWORD index   = 0;
-        DWORD clicked = candidateList.size();
+        size_type index   = 0;
+        size_type clicked = candidateList.size();
 
         ImGuiEx::StyleGuard styleGuard;
         styleGuard.Style<ImGuiStyleVar_ItemSpacing>({0, 0})
@@ -117,12 +118,8 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
             {
                 styleGuard1.Color<ImGuiCol_Button>(m3Styles.Colors()[ColorRole::primaryContainer])
                     .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onPrimaryContainer])
-                    .Color<ImGuiCol_ButtonHovered>(
-                        m3Styles.Colors().Hovered(ColorRole::primaryContainer, ColorRole::onPrimaryContainer)
-                    )
-                    .Color<ImGuiCol_ButtonActive>(
-                        m3Styles.Colors().Pressed(ColorRole::primaryContainer, ColorRole::onPrimaryContainer)
-                    );
+                    .Color<ImGuiCol_ButtonHovered>(m3Styles.Colors().Hovered(ColorRole::primaryContainer, ColorRole::onPrimaryContainer))
+                    .Color<ImGuiCol_ButtonActive>(m3Styles.Colors().Pressed(ColorRole::primaryContainer, ColorRole::onPrimaryContainer));
             }
 
             if (ImGui::Button(candidate.c_str()))
@@ -135,7 +132,7 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
         }
         if (clicked < candidateList.size())
         {
-            ImeController::GetInstance()->CommitCandidate(clicked);
+            ImeController::GetInstance()->CommitCandidate(static_cast<DWORD>(clicked));
         }
     }
 }
@@ -203,10 +200,7 @@ void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size)
 }
 } // namespace
 
-void ImeWindow::Draw(
-    const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings,
-    const ImGuiEx::M3::M3Styles &m3Styles
-)
+void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     static bool shouldRelayout = true;
     static bool imeAppearing   = true;
@@ -230,14 +224,12 @@ void ImeWindow::Draw(
         ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
     }
 
-    constexpr auto flags =
-        ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
-    const auto mainStyleGuard =
-        ImGuiEx::StyleGuard()
-            .Style<ImGuiStyleVar_WindowPadding>({})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::primary))
-            .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(M3Spec::ColorRole::surfaceContainerLow))
-            .Color<ImGuiCol_Separator>(m3Styles.Colors().at(M3Spec::ColorRole::outlineVariant));
+    constexpr auto flags          = ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
+    const auto     mainStyleGuard = ImGuiEx::StyleGuard()
+                                    .Style<ImGuiStyleVar_WindowPadding>({})
+                                    .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::primary))
+                                    .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(M3Spec::ColorRole::surfaceContainerLow))
+                                    .Color<ImGuiCol_Separator>(m3Styles.Colors().at(M3Spec::ColorRole::outlineVariant));
 
     const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     if (ImGui::Begin("IME", nullptr, flags))

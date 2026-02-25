@@ -46,7 +46,6 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_FreeType_Sources}
 #    ${IMGUI_DEMO_SOURCES}
-    ${CMAKE_SOURCE_DIR}/common/json/simdjson.cpp
     ${CMAKE_SOURCE_DIR}/common/imguiex/m3.cpp
     ${CMAKE_SOURCE_DIR}/common/imguiex/imguiex_m3.cpp
     ${CMAKE_SOURCE_DIR}/common/imguiex/imguiex_m3_slider.cpp
@@ -64,7 +63,6 @@ endif ()
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
-    SIMPLE_EXPORTS
     IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h"
 )
 
@@ -72,11 +70,14 @@ target_compile_definitions(${PROJECT_NAME}
 target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
-    ${DETOURS_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/common
-    ${IMGUI_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_include_directories(${PROJECT_NAME}
+        SYSTEM PRIVATE
+        ${DETOURS_INCLUDE_DIRS}
+        ${IMGUI_INCLUDE_DIRS}
 )
 
 # linkage
@@ -88,6 +89,8 @@ target_link_libraries(
     Freetype::Freetype
     MaterialYou
 )
+
+target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion)
 
 include(FetchContent)
 

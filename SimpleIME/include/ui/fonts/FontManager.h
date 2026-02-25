@@ -22,20 +22,11 @@ private:
 public:
     FontInfo(const Index index, const std::string &name) : index(index), name(name) {}
 
-    bool IsInvalid() const
-    {
-        return index == -1;
-    }
+    auto IsInvalid() const -> bool { return index == -1; }
 
-    auto GetName() const -> const std::string &
-    {
-        return name;
-    }
+    auto GetName() const -> const std::string & { return name; }
 
-    auto GetIndex() const -> Index
-    {
-        return index;
-    }
+    auto GetIndex() const -> Index { return index; }
 };
 
 class FontManager
@@ -43,10 +34,7 @@ class FontManager
     std::vector<FontInfo> m_fontList;
 
 public:
-    auto GetFontInfoList() const -> const std::vector<FontInfo> &
-    {
-        return m_fontList;
-    }
+    auto GetFontInfoList() const -> const std::vector<FontInfo> & { return m_fontList; }
 
     void FindInstalledFonts();
 

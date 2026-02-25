@@ -106,7 +106,7 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 
     InitializeTextService();
     m_pImeWindow = std::make_unique<ImeWindow>();
-    m_pImeUi     = std::make_unique<ImeUI>(this);
+    m_pImeUi     = std::make_unique<ImeUI>();
 
     m_pInputMethodManager = new InputMethodManager();
     if (FAILED(m_pInputMethodManager->Initialize(tsfSupport.GetThreadMgr())))
@@ -131,9 +131,7 @@ void ImeWnd::UnInitialize() const noexcept
 void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 {
     logger::info("Start ImeWnd Thread...");
-    m_hWnd = CreateWindowExW(
-        0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, Global::g_hModule, this
-    );
+    m_hWnd = CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, Global::g_hModule, this);
     if (m_hWnd == nullptr)
     {
         throw SimpleIMEException("Create ImeWnd failed");
@@ -240,14 +238,13 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
         {
             const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
             const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
-            const auto  state        = LanguageBar::Draw(m_fWantToggleToolWindow, activeLang, langProfiles, m3Styles);
-            if (LanguageBar::IsOpenSettings(state))
+            if (m_languageBar.Draw(m_fWantToggleToolWindow, activeLang, langProfiles, m3Styles))
             {
                 settings.appearance.showSettings = true;
             }
             m_fWantToggleToolWindow = false;
 
-            if (LanguageBar::IsShowing(state))
+            if (m_languageBar.IsShowing())
             {
                 m_pImeUi->DrawSettings(settings, m3Styles);
             }
@@ -264,8 +261,7 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     double avgMs = 0;
     if (++s_frameCount % 60 == 0)
     {
-        avgMs = (s_accumUs / 60.0) / 1000.0;
-
+        avgMs     = static_cast<double>(s_accumUs) / 60000.0;
         s_accumUs = 0;
     }
     ImGui::Value("Avg frame: ", static_cast<float>(avgMs));
@@ -342,10 +338,9 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case WM_CHAR: {
             if (pThis == nullptr) break;
-            if (ImeController::GetInstance()->IsModEnabled() &&
-                Core::State::GetInstance().Has(State::LANG_PROFILE_ACTIVATED))
+            if (ImeController::GetInstance()->IsModEnabled() && Core::State::GetInstance().Has(State::LANG_PROFILE_ACTIVATED))
             {
-                Utils::SendStringToGame(std::wstring(1, wParam));
+                Utils::SendStringToGame(std::wstring(1, LOWORD(wParam)));
             }
             return 0;
         }
