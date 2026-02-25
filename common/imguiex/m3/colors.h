@@ -86,6 +86,9 @@ inline float FastFromLinear(float l)
     return sqrtf(l);
 }
 
+//! @brief CPU side blending of two colors in linear space.
+//! The alpha of the blended color is always 1.0F, as it is used for blending state layers on
+//! top of surface colors.
 inline auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
 {
     ImVec4 bL = {FastToLinear(base.x), FastToLinear(base.y), FastToLinear(base.z), base.w};
@@ -100,19 +103,39 @@ inline auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
     };
 }
 
-inline auto BlendHovered(ImVec4 color, ImVec4 overlay) -> ImVec4
+//! @brief Set the alpha of the overlay color to the opacity value.
+//! Note: these color retived from the color scheme and alpha alayws 1.0F,
+//! so we can directly use the opacity value as the alpha of the overlay color.
+inline auto MakeOverlay(ImVec4 overlay, float opacity) -> ImVec4
 {
-    return BlendState(color, overlay, HOVER_OPACITY);
+    return {overlay.x, overlay.y, overlay.z, opacity};
 }
 
-inline auto BlendPressed(ImVec4 color, ImVec4 overlay) -> ImVec4
+//! @brief Blend the overlay color or make an overlay color if the base color is fully transparent.
+//! if the base color is fully transparent, the blend will defered to GPU side and we only need to provide
+//! the overlay color with correct opacity. Otherwise, we need to blend the color on CPU side to get the correct result.
+inline auto BlendOrMakeOverlay(ImVec4 color, ImVec4 overlay, float opacity) -> ImVec4
 {
-    return BlendState(color, overlay, PRESSED_OPACITY);
+    if (color.w < 1e-6F)
+    {
+        return MakeOverlay(overlay, opacity);
+    }
+    return BlendState(color, overlay, opacity);
 }
 
-inline auto BlendState(ImVec4 color, ImVec4 overlay, bool pressed, bool focused, bool hovered) -> ImVec4
+inline auto BlendHoveredOrMakeOverlay(ImVec4 color, ImVec4 overlay) -> ImVec4
 {
-    return BlendState(color, overlay, (pressed || focused) ? PRESSED_OPACITY : (hovered ? HOVER_OPACITY : 0.0F));
+    return BlendOrMakeOverlay(color, overlay, HOVER_OPACITY);
+}
+
+inline auto BlendPressedOrMakeOverlay(ImVec4 color, ImVec4 overlay) -> ImVec4
+{
+    return BlendOrMakeOverlay(color, overlay, PRESSED_OPACITY);
+}
+
+inline auto BlendStateOrMakeOverlay(ImVec4 color, ImVec4 overlay, bool pressed, bool focused, bool hovered) -> ImVec4
+{
+    return BlendOrMakeOverlay(color, overlay, (pressed || focused) ? PRESSED_OPACITY : (hovered ? HOVER_OPACITY : 0.0F));
 }
 
 } // namespace ColorUtils

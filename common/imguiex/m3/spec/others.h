@@ -48,19 +48,6 @@ struct List
     static constexpr Unit minContentHeight = minHeight - paddingY * 2U;
 };
 
-/**
- * @note **Toolbar is designed for SMALL icon buttons.** Internal spacing (padding/gap)
- * excludes additional button margins. **To ensure consistent styling**, please call
- * `M3::IconButton<SizeTips::SMALL>`.
- */
-struct ToolBar
-{
-    static constexpr Unit rounding = dp<32>();
-    static constexpr Unit paddingX = dp<8>();
-    static constexpr Unit paddingY = dp<8>();
-    static constexpr Unit gap      = dp<4>();
-};
-
 struct Tooltips
 {
     static constexpr auto textRole = TextRole::BodySmall;

@@ -31,14 +31,14 @@ using Spacing   = ImGuiEx::M3::Spacing;
 void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     uint32_t clickedIndex = UINT32_MAX;
-    if (ImGuiEx::M3::BeginCombo("###InstalledIME", activeLangProfile.desc.c_str(), m3Styles))
+    if (ImGuiEx::M3::BeginMenu("###InstalledIME", m3Styles, ImGuiEx::M3::Spec::MenuColors::Vibrant))
     {
         uint32_t idx = 0;
         for (const auto &langProfile : langProfiles)
         {
             ImGui::PushID(static_cast<int>(idx));
             const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile) == TRUE;
-            if (ImGuiEx::M3::MenuItem(langProfile.desc.c_str(), isSelected, m3Styles) && !isSelected)
+            if (ImGuiEx::M3::MenuItemVibrant(langProfile.desc.c_str(), isSelected, m3Styles) && !isSelected)
             {
                 clickedIndex = idx;
             }
@@ -49,7 +49,7 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
             ImGui::PopID();
             idx++;
         }
-        ImGuiEx::M3::EndCombo();
+        ImGuiEx::M3::EndMenu();
     }
     if (clickedIndex != UINT32_MAX)
     {
@@ -83,11 +83,6 @@ auto LanguageBar::Draw(
     bool openSettings = false;
     if (m_showing)
     {
-        const auto styleGuard = ImGuiEx::StyleGuard()
-                                    .Color<ImGuiCol_WindowBg>(m3Styles.Colors()[ColorRole::surfaceContainer])
-                                    .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(M3Spec::ToolBar::rounding))
-                                    .Style<ImGuiStyleVar_ItemSpacing>({m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace), 0.F});
-
         DoDraw(openSettings, activeLangProfile, langProfiles, m3Styles);
     }
     return openSettings;
@@ -102,43 +97,48 @@ auto LanguageBar::DoDraw(
     {
         flags = flags.NoInputs();
     }
-    if (!ImGui::Begin(LANGUAGE_BAR, &m_showing, flags))
+    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, &m_showing, m3Styles, M3Spec::ToolBarColors::Vibrant, flags))
     {
-        return;
-    }
-
-    ImGuiEx::M3::SmallIcon(ICON_MOVE, m3Styles);
-    ImGui::SameLine();
-
-    if (ImGuiEx::M3::SmallIconButton(m_pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, m3Styles))
-    {
-        m_pinned = true;
-
-        if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton())
-        {
-            messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-        }
-    }
-
-    ImGui::SameLine();
-
-    if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, m3Styles))
-    {
-        openSettings = true;
-    }
-    ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
-
-    ImGui::SameLine();
-    DrawInputMethodsCombo(activeLangProfile, langProfiles, m3Styles);
-
-    ImGui::SameLine();
-    if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))
-    {
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("ENG");
+        ImGuiEx::M3::SmallIcon(ICON_MOVE, m3Styles);
         ImGui::SameLine();
+
+        constexpr auto iconButtonColors = ImGuiEx::M3::Spec::IconButtonColors::Standard;
+        if (ImGuiEx::M3::SmallIconButton(m_pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, m3Styles, iconButtonColors))
+        {
+            m_pinned = true;
+
+            if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton())
+            {
+                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
+            }
+        }
+
+        ImGui::SameLine();
+
+        if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, m3Styles, iconButtonColors))
+        {
+            openSettings = true;
+        }
+        ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
+
+        ImGui::SameLine();
+
+        if (ImGuiEx::M3::SmallButton(activeLangProfile.desc.c_str(), "", m3Styles))
+        {
+            ImGui::OpenPopup("###InstalledIME");
+        }
+        DrawInputMethodsCombo(activeLangProfile, langProfiles, m3Styles);
+
+        ImGui::SameLine();
+        if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))
+        {
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("ENG");
+            ImGui::SameLine();
+        }
+
+        ImGuiEx::M3::EndFloatingToolbar();
     }
-    ImGui::End();
 }
 
 } // namespace Ime

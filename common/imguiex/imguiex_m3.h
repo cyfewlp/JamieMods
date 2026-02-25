@@ -11,6 +11,7 @@
 #include "m3/spec/fab.h"
 #include "m3/spec/menu.h"
 #include "m3/spec/text_field.h"
+#include "m3/spec/tool_bar.h"
 
 #include <functional>
 #include <string_view>
@@ -325,6 +326,15 @@ inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole 
 }
 
 auto EndDockedToolbar() -> void;
+
+/**
+ * @brief A floating Toolbar
+ * A window `Begin/End` wrapepr.
+ */
+auto BeginFloatingToolbar(
+    const char *name, bool *p_open, const M3Styles &m3Styles, Spec::ToolBarColors colors = Spec::ToolBarColors::Standard, WindowFlags flags = {}
+) -> bool;
+auto EndFloatingToolbar() -> void;
 
 auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors, const M3Styles &m3Styles) -> bool;
 

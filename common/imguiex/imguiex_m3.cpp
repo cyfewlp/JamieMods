@@ -17,6 +17,7 @@
 #include "m3/facade/text_field.h"
 #include "m3/spec/layout.h"
 #include "m3/spec/text_field.h"
+#include "m3/spec/tool_bar.h"
 
 #include <cmath>
 
@@ -24,6 +25,18 @@
     #error "ImGui version changed! imguiex_m3 only supports v1.92.6WIP"
 #endif
 
+/**
+ * @brief Stateless layout implementation relying on M3Styles.
+ * * **Core Design:** This implementation is entirely stateless and does not maintain
+ * its own context. It relies on an **implicit layout agreement**:
+ * - All components use `window->DC.CurrLineSize.y` as their definitive line height.
+ * - Components are automatically centered vertically within this line.
+ * * **Example:** `BeginToolBar` emits a dummy item spanning the container's full
+ * height to initialize the `CurrLineSize.y` for subsequent items.
+ *
+ * * @todo Support configurable alignment. Currently, vertical centering is hardcoded;
+ * future versions should allow custom alignment strategies.
+ */
 namespace ImGuiEx::M3
 {
 
@@ -65,6 +78,17 @@ inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_vi
 inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const M3Styles &m3Styles, const Spec::ColorRole contentRole)
 {
     DrawText(drawList, textPos, text, m3Styles.Colors()[contentRole]);
+}
+
+//! @brief Align the cursor position to the center of the line height if the line height is larger than the content height.
+inline auto GetAlignedCursorPos(const ImGuiWindow *window, const float height) -> ImVec2
+{
+    if (window->DC.CurrLineSize.y > height)
+    {
+        const auto offsetY = HalfDiff(window->DC.CurrLineSize.y, height);
+        return ImVec2(window->DC.CursorPos.x, window->DC.CursorPos.y + offsetY);
+    }
+    return window->DC.CursorPos;
 }
 
 } // namespace
@@ -302,7 +326,7 @@ auto DrawTextField(
         {
             case Spec::TextFieldState::Hovered:
                 indicatorColor = m3Styles.Colors()[Spec::FilledTextFieldHovered::ActiveIndicatorColor];
-                bgColor        = ColorUtils::BlendHovered(bgColor, inputTextColor);
+                bgColor        = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, inputTextColor);
                 break;
             case Spec::TextFieldState::Disabled: {
                 bgColor          = m3Styles.Colors()[Spec::FilledTextFieldDisabled::ContainerColor];
@@ -475,7 +499,8 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
     }
     const auto   height = m3Styles.GetPixels(TfcSpec::Height);
     const ImVec2 size(ImMax(ImGui::GetContentRegionAvail().x, minWidth), height);
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + size);
     const bool   editable = buffer != nullptr;
 
     ImGui::ItemSize(size);
@@ -597,7 +622,8 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, const M3St
 
     const auto   height = GetPixels(m3Styles, sizing.containerHeight);
     const ImVec2 size   = {height, height};
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + size);
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, 0U))
     {
@@ -636,7 +662,8 @@ auto IconButton(
 
     const auto   height = GetPixels(m3Styles, sizing.containerHeight);
     const ImVec2 size   = {height, height};
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + size);
 
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, id))
@@ -652,6 +679,7 @@ auto IconButton(
     const bool disabled = IsItemDisabled();
     const bool active   = hovered && held;
 
+    const auto hasBgColor   = ibColors == Spec::IconButtonColors::Filled || ibColors == Spec::IconButtonColors::Tonal;
     const auto colors       = Spec::GetIconButtonColorsValues(ibColors, disabled);
     ImVec4     bgColor      = m3Styles.Colors()[colors.containerColor];
     ImVec4     iconColor    = m3Styles.Colors()[colors.iconColor];
@@ -667,11 +695,11 @@ auto IconButton(
     {
         if (hovered)
         {
-            bgColor = ColorUtils::BlendHovered(bgColor, iconColor);
+            bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, iconColor);
         }
         else if (active)
         {
-            bgColor = ColorUtils::BlendPressed(bgColor, iconColor);
+            bgColor = ColorUtils::BlendPressedOrMakeOverlay(bgColor, iconColor);
         }
     }
 
@@ -709,7 +737,8 @@ auto Fab(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Style
     const ImGuiID id     = window->GetID(TextStart(icon), TextEnd(icon));
     const auto    height = m3Styles.GetPixels(Spec::FabMedium::ContainerHeight);
     const ImVec2  size   = {height, height};
-    const ImRect  bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const ImVec2  posMin = GetAlignedCursorPos(window, height);
+    const ImRect  bb(posMin, posMin + size);
 
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, id))
@@ -732,11 +761,11 @@ auto Fab(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Style
 
     if (hovered)
     {
-        bgColor = ColorUtils::BlendHovered(bgColor, iconColor);
+        bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, iconColor);
     }
     else if (active)
     {
-        bgColor = ColorUtils::BlendPressed(bgColor, iconColor);
+        bgColor = ColorUtils::BlendPressedOrMakeOverlay(bgColor, iconColor);
     }
 
     const auto iconSize = m3Styles.GetPixels(sizing.iconSize);
@@ -776,7 +805,8 @@ auto Button(std::string_view label, std::string_view icon, const Spec::SizeTips 
     }
     const auto   height = m3Styles.GetPixels(sizing.containerHeight);
     const ImVec2 size(width, height);
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + size);
 
     const auto id = window->GetID(TextStart(label), TextEnd(label));
     ImGui::ItemSize(size);
@@ -810,11 +840,11 @@ auto Button(std::string_view label, std::string_view icon, const Spec::SizeTips 
         iconColor = m3Styles.Colors()[Spec::FilledButtonEnabled::IconColor];
         if (hovered)
         {
-            bgColor = ColorUtils::BlendHovered(bgColor, textColor);
+            bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, textColor);
         }
         else if (active)
         {
-            bgColor = ColorUtils::BlendPressed(bgColor, textColor);
+            bgColor = ColorUtils::BlendPressedOrMakeOverlay(bgColor, textColor);
         }
     }
 
@@ -1007,6 +1037,42 @@ auto EndDockedToolbar() -> void
     ImGui::PopStyleVar();
 }
 
+auto BeginFloatingToolbar(const char *name, bool *p_open, const M3Styles &m3Styles, const Spec::ToolBarColors colors, WindowFlags flags) -> bool
+{
+    using TbfSpec        = Spec::ToolBar<Spec::ToolBarColors::Standard>;
+    using TbfVibrantSpec = Spec::ToolBar<Spec::ToolBarColors::Vibrant>;
+    using TbfSizingSpec  = Spec::ToolBarSizing<Spec::ToolBarVariant::Floating>;
+
+    const auto paddingX = GetPixels(m3Styles, TbfSizingSpec::ContainerLeadingSpace); // leading == trailing
+
+    const auto bgRole     = colors == Spec::ToolBarColors::Standard ? TbfSpec::ContainerColor : TbfVibrantSpec::ContainerColor;
+    const auto styleGuard = StyleGuard()
+                                .Style<ImGuiStyleVar_WindowPadding>(ImVec2(paddingX, 0.0F))
+                                .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(TbfSizingSpec::ContainerShape))
+                                .Color<ImGuiCol_WindowBg>(m3Styles.Colors()[bgRole]);
+
+    const auto minWidth = paddingX * 2.0F;
+    const auto height   = GetPixels(m3Styles, TbfSizingSpec::HorizontalContainerHeight);
+    ImGui::SetNextWindowSizeConstraints({minWidth, height}, {FLT_MAX, height});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(m3Styles.GetPixels(TbfSizingSpec::ContainerBetweenSpace), 0.0F));
+    const auto visible = ImGui::Begin(name, p_open, flags.AlwaysAutoResize().NoDecoration().NoResize().NoScrollbar());
+    if (!visible)
+    {
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }
+    ImGui::GetCurrentWindow()->DC.CurrLineSize.y = height;
+    // ImGui::Dummy({0.F, height}); // set the current line height.
+    // ImGui::SameLine();
+    return visible;
+}
+
+auto EndFloatingToolbar() -> void
+{
+    ImGui::End();
+    ImGui::PopStyleVar();
+}
+
 namespace
 {
 auto BeginMenu(ImGuiID id, const ImRect &avoidBB, const M3Styles &m3Styles, Spec::MenuColors menuColors, const int32_t maxItemCount) -> bool
@@ -1107,7 +1173,7 @@ auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menu
     }
     else
     {
-        bgColor = ColorUtils::BlendState(bgColor, textColor, hovered && held, focused, hovered);
+        bgColor = ColorUtils::BlendStateOrMakeOverlay(bgColor, textColor, hovered && held, focused, hovered);
     }
 
     ImGui::RenderNavCursor(bb, id, ImGuiNavRenderCursorFlags_Compact);
