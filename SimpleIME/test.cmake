@@ -6,8 +6,9 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(
     ${TEST_PROJ_NAME}
-    src/configs/ConfigSerializer.cpp
-    src/i18n/TranslationLoader.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/ConfigSerializer.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/TranslationLoader.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/ime/TextEditor.cpp"
     ${TEST_SOURCES}
 )
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
@@ -20,15 +21,13 @@ target_link_libraries(
     ${DETOURS_LIBRARY}
     Freetype::Freetype
 )
+target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23)
 target_include_directories(
-    ${TEST_PROJ_NAME}
-    PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${IMGUI_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${SIMPLEINI_INCLUDE_DIRS}
+        ${TEST_PROJ_NAME}
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
 
 include(GoogleTest)
 gtest_discover_tests(${TEST_PROJ_NAME})
