@@ -1054,6 +1054,21 @@ auto BeginFloatingToolbar(const char *name, bool *p_open, const M3Styles &m3Styl
     const auto minWidth = paddingX * 2.0F;
     const auto height   = GetPixels(m3Styles, TbfSizingSpec::HorizontalContainerHeight);
     ImGui::SetNextWindowSizeConstraints({minWidth, height}, {FLT_MAX, height});
+
+    // limit window position
+    if (auto *window = ImGui::FindWindowByName(name); window != nullptr)
+    {
+        const auto vScreenMargin = m3Styles.GetPixels(TbfSizingSpec::VerticalContainerExternalSpace);
+        const auto hScreenMargin = m3Styles.GetPixels(TbfSizingSpec::HorizontalContainerExternalSpace);
+        const auto displaySize   = ImGui::GetIO().DisplaySize;
+        const auto winSize       = window->Size;
+
+        ImVec2 pos = window->Pos;
+        pos.x      = std::clamp(pos.x, hScreenMargin, displaySize.x - hScreenMargin - winSize.x);
+        pos.y      = std::clamp(pos.y, vScreenMargin, displaySize.y - vScreenMargin - winSize.y);
+        ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    }
+
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(m3Styles.GetPixels(TbfSizingSpec::ContainerBetweenSpace), 0.0F));
     const auto visible = ImGui::Begin(name, p_open, flags.AlwaysAutoResize().NoDecoration().NoResize().NoScrollbar());
     if (!visible)

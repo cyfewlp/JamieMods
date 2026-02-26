@@ -330,6 +330,9 @@ auto EndDockedToolbar() -> void;
 /**
  * @brief A floating Toolbar
  * A window `Begin/End` wrapepr.
+ *
+ * @note Toolbar will limit its position to stay within the screen with a margin defined by `Spec::ToolBarSizing::VerticalContainerExternalSpace` and
+ * `Spec::ToolBarSizing::HorizontalContainerExternalSpace`.
  */
 auto BeginFloatingToolbar(
     const char *name, bool *p_open, const M3Styles &m3Styles, Spec::ToolBarColors colors = Spec::ToolBarColors::Standard, WindowFlags flags = {}
