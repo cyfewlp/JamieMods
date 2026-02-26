@@ -32,8 +32,12 @@ async def scrape_m3_tokens(url, component_name):
         await browser.close()
 
 
-async def main(url, component_name):
+async def main(url : str, component_name):
     await scrape_m3_tokens(url, component_name)
+
+async def main_with_url_parsing(url : str):
+    component_name = url[url.rfind("/components/") + len("/components/"):url.rfind("/specs")]
+    await main(url, component_name)
 
 
 async def scan_components(all_components_url):

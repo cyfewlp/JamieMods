@@ -16,13 +16,14 @@
 #include "m3/facade/nav_rail.h"
 #include "m3/facade/text_field.h"
 #include "m3/spec/layout.h"
+#include "m3/spec/search.h"
 #include "m3/spec/text_field.h"
 #include "m3/spec/tool_bar.h"
 
 #include <cmath>
 
-#if IMGUI_VERSION_NUM != 19259
-    #error "ImGui version changed! imguiex_m3 only supports v1.92.6WIP"
+#if IMGUI_VERSION_NUM != 19263
+    #error "ImGui version changed! imguiex_m3 only supports v1.92.6"
 #endif
 
 /**
@@ -78,6 +79,16 @@ inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_vi
 inline void DrawText(ImDrawList *drawList, const ImVec2 &textPos, std::string_view text, const M3Styles &m3Styles, const Spec::ColorRole contentRole)
 {
     DrawText(drawList, textPos, text, m3Styles.Colors()[contentRole]);
+}
+
+inline void RenderNavCursor(const ImRect &bb, ImGuiID id, float rounding, ImGuiNavRenderCursorFlags flags = ImGuiNavRenderCursorFlags_None)
+{
+    auto &g = *GImGui;
+
+    const auto backupRounding = g.Style.FrameRounding;
+    g.Style.FrameRounding     = rounding;
+    ImGui::RenderNavCursor(bb, id, flags);
+    g.Style.FrameRounding = backupRounding;
 }
 
 //! @brief Align the cursor position to the center of the line height if the line height is larger than the content height.
@@ -510,7 +521,7 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
     }
     const auto          *state       = ImGui::GetInputTextState(id);
     const bool           populated   = editable ? (state != nullptr && state->TextLen > 0) : !inputText.empty();
-    bool                 inputActive = false;
+    bool                 inputActive = editable && ImGui::TempInputIsActive(id);
     Spec::TextFieldState tfState     = Spec::TextFieldState::Enabled;
 
     if (IsItemDisabled())
@@ -556,10 +567,11 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
                 ImGui::SetNavCursorVisibleAfterMove();
                 ImGui::FocusWindow(window);
             }
-            else if (g.IO.MouseClicked[0] && g.NavId == id) // clear NavId when clicked outside
-            {
-                ImGui::SetNavID(0U, window->DC.NavLayerCurrent, g.CurrentFocusScopeId, ImRect(g.IO.MousePos, g.IO.MousePos));
-            }
+        }
+
+        if (!hovered && g.IO.MouseClicked[0] && g.NavId == id) // clear NavId when clicked outside
+        {
+            ImGui::SetNavID(0U, window->DC.NavLayerCurrent, g.CurrentFocusScopeId, ImRect(g.IO.MousePos, g.IO.MousePos));
         }
 
         if (g.NavId == id)
@@ -569,6 +581,7 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
         else if (hovered)
         {
             tfState = Spec::TextFieldState::Hovered;
+            ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
         }
     }
 
@@ -588,7 +601,7 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
                                     .Color<ImGuiCol_FrameBg>(ImVec4{})
                                     .Color<ImGuiCol_Border>(ImVec4{})
                                     .Color<ImGuiCol_NavCursor>(ImVec4{})
-                                    .Color<ImGuiCol_InputTextCursor>(m3Styles.Colors()[Spec::ColorRole::primary]);
+                                    .Color<ImGuiCol_InputTextCursor>(m3Styles.Colors()[Spec::TextFieldCommon::CaretColor]);
         const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AutoSelectAll;
         edited                          = ImGui::TempInputText(inputBB, id, idLabel.c_str(), buffer, static_cast<int>(bufferSize), flags);
         // We not compare buffer with previous value. Keep it simple because TempInputText already has the logic to
@@ -596,14 +609,13 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
     }
     else if (populated)
     {
-        const std::string str(inputText);
-        const ImVec2      textPos{inputBB.Min.x, inputBB.Min.y + inputTextOffsetY};
-        ImVec4            inputTextColor = m3Styles.Colors()[Spec::TextFieldCommon::InputTextColor];
+        const ImVec2 textPos{inputBB.Min.x, inputBB.Min.y + inputTextOffsetY};
+        ImVec4       inputTextColor = m3Styles.Colors()[Spec::TextFieldCommon::InputTextColor];
         if (tfState == Spec::TextFieldState::Disabled)
         {
             inputTextColor.w = DISABLED_CONTENT;
         }
-        DrawText(window->DrawList, textPos, str, inputTextColor);
+        DrawText(window->DrawList, textPos, editable ? buffer : inputText, inputTextColor);
     }
     window->DC.CursorPos = nextLineCursorPos;
     return edited;
@@ -1001,6 +1013,129 @@ auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlag
         return {};
     }
     return ListScope{true, std::move(guard)};
+}
+
+auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config, const M3Styles &m3Styles) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+    using SearchBarSpec       = Spec::SearchBar;
+    const auto innerHideLabel = std::format("##{}", strId);
+    const auto id             = window->GetID(TextStart(innerHideLabel), TextEnd(innerHideLabel));
+    const auto minWidth       = m3Styles.GetPixels(SearchBarSpec::ContainerMinWidth);
+    const auto maxWidth       = m3Styles.GetPixels(SearchBarSpec::ContainerMaxWidth);
+    const auto paddingX       = m3Styles.GetPixels(SearchBarSpec::LeadingSpace);
+    const auto iconSize       = m3Styles.GetPixels(SearchBarSpec::IconSize);
+    const auto iconLabelSpace = m3Styles.GetPixels(SearchBarSpec::LeadingIconLabelSpace);
+    const auto height         = m3Styles.GetPixels(SearchBarSpec::ContainerHeight);
+
+    float width = config.hintText.empty() ? 0.0F : ImGui::CalcTextSize(TextStart(config.hintText), TextEnd(config.hintText)).x;
+    width += paddingX * 2.0F;
+    if (!config.icon.empty())
+    {
+        width += iconSize + iconLabelSpace;
+    }
+    if (!config.trailingIcon.empty())
+    {
+        width += iconLabelSpace + iconSize;
+    }
+
+    width = std::clamp(width, minWidth, maxWidth);
+    const ImVec2 size(width, height);
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + size);
+
+    ImGui::ItemSize(size, 0.0F);
+    if (!ImGui::ItemAdd(bb, id, nullptr, ImGuiItemFlags_Inputable))
+    {
+        return false;
+    }
+
+    // draw
+    IM_ASSERT(!IsItemDisabled() && "SearchBar doesn't have disabled state in spec, TextField should be used instead when disabled state is needed.");
+
+    auto      &g       = *GImGui;
+    const bool hover   = ImGui::ItemHoverable(bb, id, g.LastItemData.ItemFlags);
+    const auto clicked = hover && ImGui::IsMouseClicked(0, 0, id);
+    if (hover)
+    {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+    }
+
+    const auto rounding = m3Styles.GetPixels(SearchBarSpec::ContainerShape);
+    RenderNavCursor(bb, id, rounding);
+
+    const ImVec4 bgColor = m3Styles.Colors().GetStateColor(Spec::SearchBar::ContainerColor, Spec::SearchBar::InputTextColor, hover, clicked);
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
+    float      cursorX     = bb.Min.x + paddingX;
+    const auto iconOffsetY = HalfDiff(size.y, iconSize);
+    if (!config.icon.empty())
+    {
+        ImVec4 iconColor = m3Styles.Colors()[Spec::SearchBar::LeadingIconColor];
+        DrawIcon(window->DrawList, iconSize, ImVec2{cursorX, bb.Min.y + iconOffsetY}, config.icon, m3Styles, iconColor);
+
+        cursorX += iconSize + iconLabelSpace;
+    }
+
+    const auto   fontScope = m3Styles.UseTextRole(SearchBarSpec::InputText);
+    const ImVec2 inputPosMin{cursorX, bb.Min.y + HalfDiff(size.y, m3Styles.GetLastText().currText.textSize)};
+
+    ImRect inputBB(inputPosMin, {bb.Max.x - paddingX, inputPosMin.y + m3Styles.GetLastText().currText.textSize});
+    if (!config.trailingIcon.empty())
+    {
+        inputBB.Max.x -= iconSize;
+        ImVec4 iconColor = m3Styles.Colors()[Spec::SearchBar::TrailingIconColor];
+        DrawIcon(window->DrawList, iconSize, ImVec2{inputBB.Max.x, bb.Min.y + iconOffsetY}, config.trailingIcon, m3Styles, iconColor);
+        inputBB.Max.x -= iconLabelSpace;
+    }
+
+    const bool makeActive  = clicked || (g.ActiveId == id);
+    bool       inputActive = ImGui::TempInputIsActive(id);
+
+    if (!inputActive)
+    {
+        if (makeActive && clicked)
+        {
+            ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+        }
+        if (g.NavActivateId == id && (g.NavActivateFlags & ImGuiActivateFlags_PreferInput) != 0)
+        {
+            inputActive = true;
+        }
+        if (makeActive && !inputActive)
+        {
+            ImGui::SetActiveID(id, window);
+            ImGui::SetFocusID(id, window);
+            ImGui::FocusWindow(window);
+            g.NavActivateId    = id;
+            g.NavActivateFlags = ImGuiActivateFlags_PreferInput;
+            inputActive        = true;
+        }
+    }
+
+    const auto nextLineCursorPos = window->DC.CursorPos;
+    bool       edited            = false;
+    if (inputActive)
+    {
+        const auto styleGuard = StyleGuard()
+                                    .Style<ImGuiStyleVar_ItemSpacing>(ImVec2())
+                                    .Color<ImGuiCol_FrameBg>(ImVec4{})
+                                    .Color<ImGuiCol_Border>(ImVec4{})
+                                    .Color<ImGuiCol_NavCursor>(ImVec4{})
+                                    .Color<ImGuiCol_Text>(m3Styles.Colors()[SearchBarSpec::InputTextColor])
+                                    .Color<ImGuiCol_InputTextCursor>(m3Styles.Colors()[SearchBarSpec::FocusIndicatorColor]);
+        edited = ImGui::TempInputText(inputBB, id, innerHideLabel.data(), buffer, static_cast<int>(bufferSize), ImGuiInputTextFlags_None);
+    }
+    else
+    {
+        std::string_view bufferSv = buffer;
+        DrawText(window->DrawList, inputBB.Min, !bufferSv.empty() ? bufferSv : config.hintText, m3Styles.Colors()[SearchBarSpec::InputTextColor]);
+    }
+    window->DC.CursorPos = nextLineCursorPos;
+    return edited;
 }
 
 auto BeginDockedToolbar(const ImVec2 &buttonSize, const uint8_t count, const Spec::ColorRole surfaceRole, const M3Styles &m3Styles) -> bool

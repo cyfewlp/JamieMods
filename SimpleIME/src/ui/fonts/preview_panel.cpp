@@ -45,54 +45,6 @@ struct StatusBar
     std::string_view text;
 };
 
-auto SearchBox(ImGuiTextFilter &filter, const ImGuiEx::M3::M3Styles &m3Styles) -> bool
-{
-    using ColorRole  = M3Spec::ColorRole;
-    using SearchSpec = ImGuiEx::M3::Spec::Search;
-
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
-    drawList->ChannelsSplit(2);
-
-    drawList->ChannelsSetCurrent(1);
-    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::BodyLarge>();
-
-    ImRect bb(ImGui::GetCursorScreenPos(), {});
-    ImGui::SetCursorScreenPos({bb.Min.x + m3Styles.GetPixels(SearchSpec::paddingX), bb.Min.y + m3Styles.GetPixels(SearchSpec::paddingY)});
-    ImGui::BeginGroup();
-    bool edited = false;
-    {
-        ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-        ImGuiEx::M3::SmallIcon(ICON_SEARCH, m3Styles);
-        ImGui::SameLine(0, m3Styles.GetPixels(SearchSpec::gap));
-
-        ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Style<ImGuiStyleVar_FramePadding>({0, m3Styles.GetPixels(SearchSpec::paddingY)})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurface))
-            .Color<ImGuiCol_FrameBg>({0, 0, 0, 0});
-        edited =
-            ImGui::InputTextWithHint("##Filter", "search by name", filter.InputBuf, IM_COUNTOF(filter.InputBuf), ImGuiInputTextFlags_EscapeClearsAll);
-        ImGui::PopItemFlag();
-    }
-    ImGui::EndGroup();
-    drawList->ChannelsSetCurrent(0);
-
-    if (ImGui::IsItemVisible())
-    {
-        const auto rectMax = ImGui::GetItemRectMax();
-        bb.Max             = {rectMax.x + SearchSpec::paddingX, rectMax.y + SearchSpec::paddingY};
-        drawList->AddRectFilled(
-            bb.Min,
-            bb.Max,
-            ImGui::ColorConvertFloat4ToU32(m3Styles.Colors().at(ColorRole::surfaceContainerHigh)),
-            m3Styles.GetPixels(SearchSpec::rounding)
-        );
-        ImGui::ItemSize(bb);
-    }
-    drawList->ChannelsMerge();
-
-    return edited;
-}
-
 /**
  * @param selectedIndex current selected FontInfo index. will be set if select a new.
  * @return is select a new row.
@@ -198,7 +150,10 @@ auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles) -> bool
 
 void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    if (SearchBox(m_textFilter, m3Styles))
+    ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
+    const bool edited = ImGuiEx::M3::SearchBar("Filter", m_textFilter.InputBuf, IM_COUNTOF(m_textFilter.InputBuf), {.icon = ICON_SEARCH}, m3Styles);
+    ImGui::PopItemFlag();
+    if (edited)
     {
         m_searchDebounceTimer.Poke();
     }

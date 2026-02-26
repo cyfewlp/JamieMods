@@ -10,6 +10,7 @@ namespace ImGuiEx::M3::Spec
 {
 struct ShapeCorner
 {
+    static constexpr auto None           = dp<0>();
     static constexpr auto ExtraSmall     = dp<4>();
     static constexpr auto Small          = dp<8>();
     static constexpr auto Medium         = dp<12>();

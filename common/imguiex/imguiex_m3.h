@@ -313,6 +313,15 @@ inline auto ListLeadingImageSize(const M3Styles &m3Styles) -> ImVec2
     return {size, size};
 }
 
+struct SearchConfiguration
+{
+    std::string_view hintText;     ///< optional
+    std::string_view icon;         ///< optional
+    std::string_view trailingIcon; ///< optional
+};
+
+auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config, const M3Styles &m3Styles) -> bool;
+
 /**
  * The toolbar is a container with multiple slots, and you must
  * provide your expected dimensions and draw your button according to the agreement.

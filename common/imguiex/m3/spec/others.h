@@ -9,14 +9,6 @@
 
 namespace ImGuiEx::M3::Spec
 {
-struct Search
-{
-    static constexpr Unit paddingY = dp<16>();
-    static constexpr Unit paddingX = dp<16>();
-    static constexpr Unit rounding = dp<28>();
-    static constexpr Unit gap      = dp<16>();
-};
-
 //! [List Tokens & specs](https://m3.material.io/components/lists/specs#f2afa345-6c7d-4681-b011-54d3f1a01338)
 //!
 //! For ImGui implementation, you can either manually configure a selectable item or use the group wrapper.
