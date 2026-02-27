@@ -36,7 +36,7 @@ constexpr auto Motion_Token_Prefix            = std::string_view{"md.sys.motion"
 
 auto token_name_to_camelCase(std::string_view tokenName, std::string &out)
 {
-    bool toUpper = false;
+    bool toUpper = true;
     for (size_t index = 0; index < tokenName.length(); index++)
     {
         if (tokenName[index] == '-' || tokenName[index] == '.')
@@ -182,6 +182,7 @@ struct Token
 struct TokenSet
 {
     std::string        name;
+    std::string        tokenSetNameSuffix;
     std::string        tokenSetName;
     std::vector<Token> tokens;
 
@@ -275,7 +276,8 @@ auto parse_tokenSets(simdjson_result<ondemand::value> jTokenSets) -> std::vector
     for (auto jTokenSet : jTokenSets.get_array())
     {
         TokenSet tokenSet;
-        if (SUCCESS == jTokenSet["name"].get(tokenSet.name) && SUCCESS == jTokenSet["tokenSetName"].get(tokenSet.tokenSetName))
+        if (SUCCESS == jTokenSet["name"].get(tokenSet.name) && SUCCESS == jTokenSet["tokenSetName"].get(tokenSet.tokenSetName) &&
+            SUCCESS == jTokenSet["tokenSetNameSuffix"].get(tokenSet.tokenSetNameSuffix))
         {
             tokenSet.name.erase(0, token_set_prefix_length);
             tokenSets.push_back(std::move(tokenSet));
@@ -321,7 +323,7 @@ auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet
             if (tokenSetCache.contains(tokenSetId))
             {
                 auto tokenSetIndex = tokenSetCache[tokenSetId];
-                if (SUCCESS == jToken["tokenName"].get(token.tokenName) && SUCCESS == jToken["displayName"].get(token.displayName) &&
+                if (SUCCESS == jToken["tokenNameSuffix"].get(token.tokenName) && SUCCESS == jToken["displayName"].get(token.displayName) &&
                     SUCCESS == jToken["tokenValueType"].get(token.type))
                 {
                     tokenSets[tokenSetIndex].tokens.push_back(std::move(token));
@@ -444,10 +446,50 @@ int main(int argc, char **argv)
     for (auto &tokenSet : tokenSets)
     {
         tokenSet.normalize();
+
+        // Some tokens have state suffixes like "pressed", "hovered", "focused", "disabled", which we want to ignore when sorting tokens, so that
+        // tokens with the same prefix will be grouped together.
+        // For example, "md.comp.button.filled-container.pressed" and "md.comp.button.filled-container.hovered" will be grouped together as they only
+        // differ in the state suffix.
+        auto skipAnyStateTokenPart = [](std::string_view tokenNameSv) {
+            static const std::unordered_set<std::string_view> stateNames = {"pressed", "hovered", "focused", "disabled"};
+
+            size_t pos1             = 0;
+            bool   isFoundStatePart = false;
+
+            std::string result;
+            result.reserve(tokenNameSv.size());
+
+            size_t start = 0;
+            while (start < tokenNameSv.size())
+            {
+                size_t dotPos = tokenNameSv.find('.', start);
+                size_t end    = (dotPos == std::string_view::npos) ? tokenNameSv.size() : dotPos;
+
+                std::string_view part = tokenNameSv.substr(start, end - start);
+
+                if (stateNames.find(part) == stateNames.end())
+                {
+                    if (!result.empty() && result.back() != '.')
+                    {
+                        result += '.';
+                    }
+                    result.append(part);
+                }
+
+                start = (dotPos == std::string_view::npos) ? tokenNameSv.size() : dotPos + 1;
+            }
+
+            return std::move(result);
+        };
+
         // sort tokens by reverse lexicographical order of their names (compare from the end)
         // using rbegin()/rend() makes tokens with similar suffixes group together; this is intentional
-        std::ranges::sort(tokenSet.tokens, [](const Token &a, const Token &b) {
-            return std::lexicographical_compare(a.tokenName.rbegin(), a.tokenName.rend(), b.tokenName.rbegin(), b.tokenName.rend());
+        std::ranges::sort(tokenSet.tokens, [&](const Token &a, const Token &b) {
+            std::string aTokenNameSort = skipAnyStateTokenPart(a.tokenName);
+            std::string bTokenNameSort = skipAnyStateTokenPart(b.tokenName);
+
+            return std::lexicographical_compare(aTokenNameSort.rbegin(), aTokenNameSort.rend(), bTokenNameSort.rbegin(), bTokenNameSort.rend());
         });
 
         for (auto &token : tokenSet.tokens)

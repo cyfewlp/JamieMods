@@ -55,14 +55,11 @@ public:
     void Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
-    void DrawFontsView(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawFontsView(const std::vector<FontInfo> &fontInfos);
     void UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList);
 
 public:
-    [[nodiscard]] auto IsPreviewing() const -> bool
-    {
-        return m_state == State::PREVIEWING;
-    }
+    [[nodiscard]] auto IsPreviewing() const -> bool { return m_state == State::PREVIEWING; }
 
 private:
     void PreviewFont(const std::string &fontName, const std::string &fontPath);
@@ -76,20 +73,11 @@ public:
 
     void Cleanup();
 
-    [[nodiscard]] auto GetInteractState() const -> const InteractState &
-    {
-        return m_interactState;
-    }
+    [[nodiscard]] auto GetInteractState() const -> const InteractState & { return m_interactState; }
 
-    [[nodiscard]] auto GetImFont() const -> const ImFontWrap &
-    {
-        return m_imFont;
-    }
+    [[nodiscard]] auto GetImFont() const -> const ImFontWrap & { return m_imFont; }
 
-    [[nodiscard]] auto GetImFont() -> ImFontWrap &
-    {
-        return m_imFont;
-    }
+    [[nodiscard]] auto GetImFont() -> ImFontWrap & { return m_imFont; }
 
 private:
     InteractState m_interactState;

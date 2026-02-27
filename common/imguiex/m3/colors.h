@@ -145,10 +145,19 @@ class ColorScheme
 public:
     struct SchemeConfig
     {
-        double contrastLevel;
+        double contrastLevel; ///< [-1, 1], default is 0.0, negative value means lower contrast, positive value means higher contrast.
         Argb   sourceColor;
         bool   darkMode;
     };
+
+    static auto GetM3ClassicSchemeConfig() -> SchemeConfig
+    {
+        return {
+            .contrastLevel = 0.0,
+            .sourceColor   = 0xFF673AB7, // Default primary color in Material 3
+            .darkMode      = true,
+        };
+    }
 
     using Colors = std::array<ImVec4, static_cast<uint8_t>(Spec::ColorRole::count)>;
 

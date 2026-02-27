@@ -34,11 +34,10 @@ public:
     };
 
 private:
-    ImGuiTestEngine          *m_testEngine = nullptr;
-    DX11RenderState           m_dx11RenderState;
-    HWND                      m_hwnd     = nullptr;
-    bool                      m_headless = false;
-    std::unique_ptr<M3Styles> m_pM3Styles;
+    ImGuiTestEngine *m_testEngine = nullptr;
+    DX11RenderState  m_dx11RenderState;
+    HWND             m_hwnd     = nullptr;
+    bool             m_headless = false;
 
 public:
     ~M3TestFixture() override = default;
@@ -46,7 +45,7 @@ public:
     void Initialize(bool headless);
     void Shutdown();
 
-    void RegisterTest(auto &&RegisterFunc) { RegisterFunc(m_testEngine, *m_pM3Styles); }
+    void RegisterTest(auto &&RegisterFunc) { RegisterFunc(m_testEngine); }
 
     [[nodiscard]] auto IsHeadless() const -> bool { return m_headless; }
 

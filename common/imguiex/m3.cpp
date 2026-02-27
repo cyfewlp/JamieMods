@@ -38,4 +38,28 @@ void M3Styles::RebuildColors(const ColorScheme::SchemeConfig &schemeConfig)
 {
     m_scheme = ThemeBuilder::Build(schemeConfig);
 }
+
+namespace
+{
+std::unique_ptr<M3Styles> g_currentStyles = nullptr;
+}
+
+auto Context::CreateM3Styles(ImFont *iconFont, const ColorScheme::SchemeConfig &schemeConfig) -> M3Styles &
+{
+    auto colors     = ImGuiEx::M3::ThemeBuilder::Build(schemeConfig);
+    g_currentStyles = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);
+
+    return *g_currentStyles;
+}
+
+auto Context::DestroyM3Styles() -> void
+{
+    g_currentStyles.reset();
+}
+
+auto Context::GetM3Styles() -> M3Styles &
+{
+    assert(g_currentStyles.get() != nullptr && "Did you forget to call Context::CreateM3Styles() before using M3 styles?");
+    return *g_currentStyles;
+}
 } // namespace ImGuiEx::M3

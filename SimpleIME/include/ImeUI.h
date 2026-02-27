@@ -29,19 +29,19 @@ public:
     ImeUI &operator=(ImeUI &&other) noexcept = delete;
 
     void Initialize();
-    void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
-    void DrawSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
+    void ApplySettings(Settings::Appearance &appearance);
+    void DrawSettings(Settings &settings);
 
     auto IsShowingToolWindow() const -> bool { return m_fShowToolWindow; }
 
     auto IsPinedToolWindow() const -> bool { return m_fPinToolWindow; }
 
 private:
-    void        DrawMenuAppearance(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawMenuFontBuilder(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawMenuBehaviour(Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles) const;
+    void        DrawMenuAppearance(Settings &settings);
+    void        DrawMenuFontBuilder(Settings &settings);
+    void        DrawMenuBehaviour(Settings &settings) const;
     static void DrawFeatures(Settings &settings);
-    void        DrawStates(const ImGuiEx::M3::M3Styles &m3Styles) const;
+    void        DrawStates() const;
     static void DrawWindowPosUpdatePolicy(Settings &settings);
 
     static constexpr auto TOOL_WINDOW_NAME = std::span("ToolWindow##SimpleIME");

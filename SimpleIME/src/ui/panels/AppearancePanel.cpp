@@ -133,7 +133,7 @@ void DrawTonePicker(const float hue, const float chroma, float &tone, const ImVe
     HandlerPickerCursor(draw_list, "tone", tone, kToneMax, picker_pos, pickerSize);
 }
 
-void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3Styles &m3Styles)
+void HexRgbInputText(AppearancePanel::HctCache &hctCache)
 {
     const Hct   hct(hctCache.hue, hctCache.chroma, hctCache.tone);
     std::string buffer = std::format("#{:06X}", hct.ToInt() & 0xFFFFFFU);
@@ -141,7 +141,7 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
     constexpr size_t BUFFER_SIZE = 64U;
     buffer.reserve(BUFFER_SIZE);
 
-    if (ImGuiEx::M3::OutlinedTextField({.label = "RGB"}, buffer.data(), buffer.capacity(), m3Styles))
+    if (ImGuiEx::M3::OutlinedTextField({.label = "RGB"}, buffer.data(), buffer.capacity()))
     {
         std::string_view view = buffer;
         for (const auto &c : view)
@@ -185,10 +185,11 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3S
 // --------------------
 // |  apply  | cancel |
 // --------------------
-auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, const ImGuiEx::M3::M3Styles &m3Styles) -> bool
+auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache) -> bool
 {
     bool applied = false;
 
+    auto      &m3Styles        = ImGuiEx::M3::Context::GetM3Styles();
     const auto popupStyleGuard = ImGuiEx::StyleGuard()
                                      .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest])
                                      .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<M3Spec::Dialogs>());
@@ -197,29 +198,29 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
         return applied;
     }
 
-    HexRgbInputText(hctCache, m3Styles);
+    HexRgbInputText(hctCache);
 
     const auto   fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     const ImVec2 pickerSSize(m3Styles.GetPixels(M3Spec::Dialogs::minWidth), m3Styles.GetPixels(M3Spec::SmallSlider::frameHeight));
 
-    ImGuiEx::M3::TextUnformatted(std::format("Hue: {:.3f}", hctCache.hue), m3Styles);
+    ImGuiEx::M3::TextUnformatted(std::format("Hue: {:.3f}", hctCache.hue));
     DrawHuePicker(hctCache.hue, hctCache.chroma, pickerSSize);
 
-    ImGuiEx::M3::TextUnformatted(std::format("Chroma: {:.3f}", hctCache.chroma), m3Styles);
+    ImGuiEx::M3::TextUnformatted(std::format("Chroma: {:.3f}", hctCache.chroma));
     DrawChromaPicker(hctCache.hue, hctCache.chroma, pickerSSize);
 
-    ImGuiEx::M3::TextUnformatted(std::format("Tone: {:.3f}", hctCache.tone), m3Styles);
+    ImGuiEx::M3::TextUnformatted(std::format("Tone: {:.3f}", hctCache.tone));
     DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerSSize);
 
     {
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK, m3Styles))
+        if (ImGuiEx::M3::Button(Translate("Settings.Appearance.Apply"), {ICON_CHECK}))
         {
             applied = true;
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X, m3Styles))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X))
         {
             ImGui::CloseCurrentPopup();
         }
@@ -231,11 +232,8 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache, cons
 
 } // namespace
 
-void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
+void AppearancePanel::Draw(Settings &settings)
 {
-    const auto mainStyleGuard = ImGuiEx::StyleGuard()
-                                    .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::onSurface))
-                                    .Color<ImGuiCol_ChildBg>(m3Styles.Colors().at(M3Spec::ColorRole::surface));
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
     {
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))
@@ -244,10 +242,10 @@ void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 
             ImGui::TableNextColumn();
             ImGui::TableNextColumn();
-            DrawZoomCombo(m3Styles);
+            DrawZoomCombo();
             ImGui::Spacing();
-            DrawThemeBuilder(m3Styles);
-            DrawLanguagesCombo(settings.appearance, m3Styles);
+            DrawThemeBuilder();
+            DrawLanguagesCombo(settings.appearance);
             ImGui::TableNextColumn();
             ImGui::EndTable();
         }
@@ -255,16 +253,16 @@ void AppearancePanel::Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     ImGui::EndChild();
 }
 
-void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
+void AppearancePanel::DrawZoomCombo()
 {
-    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Zoom"), std::format("{}%", m_currentZoomPercent), m3Styles))
+    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Zoom"), std::format("{}%", m_currentZoomPercent)))
     {
         for (uint32_t zoom = ZOOM_MIN_PERCENT; zoom <= ZOOM_MAX_PERCENT; zoom += ZOOM_STEP_PERCENT)
         {
             if (const bool selected = (zoom == m_currentZoomPercent); //
-                ImGuiEx::M3::MenuItem(std::format("{}%", zoom), selected, m3Styles) && !selected)
+                ImGuiEx::M3::MenuItem(std::format("{}%", zoom), selected) && !selected)
             {
-                m3Styles.UpdateScaling(static_cast<float>(zoom) / 100.F);
+                ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(static_cast<float>(zoom) / 100.F);
                 m_currentZoomPercent = zoom;
             }
         }
@@ -273,8 +271,9 @@ void AppearancePanel::DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles)
 }
 
 //! \todo need refactor ColorPicker style. maybe we can add a HUE wheel in the future.
-void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
+void AppearancePanel::DrawThemeBuilder()
 {
+    auto       &m3Styles     = ImGuiEx::M3::Context::GetM3Styles();
     const auto &colors       = m3Styles.Colors();
     const auto &schemeConfig = m3Styles.Colors().GetSchemeConfig();
     bool        openPopup    = false;
@@ -286,11 +285,11 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                            .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::M]})
                            .Color<ImGuiCol_ChildBg>(colors[ColorRole::surface]);
 
-        ImGuiEx::M3::ListItem("ThemeBuilderList", m3Styles, [&] {
-            const auto size = ImGuiEx::M3::ListLeadingImageSize(m3Styles);
+        ImGuiEx::M3::ListItem("ThemeBuilderList", [&] {
+            const auto size = ImGuiEx::M3::ListLeadingImageSize();
             openPopup       = ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor), colorButtonFlags, size);
             ImGui::SameLine();
-            ImGuiEx::M3::AlignedLabel(Translate("Settings.Appearance.ThemeColor"), m3Styles);
+            ImGuiEx::M3::AlignedLabel(Translate("Settings.Appearance.ThemeColor"));
         });
     }
     bool edited = false;
@@ -319,11 +318,11 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 
         const auto hctPickerPopupId = ImGui::GetID(HCT_PICKER_POPUP);
 
-        edited = HctPickerPopup(HCT_PICKER_POPUP, m_hctCache, m3Styles) || edited;
+        edited = HctPickerPopup(HCT_PICKER_POPUP, m_hctCache) || edited;
         edited = ImGui::Checkbox(Translate("Settings.Appearance.DarkMode"), &m_darkModeTemp) || edited;
         edited = ImGuiEx::M3::Slider::Draw(
                      Translate("Settings.Appearance.ContrastLevel"),
-                     ImGuiEx::M3::Slider::Params{m_contrastLevelTemp, ImGuiEx::M3::CONTRAST_MIN, ImGuiEx::M3::CONTRAST_MAX, m3Styles}
+                     ImGuiEx::M3::Slider::Params{m_contrastLevelTemp, ImGuiEx::M3::CONTRAST_MIN, ImGuiEx::M3::CONTRAST_MAX}
                  ) ||
                  edited;
         if (edited)
@@ -333,10 +332,10 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
 
         if (scheme)
         {
-            const auto paletteSize = ImGuiEx::M3::ListLeadingImageSize(m3Styles);
+            const auto paletteSize = ImGuiEx::M3::ListLeadingImageSize();
 
             auto draw_palette = [&](std::string_view label, const auto &palette) {
-                ImGuiEx::M3::ListItemPlain(label, m3Styles, [&] {
+                ImGuiEx::M3::ListItemPlain(label, [&] {
                     const auto cursorPos = ImGui::GetCursorScreenPos();
                     ImGui::GetWindowDrawList()->AddRectFilled(
                         cursorPos,
@@ -345,11 +344,11 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     );
                     ImGui::Dummy(paletteSize);
                     ImGui::SameLine();
-                    ImGuiEx::M3::AlignedLabel(label, m3Styles);
+                    ImGuiEx::M3::AlignedLabel(label);
                 });
             };
 
-            ImGuiEx::M3::ListItem("Primary", m3Styles, [&] {
+            ImGuiEx::M3::ListItem("Primary", [&] {
                 if (ImGui::ColorButton(
                         "Primary", ImGuiEx::M3::ArgbToImVec4(scheme->primary_palette.get_key_color().ToInt()), colorButtonFlags, paletteSize
                     ))
@@ -357,7 +356,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
                     ImGui::OpenPopup(hctPickerPopupId);
                 }
                 ImGui::SameLine();
-                ImGuiEx::M3::AlignedLabel("Primary", m3Styles);
+                ImGuiEx::M3::AlignedLabel("Primary");
             });
             draw_palette("Secondary", scheme->secondary_palette);
             draw_palette("Tertiary", scheme->tertiary_palette);
@@ -366,7 +365,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
             draw_palette("Error", scheme->error_palette);
         }
 
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK, m3Styles))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK))
         {
             m3Styles.RebuildColors({m_contrastLevelTemp, Hct(m_hctCache.hue, m_hctCache.chroma, m_hctCache.tone).ToInt(), m_darkModeTemp});
             UI::ApplyM3Theme(m3Styles);
@@ -375,7 +374,7 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
         }
 
         ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X, m3Styles))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X))
         {
             ImGui::CloseCurrentPopup();
         }
@@ -384,17 +383,17 @@ void AppearancePanel::DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles)
     }
 }
 
-void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance, const ImGuiEx::M3::M3Styles &m3Styles) const
+void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
 {
     bool clicked = false;
-    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language.c_str(), m3Styles))
+    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language.c_str()))
     {
         int32_t idx = 0;
         for (const auto &language : m_translateLanguages)
         {
             ImGui::PushID(idx);
             const bool isSelected = appearance.language == language;
-            if (ImGuiEx::M3::MenuItem(language.c_str(), isSelected, m3Styles) && !isSelected)
+            if (ImGuiEx::M3::MenuItem(language.c_str(), isSelected) && !isSelected)
             {
                 appearance.language = language;
                 clicked             = true;
@@ -415,10 +414,12 @@ void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance, const
     }
 }
 
-void AppearancePanel::ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles)
+void AppearancePanel::ApplySettings(Settings::Appearance &appearance)
 {
     appearance.zoom = std::min(ZOOM_MAX, appearance.zoom);
     appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
+
+    auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
     m3Styles.UpdateScaling(appearance.zoom);
     UI::ApplyM3Theme(m3Styles);
 

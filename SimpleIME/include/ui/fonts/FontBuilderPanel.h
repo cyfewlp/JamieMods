@@ -20,13 +20,13 @@ class FontBuilderPanel
 public:
     explicit FontBuilderPanel() = default;
 
-    void Draw(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
+    void Draw(FontBuilder &fontBuilder, Settings &settings);
 
 private:
     // FIXME: refactor
-    static void DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
+    static void DrawFontInfoTable(const FontBuilder &fontBuilder);
     void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
+    void        DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings);
     static void DrawHelpModal();
     static void DrawWarningsModal();
 

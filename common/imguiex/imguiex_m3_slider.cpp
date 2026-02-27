@@ -24,8 +24,8 @@ struct SliderLayout
 // Compute bounding rects and do ItemSize/ItemAdd.
 // returns false if item was clipped/culled.
 auto ComputeLayout(
-    const ImGuiWindow *window, const ImGuiID id, const std::string_view label, const detail::Params &params,
-    const M3Styles &m3Styles, SliderLayout &out
+    const ImGuiWindow *window, const ImGuiID id, const std::string_view label, const detail::Params &params, const M3Styles &m3Styles,
+    SliderLayout &out
 ) -> bool
 {
     const auto width  = ImGui::CalcItemWidth();
@@ -34,11 +34,9 @@ auto ComputeLayout(
     out.label_size          = ImGui::CalcTextSize(TextStart(label), TextEnd(label), true);
     out.outer_bb            = ImRect(window->DC.CursorPos, window->DC.CursorPos + ImVec2(width, height));
     const auto frame_offset = (height - m3Styles.GetPixels(params.frameHeight)) * HALF;
-    out.frame_bb = ImRect(out.outer_bb.Min + ImVec2(0, frame_offset), out.outer_bb.Max - ImVec2(0, frame_offset));
-    const ImRect total_bb = ImRect(
-        out.outer_bb.Min,
-        out.outer_bb.Max + ImVec2(out.label_size.x > 0.0F ? m3Styles[Spacing::XS] + out.label_size.x : 0.0F, 0.0F)
-    );
+    out.frame_bb            = ImRect(out.outer_bb.Min + ImVec2(0, frame_offset), out.outer_bb.Max - ImVec2(0, frame_offset));
+    const ImRect total_bb =
+        ImRect(out.outer_bb.Min, out.outer_bb.Max + ImVec2(out.label_size.x > 0.0F ? m3Styles[Spacing::XS] + out.label_size.x : 0.0F, 0.0F));
     ImGui::ItemSize(total_bb);
     return ImGui::ItemAdd(total_bb, id, &out.frame_bb, 0);
 }
@@ -62,10 +60,7 @@ void HandleActivation(ImGuiID id, ImGuiWindow *window, const bool hovered)
     }
 }
 
-auto DrawFrame(
-    ImDrawList *drawList, const SliderLayout &rects, const double value01, const ImVec4 &activeColor,
-    const M3Styles &m3Styles
-)
+auto DrawFrame(ImDrawList *drawList, const SliderLayout &rects, const double value01, const ImVec4 &activeColor, const M3Styles &m3Styles)
 {
     const ImU32 frame_col     = ImGui::GetColorU32(m3Styles.Colors()[Spec::ColorRole::secondaryContainer]);
     const auto  centerX       = (rects.frame_bb.Max.x + rects.frame_bb.Min.x) * HALF;
@@ -107,6 +102,7 @@ auto DrawFrame(
 
 } // namespace
 
+// \fixme remove all M3Styles spacing get. Should use slider specs.
 auto detail::Draw(std::string_view label, const Params &params, SliderFlags flags) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -116,7 +112,7 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
     const ImGuiID id = window->GetID(TextStart(label), TextEnd(label));
 
     SliderLayout layout;
-    const auto  &m3Styles = params.m3Styles;
+    auto        &m3Styles = Context::GetM3Styles();
     if (!ComputeLayout(window, id, label, params, m3Styles, layout))
     {
         return false;
@@ -132,15 +128,7 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
     const auto prevGrabMinSize = style.GrabMinSize;
     style.GrabMinSize          = m3Styles.GetPixels(params.grabOuterWidth);
     const bool value_changed   = ImGui::SliderBehavior(
-        layout.outer_bb,
-        id,
-        params.dataType,
-        params.pValue,
-        params.pMinValue,
-        params.pMaxValue,
-        format,
-        flags,
-        &layout.grab_bb
+        layout.outer_bb, id, params.dataType, params.pValue, params.pMinValue, params.pMaxValue, format, flags, &layout.grab_bb
     );
     style.GrabMinSize = prevGrabMinSize;
     if (value_changed)
@@ -150,9 +138,9 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
 
     ImGui::RenderNavCursor(layout.frame_bb, id);
 
-    const bool activated   = g.ActiveId == id;
-    const auto activeColor = activated ? m3Styles.Colors().Pressed(Spec::ColorRole::primary, Spec::ColorRole::onPrimary)
-                                       : m3Styles.Colors()[Spec::ColorRole::primary];
+    const bool activated = g.ActiveId == id;
+    const auto activeColor =
+        activated ? m3Styles.Colors().Pressed(Spec::ColorRole::primary, Spec::ColorRole::onPrimary) : m3Styles.Colors()[Spec::ColorRole::primary];
 
     DrawFrame(window->DrawList, layout, params.value01, activeColor, m3Styles);
 
@@ -169,10 +157,10 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
     if (activated)
     {
         std::array<char, 64> value_buf{};
-        const auto           bufSize =
-            ImGui::DataTypeFormatString(value_buf.data(), value_buf.size(), params.dataType, params.pValue, format);
+        const auto           bufSize = ImGui::DataTypeFormatString(value_buf.data(), value_buf.size(), params.dataType, params.pValue, format);
         if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
         {
+            // FIXME-opt: has any more modern ways? avoid compiler warning.
             ImGui::TextEx(value_buf.data(), &value_buf[bufSize], ImGuiTextFlags_NoWidthForLargeClippedText);
             ImGui::EndTooltip();
         }
@@ -180,16 +168,10 @@ auto detail::Draw(std::string_view label, const Params &params, SliderFlags flag
 
     if (layout.label_size.x > 0.0F)
     {
-        ImGui::RenderText(
-            ImVec2(layout.frame_bb.Max.x + m3Styles[Spacing::XS], layout.frame_bb.Min.y),
-            TextStart(label),
-            TextEnd(label)
-        );
+        ImGui::RenderText(ImVec2(layout.frame_bb.Max.x + m3Styles[Spacing::XS], layout.frame_bb.Min.y), TextStart(label), TextEnd(label));
     }
 
-    IMGUI_TEST_ENGINE_ITEM_INFO(
-        id, label, g.LastItemData.StatusFlags | (temp_input_allowed ? ImGuiItemStatusFlags_Inputable : 0)
-    );
+    IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags | (temp_input_allowed ? ImGuiItemStatusFlags_Inputable : 0));
     return value_changed;
 }
 } // namespace ImGuiEx::M3::Slider

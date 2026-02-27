@@ -84,7 +84,7 @@ auto ThemeBuilder::Build(const ColorScheme::SchemeConfig &config) -> ColorScheme
     FillSurfaceColors(colors, scheme);
     FillContentColors(colors, scheme);
 
-    colors[0U] = ImVec4();
+    colors[0U] = ImVec4(); // Spec::ColorRole::none, transparent
     return ColorScheme(colors, config);
 }
 } // namespace ImGuiEx::M3

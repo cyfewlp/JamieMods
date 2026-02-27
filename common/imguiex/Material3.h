@@ -132,6 +132,13 @@ public:
 };
 } // namespace detail
 
+/// @brief Material 3 Design System styles.
+///
+/// @warning NOT thread-safe. All UI rendering must happen on a single thread.
+/// The calling thread can change between frames, but concurrent access is undefined behavior.
+///
+/// @note This is consistent with ImGui's threading model, which also requires
+/// single-threaded access to each ImGuiContext.
 class M3Styles
 {
 public:
@@ -147,18 +154,18 @@ public:
 
 private:
     alignas(16) ColorScheme m_scheme;
-    GridUnitsPx                     m_precomputedPx{};
+    GridUnitsPx             m_precomputedPx{};
     //! The pixels size will not calculate until the first call to UseTextRole or UpdateScaling.
     //! @see UseTextRole
-    mutable detail::CachedTypeScale m_cachedTypeScale;
+    detail::CachedTypeScale m_cachedTypeScale;
     /**
      * It is highly recommended to provide a standalone ImFont pointer that has NOT been merged with other fonts.
      * Merging icon fonts often causes "Ascent" and "Descent" metrics to be re-calculated or corrupted to fit the
      * primary font's baseline, leading to vertical misalignment and "bleeding" outside the glyph bounding box. For
      * pixel-perfect grid alignment, use an independently loaded font.
      */
-    ImFont                         *iconFont{nullptr};
-    float                           m_currentScale = 0.0F;
+    ImFont                 *iconFont{nullptr};
+    float                   m_currentScale = 0.0F;
 
     //\todo should be removed!
     Text  labelText = TEXT_LABEL_LARGE;
@@ -202,7 +209,7 @@ public:
      * @note **Warning Suppression:** If the return value is not needed, use `const auto _ = ...`
      * to satisfy `[[nodiscard]]`.
      */
-    [[nodiscard]] auto UseTextRole(const Spec::TypeScaleValue &value) const -> detail::FontScope
+    [[nodiscard]] auto UseTextRole(const Spec::TypeScaleValue &value) -> detail::FontScope
     {
         if (m_cachedTypeScale.currRole != value.role)
         {
@@ -222,7 +229,7 @@ public:
      * @tparam Role The text role to apply.
      */
     template <Spec::TextRole Role>
-    [[nodiscard]] auto UseTextRole() const -> detail::FontScope
+    [[nodiscard]] auto UseTextRole() -> detail::FontScope
     {
         return UseTextRole(Spec::TypeScaleValue::of<Role>());
     }
@@ -318,5 +325,37 @@ public:
 };
 
 static_assert(alignof(M3Styles) >= 16, "M3Styles must be 16-byte aligned to support SIMD optimizations.");
+
+namespace Context
+{
+/**
+ * @brief Initializes the global M3Styles instance.
+ * @important **Why iconFont is REQUIRED:**
+ * M3 components (NavItems, Buttons, etc.) rely on icon metrics to calculate precise layouts
+ * and vertical centering. Without a valid @c ImFont, layout dimensions cannot be determined.
+ * @note **Font Source & Recommendations:**
+ * We do not bundle default fonts. Recommended icon sets:
+ * - **Lucide Icons** (Highly Recommended)
+ * - **Heroicons** or **Material Symbols**
+ * @note **Automation Toolchain:**
+ * To minimize binary size, we provide a specialized script: scripts/build_icons_font.py.
+ * This tool works with **FontForge** to:
+ * 1. Extract specific SVGs from an icon list.
+ * 2. Package them into a lightweight, custom font file.
+ * 3. Generate a matching `icons.h` header with glyph definitions.
+ * @note **Font Merging:** It is strongly recommended to use a standalone @c ImFont.
+ * Merged fonts may inherit incompatible baselines, breaking MD3's vertical alignment.
+ *
+ * @param iconFont     [Required] The font containing M3 icons. Pass @c ImGui::GetFont()
+ * as a placeholder only if no icons will be rendered.
+ * @param schemeConfig Color configuration. Defaults to @c ColorScheme::GetM3ClassicSchemeConfig().
+ * @return A reference to the initialized @c M3Styles instance.
+ */
+auto CreateM3Styles(ImFont *iconFont, const ColorScheme::SchemeConfig &schemeConfig = ColorScheme::GetM3ClassicSchemeConfig()) -> M3Styles &;
+auto DestroyM3Styles() -> void;
+
+auto GetM3Styles() -> M3Styles &;
+
+} // namespace Context
 
 } // namespace ImGuiEx::M3

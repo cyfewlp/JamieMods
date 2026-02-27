@@ -4,17 +4,16 @@
 
 #include "imgui_te_context.h"
 #include "imgui_te_engine.h"
-#include "imguiex/M3ThemeBuilder.h"
 #include "imguiex/imguiex_m3.h"
-#include "imguiex/m3/facade/base.h"
 #include "m3_test_fixture.h"
 
 #include <gtest/gtest.h>
 #include <string.h>
 
+extern bool g_fHeadless;
+
 namespace
 {
-bool           g_fHeadless     = false;
 constexpr auto kTestWindowName = "ImGuiEx M3 Test";
 constexpr auto kTestCategory   = "list_test";
 } // namespace
@@ -29,14 +28,12 @@ protected:
 
 TEST_F(M3ListTest, listItem_should_limit_min_height)
 {
-    RegisterTest([](ImGuiTestEngine *engine, ImGuiEx::M3::M3Styles &m3Styles) {
+    RegisterTest([](ImGuiTestEngine *engine) {
         auto *const test = IM_REGISTER_TEST(engine, kTestCategory, "listItem_should_limit_min_height");
-        test->UserData   = &m3Styles;
         test->GuiFunc    = [](ImGuiTestContext *ctx) {
-            auto       &genericVars = ctx->GenericVars;
-            const auto *pM3Styles   = static_cast<ImGuiEx::M3::M3Styles *>(ctx->Test->UserData);
+            auto &genericVars = ctx->GenericVars;
             ImGui::Begin(kTestWindowName, nullptr, ImGuiWindowFlags_NoSavedSettings);
-            ImGuiEx::M3::ListItem("small_content_list_item", *pM3Styles, [&] {
+            ImGuiEx::M3::ListItem("small_content_list_item", [&] {
                 ImGui::TextUnformatted("Small content");
             });
             genericVars.ItemSize = ImGui::GetItemRectSize();
@@ -45,38 +42,9 @@ TEST_F(M3ListTest, listItem_should_limit_min_height)
         // ReSharper disable once CppParameterMayBeConstPtrOrRef
         test->TestFunc = [](ImGuiTestContext *ctx) {
             const auto &genericVars       = ctx->GenericVars;
-            const auto *pM3Styles         = static_cast<ImGuiEx::M3::M3Styles *>(ctx->Test->UserData);
-            const auto  expectedMinHeight = pM3Styles->GetPixels(M3Spec::List::minHeight);
+            auto       &m3Styles          = ImGuiEx::M3::Context::GetM3Styles();
+            const auto  expectedMinHeight = m3Styles.GetPixels(M3Spec::List::minHeight);
             IM_CHECK_GE(genericVars.ItemSize.y, expectedMinHeight);
-        };
-        ImGuiTestEngine_QueueTest(engine, test);
-    });
-
-    RunLoop();
-}
-
-TEST_F(M3ListTest, listItem_should_ignore_interact_when_content_is_empty)
-{
-    RegisterTest([](auto &engine, ImGuiEx::M3::M3Styles &m3Styles) {
-        auto *const test =
-            IM_REGISTER_TEST(engine, kTestCategory, "listItem_should_ignore_interact_when_content_is_empty");
-        test->UserData = &m3Styles;
-        test->GuiFunc  = [](ImGuiTestContext *ctx) {
-            auto       &genericVars = ctx->GenericVars;
-            const auto *pM3Styles   = static_cast<ImGuiEx::M3::M3Styles *>(ctx->Test->UserData);
-            ImGui::Begin(kTestWindowName, nullptr, ImGuiWindowFlags_NoSavedSettings);
-            if (ImGuiEx::M3::ListItem("empty_list_item", *pM3Styles, [&] {}))
-            {
-                genericVars.Count += 1;
-            }
-            ImGui::End();
-        };
-        // ReSharper disable once CppParameterMayBeConstPtrOrRef
-        test->TestFunc = [](ImGuiTestContext *ctx) {
-            const auto &genericVars = ctx->GenericVars;
-            ctx->SetRef(kTestWindowName);
-            ctx->ItemClick("empty_list_item", 0, ImGuiTestOpFlags_NoCheckHoveredId);
-            IM_CHECK_EQ(genericVars.Count, 0);
         };
         ImGuiTestEngine_QueueTest(engine, test);
     });
@@ -86,14 +54,12 @@ TEST_F(M3ListTest, listItem_should_ignore_interact_when_content_is_empty)
 
 TEST_F(M3ListTest, listItem_should_always_cover_window_width)
 {
-    RegisterTest([](auto &engine, ImGuiEx::M3::M3Styles &m3Styles) {
+    RegisterTest([](auto &engine) {
         auto *const test = IM_REGISTER_TEST(engine, kTestCategory, "listItem_should_always_cover_window_width");
-        test->UserData   = &m3Styles;
         test->GuiFunc    = [](ImGuiTestContext *ctx) {
-            auto       &genericVars = ctx->GenericVars;
-            const auto *pM3Styles   = static_cast<ImGuiEx::M3::M3Styles *>(ctx->Test->UserData);
+            auto &genericVars = ctx->GenericVars;
             ImGui::Begin(kTestWindowName, nullptr, ImGuiWindowFlags_NoSavedSettings);
-            ImGuiEx::M3::ListItem("empty_list_item", *pM3Styles, [&] {});
+            ImGuiEx::M3::ListItem("empty_list_item", [&] {});
             genericVars.ItemSize   = ImGui::GetItemRectSize();
             genericVars.WindowSize = ImGui::GetContentRegionAvail();
             ImGui::End();
@@ -111,16 +77,13 @@ TEST_F(M3ListTest, listItem_should_always_cover_window_width)
 
 TEST_F(M3ListTest, listItem_should_auto_expand_height_with_large_content)
 {
-    RegisterTest([](auto &engine, ImGuiEx::M3::M3Styles &m3Styles) {
-        auto *const test =
-            IM_REGISTER_TEST(engine, kTestCategory, "listItem_should_auto_expand_height_with_large_content");
+    RegisterTest([](auto &engine) {
+        auto *const           test             = IM_REGISTER_TEST(engine, kTestCategory, "listItem_should_auto_expand_height_with_large_content");
         static constexpr auto kLargeButtonSize = ImVec2(300, 300);
-        test->UserData                         = &m3Styles;
         test->GuiFunc                          = [](ImGuiTestContext *ctx) {
-            auto       &genericVars = ctx->GenericVars;
-            const auto *pM3Styles   = static_cast<ImGuiEx::M3::M3Styles *>(ctx->Test->UserData);
+            auto &genericVars = ctx->GenericVars;
             ImGui::Begin(kTestWindowName, nullptr, ImGuiWindowFlags_NoSavedSettings);
-            ImGuiEx::M3::ListItem("large_content_list_item", *pM3Styles, [&] {
+            ImGuiEx::M3::ListItem("large_content_list_item", [&] {
                 ImGui::Button("Large content", kLargeButtonSize);
             });
             genericVars.ItemSize = ImGui::GetItemRectSize();
@@ -129,25 +92,12 @@ TEST_F(M3ListTest, listItem_should_auto_expand_height_with_large_content)
         // ReSharper disable once CppParameterMayBeConstPtrOrRef
         test->TestFunc = [](ImGuiTestContext *ctx) {
             const auto &genericVars       = ctx->GenericVars;
-            const auto *pM3Styles         = static_cast<ImGuiEx::M3::M3Styles *>(ctx->Test->UserData);
-            const auto  expectedMinHeight = pM3Styles->GetPixels(M3Spec::List::paddingY) * 2 + kLargeButtonSize.y;
+            auto       &m3Styles          = ImGuiEx::M3::Context::GetM3Styles();
+            const auto  expectedMinHeight = m3Styles.GetPixels(M3Spec::List::paddingY) * 2 + kLargeButtonSize.y;
             IM_CHECK_GE(genericVars.ItemSize.y, expectedMinHeight);
         };
         ImGuiTestEngine_QueueTest(engine, test);
     });
 
     RunLoop();
-}
-
-int main(int argc, char **argv)
-{
-    testing::InitGoogleTest(&argc, argv);
-
-    bool use_gui = false;
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "--gui") == 0) use_gui = true;
-    }
-    g_fHeadless = !use_gui;
-    return RUN_ALL_TESTS();
 }

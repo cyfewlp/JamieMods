@@ -7,6 +7,7 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "imgui_te_engine.h"
+#include "imgui_te_internal.h"
 #include "imgui_te_ui.h"
 #include "imguiex/M3ThemeBuilder.h"
 #include "imguiex/imguiex_m3.h"
@@ -17,6 +18,21 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+bool g_fHeadless = true;
+
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+
+    bool use_gui = false;
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "--gui") == 0) use_gui = true;
+    }
+    g_fHeadless = !use_gui;
+    return RUN_ALL_TESTS();
+}
+
 namespace ImGuiEx::M3::detail
 {
 namespace
@@ -24,20 +40,18 @@ namespace
 [[nodiscard]] auto CreateWindowAndDevice(
     M3TestFixture::DX11RenderState &renderState, WNDPROC lpfnWndProc, LPCWSTR lpszClassName, M3TestFixture *pFixture
 ) -> HWND;
-void InitImGuiTestEngine(ImGuiTestEngine *engine);
+void InitImGuiTestEngine(ImGuiTestEngine *engine, bool headless);
 void ShutdownImGuiTestEngine(ImGuiTestEngine *engine);
 bool CreateDeviceD3D(HWND hWnd, M3TestFixture::DX11RenderState &renderState);
 void CleanupRenderState(M3TestFixture::DX11RenderState &renderState);
 void CreateRenderTarget(M3TestFixture::DX11RenderState &renderState);
-void RenderD3D(HWND hwnd, ImGuiTestEngine *engine, M3TestFixture::DX11RenderState &renderState);
+void RenderD3D(HWND hwnd, M3TestFixture::DX11RenderState &renderState);
 } // namespace
 
 void M3TestFixture::Initialize(const bool headless)
 {
-    m_headless  = headless;
-    auto colors = ThemeBuilder::Build({0.0f, 0xFF673AB7, false});
-    m_pM3Styles = std::make_unique<M3Styles>(std::move(colors), nullptr);
-    m_pM3Styles->UpdateScaling(1.5F);
+    m_headless = headless;
+    Context::CreateM3Styles(ImGui::GetFont());
 
     ImGui::CreateContext();
 
@@ -56,7 +70,7 @@ void M3TestFixture::Initialize(const bool headless)
     }
 
     m_testEngine = ImGuiTestEngine_CreateContext();
-    InitImGuiTestEngine(m_testEngine);
+    InitImGuiTestEngine(m_testEngine, IsHeadless());
 }
 
 void M3TestFixture::Shutdown()
@@ -78,10 +92,19 @@ void M3TestFixture::RunLoop()
 {
     ImGuiTestEngine_Start(m_testEngine, ImGui::GetCurrentContext());
     ImGuiTestEngine_InstallDefaultCrashHandler();
-    while (!ImGuiTestEngine_IsTestQueueEmpty(m_testEngine))
+    bool done = false;
+    while (!done)
     {
         if (!IsHeadless())
         {
+            MSG msg;
+            while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
+            {
+                ::TranslateMessage(&msg);
+                ::DispatchMessage(&msg);
+                if (msg.message == WM_QUIT) done = true;
+            }
+
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
         }
@@ -95,9 +118,18 @@ void M3TestFixture::RunLoop()
 
         if (!IsHeadless())
         {
-            RenderD3D(m_hwnd, m_testEngine, m_dx11RenderState);
+            RenderD3D(m_hwnd, m_dx11RenderState);
+        }
+        else if (ImGuiTestEngine_IsTestQueueEmpty(m_testEngine))
+        {
+            done = true;
         }
     }
+
+    ImGuiTestEngineResultSummary summary;
+    ImGuiTestEngine_GetResultSummary(m_testEngine, &summary);
+
+    ASSERT_EQ(summary.CountTested, summary.CountSuccess);
 }
 
 LRESULT M3TestFixture::WndProc(const HWND hWnd, const UINT msg, const WPARAM wParam, const LPARAM lParam)
@@ -127,37 +159,15 @@ LRESULT M3TestFixture::WndProc(const HWND hWnd, const UINT msg, const WPARAM wPa
 namespace
 {
 [[nodiscard]] auto CreateWindowAndDevice(
-    M3TestFixture::DX11RenderState &renderState, const WNDPROC lpfnWndProc, const LPCWSTR lpszClassName,
-    M3TestFixture *pFixture
+    M3TestFixture::DX11RenderState &renderState, const WNDPROC lpfnWndProc, const LPCWSTR lpszClassName, M3TestFixture *pFixture
 ) -> HWND
 {
     const WNDCLASSEX wc = {
-        sizeof(wc),
-        CS_CLASSDC,
-        lpfnWndProc,
-        0L,
-        0L,
-        GetModuleHandle(nullptr),
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        lpszClassName,
-        nullptr
+        sizeof(wc), CS_CLASSDC, lpfnWndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, lpszClassName, nullptr
     };
     RegisterClassExW(&wc);
     const HWND hwnd = CreateWindowW(
-        wc.lpszClassName,
-        L"Dear ImGui DirectX11 Example",
-        WS_OVERLAPPEDWINDOW,
-        100,
-        100,
-        1280,
-        800,
-        nullptr,
-        nullptr,
-        wc.hInstance,
-        pFixture
+        wc.lpszClassName, L"Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, pFixture
     );
 
     if (!CreateDeviceD3D(hwnd, renderState))
@@ -171,11 +181,16 @@ namespace
     return hwnd;
 }
 
-void InitImGuiTestEngine(ImGuiTestEngine *engine)
+void InitImGuiTestEngine(ImGuiTestEngine *engine, bool headless)
 {
     ImGuiTestEngineIO &test_io        = ImGuiTestEngine_GetIO(engine);
     test_io.ConfigVerboseLevel        = ImGuiTestVerboseLevel_Info;
     test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
+    test_io.ConfigLogToTTY            = true; // always log to tty for test, avoid missing logs when crash happens before log file is created.
+    if (headless)
+    {
+        test_io.ConfigNoThrottle = true;
+    }
 }
 
 void ShutdownImGuiTestEngine(ImGuiTestEngine *engine)
@@ -263,10 +278,14 @@ void CreateRenderTarget(M3TestFixture::DX11RenderState &renderState)
     }
 }
 
-void RenderD3D(const HWND hwnd, ImGuiTestEngine *engine, M3TestFixture::DX11RenderState &renderState)
+void RenderD3D(const HWND hwnd, M3TestFixture::DX11RenderState &renderState)
 {
     constexpr float clear_color_with_alpha[4] = {0.45f, 0.55f, 0.60f, 1.00f};
-    renderState.d3DeviceContext->OMSetRenderTargets(1, &renderState.mainRenderTargetView, nullptr);
+
+    // CComPtr prevent use `&` with an initialized pointer.
+    // And the 2nd param in `OMSetRenderTargets` also require a array pointer.
+    std::array<ID3D11RenderTargetView *, 1> rtvs{renderState.mainRenderTargetView};
+    renderState.d3DeviceContext->OMSetRenderTargets(1, rtvs.data(), nullptr);
     renderState.d3DeviceContext->ClearRenderTargetView(renderState.mainRenderTargetView, clear_color_with_alpha);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

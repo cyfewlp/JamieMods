@@ -18,17 +18,14 @@ class LanguageBar
     bool m_showing = false;
 
 public:
-    auto Draw(bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, ImGuiEx::M3::M3Styles &m3Styles)
-        -> bool;
+    auto Draw(bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool;
 
     [[nodiscard]] auto IsPinned() const -> bool { return m_pinned; }
 
     [[nodiscard]] auto IsShowing() const -> bool { return m_showing; }
 
 private:
-    auto DoDraw(
-        bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles
-    ) -> void;
+    auto DoDraw(bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> void;
 };
 
 } // namespace Ime

@@ -45,15 +45,15 @@ public:
 
     explicit AppearancePanel() = default;
 
-    void Draw(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
+    void Draw(Settings &settings);
 
 private:
-    void DrawZoomCombo(ImGuiEx::M3::M3Styles &m3Styles);
-    void DrawThemeBuilder(ImGuiEx::M3::M3Styles &m3Styles);
-    void DrawLanguagesCombo(Settings::Appearance &appearance, const ImGuiEx::M3::M3Styles &m3Styles) const;
+    void DrawZoomCombo();
+    void DrawThemeBuilder();
+    void DrawLanguagesCombo(Settings::Appearance &appearance) const;
 
 public:
-    void ApplySettings(Settings::Appearance &appearance, ImGuiEx::M3::M3Styles &m3Styles);
+    void ApplySettings(Settings::Appearance &appearance);
 
 private:
     void LoadTranslation(std::string_view language) const;

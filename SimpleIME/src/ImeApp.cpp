@@ -28,10 +28,9 @@
 
 namespace
 {
-constexpr auto                         CONFIG_FILE_NAME     = "SimpleIME.toml";
-constexpr auto                         INIT_TIMEOUT_SECONDS = 5s;
-std::unique_ptr<Ime::ImeApp>           g_instance           = nullptr;
-std::unique_ptr<ImGuiEx::M3::M3Styles> g_M3Styles           = nullptr;
+constexpr auto               CONFIG_FILE_NAME     = "SimpleIME.toml";
+constexpr auto               INIT_TIMEOUT_SECONDS = 5s;
+std::unique_ptr<Ime::ImeApp> g_instance           = nullptr;
 
 auto ConfigFilePath() -> std::filesystem::path
 {
@@ -120,6 +119,7 @@ void ImeApp::OnInputLoaded()
 void ImeApp::Uninitialize()
 {
     UI::Shutdown();
+    ImGuiEx::M3::Context::DestroyM3Styles();
     Events::UnInstallEventSinks(); // should safe
     if (m_state.IsInitialized())
     {
@@ -269,8 +269,7 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     }
 
     const auto &appearance = m_settings.appearance;
-    auto        colors     = ImGuiEx::M3::ThemeBuilder::Build({appearance.themeContrastLevel, appearance.themeSourceColor, appearance.themeDarkMode});
-    g_M3Styles             = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);
+    ImGuiEx::M3::Context::CreateM3Styles(iconFont, {appearance.themeContrastLevel, appearance.themeSourceColor, appearance.themeDarkMode});
 
     std::thread childWndThread([&ensureInitialized, this] -> void {
         try
@@ -279,7 +278,7 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
             ensureInitialized.set_value(true);
             // we can't call ensureInitialized after create child window, will cause deadlock.
             m_imeWnd.CreateHost(m_hWnd, m_settings);
-            m_imeWnd.ApplyUiSettings(m_settings, *g_M3Styles);
+            m_imeWnd.ApplyUiSettings(m_settings);
             m_imeWnd.Run();
         }
         catch (...)
@@ -354,13 +353,13 @@ void ImeApp::LogAlreadyInitialized() const
 
 void ImeApp::Draw()
 {
-    if (!m_state.IsInitialized() || !g_M3Styles)
+    if (!m_state.IsInitialized())
     {
         return;
     }
     UI::NewFrame();
 
-    m_imeWnd.DrawIme(m_settings, *g_M3Styles);
+    m_imeWnd.DrawIme(m_settings);
 
     UI::EndFrame();
     UI::Render();

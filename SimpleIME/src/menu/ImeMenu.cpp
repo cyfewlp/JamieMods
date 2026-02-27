@@ -131,7 +131,12 @@ auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI
             const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
             return OnCharEvent(charEvent);
         }
-        case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeCharEvent):
+        case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeCharEvent): {
+            // This cast is safe but its a bit hacky, since kImeCharEvent is not a real GFxEvent type, but we can use it to distinguish from normal
+            // CharEvent. The logic: intercept all the `RE::GFxEvent::EventType::kCharEvent` type events when IME activated. And call
+            // `Utils::SendStringToGame` when recived `WM_CHAR` message. pass all `GFxEventTypeEx::kImeCharEvent` event except for ToolWindowMenu is
+            // showing.
+            // \todo Is this also worked when TSF disabled?
             if (ToolWindowMenu::IsShowing())
             {
                 const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
@@ -140,6 +145,7 @@ auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI
             }
             fxEvent->type = RE::GFxEvent::EventType::kCharEvent;
             break;
+        }
         default:
             break;
     }
@@ -256,9 +262,7 @@ bool SendFakeControlUpEvent()
             pScaleFormMessageData->scaleformEvent = pEvent;
 
             RE::UIMessageQueue::GetSingleton()->AddMessage(
-                RE::InterfaceStrings::GetSingleton()->console,
-                RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                pScaleFormMessageData
+                RE::InterfaceStrings::GetSingleton()->console, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
             );
             return true;
         }

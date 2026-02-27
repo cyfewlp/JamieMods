@@ -49,11 +49,12 @@ struct StatusBar
  * @param selectedIndex current selected FontInfo index. will be set if select a new.
  * @return is select a new row.
  */
-auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles) -> bool
+auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos) -> bool
 {
     using Spacing   = ImGuiEx::M3::Spacing;
     using ColorRole = M3Spec::ColorRole;
 
+    auto      &m3Styles        = ImGuiEx::M3::Context::GetM3Styles();
     const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     const auto paddingX        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingX);
     const auto paddingY        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingY);
@@ -106,11 +107,10 @@ auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fon
 
 void DrawStatusBar(const StatusBar &statusBar, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    ImGuiEx::M3::SmallIcon(statusBar.icon, m3Styles);
+    ImGuiEx::M3::SmallIcon(statusBar.icon);
     ImGui::SameLine();
-    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     ImGui::PushTextWrapPos(0.0F);
-    ImGuiEx::M3::TextUnformatted(statusBar.text, m3Styles, M3Spec::ColorRole::onSecondaryContainer);
+    ImGuiEx::M3::TextUnformatted<ImGuiEx::M3::Spec::TextRole::LabelLarge>(statusBar.text, M3Spec::ColorRole::onSecondaryContainer);
     ImGui::PopTextWrapPos();
 
     ImGui::Separator();
@@ -139,8 +139,8 @@ auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles) -> bool
     const auto safeIndent = ImMax(ImGuiEx::M3::HalfDiff(avail.x, fabSize), 0.0F);
     ImGui::Indent(safeIndent);
 
-    const bool clicked = ImGuiEx::M3::Fab(ICON_PLUS, m3Styles, ImGuiEx::M3::Spec::FabColors::TonalPrimary);
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Add"), m3Styles);
+    const bool clicked = ImGuiEx::M3::Fab(ICON_PLUS, ImGuiEx::M3::Spec::FabColors::TonalPrimary);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Add"));
 
     ImGui::Unindent(safeIndent);
     return clicked;
@@ -148,10 +148,10 @@ auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles) -> bool
 
 } // namespace
 
-void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos, const ImGuiEx::M3::M3Styles &m3Styles)
+void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 {
     ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-    const bool edited = ImGuiEx::M3::SearchBar("Filter", m_textFilter.InputBuf, IM_COUNTOF(m_textFilter.InputBuf), {.icon = ICON_SEARCH}, m3Styles);
+    const bool edited = ImGuiEx::M3::SearchBar("Filter", m_textFilter.InputBuf, IM_COUNTOF(m_textFilter.InputBuf), {.icon = ICON_SEARCH});
     ImGui::PopItemFlag();
     if (edited)
     {
@@ -159,7 +159,7 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos, con
     }
 
     const auto &fontInfos1 = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
-    if (FontsTable(m_interactState.selectedIndex, fontInfos1, m3Styles))
+    if (FontsTable(m_interactState.selectedIndex, fontInfos1))
     {
         m_previewDebounceTimer.Poke();
         m_state = State::DEBOUNCING;
@@ -205,7 +205,7 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
         const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
         if (ImGui::BeginChild("FontsView", {width, 0}, ImGuiEx::ChildFlags().Borders()))
         {
-            DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList(), m3Styles);
+            DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList());
         }
         ImGui::EndChild();
     }

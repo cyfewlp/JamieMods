@@ -32,15 +32,14 @@ template <> constexpr auto ImGuiDataTypeFor<uint64_t>() -> ImGuiDataType { retur
 
 struct Params
 {
-    void           *pValue;
-    const void     *pMinValue;
-    const void     *pMaxValue;
-    const M3Styles &m3Styles;
-    double          value01;
-    ImGuiDataType   dataType;
-    uint32_t        grabOuterWidth;
-    uint32_t        grabHeight;
-    uint32_t        frameHeight;
+    void         *pValue;
+    const void   *pMinValue;
+    const void   *pMaxValue;
+    double        value01;
+    ImGuiDataType dataType;
+    uint32_t      grabOuterWidth;
+    uint32_t      grabHeight;
+    uint32_t      frameHeight;
 };
 
 auto Draw(std::string_view label, const Params &params, SliderFlags flags) -> bool;
@@ -49,10 +48,9 @@ auto Draw(std::string_view label, const Params &params, SliderFlags flags) -> bo
 template <typename T>
 struct Params
 {
-    T              &value;
-    T               minValue;
-    T               maxValue;
-    const M3Styles &m3Styles;
+    T &value;
+    T  minValue;
+    T  maxValue;
 };
 
 template <Spec::SizeTips Size = Spec::SizeTips::SMALL, typename T>
@@ -63,17 +61,15 @@ auto Draw(const std::string_view label, const Params<T> &params, const SliderFla
     auto minValue = params.minValue;
     auto maxValue = params.maxValue;
     if (minValue > maxValue) std::swap(minValue, maxValue);
-    const double value01 = (maxValue != minValue)
-                               ? (static_cast<double>(params.value) - static_cast<double>(minValue)) /
-                                     (static_cast<double>(maxValue) - static_cast<double>(minValue))
-                               : 0.0;
+    const double value01 = (maxValue != minValue) ? (static_cast<double>(params.value) - static_cast<double>(minValue)) /
+                                                        (static_cast<double>(maxValue) - static_cast<double>(minValue))
+                                                  : 0.0;
     return detail::Draw(
         label,
         detail::Params{
             .pValue         = &params.value,
             .pMinValue      = &minValue,
             .pMaxValue      = &maxValue,
-            .m3Styles       = params.m3Styles,
             .value01        = value01,
             .dataType       = dataType,
             .grabOuterWidth = Spec::Slider<Size>::grabOuterWidth,

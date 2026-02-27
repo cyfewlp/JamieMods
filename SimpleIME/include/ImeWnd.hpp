@@ -75,14 +75,14 @@ public:
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles);
+    void DrawIme(Settings &settings);
     void ToggleToolWindow();
 
     bool IsShowingToolWindow() const { return m_pImeUi->IsShowingToolWindow(); }
 
     bool IsPinedToolWindow() const { return m_pImeUi->IsPinedToolWindow(); }
 
-    void ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const;
+    void ApplyUiSettings(Settings &settings) const;
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;

@@ -219,7 +219,7 @@ void ImeWnd::AbortIme() const
     }
 }
 
-void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
+void ImeWnd::DrawIme(Settings &settings)
 {
 #ifdef DEBUG
     const auto frameStart = std::chrono::high_resolution_clock::now();
@@ -228,17 +228,17 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
     if (m_fWantUpdateUiScale)
     {
         m_fWantUpdateUiScale = false;
-        m3Styles.UpdateScaling(m_dpiScale);
+        ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_dpiScale);
     }
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
-        m_pImeWindow->Draw(m_pTextService->GetTextEditor(), m_pTextService->GetCandidateUi(), settings, m3Styles);
+        m_pImeWindow->Draw(m_pTextService->GetTextEditor(), m_pTextService->GetCandidateUi(), settings);
 
         {
             const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
             const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
-            if (m_languageBar.Draw(m_fWantToggleToolWindow, activeLang, langProfiles, m3Styles))
+            if (m_languageBar.Draw(m_fWantToggleToolWindow, activeLang, langProfiles))
             {
                 settings.appearance.showSettings = true;
             }
@@ -246,7 +246,7 @@ void ImeWnd::DrawIme(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles)
 
             if (m_languageBar.IsShowing())
             {
-                m_pImeUi->DrawSettings(settings, m3Styles);
+                m_pImeUi->DrawSettings(settings);
             }
         }
     }
@@ -273,9 +273,9 @@ void ImeWnd::ToggleToolWindow()
     m_fWantToggleToolWindow = true;
 }
 
-void ImeWnd::ApplyUiSettings(Settings &settings, ImGuiEx::M3::M3Styles &m3Styles) const
+void ImeWnd::ApplyUiSettings(Settings &settings) const
 {
-    m_pImeUi->ApplySettings(settings.appearance, m3Styles);
+    m_pImeUi->ApplySettings(settings.appearance);
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

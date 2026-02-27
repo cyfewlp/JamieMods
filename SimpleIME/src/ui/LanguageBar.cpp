@@ -28,17 +28,17 @@ constexpr auto LANGUAGE_BAR = "LanguageBar";
 using ColorRole = M3Spec::ColorRole;
 using Spacing   = ImGuiEx::M3::Spacing;
 
-void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles)
+void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
 {
     uint32_t clickedIndex = UINT32_MAX;
-    if (ImGuiEx::M3::BeginMenu("###InstalledIME", m3Styles, ImGuiEx::M3::Spec::MenuColors::Vibrant))
+    if (ImGuiEx::M3::BeginMenu("###InstalledIME", ImGuiEx::M3::Spec::MenuColors::Vibrant))
     {
         uint32_t idx = 0;
         for (const auto &langProfile : langProfiles)
         {
             ImGui::PushID(static_cast<int>(idx));
             const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile) == TRUE;
-            if (ImGuiEx::M3::MenuItemVibrant(langProfile.desc.c_str(), isSelected, m3Styles) && !isSelected)
+            if (ImGuiEx::M3::MenuItemVibrant(langProfile.desc.c_str(), isSelected) && !isSelected)
             {
                 clickedIndex = idx;
             }
@@ -74,36 +74,32 @@ void TogglePinned(bool &pinned, bool &showing)
 }
 } // namespace
 
-auto LanguageBar::Draw(
-    const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, ImGuiEx::M3::M3Styles &m3Styles
-) -> bool
+auto LanguageBar::Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool
 {
     if (wantToggle) TogglePinned(m_pinned, m_showing);
 
     bool openSettings = false;
     if (m_showing)
     {
-        DoDraw(openSettings, activeLangProfile, langProfiles, m3Styles);
+        DoDraw(openSettings, activeLangProfile, langProfiles);
     }
     return openSettings;
 }
 
-auto LanguageBar::DoDraw(
-    bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, const ImGuiEx::M3::M3Styles &m3Styles
-) -> void
+auto LanguageBar::DoDraw(bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> void
 {
     auto flags = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
     if (m_pinned)
     {
         flags = flags.NoInputs();
     }
-    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, &m_showing, m3Styles, M3Spec::ToolBarColors::Vibrant, flags))
+    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, &m_showing, M3Spec::ToolBarColors::Vibrant, flags))
     {
-        ImGuiEx::M3::SmallIcon(ICON_MOVE, m3Styles);
+        ImGuiEx::M3::SmallIcon(ICON_MOVE);
         ImGui::SameLine();
 
         constexpr auto iconButtonColors = ImGuiEx::M3::Spec::IconButtonColors::Standard;
-        if (ImGuiEx::M3::SmallIconButton(m_pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, m3Styles, iconButtonColors))
+        if (ImGuiEx::M3::SmallIconButton(m_pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, iconButtonColors))
         {
             m_pinned = true;
 
@@ -115,7 +111,7 @@ auto LanguageBar::DoDraw(
 
         ImGui::SameLine();
 
-        if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, m3Styles, iconButtonColors))
+        if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, iconButtonColors))
         {
             openSettings = true;
         }
@@ -123,11 +119,11 @@ auto LanguageBar::DoDraw(
 
         ImGui::SameLine();
 
-        if (ImGuiEx::M3::SmallButton(activeLangProfile.desc.c_str(), "", m3Styles))
+        if (ImGuiEx::M3::SmallButton(activeLangProfile.desc.c_str(), ""))
         {
             ImGui::OpenPopup("###InstalledIME");
         }
-        DrawInputMethodsCombo(activeLangProfile, langProfiles, m3Styles);
+        DrawInputMethodsCombo(activeLangProfile, langProfiles);
 
         ImGui::SameLine();
         if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))

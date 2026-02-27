@@ -160,8 +160,9 @@ bool FontBuilder::ApplyFont(Settings &settings)
     return true;
 }
 
-void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
+void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
+    auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
     m_PreviewPanel.Draw(fontBuilder, m3Styles);
     ImGui::SameLine(0.0F, 0.0F);
     {
@@ -174,14 +175,14 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings, co
 
             if (m_PreviewPanel.IsPreviewing())
             {
-                DrawFontInfoTable(fontBuilder, m3Styles);
+                DrawFontInfoTable(fontBuilder);
             }
         }
         ImGui::EndChild();
     }
 }
 
-void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
+void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder)
 {
     using Spacing   = ImGuiEx::M3::Spacing;
     using ColorRole = M3Spec::ColorRole;
@@ -190,11 +191,12 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
     {
         return;
     }
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Color<ImGuiCol_Border>(m3Styles.Colors().at(ColorRole::outlineVariant))
-        .Color<ImGuiCol_TableRowBg>(m3Styles.Colors().at(ColorRole::surface))
-        .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(ColorRole::surface))
-        .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS]);
+    auto      &m3Styles   = ImGuiEx::M3::Context::GetM3Styles();
+    const auto styleGuard = ImGuiEx::StyleGuard()
+                                .Color<ImGuiCol_Border>(m3Styles.Colors().at(ColorRole::outlineVariant))
+                                .Color<ImGuiCol_TableRowBg>(m3Styles.Colors().at(ColorRole::surface))
+                                .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(ColorRole::surface))
+                                .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS]);
     ImGui::Indent(m3Styles[Spacing::L]);
     if (ImGui::BeginTable("BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()))
     {
@@ -207,7 +209,7 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGuiEx::M3::TextUnformatted(std::format("{}", idx + 1U), m3Styles);
+                ImGuiEx::M3::TextUnformatted(std::format("{}", idx + 1U));
 
                 ImGui::TableNextColumn();
 
@@ -226,11 +228,9 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder, con
 
 void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
 {
-    if (ImGuiEx::M3::BeginDockedToolbar(
-            m3Styles.GetPixels(M3Spec::SmallIconButton::ContainerHeight), 5, M3Spec::ColorRole::surfaceContainer, m3Styles
-        ))
+    if (ImGuiEx::M3::BeginDockedToolbar(m3Styles.GetPixels(M3Spec::SmallIconButton::ContainerHeight), 5, M3Spec::ColorRole::surfaceContainer))
     {
-        DrawToolBarButtons(fontBuilder, settings, m3Styles);
+        DrawToolBarButtons(fontBuilder, settings);
         ImGuiEx::M3::EndDockedToolbar();
     }
 
@@ -238,18 +238,18 @@ void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &setti
     DrawWarningsModal();
 }
 
-void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
+void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings)
 {
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
-    auto Button = [&m3Styles](const std::string_view &icon) -> bool {
-        return ImGuiEx::M3::XSmallIconButton(icon, m3Styles);
+    auto Button = [](const std::string_view &icon) -> bool {
+        return ImGuiEx::M3::XSmallIconButton(icon);
     };
 
-    if (ImGuiEx::M3::XSmallIconButton(ICON_WRENCH, m3Styles))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_WRENCH))
     {
         fontBuilder.ApplyFont(settings);
     }
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.SetAsDefault"), m3Styles);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.SetAsDefault"));
 
     ImGui::SameLine();
     if (Button(ICON_ROTATE_CCW))
@@ -260,14 +260,14 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
         }
         fontBuilder.Reset();
     }
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Reset"), m3Styles);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Reset"));
 
     ImGui::SameLine();
     if (Button(ICON_EYE))
     {
         m_PreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
     }
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Preview"), m3Styles);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Preview"));
     ImGui::EndDisabled();
 
     ImGui::SameLine();
@@ -279,17 +279,17 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
         ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
         ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
     };
-    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_ALERT, m3Styles))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_ALERT))
     {
         centerPopup(TITLE_WARNING);
     }
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"), m3Styles);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"));
     ImGui::SameLine();
-    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_QUESTION_MARK, m3Styles))
+    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_QUESTION_MARK))
     {
         centerPopup(TITLE_HELP);
     }
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"), m3Styles);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"));
 }
 
 void UI::FontBuilderPanel::DrawHelpModal()

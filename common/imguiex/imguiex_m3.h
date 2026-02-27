@@ -8,6 +8,7 @@
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
 #include "m3/facade/icon_button.h"
+#include "m3/spec/buttons.h"
 #include "m3/spec/fab.h"
 #include "m3/spec/menu.h"
 #include "m3/spec/text_field.h"
@@ -21,9 +22,40 @@ namespace ImGuiEx::M3
 constexpr int CHANNEL_FG = 1;
 constexpr int CHANNEL_BG = 0;
 
+template <typename Derived>
+struct BaseConfiguration
+{
+    Spec::SizeTips size = Spec::SizeTips::SMALL; ///< default to small
+
+    constexpr auto Size(Spec::SizeTips s) -> Derived &
+    {
+        size = s;
+        return static_cast<Derived &>(*this);
+    }
+
+    constexpr auto XSmall() { return Size(Spec::SizeTips::XSMALL); }
+
+    constexpr auto Small() { return Size(Spec::SizeTips::SMALL); }
+
+    constexpr auto Medium() { return Size(Spec::SizeTips::MEDIUM); }
+
+    constexpr auto Large() { return Size(Spec::SizeTips::LARGE); }
+
+    constexpr auto XLarge() { return Size(Spec::SizeTips::XLARGE); }
+};
+
 //! Support line height with last used TextRole's line height. If the line height is not set or less than font size, it
 //! will fall back to normal text rendering.
-void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
+void TextUnformatted(const std::string_view &text, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
+
+template <Spec::TextRole Role>
+void TextUnformatted(const std::string_view &text, Spec::ColorRole contentRole = Spec::ColorRole::onSurface)
+{
+    auto &m3Styles = Context::GetM3Styles();
+
+    const auto fontScope = m3Styles.UseTextRole(Spec::TypeScaleValue::of<Role>());
+    TextUnformatted(text, contentRole);
+}
 
 /**
  * @brief Renders a Material Design 3 style Navigation Rail item.
@@ -40,177 +72,209 @@ void TextUnformatted(const std::string_view &text, const M3Styles &m3Styles, Spe
  * @param m3Styles  Reference to @c ImGuiEx::M3Styles for theme and scaling.
  * @return true if the item was clicked; otherwise false.
  */
-auto NavItem(std::string_view label, bool selected, std::string_view icon, const M3Styles &m3Styles) -> bool;
+auto NavItem(std::string_view label, bool selected, std::string_view icon) -> bool;
 
-auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles, bool expanded) -> bool;
+auto BeginNavRail(std::string_view strId, bool expanded) -> bool;
 
-auto BeginNavRail(std::string_view strId, const M3Styles &m3Styles) -> bool;
+auto BeginNavRail(std::string_view strId) -> bool;
 
 //! Like ImGui::EndChild: You always need to call it after BeginNavRail.
 auto EndNavRail() -> void;
 
 //! @brief Icon only, no interaction.
 //! This is the Standard `IconButton` special case: no bg and interaction, only render the icon with correct size and color.
-auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> void;
+auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void;
 
-inline auto XSmallIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+inline auto XSmallIcon(std::string_view icon) -> void
 {
-    Icon(icon, Spec::SizeTips::XSMALL, m3Styles);
+    Icon(icon, Spec::SizeTips::XSMALL);
 }
 
-inline auto SmallIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+inline auto SmallIcon(std::string_view icon) -> void
 {
-    Icon(icon, Spec::SizeTips::SMALL, m3Styles);
+    Icon(icon, Spec::SizeTips::SMALL);
 }
 
-inline auto MediumIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+inline auto MediumIcon(std::string_view icon) -> void
 {
-    Icon(icon, Spec::SizeTips::MEDIUM, m3Styles);
+    Icon(icon, Spec::SizeTips::MEDIUM);
 }
 
-inline auto LargeIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+inline auto LargeIcon(std::string_view icon) -> void
 {
-    Icon(icon, Spec::SizeTips::LARGE, m3Styles);
+    Icon(icon, Spec::SizeTips::LARGE);
 }
 
-inline auto XLargeIcon(std::string_view icon, const M3Styles &m3Styles) -> void
+inline auto XLargeIcon(std::string_view icon) -> void
 {
-    Icon(icon, Spec::SizeTips::XLARGE, m3Styles);
+    Icon(icon, Spec::SizeTips::XLARGE);
 }
 
 //! @brief IconButtons
 //! Pass `Spec::IconButtonColors` to specify the color scheme for the icon button.
 //! The default is `Filled`, which applies the standard filled style.
 auto IconButton(
-    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonWidths widths, const M3Styles &m3Styles,
-    Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled
+    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonWidths widths, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled
 ) -> bool;
 
-inline auto XSmallIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto XSmallIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Default, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Default, ibColors);
 }
 
-inline auto SmallIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
+inline auto SmallIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Default, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Default, ibColors);
 }
 
-inline auto MediumIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto MediumIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Default, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Default, ibColors);
 }
 
-inline auto LargeIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
+inline auto LargeIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Default, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Default, ibColors);
 }
 
-inline auto XLargeIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto XLargeIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Default, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Default, ibColors);
 }
 
-inline auto XSmallNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto XSmallNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Narrow, ibColors);
 }
 
-inline auto SmallNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto SmallNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Narrow, ibColors);
 }
 
-inline auto MediumNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto MediumNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Narrow, ibColors);
 }
 
-inline auto LargeNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto LargeNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Narrow, ibColors);
 }
 
-inline auto XLargeNarrowIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto XLargeNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Narrow, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Narrow, ibColors);
 }
 
-inline auto XSmallWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto XSmallWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Wide, ibColors);
 }
 
-inline auto SmallWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto SmallWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Wide, ibColors);
 }
 
-inline auto MediumWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto MediumWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Wide, ibColors);
 }
 
-inline auto LargeWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto LargeWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Wide, ibColors);
 }
 
-inline auto XLargeWideIconButton(std::string_view icon, const M3Styles &m3Styles, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled)
-    -> bool
+inline auto XLargeWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Wide, m3Styles, ibColors);
+    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Wide, ibColors);
 }
 
-auto Fab(std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool;
+auto Fab(std::string_view icon, Spec::SizeTips sizeTips, Spec::FabColors fabColors) -> bool;
 
-inline auto Fab(std::string_view icon, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool
+inline auto Fab(std::string_view icon, Spec::FabColors fabColors) -> bool
 {
-    return Fab(icon, Spec::SizeTips::MEDIUM, m3Styles, fabColors);
+    return Fab(icon, Spec::SizeTips::MEDIUM, fabColors);
 }
 
-inline auto FabLarge(std::string_view icon, const M3Styles &m3Styles, Spec::FabColors fabColors) -> bool
+inline auto FabLarge(std::string_view icon, Spec::FabColors fabColors) -> bool
 {
-    return Fab(icon, Spec::SizeTips::LARGE, m3Styles, fabColors);
+    return Fab(icon, Spec::SizeTips::LARGE, fabColors);
 }
 
-auto Button(std::string_view label, std::string_view icon, Spec::SizeTips sizeTips, const M3Styles &m3Styles) -> bool;
-
-inline auto XSmallButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+struct ButtonConfiguration : BaseConfiguration<ButtonConfiguration>
 {
-    return Button(label, icon, Spec::SizeTips::XSMALL, m3Styles);
+    using BaseConfiguration::BaseConfiguration;
+
+    std::string_view   icon;                                ///< optional
+    Spec::ButtonColors colors = Spec::ButtonColors::filled; ///< default to filled
+    Spec::ButtonShape  shape  = Spec::ButtonShape::Round;   ///< default to round
+
+    ButtonConfiguration(std::string_view a_icon = "") : icon(a_icon) {}
+
+    constexpr auto Icon(std::string_view i) -> ButtonConfiguration &
+    {
+        icon = i;
+        return *this;
+    }
+
+    constexpr auto Variant(Spec::ButtonColors v) -> ButtonConfiguration &
+    {
+        colors = v;
+        return *this;
+    }
+
+    constexpr auto Shape(Spec::ButtonShape a_shape) -> ButtonConfiguration &
+    {
+        shape = a_shape;
+        return *this;
+    }
+
+    constexpr auto Filled() { return Variant(Spec::ButtonColors::filled); }
+
+    constexpr auto Tonal() { return Variant(Spec::ButtonColors::tonal); }
+
+    constexpr auto Outlined() { return Variant(Spec::ButtonColors::outlined); }
+
+    constexpr auto Text() { return Variant(Spec::ButtonColors::text); }
+
+    constexpr auto Round() { return Shape(Spec::ButtonShape::Round); }
+
+    constexpr auto Square() { return Shape(Spec::ButtonShape::Square); }
+};
+
+auto Button(std::string_view label, const ButtonConfiguration &config = {}) -> bool;
+
+inline auto Button(std::string_view label, std::string_view icon, Spec::SizeTips sizeTips) -> bool
+{
+    return Button(label, ButtonConfiguration(icon).Size(sizeTips));
 }
 
-inline auto SmallButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+inline auto XSmallButton(std::string_view label, std::string_view icon) -> bool
 {
-    return Button(label, icon, Spec::SizeTips::SMALL, m3Styles);
+    return Button(label, icon, Spec::SizeTips::XSMALL);
 }
 
-inline auto MediumButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+inline auto SmallButton(std::string_view label, std::string_view icon) -> bool
 {
-    return Button(label, icon, Spec::SizeTips::MEDIUM, m3Styles);
+    return Button(label, icon, Spec::SizeTips::SMALL);
 }
 
-inline auto LargeButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+inline auto MediumButton(std::string_view label, std::string_view icon) -> bool
 {
-    return Button(label, icon, Spec::SizeTips::LARGE, m3Styles);
+    return Button(label, icon, Spec::SizeTips::MEDIUM);
 }
 
-inline auto XLargeButton(std::string_view label, std::string_view icon, const M3Styles &m3Styles) -> bool
+inline auto LargeButton(std::string_view label, std::string_view icon) -> bool
 {
-    return Button(label, icon, Spec::SizeTips::XLARGE, m3Styles);
+    return Button(label, icon, Spec::SizeTips::LARGE);
+}
+
+inline auto XLargeButton(std::string_view label, std::string_view icon) -> bool
+{
+    return Button(label, icon, Spec::SizeTips::XLARGE);
 }
 
 /**
@@ -222,11 +286,11 @@ inline auto XLargeButton(std::string_view label, std::string_view icon, const M3
 struct TextFieldContent
 {
     //! Optional icon glyph rendered before the text field's label or input text.
-    std::string_view leadingIcon;
+    std::string_view leadingIcon = "";
     //! The label text associated with the text field.
     std::string_view label;
     //! Optional icon glyph rendered after the text field's label or input text.
-    std::string_view trailingIcon;
+    std::string_view trailingIcon = "";
 };
 
 /**
@@ -235,18 +299,18 @@ struct TextFieldContent
  * Implemented by ImGui::TempInputText and custom Item style.
  * @return true if edited, false otherwise.
  */
-auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
+auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize) -> bool;
 
 //! @brief Overload for read-only or pre-populated text fields. The presence of inputText determines if the field is
 //! "populated".
-auto FilledTextField(const TextFieldContent &tfContent, std::string_view inputText, const M3Styles &m3Styles) -> bool;
+auto FilledTextField(const TextFieldContent &tfContent, std::string_view inputText) -> bool;
 
 //! @brief An outlined text field that follows Material Design 3 specifications.
-auto OutlinedTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, const M3Styles &m3Styles) -> bool;
+auto OutlinedTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize) -> bool;
 
 //! @brief Overload for read-only or pre-populated outlined text fields. The presence of inputText determines if the
 //! field is "populated".
-auto OutlinedTextField(const TextFieldContent &tfContent, std::string_view inputText, const M3Styles &m3Styles) -> bool;
+auto OutlinedTextField(const TextFieldContent &tfContent, std::string_view inputText) -> bool;
 
 using Func = std::function<void()>;
 
@@ -272,17 +336,17 @@ using Func = std::function<void()>;
  * @see M3Styles for available styling options.
  * @see Spec namespace for Material Design 3 specifications.
  */
-void ListItem(std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc, bool plain = false);
+void ListItem(std::string_view strId, Func &&contentFunc, bool plain = false);
 
-inline void ListItemPlain(std::string_view strId, const M3Styles &m3Styles, Func &&contentFunc)
+inline void ListItemPlain(std::string_view strId, Func &&contentFunc)
 {
-    ListItem(strId, m3Styles, std::forward<Func>(contentFunc), true);
+    ListItem(strId, std::forward<Func>(contentFunc), true);
 }
 
 //! Render a single-line label aligned to the current line’s text baseline.
 //! Works inside ListItem content and also for any line where you want centered text alignment.
 //! Requires calling `m3Styles.UseTextRole<Spec::List::textRole>()` (or an equivalent role) beforehand.
-void AlignedLabel(std::string_view label, const M3Styles &m3Styles, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
+void AlignedLabel(std::string_view label, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
 
 //! adjust cursor position.y for the leading color button in ListItem.
 void ListLayoutLeadingColorButton(float height = 0.F);
@@ -307,31 +371,31 @@ inline void ListDivider()
     ImGui::Separator();
 }
 
-inline auto ListLeadingImageSize(const M3Styles &m3Styles) -> ImVec2
+inline auto ListLeadingImageSize() -> ImVec2
 {
-    const auto size = m3Styles.GetPixels(Spec::List::leadingImageSize);
+    const auto size = Context::GetM3Styles().GetPixels(Spec::List::leadingImageSize);
     return {size, size};
 }
 
 struct SearchConfiguration
 {
-    std::string_view hintText;     ///< optional
-    std::string_view icon;         ///< optional
-    std::string_view trailingIcon; ///< optional
+    std::string_view icon         = ""; ///< optional
+    std::string_view hintText     = ""; ///< optional
+    std::string_view trailingIcon = ""; ///< optional
 };
 
-auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config, const M3Styles &m3Styles) -> bool;
+auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config) -> bool;
 
 /**
  * The toolbar is a container with multiple slots, and you must
  * provide your expected dimensions and draw your button according to the agreement.
  * @return true is Toolbar visible
  */
-auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles) -> bool;
+auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, Spec::ColorRole surfaceRole) -> bool;
 
-inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole surfaceRole, const M3Styles &m3Styles) -> bool
+inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole surfaceRole) -> bool
 {
-    return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceRole, m3Styles);
+    return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceRole);
 }
 
 auto EndDockedToolbar() -> void;
@@ -343,21 +407,19 @@ auto EndDockedToolbar() -> void;
  * @note Toolbar will limit its position to stay within the screen with a margin defined by `Spec::ToolBarSizing::VerticalContainerExternalSpace` and
  * `Spec::ToolBarSizing::HorizontalContainerExternalSpace`.
  */
-auto BeginFloatingToolbar(
-    const char *name, bool *p_open, const M3Styles &m3Styles, Spec::ToolBarColors colors = Spec::ToolBarColors::Standard, WindowFlags flags = {}
-) -> bool;
+auto BeginFloatingToolbar(const char *name, bool *p_open, Spec::ToolBarColors colors = Spec::ToolBarColors::Standard, WindowFlags flags = {}) -> bool;
 auto EndFloatingToolbar() -> void;
 
-auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors, const M3Styles &m3Styles) -> bool;
+auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool;
 
-inline auto MenuItem(std::string_view label, const bool selected, const M3Styles &m3Styles) -> bool
+inline auto MenuItem(std::string_view label, const bool selected) -> bool
 {
-    return MenuItem(label, selected, Spec::MenuColors::Standard, m3Styles);
+    return MenuItem(label, selected, Spec::MenuColors::Standard);
 }
 
-inline auto MenuItemVibrant(std::string_view label, const bool selected, const M3Styles &m3Styles) -> bool
+inline auto MenuItemVibrant(std::string_view label, const bool selected) -> bool
 {
-    return MenuItem(label, selected, Spec::MenuColors::Vibrant, m3Styles);
+    return MenuItem(label, selected, Spec::MenuColors::Vibrant);
 }
 
 constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4;
@@ -376,24 +438,23 @@ constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16;
  * @param maxItemCount Optional limit for visible items before scrolling. Pass a negative value for no limit.
  * @return true if the menu is open and ready for item rendering; false if the popup is closed or failed to open.
  */
-auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, Spec::MenuColors menuitemColors, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT)
-    -> bool;
+auto BeginMenu(std::string_view strId, Spec::MenuColors menuitemColors, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool;
 
-inline auto BeginMenu(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
+inline auto BeginMenu(std::string_view strId, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
 {
-    return BeginMenu(strId, m3Styles, Spec::MenuColors::Standard, maxItemCount);
+    return BeginMenu(strId, Spec::MenuColors::Standard, maxItemCount);
 }
 
-inline auto BeginMenuVibrant(std::string_view strId, const M3Styles &m3Styles, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
+inline auto BeginMenuVibrant(std::string_view strId, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
 {
-    return BeginMenu(strId, m3Styles, Spec::MenuColors::Vibrant, maxItemCount);
+    return BeginMenu(strId, Spec::MenuColors::Vibrant, maxItemCount);
 }
 
 void EndMenu();
 
-auto BeginCombo(std::string_view label, std::string_view previewValue, const M3Styles &m3Styles) -> bool;
+auto BeginCombo(std::string_view label, std::string_view previewValue) -> bool;
 void EndCombo();
 
-void SetItemToolTip(std::string_view text, const M3Styles &m3Styles);
+void SetItemToolTip(std::string_view text);
 
 } // namespace ImGuiEx::M3

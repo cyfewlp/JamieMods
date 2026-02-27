@@ -23,10 +23,7 @@ class ImeWindow
     ImVec2 m_imeSize;
 
 public:
-    void Draw(
-        const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings,
-        const ImGuiEx::M3::M3Styles &m3Styles
-    );
+    void Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings);
 
 private:
     [[nodiscard]] auto IsImeNeedRelayout() const -> bool;

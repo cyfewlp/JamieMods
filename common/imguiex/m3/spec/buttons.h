@@ -12,12 +12,18 @@
 namespace ImGuiEx::M3::Spec
 {
 
-enum class ButtonVariant : std::uint8_t
+enum class ButtonColors : std::uint8_t
 {
     filled,
     tonal,
     outlined,
     text,
+};
+
+enum class ButtonShape : std::uint8_t
+{
+    Round,
+    Square
 };
 
 template <States State>
@@ -95,6 +101,117 @@ struct ButtonFilled<States::Disabled> : public FilledButtonEnabled
     static constexpr auto DisabledIconColor = ColorRole::onSurface;
 };
 
+struct ButtonText
+{
+    //! Button text icon color
+    static constexpr auto IconColor = ColorRole::primary;
+
+    //! Button text label color
+    static constexpr auto LabelTextColor = ColorRole::primary;
+
+    //! Button text disabled container color
+    static constexpr auto DisabledContainerColor = ColorRole::onSurface;
+
+    //! Button text disabled icon color
+    static constexpr auto DisabledIconColor = ColorRole::onSurface;
+
+    //! Button text disabled label color
+    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
+
+    //! Button text disabled container opacity
+    static constexpr auto DisabledContainerOpacity = 0.1F;
+};
+
+struct ButtonOutlined
+{
+    //! Button outlined outline color
+    static constexpr auto OutlineColor = ColorRole::outlineVariant;
+
+    //! Button outlined icon color
+    static constexpr auto IconColor = ColorRole::onSurfaceVariant;
+
+    //! Button outlined icon color - toggle (selected)
+    static constexpr auto SelectedIconColor = ColorRole::inverseOnSurface;
+
+    //! Button outlined icon color - toggle (unselected)
+    static constexpr auto UnselectedIconColor = ColorRole::onSurfaceVariant;
+
+    //! Button outlined container color - toggle (selected)
+    static constexpr auto SelectedContainerColor = ColorRole::inverseSurface;
+
+    //! Button outlined label color
+    static constexpr auto LabelTextColor = ColorRole::onSurfaceVariant;
+
+    //! Button outlined label color - toggle (selected)
+    static constexpr auto SelectedLabelTextColor = ColorRole::inverseOnSurface;
+
+    //! Button outlined label color - toggle (unselected)
+    static constexpr auto UnselectedLabelTextColor = ColorRole::onSurfaceVariant;
+
+    //! Button outlined disabled outline color
+    static constexpr auto DisabledOutlineColor = ColorRole::outlineVariant;
+
+    //! Button outlined disabled outline color (unselected)
+    static constexpr auto UnselectedDisabledOutlineColor = ColorRole::outlineVariant;
+
+    //! Button outlined disabled icon color
+    static constexpr auto DisabledIconColor = ColorRole::onSurface;
+
+    //! Button outlined disabled container color (selected)
+    static constexpr auto SelectedDisabledContainerColor = ColorRole::onSurface;
+
+    //! Button outlined disabled label color
+    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
+
+    //! Button outlined disabled container opacity
+    static constexpr auto DisabledContainerOpacity = 0.1F;
+};
+
+struct ButtonTonal
+{
+    //! Button tonal shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
+
+    //! Button tonal icon color
+    static constexpr auto IconColor = ColorRole::onSecondaryContainer;
+
+    //! Button tonal icon color - toggle (selected)
+    static constexpr auto SelectedIconColor = ColorRole::onSecondary;
+
+    //! Button tonal icon color - toggle (unselected)
+    static constexpr auto UnselectedIconColor = ColorRole::onSecondaryContainer;
+
+    //! Button tonal container color
+    static constexpr auto ContainerColor = ColorRole::secondaryContainer;
+
+    //! Button tonal container color - toggle (selected)
+    static constexpr auto SelectedContainerColor = ColorRole::secondary;
+
+    //! Button tonal container color - toggle (unselected)
+    static constexpr auto UnselectedContainerColor = ColorRole::secondaryContainer;
+
+    //! Button tonal label color
+    static constexpr auto LabelTextColor = ColorRole::onSecondaryContainer;
+
+    //! Button tonal label color - toggle (selected)
+    static constexpr auto SelectedLabelTextColor = ColorRole::onSecondary;
+
+    //! Button tonal label color - toggle (unselected)
+    static constexpr auto UnselectedLabelTextColor = ColorRole::onSecondaryContainer;
+
+    //! Button tonal disabled icon color
+    static constexpr auto DisabledIconColor = ColorRole::onSurface;
+
+    //! Button tonal disabled container color
+    static constexpr auto DisabledContainerColor = ColorRole::onSurface;
+
+    //! Button tonal disabled label color
+    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
+
+    //! Button tonal disabled container opacity
+    static constexpr auto DisabledContainerOpacity = 0.1F;
+};
+
 template <SizeTips Size>
 struct ButtonSizing;
 
@@ -114,7 +231,7 @@ struct ButtonSizing<SizeTips::XSMALL>
     static constexpr auto LabelText = TypeScaleValue::of<TextRole::LabelLarge>();
 
     //! Button xsmall shape round
-    // static constexpr auto ContainerShapeRound = ShapeCorner::full;
+    static constexpr auto ContainerShapeRound = ContainerHeight / 2U; ///< ShapeCorner::full;
 
     //! Button xsmall leading space
     static constexpr auto LeadingSpace = dp<12>();
@@ -148,6 +265,9 @@ struct ButtonSizing<SizeTips::SMALL> : public ButtonExtraSmall
     //! Button small container height
     static constexpr auto ContainerHeight = dp<40>();
 
+    //! Button xsmall shape round
+    static constexpr auto ContainerShapeRound = ContainerHeight / 2U; ///< ShapeCorner::full;
+
     //! Button small leading space
     static constexpr auto LeadingSpace = dp<16>();
 
@@ -172,6 +292,9 @@ struct ButtonSizing<SizeTips::MEDIUM> : public ButtonExtraSmall
 
     //! Button medium trailing space
     static constexpr auto TrailingSpace = dp<24>();
+
+    //! Button xsmall shape round
+    static constexpr auto ContainerShapeRound = ContainerHeight / 2U; ///< ShapeCorner::full;
 
     //! Button medium shape square
     static constexpr auto ContainerShapeSquare = ShapeCorner::Large;
@@ -209,6 +332,9 @@ struct ButtonSizing<SizeTips::LARGE> : public ButtonExtraSmall
     //! Button large trailing space
     static constexpr auto TrailingSpace = dp<48>();
 
+    //! Button xsmall shape round
+    static constexpr auto ContainerShapeRound = ContainerHeight / 2U; ///< ShapeCorner::full;
+
     //! Button large shape square
     static constexpr auto ContainerShapeSquare = ShapeCorner::ExtraLarge;
 
@@ -244,6 +370,9 @@ struct ButtonSizing<SizeTips::XLARGE> : public ButtonExtraSmall
     //! Button xlarge trailing space
     static constexpr auto TrailingSpace = dp<64>();
 
+    //! Button xsmall shape round
+    static constexpr auto ContainerShapeRound = ContainerHeight / 2U; ///< ShapeCorner::full;
+
     //! Button xlarge shape square
     static constexpr auto ContainerShapeSquare = ShapeCorner::ExtraLarge;
 
@@ -260,12 +389,12 @@ struct ButtonSizingValues
     Spec::Unit           iconSize;
     Spec::Unit           leadingSpace;
     Spec::Unit           iconLabelSpace;
-    Spec::Unit           containerShapeSquare;
+    Spec::Unit           containerShape;
     Spec::Unit           pressedContainerShape;
     Spec::TypeScaleValue labelText;
 };
 
-constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
+constexpr auto GetButtonSizing(Spec::SizeTips size, Spec::ButtonShape shape) -> ButtonSizingValues
 {
     ButtonSizingValues values;
     switch (size)
@@ -276,7 +405,7 @@ constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
             values.iconSize              = SizingSpec::IconSize;
             values.leadingSpace          = SizingSpec::LeadingSpace;
             values.iconLabelSpace        = SizingSpec::IconLabelSpace;
-            values.containerShapeSquare  = SizingSpec::ContainerShapeSquare;
+            values.containerShape        = shape == ButtonShape::Square ? SizingSpec::ContainerShapeSquare : SizingSpec::ContainerShapeRound;
             values.pressedContainerShape = SizingSpec::PressedContainerShape;
             values.labelText             = SizingSpec::LabelText;
             break;
@@ -287,7 +416,7 @@ constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
             values.iconSize              = SizingSpec::IconSize;
             values.leadingSpace          = SizingSpec::LeadingSpace;
             values.iconLabelSpace        = SizingSpec::IconLabelSpace;
-            values.containerShapeSquare  = SizingSpec::ContainerShapeSquare;
+            values.containerShape        = shape == ButtonShape::Square ? SizingSpec::ContainerShapeSquare : SizingSpec::ContainerShapeRound;
             values.pressedContainerShape = SizingSpec::PressedContainerShape;
             values.labelText             = SizingSpec::LabelText;
             break;
@@ -298,7 +427,7 @@ constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
             values.iconSize              = SizingSpec::IconSize;
             values.leadingSpace          = SizingSpec::LeadingSpace;
             values.iconLabelSpace        = SizingSpec::IconLabelSpace;
-            values.containerShapeSquare  = SizingSpec::ContainerShapeSquare;
+            values.containerShape        = shape == ButtonShape::Square ? SizingSpec::ContainerShapeSquare : SizingSpec::ContainerShapeRound;
             values.pressedContainerShape = SizingSpec::PressedContainerShape;
             values.labelText             = SizingSpec::LabelText;
             break;
@@ -309,7 +438,7 @@ constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
             values.iconSize              = SizingSpec::IconSize;
             values.leadingSpace          = SizingSpec::LeadingSpace;
             values.iconLabelSpace        = SizingSpec::IconLabelSpace;
-            values.containerShapeSquare  = SizingSpec::ContainerShapeSquare;
+            values.containerShape        = shape == ButtonShape::Square ? SizingSpec::ContainerShapeSquare : SizingSpec::ContainerShapeRound;
             values.pressedContainerShape = SizingSpec::PressedContainerShape;
             values.labelText             = SizingSpec::LabelText;
             break;
@@ -320,7 +449,7 @@ constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
             values.iconSize              = SizingSpec::IconSize;
             values.leadingSpace          = SizingSpec::LeadingSpace;
             values.iconLabelSpace        = SizingSpec::IconLabelSpace;
-            values.containerShapeSquare  = SizingSpec::ContainerShapeSquare;
+            values.containerShape        = shape == ButtonShape::Square ? SizingSpec::ContainerShapeSquare : SizingSpec::ContainerShapeRound;
             values.pressedContainerShape = SizingSpec::PressedContainerShape;
             values.labelText             = SizingSpec::LabelText;
             break;
@@ -329,4 +458,56 @@ constexpr auto GetButtonSizing(Spec::SizeTips size) -> ButtonSizingValues
     return values;
 }
 
+struct ButtonColorsValues
+{
+    ColorRole containerColor;
+    ColorRole labelTextColor;
+    ColorRole iconColor;
+    float     containerOpacity;
+};
+
+constexpr auto GetButtonColors(Spec::ButtonColors colors, const bool disabled) -> ButtonColorsValues
+{
+    ButtonColorsValues values{};
+    switch (colors)
+    {
+        case ButtonColors::filled: {
+            using ColorSpec       = ButtonFilled<States::Enabled>;
+            values.containerColor = disabled ? ButtonFilled<States::Disabled>::ContainerColor : ColorSpec::ContainerColor;
+            values.labelTextColor = disabled ? ButtonFilled<States::Disabled>::LabelTextColor : ColorSpec::LabelTextColor;
+            values.iconColor      = disabled ? ButtonFilled<States::Disabled>::IconColor : ColorSpec::IconColor;
+            break;
+        }
+        case ButtonColors::tonal: {
+            using ColorSpec         = ButtonTonal;
+            values.containerColor   = disabled ? ColorSpec::DisabledContainerColor : ColorSpec::ContainerColor;
+            values.containerOpacity = disabled ? ColorSpec::DisabledContainerOpacity : 1.0F;
+            values.labelTextColor   = disabled ? ColorSpec::DisabledLabelTextColor : ColorSpec::LabelTextColor;
+            values.iconColor        = disabled ? ColorSpec::DisabledIconColor : ColorSpec::IconColor;
+            break;
+        }
+        case ButtonColors::outlined: {
+            using ColorSpec = ButtonOutlined;
+            if (disabled)
+            {
+                values.containerOpacity = ColorSpec::DisabledContainerOpacity;
+            }
+            values.labelTextColor = disabled ? ColorSpec::DisabledLabelTextColor : ColorSpec::LabelTextColor;
+            values.iconColor      = disabled ? ColorSpec::DisabledIconColor : ColorSpec::IconColor;
+            break;
+        }
+        case ButtonColors::text: {
+            using ColorSpec = ButtonText;
+            if (disabled)
+            {
+                values.containerColor   = ColorSpec::DisabledContainerColor;
+                values.containerOpacity = ColorSpec::DisabledContainerOpacity;
+            }
+            values.labelTextColor = disabled ? ColorSpec::DisabledLabelTextColor : ColorSpec::LabelTextColor;
+            values.iconColor      = disabled ? ColorSpec::DisabledIconColor : ColorSpec::IconColor;
+            break;
+        }
+    }
+    return values;
+}
 } // namespace ImGuiEx::M3::Spec

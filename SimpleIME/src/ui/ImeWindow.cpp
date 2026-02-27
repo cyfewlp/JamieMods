@@ -201,7 +201,7 @@ void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size)
 } // namespace
 
 //! \todo may use `FindWindowByName` limt IME position? like "common/imguiex/imguiex_m3.cpp:BeginFloatingToolbar"
-void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
+void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings)
 {
     static bool shouldRelayout = true;
     static bool imeAppearing   = true;
@@ -224,7 +224,7 @@ void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateU
         ClampWindowToViewport(m_imePos, m_imeSize);
         ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
     }
-
+    auto          &m3Styles       = ImGuiEx::M3::Context::GetM3Styles();
     constexpr auto flags          = ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
     const auto     mainStyleGuard = ImGuiEx::StyleGuard()
                                     .Style<ImGuiStyleVar_WindowPadding>({})
