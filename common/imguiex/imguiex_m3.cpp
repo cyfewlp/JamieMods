@@ -91,13 +91,19 @@ inline void RenderNavCursor(const ImRect &bb, ImGuiID id, float rounding, ImGuiN
     g.Style.FrameRounding = backupRounding;
 }
 
+inline auto GetDisplayLabel(std::string_view label) -> std::string_view
+{
+    const auto *end = ImGui::FindRenderedTextEnd(TextStart(label), TextEnd(label));
+    return {TextStart(label), end};
+}
+
 //! @brief Align the cursor position to the center of the line height if the line height is larger than the content height.
 inline auto GetAlignedCursorPos(const ImGuiWindow *window, const float height) -> ImVec2
 {
     if (window->DC.CurrLineSize.y > height)
     {
         const auto offsetY = HalfDiff(window->DC.CurrLineSize.y, height);
-        return ImVec2(window->DC.CursorPos.x, window->DC.CursorPos.y + offsetY);
+        return {window->DC.CursorPos.x, window->DC.CursorPos.y + offsetY};
     }
     return window->DC.CursorPos;
 }
@@ -153,7 +159,7 @@ namespace
 {
 
 //! Internal used by NavItem when the nav rail is expanded.
-auto HoriazontalNavItem(std::string_view label, bool selected, std::string_view icon, M3Styles &m3Styles) -> bool
+auto HorizontalNavItem(std::string_view label, bool selected, std::string_view icon, M3Styles &m3Styles) -> bool
 {
     using NavItemSpecH = Spec::NavRailItemHorizontal;
 
@@ -205,12 +211,14 @@ auto NavItem(std::string_view label, bool selected, std::string_view icon) -> bo
     {
         return false;
     }
-    auto      &m3Styles = Context::GetM3Styles();
+    auto      &m3Styles     = Context::GetM3Styles();
+    const auto displayLabel = GetDisplayLabel(label);
+
     const auto availX   = ImGui::GetContentRegionAvail().x;
     const bool expanded = availX > m3Styles.GetPixels(Spec::CollapsedNavRail::ContainerWidth);
     if (expanded)
     {
-        return HoriazontalNavItem(label, selected, icon, m3Styles);
+        return HorizontalNavItem(displayLabel, selected, icon, m3Styles);
     }
 
     const float itemVerticalSpace = m3Styles.GetPixels(Spec::CollapsedNavRail::ItemVerticalSpace);
@@ -258,7 +266,7 @@ auto NavItem(std::string_view label, bool selected, std::string_view icon) -> bo
 
     const auto labelTextRole = m3Styles.UseTextRole<NavItemSpecV::LabelTextRole>();
     {
-        const auto textSize = ImGui::CalcTextSize(TextStart(label), TextEnd(label));
+        const auto textSize = ImGui::CalcTextSize(TextStart(displayLabel), TextEnd(displayLabel));
         // align left when text is too long, avoid it looks weird when center aligned with ellipsis;
         ImVec2     labelPos(bb.Min.x, ActiveIndicatorMax.y + itemVerticalSpace + m3Styles.GetLastText().currHalfLineGap);
         if (textSize.x <= size.x)
@@ -267,7 +275,7 @@ auto NavItem(std::string_view label, bool selected, std::string_view icon) -> bo
         }
 
         const auto &labelColorRole = selected ? Spec::CollapsedNavRail::ActiveLabelTextColor : Spec::CollapsedNavRail::InactiveLabelTextColor;
-        DrawText(drawList, labelPos, label, m3Styles, labelColorRole);
+        DrawText(drawList, labelPos, displayLabel, m3Styles, labelColorRole);
     }
     return pressed;
 }
@@ -320,7 +328,8 @@ namespace
 {
 template <Spec::TextFieldVariant Style>
 auto DrawTextField(
-    Spec::TextFieldState state, const ImRect &bb, const TextFieldContent &tfContent, M3Styles &m3Styles, const bool populated, ImRect &inputBB
+    std::string_view label, Spec::TextFieldState state, const ImRect &bb, const TextFieldConfiguration &tfContent, M3Styles &m3Styles,
+    const bool populated, ImRect &inputBB
 ) -> void
 {
     ImGuiWindow *window            = ImGui::GetCurrentWindow();
@@ -391,7 +400,7 @@ auto DrawTextField(
                 const auto fontScope1 = m3Styles.UseTextRole<Spec::TextFieldCommon::LabelTextPopulatedRole>();
                 labelTextPos.y += m3Styles.GetLastText().currHalfLineGap + m3Styles.GetPixels(Spec::TextFieldCommon ::LabelTextPopulatedTopSpace);
                 inputBB.Min = ImVec2{labelTextPos.x, labelTextPos.y + m3Styles.GetLastText().currText.textSize};
-                DrawText(window->DrawList, labelTextPos, tfContent.label, labelTextColor);
+                DrawText(window->DrawList, labelTextPos, label, labelTextColor);
             }
         }
         else
@@ -399,7 +408,7 @@ auto DrawTextField(
             const auto   fontScope1 = m3Styles.UseTextRole<Spec::TextFieldCommon::LabelTextRole>();
             const auto   textOffset = HalfDiff(bb.GetHeight(), m3Styles.GetLastText().currText.textSize);
             const ImVec2 textPos{labelTextPos.x, bb.Min.y + textOffset};
-            DrawText(window->DrawList, textPos, tfContent.label, labelTextColor);
+            DrawText(window->DrawList, textPos, label, labelTextColor);
         }
 
         window->DrawList->PathLineTo(bb.GetBL());
@@ -458,8 +467,8 @@ auto DrawTextField(
             {
                 const auto fontScope = m3Styles.UseTextRole<Spec::TextFieldCommon::LabelTextPopulatedRole>();
                 labelTextPos.y       = bb.Min.y - (m3Styles.GetLastText().currText.textSize * HALF);
-                labelMaxX += ImGui::CalcTextSize(TextStart(tfContent.label), TextEnd(tfContent.label)).x;
-                DrawText(window->DrawList, labelTextPos, tfContent.label, m3Styles, labelTextColor);
+                labelMaxX += ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
+                DrawText(window->DrawList, labelTextPos, label, m3Styles, labelTextColor);
             }
 
             const auto labelPaddingX = m3Styles.GetPixels(Spec::OutlinedTextFieldEnabled::LabelTextPopulatedContainerPaddingX);
@@ -476,7 +485,7 @@ auto DrawTextField(
             const auto   fontScope1  = m3Styles.UseTextRole<Spec::TextFieldCommon::LabelTextRole>();
             const auto   textOffsetY = HalfDiff(bb.GetHeight(), m3Styles.GetLastText().currText.textSize);
             const ImVec2 textPos(inputBB.Min.x, bb.Min.y + textOffsetY);
-            DrawText(window->DrawList, textPos, tfContent.label, m3Styles, labelTextColor);
+            DrawText(window->DrawList, textPos, label, m3Styles, labelTextColor);
         }
     }
 }
@@ -488,27 +497,30 @@ auto DrawTextField(
  * \todo only the TextFieldContent::label required, other fields may cause compiler warning if not set
  */
 template <Spec::TextFieldVariant Style>
-auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize, std::string_view inputText, M3Styles &m3Styles) -> bool
+auto TextField(
+    std::string_view label, char *buffer, size_t bufferSize, std::string_view inputText, M3Styles &m3Styles, const TextFieldConfiguration &config
+) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
     {
         return false;
     }
-    const auto idLabel = std::format("##TextField{}", tfContent.label);
+    const auto idLabel = std::format("##TextField{}", label);
     const auto id      = window->GetID(idLabel.c_str());
 
     using TfcSpec        = Spec::TextFieldCommon;
     const auto fontScope = m3Styles.UseTextRole<TfcSpec::LabelTextRole>();
 
-    float minWidth = ImGui::CalcTextSize(TextStart(tfContent.label), TextEnd(tfContent.label)).x +
+    const auto displayLabel = GetDisplayLabel(label);
+    float      minWidth     = ImGui::CalcTextSize(TextStart(displayLabel), TextEnd(displayLabel)).x +
                      GetPixels(m3Styles, TfcSpec::LeadingLabelTextSpace, TfcSpec::TrailingLabelTextSpace);
     const auto iconSpace = GetPixels(m3Styles, TfcSpec::IconSpace);
-    if (!tfContent.leadingIcon.empty())
+    if (!config.leadingIcon.empty())
     {
         minWidth += iconSpace;
     }
-    if (!tfContent.trailingIcon.empty())
+    if (!config.trailingIcon.empty())
     {
         minWidth += iconSpace;
     }
@@ -592,7 +604,7 @@ auto TextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSiz
     ImRect inputBB;
     ImGui::RenderNavCursor(bb, id);
     // Draw outline/active indicator and label text.
-    DrawTextField<Style>(tfState, bb, tfContent, m3Styles, populated, inputBB);
+    DrawTextField<Style>(displayLabel, tfState, bb, config, m3Styles, populated, inputBB);
 
     bool       edited            = false;
     const auto nextLineCursorPos = window->DC.CursorPos;
@@ -809,11 +821,14 @@ auto Button(std::string_view label, const ButtonConfiguration &config) -> bool
     {
         return false;
     }
-    auto      &m3Styles  = Context::GetM3Styles();
-    const auto sizing    = Spec::GetButtonSizing(config.size, config.shape);
-    const auto fontScope = m3Styles.UseTextRole(sizing.labelText);
+    auto &m3Styles = Context::GetM3Styles();
 
-    float      width        = ImGui::CalcTextSize(TextStart(label), TextEnd(label), true).x;
+    const auto *const      displayLabelEnd = ImGui::FindRenderedTextEnd(TextStart(label), TextEnd(label));
+    const std::string_view displayLabel(TextStart(label), displayLabelEnd);
+
+    const auto sizing       = Spec::GetButtonSizing(config.size, config.shape);
+    const auto fontScope    = m3Styles.UseTextRole(sizing.labelText);
+    float      width        = ImGui::CalcTextSize(TextStart(displayLabel), TextEnd(displayLabel)).x;
     const auto PaddingSpace = m3Styles.GetPixels(sizing.leadingSpace);
     width += PaddingSpace * 2.0F;
     const auto iconSize       = m3Styles.GetPixels(sizing.iconSize);
@@ -886,32 +901,32 @@ auto Button(std::string_view label, const ButtonConfiguration &config) -> bool
     }
 
     const ImVec2 textPos = bb.Min + ImVec2(labelTextOffsetX, HalfDiff(size.y, m3Styles.GetLastText().currText.textSize));
-    DrawText(window->DrawList, textPos, label, textColor);
+    DrawText(window->DrawList, textPos, displayLabel, textColor);
     return pressed;
 }
 
-auto FilledTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize) -> bool
+auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, const TextFieldConfiguration &config) -> bool
 {
     auto &m3Styles = Context::GetM3Styles();
-    return TextField<Spec::TextFieldVariant::Filled>(tfContent, buffer, bufferSize, "", m3Styles);
+    return TextField<Spec::TextFieldVariant::Filled>(label, buffer, bufferSize, "", m3Styles, config);
 }
 
-auto FilledTextField(const TextFieldContent &tfContent, std::string_view inputText) -> bool
+auto FilledTextField(std::string_view label, std::string_view inputText, const TextFieldConfiguration &config) -> bool
 {
     auto &m3Styles = Context::GetM3Styles();
-    return TextField<Spec::TextFieldVariant::Filled>(tfContent, nullptr, 0LLU, inputText, m3Styles);
+    return TextField<Spec::TextFieldVariant::Filled>(label, nullptr, 0LLU, inputText, m3Styles, config);
 }
 
-auto OutlinedTextField(const TextFieldContent &tfContent, char *buffer, size_t bufferSize) -> bool
+auto OutlinedTextField(std::string_view label, char *buffer, size_t bufferSize, const TextFieldConfiguration &config) -> bool
 {
     auto &m3Styles = Context::GetM3Styles();
-    return TextField<Spec::TextFieldVariant::Outlined>(tfContent, buffer, bufferSize, "", m3Styles);
+    return TextField<Spec::TextFieldVariant::Outlined>(label, buffer, bufferSize, "", m3Styles, config);
 }
 
-auto OutlinedTextField(const TextFieldContent &tfContent, std::string_view inputText) -> bool
+auto OutlinedTextField(std::string_view label, std::string_view inputText, const TextFieldConfiguration &config) -> bool
 {
     auto &m3Styles = Context::GetM3Styles();
-    return TextField<Spec::TextFieldVariant::Outlined>(tfContent, nullptr, 0LLU, inputText, m3Styles);
+    return TextField<Spec::TextFieldVariant::Outlined>(label, nullptr, 0LLU, inputText, m3Styles, config);
 }
 
 void ListItem(const std::string_view strId, Func &&contentFunc, const bool plain)
@@ -1024,7 +1039,7 @@ auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlag
     {
         return {};
     }
-    return ListScope{true, std::move(guard)};
+    return {.visible = true, .styleGuard = std::move(guard)};
 }
 
 auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config) -> bool
@@ -1089,7 +1104,7 @@ auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const Se
     const auto iconOffsetY = HalfDiff(size.y, iconSize);
     if (!config.icon.empty())
     {
-        ImVec4 iconColor = m3Styles.Colors()[Spec::SearchBar::LeadingIconColor];
+        const ImVec4 iconColor = m3Styles.Colors()[Spec::SearchBar::LeadingIconColor];
         DrawIcon(window->DrawList, iconSize, ImVec2{cursorX, bb.Min.y + iconOffsetY}, config.icon, m3Styles, iconColor);
 
         cursorX += iconSize + iconLabelSpace;
@@ -1100,7 +1115,7 @@ auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const Se
     if (!config.trailingIcon.empty())
     {
         inputBB.Max.x -= iconSize;
-        ImVec4 iconColor = m3Styles.Colors()[Spec::SearchBar::TrailingIconColor];
+        const ImVec4 iconColor = m3Styles.Colors()[Spec::SearchBar::TrailingIconColor];
         DrawIcon(window->DrawList, iconSize, ImVec2{inputBB.Max.x, bb.Min.y + iconOffsetY}, config.trailingIcon, m3Styles, iconColor);
         inputBB.Max.x -= iconLabelSpace;
     }
@@ -1144,7 +1159,7 @@ auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const Se
     }
     else
     {
-        std::string_view bufferSv = buffer;
+        const std::string_view bufferSv = buffer;
         DrawText(window->DrawList, inputBB.Min, !bufferSv.empty() ? bufferSv : config.hintText, m3Styles.Colors()[SearchBarSpec::InputTextColor]);
     }
     window->DC.CursorPos = nextLineCursorPos;
@@ -1375,7 +1390,7 @@ auto BeginCombo(std::string_view label, std::string_view previewValue) -> bool
 
     auto &m3Styles = Context::GetM3Styles();
     // always return false
-    (void)TextField<Spec::TextFieldVariant::Outlined>({.label = label}, nullptr, 0U, previewValue, m3Styles);
+    (void)TextField<Spec::TextFieldVariant::Outlined>(label, nullptr, 0U, previewValue, m3Styles, {});
 
     const ImGuiContext &g         = *GImGui;
     const auto          popupId   = ImHashStr("##m3_combo", 0U, g.LastItemData.ID);

@@ -141,7 +141,7 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache)
     constexpr size_t BUFFER_SIZE = 64U;
     buffer.reserve(BUFFER_SIZE);
 
-    if (ImGuiEx::M3::OutlinedTextField({.label = "RGB"}, buffer.data(), buffer.capacity()))
+    if (ImGuiEx::M3::OutlinedTextField("RGB", buffer.data(), buffer.capacity()))
     {
         std::string_view view = buffer;
         for (const auto &c : view)

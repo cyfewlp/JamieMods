@@ -55,7 +55,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_IME_DEBUG)
@@ -90,7 +90,8 @@ target_link_libraries(
     MaterialYou
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion)
+# close the unused param "/Zc:preprocessor" warnings
+target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion -Wno-unused-command-line-argument)
 
 include(FetchContent)
 

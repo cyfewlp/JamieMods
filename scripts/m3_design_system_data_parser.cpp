@@ -7,13 +7,17 @@
 
 #include "../common/json/simdjson.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <print>
+#include <ranges>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 using namespace simdjson;
 
@@ -166,7 +170,7 @@ struct Token
         tokenName = normalize_token_value(tokenName);
     }
 
-    auto toString() const -> std::string
+    [[nodiscard]] auto toString() const -> std::string
     {
         return std::format(
             R"(    //! {}
@@ -211,7 +215,7 @@ auto parse_length_value(simdjson_result<ondemand::value> jValue, TokenValue &val
     {
         if (errorCode != SUCCESS && errorCode != EMPTY && tUnit != "DIPS")
         {
-            printf("[Warning] Unsupported length unit: %s \n", tUnit.data());
+            std::println("[Warning] Unsupported length unit: {} ", tUnit.data());
         }
         else
         {
@@ -227,7 +231,7 @@ auto parse_values(simdjson_result<ondemand::value> jValues) -> TokenValueCache
     auto jValueArray = jValues.get_array();
     if (jValueArray.error() != SUCCESS)
     {
-        std::cout << "[Error] Failed to parse values.  " << jValues.error() << std::endl;
+        std::cout << "[Error] Failed to parse values.  " << jValues.error() << '\n';
     }
     // std::vector<TokenValue> values;
     TokenValueCache valuesCache;
@@ -248,17 +252,17 @@ auto parse_values(simdjson_result<ondemand::value> jValues) -> TokenValueCache
     return valuesCache;
 }
 
-std::ostream &operator<<(std::ostream &os, const Token &token)
+auto operator<<(std::ostream &os, const Token &token) -> std::ostream &
 {
     if (token.value.value.starts_with(Motion_Token_Prefix))
     {
-        printf("[Warning] Motion token is not supported yet: %s \n", token.tokenName.data());
+        std::println("[Warning] Motion token is not supported yet: {} ", token.tokenName);
         return os;
     }
     return os << token.toString();
 }
 
-std::ostream &operator<<(std::ostream &os, const TokenSet &tokenSet)
+auto operator<<(std::ostream &os, const TokenSet &tokenSet) -> std::ostream &
 {
     auto &os1 = os << tokenSet.tokenSetName << "\n{\n";
     std::ranges::copy(tokenSet.tokens, std::ostream_iterator<Token>(os1, "\n"));
@@ -270,7 +274,7 @@ auto parse_tokenSets(simdjson_result<ondemand::value> jTokenSets) -> std::vector
 {
     if (jTokenSets.error() != SUCCESS)
     {
-        std::cout << "[Error] Failed to parse tokenSets!" << std::endl;
+        std::cout << "[Error] Failed to parse tokenSets!" << '\n';
     }
     std::vector<TokenSet> tokenSets;
     for (auto jTokenSet : jTokenSets.get_array())
@@ -290,7 +294,7 @@ auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet
 {
     if (jTokens.error() != SUCCESS)
     {
-        std::cout << "[Error] Failed to parse tokens!" << std::endl;
+        std::cout << "[Error] Failed to parse tokens!" << '\n';
         return;
     }
     if (tokenSets.empty())
@@ -312,7 +316,7 @@ auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet
         {
             if (jToken["deprecationMessage"].has_value())
             {
-                printf("[Warning] Token deprecated: %s \n", token.name.data());
+                std::println("[Warning] Token deprecated: {} ", token.name);
                 if (!containDeprecatedToken)
                 {
                     continue;
@@ -330,13 +334,13 @@ auto parse_tokens(simdjson_result<ondemand::value> jTokens, std::vector<TokenSet
                 }
                 else
                 {
-                    std::cout << "[Error] Failed to parse token: " << token.name.c_str() << std::endl;
+                    std::cout << "[Error] Failed to parse token: " << token.name.c_str() << '\n';
                 }
             }
         }
         else
         {
-            std::cout << "[Error] Failed to parse token: Not have a name key!" << std::endl;
+            std::cout << "[Error] Failed to parse token: Not have a name key!" << '\n';
         }
     }
 }
@@ -351,8 +355,8 @@ auto parse_contextualReferenceTrees(simdjson_result<ondemand::value> jRefTrees, 
             {
                 for (auto ref : jObj["contextualReferenceTree"].get_array())
                 {
-                    std::string refTokenName;
-                    token_type  tokenType = token_type::unsupported;
+                    const std::string refTokenName;
+                    const token_type  tokenType = token_type::unsupported;
 
                     TokenValue tokenValue;
                     bool       parseSuccess = false;
@@ -381,11 +385,11 @@ auto parse_contextualReferenceTrees(simdjson_result<ondemand::value> jRefTrees, 
 
 } // namespace
 
-int main(int argc, char **argv)
+auto main(int argc, char **argv) -> int
 {
     if (argc < 2)
     {
-        std::cout << "Usage: m3_design_system_data_parser.exe spec.json" << std::endl;
+        std::cout << "Usage: m3_design_system_data_parser.exe spec.json" << '\n';
         return -1;
     }
 
@@ -393,30 +397,30 @@ int main(int argc, char **argv)
     std::filesystem::path filePath;
     std::filesystem::path outputFilePath;
 
-    for (size_t i = 1; i < argc; i++)
+    for (size_t i = 1; std::cmp_less(i, argc); i++)
     {
-        std::string_view arg = argv[i];
+        const std::string_view arg = argv[i];
         if (arg == "--help" || arg == "-h")
         {
-            std::cout << "Usage: m3_design_system_data_parser.exe spec.json" << std::endl;
+            std::cout << "Usage: m3_design_system_data_parser.exe spec.json" << '\n';
             return 0;
         }
         if (arg == "--deprecated" || arg == "-d")
         {
-            std::cout << "Deprecated tokens will also be parsed, but with a warning." << std::endl;
+            std::cout << "Deprecated tokens will also be parsed, but with a warning." << '\n';
             containDeprecatedToken = true;
         }
         else
         {
             // try to parse file path.
-            std::filesystem::path path(arg);
+            const std::filesystem::path path(arg);
             if (std::filesystem::exists(path))
             {
                 filePath = path;
             }
             else
             {
-                std::cout << "File not found: " << arg << std::endl;
+                std::cout << "File not found: " << arg << '\n';
                 return -1;
             }
         }
@@ -432,7 +436,7 @@ int main(int argc, char **argv)
     auto             json_result = padded_string::load(filePath.generic_string());
     if (json_result.error() != SUCCESS)
     {
-        std::cerr << "Error loading JSON: " << json_result.error() << std::endl;
+        std::cerr << "Error loading JSON: " << json_result.error() << '\n';
         return 1;
     }
     auto doc = parser.iterate(json_result);
@@ -454,8 +458,8 @@ int main(int argc, char **argv)
         auto skipAnyStateTokenPart = [](std::string_view tokenNameSv) {
             static const std::unordered_set<std::string_view> stateNames = {"pressed", "hovered", "focused", "disabled"};
 
-            size_t pos1             = 0;
-            bool   isFoundStatePart = false;
+            const size_t pos1             = 0;
+            const bool   isFoundStatePart = false;
 
             std::string result;
             result.reserve(tokenNameSv.size());
@@ -463,12 +467,12 @@ int main(int argc, char **argv)
             size_t start = 0;
             while (start < tokenNameSv.size())
             {
-                size_t dotPos = tokenNameSv.find('.', start);
-                size_t end    = (dotPos == std::string_view::npos) ? tokenNameSv.size() : dotPos;
+                const size_t dotPos = tokenNameSv.find('.', start);
+                const size_t end    = (dotPos == std::string_view::npos) ? tokenNameSv.size() : dotPos;
 
-                std::string_view part = tokenNameSv.substr(start, end - start);
+                const std::string_view part = tokenNameSv.substr(start, end - start);
 
-                if (stateNames.find(part) == stateNames.end())
+                if (!stateNames.contains(part))
                 {
                     if (!result.empty() && result.back() != '.')
                     {
@@ -485,11 +489,11 @@ int main(int argc, char **argv)
 
         // sort tokens by reverse lexicographical order of their names (compare from the end)
         // using rbegin()/rend() makes tokens with similar suffixes group together; this is intentional
-        std::ranges::sort(tokenSet.tokens, [&](const Token &a, const Token &b) {
+        std::ranges::sort(tokenSet.tokens, [&](const Token &a, const Token &b) -> bool {
             std::string aTokenNameSort = skipAnyStateTokenPart(a.tokenName);
             std::string bTokenNameSort = skipAnyStateTokenPart(b.tokenName);
 
-            return std::lexicographical_compare(aTokenNameSort.rbegin(), aTokenNameSort.rend(), bTokenNameSort.rbegin(), bTokenNameSort.rend());
+            return std::ranges::lexicographical_compare(std::ranges::reverse_view(aTokenNameSort), std::ranges::reverse_view(bTokenNameSort));
         });
 
         for (auto &token : tokenSet.tokens)

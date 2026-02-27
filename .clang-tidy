@@ -32,7 +32,7 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-HeaderFilterRegex: '^(?!.*(extern|imgui|RE|CommonLibSSE)).*' # 合并排除列表到过滤正则中，效率更高
+HeaderFilterRegex: '^(?!.*(extern|imgui|RE|CommonLibSSE)).*'
 CheckOptions:
   readability-make-member-function-const.IgnorePrototypes: 'false'
   readability-convert-member-functions-to-static.IgnoreMacros: 'true'
