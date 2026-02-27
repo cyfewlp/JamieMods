@@ -23,7 +23,7 @@ jobs:
         uses: JetBrains/qodana-action@v2025.3.1
         with:
           pr-mode: false
-          args: --image jetbrains/qodana-cpp:2025.3-eap-clang18-privileged
+          args: --image "jetbrains/qodana-cpp:2025.3-eap-clang18-privileged"
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_1341916602 }}
           QODANA_ENDPOINT: 'https://qodana.cloud'
