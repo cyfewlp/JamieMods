@@ -285,7 +285,7 @@ void AppearancePanel::DrawThemeBuilder()
                            .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::M]})
                            .Color<ImGuiCol_ChildBg>(colors[ColorRole::surface]);
 
-        ImGuiEx::M3::ListItem("ThemeBuilderList", [&] {
+        ImGuiEx::M3::ListItem([&] {
             const auto size = ImGuiEx::M3::ListLeadingImageSize();
             openPopup       = ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor), colorButtonFlags, size);
             ImGui::SameLine();
@@ -335,7 +335,7 @@ void AppearancePanel::DrawThemeBuilder()
             const auto paletteSize = ImGuiEx::M3::ListLeadingImageSize();
 
             auto draw_palette = [&](std::string_view label, const auto &palette) {
-                ImGuiEx::M3::ListItemPlain(label, [&] {
+                ImGuiEx::M3::ListItemPlain([&] {
                     const auto cursorPos = ImGui::GetCursorScreenPos();
                     ImGui::GetWindowDrawList()->AddRectFilled(
                         cursorPos,
@@ -348,7 +348,7 @@ void AppearancePanel::DrawThemeBuilder()
                 });
             };
 
-            ImGuiEx::M3::ListItem("Primary", [&] {
+            ImGuiEx::M3::ListItem([&] {
                 if (ImGui::ColorButton(
                         "Primary", ImGuiEx::M3::ArgbToImVec4(scheme->primary_palette.get_key_color().ToInt()), colorButtonFlags, paletteSize
                     ))

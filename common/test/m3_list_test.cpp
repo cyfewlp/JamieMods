@@ -33,7 +33,7 @@ TEST_F(M3ListTest, listItem_should_limit_min_height)
         test->GuiFunc    = [](ImGuiTestContext *ctx) {
             auto &genericVars = ctx->GenericVars;
             ImGui::Begin(kTestWindowName, nullptr, ImGuiWindowFlags_NoSavedSettings);
-            ImGuiEx::M3::ListItem("small_content_list_item", [&] {
+            ImGuiEx::M3::ListItem([&] {
                 ImGui::TextUnformatted("Small content");
             });
             genericVars.ItemSize = ImGui::GetItemRectSize();

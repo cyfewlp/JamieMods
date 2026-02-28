@@ -9,6 +9,7 @@
 #include "imguiex_enum_wrap.h"
 #include "m3/facade/icon_button.h"
 #include "m3/spec/buttons.h"
+#include "m3/spec/chips.h"
 #include "m3/spec/fab.h"
 #include "m3/spec/menu.h"
 #include "m3/spec/text_field.h"
@@ -235,6 +236,8 @@ struct ButtonConfiguration : BaseConfiguration<ButtonConfiguration>
         return *this;
     }
 
+    constexpr auto Elevated() { return Variant(Spec::ButtonColors::elevated); }
+
     constexpr auto Filled() { return Variant(Spec::ButtonColors::filled); }
 
     constexpr auto Tonal() { return Variant(Spec::ButtonColors::tonal); }
@@ -280,6 +283,33 @@ inline auto XLargeButton(std::string_view label, std::string_view icon) -> bool
     return Button(label, icon, Spec::SizeTips::XLARGE);
 }
 
+struct ChipConfiguration
+{
+    std::string_view icon;                                ///< optional.
+    std::string_view trailingIcon;                        ///< optional. should be used for filter chip.
+    Spec::ChipColors colors   = Spec::ChipColors::Assist; ///< default to Assist
+    bool             selected = false;                    ///< used for filter chips.
+};
+
+/**
+ * @brief Material Design 3 Chip component.
+ *
+ * Similar to Button, but with a different set of styling rules and interaction states defined by the [M3
+ * specification](https://m3.material.io/components/chips/specs). Chip: no size configuration, no container color for default state.
+ *
+ * It's suitable for secondary actions, e.g. tags, categories, or filters. It can be used in groups or standalone, and supports optional leading and
+ * trailing icons.
+ *
+ * @param label required text label for the chip.
+ * @param config optional configuration struct to customize the chip's appearance and behavior.
+ * @return true if the chip was clicked, false otherwise.
+ */
+auto Chip(std::string_view label, const ChipConfiguration &config = {}) -> bool;
+
+//! @brief A chips `ItemSpacing` style wrapper.
+void BeginChipGroup();
+void EndChipGroup();
+
 /**
  * @brief Configuration for Material Design 3 text fields.
  */
@@ -318,7 +348,6 @@ using Func = std::function<void()>;
  * Combines background rendering, interaction handling, and content scoping into a single call.
  * It automatically manages state layers (Hover/Pressed) based on M3 specifications.
  *
- * @param strId Unique identifier for ImGui state management.
  * @param m3Styles Theme configuration and layout tokens.
  * @param contentFunc Lambda/Callable for inner content. Note: Content is vertically centered
  * based on m3Styles.GetPadding<Spec::List>().
@@ -334,11 +363,11 @@ using Func = std::function<void()>;
  * @see M3Styles for available styling options.
  * @see Spec namespace for Material Design 3 specifications.
  */
-void ListItem(std::string_view strId, Func &&contentFunc, bool plain = false);
+void ListItem(Func &&contentFunc, bool plain = false);
 
-inline void ListItemPlain(std::string_view strId, Func &&contentFunc)
+inline void ListItemPlain(Func &&contentFunc)
 {
-    ListItem(strId, std::forward<Func>(contentFunc), true);
+    ListItem(std::forward<Func>(contentFunc), true);
 }
 
 //! Render a single-line label aligned to the current line’s text baseline.

@@ -108,6 +108,30 @@ inline auto GetAlignedCursorPos(const ImGuiWindow *window, const float height) -
     return window->DC.CursorPos;
 }
 
+inline auto GetButtonState(const ImRect &bb, ImGuiID id, Spec::States &states) -> bool
+{
+    bool       hovered = false;
+    bool       held    = false;
+    const bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    if (IsItemDisabled())
+    {
+        states = Spec::States::Disabled;
+    }
+    else if (hovered && held)
+    {
+        states = Spec::States::Pressed;
+    }
+    else if (hovered)
+    {
+        states = Spec::States::Hovered;
+    }
+    else
+    {
+        states = Spec::States::Enabled;
+    }
+    return pressed;
+}
+
 } // namespace
 
 void TextUnformatted(const std::string_view &text, const Spec::ColorRole contentRole)
@@ -819,7 +843,6 @@ auto Fab(std::string_view icon, Spec::SizeTips sizeTips, Spec::FabColors fabColo
     return pressed;
 }
 
-// \todo hide hash text: call `FindRenderedTextEnd` and replace or use new var for label.
 auto Button(std::string_view label, const ButtonConfiguration &config) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -925,6 +948,157 @@ auto Button(std::string_view label, const ButtonConfiguration &config) -> bool
     return pressed;
 }
 
+auto Chip(std::string_view label, const ChipConfiguration &config) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+    auto &m3Styles = Context::GetM3Styles();
+
+    const auto displayLabel = GetDisplayLabel(label);
+
+    const auto fontScope     = m3Styles.UseTextRole(Spec::ChipCommon::LabelText);
+    float      width         = ImGui::CalcTextSize(TextStart(displayLabel), TextEnd(displayLabel)).x;
+    const auto iconSize      = m3Styles.GetPixels(Spec::ChipCommon::IconSize);
+    const auto iconSpace     = m3Styles.GetPixels(Spec::ChipCommon::IconLeadingSpace);
+    const auto labelSpace    = m3Styles.GetPixels(Spec::ChipCommon::LeadingSpace);
+    const auto gap           = m3Styles.GetPixels(Spec::ChipCommon::Gap);
+    float      leadingSpace  = 0.0F;
+    float      trailingSpace = 0.0F;
+    if (!config.icon.empty())
+    {
+        leadingSpace = iconSpace;
+        width += leadingSpace + iconSize + gap;
+    }
+    else
+    {
+        leadingSpace = labelSpace;
+        width += leadingSpace;
+    }
+    if (!config.trailingIcon.empty())
+    {
+        trailingSpace = iconSpace;
+        width += trailingSpace + iconSize + gap;
+    }
+    else
+    {
+        trailingSpace = labelSpace;
+        width += trailingSpace;
+    }
+    const auto   height = m3Styles.GetPixels(Spec::ChipCommon::ContainerHeight);
+    const ImVec2 size(width, height);
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + size);
+
+    const auto id = window->GetID(TextStart(label), TextEnd(label));
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, id))
+    {
+        return false;
+    }
+    auto &g = *GImGui;
+
+    Spec::States states  = Spec::States::Enabled;
+    const bool   pressed = GetButtonState(bb, id, states);
+
+    ImVec4 bgColor;
+    ImVec4 textColor;
+    ImVec4 iconColor;
+    ImVec4 outlineColor;
+    float  outlineWidth = 1.0F;
+    if (states == Spec::States::Disabled)
+    {
+        bgColor        = m3Styles.Colors()[DISABLED_CONTAINER_COLOR];
+        textColor      = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        iconColor      = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        outlineColor   = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        bgColor.w      = DISABLED_CONTAINER_OPACITY;
+        textColor.w    = DISABLED_CONTENT_OPACITY;
+        iconColor.w    = DISABLED_CONTENT_OPACITY;
+        outlineColor.w = Spec::ChipCommon::DisabledOutlineOpacity;
+    }
+    else
+    {
+        Spec::ChipVariant variant = Spec::ChipVariant::Default;
+        if (config.colors == Spec::ChipColors::Filter)
+        {
+            if (config.selected)
+            {
+                variant      = Spec::ChipVariant::Selected;
+                outlineWidth = 0.0F;
+            }
+            else
+            {
+                variant = Spec::ChipVariant::Unselected;
+            }
+        }
+        auto colors  = Spec::GetChipsColorsValues(config.colors, states, variant);
+        bgColor      = m3Styles.Colors()[colors.containerColor];
+        textColor    = m3Styles.Colors()[colors.labelTextColor];
+        iconColor    = m3Styles.Colors()[Spec::ChipCommon::IconColor];
+        outlineColor = m3Styles.Colors()[colors.outlineColor];
+        if (states == Spec::States::Hovered)
+        {
+            bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, textColor);
+        }
+        else if (states == Spec::States::Pressed)
+        {
+            bgColor = ColorUtils::BlendPressedOrMakeOverlay(bgColor, textColor);
+        }
+    }
+
+    const auto rounding = m3Styles.GetPixels(Spec::ChipCommon::ContainerShape);
+    {
+        const auto backupFrameRounding = g.Style.FrameRounding;
+        g.Style.FrameRounding          = rounding;
+        ImGui::RenderNavCursor(bb, id);
+        g.Style.FrameRounding = backupFrameRounding;
+    }
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
+    if (outlineWidth > 0.0F)
+    {
+        window->DrawList->AddRect(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(outlineColor), rounding);
+    }
+
+    float labelTextOffsetX = leadingSpace;
+    if (!config.icon.empty())
+    {
+        const ImVec2 iconPos = bb.Min + ImVec2(labelTextOffsetX, HalfDiff(size.y, iconSize));
+        DrawIcon(window->DrawList, iconSize, iconPos, config.icon, m3Styles, iconColor);
+        labelTextOffsetX += iconSize + gap;
+    }
+    if (!config.trailingIcon.empty())
+    {
+        const ImVec2 iconPos = bb.GetTR() - ImVec2(trailingSpace + iconSize, HalfDiff(size.y, iconSize));
+        DrawIcon(window->DrawList, iconSize, iconPos, config.icon, m3Styles, iconColor);
+    }
+
+    const ImVec2 textPos = bb.Min + ImVec2(labelTextOffsetX, HalfDiff(size.y, m3Styles.GetLastText().currText.textSize));
+    DrawText(window->DrawList, textPos, displayLabel, textColor);
+    return pressed;
+}
+
+void BeginChipGroup()
+{
+    auto &m3Styles = Context::GetM3Styles();
+
+    const auto lineHeight   = Spec::ChipCommon::LineHeigh;
+    const auto chipHeight   = Spec::ChipCommon::ContainerHeight;
+    const auto itemSpacingX = m3Styles.GetPixels(Spec::ChipCommon::Margin);
+    const auto itemSpacingY = m3Styles.GetPixels(lineHeight - chipHeight);
+
+    // ImGui::GetCurrentWindow()->DC.CurrLineSize.y = m3Styles.GetPixels(lineHeight);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(itemSpacingX, itemSpacingY));
+}
+
+void EndChipGroup()
+{
+    ImGui::PopStyleVar();
+}
+
 auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, const TextFieldConfiguration &config) -> bool
 {
     auto &m3Styles = Context::GetM3Styles();
@@ -949,7 +1123,7 @@ auto OutlinedTextField(std::string_view label, std::string_view inputText, const
     return TextField<Spec::TextFieldVariant::Outlined>(label, nullptr, 0LLU, inputText, m3Styles, config);
 }
 
-void ListItem(const std::string_view strId, Func &&contentFunc, const bool plain)
+void ListItem(Func &&contentFunc, const bool plain)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -965,10 +1139,8 @@ void ListItem(const std::string_view strId, Func &&contentFunc, const bool plain
     ImRect contentRect(bb.Min + contentOffset, {});
 
     window->DrawList->ChannelsSplit(2);
-    const auto id = window->GetID(TextStart(strId), TextEnd(strId));
 
     window->DrawList->ChannelsSetCurrent(CHANNEL_FG);
-    ImGui::PushID(static_cast<int>(id));
     ImGui::BeginGroup();
     {
         ImGui::SetCursorScreenPos(contentRect.Min);
@@ -983,7 +1155,6 @@ void ListItem(const std::string_view strId, Func &&contentFunc, const bool plain
         contentFunc();
     }
     ImGui::EndGroup();
-    ImGui::PopID();
 
     contentRect.Max = ImGui::GetItemRectMax();
     window->DrawList->ChannelsSetCurrent(CHANNEL_BG);
@@ -996,16 +1167,13 @@ void ListItem(const std::string_view strId, Func &&contentFunc, const bool plain
     }
 
     ImGui::ItemSize(bb);
-    if (ImGui::ItemAdd(bb, id))
+    if (ImGui::ItemAdd(bb, 0, nullptr, ImGuiItemFlags_NoNav | ImGuiItemFlags_NoNavDefaultFocus))
     {
         // only handle hover staus because the click should be handled by inner content.
         if (contentRect.Max.x > contentRect.Min.x)
         {
-            auto      &g       = *GImGui;
-            const bool hovered = (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect) != 0;
-
             auto surfaceColor = m3Styles.Colors()[Spec::ColorRole::surface];
-            if (!plain && hovered)
+            if (!plain && ImGui::ItemHoverable(bb, 0, GImGui->LastItemData.ItemFlags))
             {
                 surfaceColor = m3Styles.Colors().Hovered(Spec::ColorRole::surface, Spec::ColorRole::onSurface);
             }
