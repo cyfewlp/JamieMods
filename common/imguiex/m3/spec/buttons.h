@@ -14,6 +14,7 @@ namespace ImGuiEx::M3::Spec
 
 enum class ButtonColors : std::uint8_t
 {
+    elevated,
     filled,
     tonal,
     outlined,
@@ -23,29 +24,70 @@ enum class ButtonColors : std::uint8_t
 enum class ButtonShape : std::uint8_t
 {
     Round,
-    Square
+    Square,
 };
 
-template <States State>
-struct ButtonFilled;
+enum class ButtonVariant : std::uint8_t
+{
+    Default,
+    ToggleSelected,
+    ToggleUnselected,
+};
+
+template <ButtonColors Colors, States State, ButtonVariant Variant = ButtonVariant::Default>
+struct Button;
 
 template <>
-struct ButtonFilled<States::Enabled>
+struct Button<ButtonColors::elevated, States::Enabled>
 {
-    //! Button filled label color - toggle (selected)
-    static constexpr auto SelectedLabelTextColor = ColorRole::onPrimary;
+    //! Button elevated shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
 
-    //! Button filled label color - toggle (unselected)
-    static constexpr auto UnselectedLabelTextColor = ColorRole::onSurfaceVariant;
+    //! Button elevated icon color
+    static constexpr auto IconColor = ColorRole::primary;
 
-    //! Button filled container color
+    //! Button elevated container color
+    static constexpr auto ContainerColor = ColorRole::surfaceContainerLow;
+
+    //! Button elevated label color
+    static constexpr auto LabelTextColor = ColorRole::primary;
+};
+
+template <>
+struct Button<ButtonColors::elevated, States::Enabled, ButtonVariant::ToggleSelected>
+{
+    //! Button elevated icon color - toggle (selected)
+    static constexpr auto IconColor            = ColorRole::onPrimary;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
+
+    //! Button elevated container color - toggle (selected)
     static constexpr auto ContainerColor = ColorRole::primary;
 
-    //! Button filled container color - toggle (unselected)
-    static constexpr auto UnselectedContainerColor = ColorRole::surfaceContainer;
+    //! Button elevated label color - toggle (selected)
+    static constexpr auto LabelTextColor = ColorRole::onPrimary;
+};
 
-    //! Button filled container color - toggle (selected)
-    static constexpr auto SelectedContainerColor = ColorRole::primary;
+template <>
+struct Button<ButtonColors::elevated, States::Enabled, ButtonVariant::ToggleUnselected>
+{
+    //! Button elevated icon color - toggle (unselected)
+    static constexpr auto IconColor = ColorRole::primary;
+
+    //! Button elevated container color - toggle (unselected)
+    static constexpr auto ContainerColor       = ColorRole::surfaceContainerLow;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
+
+    //! Button elevated label color - toggle (unselected)
+    static constexpr auto LabelTextColor = ColorRole::primary;
+};
+
+template <>
+struct Button<ButtonColors::filled, States::Enabled>
+{
+    //! Button filled container color
+    static constexpr auto ContainerColor = ColorRole::primary;
 
     //! Button filled shadow color
     static constexpr auto ContainerShadowColor = ColorRole::shadow;
@@ -55,119 +97,141 @@ struct ButtonFilled<States::Enabled>
 
     //! Button filled icon color
     static constexpr auto IconColor = ColorRole::onPrimary;
+};
+
+template <>
+struct Button<ButtonColors::filled, States::Enabled, ButtonVariant::ToggleSelected>
+{
+    //! Button filled label color - toggle (selected)
+    static constexpr auto LabelTextColor = ColorRole::onPrimary;
+
+    //! Button filled container color - toggle (selected)
+    static constexpr auto ContainerColor       = ColorRole::primary;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
 
     //! Button filled icon color - toggle (selected)
-    static constexpr auto SelectedIconColor = ColorRole::onPrimary;
+    static constexpr auto IconColor = ColorRole::onPrimary;
+};
+
+template <>
+struct Button<ButtonColors::filled, States::Enabled, ButtonVariant::ToggleUnselected>
+{
+    //! Button filled label color - toggle (unselected)
+    static constexpr auto LabelTextColor = ColorRole::onSurfaceVariant;
+
+    //! Button filled container color - toggle (unselected)
+    static constexpr auto ContainerColor       = ColorRole::surfaceContainer;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
 
     //! Button filled icon color - toggle (unselected)
-    static constexpr auto UnselectedIconColor = ColorRole::onSurfaceVariant;
-};
-
-using FilledButtonEnabled = ButtonFilled<States::Enabled>;
-
-template <>
-struct ButtonFilled<States::Hovered> : public FilledButtonEnabled
-{
-    using FilledButtonEnabled::FilledButtonEnabled;
+    static constexpr auto IconColor = ColorRole::onSurfaceVariant;
 };
 
 template <>
-struct ButtonFilled<States::Focused> : public FilledButtonEnabled
+struct Button<ButtonColors::filled, States::Disabled>
 {
-    using FilledButtonEnabled::FilledButtonEnabled;
-};
-
-template <>
-struct ButtonFilled<States::Pressed> : public FilledButtonEnabled
-{
-    using FilledButtonEnabled::FilledButtonEnabled;
-};
-
-template <>
-struct ButtonFilled<States::Disabled> : public FilledButtonEnabled
-{
-    using FilledButtonEnabled::FilledButtonEnabled;
-
     //! Button filled disabled container color
-    static constexpr auto DisabledContainerColor = ColorRole::onSurface;
+    static constexpr auto ContainerColor = ColorRole::onSurface;
 
     //! Button filled disabled container opacity
-    static constexpr auto DisabledContainerOpacity = 0.1F;
+    static constexpr auto ContainerOpacity = 0.1F;
 
     //! Button filled disabled label color
-    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
+    static constexpr auto LabelTextColor = ColorRole::onSurface;
 
     //! Button filled disabled icon color
-    static constexpr auto DisabledIconColor = ColorRole::onSurface;
+    static constexpr auto IconColor = ColorRole::onSurface;
 };
 
-struct ButtonText
+template <>
+struct Button<ButtonColors::text, States::Enabled>
 {
+    //! Button text disabled container color
+    static constexpr auto ContainerColor = ColorRole::none;
+
+    //! Button elevated shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::none;
+
     //! Button text icon color
     static constexpr auto IconColor = ColorRole::primary;
 
     //! Button text label color
     static constexpr auto LabelTextColor = ColorRole::primary;
-
-    //! Button text disabled container color
-    static constexpr auto DisabledContainerColor = ColorRole::onSurface;
-
-    //! Button text disabled icon color
-    static constexpr auto DisabledIconColor = ColorRole::onSurface;
-
-    //! Button text disabled label color
-    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
-
-    //! Button text disabled container opacity
-    static constexpr auto DisabledContainerOpacity = 0.1F;
 };
 
-struct ButtonOutlined
+using TextButtonEnabled = Button<ButtonColors::text, States::Enabled>;
+
+template <>
+struct Button<ButtonColors::text, States::Enabled, ButtonVariant::ToggleSelected> : public TextButtonEnabled
 {
+    using TextButtonEnabled::TextButtonEnabled;
+};
+
+template <>
+struct Button<ButtonColors::text, States::Enabled, ButtonVariant::ToggleUnselected> : public TextButtonEnabled
+{
+    using TextButtonEnabled::TextButtonEnabled;
+};
+
+template <>
+struct Button<ButtonColors::outlined, States::Enabled>
+{
+    //! Button outlined disabled container color
+    static constexpr auto ContainerColor       = ColorRole::none;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
+
     //! Button outlined outline color
     static constexpr auto OutlineColor = ColorRole::outlineVariant;
 
     //! Button outlined icon color
     static constexpr auto IconColor = ColorRole::onSurfaceVariant;
 
-    //! Button outlined icon color - toggle (selected)
-    static constexpr auto SelectedIconColor = ColorRole::inverseOnSurface;
-
-    //! Button outlined icon color - toggle (unselected)
-    static constexpr auto UnselectedIconColor = ColorRole::onSurfaceVariant;
-
-    //! Button outlined container color - toggle (selected)
-    static constexpr auto SelectedContainerColor = ColorRole::inverseSurface;
-
     //! Button outlined label color
     static constexpr auto LabelTextColor = ColorRole::onSurfaceVariant;
-
-    //! Button outlined label color - toggle (selected)
-    static constexpr auto SelectedLabelTextColor = ColorRole::inverseOnSurface;
-
-    //! Button outlined label color - toggle (unselected)
-    static constexpr auto UnselectedLabelTextColor = ColorRole::onSurfaceVariant;
-
-    //! Button outlined disabled outline color
-    static constexpr auto DisabledOutlineColor = ColorRole::outlineVariant;
-
-    //! Button outlined disabled outline color (unselected)
-    static constexpr auto UnselectedDisabledOutlineColor = ColorRole::outlineVariant;
-
-    //! Button outlined disabled icon color
-    static constexpr auto DisabledIconColor = ColorRole::onSurface;
-
-    //! Button outlined disabled container color (selected)
-    static constexpr auto SelectedDisabledContainerColor = ColorRole::onSurface;
-
-    //! Button outlined disabled label color
-    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
-
-    //! Button outlined disabled container opacity
-    static constexpr auto DisabledContainerOpacity = 0.1F;
 };
 
-struct ButtonTonal
+template <>
+struct Button<ButtonColors::outlined, States::Enabled, ButtonVariant::ToggleSelected>
+{
+    //! Button outlined icon color - toggle (selected)
+    static constexpr auto IconColor = ColorRole::inverseOnSurface;
+
+    //! Button outlined container color - toggle (selected)
+    static constexpr auto ContainerColor       = ColorRole::inverseSurface;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
+
+    //! Button outlined label color - toggle (selected)
+    static constexpr auto LabelTextColor = ColorRole::inverseOnSurface;
+};
+
+template <>
+struct Button<ButtonColors::outlined, States::Enabled, ButtonVariant::ToggleUnselected>
+{
+    //! Button outlined icon color - toggle (unselected)
+    static constexpr auto IconColor = ColorRole::onSurfaceVariant;
+
+    //! Button outlined container color - toggle (selected)
+    static constexpr auto ContainerColor       = ColorRole::none;
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
+
+    //! Button outlined label color - toggle (unselected)
+    static constexpr auto LabelTextColor = ColorRole::onSurfaceVariant;
+};
+
+template <>
+struct Button<ButtonColors::outlined, States::Disabled>
+{
+    //! Button outlined disabled outline color
+    static constexpr auto OutlineColor = ColorRole::outlineVariant;
+};
+
+template <>
+struct Button<ButtonColors::tonal, States::Enabled>
 {
     //! Button tonal shadow color
     static constexpr auto ContainerShadowColor = ColorRole::shadow;
@@ -175,41 +239,43 @@ struct ButtonTonal
     //! Button tonal icon color
     static constexpr auto IconColor = ColorRole::onSecondaryContainer;
 
-    //! Button tonal icon color - toggle (selected)
-    static constexpr auto SelectedIconColor = ColorRole::onSecondary;
-
-    //! Button tonal icon color - toggle (unselected)
-    static constexpr auto UnselectedIconColor = ColorRole::onSecondaryContainer;
-
     //! Button tonal container color
     static constexpr auto ContainerColor = ColorRole::secondaryContainer;
 
-    //! Button tonal container color - toggle (selected)
-    static constexpr auto SelectedContainerColor = ColorRole::secondary;
-
-    //! Button tonal container color - toggle (unselected)
-    static constexpr auto UnselectedContainerColor = ColorRole::secondaryContainer;
-
     //! Button tonal label color
     static constexpr auto LabelTextColor = ColorRole::onSecondaryContainer;
+};
+
+template <>
+struct Button<ButtonColors::tonal, States::Enabled, ButtonVariant::ToggleSelected>
+{
+    //! Button tonal icon color - toggle (selected)
+    static constexpr auto IconColor = ColorRole::onSecondary;
+
+    //! Button tonal container color - toggle (selected)
+    static constexpr auto ContainerColor = ColorRole::secondary;
+
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
 
     //! Button tonal label color - toggle (selected)
-    static constexpr auto SelectedLabelTextColor = ColorRole::onSecondary;
+    static constexpr auto LabelTextColor = ColorRole::onSecondary;
+};
+
+template <>
+struct Button<ButtonColors::tonal, States::Enabled, ButtonVariant::ToggleUnselected>
+{
+    //! Button tonal icon color - toggle (unselected)
+    static constexpr auto IconColor = ColorRole::onSecondaryContainer;
+
+    //! Button tonal container color - toggle (unselected)
+    static constexpr auto ContainerColor = ColorRole::secondaryContainer;
+
+    //! Button shadow color
+    static constexpr auto ContainerShadowColor = ColorRole::shadow;
 
     //! Button tonal label color - toggle (unselected)
-    static constexpr auto UnselectedLabelTextColor = ColorRole::onSecondaryContainer;
-
-    //! Button tonal disabled icon color
-    static constexpr auto DisabledIconColor = ColorRole::onSurface;
-
-    //! Button tonal disabled container color
-    static constexpr auto DisabledContainerColor = ColorRole::onSurface;
-
-    //! Button tonal disabled label color
-    static constexpr auto DisabledLabelTextColor = ColorRole::onSurface;
-
-    //! Button tonal disabled container opacity
-    static constexpr auto DisabledContainerOpacity = 0.1F;
+    static constexpr auto LabelTextColor = ColorRole::onSecondaryContainer;
 };
 
 template <SizeTips Size>
@@ -396,7 +462,7 @@ struct ButtonSizingValues
 
 constexpr auto GetButtonSizing(Spec::SizeTips size, Spec::ButtonShape shape) -> ButtonSizingValues
 {
-    ButtonSizingValues values;
+    ButtonSizingValues values{};
     switch (size)
     {
         case SizeTips::XSMALL: {
@@ -461,50 +527,101 @@ constexpr auto GetButtonSizing(Spec::SizeTips size, Spec::ButtonShape shape) -> 
 struct ButtonColorsValues
 {
     ColorRole containerColor;
+    ColorRole shadowColor;
     ColorRole labelTextColor;
     ColorRole iconColor;
     float     containerOpacity;
 };
 
-constexpr auto GetButtonColors(Spec::ButtonColors colors, const bool disabled) -> ButtonColorsValues
+template <ButtonColors Colors, States State, ButtonVariant Variant = ButtonVariant::Default>
+constexpr auto GetButtonColors() -> ButtonColorsValues
+{
+    ButtonColorsValues values{};
+    values.containerColor = Button<Colors, State, Variant>::ContainerColor;
+    values.shadowColor    = Button<Colors, State, Variant>::ContainerShadowColor;
+    values.labelTextColor = Button<Colors, State, Variant>::LabelTextColor;
+    values.iconColor      = Button<Colors, State, Variant>::IconColor;
+    return values;
+}
+
+constexpr auto GetButtonColors(ButtonColors colors, ButtonVariant variant) -> ButtonColorsValues
 {
     ButtonColorsValues values{};
     switch (colors)
     {
+        case ButtonColors::elevated: {
+            switch (variant)
+            {
+                case ButtonVariant::Default:
+                    values = GetButtonColors<ButtonColors::elevated, States::Enabled>();
+                    break;
+                case ButtonVariant::ToggleSelected:
+                    values = GetButtonColors<ButtonColors::elevated, States::Enabled, ButtonVariant::ToggleSelected>();
+                    break;
+                case ButtonVariant::ToggleUnselected:
+                    values = GetButtonColors<ButtonColors::elevated, States::Enabled, ButtonVariant::ToggleUnselected>();
+                    break;
+            }
+            break;
+        }
         case ButtonColors::filled: {
-            using ColorSpec       = ButtonFilled<States::Enabled>;
-            values.containerColor = disabled ? ButtonFilled<States::Disabled>::ContainerColor : ColorSpec::ContainerColor;
-            values.labelTextColor = disabled ? ButtonFilled<States::Disabled>::LabelTextColor : ColorSpec::LabelTextColor;
-            values.iconColor      = disabled ? ButtonFilled<States::Disabled>::IconColor : ColorSpec::IconColor;
+            switch (variant)
+            {
+                case ButtonVariant::Default:
+                    values = GetButtonColors<ButtonColors::filled, States::Enabled>();
+                    break;
+                case ButtonVariant::ToggleSelected:
+                    values = GetButtonColors<ButtonColors::filled, States::Enabled, ButtonVariant::ToggleSelected>();
+                    break;
+                case ButtonVariant::ToggleUnselected:
+                    values = GetButtonColors<ButtonColors::filled, States::Enabled, ButtonVariant::ToggleUnselected>();
+                    break;
+            }
             break;
         }
         case ButtonColors::tonal: {
-            using ColorSpec         = ButtonTonal;
-            values.containerColor   = disabled ? ColorSpec::DisabledContainerColor : ColorSpec::ContainerColor;
-            values.containerOpacity = disabled ? ColorSpec::DisabledContainerOpacity : 1.0F;
-            values.labelTextColor   = disabled ? ColorSpec::DisabledLabelTextColor : ColorSpec::LabelTextColor;
-            values.iconColor        = disabled ? ColorSpec::DisabledIconColor : ColorSpec::IconColor;
+            switch (variant)
+            {
+                case ButtonVariant::Default:
+                    values = GetButtonColors<ButtonColors::tonal, States::Enabled>();
+                    break;
+                case ButtonVariant::ToggleSelected:
+                    values = GetButtonColors<ButtonColors::tonal, States::Enabled, ButtonVariant::ToggleSelected>();
+                    break;
+                case ButtonVariant::ToggleUnselected:
+                    values = GetButtonColors<ButtonColors::tonal, States::Enabled, ButtonVariant::ToggleUnselected>();
+                    break;
+            }
             break;
         }
         case ButtonColors::outlined: {
-            using ColorSpec = ButtonOutlined;
-            if (disabled)
+            switch (variant)
             {
-                values.containerOpacity = ColorSpec::DisabledContainerOpacity;
+                case ButtonVariant::Default:
+                    values = GetButtonColors<ButtonColors::outlined, States::Enabled>();
+                    break;
+                case ButtonVariant::ToggleSelected:
+                    values = GetButtonColors<ButtonColors::outlined, States::Enabled, ButtonVariant::ToggleSelected>();
+                    break;
+                case ButtonVariant::ToggleUnselected:
+                    values = GetButtonColors<ButtonColors::outlined, States::Enabled, ButtonVariant::ToggleUnselected>();
+                    break;
             }
-            values.labelTextColor = disabled ? ColorSpec::DisabledLabelTextColor : ColorSpec::LabelTextColor;
-            values.iconColor      = disabled ? ColorSpec::DisabledIconColor : ColorSpec::IconColor;
             break;
         }
         case ButtonColors::text: {
-            using ColorSpec = ButtonText;
-            if (disabled)
+            switch (variant)
             {
-                values.containerColor   = ColorSpec::DisabledContainerColor;
-                values.containerOpacity = ColorSpec::DisabledContainerOpacity;
+                case ButtonVariant::Default:
+                    values = GetButtonColors<ButtonColors::text, States::Enabled>();
+                    break;
+                case ButtonVariant::ToggleSelected:
+                    values = GetButtonColors<ButtonColors::text, States::Enabled, ButtonVariant::ToggleSelected>();
+                    break;
+                case ButtonVariant::ToggleUnselected:
+                    values = GetButtonColors<ButtonColors::text, States::Enabled, ButtonVariant::ToggleUnselected>();
+                    break;
             }
-            values.labelTextColor = disabled ? ColorSpec::DisabledLabelTextColor : ColorSpec::LabelTextColor;
-            values.iconColor      = disabled ? ColorSpec::DisabledIconColor : ColorSpec::IconColor;
             break;
         }
     }

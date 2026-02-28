@@ -9,8 +9,12 @@
 
 namespace ImGuiEx::M3::Spec
 {
-using FilledButtonHovered  = ButtonFilled<States::Hovered>;
-using FilledButtonDisabled = ButtonFilled<States::Disabled>;
-using FilledButtonPressed  = ButtonFilled<States::Pressed>;
-using FilledButtonFocused  = ButtonFilled<States::Focused>;
+using ElevatedButtonEnabled  = Button<ButtonColors::elevated, States::Enabled>;
+using ElevatedButtonDisabled = Button<ButtonColors::elevated, States::Disabled>;
+
+using FilledButtonEnabled  = Button<ButtonColors::filled, States::Enabled>;
+using FilledButtonDisabled = Button<ButtonColors::filled, States::Disabled>;
+
+using OutlinedButtonEnabled  = Button<ButtonColors::outlined, States::Enabled>;
+using OutlinedButtonDisabled = Button<ButtonColors::outlined, States::Disabled>;
 } // namespace ImGuiEx::M3::Spec

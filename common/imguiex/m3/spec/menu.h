@@ -328,7 +328,7 @@ struct MenusSizing<MenuLayout::HorizontalIconOnly> : public MenusHorizontal
 struct MenuItemColorsValues
 {
     ColorRole containerColor;
-    float     selectedcontainerOpacity;
+    float     selectedContainerOpacity;
     ColorRole selectedContainerColor;
     ColorRole selectedLabelTextColor;
     ColorRole labelTextColor;
@@ -339,7 +339,7 @@ struct MenuItemColorsValues
 //! However, the parameter is included for future use in case the spec is updated to include disabled state colors.
 constexpr auto GetMenuItemColors(MenuColors colors, [[maybe_unused]] const bool disabled) -> MenuItemColorsValues
 {
-    MenuItemColorsValues values;
+    MenuItemColorsValues values{};
     switch (colors)
     {
         case MenuColors::Standard: {
@@ -347,7 +347,7 @@ constexpr auto GetMenuItemColors(MenuColors colors, [[maybe_unused]] const bool 
             values.labelTextColor           = Menus<MenuColors::Standard>::Item::LabelTextColor;
             values.selectedContainerColor   = Menus<MenuColors::Standard>::Item::SelectedContainerColor;
             values.selectedLabelTextColor   = Menus<MenuColors::Standard>::Item::SelectedLabelTextColor;
-            values.selectedcontainerOpacity = disabled ? Menus<MenuColors::Standard>::Item::SelectedDisabledContainerOpacity : 1.0F;
+            values.selectedContainerOpacity = disabled ? Menus<MenuColors::Standard>::Item::SelectedDisabledContainerOpacity : 1.0F;
             break;
         }
         case MenuColors::Vibrant: {
@@ -355,7 +355,7 @@ constexpr auto GetMenuItemColors(MenuColors colors, [[maybe_unused]] const bool 
             values.labelTextColor           = Menus<MenuColors::Vibrant>::Item::LabelTextColor;
             values.selectedContainerColor   = Menus<MenuColors::Vibrant>::Item::SelectedContainerColor;
             values.selectedLabelTextColor   = Menus<MenuColors::Vibrant>::Item::SelectedLabelTextColor;
-            values.selectedcontainerOpacity = 1.0F;
+            values.selectedContainerOpacity = 1.0F;
             break;
         }
     }

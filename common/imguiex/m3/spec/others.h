@@ -37,7 +37,7 @@ struct List
     static constexpr Unit gap              = dp<12>();
     static constexpr Unit segmentedGap     = dp<2>(); ///< md.comp.list.segmented.gap
     //! extended field
-    static constexpr Unit minContentHeight = minHeight - paddingY * 2U;
+    static constexpr Unit minContentHeight = minHeight - (paddingY * 2U);
 };
 
 struct Tooltips

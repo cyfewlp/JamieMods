@@ -456,7 +456,7 @@ auto main(int argc, char **argv) -> int
         // For example, "md.comp.button.filled-container.pressed" and "md.comp.button.filled-container.hovered" will be grouped together as they only
         // differ in the state suffix.
         auto skipAnyStateTokenPart = [](std::string_view tokenNameSv) {
-            static const std::unordered_set<std::string_view> stateNames = {"pressed", "hovered", "focused", "disabled"};
+            static const std::unordered_set<std::string_view> stateNames = {"pressed", "hovered", "focused", "disabled", "selected", "unselected"};
 
             const size_t pos1             = 0;
             const bool   isFoundStatePart = false;

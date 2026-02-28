@@ -529,33 +529,30 @@ struct IconButtonColorsValues
     ColorRole containerColor;
     ColorRole iconColor;
     ColorRole outlineColor;
-    float     containerOpacity;
 };
 
-constexpr auto GetIconButtonColorsValues(IconButtonColors colors, bool disabled) -> IconButtonColorsValues
+constexpr auto GetIconButtonColorsValues(IconButtonColors colors) -> IconButtonColorsValues
 {
     IconButtonColorsValues values{};
     switch (colors)
     {
         case IconButtonColors::Filled: {
-            values.iconColor      = disabled ? IconButtonFilled<States::Disabled>::IconColor : IconButtonFilled<States::Enabled>::IconColor;
-            values.containerColor = disabled ? IconButtonFilled<States::Disabled>::ContainerColor : IconButtonFilled<States::Enabled>::ContainerColor;
-            values.containerOpacity = disabled ? IconButtonFilled<States::Disabled>::ContainerOpacity : 1.0F;
+            values.iconColor      = IconButtonFilled<States::Enabled>::IconColor;
+            values.containerColor = IconButtonFilled<States::Enabled>::ContainerColor;
             break;
         }
         case IconButtonColors::Tonal: {
-            values.iconColor        = disabled ? IconButtonTonal<States::Disabled>::IconColor : IconButtonTonal<States::Enabled>::IconColor;
-            values.containerColor   = disabled ? IconButtonTonal<States::Disabled>::ContainerColor : IconButtonTonal<States::Enabled>::ContainerColor;
-            values.containerOpacity = disabled ? IconButtonTonal<States::Disabled>::ContainerOpacity : 1.0F;
+            values.iconColor      = IconButtonTonal<States::Enabled>::IconColor;
+            values.containerColor = IconButtonTonal<States::Enabled>::ContainerColor;
             break;
         }
         case IconButtonColors::Outlined: {
-            values.iconColor    = disabled ? IconButtonOutlined<States::Disabled>::IconColor : IconButtonOutlined<States::Enabled>::IconColor;
-            values.outlineColor = disabled ? IconButtonOutlined<States::Disabled>::OutlineColor : IconButtonOutlined<States::Enabled>::OutlineColor;
+            values.iconColor    = IconButtonOutlined<States::Enabled>::IconColor;
+            values.outlineColor = IconButtonOutlined<States::Enabled>::OutlineColor;
             break;
         }
         case IconButtonColors::Standard: {
-            values.iconColor = disabled ? IconButtonStandard<States::Disabled>::IconColor : IconButtonStandard<States::Enabled>::IconColor;
+            values.iconColor = IconButtonStandard<States::Enabled>::IconColor;
             break;
         }
     }

@@ -356,9 +356,9 @@ auto DrawTextField(
                 bgColor          = m3Styles.Colors()[Spec::FilledTextFieldDisabled::ContainerColor];
                 indicatorColor   = m3Styles.Colors()[Spec::FilledTextFieldDisabled::ActiveIndicatorColor];
                 bgColor.w        = Spec::FilledTextFieldDisabled::ContainerOpacity;
-                labelTextColor.w = DISABLED_CONTENT;
-                indicatorColor.w = DISABLED_CONTENT;
-                iconColor.w      = DISABLED_CONTENT;
+                labelTextColor.w = DISABLED_CONTENT_OPACITY;
+                indicatorColor.w = DISABLED_CONTENT_OPACITY;
+                iconColor.w      = DISABLED_CONTENT_OPACITY;
                 break;
             }
             case Spec::TextFieldState::Focused: {
@@ -437,7 +437,7 @@ auto DrawTextField(
             case Spec::TextFieldState::Disabled: {
                 labelTextColor = Spec::OutlinedTextFieldDisabled::LabelTextColor;
                 outlineColor   = Spec::OutlinedTextFieldDisabled::OutlineColor;
-                iconColor.w    = DISABLED_CONTENT;
+                iconColor.w    = DISABLED_CONTENT_OPACITY;
                 break;
             }
             default:
@@ -629,7 +629,7 @@ auto TextField(
         ImVec4       inputTextColor = m3Styles.Colors()[Spec::TextFieldCommon::InputTextColor];
         if (tfState == Spec::TextFieldState::Disabled)
         {
-            inputTextColor.w = DISABLED_CONTENT;
+            inputTextColor.w = DISABLED_CONTENT_OPACITY;
         }
         DrawText(window->DrawList, textPos, editable ? buffer : inputText, inputTextColor);
     }
@@ -663,7 +663,7 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void
     if (IsItemDisabled())
     {
         iconColor   = m3Styles.Colors()[Spec::StandardIconButtonDisabled::IconColor];
-        iconColor.w = DISABLED_CONTENT;
+        iconColor.w = DISABLED_CONTENT_OPACITY;
     }
     else
     {
@@ -707,19 +707,25 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButton
     const bool disabled = IsItemDisabled();
     const bool active   = hovered && held;
 
-    const auto colors       = Spec::GetIconButtonColorsValues(ibColors, disabled);
-    ImVec4     bgColor      = m3Styles.Colors()[colors.containerColor];
-    ImVec4     iconColor    = m3Styles.Colors()[colors.iconColor];
-    ImVec4     outlineColor = m3Styles.Colors()[colors.outlineColor];
+    ImVec4 bgColor;
+    ImVec4 iconColor;
+    ImVec4 outlineColor;
 
     if (disabled)
     {
-        bgColor.w      = colors.containerOpacity;
-        iconColor.w    = DISABLED_CONTENT;
-        outlineColor.w = DISABLED_CONTENT;
+        bgColor        = m3Styles.Colors()[DISABLED_CONTAINER_COLOR];
+        iconColor      = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        outlineColor   = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        bgColor.w      = DISABLED_CONTAINER_OPACITY;
+        iconColor.w    = DISABLED_CONTENT_OPACITY;
+        outlineColor.w = DISABLED_CONTENT_OPACITY;
     }
     else
     {
+        const auto colors = Spec::GetIconButtonColorsValues(ibColors);
+        bgColor           = m3Styles.Colors()[colors.containerColor];
+        iconColor         = m3Styles.Colors()[colors.iconColor];
+        outlineColor      = m3Styles.Colors()[colors.outlineColor];
         if (hovered)
         {
             bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, iconColor);
@@ -855,19 +861,32 @@ auto Button(std::string_view label, const ButtonConfiguration &config) -> bool
     const bool pressed  = ImGui::ButtonBehavior(bb, id, &hovered, &held);
     const bool active   = hovered && held;
     const bool disabled = IsItemDisabled();
-    const auto colors   = Spec::GetButtonColors(config.colors, disabled);
 
-    ImVec4 bgColor   = m3Styles.Colors()[colors.containerColor];
-    ImVec4 textColor = m3Styles.Colors()[colors.labelTextColor];
-    ImVec4 iconColor = m3Styles.Colors()[colors.iconColor];
+    ImVec4 bgColor;
+    ImVec4 textColor;
+    ImVec4 iconColor;
+    ImVec4 shadowColor;
     if (disabled)
     {
-        bgColor.w   = colors.containerOpacity;
-        textColor.w = DISABLED_CONTENT;
-        iconColor.w = DISABLED_CONTENT;
+        bgColor     = m3Styles.Colors()[DISABLED_CONTAINER_COLOR];
+        textColor   = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        iconColor   = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        bgColor.w   = DISABLED_CONTAINER_OPACITY;
+        textColor.w = DISABLED_CONTENT_OPACITY;
+        iconColor.w = DISABLED_CONTENT_OPACITY;
     }
     else
     {
+        Spec::ButtonVariant variant = Spec::ButtonVariant::Default;
+        if (config.toggle)
+        {
+            variant = config.selected ? Spec::ButtonVariant::ToggleSelected : Spec::ButtonVariant::ToggleUnselected;
+        }
+        const auto colors = Spec::GetButtonColors(config.colors, variant);
+        bgColor           = m3Styles.Colors()[colors.containerColor];
+        shadowColor       = m3Styles.Colors()[colors.shadowColor];
+        textColor         = m3Styles.Colors()[colors.labelTextColor];
+        iconColor         = m3Styles.Colors()[colors.iconColor];
         if (hovered)
         {
             bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, textColor);
@@ -885,10 +904,11 @@ auto Button(std::string_view label, const ButtonConfiguration &config) -> bool
         ImGui::RenderNavCursor(bb, id);
         g.Style.FrameRounding = backupFrameRounding;
     }
+    window->DrawList->AddRect(bb.Min + ImVec2{-1.0F, 1.0F}, bb.Max + ImVec2{1.0F, 1.0F}, ImGui::ColorConvertFloat4ToU32(shadowColor), rounding);
     window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
     if (config.colors == Spec::ButtonColors::outlined)
     {
-        const auto outlineColor = m3Styles.Colors()[Spec::ButtonOutlined::OutlineColor];
+        const auto outlineColor = m3Styles.Colors()[Spec::OutlinedButtonEnabled::OutlineColor];
         window->DrawList->AddRect(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(outlineColor), rounding);
     }
 
@@ -1348,9 +1368,9 @@ auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menu
     {
         if (selected)
         {
-            bgColor.w = colors.selectedcontainerOpacity;
+            bgColor.w = colors.selectedContainerOpacity;
         }
-        textColor.w = DISABLED_CONTENT;
+        textColor.w = DISABLED_CONTENT_OPACITY;
     }
     else
     {

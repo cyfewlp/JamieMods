@@ -30,11 +30,14 @@ static constexpr auto IM_COL32_R_MASK = 0x000000FFU;
 static constexpr auto IM_COL32_G_MASK = 0x0000FF00U;
 static constexpr auto IM_COL32_B_MASK = 0x00FF0000U;
 
-static constexpr float HOVER_OPACITY    = 0.08F;
-static constexpr float PRESSED_OPACITY  = 0.10F;
-static constexpr float FOCUS_OPACITY    = 0.10F;
-static constexpr float DRAGGED_OPACITY  = 0.16F;
-static constexpr float DISABLED_CONTENT = 0.38F;
+static constexpr float HOVER_OPACITY              = 0.08F;
+static constexpr float PRESSED_OPACITY            = 0.10F;
+static constexpr float FOCUS_OPACITY              = 0.10F;
+static constexpr float DRAGGED_OPACITY            = 0.16F;
+static constexpr float DISABLED_CONTENT_OPACITY   = 0.38F;
+static constexpr float DISABLED_CONTAINER_OPACITY = 0.10F;
+static constexpr auto  DISABLED_CONTAINER_COLOR   = Spec::ColorRole::onSurface;
+static constexpr auto  DISABLED_CONTENT_COLOR     = Spec::ColorRole::onSurface;
 
 constexpr auto ImU32ToArgb(const ImU32 imU32) -> Argb
 {
@@ -59,13 +62,13 @@ constexpr auto ArgbToImVec4(const Argb argb) -> ImVec4
 namespace ColorUtils
 {
 //! Standard sRGB -> Linear conversion
-inline float SrgbToLinear(float c)
+inline auto SrgbToLinear(float c) -> float
 {
     return c <= 0.04045F ? c / 12.92F : powf((c + 0.055F) / 1.055F, 2.4F);
 }
 
 //! Standard Linear -> sRGB conversion
-inline float LinearToSrgb(float c)
+inline auto LinearToSrgb(float c) -> float
 {
     return c <= 0.0031308F ? c * 12.92F : 1.055F * powf(c, 1.0F / 2.4F) - 0.055F;
 }
@@ -73,7 +76,7 @@ inline float LinearToSrgb(float c)
 /**
  * @brief A fast approximation of sRGB -> Linear conversion. It is not accurate, but it is fast.
  */
-inline float FastToLinear(float s)
+inline auto FastToLinear(float s) -> float
 {
     return s * s;
 }
@@ -81,7 +84,7 @@ inline float FastToLinear(float s)
 /**
  * @brief A fast approximation of Linear -> sRGB conversion. It is not accurate, but it is fast.
  */
-inline float FastFromLinear(float l)
+inline auto FastFromLinear(float l) -> float
 {
     return sqrtf(l);
 }
@@ -91,13 +94,13 @@ inline float FastFromLinear(float l)
 //! top of surface colors.
 inline auto BlendState(ImVec4 base, ImVec4 overlay, float opacity) -> ImVec4
 {
-    ImVec4 bL = {FastToLinear(base.x), FastToLinear(base.y), FastToLinear(base.z), base.w};
-    ImVec4 oL = {FastToLinear(overlay.x), FastToLinear(overlay.y), FastToLinear(overlay.z), overlay.w};
+    const ImVec4 bL = {FastToLinear(base.x), FastToLinear(base.y), FastToLinear(base.z), base.w};
+    const ImVec4 oL = {FastToLinear(overlay.x), FastToLinear(overlay.y), FastToLinear(overlay.z), overlay.w};
 
     return {
-        FastFromLinear(bL.x + (oL.x - bL.x) * opacity),
-        FastFromLinear(bL.y + (oL.y - bL.y) * opacity),
-        FastFromLinear(bL.z + (oL.z - bL.z) * opacity),
+        FastFromLinear(bL.x + ((oL.x - bL.x) * opacity)),
+        FastFromLinear(bL.y + ((oL.y - bL.y) * opacity)),
+        FastFromLinear(bL.z + ((oL.z - bL.z) * opacity)),
         1.0F // The alpha of the blended color is always 1.0F, as it is used for blending state layers on top of surface
              // colors.
     };
@@ -224,20 +227,17 @@ public:
      * of the surface color based on the state flags.
      * @see ColorUtils::BlendState for more details on how the blending works.
      */
-    auto GetStateColor(Spec::ColorRole containerRole, Spec::ColorRole contentRole, bool hovered, bool pressed) const -> ImVec4
+    [[nodiscard]] auto GetStateColor(Spec::ColorRole containerRole, Spec::ColorRole contentRole, bool hovered, bool pressed) const -> ImVec4
     {
         if (pressed)
         {
             return Pressed(containerRole, contentRole);
         }
-        else if (hovered)
+        if (hovered)
         {
             return Hovered(containerRole, contentRole);
         }
-        else
-        {
-            return at(containerRole);
-        }
+        return at(containerRole);
     }
 };
 } // namespace ImGuiEx::M3

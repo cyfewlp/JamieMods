@@ -208,11 +208,14 @@ struct ButtonConfiguration : BaseConfiguration<ButtonConfiguration>
 {
     using BaseConfiguration::BaseConfiguration;
 
-    std::string_view   icon;                                ///< optional
-    Spec::ButtonColors colors = Spec::ButtonColors::filled; ///< default to filled
-    Spec::ButtonShape  shape  = Spec::ButtonShape::Round;   ///< default to round
+    std::string_view   icon;                                  ///< optional
+    Spec::ButtonColors colors   = Spec::ButtonColors::filled; ///< default to filled
+    Spec::ButtonShape  shape    = Spec::ButtonShape::Round;   ///< default to round
+    bool               toggle   = false;                      ///< default to false, set true for toggle varint
+    bool               selected = false;                      ///< default to false, only used for toggle varint, set true for selected state
 
-    ButtonConfiguration(std::string_view a_icon = "") : icon(a_icon) {}
+    // allow implict conversionn for ImGuiEx::icon.
+    ButtonConfiguration(std::string_view a_icon = "") : icon(a_icon) {} // NOLINT(*-explicit-constructor)
 
     constexpr auto Icon(std::string_view i) -> ButtonConfiguration &
     {
