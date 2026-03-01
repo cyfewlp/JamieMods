@@ -26,7 +26,7 @@ async def scrape_m3_tokens(url, component_name):
             file_name = f"build/m3_specs/m3_{component_name}_spec_data_{index}.json"
             with open(file_name, "w", encoding="utf-8") as f:
                 f.write(design_system_data)
-                print("Already written spec data to " + file_name)
+                print("Successfully written spec data to " + file_name)
             index += 1
 
         await browser.close()

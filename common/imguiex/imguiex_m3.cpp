@@ -1161,13 +1161,15 @@ void ListItem(Func &&contentFunc, const bool plain)
     bb.Max = contentRect.Max + contentOffset;
     ImGui::SetCursorScreenPos(bb.Min);
 
+    // Intentional minimal size submission: Prevents layout bloating during AutoFit passes,
+    // while ensuring the component remains full-width for rendering and input.
+    ImGui::ItemSize(bb);
     if (const auto availX = ImGui::GetContentRegionAvail().x; availX > bb.GetWidth())
     {
         bb.Max.x = bb.Min.x + availX;
     }
 
-    ImGui::ItemSize(bb);
-    if (ImGui::ItemAdd(bb, 0, nullptr, ImGuiItemFlags_NoNav | ImGuiItemFlags_NoNavDefaultFocus))
+    if (ImGui::ItemAdd(bb, 0))
     {
         // only handle hover staus because the click should be handled by inner content.
         if (contentRect.Max.x > contentRect.Min.x)
@@ -1228,6 +1230,29 @@ auto BeginList(const M3Styles &m3Styles, float width, const ChildFlags childFlag
         return {};
     }
     return {.visible = true, .styleGuard = std::move(guard)};
+}
+
+void Divider()
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return;
+    }
+
+    auto        &m3Styles = Context::GetM3Styles();
+    const ImVec2 size(0.0F, 1.0F);
+    const float  x1 = window->DC.CursorPos.x;
+    const float  x2 = window->WorkRect.Max.x;
+    const ImRect bb({x1, window->DC.CursorPos.y}, {x2, window->DC.CursorPos.y + size.y});
+
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, 0))
+    {
+        return;
+    }
+
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::ColorRole::outlineVariant]));
 }
 
 auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config) -> bool

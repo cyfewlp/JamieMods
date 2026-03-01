@@ -393,10 +393,12 @@ inline auto EndList()
     ImGui::EndChild();
 }
 
-inline void ListDivider()
-{
-    ImGui::Separator();
-}
+/**
+ * @brief A divider component that follows Material Design 3 specifications.
+ *
+ * It's the same as ImGui::Separator but has a layout height (Separator will not affect layout height) and color defined by the M3 spec.
+ */
+void Divider();
 
 inline auto ListLeadingImageSize() -> ImVec2
 {
