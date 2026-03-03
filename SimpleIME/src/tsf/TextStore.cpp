@@ -389,8 +389,8 @@ auto TextStore::SetSelection(const ULONG ulCount, const TS_SELECTION_ACP *pSelec
 }
 
 auto TextStore::GetText(
-    const LONG acpStart, const LONG acpEnd, WCHAR *pchPlain, const ULONG cchPlainReq, ULONG *pcchPlainRet, TS_RUNINFO *prgRunInfo, ULONG ulRunInfoReq,
-    ULONG *pcRunInfoRet, LONG *pacpNext
+    const LONG acpStart, LONG acpEnd, WCHAR *textBuffer, const ULONG textBufferSize, ULONG *textBufferCopied, TS_RUNINFO *runInfoBuffer,
+    ULONG runInfoBufferSize, ULONG *runInfoBufferCopied, LONG *pacpNext
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}, {}, {}", __func__, acpStart, acpEnd);
@@ -399,14 +399,14 @@ auto TextStore::GetText(
         return TS_E_NOLOCK;
     }
 
-    if (pcchPlainRet != nullptr)
+    if (textBufferCopied != nullptr)
     {
-        *pcchPlainRet = 0;
+        *textBufferCopied = 0U;
     }
 
-    if (ulRunInfoReq > 0)
+    if (runInfoBufferSize > 0U)
     {
-        *pcRunInfoRet = 0;
+        *runInfoBufferCopied = 0U;
     }
 
     if (pacpNext != nullptr)
@@ -414,48 +414,41 @@ auto TextStore::GetText(
         *pacpNext = acpStart;
     }
 
-    size_t charSize = 0;
-    m_pTextService->GetTextEditor().GetTextSize(charSize);
-
-    const auto uAcpStart = static_cast<uint32_t>(acpStart);
-    const auto uAcpEnd   = static_cast<uint32_t>(acpEnd);
-
-    // validate the start pos
-    if (uAcpStart > charSize)
+    size_t charSize = m_pTextService->GetTextEditor().GetTextSize();
+    if (acpEnd == -1)
     {
-        return TS_E_INVALIDPOS;
+        acpEnd = static_cast<LONG>(charSize);
     }
+    if (!((0 <= acpStart) && (acpStart <= acpEnd) && (acpEnd <= static_cast<LONG>(charSize))))
+    {
+        return TF_E_INVALIDPOS;
+    }
+
+    const auto uAcpStart = static_cast<size_t>(acpStart);
+    const auto uAcpEnd   = static_cast<size_t>(acpEnd);
 
     if (uAcpStart == charSize)
     {
         return S_OK;
     }
-    ULONG cchToCopy = 0;
-    if (uAcpEnd >= uAcpStart)
+
+    ULONG cchToCopy = static_cast<ULONG>(uAcpEnd - uAcpStart);
+    if (textBuffer != nullptr && textBufferSize > 0U)
     {
-        cchToCopy = uAcpEnd - uAcpStart;
-    }
-    else // acpEnd will be -1 if all the text up to the end is being requested.
-    {
-        cchToCopy = static_cast<ULONG>(charSize - uAcpStart);
+        cchToCopy = std::min(cchToCopy, textBufferSize);
+        m_pTextService->GetTextEditor().UnsafeGetText(textBuffer, textBufferSize, uAcpStart, cchToCopy);
     }
 
-    if (pchPlain != nullptr && cchPlainReq > 0)
+    if (textBufferCopied != nullptr)
     {
-        cchToCopy = std::min(cchToCopy, cchPlainReq);
-        m_pTextService->GetTextEditor().UnsafeGetText(pchPlain, cchPlainReq, uAcpStart, cchToCopy);
+        *textBufferCopied = cchToCopy;
     }
 
-    if (pcchPlainRet != nullptr)
+    if (runInfoBufferSize > 0U)
     {
-        *pcchPlainRet = cchToCopy;
-    }
-
-    if (ulRunInfoReq > 0)
-    {
-        *pcRunInfoRet      = 1;
-        prgRunInfo->type   = TS_RT_PLAIN;
-        prgRunInfo->uCount = cchToCopy;
+        *runInfoBufferCopied  = 1U;
+        runInfoBuffer->type   = TS_RT_PLAIN;
+        runInfoBuffer->uCount = cchToCopy;
     }
 
     if (pacpNext != nullptr)
@@ -470,7 +463,11 @@ auto TextStore::SetText(DWORD /*dwFlags*/, LONG acpStart, LONG acpEnd, const WCH
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     tracer.log("acpStart {}, acpEnd {}", acpStart, acpEnd);
-    //
+    if (!IsLocked(TS_LF_READWRITE))
+    {
+        return TS_E_NOLOCK;
+    }
+
     TS_SELECTION_ACP tsa;
     tsa.acpStart           = acpStart;
     tsa.acpEnd             = acpEnd;
@@ -481,7 +478,7 @@ auto TextStore::SetText(DWORD /*dwFlags*/, LONG acpStart, LONG acpEnd, const WCH
 
     if (SUCCEEDED(hresult))
     {
-        hresult = InsertTextAtSelection(TS_IAS_NOQUERY, pchText, cch, nullptr, nullptr, pChange);
+        hresult = InsertTextAtSelection(0U, pchText, cch, &acpStart, &acpEnd, pChange);
     }
 
     return hresult;

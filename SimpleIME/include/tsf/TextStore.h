@@ -162,10 +162,17 @@ public:
      * @return
      */
     STDMETHODIMP GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_ACP *pSelection, ULONG *pcFetched) override;
+    /**
+     * The ITextStoreACP::SetSelection method selects text within the document.
+     * The application must have a read/write lock on the document before calling this method.
+     * @param ulCount Specifies the number of text selections in pSelection.
+     * @param pSelection Specifies the style, start, and end character positions of the text selected through the TS_SELECTION_ACP structure.
+     * @return
+     */
     STDMETHODIMP SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSelection) override;
     STDMETHODIMP GetText(
-        LONG acpStart, LONG acpEnd, WCHAR *pchPlain, ULONG cchPlainReq, ULONG *pcchPlainRet, TS_RUNINFO *prgRunInfo, ULONG cRunInfoReq,
-        ULONG *pcRunInfoRet, LONG *pacpNext
+        LONG acpStart, LONG acpEnd, WCHAR *textBuffer, ULONG textBufferSize, ULONG *textBufferCopied, TS_RUNINFO *runInfoBuffer, ULONG cRunInfoReq,
+        ULONG *runInfoBufferCopied, LONG *pacpNext
     ) override;
     STDMETHODIMP SetText(DWORD dwFlags, LONG acpStart, LONG acpEnd, const WCHAR *pchText, ULONG cch, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP GetFormattedText(LONG acpStart, LONG acpEnd, IDataObject **ppDataObject) override;

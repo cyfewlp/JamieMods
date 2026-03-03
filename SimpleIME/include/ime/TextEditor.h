@@ -48,15 +48,6 @@ public:
     /**
      * @return The editor text size in characters
      */
-    constexpr auto GetTextSize(size_t &charSize) const -> void
-    {
-        const std::shared_lock lock(m_mutex);
-        charSize = m_editorText.size();
-    }
-
-    /**
-     * @return The editor text size in characters
-     */
     [[nodiscard]] constexpr auto GetTextSize() const -> size_t
     {
         const std::shared_lock lock(m_mutex);
