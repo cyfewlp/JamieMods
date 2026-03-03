@@ -177,10 +177,17 @@ void ImeUI::DrawStates() const
     {
         ImeController::GetInstance()->ForceFocusIme();
     }
-#ifdef SIMPLE_IME_DEBUG
+#ifdef DEBUG
     auto action = [&state, &STATE_ACTIVE_COLOR](const State::StateKey stateKey) {
         ImGui::SameLine();
-        ImGui::TextColored(state.Has(stateKey) ? STATE_ACTIVE_COLOR : inactiveColor, "[ %s ]", static_cast<std::string_view>(ICON_FOCUS).data());
+        if (state.Has(stateKey))
+        {
+            ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+        else
+        {
+            ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
     };
     ImGui::Text("IN_COMPOSING: ");
     action(State::IN_COMPOSING);

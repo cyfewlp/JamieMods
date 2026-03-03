@@ -99,7 +99,7 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 
     // FIXME: refactor initialize flow to support IMM32 and TSF not available.
     auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
-    if (SUCCEEDED(tsfSupport.InitializeTsf(true)))
+    if (FAILED(tsfSupport.InitializeTsf(true)))
     {
         m_fEnabledTsf = false;
     }
@@ -152,7 +152,7 @@ void ImeWnd::Run() const
         bool done = false;
         while (!done)
         {
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE) != FALSE)
             {
                 if (msg.message == WM_QUIT)
                 {
@@ -230,6 +230,8 @@ void ImeWnd::DrawIme(Settings &settings)
         m_fWantUpdateUiScale = false;
         ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_dpiScale);
     }
+    m_pTextService->UpdateCandidateUiIfDirty();
+
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();

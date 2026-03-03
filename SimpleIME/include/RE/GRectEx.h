@@ -22,7 +22,7 @@ auto Intersects(GRect<T> left, const GRect<T> &r) -> bool
 {
     if (left.bottom >= r.top && r.bottom >= left.top)
     {
-        if (left.right >= r.left && r.right >= left.left) return true;
+        return left.right >= r.left && r.right >= left.left;
     }
     return false;
 }

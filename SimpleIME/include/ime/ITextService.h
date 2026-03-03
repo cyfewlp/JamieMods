@@ -16,6 +16,26 @@ using OnEndCompositionCallback = void(const std::wstring &compositionString);
 class ITextService
 {
 public:
+    enum class DirtyFlag : uint8_t
+    {
+        None               = 0U,      ///< All changes are clean, no need to update candidate UI.
+        CandidateSelection = 1U << 1, ///< candidate selection changed.
+        CandidateList      = 1U << 2, ///< candidate list changed, selection may also changed.
+        All                = CandidateList | CandidateSelection
+    };
+
+    inline friend DirtyFlag operator|(DirtyFlag lhs, DirtyFlag rhs)
+    {
+        using Underlying = std::underlying_type_t<DirtyFlag>;
+        return static_cast<DirtyFlag>(static_cast<Underlying>(lhs) | static_cast<Underlying>(rhs));
+    }
+
+    inline friend DirtyFlag &operator|=(DirtyFlag &lhs, DirtyFlag rhs)
+    {
+        lhs = lhs | rhs;
+        return lhs;
+    }
+
     ITextService()                                                  = default;
     virtual ~ITextService()                                         = default;
     ITextService(const ITextService &other)                         = delete;
@@ -32,14 +52,40 @@ public:
     virtual auto OnFocus([[maybe_unused]] bool focus) -> bool { return true; }
 
     virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
-    virtual auto GetCandidateUi() -> CandidateUi &                                                = 0;
-    virtual auto CommitCandidate(DWORD index) -> bool                                             = 0;
-    virtual auto GetTextEditor() -> TextEditor &                                                  = 0;
+
+    // UI thread
+    auto UpdateCandidateUiIfDirty() -> void
+    {
+        if (m_dirtyFlag == DirtyFlag::None)
+        {
+            return;
+        }
+
+        std::unique_lock lock(m_mutex);
+        if (const auto flag = m_dirtyFlag.exchange(DirtyFlag::None); flag != DirtyFlag::None)
+        {
+            RequestUpdateCandidateUi(m_candidateUi, flag);
+        }
+    }
+
+    auto GetCandidateUi() const -> const CandidateUi & { return m_candidateUi; }
+
+    void MarkDirty(DirtyFlag dirtyFlag) { m_dirtyFlag = m_dirtyFlag | dirtyFlag; }
+
+    virtual auto CommitCandidate(DWORD index) -> bool = 0;
+    virtual auto GetTextEditor() -> TextEditor &      = 0;
 
     virtual void RegisterCallback(OnEndCompositionCallback *callback) { m_OnEndCompositionCallback = callback; }
 
+private:
+    mutable std::shared_mutex m_mutex;
+    CandidateUi               m_candidateUi;
+    std::atomic<DirtyFlag>    m_dirtyFlag{DirtyFlag::All};
+
 protected:
     OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
+
+    virtual void RequestUpdateCandidateUi(CandidateUi &uiForRead, DirtyFlag dirtyFlags) = 0;
 };
 
 namespace Imm32
@@ -63,30 +109,29 @@ public:
 
     bool OnFocus(bool focus) override;
 
-    [[nodiscard]] auto GetCandidateUi() -> CandidateUi & override { return m_candidateUi; }
-
     auto CommitCandidate(DWORD index) -> bool override;
 
     [[nodiscard]] auto GetTextEditor() -> TextEditor & override { return m_textEditor; }
+
+protected:
+    void RequestUpdateCandidateUi(CandidateUi &uiForRead, DirtyFlag) override { uiForRead.swap(m_candidateUi); }
 
 private:
     static void OnStartComposition();
     void        OnEndComposition();
     void        OnComposition(HWND hWnd, LPARAM compFlag);
     void        UpdateComposition(const std::wstring &compStr, size_t cursorPos, size_t deltaStart);
-    auto        ImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> bool;
+    auto        OnImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> void;
 
     void OpenCandidate(HIMC hIMC);
-    void CloseCandidate();
     void ChangeCandidate(HIMC hIMC);
     void ChangeCandidateAt(HIMC hIMC);
     void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
 
-    HWND m_imeHwnd = nullptr;
-    HIMC m_hIMC    = nullptr;
-
-    CandidateUi m_candidateUi;
     TextEditor  m_textEditor;
+    CandidateUi m_candidateUi;
+    HWND        m_imeHwnd = nullptr;
+    HIMC        m_hIMC    = nullptr;
 };
 } // namespace Imm32
 } // namespace Ime

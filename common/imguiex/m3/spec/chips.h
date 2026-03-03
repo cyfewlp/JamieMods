@@ -173,7 +173,7 @@ constexpr auto GetChipsColorsValues(ChipColors colors, States states, ChipVarian
         case ChipColors::Input:
         case ChipColors::Suggestion:
         default:
-            assert("not implemented yet");
+            assert(0 && "not implemented yet");
             break;
     }
     return values;

@@ -9,16 +9,20 @@
 class WCharUtils
 {
 public:
-    static auto ToString(const std::wstring &wstr, const UINT codePage = CP_UTF8) -> std::string
+    static auto ToString(const std::wstring_view &wstrv, const UINT codePage = CP_UTF8) -> std::string
     {
-        std::string strTo;
-        const int   size_needed = WideCharToMultiByte(codePage, 0, wstr.data(), static_cast<int>(wstr.size()), nullptr, 0, nullptr, nullptr);
+        const int size_needed = WideCharToMultiByte(codePage, 0, wstrv.data(), static_cast<int>(wstrv.size()), nullptr, 0, nullptr, nullptr);
         if (size_needed > 0)
         {
+            std::string strTo;
             strTo.resize(static_cast<size_t>(size_needed));
-            WideCharToMultiByte(codePage, 0, wstr.data(), static_cast<int>(wstr.size()), strTo.data(), size_needed, nullptr, nullptr);
+            int written = WideCharToMultiByte(codePage, 0, wstrv.data(), static_cast<int>(wstrv.size()), strTo.data(), size_needed, nullptr, nullptr);
+            if (written > 0)
+            {
+                return strTo;
+            }
         }
-        return strTo;
+        return {};
     }
 
     static auto ToString(const wchar_t *pwsz, const int charSize, const UINT codePage = CP_UTF8) -> std::string

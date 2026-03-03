@@ -103,7 +103,7 @@ void ImeApp::Initialize()
     D3DInitHook         = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
     auto &errorNotifier = ErrorNotifier::GetInstance();
     errorNotifier.SetMessageDuration(m_settings.appearance.errorDisplayDuration);
-#ifdef SIMPLE_IME_DEBUG
+#ifdef DEBUG
     errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
 #endif
 }

@@ -6,6 +6,7 @@
 #include <list>
 #include <shared_mutex>
 #include <string>
+#include <vector>
 #include <windows.h>
 
 namespace Ime
@@ -20,60 +21,43 @@ struct CandWindowProp
 class CandidateUi
 {
 public:
-    using CandidateList_t = std::list<std::string>;
+    using CandidateList_t = std::vector<std::string>;
     using size_type       = CandidateList_t::size_type;
 
-    CandidateUi()                                                 = default;
-    ~CandidateUi()                                                = default;
-    CandidateUi(const CandidateUi &other)                         = delete;
-    CandidateUi(CandidateUi &&other) noexcept                     = delete;
-    auto operator=(const CandidateUi &other) -> CandidateUi &     = delete;
-    auto operator=(CandidateUi &&other) noexcept -> CandidateUi & = delete;
+    void Reserve(const DWORD dwPageSize) { m_candidateList.reserve(dwPageSize); }
 
-    void SetPageSize(const DWORD dwPageSize) { m_dwPageSize = dwPageSize == 0U ? CandWindowProp::DEFAULT_PAGE_SIZE : dwPageSize; }
+    //! [internal use] A cache field. Be used to the candidate list is need to update when page up or page down.
+    void SetFirstIndex(const DWORD firstIndex) { m_dwFirstIndex = firstIndex; }
 
-    void SetSelection(const DWORD dwSelection) { m_dwSelection = dwSelection % m_dwPageSize; }
+    void SetSelection(const DWORD dwSelection) { m_dwSelection = dwSelection; }
 
-    [[nodiscard]] constexpr auto PageSize() const -> DWORD { return m_dwPageSize; }
+    [[nodiscard]] auto FirstIndex() const -> DWORD { return m_dwFirstIndex; }
 
-    [[nodiscard]] constexpr auto Selection() const -> DWORD { return m_dwSelection; }
+    [[nodiscard]] auto Selection() const -> DWORD { return m_dwSelection; }
 
-    [[nodiscard]] constexpr auto UnsafeCandidateList() const -> const CandidateList_t & { return m_candidateList; }
+    [[nodiscard]] auto CandidateList() const -> CandidateList_t { return m_candidateList; }
 
-    [[nodiscard]] constexpr auto CandidateList() const -> CandidateList_t
+    auto PushBack(const std::string &candidate) -> void { m_candidateList.push_back(candidate); }
+
+    auto PushBack(std::string &&candidate) -> void { m_candidateList.emplace_back(std::move(candidate)); }
+
+    auto swap(CandidateUi &right) -> void
     {
-        const std::shared_lock lock(m_mutex);
-        return m_candidateList;
+        m_candidateList.swap(right.m_candidateList);
+        std::swap(m_dwSelection, right.m_dwSelection);
     }
 
-    auto PushBack(const std::string &candidate) -> void
-    {
-        const std::unique_lock lock(m_mutex);
-        m_candidateList.push_back(candidate);
-    }
-
-    auto Swap(CandidateList_t &candidates) -> void
-    {
-        const std::unique_lock lock(m_mutex);
-        m_candidateList.swap(candidates);
-    }
+    auto empty() -> bool { return m_candidateList.empty(); }
 
     /**
      * Close current candidate list
      */
-    void Close()
-    {
-        const std::unique_lock lock(m_mutex);
-        m_dwSelection = 0;
-        m_candidateList.clear();
-        m_dwPageSize = CandWindowProp::DEFAULT_PAGE_SIZE;
-    }
+    void Close() { m_candidateList.clear(); }
 
 private:
-    CandidateList_t           m_candidateList;
-    DWORD                     m_dwPageSize{CandWindowProp::DEFAULT_PAGE_SIZE};
-    DWORD                     m_dwSelection{0};
-    mutable std::shared_mutex m_mutex;
+    CandidateList_t m_candidateList;
+    DWORD           m_dwFirstIndex{0}; ///< [internal use] the first index of current candidate list. Be used to determine is page up or page down.
+    DWORD           m_dwSelection{0};
 };
 } // namespace Ime
 

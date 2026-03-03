@@ -1,9 +1,11 @@
+cmake_minimum_required(VERSION 4.2)
 project(
     SimpleIME
     VERSION 1.3.0
     DESCRIPTION "Simple IME support for Skyrim"
     LANGUAGES CXX
 )
+option(BUILD_TESTING "Build tests" OFF)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
@@ -36,8 +38,11 @@ find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
 include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
+
+if (BUILD_TESTING)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
+endif ()
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
@@ -57,9 +62,6 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(${PROJECT_NAME} PRIVATE SIMPLE_IME_DEBUG)
-endif ()
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE

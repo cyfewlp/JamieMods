@@ -50,9 +50,23 @@ void Ime::TextEditor::GetSelection(TS_SELECTION_ACP *pSelectionAcp) const
     }
 }
 
+void Ime::TextEditor::GetClampedSelection(size_t &acpStart, size_t &acpEnd) const
+{
+    const auto textSize = m_editorText.size();
+
+    // The acpStart/acpEnd may -1 which means the caret is at the end of text.
+    // this cast will convert -1 to a very large number, but we will clamp it to text size later, so it is fine.
+    acpStart = static_cast<size_t>(m_acpSelection.acpStart);
+    acpEnd   = static_cast<size_t>(m_acpSelection.acpEnd);
+
+    acpStart = std::clamp(acpStart, 0LLU, textSize);
+    acpEnd   = std::clamp(acpEnd, 0LLU, textSize);
+    acpEnd   = std::max(acpEnd, acpStart);
+}
+
 auto Ime::TextEditor::InsertText(const wchar_t *pwszText, const size_t cch) -> bool
 {
-    if (pwszText == nullptr || cch == 0)
+    if (pwszText == nullptr && cch > 0)
     {
         return false;
     }
@@ -61,15 +75,9 @@ auto Ime::TextEditor::InsertText(const wchar_t *pwszText, const size_t cch) -> b
 
     const auto textSize = m_editorText.size();
 
-    // The acpStart/acpEnd may -1 which means the caret is at the end of text.
-    // this cast will convert -1 to a very large number, but we will clamp it to text size later, so it is fine.
-    auto start = static_cast<size_t>(m_acpSelection.acpStart);
-    auto end   = static_cast<size_t>(m_acpSelection.acpEnd);
-
-    start = std::clamp(start, 0LLU, textSize);
-    end   = std::clamp(end, 0LLU, textSize);
-
-    end = std::max(end, start);
+    size_t start;
+    size_t end;
+    GetClampedSelection(start, end);
 
     if (start >= textSize)
     {

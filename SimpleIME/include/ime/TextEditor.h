@@ -38,6 +38,7 @@ public:
 
     void GetSelection(LONG *pAcpStart, LONG *pAcpEnd) const;
     auto GetSelection(TS_SELECTION_ACP *pSelectionAcp) const -> void;
+    void GetClampedSelection(size_t &acpStart, size_t &acpEnd) const;
     auto InsertText(const wchar_t *pwszText, size_t cch) -> bool;
 
     auto InsertText(std::wstring_view wsTextView) -> bool { return InsertText(wsTextView.data(), wsTextView.size()); }

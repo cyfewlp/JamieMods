@@ -58,12 +58,20 @@ auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pW
         const LONG bufLenInBytes = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), nullptr, 0);
         if (bufLenInBytes > 0)
         {
-            const auto dBufLenInBytes = static_cast<DWORD>(bufLenInBytes);
-            pWcharBuf.resize((dBufLenInBytes / sizeof(WCHAR)) + 1);
-            ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf.data(), dBufLenInBytes);
-            return true;
+            const auto dwBufLenInBytes = static_cast<DWORD>(bufLenInBytes);
+            pWcharBuf.resize(dwBufLenInBytes / sizeof(WCHAR));
+            const LONG written = ImmGetCompositionStringW(hIMC, static_cast<DWORD>(flagToCheck), pWcharBuf.data(), dwBufLenInBytes);
+            if (written > 0)
+            {
+                if (written != bufLenInBytes)
+                {
+                    pWcharBuf.resize(static_cast<size_t>(written) / sizeof(WCHAR));
+                }
+                return true;
+            }
         }
     }
+    pWcharBuf.clear();
     return false;
 }
 
@@ -76,18 +84,15 @@ void Imm32TextService::OnStartComposition()
 
 void Imm32TextService::OnEndComposition()
 {
-    State::GetInstance().Clear(State::IN_COMPOSING);
     if (m_OnEndCompositionCallback != nullptr)
     {
         m_OnEndCompositionCallback(m_textEditor.GetText());
     }
     m_textEditor.Select(0, 0);
     m_textEditor.ClearText();
-
-    if (State::GetInstance().Has(State::IN_CAND_CHOOSING))
-    {
-        CloseCandidate();
-    }
+    m_candidateUi.Close();
+    State::GetInstance().Clear(State::IN_COMPOSING);
+    State::GetInstance().Clear(State::IN_CAND_CHOOSING);
 }
 
 auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool
@@ -113,10 +118,7 @@ auto Imm32TextService::ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam,
             OnComposition(hWnd, lParam);
             return true;
         case WM_IME_NOTIFY: {
-            if (ImeNotify(hWnd, wParam, lParam))
-            {
-                return true;
-            }
+            OnImeNotify(hWnd, wParam, lParam);
             break;
         }
         default:
@@ -218,7 +220,7 @@ void Imm32TextService::UpdateComposition(const std::wstring &compStr, size_t cur
     }
 }
 
-auto Imm32TextService::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM /*lParam*/) -> bool
+auto Imm32TextService::OnImeNotify(HWND hWnd, WPARAM wParam, LPARAM /*lParam*/) -> void
 {
     // logger::debug("ImeNotify {:#x}, {:#x}", wParam, lParam);
     switch (wParam)
@@ -234,7 +236,7 @@ auto Imm32TextService::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM /*lParam*/) ->
             break;
         }
         case IMN_CLOSECANDIDATE:
-            CloseCandidate();
+            State::GetInstance().Clear(State::IN_CAND_CHOOSING);
             break;
         case IMN_CHANGECANDIDATE: {
             HIMC hIMC = ImmGetContext(hWnd);
@@ -266,18 +268,11 @@ auto Imm32TextService::ImeNotify(HWND hWnd, WPARAM wParam, LPARAM /*lParam*/) ->
         default:
             break;
     }
-    return false;
 }
 
 void Imm32TextService::OpenCandidate(HIMC hIMC)
 {
     ChangeCandidateAt(hIMC);
-}
-
-void Imm32TextService::CloseCandidate()
-{
-    State::GetInstance().Clear(State::IN_CAND_CHOOSING);
-    m_candidateUi.Close();
 }
 
 void Imm32TextService::ChangeCandidate(HIMC hIMC)
@@ -303,11 +298,13 @@ void Imm32TextService::ChangeCandidateAt(HIMC hIMC)
     {
         logger::error("Candidate alloc memory failed.");
         GlobalFree(hGlobal);
-        m_candidateUi.Close();
         return;
     }
-    ImmGetCandidateListW(hIMC, 0, lpCandList, bufLen);
-    DoUpdateCandidateList(lpCandList);
+    bufLen = ImmGetCandidateListW(hIMC, 0, lpCandList, bufLen);
+    if (bufLen > 0)
+    {
+        DoUpdateCandidateList(lpCandList);
+    }
     GlobalUnlock(hGlobal);
     GlobalFree(hGlobal);
 }
@@ -319,7 +316,7 @@ void Imm32TextService::DoUpdateCandidateList(LPCANDIDATELIST lpCandList)
     dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
 
     m_candidateUi.Close();
-    m_candidateUi.SetPageSize(lpCandList->dwPageSize);
+    m_candidateUi.Reserve(lpCandList->dwPageSize);
     auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);
     for (DWORD index = 0; dwStartIndex < dwEndIndex; ++index, ++dwStartIndex)
     {
@@ -330,6 +327,7 @@ void Imm32TextService::DoUpdateCandidateList(LPCANDIDATELIST lpCandList)
         m_candidateUi.PushBack(ansiStr);
     }
     m_candidateUi.SetSelection(lpCandList->dwSelection);
+    MarkDirty(DirtyFlag::CandidateList);
 }
 
 } // namespace Ime::Imm32

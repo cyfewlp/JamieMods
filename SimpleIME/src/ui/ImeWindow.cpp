@@ -18,6 +18,7 @@
 #include "imgui_internal.h"
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
 #include "imguiex/m3/facade/base.h"
 #include "utils/InputFocusAnchor.h"
 
@@ -26,103 +27,83 @@ namespace Ime
 
 namespace
 {
-void DrawComposition(const TextEditor &editor, const ImGuiEx::M3::M3Styles &m3Styles)
+void DrawComposition(const TextEditor &editor)
 {
-    const auto &editorText = editor.GetText();
-    LONG        acpStart0  = 0;
-    LONG        acpEnd0    = 0;
-    editor.GetSelection(&acpStart0, &acpEnd0);
+    const auto             &editorText = editor.GetText();
+    const std::wstring_view editorTextSv(editorText);
 
-    const auto textSize = editorText.size();
-    auto       acpStart = static_cast<size_t>(std::max(0L, acpStart0));
-    auto       acpEnd   = static_cast<size_t>(std::max(0L, acpEnd0));
+    size_t acpStart = 0;
+    size_t acpEnd   = 0;
+    editor.GetClampedSelection(acpStart, acpEnd);
 
-    acpStart = std::min(textSize, acpStart);
-    acpEnd   = std::min(textSize, acpEnd);
-
-    if (acpEnd < acpStart)
-    {
-        std::swap(acpStart, acpEnd);
-    }
-
-    // use frame padding set line height
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard.Style<ImGuiStyleVar_FramePadding>({0, m3Styles[ImGuiEx::M3::Spacing::S]});
-    ImGui::SameLine(0, m3Styles[ImGuiEx::M3::Spacing::M]);
-    ImGui::AlignTextToFramePadding();
-
-    bool success = false;
+    bool drawStartToCaret = false;
     if (acpStart > 0)
     {
-        std::string startToCaret;
-        success = WCharUtils::ToString(editorText.c_str(), static_cast<int>(acpStart), startToCaret);
-        if (success)
+        auto startToCaret = WCharUtils::ToString(editorTextSv.substr(0, acpStart));
+        if (startToCaret.empty())
         {
-            ImGui::TextUnformatted(startToCaret.c_str());
+            // Conversion failed for a non-empty wstring segment; render a placeholder
+            // so the caret anchors to the correct position rather than snapping to line-start.
+            startToCaret = "?";
         }
+        ImGuiEx::M3::AlignedLabel(startToCaret);
+        drawStartToCaret = true;
     }
 
+    const auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
     // caret
-    ImGui::SameLine(0, 1.F);
     if (fmod(ImGui::GetTime(), 1.2) <= 0.8) // NOLINT(*-magic-numbers)
     {
-        ImVec2 const cursorScreenPos = ImGui::GetCursorScreenPos();
-        ImVec2 const min(cursorScreenPos.x, cursorScreenPos.y + 0.5f + m3Styles[ImGuiEx::M3::Spacing::S]);
-        ImGui::GetWindowDrawList()->AddLine(
-            min, ImVec2(min.x, min.y + ImGui::GetFontSize() - 1.5f), ImGui::GetColorU32(ImGuiCol_InputTextCursor), 1.0f
-        );
-    }
-
-    std::string caretToEnd;
-    const auto  subFromCaret = editorText.substr(acpStart);
-    success                  = false;
-    if (!subFromCaret.empty())
-    {
-        success = WCharUtils::ToString(subFromCaret.c_str(), static_cast<int>(subFromCaret.size()), caretToEnd);
-        if (success)
+        ImGuiWindow *window = ImGui::GetCurrentWindow();
+        ImRect       caretRect;
+        if (drawStartToCaret)
         {
-            ImGui::TextUnformatted(caretToEnd.c_str());
+            const auto lastItemMin = ImGui::GetItemRectMin();
+            const auto lastItemMax = ImGui::GetItemRectMax();
+            caretRect.Min          = ImVec2(lastItemMax.x, lastItemMin.y);
+            caretRect.Max          = ImVec2(lastItemMax.x, lastItemMax.y);
         }
+        else
+        {
+            const auto &lineHeight = m3Styles.GetLastText().currText.lineHeight;
+            const float offsetY    = ImGuiEx::M3::HalfDiff(window->DC.CurrLineSize.y, lineHeight);
+            caretRect.Min          = ImVec2(window->DC.CursorPos.x, window->DC.CursorPos.y + offsetY);
+            caretRect.Max          = ImVec2(caretRect.Min.x, caretRect.Min.y + lineHeight);
+        }
+
+        const auto caretColor = m3Styles.Colors()[ImGuiEx::M3::Spec::TextFieldCommon::CaretColor];
+        window->DrawList->AddLine(caretRect.Min, caretRect.Max, ImGui::ColorConvertFloat4ToU32(caretColor), 1.0f);
     }
 
-    if (!success)
+    if (acpStart < editorText.size())
     {
-        ImGui::NewLine();
+        const auto caretToEnd = WCharUtils::ToString(editorTextSv.substr(acpStart));
+        if (!caretToEnd.empty())
+        {
+            ImGui::SameLine(0.F, 0.F);
+            ImGuiEx::M3::AlignedLabel(caretToEnd);
+        }
     }
 }
 
-void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles &m3Styles)
+void DrawCandidates(const CandidateUi &candidateUi)
 {
-    using Spacing   = ImGuiEx::M3::Spacing;
-    using ColorRole = M3Spec::ColorRole;
     using size_type = CandidateUi::size_type;
 
     if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
     {
+        ImGuiEx::M3::BeginChipGroup();
+
+        ImGuiEx::M3::ChipConfiguration configuration{};
+        configuration.colors = ImGuiEx::M3::Spec::ChipColors::Filter;
+
         size_type index   = 0;
         size_type clicked = candidateList.size();
-
-        ImGuiEx::StyleGuard styleGuard;
-        styleGuard.Style<ImGuiStyleVar_ItemSpacing>({0, 0})
-            .Style<ImGuiStyleVar_FramePadding>({m3Styles[Spacing::M], m3Styles[Spacing::S]})
-            .Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurface))
-            .Color<ImGuiCol_Button>({0, 0, 0, 0})
-            .Color<ImGuiCol_ButtonHovered>(m3Styles.Colors().Hovered(ColorRole::surfaceContainer, ColorRole::onSurface))
-            .Color<ImGuiCol_ButtonActive>(m3Styles.Colors().Pressed(ColorRole::surfaceContainer, ColorRole::onSurface));
-
         for (const auto &candidate : candidateList)
         {
             ImGui::PushID(static_cast<int>(index));
-            ImGuiEx::StyleGuard styleGuard1;
-            if (index == candidateUi.Selection())
-            {
-                styleGuard1.Color<ImGuiCol_Button>(m3Styles.Colors()[ColorRole::primaryContainer])
-                    .Color<ImGuiCol_Text>(m3Styles.Colors()[ColorRole::onPrimaryContainer])
-                    .Color<ImGuiCol_ButtonHovered>(m3Styles.Colors().Hovered(ColorRole::primaryContainer, ColorRole::onPrimaryContainer))
-                    .Color<ImGuiCol_ButtonActive>(m3Styles.Colors().Pressed(ColorRole::primaryContainer, ColorRole::onPrimaryContainer));
-            }
-
-            if (ImGui::Button(candidate.c_str()))
+            configuration.selected = index == candidateUi.Selection();
+            if (ImGuiEx::M3::Chip(candidate.c_str(), configuration))
             {
                 clicked = index;
             }
@@ -134,6 +115,7 @@ void DrawCandidates(const CandidateUi &candidateUi, const ImGuiEx::M3::M3Styles 
         {
             ImeController::GetInstance()->CommitCandidate(static_cast<DWORD>(clicked));
         }
+        ImGuiEx::M3::EndChipGroup();
     }
 }
 
@@ -167,92 +149,74 @@ auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
 }
 
 /**
- * @brief Ensure the current ImGui window is fully within the viewport.
+ * @brief Ensures the IME window is fully contained within the viewport and avoids the input area.
+ * @details
+ * **Implementation Logic:**
+ * Replaces manual clamping with ImGui internal `FindBestWindowPosForPopupEx`. This leverages
+ * engine-native logic to calculate the optimal position relative to the `avoidRect`
+ * (the text input area) while respecting viewport boundaries.
  */
-void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size)
+void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size, ImGuiDir &lastAutoPosDir)
 {
     const auto &viewport = ImGui::GetMainViewport();
+    const auto &bounds   = InputFocusAnchor::GetInstance().GetLastBounds();
 
-    const RE::GPointF max = {.x = pos.x + size.x, .y = pos.y + size.y};
-
-    auto maxX = viewport->Pos.x + viewport->Size.x;
-    auto maxY = viewport->Pos.y + viewport->Size.y;
-    if (size.x < viewport->Size.x)
-    {
-        maxX -= size.x;
-    }
-    if (size.y < viewport->Size.y)
-    {
-        maxY -= size.y;
-    }
-    pos.x = std::clamp(pos.x, viewport->Pos.x, maxX);
-    pos.y = std::clamp(pos.y, viewport->Pos.y, maxY);
-
-    if (const auto &bounds = InputFocusAnchor::GetInstance().GetLastBounds();
-        Intersects(bounds, RE::GRectF{.left = pos.x, .top = pos.y, .right = max.x, .bottom = max.y})) // is overlaps?
-    {
-        // Move the window above the boundary
-        if (const float newY = bounds.top - size.y; newY >= viewport->Pos.y)
-        {
-            pos.y = newY;
-        }
-    }
+    const ImRect viewPortRect(viewport->Pos, viewport->Pos + viewport->Size);
+    const ImRect avoidRect(bounds.left, bounds.top, bounds.right, bounds.bottom);
+    pos = ImGui::FindBestWindowPosForPopupEx(pos, size, &lastAutoPosDir, viewPortRect, avoidRect, ImGuiPopupPositionPolicy_ComboBox);
 }
 } // namespace
 
-//! \todo may use `FindWindowByName` limt IME position? like "common/imguiex/imguiex_m3.cpp:BeginFloatingToolbar"
 void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings)
 {
-    static bool shouldRelayout = true;
-    static bool imeAppearing   = true;
-    const auto &state          = Core::State::GetInstance();
+    const auto &state = Core::State::GetInstance();
     if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
     {
-        imeAppearing   = true;
-        shouldRelayout = true;
         ImGui::CloseCurrentPopup();
         return;
     }
-    if (imeAppearing)
+    const auto currentFrame = ImGui::GetFrameCount();
+    if (currentFrame > m_lastShowFrame + 1)
     {
-        imeAppearing = false;
+        m_shouldRelayout = true;
         UpdateImeWindowPos(settings, m_imePos);
     }
-    if (shouldRelayout)
+    m_lastShowFrame = currentFrame;
+    if (m_shouldRelayout)
     {
-        shouldRelayout = false;
-        ClampWindowToViewport(m_imePos, m_imeSize);
+        m_shouldRelayout = false;
+        ClampWindowToViewport(m_imePos, m_imeSize, m_lastAutoPosDir);
         ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
     }
-    auto          &m3Styles       = ImGuiEx::M3::Context::GetM3Styles();
     constexpr auto flags          = ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
-    const auto     mainStyleGuard = ImGuiEx::StyleGuard()
-                                    .Style<ImGuiStyleVar_WindowPadding>({})
-                                    .Color<ImGuiCol_Text>(m3Styles.Colors().at(M3Spec::ColorRole::primary))
-                                    .Color<ImGuiCol_WindowBg>(m3Styles.Colors().at(M3Spec::ColorRole::surfaceContainerLow))
-                                    .Color<ImGuiCol_Separator>(m3Styles.Colors().at(M3Spec::ColorRole::outlineVariant));
+    const auto     mainStyleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_WindowPadding>({});
 
-    const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+    // Why not use `BeginComboPopup`?
+    // While the IME window's lifecycle resembles a Combo, `BeginComboPopup` is unsuitable because:
+    // 1. **Focus/Closure Policy:** Popups automatically close on "click-outside," which conflicts
+    // with IME persistence requirements during composition.
+    // 2. **State Control:** IME visibility is strictly driven by `Core::State`, whereas Popups
+    // rely on ImGui's internal `OpenPopup` stack, leading to state synchronization issues.
     if (ImGui::Begin("IME", nullptr, flags))
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
-        if (state.Has(Core::State::IN_COMPOSING))
-        {
-            DrawComposition(textEditor, m3Styles);
-        }
 
-        ImGui::Separator();
-        // render ime status window: language,
-        if (state.Has(Core::State::IN_CAND_CHOOSING))
-        {
-            DrawCandidates(candidateUi, m3Styles);
-        }
+        ImGuiEx::M3::ListItemPlain([&] {
+            DrawComposition(textEditor);
+        });
+
+        ImGuiEx::M3::Divider();
+
+        ImGuiEx::M3::ListItemPlain([&] {
+            DrawCandidates(candidateUi);
+        });
+
         m_imeSize = ImGui::GetWindowSize();
     }
     ImGui::End();
     if (IsImeNeedRelayout())
     {
-        shouldRelayout = true;
+        m_shouldRelayout = true;
     }
 }
 
