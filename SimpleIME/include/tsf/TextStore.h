@@ -14,21 +14,32 @@
 
 namespace Tsf
 {
+
+/**
+ * @brief RAII function call tracer for TSF debugging.
+ *
+ * Produces indented trace-level log output showing TSF call sequences and nesting.
+ * In release builds (when SIMPLE_IME_TRACE is not defined), this entire class and
+ * all its call sites are eliminated by the compiler as dead code — zero overhead.
+ *
+ * **Enable at compile time** by adding `-DSIMPLE_IME_TRACE` to your build flags,
+ * or passing `-DSIMPLE_IME_TRACE=1` in CMake.
+ */
+#ifdef SIMPLE_IME_TRACE
 struct FuncTracer
 {
     template <typename... Args>
-    explicit constexpr FuncTracer(std::format_string<Args...> fmt, Args &&...args)
+    explicit FuncTracer(std::format_string<Args...> fmt, Args &&...args)
     {
         if (spdlog::should_log(spdlog::level::trace))
         {
             spdlog::trace("{:>{}}{}", "", g_indent, std::format(fmt, std::forward<Args>(args)...));
-            // spdlog::log(spdlog::level::trace, "{:>{}}{}", "", g_indent, fmt, std::forward<Args>(args)...);
             g_indent += 4;
         }
     }
 
     template <typename... Args>
-    constexpr void log(std::format_string<Args...> fmt, Args &&...args)
+    void log(std::format_string<Args...> fmt, Args &&...args)
     {
         if (spdlog::should_log(spdlog::level::trace))
         {
@@ -43,8 +54,25 @@ struct FuncTracer
     }
 
 private:
-    static inline uint32_t g_indent;
+    static inline uint32_t g_indent = 0;
 };
+#else
+// Release / non-trace build: FuncTracer is a completely empty type.
+// The compiler will eliminate every `auto tracer = FuncTracer(...)` call site,
+// including argument evaluation for trivial arguments like __func__.
+struct FuncTracer
+{
+    template <typename... Args>
+    explicit constexpr FuncTracer(std::format_string<Args...> /*fmt*/, Args &&.../*args*/) noexcept
+    {
+    }
+
+    template <typename... Args>
+    constexpr void log(std::format_string<Args...> /*fmt*/, Args &&.../*args*/) const noexcept
+    {
+    }
+};
+#endif
 
 struct AdviseSinkCache
 {
@@ -254,12 +282,19 @@ public:
 
     [[nodiscard]] auto GetTextEditor() -> Ime::TextEditor & override { return m_textEditor; }
 
+    [[nodiscard]] auto GetCandidateUiWrite() -> Ime::CandidateUi & { return m_candidateUi; }
+
+    [[nodiscard]] auto GetReadLock() -> std::shared_lock<std::shared_mutex> { return std::shared_lock(m_mutex); }
+
+    [[nodiscard]] auto GetWriteLock() -> std::lock_guard<std::shared_mutex> { return std::lock_guard(m_mutex); }
+
     auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
 protected:
-    void RequestUpdateCandidateUi(Ime::CandidateUi &uiForRead, DirtyFlag dirtyFlags) override
+    void RequestUpdateCandidateUi(Ime::CandidateUi &uiForRead, DirtyFlag flag) override
     {
-        if (dirtyFlags == DirtyFlag::CandidateSelection)
+        const std::shared_lock readLock(m_mutex);
+        if (flag == DirtyFlag::CandidateSelection)
         {
             uiForRead.SetSelection(m_candidateUi.Selection());
         }
@@ -273,13 +308,12 @@ private:
     void        UpdateConversionMode() const;
     static void DoUpdateConversionMode(ULONG convertionMode);
 
-    friend class TextStore;
-
-    Ime::TextEditor         m_textEditor;
-    Ime::CandidateUi        m_candidateUi;
-    CComPtr<TsfCompartment> m_pCompartment         = nullptr;
-    CComPtr<TsfCompartment> m_pCompartmentKeyBoard = nullptr;
-    CComPtr<TextStore>      m_pTextStore           = nullptr;
+    Ime::TextEditor           m_textEditor;
+    Ime::CandidateUi          m_candidateUi;
+    CComPtr<TsfCompartment>   m_pCompartment         = nullptr;
+    CComPtr<TsfCompartment>   m_pCompartmentKeyBoard = nullptr;
+    CComPtr<TextStore>        m_pTextStore           = nullptr;
+    mutable std::shared_mutex m_mutex;
 };
 } // namespace Tsf
 

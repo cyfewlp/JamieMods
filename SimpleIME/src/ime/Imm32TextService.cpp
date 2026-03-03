@@ -90,7 +90,10 @@ void Imm32TextService::OnEndComposition()
     }
     m_textEditor.Select(0, 0);
     m_textEditor.ClearText();
-    m_candidateUi.Close();
+    {
+        std::lock_guard lock(m_mutex);
+        m_candidateUi.Close();
+    }
     State::GetInstance().Clear(State::IN_COMPOSING);
     State::GetInstance().Clear(State::IN_CAND_CHOOSING);
 }
@@ -315,6 +318,7 @@ void Imm32TextService::DoUpdateCandidateList(LPCANDIDATELIST lpCandList)
     DWORD dwEndIndex   = dwStartIndex + lpCandList->dwPageSize;
     dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
 
+    std::lock_guard lock(m_mutex);
     m_candidateUi.Close();
     m_candidateUi.Reserve(lpCandList->dwPageSize);
     auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);

@@ -66,6 +66,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h)
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h"
+    $<$<CONFIG:Debug>:SIMPLE_IME_TRACE>
 )
 
 # include directories

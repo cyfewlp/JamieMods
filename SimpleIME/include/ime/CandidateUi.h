@@ -44,6 +44,7 @@ public:
     auto swap(CandidateUi &right) -> void
     {
         m_candidateList.swap(right.m_candidateList);
+        std::swap(m_dwFirstIndex, right.m_dwFirstIndex);
         std::swap(m_dwSelection, right.m_dwSelection);
     }
 

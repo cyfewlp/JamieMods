@@ -53,16 +53,11 @@ public:
 
     virtual auto ProcessImeMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) -> bool = 0;
 
-    // UI thread
+    // UI thread only. Called once per frame before rendering.
     auto UpdateCandidateUiIfDirty() -> void
     {
-        if (m_dirtyFlag == DirtyFlag::None)
-        {
-            return;
-        }
-
-        std::unique_lock lock(m_mutex);
-        if (const auto flag = m_dirtyFlag.exchange(DirtyFlag::None); flag != DirtyFlag::None)
+        const auto flag = m_dirtyFlag.exchange(DirtyFlag::None, std::memory_order_acq_rel);
+        if (flag != DirtyFlag::None)
         {
             RequestUpdateCandidateUi(m_candidateUi, flag);
         }
@@ -70,7 +65,13 @@ public:
 
     auto GetCandidateUi() const -> const CandidateUi & { return m_candidateUi; }
 
-    void MarkDirty(DirtyFlag dirtyFlag) { m_dirtyFlag = m_dirtyFlag | dirtyFlag; }
+    void MarkDirty(DirtyFlag dirtyFlag)
+    {
+        auto current = m_dirtyFlag.load(std::memory_order_relaxed);
+        while (!m_dirtyFlag.compare_exchange_weak(current, current | dirtyFlag, std::memory_order_release, std::memory_order_relaxed))
+        {
+        }
+    }
 
     virtual auto CommitCandidate(DWORD index) -> bool = 0;
     virtual auto GetTextEditor() -> TextEditor &      = 0;
@@ -78,14 +79,13 @@ public:
     virtual void RegisterCallback(OnEndCompositionCallback *callback) { m_OnEndCompositionCallback = callback; }
 
 private:
-    mutable std::shared_mutex m_mutex;
-    CandidateUi               m_candidateUi;
-    std::atomic<DirtyFlag>    m_dirtyFlag{DirtyFlag::All};
+    CandidateUi            m_candidateUi;
+    std::atomic<DirtyFlag> m_dirtyFlag{DirtyFlag::All};
 
 protected:
     OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
 
-    virtual void RequestUpdateCandidateUi(CandidateUi &uiForRead, DirtyFlag dirtyFlags) = 0;
+    virtual void RequestUpdateCandidateUi(CandidateUi &uiForRead, DirtyFlag flag) = 0;
 };
 
 namespace Imm32
@@ -114,7 +114,11 @@ public:
     [[nodiscard]] auto GetTextEditor() -> TextEditor & override { return m_textEditor; }
 
 protected:
-    void RequestUpdateCandidateUi(CandidateUi &uiForRead, DirtyFlag) override { uiForRead.swap(m_candidateUi); }
+    void RequestUpdateCandidateUi(CandidateUi &uiForRead, DirtyFlag /*flag*/) override
+    {
+        std::lock_guard lock(m_mutex);
+        uiForRead.swap(m_candidateUi);
+    }
 
 private:
     static void OnStartComposition();
@@ -128,10 +132,11 @@ private:
     void ChangeCandidateAt(HIMC hIMC);
     void DoUpdateCandidateList(LPCANDIDATELIST lpCandList);
 
-    TextEditor  m_textEditor;
-    CandidateUi m_candidateUi;
-    HWND        m_imeHwnd = nullptr;
-    HIMC        m_hIMC    = nullptr;
+    TextEditor                m_textEditor;
+    CandidateUi               m_candidateUi;
+    HWND                      m_imeHwnd = nullptr;
+    HIMC                      m_hIMC    = nullptr;
+    mutable std::shared_mutex m_mutex;
 };
 } // namespace Imm32
 } // namespace Ime
