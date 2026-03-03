@@ -129,17 +129,17 @@ public:
     // ITextStoreACP functions
     // NOLINTBEGIN(*-use-trailing-return-type)
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject) override;
-    STDMETHODIMP AdviseSink(REFIID riid, IUnknown *punk, DWORD dwMask) override;
-    STDMETHODIMP UnadviseSink(IUnknown *punk) override;
+    STDMETHODIMP AdviseSink(REFIID riid, IUnknown *pUnknown, DWORD dwMask) override;
+    STDMETHODIMP UnadviseSink(IUnknown *pUnknown) override;
     STDMETHODIMP RequestLock(DWORD dwLockFlags, HRESULT *phrSession) override;
-    STDMETHODIMP GetStatus(TS_STATUS *pdcs) override;
+    STDMETHODIMP GetStatus(TS_STATUS *pStatus) override;
     /**
      * determines whether the specified start and end character positions are valid. Use this method to adjust
      * an edit to a document before executing the edit. The method must not return values outside the range of
      * the document.
-     * @param acpTestStart Starting application character position for inserted text.
-     * @param acpTestEnd Ending application character position for the inserted text. This value is equal to
-     * acpTextStart if the text is inserted at a point instead of replacing selected text.
+     * @param acpStart Starting application character position for inserted text.
+     * @param acpEnd Ending application character position for the inserted text. This value is equal to
+     * acpStart if the text is inserted at a point instead of replacing selected text.
      * @param cch Length of replacement text.
      * @param pacpResultStart Returns the new starting application character position of the inserted text. If
      * this parameter is NULL, then text cannot be inserted at the specified position. This value cannot be
@@ -149,54 +149,54 @@ public:
      * position. This value cannot be outside the document range.
      * @return
      */
-    STDMETHODIMP QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG cch, LONG *pacpResultStart, LONG *pacpResultEnd) override;
+    STDMETHODIMP QueryInsert(LONG acpStart, LONG acpEnd, ULONG cch, LONG *pacpResultStart, LONG *pacpResultEnd) override;
     /**
      * returns the character position of a text selection in a document. This method supports multiple text
      * selections. The caller must have a read-only lock on the document before calling this method.
-     * @param ulIndex Specifies the text selections that start the process. If the TF_DEFAULT_SELECTION constant
+     * @param startIndex Specifies the text selections that start the process. If the TF_DEFAULT_SELECTION constant
      * is specified for this parameter, the input selection starts the process.
-     * @param ulCount Specifies the maximum number of selections to return.
-     * @param pSelection Receives the style, start, and end character positions of the selected text. These
+     * @param maxCount Specifies the maximum number of selections to return.
+     * @param pSelections Receives the style, start, and end character positions of the selected text. These
      * values are put into the TS_SELECTION_ACP structure.
-     * @param pcFetched Receives the number of pSelection structures returned.
+     * @param pcFetched Receives the number of pSelections structures returned.
      * @return
      */
-    STDMETHODIMP GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_ACP *pSelection, ULONG *pcFetched) override;
+    STDMETHODIMP GetSelection(ULONG startIndex, ULONG maxCount, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) override;
     /**
      * The ITextStoreACP::SetSelection method selects text within the document.
      * The application must have a read/write lock on the document before calling this method.
-     * @param ulCount Specifies the number of text selections in pSelection.
-     * @param pSelection Specifies the style, start, and end character positions of the text selected through the TS_SELECTION_ACP structure.
+     * @param selectionCount Specifies the number of text selections in pSelections.
+     * @param pSelections Specifies the style, start, and end character positions of the text selected through the TS_SELECTION_ACP structure.
      * @return
      */
-    STDMETHODIMP SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSelection) override;
+    STDMETHODIMP SetSelection(ULONG selectionCount, const TS_SELECTION_ACP *pSelections) override;
     STDMETHODIMP GetText(
         LONG acpStart, LONG acpEnd, WCHAR *textBuffer, ULONG textBufferSize, ULONG *textBufferCopied, TS_RUNINFO *runInfoBuffer, ULONG cRunInfoReq,
         ULONG *runInfoBufferCopied, LONG *pacpNext
     ) override;
     STDMETHODIMP SetText(DWORD dwFlags, LONG acpStart, LONG acpEnd, const WCHAR *pchText, ULONG cch, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP GetFormattedText(LONG acpStart, LONG acpEnd, IDataObject **ppDataObject) override;
-    STDMETHODIMP GetEmbedded(LONG acpPos, REFGUID rguidService, REFIID riid, IUnknown **ppunk) override;
+    STDMETHODIMP GetEmbedded(LONG acpPos, REFGUID rguidService, REFIID riid, IUnknown **ppObject) override;
     STDMETHODIMP QueryInsertEmbedded(const GUID *pguidService, const FORMATETC *pFormatEtc, BOOL *pfInsertable) override;
     STDMETHODIMP InsertEmbedded(DWORD dwFlags, LONG acpStart, LONG acpEnd, IDataObject *pDataObject, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP InsertTextAtSelection(
         DWORD dwFlags, const WCHAR *pchText, ULONG cch, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
     ) override;
     STDMETHODIMP InsertEmbeddedAtSelection(DWORD dwFlags, IDataObject *pDataObject, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange) override;
-    STDMETHODIMP RequestSupportedAttrs(DWORD dwFlags, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs) override;
-    STDMETHODIMP RequestAttrsAtPosition(LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags) override;
-    STDMETHODIMP RequestAttrsTransitioningAtPosition(LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags) override;
+    STDMETHODIMP RequestSupportedAttrs(DWORD dwFlags, ULONG filterAttrCount, const TS_ATTRID *filterAttrs) override;
+    STDMETHODIMP RequestAttrsAtPosition(LONG acpPos, ULONG filterAttrCount, const TS_ATTRID *filterAttrs, DWORD dwFlags) override;
+    STDMETHODIMP RequestAttrsTransitioningAtPosition(LONG acpPos, ULONG filterAttrCount, const TS_ATTRID *filterAttrs, DWORD dwFlags) override;
     STDMETHODIMP FindNextAttrTransition(
-        LONG acpStart, LONG acpHalt, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags, LONG *pacpNext, BOOL *pfFound,
-        LONG *plFoundOffset
+        LONG acpStart, LONG acpStop, ULONG filterAttrCount, const TS_ATTRID *filterAttrs, DWORD dwFlags, LONG *pacpNext, BOOL *pfFoundTransition,
+        LONG *foundOffset
     ) override;
-    STDMETHODIMP RetrieveRequestedAttrs(ULONG ulCount, TS_ATTRVAL *paAttrVals, ULONG *pcFetched) override;
-    STDMETHODIMP GetEndACP(LONG *pacp) override;
-    STDMETHODIMP GetActiveView(TsViewCookie *pvcView) override;
-    STDMETHODIMP GetACPFromPoint(TsViewCookie vcView, const POINT *ptScreen, DWORD dwFlags, LONG *pacp) override;
-    STDMETHODIMP GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT *prc, BOOL *pfClipped) override;
-    STDMETHODIMP GetScreenExt(TsViewCookie vcView, RECT *prc) override;
-    STDMETHODIMP GetWnd(TsViewCookie vcView, HWND *phwnd) override;
+    STDMETHODIMP RetrieveRequestedAttrs(ULONG attrCount, TS_ATTRVAL *attrVals, ULONG *pcFetched) override;
+    STDMETHODIMP GetEndACP(LONG *pacpEnd) override;
+    STDMETHODIMP GetActiveView(TsViewCookie *pViewCookie) override;
+    STDMETHODIMP GetACPFromPoint(TsViewCookie vcView, const POINT *ptScreenPos, DWORD dwFlags, LONG *pacpPos) override;
+    STDMETHODIMP GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT *pRect, BOOL *pfIsClipped) override;
+    STDMETHODIMP GetScreenExt(TsViewCookie vcView, RECT *pRect) override;
+    STDMETHODIMP GetWnd(TsViewCookie vcView, HWND *pHwnd) override;
 
     // ITfContextOwnerCompositionSink functions
     STDMETHODIMP OnStartComposition(ITfCompositionView *pComposition, BOOL *pfOk) override;

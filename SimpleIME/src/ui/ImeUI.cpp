@@ -40,8 +40,6 @@ void ImeUI::ApplySettings(Settings::Appearance &appearance)
     m_panelAppearance.ApplySettings(appearance);
 }
 
-static auto inactiveColor = ImVec4(0.45F, 0.45F, 0.45F, 0.9F);
-
 void ImeUI::DrawSettings(Settings &settings)
 {
     if (!settings.appearance.showSettings)
@@ -178,7 +176,7 @@ void ImeUI::DrawStates() const
         ImeController::GetInstance()->ForceFocusIme();
     }
 #ifdef DEBUG
-    auto action = [&state, &STATE_ACTIVE_COLOR](const State::StateKey stateKey) {
+    auto action = [&state](const State::StateKey stateKey) {
         ImGui::SameLine();
         if (state.Has(stateKey))
         {

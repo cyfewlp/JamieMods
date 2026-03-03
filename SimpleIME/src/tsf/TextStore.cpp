@@ -310,40 +310,40 @@ auto TextStore::RequestLock(DWORD dwLockFlags, HRESULT *phrSession) -> HRESULT
     return S_OK;
 }
 
-auto TextStore::GetStatus(TS_STATUS *pdcs) -> HRESULT
+auto TextStore::GetStatus(TS_STATUS *pStatus) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
-    if (nullptr == pdcs)
+    if (nullptr == pStatus)
     {
         return E_INVALIDARG;
     }
 
-    pdcs->dwDynamicFlags = 0;
-    pdcs->dwStaticFlags  = 0;
+    pStatus->dwDynamicFlags = 0;
+    pStatus->dwStaticFlags  = 0;
 
     return S_OK;
 }
 
-auto TextStore::QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG /*cch*/, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
+auto TextStore::QueryInsert(LONG acpStart, LONG acpEnd, ULONG /*cch*/, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
     if (const size_t lTextLength = m_pTextService->GetTextEditor().GetTextSize(); //
-        acpTestStart > acpTestEnd || static_cast<size_t>(acpTestEnd) > lTextLength)
+        acpStart > acpEnd || static_cast<size_t>(acpEnd) > lTextLength)
     {
         return E_INVALIDARG;
     }
 
-    *pacpResultStart = acpTestStart;
-    *pacpResultEnd   = acpTestEnd;
+    *pacpResultStart = acpStart;
+    *pacpResultEnd   = acpEnd;
 
     return S_OK;
 }
 
-auto TextStore::GetSelection(ULONG ulIndex, ULONG /*ulCount*/, TS_SELECTION_ACP *pSelection, ULONG *pcFetched) -> HRESULT
+auto TextStore::GetSelection(ULONG startIndex, ULONG /*maxCount*/, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
-    if (nullptr == pSelection || nullptr == pcFetched)
+    if (nullptr == pSelections || nullptr == pcFetched)
     {
         return E_INVALIDARG;
     }
@@ -354,25 +354,25 @@ auto TextStore::GetSelection(ULONG ulIndex, ULONG /*ulCount*/, TS_SELECTION_ACP 
         return TS_E_NOLOCK;
     }
 
-    if (TF_DEFAULT_SELECTION == ulIndex)
+    if (TF_DEFAULT_SELECTION == startIndex)
     {
-        ulIndex = 0;
+        startIndex = 0;
     }
-    else if (ulIndex > 1)
+    else if (startIndex > 1)
     {
         return E_INVALIDARG;
     }
 
-    m_pTextService->GetTextEditor().GetSelection(pSelection);
-    tracer.log("AcpStart: {}, AcpEnd: {}", pSelection->acpStart, pSelection->acpEnd);
+    m_pTextService->GetTextEditor().GetSelection(pSelections);
+    tracer.log("AcpStart: {}, AcpEnd: {}", pSelections->acpStart, pSelections->acpEnd);
     *pcFetched = 1;
     return S_OK;
 }
 
-auto TextStore::SetSelection(const ULONG ulCount, const TS_SELECTION_ACP *pSelection) -> HRESULT
+auto TextStore::SetSelection(const ULONG selectionCount, const TS_SELECTION_ACP *pSelections) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
-    if (nullptr == pSelection || ulCount > 1)
+    if (nullptr == pSelections || selectionCount > 1)
     {
         return E_INVALIDARG;
     }
@@ -382,8 +382,8 @@ auto TextStore::SetSelection(const ULONG ulCount, const TS_SELECTION_ACP *pSelec
         return TS_E_NOLOCK;
     }
 
-    m_pTextService->GetTextEditor().Select(pSelection);
-    tracer.log("set acpStart {}, acpEnd {}", pSelection->acpStart, pSelection->acpEnd);
+    m_pTextService->GetTextEditor().Select(pSelections);
+    tracer.log("set acpStart {}, acpEnd {}", pSelections->acpStart, pSelections->acpEnd);
     // do not reverse TS_AE_START (not support choose selection dir)
     return S_OK;
 }
@@ -584,7 +584,7 @@ auto TextStore::InsertEmbedded(
     return E_NOTIMPL;
 }
 
-auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/) -> HRESULT
+auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG /*filterAttrCount*/, const TS_ATTRID * /*filterAttrs*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
@@ -592,7 +592,7 @@ auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG /*cFilterAttrs*/,
 }
 
 auto TextStore::RequestAttrsAtPosition(
-    LONG /*acpPos*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/, DWORD /*dwFlags*/
+    LONG /*acpPos*/, ULONG /*filterAttrCount*/, const TS_ATTRID * /*filterAttrs*/, DWORD /*dwFlags*/
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
@@ -601,7 +601,7 @@ auto TextStore::RequestAttrsAtPosition(
 }
 
 auto TextStore::RequestAttrsTransitioningAtPosition(
-    LONG /*acpPos*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/, DWORD /*dwFlags*/
+    LONG /*acpPos*/, ULONG /*filterAttrCount*/, const TS_ATTRID * /*filterAttrs*/, DWORD /*dwFlags*/
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
@@ -610,8 +610,8 @@ auto TextStore::RequestAttrsTransitioningAtPosition(
 }
 
 auto TextStore::FindNextAttrTransition(
-    LONG /*acpStart*/, LONG /*acpHalt*/, ULONG /*cFilterAttrs*/, const TS_ATTRID * /*paFilterAttrs*/, DWORD /*dwFlags*/, LONG * /*pacpNext*/,
-    BOOL * /*pfFound*/, LONG * /*plFoundOffset*/
+    LONG /*acpStart*/, LONG /*acpStop*/, ULONG /*filterAttrCount*/, const TS_ATTRID * /*filterAttrs*/, DWORD /*dwFlags*/, LONG * /*pacpNext*/,
+    BOOL * /*pfFoundTransition*/, LONG * /*foundOffset*/
 ) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
@@ -619,14 +619,14 @@ auto TextStore::FindNextAttrTransition(
     return E_NOTIMPL;
 }
 
-auto TextStore::RetrieveRequestedAttrs(ULONG /*ulCount*/, TS_ATTRVAL * /*paAttrVals*/, ULONG * /*pcFetched*/) -> HRESULT
+auto TextStore::RetrieveRequestedAttrs(ULONG /*attrCount*/, TS_ATTRVAL * /*attrVals*/, ULONG * /*pcFetched*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
     return S_OK;
 }
 
-auto TextStore::GetEndACP(LONG *pacp) -> HRESULT
+auto TextStore::GetEndACP(LONG *pacpEnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     if (!IsLocked(TS_LF_READWRITE))
@@ -634,39 +634,39 @@ auto TextStore::GetEndACP(LONG *pacp) -> HRESULT
         return TS_E_NOLOCK;
     }
 
-    if (nullptr == pacp)
+    if (nullptr == pacpEnd)
     {
         return E_INVALIDARG;
     }
 
-    m_pTextService->GetTextEditor().GetSelection(nullptr, pacp);
+    m_pTextService->GetTextEditor().GetSelection(nullptr, pacpEnd);
     return S_OK;
 }
 
-auto TextStore::GetActiveView(TsViewCookie *pvcView) -> HRESULT
+auto TextStore::GetActiveView(TsViewCookie *pViewCookie) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{}", __func__);
-    *pvcView    = EDIT_VIEW_COOKIE;
+    auto tracer  = FuncTracer("TextStore::{}", __func__);
+    *pViewCookie = EDIT_VIEW_COOKIE;
     return S_OK;
 }
 
-auto TextStore::GetACPFromPoint(TsViewCookie /*vcView*/, const POINT * /*pt*/, DWORD /*dwFlags*/, LONG * /*pacp*/) -> HRESULT
+auto TextStore::GetACPFromPoint(TsViewCookie /*vcView*/, const POINT * /*ptScreenPos*/, DWORD /*dwFlags*/, LONG * /*pacpPos*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     return E_NOTIMPL;
 }
 
-auto TextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT *prc, BOOL *pfClipped) -> HRESULT
+auto TextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT *pRect, BOOL *pfIsClipped) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
-    if (nullptr == prc || nullptr == pfClipped)
+    if (nullptr == pRect || nullptr == pfIsClipped)
     {
         return E_INVALIDARG;
     }
 
-    *pfClipped = FALSE;
-    ZeroMemory(prc, sizeof(RECT));
+    *pfIsClipped = FALSE;
+    ZeroMemory(pRect, sizeof(RECT));
 
     if (EDIT_VIEW_COOKIE != vcView)
     {
@@ -683,31 +683,31 @@ auto TextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT
         return E_INVALIDARG;
     }
 
-    GetClientRect(m_hWnd, prc);
-    MapWindowPoints(m_hWnd, nullptr, reinterpret_cast<LPPOINT>(prc), 2);
+    GetClientRect(m_hWnd, pRect);
+    MapWindowPoints(m_hWnd, nullptr, reinterpret_cast<LPPOINT>(pRect), 2);
     return S_OK;
 }
 
-auto TextStore::GetScreenExt(TsViewCookie vcView, RECT *prc) -> HRESULT
+auto TextStore::GetScreenExt(TsViewCookie vcView, RECT *pRect) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
-    if (nullptr == prc || EDIT_VIEW_COOKIE != vcView)
+    if (nullptr == pRect || EDIT_VIEW_COOKIE != vcView)
     {
         return E_INVALIDARG;
     }
 
-    GetClientRect(m_hWnd, prc);
-    MapWindowPoints(m_hWnd, nullptr, reinterpret_cast<LPPOINT>(prc), 2);
+    GetClientRect(m_hWnd, pRect);
+    MapWindowPoints(m_hWnd, nullptr, reinterpret_cast<LPPOINT>(pRect), 2);
     return S_OK;
 }
 
-auto TextStore::GetWnd(TsViewCookie vcView, HWND *phwnd) -> HRESULT
+auto TextStore::GetWnd(TsViewCookie vcView, HWND *pHwnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     if (EDIT_VIEW_COOKIE == vcView)
     {
-        *phwnd = m_hWnd;
+        *pHwnd = m_hWnd;
         return S_OK;
     }
     return E_INVALIDARG;
@@ -738,7 +738,7 @@ auto TextStore::OnUpdateComposition(ITfCompositionView * /*pComposition*/, ITfRa
     return S_OK;
 }
 
-auto TextStore::OnEndComposition(ITfCompositionView *pComposition) -> HRESULT
+auto TextStore::OnEndComposition(ITfCompositionView * /*pComposition*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     if (m_OnEndCompositionCallback != nullptr)
