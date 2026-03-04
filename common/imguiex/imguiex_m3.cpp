@@ -698,7 +698,7 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void
     DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
 }
 
-auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonWidths widths, Spec::IconButtonColors ibColors) -> bool
+auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonColorsValues colors, Spec::IconButtonWidths widths) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -711,10 +711,16 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButton
 
     const ImGuiID id = window->GetID(TextStart(icon), TextEnd(icon));
 
-    const auto   height = GetPixels(m3Styles, sizing.containerHeight);
-    const ImVec2 size   = {height, height};
-    const ImVec2 posMin = GetAlignedCursorPos(window, height);
-    const ImRect bb(posMin, posMin + size);
+    const auto   minSize         = m3Styles.GetPixels(Spec::IconButtonCommon::MinSize);
+    const auto   containerHeight = GetPixels(m3Styles, sizing.containerHeight);
+    // center align when container height less than min size.
+    const auto   offset          = minSize > containerHeight ? HalfDiff(minSize, containerHeight) : 0.0F;
+    const auto   height          = std::max(containerHeight, minSize);
+    // There may submit a greater item size than bounding box size when container height less than min size,
+    // but it won't cause problem because ItemAdd use bounding box for clipping and interaction.
+    const ImVec2 size            = {height, height};
+    const ImVec2 posMin          = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin + ImVec2(offset, offset), posMin + size - ImVec2(offset, offset));
 
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, id))
@@ -745,10 +751,9 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButton
     }
     else
     {
-        const auto colors = Spec::GetIconButtonColorsValues(ibColors);
-        bgColor           = m3Styles.Colors()[colors.containerColor];
-        iconColor         = m3Styles.Colors()[colors.iconColor];
-        outlineColor      = m3Styles.Colors()[colors.outlineColor];
+        bgColor      = m3Styles.Colors()[colors.containerColor];
+        iconColor    = m3Styles.Colors()[colors.iconColor];
+        outlineColor = m3Styles.Colors()[colors.outlineColor];
         if (hovered)
         {
             bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, iconColor);
@@ -769,15 +774,12 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButton
 
     window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(bgColor), rounding);
 
-    if (ibColors == Spec::IconButtonColors::Outlined)
-    {
-        const float outlineWidth = sizing.outlinedOutlineWidth;
-        window->DrawList->AddRect(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(outlineColor), rounding, 0, outlineWidth);
-    }
+    const float outlineWidth = sizing.outlinedOutlineWidth;
+    window->DrawList->AddRect(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(outlineColor), rounding, 0, outlineWidth);
 
     const auto offsetX  = GetPixels(m3Styles, sizing.leadingSpace);
     const auto iconSize = GetPixels(m3Styles, sizing.iconSize);
-    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
+    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(containerHeight, iconSize)}, icon, m3Styles, iconColor);
     return pressed;
 }
 
@@ -1637,5 +1639,146 @@ void SetItemToolTip(const std::string_view text)
         ImGui::EndTooltip();
     }
     ImGui::PopFont();
+}
+
+AppBarScope::AppBarScope(Spec::AppBarVariant variant) : m_variant(variant)
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return;
+    }
+
+    Spec::Unit containerHeight = 0U;
+    const auto paddingX        = Spec::AppBarCommon::LeadingSpace;
+    switch (variant)
+    {
+        case Spec::AppBarVariant::Small:
+            containerHeight = Spec::SmallAppbar::ContainerHeight;
+            break;
+        case Spec::AppBarVariant::MediumFlexible:
+            containerHeight = Spec::MediumFlexibleAppbar::ContainerHeight;
+            break;
+        case Spec::AppBarVariant::LargeFlexible:
+            containerHeight = Spec::LargeFlexibleAppbar::ContainerHeight;
+            break;
+    }
+
+    auto        &m3Styles = Context::GetM3Styles();
+    const ImVec2 size(ImGui::GetContentRegionAvail().x, m3Styles.GetPixels(containerHeight));
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+
+    ImGui::ItemSize(size);
+    m_nextLineCursorPos = window->DC.CursorPos;
+    if (!ImGui::ItemAdd(bb, 0))
+    {
+        return;
+    }
+    m_visible                 = true;
+    m_paddingX                = m3Styles.GetPixels(paddingX);
+    m_minPos                  = bb.Min;
+    window->DC.CursorPos      = bb.Min;
+    // For medium/Large AppBar, the title will be placed in the second line.
+    window->DC.CurrLineSize.y = m3Styles.GetPixels(Spec::SmallAppbar::ContainerHeight);
+
+    const auto containerColor = m3Styles.Colors()[Spec::AppBarCommon::ContainerColor];
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(containerColor));
+}
+
+AppBarScope::~AppBarScope()
+{
+    if (m_visible)
+    {
+        ImGuiWindow *window  = ImGui::GetCurrentWindow();
+        window->DC.CursorPos = m_nextLineCursorPos;
+    }
+}
+
+auto AppBarScope::LeadingIcon(std::string_view icon) const -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    // Can't call SameLine in there: the pre-line will be the Appbar's line.
+    window->DC.CursorPos.x += m_paddingX;
+    const auto visible = IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::LeadingIconColor});
+    ImGui::SameLine(0.F, 0.F);
+    return visible;
+}
+
+auto AppBarScope::Title(std::string_view title, std::string_view subTitle) -> void
+{
+    Spec::TypeScaleValue titleText{};
+    Spec::TypeScaleValue subtitleText{};
+    auto                &m3Styles = Context::GetM3Styles();
+    ImGuiWindow         *window   = ImGui::GetCurrentWindow();
+    ImVec2               cursor;
+    float                titleBottomSpace    = 0.0F; // the space between title and subtitle.
+    bool                 needBackupCursorPos = false;
+    switch (m_variant)
+    {
+        case Spec::AppBarVariant::Small: {
+            titleText    = Spec::SmallAppbar::TitleText;
+            subtitleText = Spec::SmallAppbar::SubtitleText;
+            cursor.x     = window->DC.CursorPos.x + m3Styles.GetPixels(Spec::SmallAppbar::TitleLeadingSpace);
+            cursor.y     = m_minPos.y + m3Styles.GetPixels(Spec::SmallAppbar::TitleTopSpace);
+            break;
+        }
+        case Spec::AppBarVariant::MediumFlexible: {
+            titleText           = Spec::MediumFlexibleAppbar::TitleText;
+            subtitleText        = Spec::MediumFlexibleAppbar::SubtitleText;
+            titleBottomSpace    = m3Styles.GetPixels(Spec::MediumFlexibleAppbar::TitleBottomSpace);
+            cursor.x            = m_minPos.x + m3Styles.GetPixels(Spec::MediumFlexibleAppbar::TitleLeadingSpace);
+            cursor.y            = m_minPos.y + m3Styles.GetPixels(Spec::MediumFlexibleAppbar::TitleTopSpace);
+            needBackupCursorPos = true;
+            break;
+        }
+        case Spec::AppBarVariant::LargeFlexible: {
+            titleText           = Spec::LargeFlexibleAppbar::TitleText;
+            subtitleText        = Spec::LargeFlexibleAppbar::SubtitleText;
+            titleBottomSpace    = m3Styles.GetPixels(Spec::LargeFlexibleAppbar::TitleBottomSpace);
+            cursor.x            = m_minPos.x + m3Styles.GetPixels(Spec::LargeFlexibleAppbar::TitleLeadingSpace);
+            cursor.y            = m_minPos.y + m3Styles.GetPixels(Spec::LargeFlexibleAppbar::TitleTopSpace);
+            needBackupCursorPos = true;
+            break;
+        }
+    }
+    float maxTextWidth = 0.0F; // the max width title/subtitle,
+    {
+        const auto fontScope = m3Styles.UseTextRole(titleText);
+        const auto textColor = m3Styles.Colors()[Spec::AppBarCommon::TitleColor];
+        maxTextWidth         = ImGui::CalcTextSize(TextStart(title), TextEnd(title)).x;
+        DrawText(window->DrawList, ImVec2(cursor.x, cursor.y + fontScope.CurrTypeScale().currHalfLineGap), title, textColor);
+        cursor.y += titleBottomSpace + fontScope.CurrTypeScale().currText.lineHeight;
+    }
+    if (!subTitle.empty())
+    {
+        const auto fontScope = m3Styles.UseTextRole(subtitleText);
+        const auto textColor = m3Styles.Colors()[Spec::AppBarCommon::SubtitleColor];
+        maxTextWidth         = std::max(maxTextWidth, ImGui::CalcTextSize(TextStart(subTitle), TextEnd(subTitle)).x);
+        DrawText(window->DrawList, ImVec2(cursor.x, cursor.y + fontScope.CurrTypeScale().currHalfLineGap), subTitle, textColor);
+    }
+    if (needBackupCursorPos)
+    {
+        const auto cursorPos = window->DC.CursorPos;
+        ImGui::ItemSize({maxTextWidth, 0.0F});
+        window->DC.CursorPos = cursorPos;
+    }
+    else
+    {
+        ImGui::ItemSize({maxTextWidth, 0.0F});
+        ImGui::SameLine(0.F, 0.F);
+    }
+}
+
+auto AppBarScope::TrailingIcon(std::string_view icon) const -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+
+    auto &m3Styles = Context::GetM3Styles();
+
+    const auto iconSize         = m3Styles.GetPixels(Spec::IconButtonCommon::MinSize);
+    const auto expectCursorPosX = window->ContentRegionRect.Max.x - iconSize - m_paddingX;
+    window->DC.CursorPos.x      = m_paddingX + std::max(window->DC.CursorPos.x, expectCursorPosX);
+
+    return IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::TrailingIconColor});
 }
 } // namespace ImGuiEx::M3

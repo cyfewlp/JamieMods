@@ -118,6 +118,10 @@ public:
         return *this;
     }
 
+    auto LastTypeScale() const -> const CachedTypeScale & { return m_lastTypeScale; }
+
+    auto CurrTypeScale() const -> const CachedTypeScale & { return *m_currTypeScale; }
+
     ~FontScope()
     {
         if (m_pushed)

@@ -27,6 +27,12 @@ enum class IconButtonWidths : std::uint8_t
     Wide
 };
 
+struct IconButtonCommon
+{
+    //! The icon button min layout size: Greater for visible area with xsmall/small size.
+    static constexpr auto MinSize = dp<48>();
+};
+
 template <States State>
 struct IconButtonFilled;
 
@@ -526,9 +532,9 @@ constexpr auto GetIconButtonSizing(Spec::SizeTips size, IconButtonWidths widths)
 
 struct IconButtonColorsValues
 {
-    ColorRole containerColor;
-    ColorRole iconColor;
-    ColorRole outlineColor;
+    ColorRole containerColor = ColorRole::none;
+    ColorRole iconColor; /// Required, no default value since all variants have icon color
+    ColorRole outlineColor = ColorRole::none;
 };
 
 constexpr auto GetIconButtonColorsValues(IconButtonColors colors) -> IconButtonColorsValues

@@ -7,6 +7,7 @@
 #include "ImGuiEx.h"
 #include "Material3.h"
 #include "imguiex_enum_wrap.h"
+#include "m3/facade/appbar.h"
 #include "m3/facade/icon_button.h"
 #include "m3/spec/buttons.h"
 #include "m3/spec/chips.h"
@@ -115,82 +116,41 @@ inline auto XLargeIcon(std::string_view icon) -> void
 //! Pass `Spec::IconButtonColors` to specify the color scheme for the icon button.
 //! The default is `Filled`, which applies the standard filled style.
 auto IconButton(
-    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonWidths widths, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled
+    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonColorsValues colors,
+    Spec::IconButtonWidths widths = Spec::IconButtonWidths::Default
 ) -> bool;
+
+inline auto IconButton(
+    std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled,
+    Spec::IconButtonWidths widths = Spec::IconButtonWidths::Default
+) -> bool
+{
+    return IconButton(icon, sizeTips, Spec::GetIconButtonColorsValues(ibColors), widths);
+}
 
 inline auto XSmallIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Default, ibColors);
+    return IconButton(icon, Spec::SizeTips::XSMALL, ibColors, Spec::IconButtonWidths::Default);
 }
 
 inline auto SmallIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Default, ibColors);
+    return IconButton(icon, Spec::SizeTips::SMALL, ibColors, Spec::IconButtonWidths::Default);
 }
 
 inline auto MediumIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Default, ibColors);
+    return IconButton(icon, Spec::SizeTips::MEDIUM, ibColors, Spec::IconButtonWidths::Default);
 }
 
 inline auto LargeIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Default, ibColors);
+    return IconButton(icon, Spec::SizeTips::LARGE, ibColors, Spec::IconButtonWidths::Default);
 }
 
 inline auto XLargeIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
 {
-    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Default, ibColors);
-}
-
-inline auto XSmallNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Narrow, ibColors);
-}
-
-inline auto SmallNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Narrow, ibColors);
-}
-
-inline auto MediumNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Narrow, ibColors);
-}
-
-inline auto LargeNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Narrow, ibColors);
-}
-
-inline auto XLargeNarrowIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Narrow, ibColors);
-}
-
-inline auto XSmallWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::XSMALL, Spec::IconButtonWidths::Wide, ibColors);
-}
-
-inline auto SmallWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonWidths::Wide, ibColors);
-}
-
-inline auto MediumWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::MEDIUM, Spec::IconButtonWidths::Wide, ibColors);
-}
-
-inline auto LargeWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::LARGE, Spec::IconButtonWidths::Wide, ibColors);
-}
-
-inline auto XLargeWideIconButton(std::string_view icon, Spec::IconButtonColors ibColors = Spec::IconButtonColors::Filled) -> bool
-{
-    return IconButton(icon, Spec::SizeTips::XLARGE, Spec::IconButtonWidths::Wide, ibColors);
+    return IconButton(icon, Spec::SizeTips::XLARGE, ibColors, Spec::IconButtonWidths::Default);
 }
 
 auto Fab(std::string_view icon, Spec::SizeTips sizeTips, Spec::FabColors fabColors) -> bool;
@@ -485,5 +445,64 @@ auto BeginCombo(std::string_view label, std::string_view previewValue) -> bool;
 void EndCombo();
 
 void SetItemToolTip(std::string_view text);
+
+/**
+ *  @brief Scoped AppBar component that follows Material Design 3 specifications.
+ *
+ * @important You must call `LeadingIcon`, `Title`, or `TrailingIcon` in sequence to populate the AppBar's content.
+ * The layout will adjust dynamically based on which elements are present, following M3 guidelines.
+ * Otherwise，the layout will almost certainly look broken!
+ */
+class AppBarScope
+{
+    ImVec2              m_minPos; ///< The bounding rect left top position, used for auto layout and interaction.
+    // The next line cursorPos. Be used to reset cursor pos when scope exit.
+    // Because we must change the "window->Dc.CursorPos" in the scope to achieve the layout defined by M3 spec,
+    // but we don't want to affect the content after the scope, so we need to reset the cursor pos when scope exit.
+    ImVec2              m_nextLineCursorPos;
+    float               m_paddingX{0.F}; ///< The AppBar leading/trailing space. Already merged into the single field.
+    Spec::AppBarVariant m_variant{Spec::AppBarVariant::Small};
+    bool                m_visible = false;
+
+public:
+    explicit AppBarScope(Spec::AppBarVariant variant = Spec::AppBarVariant::Small);
+    ~AppBarScope();
+    AppBarScope(const AppBarScope &other)                     = delete;
+    auto operator=(const AppBarScope &other) -> AppBarScope & = delete;
+
+    AppBarScope(AppBarScope &&other) noexcept { *this = std::move(other); }
+
+    auto operator=(AppBarScope &&other) noexcept -> AppBarScope &
+    {
+        m_minPos            = std::exchange(other.m_minPos, {});
+        m_nextLineCursorPos = std::exchange(other.m_nextLineCursorPos, {});
+        m_paddingX          = other.m_paddingX;
+        m_variant           = other.m_variant;
+        m_visible           = std::exchange(other.m_visible, false);
+        return *this;
+    }
+
+    auto LeadingIcon(std::string_view icon) const -> bool; // NOLINT(*-use-nodiscard)
+
+    auto Title(std::string_view title, std::string_view subTitle = "") -> void;
+
+    //! Only be called once.
+    auto TrailingIcon(std::string_view icon) const -> bool; // NOLINT(*-use-nodiscard)
+
+    explicit operator bool() const { return m_visible; }
+};
+
+/**
+ * @brief Constructs a Material Design 3 AppBar with the specified variant.
+ * @param variant default to `Small`. Determines the AppBar's height and layout according to M3 specifications.
+ * @return The AppBarScope object manages the AppBar's lifecycle, including rendering and interaction handling. It provides methods to set
+ * leading/trailing icons and title text.
+ * @note The AppBarScope must be used in a scoped manner (e.g., within a block) to ensure proper resource management. The AppBar will only be rendered
+ * if the returned scope is valid (i.e., the AppBar is visible based on internal logic, such as screen width constraints).
+ */
+[[nodiscard]] inline auto AppBar(Spec::AppBarVariant variant = Spec::AppBarVariant::Small) -> AppBarScope
+{
+    return AppBarScope(variant);
+}
 
 } // namespace ImGuiEx::M3
