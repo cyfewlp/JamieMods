@@ -140,7 +140,7 @@ public:
      * @param acpStart Starting application character position for inserted text.
      * @param acpEnd Ending application character position for the inserted text. This value is equal to
      * acpStart if the text is inserted at a point instead of replacing selected text.
-     * @param cch Length of replacement text.
+     * @param textSize Length of replacement text.
      * @param pacpResultStart Returns the new starting application character position of the inserted text. If
      * this parameter is NULL, then text cannot be inserted at the specified position. This value cannot be
      * outside the document range.
@@ -149,19 +149,19 @@ public:
      * position. This value cannot be outside the document range.
      * @return
      */
-    STDMETHODIMP QueryInsert(LONG acpStart, LONG acpEnd, ULONG cch, LONG *pacpResultStart, LONG *pacpResultEnd) override;
+    STDMETHODIMP QueryInsert(LONG acpStart, LONG acpEnd, ULONG textSize, LONG *pacpResultStart, LONG *pacpResultEnd) override;
     /**
      * returns the character position of a text selection in a document. This method supports multiple text
      * selections. The caller must have a read-only lock on the document before calling this method.
      * @param startIndex Specifies the text selections that start the process. If the TF_DEFAULT_SELECTION constant
      * is specified for this parameter, the input selection starts the process.
-     * @param maxCount Specifies the maximum number of selections to return.
+     * @param selectionSize Specifies the maximum number of selections to return.
      * @param pSelections Receives the style, start, and end character positions of the selected text. These
      * values are put into the TS_SELECTION_ACP structure.
      * @param pcFetched Receives the number of pSelections structures returned.
      * @return
      */
-    STDMETHODIMP GetSelection(ULONG startIndex, ULONG maxCount, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) override;
+    STDMETHODIMP GetSelection(ULONG startIndex, ULONG selectionSize, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) override;
     /**
      * The ITextStoreACP::SetSelection method selects text within the document.
      * The application must have a read/write lock on the document before calling this method.
@@ -180,7 +180,7 @@ public:
     STDMETHODIMP QueryInsertEmbedded(const GUID *pguidService, const FORMATETC *pFormatEtc, BOOL *pfInsertable) override;
     STDMETHODIMP InsertEmbedded(DWORD dwFlags, LONG acpStart, LONG acpEnd, IDataObject *pDataObject, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP InsertTextAtSelection(
-        DWORD dwFlags, const WCHAR *pchText, ULONG cch, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
+        DWORD dwFlags, const WCHAR *textBuffer, ULONG textBufferSize, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
     ) override;
     STDMETHODIMP InsertEmbeddedAtSelection(DWORD dwFlags, IDataObject *pDataObject, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP RequestSupportedAttrs(DWORD dwFlags, ULONG filterAttrCount, const TS_ATTRID *filterAttrs) override;
@@ -233,7 +233,6 @@ private:
     CComPtr<ITfDocumentMgr>                    m_pPrevDocMgr              = nullptr;
     CComPtr<ITfUIElementMgr>                   m_uiElementMgr             = nullptr;
     CComPtr<ITfContext>                        m_context                  = nullptr;
-    CComPtr<ITfCompositionView>                m_currentCompositionView   = nullptr;
     CComPtr<ITfCandidateListUIElementBehavior> m_currentCandidateUi       = nullptr;
     DWORD                                      m_currentUiElementId{TF_INVALID_UIELEMENTID};
     DWORD                                      m_refCount{0};
@@ -241,7 +240,8 @@ private:
     TfEditCookie                               m_editCookie{0};
     DWORD                                      m_uiElementCookie{0};
     DWORD                                      m_textEditCookie{0};
-    DWORD                                      m_candidateUpdateFlags{0};
+    // Pending change flags. Be Updated in a edit session and consume in OnEndEdit or at the end of RequestLock.
+    Ime::ITextService::DirtyFlag               m_pendingChangeFlags{Ime::ITextService::DirtyFlag::None};
     bool                                       m_fPendingLockUpgrade{false};
     bool                                       m_fLocked{false};
     bool                                       m_fLayoutChanged{false};
@@ -285,9 +285,9 @@ public:
         return SUCCEEDED(hr);
     }
 
-    auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }
+    virtual auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }
 
-    [[nodiscard]] auto GetTextEditor() -> Ime::TextEditor & override { return m_textEditor; }
+    [[nodiscard]] auto GetTextEditorWrite() -> Ime::TextEditor & { return m_textEditor; }
 
     [[nodiscard]] auto GetCandidateUiWrite() -> Ime::CandidateUi & { return m_candidateUi; }
 
@@ -298,16 +298,22 @@ public:
     auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
 protected:
-    void RequestUpdateCandidateUi(Ime::CandidateUi &uiForRead, DirtyFlag flag) override
+    void RequestUpdate(Ime::CompositionInfo &compositionInfo, Ime::CandidateUi &uiForRead, DirtyFlag flag) override
     {
-        const std::shared_lock readLock(m_mutex);
-        if (flag == DirtyFlag::CandidateSelection)
+        const std::lock_guard lock(m_mutex);
+        if (HasDirtyFlag(flag, DirtyFlag::Composition))
         {
-            uiForRead.SetSelection(m_candidateUi.Selection());
+            compositionInfo.documentText = m_textEditor.GetText();
+            compositionInfo.caretPos     = m_textEditor.GetStart();
         }
-        else
+
+        if (HasDirtyFlag(flag, DirtyFlag::CandidateList))
         {
             uiForRead = m_candidateUi;
+        }
+        else if (HasDirtyFlag(flag, DirtyFlag::CandidateSelection))
+        {
+            uiForRead.SetSelection(m_candidateUi.Selection());
         }
     }
 

@@ -14,8 +14,8 @@ class M3Styles;
 
 namespace Ime
 {
+class CompositionInfo;
 class CandidateUi;
-class TextEditor;
 
 class ImeWindow
 {
@@ -26,7 +26,7 @@ class ImeWindow
     bool     m_shouldRelayout = true;
 
 public:
-    void Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings);
+    void Draw(const CompositionInfo &compositionInfo, const CandidateUi &candidateUi, const Settings &settings);
 
 private:
     [[nodiscard]] auto IsImeNeedRelayout() const -> bool;

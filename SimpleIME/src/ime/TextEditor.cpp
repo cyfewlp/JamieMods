@@ -64,14 +64,12 @@ void Ime::TextEditor::GetClampedSelection(size_t &acpStart, size_t &acpEnd) cons
     acpEnd   = std::max(acpEnd, acpStart);
 }
 
-auto Ime::TextEditor::InsertText(const wchar_t *pwszText, const size_t cch) -> bool
+auto Ime::TextEditor::InsertText(const wchar_t *textBuffer, const size_t textBufferSize) -> bool
 {
-    if (pwszText == nullptr && cch > 0)
+    if (textBuffer == nullptr && textBufferSize > 0)
     {
         return false;
     }
-
-    const std::unique_lock lock(m_mutex);
 
     const auto textSize = m_editorText.size();
 
@@ -81,29 +79,15 @@ auto Ime::TextEditor::InsertText(const wchar_t *pwszText, const size_t cch) -> b
 
     if (start >= textSize)
     {
-        m_editorText.append(pwszText, cch);
+        m_editorText.append(textBuffer, textBufferSize);
     }
     else
     {
-        m_editorText.replace(start, end - start, pwszText, cch);
+        m_editorText.replace(start, end - start, textBuffer, textBufferSize);
     }
 
-    const auto newCaret     = static_cast<int32_t>(start + cch); // positive, safe
-    m_acpSelection.acpStart = newCaret;
-    m_acpSelection.acpEnd   = newCaret;
+    const auto acpNewEnd    = static_cast<int32_t>(start + textBufferSize); // positive, safe
+    m_acpSelection.acpStart = acpNewEnd;
+    m_acpSelection.acpEnd   = acpNewEnd;
     return true;
-}
-
-void Ime::TextEditor::ClearText()
-{
-    const std::unique_lock lock(m_mutex);
-    m_editorText.clear();
-}
-
-auto Ime::TextEditor::UnsafeGetText(LPWCH lpWch, const size_t bufferSize, const size_t offset, const size_t cchRequire) const -> void
-{
-    if (lpWch != nullptr)
-    {
-        wcsncpy_s(lpWch, bufferSize, m_editorText.substr(offset).c_str(), cchRequire);
-    }
 }

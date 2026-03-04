@@ -11,9 +11,8 @@
 #include "RE/M/MenuCursor.h"
 #include "WCharUtils.h"
 #include "core/State.h"
-#include "ime/CandidateUi.h"
+#include "ime/ITextService.h"
 #include "ime/ImeController.h"
-#include "ime/TextEditor.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imguiex/ImGuiEx.h"
@@ -27,23 +26,18 @@ namespace Ime
 
 namespace
 {
-void DrawComposition(const TextEditor &editor)
+void DrawComposition(const CompositionInfo &compositionInfo)
 {
-    const auto             &editorText = editor.GetText();
-    const std::wstring_view editorTextSv(editorText);
-
-    size_t acpStart = 0;
-    size_t acpEnd   = 0;
-    editor.GetClampedSelection(acpStart, acpEnd);
+    const auto             &documentText = compositionInfo.documentText;
+    const std::wstring_view editorTextSv(documentText);
 
     bool drawStartToCaret = false;
-    if (acpStart > 0)
+    if (compositionInfo.caretPos > 0)
     {
-        auto startToCaret = WCharUtils::ToString(editorTextSv.substr(0, acpStart));
+        auto startToCaret = WCharUtils::ToString(editorTextSv.substr(0, compositionInfo.caretPos));
         if (startToCaret.empty())
         {
-            // Conversion failed for a non-empty wstring segment; render a placeholder
-            // so the caret anchors to the correct position rather than snapping to line-start.
+            // Conversion failed for a non-empty wstring segment; render a placeholder.
             startToCaret = "?";
         }
         ImGuiEx::M3::AlignedLabel(startToCaret);
@@ -75,9 +69,9 @@ void DrawComposition(const TextEditor &editor)
         window->DrawList->AddLine(caretRect.Min, caretRect.Max, ImGui::ColorConvertFloat4ToU32(caretColor), 1.0f);
     }
 
-    if (acpStart < editorText.size())
+    if (compositionInfo.caretPos < documentText.size())
     {
-        const auto caretToEnd = WCharUtils::ToString(editorTextSv.substr(acpStart));
+        const auto caretToEnd = WCharUtils::ToString(editorTextSv.substr(compositionInfo.caretPos));
         if (!caretToEnd.empty())
         {
             ImGui::SameLine(0.F, 0.F);
@@ -167,7 +161,7 @@ void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size, ImGuiDir &lastAutoPo
 }
 } // namespace
 
-void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateUi, const Settings &settings)
+void ImeWindow::Draw(const CompositionInfo &compositionInfo, const CandidateUi &candidateUi, const Settings &settings)
 {
     const auto &state = Core::State::GetInstance();
     if (state.ImeDisabled() || !state.IsImeInputting() /* || !state.HasAny(State::KEYBOARD_OPEN, State::IME_OPEN)*/)
@@ -202,7 +196,7 @@ void ImeWindow::Draw(const TextEditor &textEditor, const CandidateUi &candidateU
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
 
         ImGuiEx::M3::ListItemPlain([&] {
-            DrawComposition(textEditor);
+            DrawComposition(compositionInfo);
         });
 
         ImGuiEx::M3::Divider();

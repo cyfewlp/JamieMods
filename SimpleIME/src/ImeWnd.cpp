@@ -230,12 +230,12 @@ void ImeWnd::DrawIme(Settings &settings)
         m_fWantUpdateUiScale = false;
         ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_dpiScale);
     }
-    m_pTextService->UpdateCandidateUiIfDirty();
+    m_pTextService->UpdateIfDirty();
 
     ImGui::PushFont(nullptr, settings.state.fontSize);
     {
         ErrorNotifier::GetInstance().Show();
-        m_pImeWindow->Draw(m_pTextService->GetTextEditor(), m_pTextService->GetCandidateUi(), settings);
+        m_pImeWindow->Draw(m_pTextService->GetCompositionInfo(), m_pTextService->GetCandidateUi(), settings);
 
         {
             const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();

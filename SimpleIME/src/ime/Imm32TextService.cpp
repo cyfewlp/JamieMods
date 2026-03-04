@@ -84,14 +84,14 @@ void Imm32TextService::OnStartComposition()
 
 void Imm32TextService::OnEndComposition()
 {
-    if (m_OnEndCompositionCallback != nullptr)
-    {
-        m_OnEndCompositionCallback(m_textEditor.GetText());
-    }
-    m_textEditor.Select(0, 0);
-    m_textEditor.ClearText();
     {
         std::lock_guard lock(m_mutex);
+        if (m_OnEndCompositionCallback != nullptr)
+        {
+            m_OnEndCompositionCallback(m_textEditor.GetText());
+        }
+        m_textEditor.Select(0, 0);
+        m_textEditor.ClearText();
         m_candidateUi.Close();
     }
     State::GetInstance().Clear(State::IN_COMPOSING);
@@ -175,6 +175,8 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     std::wstring compositionSting;
     if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, compositionSting))
     {
+        std::lock_guard lock(m_mutex);
+
         m_textEditor.SelectAll();
         m_textEditor.InsertText(compositionSting);
         if (spdlog::should_log(spdlog::level::trace))
@@ -185,6 +187,8 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     }
     else if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, compositionSting))
     {
+        std::lock_guard lock(m_mutex);
+
         const int32_t cursorPos  = ImmGetCompositionStringW(hIMC, GCS_CURSORPOS, nullptr, 0);
         const int32_t deltaStart = ImmGetCompositionStringW(hIMC, GCS_DELTASTART, nullptr, 0);
         // IMM_ERROR_NODATA or IMM_ERROR_GENERAL
@@ -319,6 +323,7 @@ void Imm32TextService::DoUpdateCandidateList(LPCANDIDATELIST lpCandList)
     dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
 
     std::lock_guard lock(m_mutex);
+
     m_candidateUi.Close();
     m_candidateUi.Reserve(lpCandList->dwPageSize);
     auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);

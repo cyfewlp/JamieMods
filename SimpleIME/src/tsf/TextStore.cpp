@@ -13,6 +13,8 @@
 
 namespace Tsf
 {
+using DirtyFlag = Ime::ITextService::DirtyFlag;
+
 TextStore::~TextStore()
 {
     m_adviseSinkCache.Clear();
@@ -286,26 +288,55 @@ auto TextStore::RequestLock(DWORD dwLockFlags, HRESULT *phrSession) -> HRESULT
     }
 
     LockDocument(dwLockFlags);
-    *phrSession = m_adviseSinkCache.pTextStoreAcpSink->OnLockGranted(dwLockFlags);
+    {
+        // Hold the shared_mutex for the duration of OnLockGranted to synchronize with the UI thread.
+        //
+        // Two threads access m_textEditor / m_candidateUi concurrently:
+        //   - TSF thread  : writes data inside OnLockGranted (SetText, InsertText, etc.)
+        //   - UI/render thread: reads data via RequestUpdate() (triggered by dirty flags)
+        //
+        // Lock level mirrors TSF semantics onto the C++ shared_mutex:
+        //   - TS_LF_READWRITE → exclusive write_lock : UI thread must wait entirely.
+        //   - TS_LF_READ      → shared  read_lock   : UI thread may read concurrently.
+        //
+        // IMPORTANT - scope must end BEFORE UnlockDocument():
+        //   UnlockDocument() may immediately call RequestLock(READWRITE) again to service
+        //   a pending lock upgrade (m_fPendingLockUpgrade). That call needs GetWriteLock(),
+        //   which would deadlock if the shared_lock from the read branch is still held.
+        //   The closing `}` below guarantees the C++ lock is released first.
+        //
+        // Reentrancy during OnLockGranted is handled above (m_fLocked guard):
+        //   any nested RequestLock call returns early (TS_E_SYNCHRONOUS / TS_S_ASYNC / E_FAIL)
+        //   and never reaches this point, so the mutex is never acquired twice on the same thread.
+        if (IsLocked(TS_LF_READWRITE))
+        {
+            const auto lock = m_pTextService->GetWriteLock();
+            *phrSession     = m_adviseSinkCache.pTextStoreAcpSink->OnLockGranted(dwLockFlags);
+        }
+        else
+        {
+            const auto lock = m_pTextService->GetReadLock();
+            *phrSession     = m_adviseSinkCache.pTextStoreAcpSink->OnLockGranted(dwLockFlags);
+        }
+    } // ← shared_mutex released here, before UnlockDocument()
     UnlockDocument();
 
     // For any candidate update, TSF will call RequestLock with TS_LF_READWRITE.
     // And may call Update/End(choose a candidate with MSPY) or only Update.
     // 1. RequestLock (MSPY: choose a candidate via number key)
-    //    ---- UpdateUIElement  → sets m_candidateUpdateFlags
+    //    ---- UpdateUIElement  → sets m_pendingChangeFlags | CandidateSelection
     //    ---- EndUIElement
     //    --other calls--
     //    ---- OnEndEdit        → calls MarkDirty (composition text changed)
     // 2. RequestLock (update candidate list: composition changed, direct key, etc.)
-    //    ---- UpdateUIElement  → sets m_candidateUpdateFlags
+    //    ---- UpdateUIElement  → sets m_pendingChangeFlags | CandidateSelection
     //
     // Case 1 is handled by OnEndEdit. However, selection-only changes (TF_CLUIE_SELECTION)
     // do NOT trigger OnEndEdit because the composition text itself did not change.
     // This post-lock check is the only place that catches that case.
-    if (const auto flags = std::exchange(m_candidateUpdateFlags, 0U); flags != 0U && m_currentUiElementId != TF_INVALID_UIELEMENTID)
+    if (const auto flags = std::exchange(m_pendingChangeFlags, DirtyFlag{}); flags != DirtyFlag{} && m_currentUiElementId != TF_INVALID_UIELEMENTID)
     {
-        using enum Ime::ITextService::DirtyFlag;
-        m_pTextService->MarkDirty(flags == TF_CLUIE_SELECTION ? CandidateSelection : CandidateList);
+        m_pTextService->MarkDirty(flags);
     }
     return S_OK;
 }
@@ -324,48 +355,49 @@ auto TextStore::GetStatus(TS_STATUS *pStatus) -> HRESULT
     return S_OK;
 }
 
-auto TextStore::QueryInsert(LONG acpStart, LONG acpEnd, ULONG /*cch*/, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
+auto TextStore::QueryInsert(LONG acpStart, LONG acpEnd, ULONG textSize, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
-
-    if (const size_t lTextLength = m_pTextService->GetTextEditor().GetTextSize(); //
-        acpStart > acpEnd || static_cast<size_t>(acpEnd) > lTextLength)
+    if (pacpResultStart == nullptr || pacpResultEnd == nullptr)
     {
         return E_INVALIDARG;
     }
 
-    *pacpResultStart = acpStart;
-    *pacpResultEnd   = acpEnd;
+    auto      &textEditor = m_pTextService->GetTextEditorWrite();
+    const LONG bufferSize = static_cast<LONG>(textEditor.GetTextSize());
+    if (acpStart > acpEnd || acpEnd > bufferSize)
+    {
+        return E_INVALIDARG;
+    }
 
+    size_t start = 0;
+    size_t end   = 0;
+    textEditor.GetClampedSelection(start, end);
+    *pacpResultStart = std::min(std::max(acpStart, static_cast<LONG>(start)), bufferSize);
+    *pacpResultEnd   = std::min(std::max(acpEnd, static_cast<LONG>(end)), bufferSize);
     return S_OK;
 }
 
-auto TextStore::GetSelection(ULONG startIndex, ULONG /*maxCount*/, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) -> HRESULT
+auto TextStore::GetSelection(ULONG startIndex, ULONG selectionSize, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     if (nullptr == pSelections || nullptr == pcFetched)
     {
         return E_INVALIDARG;
     }
-
-    *pcFetched = 0;
     if (!IsLocked(TS_LF_READ))
     {
         return TS_E_NOLOCK;
     }
 
-    if (TF_DEFAULT_SELECTION == startIndex)
+    *pcFetched = 0;
+    if (selectionSize > 0U && (startIndex == 0U || startIndex == TF_DEFAULT_SELECTION))
     {
-        startIndex = 0;
-    }
-    else if (startIndex > 1)
-    {
-        return E_INVALIDARG;
+        m_pTextService->GetTextEditorWrite().GetSelection(pSelections);
+        tracer.log("AcpStart: {}, AcpEnd: {}", pSelections->acpStart, pSelections->acpEnd);
+        *pcFetched = 1;
     }
 
-    m_pTextService->GetTextEditor().GetSelection(pSelections);
-    tracer.log("AcpStart: {}, AcpEnd: {}", pSelections->acpStart, pSelections->acpEnd);
-    *pcFetched = 1;
     return S_OK;
 }
 
@@ -382,7 +414,7 @@ auto TextStore::SetSelection(const ULONG selectionCount, const TS_SELECTION_ACP 
         return TS_E_NOLOCK;
     }
 
-    m_pTextService->GetTextEditor().Select(pSelections);
+    m_pTextService->GetTextEditorWrite().Select(pSelections);
     tracer.log("set acpStart {}, acpEnd {}", pSelections->acpStart, pSelections->acpEnd);
     // do not reverse TS_AE_START (not support choose selection dir)
     return S_OK;
@@ -414,7 +446,9 @@ auto TextStore::GetText(
         *pacpNext = acpStart;
     }
 
-    size_t charSize = m_pTextService->GetTextEditor().GetTextSize();
+    auto                   &textEditor = m_pTextService->GetTextEditorWrite();
+    const std::wstring_view editorText = textEditor.GetText();
+    size_t                  charSize   = editorText.size();
     if (acpEnd == -1)
     {
         acpEnd = static_cast<LONG>(charSize);
@@ -432,28 +466,32 @@ auto TextStore::GetText(
         return S_OK;
     }
 
-    ULONG cchToCopy = static_cast<ULONG>(uAcpEnd - uAcpStart);
+    ULONG charCountToCopy = static_cast<ULONG>(uAcpEnd - uAcpStart);
     if (textBuffer != nullptr && textBufferSize > 0U)
     {
-        cchToCopy = std::min(cchToCopy, textBufferSize);
-        m_pTextService->GetTextEditor().UnsafeGetText(textBuffer, textBufferSize, uAcpStart, cchToCopy);
+        charCountToCopy                  = std::min(charCountToCopy, textBufferSize);
+        const std::wstring_view svToCopy = editorText.substr(uAcpStart, charCountToCopy);
+        for (size_t i = 0; i < svToCopy.size(); i++)
+        {
+            textBuffer[i] = svToCopy[i];
+        }
     }
 
     if (textBufferCopied != nullptr)
     {
-        *textBufferCopied = cchToCopy;
+        *textBufferCopied = charCountToCopy;
     }
 
     if (runInfoBufferSize > 0U)
     {
         *runInfoBufferCopied  = 1U;
         runInfoBuffer->type   = TS_RT_PLAIN;
-        runInfoBuffer->uCount = cchToCopy;
+        runInfoBuffer->uCount = charCountToCopy;
     }
 
     if (pacpNext != nullptr)
     {
-        *pacpNext = static_cast<int32_t>(uAcpStart + cchToCopy);
+        *pacpNext = static_cast<int32_t>(uAcpStart + charCountToCopy);
     }
 
     return S_OK;
@@ -484,10 +522,11 @@ auto TextStore::SetText(DWORD /*dwFlags*/, LONG acpStart, LONG acpEnd, const WCH
     return hresult;
 }
 
-auto TextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR *pwszText, ULONG cch, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange)
-    -> HRESULT
+auto TextStore::InsertTextAtSelection(
+    DWORD dwFlags, const WCHAR *textBuffer, ULONG textBufferSize, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
+) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{} count {}", __func__, cch);
+    auto tracer = FuncTracer("TextStore::{} count {}", __func__, textBufferSize);
     LONG lTemp  = 0;
     if (nullptr == pacpStart)
     {
@@ -506,7 +545,7 @@ auto TextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR *pwszText, ULON
 
     LONG acpStart  = 0;
     LONG acpOldEnd = 0;
-    m_pTextService->GetTextEditor().GetSelection(&acpStart, &acpOldEnd);
+    m_pTextService->GetTextEditorWrite().GetSelection(&acpStart, &acpOldEnd);
     tracer.log("Current Selection: {}, {}", acpStart, acpOldEnd);
 
     if ((dwFlags & TS_IAS_QUERYONLY) == TS_IAS_QUERYONLY)
@@ -517,12 +556,12 @@ auto TextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR *pwszText, ULON
     }
 
     // may nullptr + 0, legal.
-    if (!m_pTextService->GetTextEditor().InsertText(pwszText, cch))
+    if (!m_pTextService->GetTextEditorWrite().InsertText(textBuffer, textBufferSize))
     {
         return E_FAIL;
     }
 
-    auto acpNewEnd = acpStart + static_cast<LONG>(cch);
+    auto acpNewEnd = acpStart + static_cast<LONG>(textBufferSize);
     tracer.log("Insert Success: new end {}", acpNewEnd);
 
     if ((dwFlags & TS_IAS_NOQUERY) != TS_IAS_NOQUERY)
@@ -629,7 +668,7 @@ auto TextStore::RetrieveRequestedAttrs(ULONG /*attrCount*/, TS_ATTRVAL * /*attrV
 auto TextStore::GetEndACP(LONG *pacpEnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
-    if (!IsLocked(TS_LF_READWRITE))
+    if (!IsLocked(TS_LF_READ))
     {
         return TS_E_NOLOCK;
     }
@@ -639,7 +678,7 @@ auto TextStore::GetEndACP(LONG *pacpEnd) -> HRESULT
         return E_INVALIDARG;
     }
 
-    m_pTextService->GetTextEditor().GetSelection(nullptr, pacpEnd);
+    *pacpEnd = static_cast<LONG>(m_pTextService->GetTextEditorWrite().GetTextSize());
     return S_OK;
 }
 
@@ -740,19 +779,19 @@ auto TextStore::OnUpdateComposition(ITfCompositionView * /*pComposition*/, ITfRa
 
 auto TextStore::OnEndComposition(ITfCompositionView * /*pComposition*/) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{}", __func__);
+    auto  tracer     = FuncTracer("TextStore::{}", __func__);
+    auto &textEditor = m_pTextService->GetTextEditorWrite();
     if (m_OnEndCompositionCallback != nullptr)
     {
-        m_OnEndCompositionCallback(m_pTextService->GetTextEditor().GetText());
+        m_OnEndCompositionCallback(textEditor.GetText());
     }
-    m_pTextService->GetTextEditor().Select(0, 0);
-    m_pTextService->GetTextEditor().ClearText();
+    textEditor.Select(0, 0);
+    textEditor.ClearText();
     {
-        const auto lock = m_pTextService->GetWriteLock();
         if (auto &candidateUi = m_pTextService->GetCandidateUiWrite(); !candidateUi.empty())
         {
             candidateUi.Close();
-            m_candidateUpdateFlags = TF_CLUIE_STRING;
+            m_pendingChangeFlags |= DirtyFlag::CandidateList;
         }
     }
     State::GetInstance().Clear(State::IN_COMPOSING);
@@ -889,8 +928,8 @@ auto TextStore::GetCandInfo(ITfCandidateListUIElementBehavior *pCandidateList, C
 
 auto TextStore::DoUpdateUIElement() -> HRESULT
 {
-    m_candidateUpdateFlags = 0;
-    if (FAILED(m_currentCandidateUi->GetUpdatedFlags(&m_candidateUpdateFlags)))
+    DWORD updateFlags = 0;
+    if (FAILED(m_currentCandidateUi->GetUpdatedFlags(&updateFlags)))
     {
         return E_FAIL;
     }
@@ -903,16 +942,16 @@ auto TextStore::DoUpdateUIElement() -> HRESULT
             return E_FAIL;
         }
 
-        const auto lock        = m_pTextService->GetWriteLock();
-        auto      &candidateUi = m_pTextService->GetCandidateUiWrite();
+        auto &candidateUi = m_pTextService->GetCandidateUiWrite();
         candidateUi.SetSelection(selection - info.pageStart);
-        if (m_candidateUpdateFlags == TF_CLUIE_SELECTION && candidateUi.FirstIndex() == info.pageStart)
+        if (updateFlags == TF_CLUIE_SELECTION && candidateUi.FirstIndex() == info.pageStart)
         {
+            m_pendingChangeFlags |= DirtyFlag::CandidateSelection;
             return S_OK; // No need to update candidate list if only selection changed.
         }
 
         // if only selection change but page changed, we still need to update candidate list.
-        m_candidateUpdateFlags |= TF_CLUIE_STRING;
+        m_pendingChangeFlags |= DirtyFlag::CandidateList;
         candidateUi.Close();
         candidateUi.SetFirstIndex(info.pageStart);
         candidateUi.Reserve(info.pageEnd - info.pageStart);
@@ -938,11 +977,7 @@ auto TextStore::DoUpdateUIElement() -> HRESULT
 auto TextStore::OnEndEdit(ITfContext * /*pic*/, TfEditCookie /*ecReadOnly*/, ITfEditRecord * /*pEditRecord*/) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
-    if (const auto flags = std::exchange(m_candidateUpdateFlags, 0U); flags != 0U)
-    {
-        using enum Ime::ITextService::DirtyFlag;
-        m_pTextService->MarkDirty(flags == TF_CLUIE_SELECTION ? CandidateSelection : CandidateList);
-    }
+    m_pTextService->MarkDirty(m_pendingChangeFlags | DirtyFlag::Composition);
     return S_OK;
 }
 
