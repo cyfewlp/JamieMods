@@ -518,7 +518,6 @@ auto DrawTextField(
  * this function support readonly text field (buffer == nullptr) and editable text field (buffer != nullptr). For read
  * only text field, the inputText is used to determine whether the text field is populated, which will affect the label
  * text position.
- * \todo only the TextFieldContent::label required, other fields may cause compiler warning if not set
  */
 template <Spec::TextFieldVariant Style>
 auto TextField(

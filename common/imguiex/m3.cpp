@@ -28,10 +28,6 @@ void M3Styles::UpdateScaling(const float newScale)
         m_precomputedPx[i] = std::floor(static_cast<float>(i * Spec::BASE_UNIT) * newScale);
     }
     UpdateTypeScaleScaling(m_cachedTypeScale, m_currentScale);
-    labelText.textSize   = TEXT_LABEL_LARGE.textSize * newScale;
-    labelText.lineHeight = TEXT_LABEL_LARGE.lineHeight * newScale;
-
-    iconSize = ICON_SIZE * newScale;
 }
 
 void M3Styles::RebuildColors(const ColorScheme::SchemeConfig &schemeConfig)

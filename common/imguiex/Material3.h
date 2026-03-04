@@ -167,10 +167,6 @@ private:
     ImFont                 *iconFont{nullptr};
     float                   m_currentScale = 0.0F;
 
-    //\todo should be removed!
-    Text  labelText = TEXT_LABEL_LARGE;
-    float iconSize  = ICON_SIZE;
-
 public:
     constexpr explicit M3Styles(ColorScheme colors, ImFont *iconFont) : m_scheme(std::move(colors)), iconFont(iconFont) {}
 
@@ -271,10 +267,6 @@ public:
     [[nodiscard]] auto GetPixels(const float dpSize) const -> float { return dpSize * m_currentScale; }
 
     [[deprecated("Please use GetPixels.")]] auto operator[](Spacing s) const -> float { return Get(s); }
-
-    [[nodiscard]] auto LabelText() const -> const Text & { return labelText; }
-
-    [[nodiscard]] auto IconSize() const -> float { return iconSize; }
 
     /**
      * This method does **not** internally calculate text size based on its TextRole.

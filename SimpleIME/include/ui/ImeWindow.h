@@ -14,7 +14,7 @@ class M3Styles;
 
 namespace Ime
 {
-class CompositionInfo;
+struct CompositionInfo;
 class CandidateUi;
 
 class ImeWindow

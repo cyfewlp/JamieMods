@@ -154,8 +154,7 @@ void ImeUI::DrawStates() const
 {
     ImGui::SeparatorText(Translate("Settings.Behaviour.States"));
 
-    constexpr auto STATE_ACTIVE_COLOR = ImVec4(0.35F, 0.75F, 1.0F, 1.0F);
-    const auto    &state              = State::GetInstance();
+    const auto &state = State::GetInstance();
     ImGuiEx::M3::XSmallIcon(ICON_KEYBOARD);
     ImGui::SameLine();
     ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled"));
