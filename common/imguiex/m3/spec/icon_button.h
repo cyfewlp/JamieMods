@@ -30,7 +30,7 @@ enum class IconButtonWidths : std::uint8_t
 struct IconButtonCommon
 {
     //! The icon button min layout size: Greater for visible area with xsmall/small size.
-    static constexpr auto MinSize = dp<48>();
+    static constexpr auto MinLayoutSize = dp<48>();
 };
 
 template <States State>

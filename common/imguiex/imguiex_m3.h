@@ -447,58 +447,89 @@ void EndCombo();
 void SetItemToolTip(std::string_view text);
 
 /**
- *  @brief Scoped AppBar component that follows Material Design 3 specifications.
+ * @brief Scoped AppBar component following Material Design 3 specifications.
  *
- * @important You must call `LeadingIcon`, `Title`, or `TrailingIcon` in sequence to populate the AppBar's content.
- * The layout will adjust dynamically based on which elements are present, following M3 guidelines.
- * Otherwise，the layout will almost certainly look broken!
+ * Lifecycle is managed via RAII: the constructor reserves layout space and begins the
+ * internal draw group;
+ *
+ * @note Intended call order within the scope: `LeadingIcon` → `Title` → `TrailingIcon`
+ * (one or more). Calling out of order will almost certainly produce broken layout.
  */
 class AppBarScope
 {
-    ImVec2              m_minPos; ///< The bounding rect left top position, used for auto layout and interaction.
-    // The next line cursorPos. Be used to reset cursor pos when scope exit.
-    // Because we must change the "window->Dc.CursorPos" in the scope to achieve the layout defined by M3 spec,
-    // but we don't want to affect the content after the scope, so we need to reset the cursor pos when scope exit.
-    ImVec2              m_nextLineCursorPos;
-    float               m_paddingX{0.F}; ///< The AppBar leading/trailing space. Already merged into the single field.
+    //! Top-left corner of the AppBar bounding rect.
+    ImVec2              m_minPos;
+    //! Pixel width of one icon layout slot (`IconButtonCommon::MinLayoutSize`).
+    float               m_iconLayoutWidth{0.F};
+    //! X position for the *next* trailing icon to be placed.
+    //! Initialised to `bb.Max.x - m_paddingX` and decremented by `m_iconLayoutWidth`
+    //! before each `TrailingIcon` call, so icons are stacked right-to-left.
+    float               m_trailingIconCursorPosX{0.F};
+    //! Rightmost X reached by leading-side content (`LeadingIcon` and `Title`).
+    //! `TrailingIcon` uses this to guard against overlap: it clamps its own cursor to
+    //! `max(m_iconLineItemMaxPosX + m_paddingX, m_trailingIconCursorPosX)`.
+    float               m_iconLineItemMaxPosX{0.F};
+    //! Leading/trailing horizontal padding of the AppBar container (mapped from
+    //! `AppBarCommon::LeadingSpace`). Shared between leading and trailing sides.
+    float               m_paddingX{0.F};
     Spec::AppBarVariant m_variant{Spec::AppBarVariant::Small};
-    bool                m_visible = false;
+    bool                m_visible{false};
 
 public:
     explicit AppBarScope(Spec::AppBarVariant variant = Spec::AppBarVariant::Small);
+    //! Calls `ImGui::EndGroup`, which restores the cursor/line state saved by `BeginGroup` in the constructor
+    //! and terminates any active `SameLine` mode left by the last `TrailingIcon` call.
+    //! Because `GroupStack.back().EmitItem` is set to `false` in the constructor, `EndGroup` does **not**
+    //! submit the group bounding box as a layout item — layout space was already reserved by the `ItemSize`
+    //! call made before `BeginGroup`.
     ~AppBarScope();
-    AppBarScope(const AppBarScope &other)                     = delete;
-    auto operator=(const AppBarScope &other) -> AppBarScope & = delete;
+    AppBarScope(const AppBarScope &)                     = delete;
+    auto operator=(const AppBarScope &) -> AppBarScope & = delete;
 
     AppBarScope(AppBarScope &&other) noexcept { *this = std::move(other); }
 
     auto operator=(AppBarScope &&other) noexcept -> AppBarScope &
     {
-        m_minPos            = std::exchange(other.m_minPos, {});
-        m_nextLineCursorPos = std::exchange(other.m_nextLineCursorPos, {});
-        m_paddingX          = other.m_paddingX;
-        m_variant           = other.m_variant;
-        m_visible           = std::exchange(other.m_visible, false);
+        m_minPos                 = std::exchange(other.m_minPos, {});
+        m_iconLayoutWidth        = other.m_iconLayoutWidth;
+        m_trailingIconCursorPosX = std::exchange(other.m_trailingIconCursorPosX, 0.F);
+        m_iconLineItemMaxPosX    = std::exchange(other.m_iconLineItemMaxPosX, 0.F);
+        m_paddingX               = other.m_paddingX;
+        m_variant                = other.m_variant;
+        m_visible                = std::exchange(other.m_visible, false);
         return *this;
     }
 
-    auto LeadingIcon(std::string_view icon) const -> bool; // NOLINT(*-use-nodiscard)
+    //! Renders the leading icon using `AppBarCommon::LeadingIconColor`.
+    //! Must be called before `Title`. Leaves the cursor immediately after the icon
+    //! via `SameLine` so that `Title` is positioned relative to it.
+    auto LeadingIcon(std::string_view icon) -> bool; // NOLINT(*-use-nodiscard)
 
+    //! Renders the title (and optional subtitle) according to the active variant's
+    //! typography and position spec. For `Small`, the cursor advances rightward for
+    //! a potential `TrailingIcon`. For `MediumFlexible`/`LargeFlexible`, the title
+    //! is placed in the lower section and the cursor is not advanced horizontally.
     auto Title(std::string_view title, std::string_view subTitle = "") -> void;
 
-    //! Only be called once.
-    auto TrailingIcon(std::string_view icon) const -> bool; // NOLINT(*-use-nodiscard)
+    //! Renders a trailing icon using `AppBarCommon::TrailingIconColor`.
+    //! May be called multiple times; icons are stacked from right to left.
+    //! Each call decrements the internal trailing cursor by one icon slot width.
+    //! Emits `IM_ASSERT` if the trailing cursor would overlap the leading content.
+    //! Each call except the conceptual "last" relies on `SameLine` to stay on the
+    //! icon row; the scope destructor (`EndGroup`) resets the line state on exit.
+    auto TrailingIcon(std::string_view icon) -> bool; // NOLINT(*-use-nodiscard)
 
     explicit operator bool() const { return m_visible; }
 };
 
 /**
  * @brief Constructs a Material Design 3 AppBar with the specified variant.
- * @param variant default to `Small`. Determines the AppBar's height and layout according to M3 specifications.
- * @return The AppBarScope object manages the AppBar's lifecycle, including rendering and interaction handling. It provides methods to set
- * leading/trailing icons and title text.
- * @note The AppBarScope must be used in a scoped manner (e.g., within a block) to ensure proper resource management. The AppBar will only be rendered
- * if the returned scope is valid (i.e., the AppBar is visible based on internal logic, such as screen width constraints).
+ *
+ * @param variant Determines the AppBar's height and title layout. Defaults to `Small`.
+ *   - `Small`: single icon row, title inline.
+ *   - `MediumFlexible` / `LargeFlexible`: title placed in a taller lower section.
+ * @return `AppBarScope` managing the AppBar's lifecycle. Use `operator bool` to check
+ *   visibility before calling slot methods.
  */
 [[nodiscard]] inline auto AppBar(Spec::AppBarVariant variant = Spec::AppBarVariant::Small) -> AppBarScope
 {

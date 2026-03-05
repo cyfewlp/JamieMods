@@ -711,7 +711,7 @@ auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButton
 
     const ImGuiID id = window->GetID(TextStart(icon), TextEnd(icon));
 
-    const auto   minSize         = m3Styles.GetPixels(Spec::IconButtonCommon::MinSize);
+    const auto   minSize         = m3Styles.GetPixels(Spec::IconButtonCommon::MinLayoutSize);
     const auto   containerHeight = GetPixels(m3Styles, sizing.containerHeight);
     // center align when container height less than min size.
     const auto   offset          = minSize > containerHeight ? HalfDiff(minSize, containerHeight) : 0.0F;
@@ -1669,13 +1669,22 @@ AppBarScope::AppBarScope(Spec::AppBarVariant variant) : m_variant(variant)
     const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
 
     ImGui::ItemSize(size);
-    m_nextLineCursorPos = window->DC.CursorPos;
     if (!ImGui::ItemAdd(bb, 0))
     {
         return;
     }
+    ImGui::BeginGroup();
+    // Setting EmitItem = false prevents EndGroup from submitting a layout item for the group bounding box.
+    // Without this, EndGroup would call ItemSize/ItemAdd a second time, double-advancing the cursor past the AppBar
+    // (ItemSize was already called above to reserve the full AppBar height).
+    // The group is retained solely for its cursor/line-state backup+restore behaviour and to terminate
+    // any trailing SameLine mode left by the last TrailingIcon call.
+    GImGui->GroupStack.back().EmitItem = false;
+
     m_visible                 = true;
     m_paddingX                = m3Styles.GetPixels(paddingX);
+    m_iconLayoutWidth         = m3Styles.GetPixels(Spec::IconButtonCommon::MinLayoutSize);
+    m_trailingIconCursorPosX  = bb.Max.x - m_paddingX;
     m_minPos                  = bb.Min;
     window->DC.CursorPos      = bb.Min;
     // For medium/Large AppBar, the title will be placed in the second line.
@@ -1689,17 +1698,17 @@ AppBarScope::~AppBarScope()
 {
     if (m_visible)
     {
-        ImGuiWindow *window  = ImGui::GetCurrentWindow();
-        window->DC.CursorPos = m_nextLineCursorPos;
+        ImGui::EndGroup();
     }
 }
 
-auto AppBarScope::LeadingIcon(std::string_view icon) const -> bool
+auto AppBarScope::LeadingIcon(std::string_view icon) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     // Can't call SameLine in there: the pre-line will be the Appbar's line.
     window->DC.CursorPos.x += m_paddingX;
-    const auto visible = IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::LeadingIconColor});
+    m_iconLineItemMaxPosX = window->DC.CursorPos.x + m_iconLayoutWidth;
+    const auto visible    = IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::LeadingIconColor});
     ImGui::SameLine(0.F, 0.F);
     return visible;
 }
@@ -1766,19 +1775,27 @@ auto AppBarScope::Title(std::string_view title, std::string_view subTitle) -> vo
     {
         ImGui::ItemSize({maxTextWidth, 0.0F});
         ImGui::SameLine(0.F, 0.F);
+        m_iconLineItemMaxPosX = window->DC.CursorPos.x;
     }
 }
 
-auto AppBarScope::TrailingIcon(std::string_view icon) const -> bool
+auto AppBarScope::TrailingIcon(std::string_view icon) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
 
     auto &m3Styles = Context::GetM3Styles();
 
-    const auto iconSize         = m3Styles.GetPixels(Spec::IconButtonCommon::MinSize);
-    const auto expectCursorPosX = window->ContentRegionRect.Max.x - iconSize - m_paddingX;
-    window->DC.CursorPos.x      = m_paddingX + std::max(window->DC.CursorPos.x, expectCursorPosX);
+    m_trailingIconCursorPosX -= m_iconLayoutWidth;
+    IM_ASSERT(
+        m_iconLineItemMaxPosX <= m_trailingIconCursorPosX &&
+        "The leading icon and title have occupied all spaces for trailing icon, please check the layout or reduce the width of leading "
+        "icon/title."
+    );
 
-    return IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::TrailingIconColor});
+    window->DC.CursorPos.x = std::max(m_iconLineItemMaxPosX + m_paddingX, m_trailingIconCursorPosX);
+
+    const auto visible = IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::TrailingIconColor});
+    ImGui::SameLine(0.F, 0.F);
+    return visible;
 }
 } // namespace ImGuiEx::M3
