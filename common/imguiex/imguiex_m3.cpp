@@ -672,10 +672,17 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void
     auto      &m3Styles = Context::GetM3Styles();
     const auto sizing   = Spec::GetIconButtonSizing(sizeTips, Spec::IconButtonWidths::Default);
 
-    const auto   height = GetPixels(m3Styles, sizing.containerHeight);
-    const ImVec2 size   = {height, height};
-    const ImVec2 posMin = GetAlignedCursorPos(window, height);
-    const ImRect bb(posMin, posMin + size);
+    const auto   minSize         = m3Styles.GetPixels(Spec::IconButtonCommon::MinLayoutSize);
+    const auto   containerHeight = GetPixels(m3Styles, sizing.containerHeight);
+    // center align when container height less than min size.
+    const auto   offset          = minSize > containerHeight ? HalfDiff(minSize, containerHeight) : 0.0F;
+    const auto   height          = std::max(containerHeight, minSize);
+    // There may submit a greater item size than bounding box size when container height less than min size,
+    // but it won't cause problem because ItemAdd use bounding box for clipping and interaction.
+    const ImVec2 size            = {height, height};
+    const ImVec2 posMin          = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin + ImVec2(offset, offset), posMin + size - ImVec2(offset, offset));
+
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, 0U))
     {
@@ -695,7 +702,7 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void
 
     const auto offsetX  = GetPixels(m3Styles, sizing.leadingSpace);
     const auto iconSize = GetPixels(m3Styles, sizing.iconSize);
-    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(size.y, iconSize)}, icon, m3Styles, iconColor);
+    DrawIcon(window->DrawList, iconSize, bb.Min + ImVec2{offsetX, HalfDiff(containerHeight, iconSize)}, icon, m3Styles, iconColor);
 }
 
 auto IconButton(std::string_view icon, Spec::SizeTips sizeTips, Spec::IconButtonColorsValues colors, Spec::IconButtonWidths widths) -> bool
