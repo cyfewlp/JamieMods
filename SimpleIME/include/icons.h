@@ -30,26 +30,30 @@ static auto constexpr ICON_FOCUS                = ImGuiEx::icon<0xE008>;
 static auto constexpr ICON_INFO                 = ImGuiEx::icon<0xE009>;
 // ICON_KEYBOARD -> U+E00A (keyboard.svg)
 static auto constexpr ICON_KEYBOARD             = ImGuiEx::icon<0xE00A>;
-// ICON_MOVE -> U+E00B (move.svg)
-static auto constexpr ICON_MOVE                 = ImGuiEx::icon<0xE00B>;
-// ICON_PALETTE -> U+E00C (palette.svg)
-static auto constexpr ICON_PALETTE              = ImGuiEx::icon<0xE00C>;
-// ICON_PIN_OFF -> U+E00D (pin-off.svg)
-static auto constexpr ICON_PIN_OFF              = ImGuiEx::icon<0xE00D>;
-// ICON_PIN -> U+E00E (pin.svg)
-static auto constexpr ICON_PIN                  = ImGuiEx::icon<0xE00E>;
-// ICON_PLUS -> U+E00F (plus.svg)
-static auto constexpr ICON_PLUS                 = ImGuiEx::icon<0xE00F>;
-// ICON_REFRESH_CW -> U+E010 (refresh-cw.svg)
-static auto constexpr ICON_REFRESH_CW           = ImGuiEx::icon<0xE010>;
-// ICON_ROTATE_CCW -> U+E011 (rotate-ccw.svg)
-static auto constexpr ICON_ROTATE_CCW           = ImGuiEx::icon<0xE011>;
-// ICON_SEARCH -> U+E012 (search.svg)
-static auto constexpr ICON_SEARCH               = ImGuiEx::icon<0xE012>;
-// ICON_SETTINGS -> U+E013 (settings.svg)
-static auto constexpr ICON_SETTINGS             = ImGuiEx::icon<0xE013>;
-// ICON_WRENCH -> U+E014 (wrench.svg)
-static auto constexpr ICON_WRENCH               = ImGuiEx::icon<0xE014>;
-// ICON_X -> U+E015 (x.svg)
-static auto constexpr ICON_X                    = ImGuiEx::icon<0xE015>;
+// ICON_MOON -> U+E00B (moon.svg)
+static auto constexpr ICON_MOON                 = ImGuiEx::icon<0xE00B>;
+// ICON_MOVE -> U+E00C (move.svg)
+static auto constexpr ICON_MOVE                 = ImGuiEx::icon<0xE00C>;
+// ICON_PALETTE -> U+E00D (palette.svg)
+static auto constexpr ICON_PALETTE              = ImGuiEx::icon<0xE00D>;
+// ICON_PIN_OFF -> U+E00E (pin-off.svg)
+static auto constexpr ICON_PIN_OFF              = ImGuiEx::icon<0xE00E>;
+// ICON_PIN -> U+E00F (pin.svg)
+static auto constexpr ICON_PIN                  = ImGuiEx::icon<0xE00F>;
+// ICON_PLUS -> U+E010 (plus.svg)
+static auto constexpr ICON_PLUS                 = ImGuiEx::icon<0xE010>;
+// ICON_REFRESH_CW -> U+E011 (refresh-cw.svg)
+static auto constexpr ICON_REFRESH_CW           = ImGuiEx::icon<0xE011>;
+// ICON_ROTATE_CCW -> U+E012 (rotate-ccw.svg)
+static auto constexpr ICON_ROTATE_CCW           = ImGuiEx::icon<0xE012>;
+// ICON_SEARCH -> U+E013 (search.svg)
+static auto constexpr ICON_SEARCH               = ImGuiEx::icon<0xE013>;
+// ICON_SETTINGS -> U+E014 (settings.svg)
+static auto constexpr ICON_SETTINGS             = ImGuiEx::icon<0xE014>;
+// ICON_SUN -> U+E015 (sun.svg)
+static auto constexpr ICON_SUN                  = ImGuiEx::icon<0xE015>;
+// ICON_WRENCH -> U+E016 (wrench.svg)
+static auto constexpr ICON_WRENCH               = ImGuiEx::icon<0xE016>;
+// ICON_X -> U+E017 (x.svg)
+static auto constexpr ICON_X                    = ImGuiEx::icon<0xE017>;
 } // namespace Ime

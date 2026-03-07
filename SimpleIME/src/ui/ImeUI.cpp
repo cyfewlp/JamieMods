@@ -49,8 +49,23 @@ void ImeUI::DrawSettings(Settings &settings)
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
-    if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings))
+    if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings, ImGuiEx::WindowFlags().NoTitleBar()))
     {
+        if (auto appBar = ImGuiEx::M3::AppBar(ImGuiEx::M3::Spec::AppBarVariant::MediumFlexible); appBar)
+        {
+            appBar.Title("SimpleIME", "Created By Jamie");
+            if (appBar.TrailingIcon(ICON_X))
+            {
+                settings.appearance.showSettings = false;
+            }
+            if (auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
+                appBar.TrailingIcon(m3Styles.Colors().IsDark() ? std::string_view(ICON_MOON) : ICON_SUN))
+            {
+                m3Styles.ToggleLightDarkScheme();
+                ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
+            }
+        }
+
         enum class Menu : int8_t
         {
             Appearance,

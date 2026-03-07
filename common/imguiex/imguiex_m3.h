@@ -536,4 +536,11 @@ public:
     return AppBarScope(variant);
 }
 
+/**
+ * @brief Setup the default imgui style colors by ColorScheme.
+ *
+ * This can be reduces some colors push/pop.
+ */
+void SetupDefaultImGuiStyles(ImGuiStyle &style);
+
 } // namespace ImGuiEx::M3

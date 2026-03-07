@@ -368,7 +368,7 @@ void AppearancePanel::DrawThemeBuilder()
         if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK))
         {
             m3Styles.RebuildColors({m_contrastLevelTemp, Hct(m_hctCache.hue, m_hctCache.chroma, m_hctCache.tone).ToInt(), m_darkModeTemp});
-            UI::ApplyM3Theme(m3Styles);
+            ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
             scheme.reset();
             ImGui::CloseCurrentPopup();
         }
@@ -421,7 +421,7 @@ void AppearancePanel::ApplySettings(Settings::Appearance &appearance)
 
     auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
     m3Styles.UpdateScaling(appearance.zoom);
-    UI::ApplyM3Theme(m3Styles);
+    ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
 
     i18n::ScanLanguages(utils::GetInterfacePath() / SIMPLE_IME, m_translateLanguages);
 

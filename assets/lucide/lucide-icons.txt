@@ -20,3 +20,5 @@ search
 plus
 file-check
 file-question-mark
+sun
+moon

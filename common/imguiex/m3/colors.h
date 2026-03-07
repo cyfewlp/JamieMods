@@ -189,6 +189,12 @@ public:
 
     [[nodiscard]] auto GetSchemeConfig() const -> const SchemeConfig & { return m_schemeConfig; }
 
+    [[nodiscard]] auto IsDark() const -> bool { return m_schemeConfig.darkMode; }
+
+    [[nodiscard]] auto GetContrastLevel() const -> double { return m_schemeConfig.contrastLevel; }
+
+    [[nodiscard]] auto GetSourceColor() const -> Argb { return m_schemeConfig.sourceColor; }
+
     [[nodiscard]] auto at(Spec::ColorRole role) const -> const ImVec4 & { return m_colors.at(static_cast<size_t>(role)); }
 
     auto operator[](Spec::ColorRole role) const -> const ImVec4 & { return m_colors[static_cast<uint8_t>(role)]; }

@@ -188,8 +188,19 @@ public:
      * rebuild colors according to the new scheme config.
      * DON'T call this frequently, as it is a heavy operation.
      * @param schemeConfig A simple struct. see Colors::SchemeConfig
+     *
+     * @note Some ImGui StyleColor also still config by ImGui `Styles` object, like WindowBg,ChildBg.
+     * This can be reduce some style colors push.
      */
     void RebuildColors(const ColorScheme::SchemeConfig &schemeConfig);
+
+    void RebuildColors(bool darkMode)
+    {
+        RebuildColors({.contrastLevel = m_scheme.GetContrastLevel(), .sourceColor = m_scheme.GetSourceColor(), .darkMode = darkMode});
+    }
+
+    //! @brief Helper method to switch colors between light and dark mode.
+    void ToggleLightDarkScheme() { RebuildColors(!m_scheme.IsDark()); }
 
     /**
      * @brief Sets the text role and returns an RAII FontScope to manage font lifecycle.

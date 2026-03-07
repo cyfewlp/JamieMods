@@ -135,19 +135,14 @@ auto AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
     auto   &io     = ImGui::GetIO();
     if (imFont == nullptr)
     {
-        ErrorNotifier::GetInstance().addError(
-            "Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning
-        );
+        ErrorNotifier::GetInstance().addError("Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning);
         io.Fonts->Clear();
-        auto defaultFonts =
-            std::vector{std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)};
-        imFont = AddFonts(defaultFonts);
+        auto defaultFonts = std::vector{std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)};
+        imFont            = AddFonts(defaultFonts);
     }
     if (imFont == nullptr)
     {
-        ErrorNotifier::GetInstance().addError(
-            "Can't load fonts! Fallback to ImGui embedded font...", ErrorMsg::Level::warning
-        );
+        ErrorNotifier::GetInstance().addError("Can't load fonts! Fallback to ImGui embedded font...", ErrorMsg::Level::warning);
         io.Fonts->Clear();
         imFont = io.Fonts->AddFontDefault();
     }
@@ -188,99 +183,6 @@ void Shutdown()
         ImGui::DestroyContext();
     }
     g_initialized = false;
-}
-
-void ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles)
-{
-    using ColorRole   = M3Spec::ColorRole;
-    ImGuiStyle &style = ImGui::GetStyle();
-
-    const auto &colors = m3Styles.Colors();
-
-    style.Colors[ImGuiCol_Text]             = colors[ColorRole::onSurface];
-    style.Colors[ImGuiCol_TitleBg]          = colors[ColorRole::surfaceContainer];
-    style.Colors[ImGuiCol_TitleBgActive]    = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_TitleBgCollapsed] = colors[ColorRole::surfaceContainer];
-
-    style.Colors[ImGuiCol_WindowBg] = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_ChildBg]  = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_PopupBg]  = colors[ColorRole::primaryContainer];
-
-    style.Colors[ImGuiCol_FrameBg] = colors[ColorRole::secondaryContainer];
-    style.Colors[ImGuiCol_FrameBgActive] =
-        colors.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
-    style.Colors[ImGuiCol_FrameBgHovered] =
-        colors.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
-    style.Colors[ImGuiCol_Border]       = colors[ColorRole::outlineVariant];
-    style.Colors[ImGuiCol_BorderShadow] = colors[ColorRole::outlineVariant];
-
-    style.Colors[ImGuiCol_SliderGrab]       = colors[ColorRole::primary];
-    style.Colors[ImGuiCol_SliderGrabActive] = colors.Pressed(ColorRole::primary, ColorRole::onPrimary);
-
-    style.Colors[ImGuiCol_Button]        = colors[ColorRole::primary];
-    style.Colors[ImGuiCol_ButtonHovered] = colors.Hovered(ColorRole::primary, ColorRole::onPrimary);
-    style.Colors[ImGuiCol_ButtonActive]  = colors.Pressed(ColorRole::primary, ColorRole::onPrimary);
-
-    style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
-    style.Colors[ImGuiCol_ScrollbarGrab]        = colors[ColorRole::outline];
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = colors[ColorRole::outlineVariant];
-    style.Colors[ImGuiCol_ScrollbarGrabActive]  = colors[ColorRole::primary];
-
-    style.Colors[ImGuiCol_MenuBarBg] = colors[ColorRole::surfaceContainerHigh];
-
-    style.Colors[ImGuiCol_Header]        = colors[ColorRole::surfaceContainerHigh];
-    style.Colors[ImGuiCol_HeaderHovered] = colors.Hovered(ColorRole::surfaceContainerHigh, ColorRole::onSurface);
-    style.Colors[ImGuiCol_HeaderActive]  = colors.Pressed(ColorRole::surfaceContainerHigh, ColorRole::onSurface);
-
-    style.Colors[ImGuiCol_Separator]        = colors[ColorRole::secondary];
-    style.Colors[ImGuiCol_SeparatorHovered] = colors.Hovered(ColorRole::secondary, ColorRole::onSecondary);
-    style.Colors[ImGuiCol_SeparatorActive]  = colors.Pressed(ColorRole::secondary, ColorRole::onSecondary);
-
-    style.Colors[ImGuiCol_ResizeGrip] = colors[ColorRole::secondaryContainer];
-    style.Colors[ImGuiCol_ResizeGripHovered] =
-        colors.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
-    style.Colors[ImGuiCol_ResizeGripActive] =
-        colors.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
-
-    style.Colors[ImGuiCol_InputTextCursor] = colors[ColorRole::secondary];
-
-    style.Colors[ImGuiCol_Tab]                 = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_TabHovered]          = colors.Hovered(ColorRole::surface, ColorRole::onSurface);
-    style.Colors[ImGuiCol_TabSelected]         = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_TabSelectedOverline] = colors[ColorRole::primary];
-
-    style.Colors[ImGuiCol_TabDimmed]                 = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_TabDimmedSelected]         = colors.Pressed(ColorRole::surface, ColorRole::onSurface);
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = colors[ColorRole::outlineVariant];
-
-    style.Colors[ImGuiCol_PlotLines]        = colors[ColorRole::primary];
-    style.Colors[ImGuiCol_PlotLinesHovered] = colors.Hovered(ColorRole::primary, ColorRole::onPrimary);
-
-    style.Colors[ImGuiCol_PlotHistogram]        = colors[ColorRole::tertiary];
-    style.Colors[ImGuiCol_PlotHistogramHovered] = colors.Hovered(ColorRole::tertiary, ColorRole::onTertiary);
-
-    style.Colors[ImGuiCol_TableHeaderBg]     = colors[ColorRole::surfaceContainerHigh];
-    style.Colors[ImGuiCol_TableBorderStrong] = colors[ColorRole::outline];
-    style.Colors[ImGuiCol_TableBorderLight]  = colors[ColorRole::outlineVariant];
-    style.Colors[ImGuiCol_TableRowBg]        = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_TableRowBgAlt]     = colors[ColorRole::surfaceContainerLowest];
-
-    // style.Colors[ImGuiCol_TextLink]     =colors.surface_container_low; // TODO: set this
-    style.Colors[ImGuiCol_TextSelectedBg]   = colors[ColorRole::primary];
-    style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
-
-    style.Colors[ImGuiCol_TreeLines] = colors[ColorRole::onSurface];
-
-    style.Colors[ImGuiCol_DragDropTarget]   = colors[ColorRole::primary];
-    style.Colors[ImGuiCol_DragDropTargetBg] = colors[ColorRole::surface];
-
-    style.Colors[ImGuiCol_UnsavedMarker]         = colors[ColorRole::onPrimary];
-    style.Colors[ImGuiCol_NavCursor]             = colors[ColorRole::onSecondary];
-    style.Colors[ImGuiCol_NavWindowingHighlight] = colors[ColorRole::onPrimary];
-    style.Colors[ImGuiCol_NavWindowingDimBg]     = colors[ColorRole::surfaceContainer];
-
-    style.Colors[ImGuiCol_ModalWindowDimBg]   = colors[ColorRole::surface];
-    style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
 }
 
 } // namespace Ime::UI

@@ -1805,4 +1805,93 @@ auto AppBarScope::TrailingIcon(std::string_view icon) -> bool
     ImGui::SameLine(0.F, 0.F);
     return visible;
 }
+
+void SetupDefaultImGuiStyles(ImGuiStyle &style)
+{
+    using ColorRole = Spec::ColorRole;
+
+    auto       &m3Styles = Context::GetM3Styles();
+    const auto &scheme   = m3Styles.Colors();
+
+    style.Colors[ImGuiCol_Text]             = scheme[ColorRole::onSurface];
+    style.Colors[ImGuiCol_TitleBg]          = scheme[ColorRole::surfaceContainer];
+    style.Colors[ImGuiCol_TitleBgActive]    = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_TitleBgCollapsed] = scheme[ColorRole::surfaceContainer];
+
+    style.Colors[ImGuiCol_WindowBg] = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_ChildBg]  = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_PopupBg]  = scheme[ColorRole::primaryContainer];
+
+    style.Colors[ImGuiCol_FrameBg]        = scheme[ColorRole::secondaryContainer];
+    style.Colors[ImGuiCol_FrameBgActive]  = scheme.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
+    style.Colors[ImGuiCol_FrameBgHovered] = scheme.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
+    style.Colors[ImGuiCol_Border]         = scheme[ColorRole::outlineVariant];
+    style.Colors[ImGuiCol_BorderShadow]   = scheme[ColorRole::outlineVariant];
+
+    style.Colors[ImGuiCol_SliderGrab]       = scheme[ColorRole::primary];
+    style.Colors[ImGuiCol_SliderGrabActive] = scheme.Pressed(ColorRole::primary, ColorRole::onPrimary);
+
+    style.Colors[ImGuiCol_Button]        = scheme[ColorRole::primary];
+    style.Colors[ImGuiCol_ButtonHovered] = scheme.Hovered(ColorRole::primary, ColorRole::onPrimary);
+    style.Colors[ImGuiCol_ButtonActive]  = scheme.Pressed(ColorRole::primary, ColorRole::onPrimary);
+
+    style.Colors[ImGuiCol_ScrollbarBg]          = {0, 0, 0, 0};
+    style.Colors[ImGuiCol_ScrollbarGrab]        = scheme[ColorRole::outline];
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = scheme[ColorRole::outlineVariant];
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = scheme[ColorRole::primary];
+
+    style.Colors[ImGuiCol_MenuBarBg] = scheme[ColorRole::surfaceContainerHigh];
+
+    style.Colors[ImGuiCol_Header]        = scheme[ColorRole::surfaceContainerHigh];
+    style.Colors[ImGuiCol_HeaderHovered] = scheme.Hovered(ColorRole::surfaceContainerHigh, ColorRole::onSurface);
+    style.Colors[ImGuiCol_HeaderActive]  = scheme.Pressed(ColorRole::surfaceContainerHigh, ColorRole::onSurface);
+
+    style.Colors[ImGuiCol_Separator]        = scheme[ColorRole::secondary];
+    style.Colors[ImGuiCol_SeparatorHovered] = scheme.Hovered(ColorRole::secondary, ColorRole::onSecondary);
+    style.Colors[ImGuiCol_SeparatorActive]  = scheme.Pressed(ColorRole::secondary, ColorRole::onSecondary);
+
+    style.Colors[ImGuiCol_ResizeGrip]        = scheme[ColorRole::secondaryContainer];
+    style.Colors[ImGuiCol_ResizeGripHovered] = scheme.Hovered(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
+    style.Colors[ImGuiCol_ResizeGripActive]  = scheme.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);
+
+    style.Colors[ImGuiCol_InputTextCursor] = scheme[ColorRole::secondary];
+
+    style.Colors[ImGuiCol_Tab]                 = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_TabHovered]          = scheme.Hovered(ColorRole::surface, ColorRole::onSurface);
+    style.Colors[ImGuiCol_TabSelected]         = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_TabSelectedOverline] = scheme[ColorRole::primary];
+
+    style.Colors[ImGuiCol_TabDimmed]                 = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_TabDimmedSelected]         = scheme.Pressed(ColorRole::surface, ColorRole::onSurface);
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = scheme[ColorRole::outlineVariant];
+
+    style.Colors[ImGuiCol_PlotLines]        = scheme[ColorRole::primary];
+    style.Colors[ImGuiCol_PlotLinesHovered] = scheme.Hovered(ColorRole::primary, ColorRole::onPrimary);
+
+    style.Colors[ImGuiCol_PlotHistogram]        = scheme[ColorRole::tertiary];
+    style.Colors[ImGuiCol_PlotHistogramHovered] = scheme.Hovered(ColorRole::tertiary, ColorRole::onTertiary);
+
+    style.Colors[ImGuiCol_TableHeaderBg]     = scheme[ColorRole::surfaceContainerHigh];
+    style.Colors[ImGuiCol_TableBorderStrong] = scheme[ColorRole::outline];
+    style.Colors[ImGuiCol_TableBorderLight]  = scheme[ColorRole::outlineVariant];
+    style.Colors[ImGuiCol_TableRowBg]        = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_TableRowBgAlt]     = scheme[ColorRole::surfaceContainerLowest];
+
+    // style.Colors[ImGuiCol_TextLink]     =scheme.surface_container_low; // TODO: set this
+    style.Colors[ImGuiCol_TextSelectedBg]   = scheme[ColorRole::primary];
+    style.Colors[ImGuiCol_TextSelectedBg].w = 0.35f;
+
+    style.Colors[ImGuiCol_TreeLines] = scheme[ColorRole::onSurface];
+
+    style.Colors[ImGuiCol_DragDropTarget]   = scheme[ColorRole::primary];
+    style.Colors[ImGuiCol_DragDropTargetBg] = scheme[ColorRole::surface];
+
+    style.Colors[ImGuiCol_UnsavedMarker]         = scheme[ColorRole::onPrimary];
+    style.Colors[ImGuiCol_NavCursor]             = scheme[ColorRole::onSecondary];
+    style.Colors[ImGuiCol_NavWindowingHighlight] = scheme[ColorRole::onPrimary];
+    style.Colors[ImGuiCol_NavWindowingDimBg]     = scheme[ColorRole::surfaceContainer];
+
+    style.Colors[ImGuiCol_ModalWindowDimBg]   = scheme[ColorRole::surface];
+    style.Colors[ImGuiCol_ModalWindowDimBg].w = 0.35f;
+}
 } // namespace ImGuiEx::M3

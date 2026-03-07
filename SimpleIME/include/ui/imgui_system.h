@@ -40,6 +40,4 @@ void EndFrame();
 
 void Shutdown();
 
-void ApplyM3Theme(const ImGuiEx::M3::M3Styles &m3Styles);
-
 } // namespace Ime::UI
