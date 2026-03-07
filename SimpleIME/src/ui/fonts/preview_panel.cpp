@@ -15,6 +15,7 @@
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
 #include "imguiex/m3/facade/base.h"
+#include "imguiex/m3/spec/layout.h"
 #include "ui/fonts/FontManager.h"
 #include "ui/fonts/ImFontWrap.h"
 
@@ -51,29 +52,6 @@ struct StatusBar
  */
 auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos) -> bool
 {
-    using Spacing   = ImGuiEx::M3::Spacing;
-    using ColorRole = M3Spec::ColorRole;
-
-    auto      &m3Styles        = ImGuiEx::M3::Context::GetM3Styles();
-    const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
-    const auto paddingX        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingX);
-    const auto paddingY        = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::paddingY);
-    const auto itemSpacing     = ImVec2(paddingX, paddingY);
-
-    ImGuiEx::StyleGuard styleGuard;
-    styleGuard
-        .Style<ImGuiStyleVar_ItemSpacing>(itemSpacing) // Selectable used
-        .Style<ImGuiStyleVar_SelectableTextAlign>({ImGuiEx::ALIGN_LEFT, ImGuiEx::ALIGN_CENTER})
-        .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS])
-        .Color<ImGuiCol_Header>(m3Styles.Colors().at(ColorRole::surface))
-        .Color<ImGuiCol_HeaderActive>(m3Styles.Colors().Pressed(ColorRole::surface, ColorRole::onSurface))
-        .Color<ImGuiCol_HeaderHovered>(m3Styles.Colors().Hovered(ColorRole::surface, ColorRole::onSurface));
-
-    ImGui::Spacing();
-
-    // If we use the SpanAllColumns flags, Selectable does not respect the ItemSpacing settings,
-    // and we need to simulate a Label with padding.
-    ImGui::Indent(paddingX);
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(fontInfos.size()));
     bool selectedNew = false;
@@ -85,9 +63,7 @@ auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fon
             ImGui::PushID(row);
 
             const bool selected = selectedIndex == fontInfo.GetIndex();
-            const bool clicked  = ImGui::Selectable(
-                fontInfo.GetName().c_str(), selected, ImGuiEx::SelectableFlags().SpanAllColumns(), {0.F, m3Styles.GetLastText().currText.lineHeight}
-            );
+            const bool clicked  = ImGuiEx::M3::MenuItem(fontInfo.GetName(), selected);
             if (clicked && !selected)
             {
                 selectedNew   = true;
@@ -100,12 +76,11 @@ auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fon
             ImGui::PopID();
         }
     }
-    ImGui::Unindent(paddingX);
 
     return selectedNew;
 }
 
-void DrawStatusBar(const StatusBar &statusBar, const ImGuiEx::M3::M3Styles &m3Styles)
+void DrawStatusBar(const StatusBar &statusBar)
 {
     ImGuiEx::M3::SmallIcon(statusBar.icon);
     ImGui::SameLine();
@@ -113,36 +88,37 @@ void DrawStatusBar(const StatusBar &statusBar, const ImGuiEx::M3::M3Styles &m3St
     ImGuiEx::M3::TextUnformatted<ImGuiEx::M3::Spec::TextRole::LabelLarge>(statusBar.text, M3Spec::ColorRole::onSecondaryContainer);
     ImGui::PopTextWrapPos();
 
-    ImGui::Separator();
-    ImGui::Dummy({0, m3Styles[ImGuiEx::M3::Spacing::L]});
+    ImGuiEx::M3::Divider();
 }
 
 /**
  * contains a "apply" button to ensure if add font to @c FontBuilder
  * @return true if click the "apply" button, false otherwise.
  */
-auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles) -> bool
+auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles, ImFontWrap &displayFont) -> bool
 {
+    ImGui::PushFont(displayFont.UnsafeGetFont(), 0);
     for (const auto &text : PREVIEW_TEXT)
     {
-        ImGui::TextUnformatted(text);
+        ImGuiEx::M3::TextUnformatted<ImGuiEx::M3::Spec::TextRole::BodyLarge>(text);
     }
-    const auto &avail   = ImGui::GetContentRegionAvail();
-    const auto  marginY = m3Styles[ImGuiEx::M3::Spacing::L];
-    ImGui::Dummy({0, marginY});
-    constexpr auto fabSizeUnit = ImGuiEx::M3::Spec::FabSizing<ImGuiEx::M3::Spec::SizeTips::MEDIUM>::ContainerHeight;
-    const auto     fabSize     = m3Styles.GetPixels(fabSizeUnit);
-    if (const auto space = fabSize + marginY; avail.y > space)
-    {
-        ImGui::Dummy({0, avail.y - space});
-    }
-    const auto safeIndent = ImMax(ImGuiEx::M3::HalfDiff(avail.x, fabSize), 0.0F);
-    ImGui::Indent(safeIndent);
+    ImGui::PopFont();
 
+    if (!displayFont.IsCommittable())
+    {
+        return false;
+    }
+
+    // Absolute layout: the FAB should be placed in the bottom right corner of the preview panel,
+    // regardless of the content size.
+    const auto cursorPos = ImGui::GetCursorScreenPos();
+    const auto avail     = ImGui::GetContentRegionAvail();
+
+    constexpr auto FabSize       = M3Spec::FabSizing<ImGuiEx::M3::Spec::SizeTips::MEDIUM>::ContainerHeight;
+    const auto     scaledFabSize = m3Styles.GetPixels(FabSize);
+    ImGui::SetCursorScreenPos(cursorPos + avail - ImVec2(scaledFabSize, scaledFabSize - ImGui::GetScrollY()));
     const bool clicked = ImGuiEx::M3::Fab(ICON_PLUS, ImGuiEx::M3::Spec::FabColors::TonalPrimary);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Add"));
-
-    ImGui::Unindent(safeIndent);
     return clicked;
 }
 
@@ -158,8 +134,8 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
         m_searchDebounceTimer.Poke();
     }
 
-    const auto &fontInfos1 = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
-    if (FontsTable(m_interactState.selectedIndex, fontInfos1))
+    const auto &displayFontInfos = m_displayFontInfos.empty() ? fontInfos : m_displayFontInfos;
+    if (FontsTable(m_interactState.selectedIndex, displayFontInfos))
     {
         m_previewDebounceTimer.Poke();
         m_state = State::DEBOUNCING;
@@ -197,13 +173,14 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
     }
 }
 
+//! Submit two child windows.
+//! Child1: Fonts info, auto resize along X-axis, fixed height, with border.
+//! Child2: Font preview, auto extend along X-axis, fill remaining height. contains a "apply" button to ensure if add font to @c FontBuilder
 void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     {
-        const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
-
         const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
-        if (ImGui::BeginChild("FontsView", {width, 0}, ImGuiEx::ChildFlags().Borders()))
+        if (ImGui::BeginChild("FontsView", {}, ImGuiEx::ChildFlags().AutoResizeX().Borders()))
         {
             DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList());
         }
@@ -244,15 +221,18 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
             break;
     }
 
+    ImGui::SameLine(0, M3Spec::Layout::ExtraLarge::Margin);
     const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
-    if (ImGui::BeginChild("PreviewPanel", {}, ImGuiEx::ChildFlags().AutoResizeX()))
+
+    // Ensures children can auto-extend along the X-axis.
+    // Note: Due to limitations with nested tables in the current Table API, we cannot rely
+    // on the table system for child layout. As a workaround, we must specify a
+    // fixed negative width manually to ensure proper rendering.
+    const auto SideSheetMaxWidth = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::SideSheetsMaxWidth);
+    if (ImGui::BeginChild("PreviewPanel", {-SideSheetMaxWidth, 0.F}, ImGuiEx::ChildFlags()))
     {
-        DrawStatusBar(statusBar, m3Styles);
-        ImGui::BeginDisabled(!m_imFont.IsCommittable());
-        ImGui::PushFont(m_imFont.UnsafeGetFont(), 0);
-        auto clicked = PreviewPanel(m3Styles);
-        ImGui::PopFont();
-        ImGui::EndDisabled();
+        DrawStatusBar(statusBar);
+        auto clicked = PreviewPanel(m3Styles, m_imFont);
         if (clicked)
         {
             if (fontBuilder.AddFont(m_interactState.selectedIndex, m_imFont))

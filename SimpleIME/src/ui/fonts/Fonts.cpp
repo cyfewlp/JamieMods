@@ -12,6 +12,7 @@
 #include "imguiex/Material3.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
+#include "imguiex/m3/spec/layout.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/FontBuilderPanel.h"
 #include "ui/fonts/ImFontWrap.h"
@@ -164,13 +165,19 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
     auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
     m_PreviewPanel.Draw(fontBuilder, m3Styles);
-    ImGui::SameLine(0.0F, 0.0F);
+    ImGui::SameLine(0, M3Spec::Layout::ExtraLarge::Margin);
     {
+        // The Font Builder child window.
+        // \todo should support resize-x.
         const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
 
-        const auto width = m3Styles.GetPixels(ImGuiEx::M3::Spec::List::width);
-        if (ImGui::BeginChild("FontBuilderFontInfo", {-width, -FLT_MIN}, ImGuiEx::ChildFlags()))
+        // right-align, fixed width. The left two child windows(submitted in preview panel)
+        // should auto resize along with the window resizing, and this child window should keep a fixed width
+        // and align to the right side of the panel.
+        const auto width = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::SideSheetsMaxWidth);
+        if (ImGui::BeginChild("FontBuilderFontInfo", {width, 0}, ImGuiEx::ChildFlags()))
         {
+            // \fixme the lat con button beyond window right-side the visible range.
             DrawToolBar(fontBuilder, settings, m3Styles);
 
             if (m_PreviewPanel.IsPreviewing())

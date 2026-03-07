@@ -337,7 +337,7 @@ auto BeginNavRail(std::string_view strId, const bool expanded) -> bool
 auto BeginNavRail(std::string_view strId) -> bool
 {
     auto      &m3Styles = Context::GetM3Styles();
-    const bool expanded = ImGui::GetContentRegionAvail().x > m3Styles.GetPixels(Spec::Layout::breakpointLarge);
+    const bool expanded = ImGui::GetContentRegionAvail().x > m3Styles.GetPixels(Spec::Layout::Large::Breakpoint);
     return BeginNavRail(strId, expanded);
 }
 
@@ -1248,7 +1248,6 @@ void Divider()
         return;
     }
 
-    auto        &m3Styles = Context::GetM3Styles();
     const ImVec2 size(0.0F, 1.0F);
     const float  x1 = window->DC.CursorPos.x;
     const float  x2 = window->WorkRect.Max.x;
@@ -1260,6 +1259,7 @@ void Divider()
         return;
     }
 
+    auto &m3Styles = Context::GetM3Styles();
     window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::ColorRole::outlineVariant]));
 }
 
@@ -1631,21 +1631,16 @@ void EndCombo()
 
 void SetItemToolTip(const std::string_view text)
 {
-    auto      &m3Styles = Context::GetM3Styles();
-    const auto guard    = StyleGuard()
-                           .Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(Spec::ColorRole::inverseSurface))
-                           .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<Spec::Tooltips>());
-
     if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) return;
 
+    auto      &m3Styles         = Context::GetM3Styles();
+    const auto guard            = StyleGuard().Color<ImGuiCol_PopupBg>(m3Styles.Colors().at(Spec::ColorRole::inverseSurface));
     const auto tooltipFontScope = m3Styles.UseTextRole<Spec::Tooltips::textRole>();
-    ImGui::PushFont(nullptr, m3Styles.GetLastText().currText.textSize);
     if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
     {
         TextUnformatted(text, Spec::ColorRole::inverseOnSurface);
         ImGui::EndTooltip();
     }
-    ImGui::PopFont();
 }
 
 AppBarScope::AppBarScope(Spec::AppBarVariant variant) : m_variant(variant)
@@ -1789,8 +1784,6 @@ auto AppBarScope::Title(std::string_view title, std::string_view subTitle) -> vo
 auto AppBarScope::TrailingIcon(std::string_view icon) -> bool
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
-
-    auto &m3Styles = Context::GetM3Styles();
 
     m_trailingIconCursorPosX -= m_iconLayoutWidth;
     IM_ASSERT(

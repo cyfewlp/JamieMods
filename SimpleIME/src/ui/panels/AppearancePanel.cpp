@@ -232,6 +232,7 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache) -> b
 
 } // namespace
 
+// \fixme After resize window, center align will broken.
 void AppearancePanel::Draw(Settings &settings)
 {
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
@@ -296,7 +297,7 @@ void AppearancePanel::DrawThemeBuilder()
     if (openPopup)
     {
         ImGui::OpenPopup("ThemeBuilder");
-        ImGui::SetNextWindowSize({m3Styles.GetPixels(M3Spec::Layout::breakpointMedium), 0.F});
+        ImGui::SetNextWindowSize({m3Styles.GetPixels(M3Spec::Layout::Medium::Breakpoint), 0.F});
         const Hct hct(schemeConfig.sourceColor);
         m_hctCache.hue    = static_cast<float>(hct.get_hue());
         m_hctCache.chroma = static_cast<float>(hct.get_chroma());
