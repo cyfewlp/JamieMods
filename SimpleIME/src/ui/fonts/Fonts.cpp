@@ -177,8 +177,7 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
         const auto width = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::SideSheetsMaxWidth);
         if (ImGui::BeginChild("FontBuilderFontInfo", {width, 0}, ImGuiEx::ChildFlags()))
         {
-            // \fixme the lat con button beyond window right-side the visible range.
-            DrawToolBar(fontBuilder, settings, m3Styles);
+            DrawToolBar(fontBuilder, settings);
 
             if (m_PreviewPanel.IsPreviewing())
             {
@@ -233,33 +232,27 @@ void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder)
     ImGui::Indent(m3Styles[Spacing::L]);
 }
 
-void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles)
+void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
 {
-    if (ImGuiEx::M3::BeginDockedToolbar(m3Styles.GetPixels(M3Spec::SmallIconButton::ContainerHeight), 5, M3Spec::ColorRole::surfaceContainer))
+    if (const auto toolBar = ImGuiEx::M3::DockedToolBar("FontBuilderToolBar", 5))
     {
-        DrawToolBarButtons(fontBuilder, settings);
-        ImGuiEx::M3::EndDockedToolbar();
+        DrawToolBarButtons(toolBar, fontBuilder, settings);
     }
 
     DrawHelpModal();
     DrawWarningsModal();
 }
 
-void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings)
+void UI::FontBuilderPanel::DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarScope &toolBar, FontBuilder &fontBuilder, Settings &settings)
 {
     ImGui::BeginDisabled(!fontBuilder.IsBuilding());
-    auto Button = [](const std::string_view &icon) -> bool {
-        return ImGuiEx::M3::XSmallIconButton(icon);
-    };
-
-    if (ImGuiEx::M3::XSmallIconButton(ICON_WRENCH))
+    if (toolBar.Icon(ICON_WRENCH))
     {
         fontBuilder.ApplyFont(settings);
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.SetAsDefault"));
 
-    ImGui::SameLine();
-    if (Button(ICON_ROTATE_CCW))
+    if (toolBar.Icon(ICON_ROTATE_CCW))
     {
         if (fontBuilder.GetBaseFont() == m_PreviewPanel.GetImFont())
         {
@@ -269,15 +262,13 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Reset"));
 
-    ImGui::SameLine();
-    if (Button(ICON_EYE))
+    if (toolBar.Icon(ICON_EYE))
     {
         m_PreviewPanel.PreviewFont(fontBuilder.GetBaseFont());
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Preview"));
     ImGui::EndDisabled();
 
-    ImGui::SameLine();
     auto centerPopup = [](std::string_view name) -> void {
         ImGui::OpenPopup(name.data());
         constexpr auto CENTER_PIVOT = ImVec2(0.5f, 0.5f);
@@ -286,13 +277,13 @@ void UI::FontBuilderPanel::DrawToolBarButtons(FontBuilder &fontBuilder, Settings
         ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
         ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
     };
-    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_ALERT))
+    if (toolBar.Icon(ICON_CIRCLE_ALERT))
     {
         centerPopup(TITLE_WARNING);
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"));
-    ImGui::SameLine();
-    if (ImGuiEx::M3::XSmallIconButton(ICON_CIRCLE_QUESTION_MARK))
+
+    if (toolBar.Icon(ICON_CIRCLE_QUESTION_MARK))
     {
         centerPopup(TITLE_HELP);
     }

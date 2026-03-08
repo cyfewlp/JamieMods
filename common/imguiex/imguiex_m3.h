@@ -390,18 +390,35 @@ struct SearchConfiguration
 auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const SearchConfiguration &config) -> bool;
 
 /**
- * The toolbar is a container with multiple slots, and you must
+ * @brief Docked Toolbar component following Material Design 3 specifications.
+ * Implemented by ImGui Table API and custom Item style.
+ *
+ * FIXME-OPT: the Icon is left-aligned, how to center align?
+ */
+class DockedToolbarScope
+{
+    bool m_visible{false};
+
+public:
+    explicit DockedToolbarScope(std::string_view strId, uint8_t count, const Spec::ToolBarColors colors = Spec::ToolBarColors::Standard);
+
+    ~DockedToolbarScope();
+
+    auto Icon(std::string_view icon) const -> bool;
+
+    explicit operator bool() const { return m_visible; }
+};
+
+/**
+ * @brief The toolbar is a container with multiple slots, and you must
  * provide your expected dimensions and draw your button according to the agreement.
  * @return true is Toolbar visible
  */
-auto BeginDockedToolbar(const ImVec2 &buttonSize, uint8_t count, Spec::ColorRole surfaceRole) -> bool;
-
-inline auto BeginDockedToolbar(float buttonSize, uint8_t count, Spec::ColorRole surfaceRole) -> bool
+inline auto DockedToolBar(std::string_view strId, uint8_t count, const Spec::ToolBarColors colors = Spec::ToolBarColors::Standard)
+    -> DockedToolbarScope
 {
-    return BeginDockedToolbar(ImVec2{buttonSize, buttonSize}, count, surfaceRole);
+    return DockedToolbarScope(strId, count, colors);
 }
-
-auto EndDockedToolbar() -> void;
 
 /**
  * @brief A floating Toolbar

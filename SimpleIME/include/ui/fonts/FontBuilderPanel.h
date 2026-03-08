@@ -4,9 +4,13 @@
 
 #pragma once
 
-#include "imguiex/Material3.h"
 #include "ui/fonts/FontBuilder.h"
 #include "ui/fonts/preview_panel.h"
+
+namespace ImGuiEx::M3
+{
+class DockedToolbarScope;
+}
 
 struct ImGuiTextFilter;
 
@@ -25,8 +29,8 @@ public:
 private:
     // FIXME: refactor
     static void DrawFontInfoTable(const FontBuilder &fontBuilder);
-    void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings, const ImGuiEx::M3::M3Styles &m3Styles);
-    void        DrawToolBarButtons(FontBuilder &fontBuilder, Settings &settings);
+    void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings);
+    void        DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarScope &toolBar, FontBuilder &fontBuilder, Settings &settings);
     static void DrawHelpModal();
     static void DrawWarningsModal();
 

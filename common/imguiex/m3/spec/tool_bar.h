@@ -58,7 +58,6 @@ struct ToolBarSizing<ToolBarVariant::Floating>
 template <>
 struct ToolBarSizing<ToolBarVariant::Docked>
 {
-
     //! Docked toolbar leading padding
     static constexpr auto ContainerLeadingSpace = dp<16>();
 

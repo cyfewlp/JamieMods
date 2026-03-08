@@ -100,9 +100,11 @@ inline auto GetDisplayLabel(std::string_view label) -> std::string_view
 //! @brief Align the cursor position to the center of the line height if the line height is larger than the content height.
 inline auto GetAlignedCursorPos(const ImGuiWindow *window, const float height) -> ImVec2
 {
-    if (window->DC.CurrLineSize.y > height)
+    auto      &g              = *GImGui;
+    const auto currLineHeight = g.CurrentTable != nullptr ? (g.CurrentTable->RowPosY2 - g.CurrentTable->RowPosY1) : window->DC.CurrLineSize.y;
+    if (currLineHeight > height)
     {
-        const auto offsetY = HalfDiff(window->DC.CurrLineSize.y, height);
+        const auto offsetY = HalfDiff(currLineHeight, height);
         return {window->DC.CursorPos.x, window->DC.CursorPos.y + offsetY};
     }
     return window->DC.CursorPos;
@@ -1387,39 +1389,42 @@ auto SearchBar(std::string_view strId, char *buffer, size_t bufferSize, const Se
     return edited;
 }
 
-auto BeginDockedToolbar(const ImVec2 &buttonSize, const uint8_t count, const Spec::ColorRole surfaceRole) -> bool
+DockedToolbarScope::DockedToolbarScope(std::string_view strId, uint8_t count, const Spec::ToolBarColors colors)
 {
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
-    if (window->SkipItems) return false;
-    auto &m3Styles = Context::GetM3Styles();
+    using TbfSpec           = Spec::ToolBar<Spec::ToolBarColors::Standard>;
+    using TbfVibrantSpec    = Spec::ToolBar<Spec::ToolBarColors::Vibrant>;
+    using DockedToolbarSpec = Spec::ToolBarSizing<Spec::ToolBarVariant::Docked>;
 
-    const auto margin = m3Styles[Spacing::M];
-    const auto size   = ImVec2{ImGui::GetContentRegionAvail().x, buttonSize.y + m3Styles[Spacing::Double_S] + (margin * 2)};
-    ImRect     bb(window->DC.CursorPos, window->DC.CursorPos + size);
-    ImGui::ItemSize(size);
-    if (!ImGui::ItemAdd(bb, 0)) return false;
-
-    bb.Min.y += margin;
-    bb.Max.y -= margin;
-    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[surfaceRole]));
-
-    const auto minWidth = buttonSize.x * static_cast<float>(count);
-    float      gap      = 0.0F;
-    if (count > 1U)
+    const auto styleGuard = StyleGuard().Style<ImGuiStyleVar_CellPadding>(ImVec2(DockedToolbarSpec::ContainerLeadingSpace, 0.F));
+    m_visible             = ImGui::BeginTable(TextStart(strId), static_cast<int>(count), TableFlags().SizingStretchSame().RowBg().PadOuterX());
+    auto &m3Styles        = Context::GetM3Styles();
+    if (m_visible)
     {
-        gap = (size.x - minWidth - m3Styles[Spacing::Double_L]) / (count - 1);
-        gap = std::max(gap, 0.F);
+        const auto bgRole = colors == Spec::ToolBarColors::Standard ? TbfSpec::ContainerColor : TbfVibrantSpec::ContainerColor;
+        ImGui::PushStyleColor(ImGuiCol_TableRowBg, m3Styles.Colors()[bgRole]);
+        ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, m3Styles.Colors()[bgRole]);
     }
-    ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, gap);
-    ImGui::SetNextItemAllowOverlap();
-
-    window->DC.CursorPos = bb.Min + ImVec2(m3Styles[Spacing::L], m3Styles[Spacing::S]);
-    return true;
+    ImGui::TableNextRow(ImGuiTableRowFlags_None, m3Styles.GetPixels(DockedToolbarSpec::ContainerHeight));
 }
 
-auto EndDockedToolbar() -> void
+DockedToolbarScope::~DockedToolbarScope()
 {
-    ImGui::PopStyleVar();
+    if (m_visible)
+    {
+        ImGui::PopStyleColor(2);
+        ImGui::EndTable();
+    }
+}
+
+auto DockedToolbarScope::Icon(std::string_view icon) const -> bool
+{
+    ImGui::TableNextColumn();
+    auto      &m3Styles   = Context::GetM3Styles();
+    const auto minSpacing = m3Styles.GetPixels(Spec::ToolBarSizing<Spec::ToolBarVariant::Docked>::ContainerMinSpacing);
+    ImGui::Indent(minSpacing);
+    const auto visible = IconButton(icon, Spec::SizeTips::SMALL, Spec::IconButtonColors::Standard);
+    ImGui::Unindent(minSpacing);
+    return visible;
 }
 
 auto BeginFloatingToolbar(const char *name, bool *p_open, const Spec::ToolBarColors colors, WindowFlags flags) -> bool
