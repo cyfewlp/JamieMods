@@ -74,9 +74,24 @@ void TogglePinned(bool &pinned, bool &showing)
 }
 } // namespace
 
-auto LanguageBar::Draw(const bool wantToggle, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool
+auto LanguageBar::Draw(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool
 {
-    if (wantToggle) TogglePinned(m_pinned, m_showing);
+    if (ImGui::Shortcut(m_shortCut, ImGuiInputFlags_RouteGlobal))
+    {
+        TogglePinned(m_pinned, m_showing);
+
+        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
+        {
+            if (IsShowing())
+            {
+                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
+            }
+            else
+            {
+                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
+            }
+        }
+    }
 
     bool openSettings = false;
     if (m_showing)

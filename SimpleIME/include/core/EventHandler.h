@@ -6,7 +6,7 @@ class ImeWnd;
 
 namespace Events
 {
-void InstallEventSinks(ImeWnd *imeWnd, uint32_t shortcutKey);
+void InstallEventSinks();
 void UnInstallEventSinks();
 } // namespace Events
 

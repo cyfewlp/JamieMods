@@ -76,7 +76,7 @@ void ImeUI::DrawSettings(Settings &settings)
 
         // Sidebar
         {
-            if (ImGuiEx::M3::BeginNavRail("Sidebar"))
+            if (ImGuiEx::M3::BeginResponsiveNavRail("Sidebar"))
             {
                 if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Appearance"), currentMenu.first == Menu::Appearance, ICON_PALETTE))
                 {

@@ -334,10 +334,10 @@ auto BeginNavRail(std::string_view strId, const bool expanded) -> bool
     return visible;
 }
 
-auto BeginNavRail(std::string_view strId) -> bool
+auto BeginResponsiveNavRail(std::string_view strId, float minWidthToExpand) -> bool
 {
     auto      &m3Styles = Context::GetM3Styles();
-    const bool expanded = ImGui::GetContentRegionAvail().x > m3Styles.GetPixels(Spec::Layout::Large::Breakpoint);
+    const bool expanded = ImGui::GetContentRegionAvail().x > m3Styles.GetPixels(minWidthToExpand);
     return BeginNavRail(strId, expanded);
 }
 

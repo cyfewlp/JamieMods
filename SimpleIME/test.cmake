@@ -9,6 +9,7 @@ find_package(benchmark CONFIG REQUIRED)
 add_executable(
     ${TEST_PROJ_NAME}
         "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/ConfigSerializer.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/settings_converter.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/TranslationLoader.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/ime/TextEditor.cpp"
     ${TEST_SOURCES}
@@ -47,6 +48,7 @@ target_include_directories(
         PRIVATE
         ${CMAKE_SOURCE_DIR}/common
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${IMGUI_INCLUDE_DIRS}
 )
 target_include_directories(
         ${PROJECT_NAME}Benchmark

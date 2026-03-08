@@ -3,6 +3,7 @@
 //
 #include "configs/ConfigSerializer.h"
 
+#include "configs/configuration.h"
 #include "log.h"
 #include "toml/toml.hpp"
 #include "ui/Settings.h"
@@ -16,178 +17,167 @@
 #include <string>
 #include <vector>
 
-namespace toml
-{
-template <>
-struct from<Ime::Settings::WindowPosUpdatePolicy>
-{
-    using Policy = Ime::Settings::WindowPosUpdatePolicy;
-
-    static Policy from_toml(const toml::value &v)
-    {
-        auto str = toml::get_or(v, "NONE");
-        std::ranges::transform(str, str.begin(), ::tolower);
-        if (str == "none")
-        {
-            return Policy::NONE;
-        }
-        if (str == "based_on_caret")
-        {
-            return Policy::BASED_ON_CARET;
-        }
-        if (str == "based_on_cursor")
-        {
-            return Policy::BASED_ON_CURSOR;
-        }
-        return Policy::NONE;
-    }
-};
-
-template <>
-struct from<spdlog::level::level_enum>
-{
-    static spdlog::level::level_enum from_toml(const toml::value &v)
-    {
-        auto str = toml::get_or(v, "info");
-        std::ranges::transform(str, str.begin(), ::tolower);
-        if (str == "trace") return spdlog::level::trace;
-        if (str == "debug") return spdlog::level::debug;
-        if (str == "info") return spdlog::level::info;
-        if (str == "warn") return spdlog::level::warn;
-        if (str == "err") return spdlog::level::err;
-        if (str == "critical") return spdlog::level::critical;
-        if (str == "off") return spdlog::level::off;
-        return spdlog::level::info;
-    }
-};
-
-} // namespace toml
-
 namespace Ime::ConfigSerializer
 {
 namespace
 {
-auto toString(const Settings::WindowPosUpdatePolicy policy) -> std::string
-{
-    switch (policy)
-    {
-        case Settings::WindowPosUpdatePolicy::BASED_ON_CARET:
-            return "BASED_ON_CARET";
-        case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
-            return "BASED_ON_CURSOR";
-        default:
-            return "NONE";
-    }
-}
 
-auto toString(const spdlog::level::level_enum &level) -> std::string
-{
-    switch (level)
-    {
-        case spdlog::level::trace:
-            return "trace";
-        case spdlog::level::debug:
-            return "debug";
-        case spdlog::level::info:
-            return "info";
-        case spdlog::level::warn:
-            return "warn";
-        case spdlog::level::err:
-            return "err";
-        case spdlog::level::critical:
-            return "critical";
-        case spdlog::level::off:
-            return "off";
-        default:
-            return "info";
-    }
-}
+static constexpr auto KEY_SHORTCUT = "shortcut";
 
-toml::table toTomlTable(Settings &settings)
+// Section keys
+static constexpr auto KEY_SECTION_CORE       = "core";
+static constexpr auto KEY_SECTION_RESOURCES  = "resources";
+static constexpr auto KEY_SECTION_APPEARANCE = "appearance";
+static constexpr auto KEY_SECTION_INPUT      = "input";
+static constexpr auto KEY_SECTION_LOGGING    = "logging";
+
+// Core keys
+static constexpr auto KEY_ENABLE_TSF = "enable_tsf";
+static constexpr auto KEY_ENABLE_MOD = "enable_mod";
+
+// Logging keys
+static constexpr auto KEY_LOG_LEVEL       = "level";
+static constexpr auto KEY_LOG_FLUSH_LEVEL = "flush_level";
+
+// Resources keys
+static constexpr auto KEY_TRANSLATION_DIR = "translation_dir";
+static constexpr auto KEY_FONTS           = "fonts";
+
+// Appearance keys
+static constexpr auto KEY_ZOOM                   = "zoom";
+static constexpr auto KEY_LANGUAGE               = "language";
+static constexpr auto KEY_THEME_SOURCE_COLOR     = "theme_source_color";
+static constexpr auto KEY_THEME_DARK_MODE        = "theme_dark_mode";
+static constexpr auto KEY_THEME_CONTRAST_LEVEL   = "theme_contrast_level";
+static constexpr auto KEY_ERROR_DISPLAY_DURATION = "error_display_duration";
+static constexpr auto KEY_SHOW_SETTINGS          = "show_settings";
+
+// Input keys
+static constexpr auto KEY_ENABLE_UNICODE_PASTE = "enable_unicode_paste";
+static constexpr auto KEY_KEEP_IME_OPEN        = "keep_ime_open";
+static constexpr auto KEY_POS_UPDATE_POLICY    = "pos_update_policy";
+
+//! @brief Format the configuration to a TOML string with comments for better readability.
+//! May throw `toml::exception` if the configuration contains unsupported types or values.
+auto FormatConfigurationToToml(const Configuration &configuration) -> std::string
 {
     using Comments = std::vector<std::string>;
 
-    static Comments const shortcutKeyComment = {
-        " 快捷键配置 (使用标准的 Hex 格式)", " DIK_F1 = 0x3B, DIK_F2 = 0x3C..."
+    const Comments shortcutComment = {
+        " 快捷键配置，格式: <key> 或 <modifier(s)> + <key>，多个部分用 '+' 分隔，忽略空格",
+        " <key>      : F1-F12, NumPad0-9, A-Z, 0-9 等 ImGui 支持的按键名",
+        " <modifier> : ctrl, shift, alt, super (可组合)",
+        R"( 示例: "F2", "ctrl + F2", "ctrl + shift + alt + F4")",
+        " 注意: 不支持多个普通键组合 (如 A + B)，末尾不能为 '+', 非法配置将使用默认值",
+        "默认值为 F2"
     };
-    static Comments enableTsfComment = {" 现代输入法建议开启，旧版输入法可能不兼容"};
-    static Comments enableModComment = {" 是否启用 Mod 功能"};
-    static Comments logLevelComment  = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
-
-    toml::value shortKey{settings.shortcutKey, shortcutKeyComment};
-    shortKey.as_integer_fmt().uppercase = true;
-    shortKey.as_integer_fmt().fmt       = toml::integer_format::hex;
+    const Comments enableTsfComment = {
+        " 强烈建议开启，只需要保证您的系统版本大于 Window 8.1(除非您手动将 TSF 关闭了，或者您是某些极简系统). 关闭将使用 Imm32, 支持不如 TSF"
+    };
+    const Comments enableModComment = {" 是否启用 Mod 功能"};
+    const Comments logLevelComment  = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
 
     toml::table logging{
-        {"level",       {toString(settings.logging.level), logLevelComment}},
-        {"flush_level", toString(settings.logging.flushLevel)              },
+        {KEY_LOG_LEVEL,       {configuration.logging.level, logLevelComment}},
+        {KEY_LOG_FLUSH_LEVEL, configuration.logging.flushLevel              },
     };
-    return {
-        {"shortcut_key", shortKey                              },
-        {"enable_tsf",   {settings.enableTsf, enableTsfComment}},
-        {"enable_mod",   {settings.enableMod, enableModComment}},
-        {"logging",      logging                               }
+
+    toml::table core{
+        {{KEY_SHORTCUT, {configuration.shortcut, shortcutComment}},
+         {KEY_ENABLE_TSF, {configuration.enableTsf, enableTsfComment}},
+         {KEY_ENABLE_MOD, {configuration.enableMod, enableModComment}},
+         {KEY_SECTION_LOGGING, logging}}
     };
+    toml::table resources{
+        {KEY_TRANSLATION_DIR, {configuration.resources.translationDir, {" 翻译文件目录"}}},
+        {KEY_FONTS,           configuration.resources.fontPathList                       },
+    };
+    toml::table appearance{
+        {KEY_ZOOM,                   {configuration.appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25 的整数倍"}}                },
+        {KEY_LANGUAGE,               configuration.appearance.language                                                               },
+        {KEY_THEME_SOURCE_COLOR,     configuration.appearance.themeSourceColor                                                       },
+        {KEY_THEME_DARK_MODE,        configuration.appearance.themeDarkMode                                                          },
+        {KEY_THEME_CONTRAST_LEVEL,   configuration.appearance.themeContrastLevel                                                     },
+        {KEY_ERROR_DISPLAY_DURATION, {configuration.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
+        {KEY_SHOW_SETTINGS,          configuration.appearance.showSettings                                                           },
+    };
+    toml::table input{
+        {KEY_ENABLE_UNICODE_PASTE, configuration.input.enableUnicodePaste},
+        {KEY_KEEP_IME_OPEN,        configuration.input.keepImeOpen       },
+        {KEY_POS_UPDATE_POLICY,    configuration.input.posUpdatePolicy   },
+    };
+    toml::value tomlTable = {
+        toml::table{
+                    {KEY_SECTION_CORE, core},
+                    {KEY_SECTION_RESOURCES, resources},
+                    {KEY_SECTION_APPEARANCE, appearance},
+                    {KEY_SECTION_INPUT, input},
+                    }
+    };
+
+    return toml::format(tomlTable);
 }
 
-toml::table toTomlTable(Settings::Appearance &appearance)
+auto ParseConfigurationFromToml(toml::value &rawToml) -> Configuration
 {
-    return {
-        {"zoom",                   {appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25的整数倍"}}                },
-        {"language",               appearance.language                                                               },
-        {"theme_source_color",     appearance.themeSourceColor                                                       },
-        {"theme_dark_mode",        appearance.themeDarkMode                                                          },
-        {"theme_contrast_level",   appearance.themeContrastLevel                                                     },
-        {"error_display_duration", {appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
-        {"show_settings",          appearance.showSettings                                                           },
+    auto findAndSet = [](auto &tomlTable, const char *key, auto &value) {
+        value = toml::find_or(tomlTable, key, value);
     };
-}
+    Configuration config{};
+    if (rawToml.contains(KEY_SECTION_CORE))
+    {
+        auto &coreToml = rawToml[KEY_SECTION_CORE];
+        findAndSet(coreToml, KEY_SHORTCUT, config.shortcut);
+        findAndSet(coreToml, KEY_ENABLE_TSF, config.enableTsf);
+        findAndSet(coreToml, KEY_ENABLE_MOD, config.enableMod);
+        if (coreToml.contains(KEY_SECTION_LOGGING))
+        {
+            auto &loggingToml         = coreToml[KEY_SECTION_LOGGING];
+            config.logging.level      = toml::find_or(loggingToml, KEY_LOG_LEVEL, config.logging.level);
+            config.logging.flushLevel = toml::find_or(loggingToml, KEY_LOG_FLUSH_LEVEL, config.logging.flushLevel);
+        }
+    }
 
-toml::table toTomlTable(Settings::Resources &resources)
-{
-    return {
-        {"translation_dir", {resources.translationDir, {" 翻译文件目录"}}},
-        {"fonts",           resources.fontPathList                       },
-    };
-}
+    if (rawToml.contains(KEY_SECTION_RESOURCES))
+    {
+        auto &resourcesToml = rawToml[KEY_SECTION_RESOURCES];
+        findAndSet(resourcesToml, KEY_TRANSLATION_DIR, config.resources.translationDir);
+        findAndSet(resourcesToml, KEY_FONTS, config.resources.fontPathList);
+    }
 
-toml::table toTomlTable(Settings::Input &input)
-{
-    return {
-        {"enable_unicode_paste", input.enableUnicodePaste       },
-        {"keep_ime_open",        input.keepImeOpen              },
-        {"pos_update_policy",    toString(input.posUpdatePolicy)},
-    };
+    if (rawToml.contains(KEY_SECTION_APPEARANCE))
+    {
+        auto &appearanceToml = rawToml[KEY_SECTION_APPEARANCE];
+        findAndSet(appearanceToml, KEY_ZOOM, config.appearance.zoom);
+        findAndSet(appearanceToml, KEY_LANGUAGE, config.appearance.language);
+        findAndSet(appearanceToml, KEY_THEME_SOURCE_COLOR, config.appearance.themeSourceColor);
+        findAndSet(appearanceToml, KEY_THEME_DARK_MODE, config.appearance.themeDarkMode);
+        findAndSet(appearanceToml, KEY_THEME_CONTRAST_LEVEL, config.appearance.themeContrastLevel);
+        findAndSet(appearanceToml, KEY_ERROR_DISPLAY_DURATION, config.appearance.errorDisplayDuration);
+        findAndSet(appearanceToml, KEY_SHOW_SETTINGS, config.appearance.showSettings);
+    }
+
+    if (rawToml.contains(KEY_SECTION_INPUT))
+    {
+        auto &input = rawToml[KEY_SECTION_INPUT];
+        findAndSet(input, KEY_ENABLE_UNICODE_PASTE, config.input.enableUnicodePaste);
+        findAndSet(input, KEY_KEEP_IME_OPEN, config.input.keepImeOpen);
+        findAndSet(input, KEY_POS_UPDATE_POLICY, config.input.posUpdatePolicy);
+    }
+    return config;
 }
 } // namespace
 
-void DoDeserialize(toml::value &config, Settings &settings);
-
-auto DoSerialize(Settings &settings) -> toml::value;
-
-void Deserialize(const std::filesystem::path &filePath, Settings &settings)
+void SaveConfiguration(const std::filesystem::path &filePath, const Configuration &configuration)
 {
     try
     {
-        auto config = toml::parse(filePath);
-        DoDeserialize(config, settings);
-    }
-    catch (toml::exception &exception)
-    {
-        logger::error("Parse configuration failed! Fallback to default configuration: {}", exception.what());
-    }
-}
-
-void Serialize(const std::filesystem::path &filePath, Settings &settings)
-{
-    try
-    {
-        const auto settingsValue = DoSerialize(settings);
+        const auto tomlString = FormatConfigurationToToml(configuration);
 
         std::ofstream file;
         file.exceptions(std::ios::failbit | std::ios::badbit);
         file.open(filePath, std::ios::out | std::ios::trunc);
-        file << toml::format(settingsValue);
+        file << tomlString;
         file.close();
         logger::info("Configuration saved successfully to {}", filePath.generic_string());
     }
@@ -205,62 +195,18 @@ void Serialize(const std::filesystem::path &filePath, Settings &settings)
     }
 }
 
-void DoDeserialize(toml::value &config, Settings &settings)
+auto LoadConfiguration(const std::filesystem::path &filePath) -> Configuration
 {
-    auto findAndSet = [](auto &tomlTable, const char *key, auto &value) {
-        value = toml::find_or(tomlTable, key, value);
-    };
-    if (config.contains("core"))
+    try
     {
-        auto &core = config["core"];
-        findAndSet(core, "shortcut_key", settings.shortcutKey);
-        findAndSet(core, "enable_tsf", settings.enableTsf);
-        findAndSet(core, "enable_mod", settings.enableMod);
-        settings.logging.level      = toml::find_or(core, "logging", "level", settings.logging.level);
-        settings.logging.flushLevel = toml::find_or(core, "logging", "flush_level", settings.logging.flushLevel);
+        auto tomlValue = toml::parse(filePath);
+        return ParseConfigurationFromToml(tomlValue);
     }
-
-    if (config.contains("resources"))
+    catch (toml::exception &exception)
     {
-        auto &resources = config["resources"];
-        findAndSet(resources, "translation_dir", settings.resources.translationDir);
-        findAndSet(resources, "fonts", settings.resources.fontPathList);
+        logger::error("Parse configuration failed! Fallback to default configuration: {}", exception.what());
     }
-
-    if (config.contains("appearance"))
-    {
-        auto &appearance = config["appearance"];
-        findAndSet(appearance, "zoom", settings.appearance.zoom);
-        findAndSet(appearance, "language", settings.appearance.language);
-        findAndSet(appearance, "theme_source_color", settings.appearance.themeSourceColor);
-        findAndSet(appearance, "theme_dark_mode", settings.appearance.themeDarkMode);
-        findAndSet(appearance, "theme_contrast_level", settings.appearance.themeContrastLevel);
-        findAndSet(appearance, "error_display_duration", settings.appearance.errorDisplayDuration);
-        findAndSet(appearance, "show_settings", settings.appearance.showSettings);
-    }
-
-    if (config.contains("input"))
-    {
-        auto &input = config["input"];
-        findAndSet(input, "enable_unicode_paste", settings.input.enableUnicodePaste);
-        findAndSet(input, "keep_ime_open", settings.input.keepImeOpen);
-        findAndSet(input, "pos_update_policy", settings.input.posUpdatePolicy);
-    }
+    return {};
 }
 
-auto DoSerialize(Settings &settings) -> toml::value
-{
-    toml::value core{toTomlTable(settings)};
-    toml::value resources{toTomlTable(settings.resources)};
-    toml::value appearance{toTomlTable(settings.appearance)};
-    toml::value input{toTomlTable(settings.input)};
-    return {
-        toml::table{
-                    {"core", core},
-                    {"resources", resources},
-                    {"appearance", appearance},
-                    {"input", input},
-                    }
-    };
-}
 } // namespace Ime::ConfigSerializer

@@ -1,6 +1,7 @@
 #include "configs/ConfigSerializer.h"
 
 #include "RandomUtils.h"
+#include "configs/configuration.h"
 #include "ui/Settings.h"
 
 #include <gtest/gtest.h>
@@ -9,88 +10,38 @@
 
 namespace fs = std::filesystem;
 
-TEST(ConfigSerializerTest, DeserializeAll)
+TEST(ConfigSerializerTest, should_save_load_configuration)
 {
-    Ime::Settings settings;
+    const auto toSaveConfiguration = ImeTest::GetRandomConfiguation();
 
-    Ime::ConfigSerializer::Deserialize("SimpleIME.toml", settings);
+    std::filesystem::path filePath = "test_temp_configuration.toml";
+    Ime::ConfigSerializer::SaveConfiguration(filePath, toSaveConfiguration);
 
-    ASSERT_EQ(settings.shortcutKey, 0x9999);
-    ASSERT_EQ(settings.enableMod, false);
-    ASSERT_EQ(settings.enableTsf, false);
-    ASSERT_EQ(settings.logging.level, spdlog::level::off);
-    ASSERT_EQ(settings.logging.flushLevel, spdlog::level::off);
-    ASSERT_EQ(settings.resources.translationDir, "path/to/translation");
-    auto exceptFonts = std::vector<std::string>{"path/to/font1.ttf", "path/to/font2.ttf"};
-    ASSERT_EQ(settings.resources.fontPathList, exceptFonts);
-    ASSERT_EQ(settings.appearance.language, "a language");
-    ASSERT_EQ(settings.appearance.themeSourceColor, 0x33333333);
-    ASSERT_EQ(settings.appearance.themeDarkMode, false);
-    ASSERT_EQ(settings.appearance.themeContrastLevel, 0.233);
-    ASSERT_EQ(settings.appearance.errorDisplayDuration, 9999);
-    ASSERT_EQ(settings.appearance.showSettings, true);
-    ASSERT_FLOAT_EQ(settings.appearance.zoom, 1.75f);
+    ASSERT_TRUE(std::filesystem::exists(filePath)) << "Save success but can't find the file!";
 
-    // raw value: "xxx"
-    ASSERT_EQ(settings.input.posUpdatePolicy, Ime::Settings::WindowPosUpdatePolicy::NONE);
-    ASSERT_EQ(settings.input.enableUnicodePaste, false);
-    ASSERT_EQ(settings.input.keepImeOpen, true);
-}
+    const auto loadedConfig = Ime::ConfigSerializer::LoadConfiguration(filePath);
 
-TEST(ConfigSerializerTest, ShouldNoException)
-{
-    const auto    emptyPath = fs::path("empty.toml");
-    std::ofstream emptyFile(emptyPath);
-    emptyFile.close();
+    EXPECT_EQ(loadedConfig.shortcut, toSaveConfiguration.shortcut);
+    EXPECT_EQ(loadedConfig.enableMod, toSaveConfiguration.enableMod);
+    EXPECT_EQ(loadedConfig.enableTsf, toSaveConfiguration.enableTsf);
+    EXPECT_EQ(loadedConfig.logging.level, toSaveConfiguration.logging.level);
+    EXPECT_EQ(loadedConfig.logging.flushLevel, toSaveConfiguration.logging.flushLevel);
 
-    Ime::Settings settings;
-    ASSERT_NO_THROW(Ime::ConfigSerializer::Deserialize("empty.toml", settings));
-    ASSERT_NO_THROW(Ime::ConfigSerializer::Serialize("empty.toml", settings));
+    EXPECT_EQ(loadedConfig.resources.translationDir, toSaveConfiguration.resources.translationDir);
+    EXPECT_EQ(loadedConfig.resources.fontPathList, toSaveConfiguration.resources.fontPathList);
 
-    std::filesystem::remove(emptyPath);
-}
+    EXPECT_EQ(loadedConfig.appearance.themeSourceColor, toSaveConfiguration.appearance.themeSourceColor);
+    EXPECT_EQ(loadedConfig.appearance.themeContrastLevel, toSaveConfiguration.appearance.themeContrastLevel);
+    EXPECT_EQ(loadedConfig.appearance.themeDarkMode, toSaveConfiguration.appearance.themeDarkMode);
+    EXPECT_EQ(loadedConfig.appearance.language, toSaveConfiguration.appearance.language);
+    EXPECT_EQ(loadedConfig.appearance.zoom, toSaveConfiguration.appearance.zoom);
+    EXPECT_EQ(loadedConfig.appearance.errorDisplayDuration, toSaveConfiguration.appearance.errorDisplayDuration);
+    EXPECT_EQ(loadedConfig.appearance.showSettings, toSaveConfiguration.appearance.showSettings);
 
-TEST(ConfigSerializerTest, ShouldSerializeCorrectly)
-{
-    ImeTest::RandomUtils random;
+    EXPECT_EQ(loadedConfig.input.enableUnicodePaste, toSaveConfiguration.input.enableUnicodePaste);
+    EXPECT_EQ(loadedConfig.input.keepImeOpen, toSaveConfiguration.input.keepImeOpen);
+    EXPECT_EQ(loadedConfig.input.posUpdatePolicy, toSaveConfiguration.input.posUpdatePolicy);
 
-    Ime::Settings settings;
-    settings.shortcutKey = random.NextInt(0x1, 0xffffff);
-    settings.enableMod   = random.NextBool();
-    settings.enableTsf   = random.NextBool();
-
-    settings.logging.level      = static_cast<spdlog::level::level_enum>(random.NextInt(0, spdlog::level::off));
-    settings.logging.flushLevel = static_cast<spdlog::level::level_enum>(random.NextInt(0, spdlog::level::off));
-
-    settings.resources.translationDir = random.NextStrinng(10);
-    settings.resources.fontPathList   = std::vector{random.NextStrinng(10), random.NextStrinng(10)};
-
-    settings.appearance.zoom                 = std::round(random.NextFloat(1.f, 9999.f) * 100.f) / 100.f;
-    settings.appearance.themeSourceColor     = random.NextInt(0, 0xffffff);
-    settings.appearance.themeDarkMode        = random.NextBool();
-    settings.appearance.themeContrastLevel   = 0.5;
-    settings.appearance.language             = random.NextStrinng(10);
-    settings.appearance.errorDisplayDuration = random.NextInt(0, 0xffff);
-    settings.appearance.showSettings         = random.NextBool();
-
-    settings.input.enableUnicodePaste = random.NextBool();
-    settings.input.keepImeOpen        = random.NextBool();
-    settings.input.posUpdatePolicy    = static_cast<Ime::Settings::WindowPosUpdatePolicy>(random.NextInt(0, 2));
-
-    const auto testFilePath = fs::path("SerializeTest.toml");
-    Ime::ConfigSerializer::Serialize(testFilePath.string(), settings);
-
-    Ime::Settings deserialized;
-    ASSERT_FALSE(settings == deserialized);
-    Ime::ConfigSerializer::Deserialize(testFilePath.string(), deserialized);
-
-    ASSERT_EQ(deserialized.enableMod, settings.enableMod);
-    ASSERT_EQ(deserialized.enableTsf, settings.enableTsf);
-    ASSERT_EQ(deserialized.shortcutKey, settings.shortcutKey);
-    ASSERT_EQ(deserialized.logging, settings.logging);
-    ASSERT_EQ(deserialized.resources, settings.resources);
-    ASSERT_EQ(deserialized.appearance, settings.appearance);
-    ASSERT_EQ(deserialized.input, settings.input);
-
-    std::filesystem::remove(testFilePath);
+    // file already writted. remove it after test.
+    std::filesystem::remove(filePath);
 }

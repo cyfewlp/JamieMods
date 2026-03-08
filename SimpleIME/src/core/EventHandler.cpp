@@ -17,24 +17,6 @@
 
 namespace Ime::Events
 {
-
-class InputEventSink : public RE::BSTEventSink<RE::InputEvent *>
-{
-    using Event = RE::InputEvent;
-    using Keys  = RE::BSWin32MouseDevice::Keys;
-
-public:
-    explicit InputEventSink(ImeWnd *m_imeWnd, uint32_t shortcutKey) : m_imeWnd(m_imeWnd), m_shortcutKey(shortcutKey) {}
-
-    RE::BSEventNotifyControl ProcessEvent(Event *const *event, RE::BSTEventSource<Event *> * /*eventSource*/) override;
-
-private:
-    ImeWnd  *m_imeWnd;
-    uint32_t m_shortcutKey;
-
-    void ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const;
-};
-
 class MenuOpenCloseEventSink final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
 {
     using Event = RE::MenuOpenCloseEvent;
@@ -48,12 +30,6 @@ private:
 
 namespace
 {
-auto &GetInputEventSink()
-{
-    static std::unique_ptr<InputEventSink> instance = nullptr;
-    return instance;
-}
-
 auto &GetMenuOpenCloseEventSink()
 {
     static std::unique_ptr<MenuOpenCloseEventSink> instance = nullptr;
@@ -95,16 +71,8 @@ void OnSteamOverlayMenu(bool open)
 
 } // namespace
 
-void InstallEventSinks(ImeWnd *imeWnd, const uint32_t shortcutKey)
+void InstallEventSinks()
 {
-    if (auto &inputSink = GetInputEventSink(); inputSink == nullptr)
-    {
-        if (const auto &deviceManager = RE::BSInputDeviceManager::GetSingleton(); deviceManager)
-        {
-            inputSink = std::make_unique<InputEventSink>(imeWnd, shortcutKey);
-            deviceManager->AddEventSink(inputSink.get());
-        }
-    }
     if (auto &menuSink = GetMenuOpenCloseEventSink(); menuSink == nullptr)
     {
         if (auto *ui = RE::UI::GetSingleton(); ui)
@@ -117,14 +85,6 @@ void InstallEventSinks(ImeWnd *imeWnd, const uint32_t shortcutKey)
 
 void UnInstallEventSinks()
 {
-    if (auto &inputSink = GetInputEventSink(); inputSink != nullptr)
-    {
-        if (const auto &deviceManager = RE::BSInputDeviceManager::GetSingleton(); deviceManager)
-        {
-            deviceManager->RemoveEventSink(inputSink.get());
-        }
-        inputSink.reset();
-    }
     if (auto &menuSink = GetMenuOpenCloseEventSink(); menuSink != nullptr)
     {
         if (const auto &ui = RE::UI::GetSingleton(); ui)
@@ -132,53 +92,6 @@ void UnInstallEventSinks()
             ui->RemoveEventSink(menuSink.get());
         }
         menuSink.reset();
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////
-// InputEventSink
-//////////////////////////////////////////////////////////////////////////
-
-RE::BSEventNotifyControl InputEventSink::ProcessEvent(Event *const *events, RE::BSTEventSource<Event *> *)
-{
-    for (auto *event = *events; event != nullptr; event = event->next)
-    {
-        if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
-        {
-            if (const auto *buttonEvent = event->AsButtonEvent(); buttonEvent != nullptr)
-            {
-                switch (buttonEvent->GetDevice())
-                {
-                    case RE::INPUT_DEVICE::kKeyboard:
-                        ProcessKeyboardEvent(buttonEvent);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    return RE::BSEventNotifyControl::kContinue;
-}
-
-void InputEventSink::ProcessKeyboardEvent(const RE::ButtonEvent *btnEvent) const
-{
-    if (const auto keyCode = btnEvent->GetIDCode(); /**/
-        keyCode == m_shortcutKey && btnEvent->IsDown())
-    {
-        m_imeWnd->ToggleToolWindow();
-        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton())
-        {
-            if (!m_imeWnd->IsPinedToolWindow() && m_imeWnd->IsShowingToolWindow())
-            {
-                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
-            }
-            else
-            {
-                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-            }
-        }
     }
 }
 

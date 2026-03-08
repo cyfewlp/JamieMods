@@ -12,6 +12,7 @@
 #include "m3/spec/buttons.h"
 #include "m3/spec/chips.h"
 #include "m3/spec/fab.h"
+#include "m3/spec/layout.h"
 #include "m3/spec/menu.h"
 #include "m3/spec/text_field.h"
 #include "m3/spec/tool_bar.h"
@@ -76,9 +77,22 @@ void TextUnformatted(const std::string_view &text, Spec::ColorRole contentRole =
  */
 auto NavItem(std::string_view label, bool selected, std::string_view icon) -> bool;
 
-auto BeginNavRail(std::string_view strId, bool expanded) -> bool;
+/**
+ * @brief Begin a Navigation Rail container.
+ * @param strId The ID for the Navigation Rail, used for ImGui's ID stack and should be unique within the scope of the UI.
+ * @param expanded true to start in expanded state (showing both icons and labels), false to start in collapsed state (showing only icons).
+ * @return true if the Navigation Rail container is successfully created and should be rendered; otherwise false. Always call EndNavRail() if this
+ * returns true.
+ */
+auto BeginNavRail(std::string_view strId, bool expanded = false) -> bool;
 
-auto BeginNavRail(std::string_view strId) -> bool;
+/**
+ * @copydoc BeginNavRail(std::string_view, bool)
+ *
+ * @param minWidthToExpand The unscaled width threshold (in dp) at which the Navigation Rail should switch between collapsed and expanded states. If
+ * the available width is greater than this value, the Navigation Rail will be in expanded state; otherwise, it will be collapsed.
+ */
+auto BeginResponsiveNavRail(std::string_view strId, float minWidthToExpand = Spec::Layout::ExtraLarge::Breakpoint) -> bool;
 
 //! Like ImGui::EndChild: You always need to call it after BeginNavRail.
 auto EndNavRail() -> void;

@@ -32,10 +32,6 @@ public:
     void ApplySettings(Settings::Appearance &appearance);
     void DrawSettings(Settings &settings);
 
-    auto IsShowingToolWindow() const -> bool { return m_fShowToolWindow; }
-
-    auto IsPinedToolWindow() const -> bool { return m_fPinToolWindow; }
-
 private:
     void        DrawMenuAppearance(Settings &settings);
     void        DrawMenuFontBuilder(Settings &settings);
@@ -52,8 +48,5 @@ private:
     AppearancePanel          m_panelAppearance{};
 
     std::optional<TranslatorHolder::UpdateHandle> m_i18nHandle;
-
-    bool m_fShowToolWindow = false;
-    bool m_fPinToolWindow  = false;
 };
 } // namespace Ime

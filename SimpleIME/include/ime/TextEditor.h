@@ -4,6 +4,7 @@
 #pragma once
 
 #include <TextStor.h>
+#include <algorithm>
 #include <shared_mutex>
 #include <string>
 

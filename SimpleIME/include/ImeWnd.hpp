@@ -76,12 +76,6 @@ public:
      */
     void AbortIme() const;
     void DrawIme(Settings &settings);
-    void ToggleToolWindow();
-
-    bool IsShowingToolWindow() const { return m_pImeUi->IsShowingToolWindow(); }
-
-    bool IsPinedToolWindow() const { return m_pImeUi->IsPinedToolWindow(); }
-
     void ApplyUiSettings(Settings &settings) const;
 
 private:
@@ -105,8 +99,8 @@ private:
     LanguageBar                   m_languageBar;
     bool                          m_fFocused              = false;
     bool                          m_fEnabledTsf           = true;
-    bool                          m_fWantToggleToolWindow = false;
     bool                          m_fWantUpdateUiScale    = false;
+    bool                          m_fJustWantCaptureMouse = false;
 };
 } // namespace Ime
 

@@ -9,6 +9,7 @@
 #include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
 #include "log.h"
+#include "menu/MenuNames.h"
 #include "ui/LanguageBar.h"
 
 #include <chrono>
@@ -233,6 +234,8 @@ void ImeWnd::DrawIme(Settings &settings)
     m_pTextService->UpdateIfDirty();
 
     ImGui::PushFont(nullptr, settings.state.fontSize);
+    auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
+    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
     {
         ErrorNotifier::GetInstance().Show();
         m_pImeWindow->Draw(m_pTextService->GetCompositionInfo(), m_pTextService->GetCandidateUi(), settings);
@@ -240,11 +243,10 @@ void ImeWnd::DrawIme(Settings &settings)
         {
             const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
             const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
-            if (m_languageBar.Draw(m_fWantToggleToolWindow, activeLang, langProfiles))
+            if (m_languageBar.Draw(activeLang, langProfiles))
             {
                 settings.appearance.showSettings = true;
             }
-            m_fWantToggleToolWindow = false;
 
             if (m_languageBar.IsShowing())
             {
@@ -252,7 +254,6 @@ void ImeWnd::DrawIme(Settings &settings)
             }
         }
     }
-    ImGui::PopFont();
 
 #ifdef DEBUG
     const auto      frameEnd     = std::chrono::high_resolution_clock::now();
@@ -268,11 +269,6 @@ void ImeWnd::DrawIme(Settings &settings)
     }
     ImGui::Value("Avg frame: ", static_cast<float>(avgMs));
 #endif
-}
-
-void ImeWnd::ToggleToolWindow()
-{
-    m_fWantToggleToolWindow = true;
 }
 
 void ImeWnd::ApplyUiSettings(Settings &settings) const
@@ -429,6 +425,7 @@ void ImeWnd::OnCreated(Settings &settings)
     m_dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
 
     ImeController::GetInstance()->Init(this, m_hWndParent, settings);
+    m_languageBar.SetShortCut(settings.shortcut);
 }
 
 auto ImeWnd::OnDestroy() const -> LRESULT

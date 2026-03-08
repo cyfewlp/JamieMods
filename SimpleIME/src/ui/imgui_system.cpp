@@ -123,6 +123,7 @@ void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.MouseDrawCursor          = true;
     io.ConfigNavMoveSetMousePos = false;
 
     g_initialized = true;

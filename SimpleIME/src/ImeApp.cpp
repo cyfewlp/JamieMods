@@ -4,6 +4,8 @@
 #include "common.h"
 #include "configs/ConfigSerializer.h"
 #include "configs/CustomMessage.h"
+#include "configs/configuration.h"
+#include "configs/settings_converter.h"
 #include "core/EventHandler.h"
 #include "core/State.h"
 #include "hook.h"
@@ -47,7 +49,9 @@ auto Initialize() -> bool
 
     static Ime::Settings g_settings;
 
-    Ime::ConfigSerializer::Deserialize(ConfigFilePath(), g_settings);
+    const auto configuration = Ime::ConfigSerializer::LoadConfiguration(ConfigFilePath());
+
+    g_settings = Ime::ConvertConfigurationToSettings(configuration);
     InitializeLogging(SpdLogSettings(g_settings.logging.level, g_settings.logging.flushLevel));
     g_instance = std::make_unique<Ime::ImeApp>(g_settings);
 
@@ -112,7 +116,7 @@ void ImeApp::OnInputLoaded()
 {
     if (m_state.IsInitialized())
     {
-        Events::InstallEventSinks(&m_imeWnd, m_settings.shortcutKey);
+        Events::InstallEventSinks();
     }
 }
 
@@ -120,7 +124,7 @@ void ImeApp::Uninitialize()
 {
     UI::Shutdown();
     ImGuiEx::M3::Context::DestroyM3Styles();
-    Events::UnInstallEventSinks(); // should safe
+    Events::UnInstallEventSinks(); // should safety
     if (m_state.IsInitialized())
     {
         ImmAssociateContext(m_hWnd, m_hIMCDefault);
@@ -333,7 +337,9 @@ void ImeApp::Shutdown()
 void ImeApp::SaveSettings() const
 {
     ImeController::GetInstance()->SaveSettings(m_settings);
-    ConfigSerializer::Serialize(ConfigFilePath(), m_settings);
+
+    const auto config = Ime::ConvertSettingsToConfiguration(m_settings);
+    Ime::ConfigSerializer::SaveConfiguration(ConfigFilePath(), config);
 }
 
 void ImeApp::InstallHooks()
