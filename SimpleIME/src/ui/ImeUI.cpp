@@ -49,6 +49,9 @@ void ImeUI::DrawSettings(Settings &settings)
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
+    const ImVec2 &viewportSize = ImGui::GetMainViewport()->Size;
+    ImGui::SetNextWindowSize(viewportSize * 0.5F, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(viewportSize * 0.25F, ImGuiCond_FirstUseEver);
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings, ImGuiEx::WindowFlags().NoTitleBar()))
     {
         if (auto appBar = ImGuiEx::M3::AppBar(); appBar)

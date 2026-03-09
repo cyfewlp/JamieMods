@@ -213,14 +213,14 @@ auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache) -> b
     DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerSSize);
 
     {
-        if (ImGuiEx::M3::Button(Translate("Settings.Appearance.Apply"), {ICON_CHECK}))
+        if (ImGuiEx::M3::Button(Translate("Settings.Apply"), {ICON_CHECK}))
         {
             applied = true;
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Cancel"), ICON_X))
         {
             ImGui::CloseCurrentPopup();
         }
@@ -368,7 +368,7 @@ void AppearancePanel::DrawThemeBuilder()
             draw_palette("Error", scheme->error_palette);
         }
 
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Apply"), ICON_CHECK))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Apply"), ICON_CHECK))
         {
             m3Styles.RebuildColors({m_contrastLevelTemp, Hct(m_hctCache.hue, m_hctCache.chroma, m_hctCache.tone).ToInt(), m_darkModeTemp});
             ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
@@ -377,7 +377,7 @@ void AppearancePanel::DrawThemeBuilder()
         }
 
         ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Appearance.Cancel"), ICON_X))
+        if (ImGuiEx::M3::SmallButton(Translate("Settings.Cancel"), ICON_X))
         {
             ImGui::CloseCurrentPopup();
         }

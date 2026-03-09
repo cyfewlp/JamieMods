@@ -122,17 +122,22 @@ public:
 
     auto CurrTypeScale() const -> const CachedTypeScale & { return *m_currTypeScale; }
 
-    ~FontScope()
+    //! @brief early pop the font before the scope ends.
+    //! This may be used to avoid the ImGui "ASSERT" before EndChild/End/EndPopup and etc.
+    void _PopFont()
     {
-        if (m_pushed)
+        if (std::exchange(m_pushed, false))
         {
             ImGui::PopFont();
         }
         if (m_currTypeScale != nullptr)
         {
             *m_currTypeScale = m_lastTypeScale;
+            m_currTypeScale  = nullptr;
         }
     }
+
+    ~FontScope() { _PopFont(); }
 };
 } // namespace detail
 
@@ -217,8 +222,9 @@ public:
      * } // Font automatically popped here
      * @endcode
      *
-     * @note **Warning Suppression:** If the return value is not needed, use `const auto _ = ...`
-     * to satisfy `[[nodiscard]]`.
+     * @note **Warning Suppression:** If the return value is not needed, use `const auto _ = ...` to satisfy `[[nodiscard]]`.
+     * @important Please not use `UseTextRole` in some scoped components like `DialogModalScope`, `AppBarScope`, etc.,
+     * because these components will manage the font scope internally, and using `UseTextRole` may cause unexpected behavior.
      */
     [[nodiscard]] auto UseTextRole(const Spec::TypeScaleValue &value) -> detail::FontScope
     {

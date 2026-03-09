@@ -237,10 +237,10 @@ void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &setti
     if (const auto toolBar = ImGuiEx::M3::DockedToolBar("FontBuilderToolBar", 5))
     {
         DrawToolBarButtons(toolBar, fontBuilder, settings);
-    }
 
-    DrawHelpModal();
-    DrawWarningsModal();
+        DrawHelpModal();
+        DrawWarningsModal();
+    }
 }
 
 void UI::FontBuilderPanel::DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarScope &toolBar, FontBuilder &fontBuilder, Settings &settings)
@@ -269,48 +269,35 @@ void UI::FontBuilderPanel::DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarSc
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Preview"));
     ImGui::EndDisabled();
 
-    auto centerPopup = [](std::string_view name) -> void {
-        ImGui::OpenPopup(name.data());
-        constexpr auto CENTER_PIVOT = ImVec2(0.5f, 0.5f);
-
-        const auto viewportSize = ImGui::GetMainViewport()->Size;
-        ImGui::SetNextWindowSize({viewportSize.x * 0.75f, 0.f}, ImGuiCond_Always);
-        ImGui::SetNextWindowPos({viewportSize.x * 0.5f, viewportSize.y * 0.5f}, ImGuiCond_Always, CENTER_PIVOT);
-    };
     if (toolBar.Icon(ICON_CIRCLE_ALERT))
     {
-        centerPopup(TITLE_WARNING);
+        ImGui::OpenPopup(TITLE_WARNING);
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Warning"));
 
     if (toolBar.Icon(ICON_CIRCLE_QUESTION_MARK))
     {
-        centerPopup(TITLE_HELP);
+        ImGui::OpenPopup(Translate("Settings.FontBuilder.HelpTitle"));
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"));
 }
 
 void UI::FontBuilderPanel::DrawHelpModal()
 {
-    bool open = true;
-    if (ImGui::BeginPopupModal(Translate("Settings.FontBuilder.HelpTitle"), &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar))
+    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.FontBuilder.HelpTitle")); dialog)
     {
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Help1"));
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Help2"));
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Help3"));
-        ImGui::EndPopup();
+        dialog.SupportingText(Translate("Settings.FontBuilder.Help1"), true);
+        dialog.SupportingText(Translate("Settings.FontBuilder.Help2"), true);
+        dialog.ActionButton(Translate("Settings.Apply"));
     }
 }
 
 void UI::FontBuilderPanel::DrawWarningsModal()
 {
-    bool open = true;
-    if (ImGui::BeginPopupModal(
-            Translate("Settings.FontBuilder.WarningTitle"), &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar
-        ))
+    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.FontBuilder.WarningTitle")); dialog)
     {
-        ImGui::Text("%s", Translate("Settings.FontBuilder.Warning1"));
-        ImGui::EndPopup();
+        dialog.SupportingText(Translate("Settings.FontBuilder.Warning1"), true);
+        dialog.ActionButton(Translate("Settings.Apply"));
     }
 }
 

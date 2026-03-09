@@ -1,6 +1,8 @@
 [Settings]
 IME = "IME"
 Settings = "设置"
+Apply = "确定"
+Cancel = "取消"
 
 [Settings.Sidebar]
 Appearance = "外观"
@@ -8,8 +10,6 @@ FontBuilder = "字体构建器"
 Behaviour = "行为"
 
 [Settings.Appearance]
-Apply = "确定"
-Cancel = "取消"
 DarkMode = "黑暗模式"
 Languages = "语言"
 Zoom = "缩放"
@@ -25,11 +25,10 @@ Preview = "预览"
 Warning = "警告"
 WarningTitle = "警告###Warning"
 Help = "帮助"
-HelpTitle = "帮助###Help"
+HelpTitle = "什么是字体构建器?"
 Warning1 = "为确保稳定性和性能，请避免添加过多字体或使用体积过大的字体文件。大字体占用高内存，可能导致卡顿。"
-Help1 = "什么是字体构建器?"
-Help2 = "您可以为不同的 Unicode 字符范围（如拉丁语、中日韩文字）分配特定的字体文件。"
-Help3 = "字形查询依赖于字体的优先级。如果第一个字体中不包含某个字符，系统将按照您定义的顺序在后续字体中查找。"
+Help1 = "您可以为不同的 Unicode 字符范围（如拉丁语、中日韩文字）分配特定的字体文件。"
+Help2 = "字形查询依赖于字体的优先级。如果第一个字体中不包含某个字符，系统将按照您定义的顺序在后续字体中查找。"
 
 [Settings.Behaviour]
 EnableMod = "启用Mod"

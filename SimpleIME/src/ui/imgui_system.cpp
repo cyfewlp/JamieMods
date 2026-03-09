@@ -12,6 +12,7 @@
 #include "imguiex/m3/facade/base.h"
 #include "imguiex/m3/spec/color_roles.h"
 #include "log.h"
+#include "path_utils.h"
 
 #include <RE/C/ControlMap.h>
 #include <RE/C/CursorMenu.h>
@@ -125,6 +126,9 @@ void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.MouseDrawCursor          = true;
     io.ConfigNavMoveSetMousePos = false;
+
+    static auto iniPath = (utils::GetInterfacePath() / SIMPLE_IME / "imgui.ini").generic_string();
+    io.IniFilename      = iniPath.c_str();
 
     g_initialized = true;
     logger::info("ImGui initialized!");

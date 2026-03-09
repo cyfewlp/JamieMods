@@ -15,6 +15,7 @@
 #include "m3/facade/menu.h"
 #include "m3/facade/nav_rail.h"
 #include "m3/facade/text_field.h"
+#include "m3/spec/dialog.h"
 #include "m3/spec/layout.h"
 #include "m3/spec/search.h"
 #include "m3/spec/text_field.h"
@@ -55,6 +56,45 @@ inline auto GetPixels(const M3Styles &m3Styles, Units... units) -> float
     float totalPixels = 0.0F;
     ((totalPixels += m3Styles.GetPixels(units)), ...);
     return totalPixels;
+}
+
+/// @brief Walk wrapped/newline text line by line, invoking `lineFunc` for each segment.
+/// @return {maxLineWidth, lineCount}
+template <typename LineFunc>
+auto WalkTextLines(std::string_view text, float fontSize, float wrapWidth, LineFunc &&lineFunc) -> std::pair<float, size_t>
+{
+    auto       *font      = GImGui->Font;
+    const char *line      = TextStart(text);
+    const char *textEnd   = TextEnd(text);
+    float       maxWidth  = 0.0F;
+    size_t      lineCount = 0;
+
+    while (line < textEnd)
+    {
+        const char *lineEnd;
+        if (wrapWidth > 0.0F)
+        {
+            lineEnd = font->CalcWordWrapPosition(fontSize, line, textEnd, wrapWidth);
+            if (line >= lineEnd)
+            {
+                ++lineEnd;
+            }
+        }
+        else
+        {
+            lineEnd = static_cast<const char *>(ImMemchr(line, '\n', textEnd - line));
+            if (!lineEnd) lineEnd = textEnd;
+        }
+
+        const float lineWidth = ImGui::CalcTextSize(line, lineEnd).x;
+        maxWidth              = ImMax(maxWidth, lineWidth);
+        lineFunc(line, lineEnd, lineCount);
+
+        ++lineCount;
+        line = lineEnd;
+        line = ImTextCalcWordWrapNextLineStart(line, textEnd, ImDrawTextFlags_None); // Wrapping skips upcoming blanks
+    }
+    return {maxWidth, lineCount};
 }
 
 inline void DrawIcon(
@@ -136,48 +176,115 @@ inline auto GetButtonState(const ImRect &bb, ImGuiID id, Spec::States &states) -
 
 } // namespace
 
-void TextUnformatted(const std::string_view &text, const Spec::ColorRole contentRole)
+void TextUnformatted(std::string_view text, const Spec::ColorRole contentRole, const float wrapPos)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems) return;
     const ImGuiContext &g        = *GImGui;
     auto               &m3Styles = Context::GetM3Styles();
 
-    const float wrap_pos_x   = window->DC.TextWrapPos;
-    const bool  wrap_enabled = (wrap_pos_x >= 0.0F);
-    if (text.size() <= 2000 || wrap_enabled)
+    const bool        wrapEnabled = (wrapPos >= 0.0F);
+    const ImVec2      textPos(window->DC.CursorPos);
+    const auto *const textEnd   = TextEnd(text);
+    const auto        typeScale = m3Styles.GetLastText();
+    if (text.size() <= 2000 || wrapEnabled)
     {
         // Common case
-        const float       wrap_width = wrap_enabled ? ImGui::CalcWrapWidthForPos(window->DC.CursorPos, wrap_pos_x) : 0.0F;
-        const auto *const textEnd    = TextEnd(text);
-        const ImVec2      text_size  = ImGui::CalcTextSize(TextStart(text), textEnd, false, wrap_width);
-
-        const auto   halfGap = ImMax(0.0F, m3Styles.GetLastText().currHalfLineGap);
-        const auto   size    = text_size + ImVec2(0.0F, halfGap * 2.0F);
-        const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
-        ImGui::ItemSize(size, 0.0F);
+        const float wrapWidth = wrapEnabled ? ImGui::CalcWrapWidthForPos(textPos, wrapPos) : 0.0F;
+        float       maxWidth  = 0.0F;
+        size_t      lineCount = 0;
+        if (!text.empty())
+        {
+            auto [w, n] = WalkTextLines(text, typeScale.currText.textSize, wrapWidth, [](auto, auto, auto) {});
+            maxWidth    = w;
+            lineCount   = n;
+        }
+        const ImVec2 textSize(maxWidth, static_cast<float>(lineCount) * typeScale.currText.lineHeight);
+        const ImRect bb(textPos, textPos + textSize);
+        ImGui::ItemSize(textSize, 0.0F);
         if (!ImGui::ItemAdd(bb, 0U)) return;
 
         // Render (we don't hide text after ## in this end-user function)
         if (!text.empty())
         {
-            const auto pos = ImVec2{bb.Min.x, bb.Min.y + halfGap};
-            window->DrawList->AddText(
-                g.Font,
-                m3Styles.GetLastText().currText.textSize,
-                pos,
-                ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentRole]),
-                TextStart(text),
-                textEnd,
-                wrap_width
-            );
+            const auto pos    = ImVec2{bb.Min.x, bb.Min.y + typeScale.currHalfLineGap};
+            const auto colU32 = ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[contentRole]);
+
+            float lineStartY = bb.Min.y + typeScale.currHalfLineGap;
+            WalkTextLines(text, typeScale.currText.textSize, wrapWidth, [&](const char *lineStart, const char *lineEnd, size_t /*i*/) {
+                window->DrawList->AddText(g.Font, typeScale.currText.textSize, {bb.Min.x, lineStartY}, colU32, lineStart, lineEnd);
+                lineStartY += typeScale.currText.lineHeight;
+            });
             if (g.LogEnabled) ImGui::LogRenderedText(&pos, TextStart(text), textEnd);
         }
     }
     else
     {
-        IM_ASSERT(false && "ImGuiEx::M3 not designed for long text! Use ImGui::TextWrapped instead.");
-        ImGui::TextWrapped("%.*s", static_cast<int>(text.size()), TextStart(text));
+        // Long text!
+        // Perform manual coarse clipping to optimize for long multi-line text
+        // - From this point we will only compute the width of lines that are visible. Optimization only available when word-wrapping is disabled.
+        // - We also don't vertically center the text within the line full height, which is unlikely to matter because we are likely the biggest and
+        // only item on the line.
+        // - We use memchr(), pay attention that well optimized versions of those str/mem functions are much faster than a casually written loop.
+        const char *line       = TextStart(text);
+        const auto  lineHeight = m3Styles.GetLastText().currText.lineHeight;
+        ImVec2      textSize(0, 0);
+
+        // Lines to skip (can't skip when logging text)
+        ImVec2 pos = window->DC.CursorPos;
+        if (!g.LogEnabled)
+        {
+            auto linesSkippable = (window->ClipRect.Min.y - textPos.y) / lineHeight;
+            if (linesSkippable > 0)
+            {
+                float linesSkipped = 0;
+                while (line < textEnd && linesSkipped < linesSkippable)
+                {
+                    const char *lineEnd = (const char *)ImMemchr(line, '\n', textEnd - line);
+                    if (!lineEnd) lineEnd = textEnd;
+                    textSize.x = ImMax(textSize.x, ImGui::CalcTextSize(line, lineEnd).x);
+                    line       = lineEnd + 1;
+                    linesSkipped++;
+                }
+                pos.y += linesSkipped * lineHeight;
+            }
+        }
+
+        // Lines to render
+        if (line < textEnd)
+        {
+            ImRect lineRect(pos, pos + ImVec2(FLT_MAX, lineHeight));
+            while (line < textEnd)
+            {
+                if (ImGui::IsClippedEx(lineRect, 0)) break;
+
+                const char *lineEnd = (const char *)ImMemchr(line, '\n', textEnd - line);
+                if (!lineEnd) lineEnd = textEnd;
+                textSize.x = ImMax(textSize.x, ImGui::CalcTextSize(line, lineEnd).x);
+                DrawText(window->DrawList, {pos.x, pos.y + typeScale.currHalfLineGap}, {line, lineEnd}, m3Styles, contentRole);
+                line = lineEnd + 1;
+                lineRect.Min.y += lineHeight;
+                lineRect.Max.y += lineHeight;
+                pos.y += lineHeight;
+            }
+
+            // Count remaining lines
+            float linesSkipped = 0;
+            while (line < textEnd)
+            {
+                const char *line_end = (const char *)ImMemchr(line, '\n', textEnd - line);
+                if (!line_end) line_end = textEnd;
+                textSize.x = ImMax(textSize.x, ImGui::CalcTextSize(line, line_end).x);
+                line       = line_end + 1;
+                linesSkipped++;
+            }
+            pos.y += linesSkipped * lineHeight;
+        }
+        textSize.y = (pos - textPos).y;
+
+        ImRect bb(textPos, textPos + textSize);
+        ImGui::ItemSize(textSize, 0.0F);
+        ImGui::ItemAdd(bb, 0);
     }
 }
 
@@ -1527,10 +1634,10 @@ auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menu
     const auto   labelFontScope = m3Styles.UseTextRole<MenuItemSpec::LabelTextRole>();
     const auto   minWidth       = m3Styles.GetPixels(MenuItemSpec::MinWidthEx);
     const auto   contentWidth   = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
-    const auto   width          = ImMax(ImGui::GetContentRegionAvail().x, minWidth + contentWidth);
+    const auto   width          = minWidth + contentWidth;
     const auto   height         = m3Styles.GetPixels(MenusSpec::Item::OuterHeightEx);
     const ImVec2 size(width, height);
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2{ImMax(ImGui::GetContentRegionAvail().x, size.x), size.y});
     const auto   id = window->GetID(TextStart(label), TextEnd(label));
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, id))
@@ -1802,6 +1909,71 @@ auto AppBarScope::TrailingIcon(std::string_view icon) -> bool
     const auto visible = IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::TrailingIconColor});
     ImGui::SameLine(0.F, 0.F);
     return visible;
+}
+
+DialogModalScope::DialogModalScope(std::string_view name, WindowFlags flags)
+{
+    using DialogSpec = Spec::Dialog;
+
+    auto       &m3Styles = Context::GetM3Styles();
+    const float minWidth = m3Styles.GetPixels(DialogSpec::MinWidth);
+    const float maxWidth = m3Styles.GetPixels(DialogSpec::MaxWidth);
+    ImGui::SetNextWindowSizeConstraints({minWidth, -1.0F}, {maxWidth, -1.0F});
+
+    const auto paddingX    = m3Styles.GetPixels(DialogSpec::PaddingX);
+    const auto paddingY    = paddingX; // see Dialog Spec;
+    const auto styleGuargd = StyleGuard()
+                                 .Style<ImGuiStyleVar_WindowPadding>({paddingX, paddingY})
+                                 .Style<ImGuiStyleVar_WindowRounding>(m3Styles.GetPixels(DialogSpec::ContainerShape))
+                                 .Color<ImGuiCol_WindowBg>(m3Styles.Colors()[DialogSpec::ContainerColor]);
+    m_visible = ImGui::BeginPopupModal(TextStart(name), nullptr, flags.NoTitleBar());
+    if (m_visible)
+    {
+        // Render Headline from popup name.
+        ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, m3Styles.GetPixels(DialogSpec::ButtonsPadding));
+        const auto headline = GetDisplayLabel(name);
+        if (!headline.empty())
+        {
+            const auto fontScope = m3Styles.UseTextRole(DialogSpec::HeadlineText);
+            ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, m3Styles.GetPixels(DialogSpec::TitleBodyPadding));
+            // The popup name may contains "##/###" to support multiple popup with same display name,
+            // so we also need hide the trailing text in headline.
+            TextUnformatted(headline, DialogSpec::HeadlineColor);
+            ImGui::PopStyleVar();
+        }
+        // Supporting text is required, for optimization, we store the font scope in DialogModalScope.
+        // User may overhide this but we assume user won't do that.
+        m_supportingTextFontScope = m3Styles.UseTextRole(DialogSpec::SupportingText);
+    }
+}
+
+DialogModalScope::~DialogModalScope()
+{
+    if (m_visible)
+    {
+        ImGui::PopStyleVar();
+        m_supportingTextFontScope._PopFont();
+        ImGui::EndPopup();
+    }
+}
+
+void DialogModalScope::SupportingText(std::string_view text, const bool wrapText)
+{
+    TextUnformatted(text, Spec::Dialog::SupportingTextColor, wrapText ? 0.0F : -1.0F);
+    m_submittedBody = true;
+}
+
+auto DialogModalScope::ActionButton(std::string_view label) const -> bool
+{
+    IM_ASSERT(m_submittedBody && "ActionButton should be called after SupportingText according to spec.");
+    auto &m3Styles = Context::GetM3Styles();
+    ImGui::Dummy({0.F, m3Styles.GetPixels(Spec::Dialog::BodyActionsPadding)});
+    const auto clicked = Button(label, ButtonConfiguration().Text().Square());
+    if (m_visible && clicked)
+    {
+        ImGui::CloseCurrentPopup();
+    }
+    return clicked;
 }
 
 void SetupDefaultImGuiStyles(ImGuiStyle &style)

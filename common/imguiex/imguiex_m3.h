@@ -47,17 +47,38 @@ struct BaseConfiguration
     constexpr auto XLarge() { return Size(Spec::SizeTips::XLARGE); }
 };
 
-//! Support line height with last used TextRole's line height. If the line height is not set or less than font size, it
-//! will fall back to normal text rendering.
-void TextUnformatted(const std::string_view &text, Spec::ColorRole contentRole = Spec::ColorRole::onSurface);
+/**
+ * @brief Renders unformatted text using Material Design 3 typography and color roles.
+ *
+ * Unlike @c ImGui::TextUnformatted, this function integrates with @c M3Styles to
+ * apply MD3-specific styling, cached type scales, and optional text wrapping.
+ *
+ * @pre **IMPORTANT:** You must call @c M3Styles::UseTextRole() before this function
+ * to initialize the appropriate font and line height metrics.
+ *
+ * @note **Vertical Centering Logic:**
+ * Instead of using the global ImGui font size, this function utilizes cached MD3
+ * metrics (line height, text size, and half-line gap). This allows the text to be
+ * **vertically centered by default** within its layout slot without manual offset
+ * calculations.
+ *
+ * @note **Modern C++ Recommendation:**
+ * C-style variadic formatting is intentionally unsupported. For efficiency and
+ * type safety, use @c std::format or @c fmt::format before passing the string.
+ *
+ * @param text        The text to render (@c std::string_view for zero-copy handling).
+ * @param contentRole [Optional] The MD3 color role. Defaults to current context style.
+ * @param wrapWidth   [Optional] Wrap threshold in pixels. Negative values disable wrapping.
+ */
+void TextUnformatted(std::string_view text, Spec::ColorRole contentRole = Spec::ColorRole::onSurface, const float wrapWidth = -1.0F);
 
 template <Spec::TextRole Role>
-void TextUnformatted(const std::string_view &text, Spec::ColorRole contentRole = Spec::ColorRole::onSurface)
+void TextUnformatted(const std::string_view &text, Spec::ColorRole contentRole = Spec::ColorRole::onSurface, const float wrapWidth = -1.0F)
 {
     auto &m3Styles = Context::GetM3Styles();
 
     const auto fontScope = m3Styles.UseTextRole(Spec::TypeScaleValue::of<Role>());
-    TextUnformatted(text, contentRole);
+    TextUnformatted(text, contentRole, wrapWidth);
 }
 
 /**
@@ -565,6 +586,47 @@ public:
 [[nodiscard]] inline auto AppBar(Spec::AppBarVariant variant = Spec::AppBarVariant::Small) -> AppBarScope
 {
     return AppBarScope(variant);
+}
+
+class DialogModalScope
+{
+    detail::FontScope m_supportingTextFontScope;
+    bool              m_visible{false};
+    bool              m_submittedBody{false};
+
+public:
+    explicit DialogModalScope(std::string_view name, WindowFlags flags = {});
+    ~DialogModalScope();
+
+    /**
+     * @brief Render the supporting text for the dialog.
+     * @param text the supporting text content, usually a description or instruction for the dialog.
+     * @param wrapText true to enable text wrapping, false for single line. Default is false.
+     */
+    void SupportingText(std::string_view text, bool wrapText = false);
+
+    /**
+     * @brief Add a action button(g.g. apply/cancel) to the dialog.
+     * REQUIRED! Diaglog no titlebar and popup name will render to HeadLine!
+     * So, also no close button, you need to add a action button to
+     * close the dialog.
+     *
+     * Multiple action button must call ImGui::SameLine by yourself.
+     *
+     * Action button will close the dialog when clicked, so you don't need to call `ImGui::CloseCurrentPopup()` in your logic, just handle the
+     * business logic and return.
+     *
+     * @note The action buttons won't aligned-right, not supported yet.
+     * @param label the button label, e.g. "Apply", "Cancel".
+     */
+    auto ActionButton(std::string_view label) const -> bool;
+
+    explicit operator bool() const { return m_visible; }
+};
+
+inline auto DialogModal(std::string_view name, WindowFlags flags = {}) -> DialogModalScope
+{
+    return DialogModalScope(name, flags);
 }
 
 /**
