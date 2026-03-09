@@ -90,8 +90,8 @@ void ImeUI::DrawSettings(Settings &settings)
                 {
                     currentMenu = {Menu::Behaviour, true};
                 }
+                ImGuiEx::M3::EndNavRail();
             }
-            ImGuiEx::M3::EndNavRail();
         }
 
         ImGui::SameLine(0, 0);
