@@ -402,7 +402,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
 auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
 {
     auto *pThis = static_cast<ImeWnd *>(lpCreateStruct->lpCreateParams);
-    SetWindowLongPtr(hWnd, GWLP_USERDATA, Utils::ToLongPtr(pThis));
+    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
     pThis->m_hWnd       = hWnd;
     pThis->m_hWndParent = lpCreateStruct->hwndParent;
     return TRUE;

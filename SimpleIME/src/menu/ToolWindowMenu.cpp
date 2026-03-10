@@ -4,6 +4,7 @@
 #include "menu/ToolWindowMenu.h"
 
 #include "ImeApp.h"
+#include "Utils.h"
 #include "ime/ImeController.h"
 #include "log.h"
 #include "menu/MenuNames.h"
@@ -39,10 +40,7 @@ auto ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_
             const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
             if (data->fixedStr == "Cancel")
             {
-                if (auto messageQueue = RE::UIMessageQueue::GetSingleton())
-                {
-                    messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-                }
+                Skyrim::HideMenu(ToolWindowMenuName);
             }
         }
         break;

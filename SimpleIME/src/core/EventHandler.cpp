@@ -2,6 +2,7 @@
 
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
+#include "Utils.h"
 #include "ime/ImeController.h"
 #include "log.h"
 #include "menu/MenuNames.h"
@@ -38,19 +39,13 @@ auto &GetMenuOpenCloseEventSink()
 
 void OnFirstOpenMainMenu()
 {
-    if (auto *messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue)
-    {
-        messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
-    }
+    Skyrim::ShowMenu(ImeMenuName);
     ImeController::GetInstance()->ApplySettings();
 }
 
 void OnLoadingMenuClose()
 {
-    if (const auto messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue)
-    {
-        messageQueue->AddMessage(ImeMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
-    }
+    Skyrim::ShowMenu(ImeMenuName);
 }
 
 void OnSteamOverlayMenu(bool open)
@@ -99,8 +94,7 @@ void UnInstallEventSinks()
 // MenuOpenCloseEventSink
 //////////////////////////////////////////////////////////////////////////
 
-RE::BSEventNotifyControl MenuOpenCloseEventSink::
-    ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
+RE::BSEventNotifyControl MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
 {
     logger::debug("Menu {} open {}", event->menuName.c_str(), event->opening);
     static bool firstOpenMainMenu = true;

@@ -4,6 +4,7 @@
 
 #include "ui/ToolWindow.h"
 
+#include "Utils.h"
 #include "i18n/translator_manager.h"
 #include "menu/MenuNames.h"
 
@@ -31,50 +32,48 @@ void TogglePinned(bool &pinned, bool &showing)
 
 ToolWindow::ToolWindow(ImGuiKeyChord shortcut, std::string_view language) : m_shortcut(shortcut)
 {
-    if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
-    {
-        messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
-    }
     i18n::UpdateTranslator(language, "english");
 }
 
 ToolWindow::~ToolWindow()
 {
-    // FIXME: ToolWindow won't immediately release when close. The need move to the draw function inner.
-    if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
-    {
-        messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-    }
     i18n::ReleaseTranslator();
 }
 
 auto ToolWindow::Draw(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, Settings &settings) -> bool
 {
+    // NOTE: Event if ToolWindow is opened using a shortcut processed by ImeWnd,
+    // the ToolWindow still receive a shortcut because they are in the same level(DEBUG window)
+    bool showing = m_showing;
     if (ImGui::Shortcut(m_shortcut, ImGuiInputFlags_RouteGlobal))
     {
-        TogglePinned(m_pinned, m_showing);
+        TogglePinned(m_pinned, showing);
     }
-    if (!m_showing)
+    if (showing != m_showing)
     {
-        return m_showing;
-    }
-
-    if (m_languageBar.Draw(m_pinned, activeLangProfile, langProfiles))
-    {
-        settings.appearance.showSettings = true;
+        Skyrim::ToggleMenu(ToolWindowMenuName, showing);
     }
 
-    if (settings.appearance.showSettings)
+    m_showing = showing;
+    if (m_showing)
     {
-        if (m_settingsWindow == nullptr)
+        if (m_languageBar.Draw(m_pinned, activeLangProfile, langProfiles))
         {
-            m_settingsWindow = std::make_unique<UI::SettingsWindow>();
+            settings.appearance.showSettings = true;
         }
-        m_settingsWindow->Draw(settings);
-    }
-    else
-    {
-        m_settingsWindow.reset();
+
+        if (settings.appearance.showSettings)
+        {
+            if (m_settingsWindow == nullptr)
+            {
+                m_settingsWindow = std::make_unique<UI::SettingsWindow>();
+            }
+            m_settingsWindow->Draw(settings);
+        }
+        else if (m_settingsWindow != nullptr)
+        {
+            m_settingsWindow.reset();
+        }
     }
     return m_showing;
 }

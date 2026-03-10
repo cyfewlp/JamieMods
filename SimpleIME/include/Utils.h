@@ -15,6 +15,33 @@ inline int align_to(int value, int alignment)
     return ((value + alignment - 1) / alignment) * alignment;
 }
 
+namespace Skyrim
+{
+inline void ToggleMenu(const RE::BSFixedString &a_menuName, bool show)
+{
+    if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
+    {
+        messageQueue->AddMessage(a_menuName, show ? RE::UI_MESSAGE_TYPE::kShow : RE::UI_MESSAGE_TYPE::kHide, nullptr);
+    }
+}
+
+inline void ShowMenu(const RE::BSFixedString &a_menuName)
+{
+    if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
+    {
+        messageQueue->AddMessage(a_menuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
+    }
+}
+
+inline void HideMenu(const RE::BSFixedString &a_menuName)
+{
+    if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
+    {
+        messageQueue->AddMessage(a_menuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
+    }
+}
+} // namespace Skyrim
+
 class Utils
 {
     static constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `
@@ -22,18 +49,7 @@ class Utils
     using State                              = Core::State;
 
 public:
-    template <typename Ptr>
-    static auto ToLongPtr(Ptr *ptr) -> LONG_PTR
-    {
-        return reinterpret_cast<LONG_PTR>(ptr);
-    }
-
-    static constexpr auto IsCapsLockOn() -> bool
-    {
-        SHORT capsState = GetKeyState(VK_CAPITAL);
-        return (capsState & 0x0001) != 0;
-    }
-
+    // FIXME: move out from Utils into Skyrim namespace
     template <typename String>
     static void SendStringToGame(String &&sourceString)
     {

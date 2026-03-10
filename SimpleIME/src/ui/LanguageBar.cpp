@@ -76,11 +76,6 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
         if (ImGuiEx::M3::SmallIconButton(pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, iconButtonColors))
         {
             pinned = true;
-
-            if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton())
-            {
-                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-            }
         }
 
         ImGui::SameLine();
