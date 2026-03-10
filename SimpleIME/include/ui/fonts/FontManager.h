@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-struct IDWriteLocalizedStrings;
-
 namespace Ime
 {
 class FontInfo
@@ -22,11 +20,11 @@ private:
 public:
     FontInfo(const Index index, const std::string &name) : index(index), name(name) {}
 
-    auto IsInvalid() const -> bool { return index == -1; }
+    [[nodiscard]] auto IsInvalid() const -> bool { return index == -1; }
 
-    auto GetName() const -> const std::string & { return name; }
+    [[nodiscard]] auto GetName() const -> const std::string & { return name; }
 
-    auto GetIndex() const -> Index { return index; }
+    [[nodiscard]] auto GetIndex() const -> Index { return index; }
 };
 
 class FontManager
@@ -34,13 +32,11 @@ class FontManager
     std::vector<FontInfo> m_fontList;
 
 public:
-    auto GetFontInfoList() const -> const std::vector<FontInfo> & { return m_fontList; }
+    explicit FontManager();
 
-    void FindInstalledFonts();
-
-    static auto GetFontFilePath(const FontInfo &fontInfo) -> std::string;
-
-private:
-    static void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result);
+    [[nodiscard]] auto GetFontInfoList() const -> const std::vector<FontInfo> & { return m_fontList; }
 };
+
+auto GetFontFilePath(const FontInfo &fontInfo) -> std::string;
+
 } // namespace Ime

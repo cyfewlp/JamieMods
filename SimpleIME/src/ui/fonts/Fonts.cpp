@@ -4,7 +4,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "i18n/Translator.h"
-#include "i18n/TranslatorHolder.h"
+#include "i18n/translator_manager.h"
 #include "icons.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -20,6 +20,40 @@
 
 namespace Ime
 {
+namespace
+{
+//! Merge the source font into the target font.
+//! The source font will be removed after merging, and the target font will be updated with the merged font.
+//! The source font should be committable and only contains a single font source, otherwise the merge will fail.
+auto MergeFont(ImFontWrap &target, ImFontWrap &source) -> bool
+{
+    if (!source.IsCommittableSingleFont())
+    {
+        return false;
+    }
+
+    auto *imFont                     = source.TakeFont();
+    auto *fontConfig                 = imFont->Sources[0];
+    fontConfig->FontDataOwnedByAtlas = false; // avoid copy font data
+
+    ImFontConfig config;
+    ImStrncpy(config.Name, fontConfig->Name, IM_COUNTOF(config.Name));
+    config.OversampleH  = 1;
+    config.OversampleV  = 1;
+    config.PixelSnapH   = true;
+    config.MergeMode    = true;
+    config.DstFont      = target.UnsafeGetFont();
+    config.FontData     = fontConfig->FontData;
+    config.FontDataSize = fontConfig->FontDataSize;
+
+    ImGui::GetIO().Fonts->AddFont(&config);
+    ImGui::GetIO().Fonts->RemoveFont(imFont);
+
+    target.AddFontInfo(source.GetFontNameOr(0), source.GetFontPathOr(0));
+    return true;
+}
+} // namespace
+
 ImFontWrap::ImFontWrap(ImFont *imFont, std::string_view fontName, std::string_view fontPath, bool a_owner)
     : font(imFont), owner(a_owner && font != nullptr)
 {
@@ -27,7 +61,7 @@ ImFontWrap::ImFontWrap(ImFont *imFont, std::string_view fontName, std::string_vi
     m_fontPathList.emplace_back(fontPath);
 }
 
-ImFontWrap &ImFontWrap::operator=(const ImFontWrap &other)
+auto ImFontWrap::operator=(const ImFontWrap &other) -> ImFontWrap &
 {
     if (this == &other) return *this;
     RemoveFontIfOwned();
@@ -39,7 +73,7 @@ ImFontWrap &ImFontWrap::operator=(const ImFontWrap &other)
     return *this;
 }
 
-ImFontWrap &ImFontWrap::operator=(ImFontWrap &&other) noexcept
+auto ImFontWrap::operator=(ImFontWrap &&other) noexcept -> ImFontWrap &
 {
     if (this == &other) return *this;
     RemoveFontIfOwned();
@@ -54,17 +88,12 @@ ImFontWrap &ImFontWrap::operator=(ImFontWrap &&other) noexcept
     return *this;
 }
 
-ImFontWrap::~ImFontWrap()
-{
-    Cleanup();
-}
-
-bool ImFontWrap::IsCommittable() const
+auto ImFontWrap::IsCommittable() const -> bool
 {
     return owner && font != nullptr;
 }
 
-bool ImFontWrap::IsCommittableSingleFont() const
+auto ImFontWrap::IsCommittableSingleFont() const -> bool
 {
     return owner && font != nullptr && font->Sources.size() == 1;
 }
@@ -91,7 +120,9 @@ constexpr auto FontBuilder::IsBuilding() const -> bool
     return m_baseFont.IsCommittable();
 }
 
-bool FontBuilder::AddFont(int fontId, ImFontWrap &imFont)
+//! Add a font to the builder.
+//! The font will be invalid after adding.
+auto FontBuilder::AddFont(int fontId, ImFontWrap &imFont) -> bool
 {
     bool result = true;
 
@@ -106,7 +137,7 @@ bool FontBuilder::AddFont(int fontId, ImFontWrap &imFont)
     }
     else // merge to base font
     {
-        result = MergeFont(imFont);
+        result = MergeFont(m_baseFont, imFont);
     }
     if (result)
     {
@@ -115,35 +146,7 @@ bool FontBuilder::AddFont(int fontId, ImFontWrap &imFont)
     return result;
 }
 
-bool FontBuilder::MergeFont(ImFontWrap &imFontWrap)
-{
-    if (!imFontWrap.IsCommittableSingleFont())
-    {
-        return false;
-    }
-
-    auto *imFont                     = imFontWrap.TakeFont();
-    auto *fontConfig                 = imFont->Sources[0];
-    fontConfig->FontDataOwnedByAtlas = false; // avoid copy font data
-
-    ImFontConfig config;
-    ImStrncpy(config.Name, fontConfig->Name, IM_COUNTOF(config.Name));
-    config.OversampleH  = 1;
-    config.OversampleV  = 1;
-    config.PixelSnapH   = true;
-    config.MergeMode    = true;
-    config.DstFont      = m_baseFont.UnsafeGetFont();
-    config.FontData     = fontConfig->FontData;
-    config.FontDataSize = fontConfig->FontDataSize;
-
-    ImGui::GetIO().Fonts->AddFont(&config);
-    ImGui::GetIO().Fonts->RemoveFont(imFont);
-
-    m_baseFont.AddFontInfo(imFontWrap.GetFontNameOr(0), imFontWrap.GetFontPathOr(0));
-    return true;
-}
-
-bool FontBuilder::ApplyFont(Settings &settings)
+auto FontBuilder::ApplyFont(Settings &settings) -> bool
 {
     if (!m_baseFont.IsCommittable())
     {
@@ -190,46 +193,14 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 
 void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder)
 {
-    using Spacing   = ImGuiEx::M3::Spacing;
-    using ColorRole = M3Spec::ColorRole;
-
     if (!fontBuilder.IsBuilding())
     {
         return;
     }
-    auto      &m3Styles   = ImGuiEx::M3::Context::GetM3Styles();
-    const auto styleGuard = ImGuiEx::StyleGuard()
-                                .Color<ImGuiCol_Border>(m3Styles.Colors().at(ColorRole::outlineVariant))
-                                .Color<ImGuiCol_TableRowBg>(m3Styles.Colors().at(ColorRole::surface))
-                                .Color<ImGuiCol_TableRowBgAlt>(m3Styles.Colors().at(ColorRole::surface))
-                                .Style<ImGuiStyleVar_ScrollbarSize>(m3Styles[Spacing::XS]);
-    ImGui::Indent(m3Styles[Spacing::L]);
-    if (ImGui::BeginTable("BasicFontInfo", 2, ImGuiEx::TableFlags().BordersInnerH().ScrollY().NoBordersInBody().SizingFixedFit()))
+    for (const auto &fontName : fontBuilder.GetBaseFont().GetFontNames())
     {
-        auto &names = fontBuilder.GetBaseFont().GetFontNames();
-        auto &paths = fontBuilder.GetBaseFont().GetFontPathList();
-        if (names.size() == paths.size())
-        {
-            const auto labelLargeScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
-            for (size_t idx = 0U; idx < names.size(); idx++)
-            {
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGuiEx::M3::TextUnformatted(std::format("{}", idx + 1U));
-
-                ImGui::TableNextColumn();
-
-                ImGui::Text("%s", names.at(idx).c_str());
-                {
-                    const auto supportTextStyleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors().at(ColorRole::onSurfaceVariant));
-                    const auto labelSmallScope       = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelSmall>();
-                    ImGui::Text("%s", paths.at(idx).c_str());
-                }
-            }
-        }
-        ImGui::EndTable();
+        ImGuiEx::M3::MenuItem(fontName, false);
     }
-    ImGui::Indent(m3Styles[Spacing::L]);
 }
 
 void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
@@ -252,7 +223,7 @@ void UI::FontBuilderPanel::DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarSc
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.SetAsDefault"));
 
-    if (toolBar.Icon(ICON_ROTATE_CCW))
+    if (toolBar.Icon(ICON_ROTATE_CCW)) // reset font builder
     {
         if (fontBuilder.GetBaseFont() == m_PreviewPanel.GetImFont())
         {
@@ -277,7 +248,7 @@ void UI::FontBuilderPanel::DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarSc
 
     if (toolBar.Icon(ICON_CIRCLE_QUESTION_MARK))
     {
-        ImGui::OpenPopup(Translate("Settings.FontBuilder.HelpTitle"));
+        ImGui::OpenPopup(Translate("Settings.FontBuilder.HelpTitle").data());
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"));
 }

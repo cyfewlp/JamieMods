@@ -13,8 +13,6 @@
 #include "hooks/WinHooks.h"
 #include "ime/ImeController.h"
 #include "imguiex/ErrorNotifier.h"
-#include "imguiex/M3ThemeBuilder.h"
-#include "imguiex/Material3.h"
 #include "log.h"
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
@@ -122,8 +120,8 @@ void ImeApp::OnInputLoaded()
 
 void ImeApp::Uninitialize()
 {
+    UI::DestroyM3();
     UI::Shutdown();
-    ImGuiEx::M3::Context::DestroyM3Styles();
     Events::UnInstallEventSinks(); // should safety
     if (m_state.IsInitialized())
     {
@@ -262,18 +260,8 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto              *context     = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
     UI::Initialize(m_hWnd, device, context);
-    auto      *primaryFont  = UI::AddPrimaryFont(m_settings.resources.fontPathList);
-    const auto iconFontPath = utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE;
-    // FIXME:: should move to ImeUI after refactor ImeUI
-    auto      *iconFont     = UI::AddFont(iconFontPath.generic_string());
-    if (iconFont == nullptr)
-    {
-        logger::error("Cannot find icon font. Initialization failed!");
-        iconFont = primaryFont;
-    }
-
-    const auto &appearance = m_settings.appearance;
-    ImGuiEx::M3::Context::CreateM3Styles(iconFont, {appearance.themeContrastLevel, appearance.themeSourceColor, appearance.themeDarkMode});
+    (void)UI::AddPrimaryFont(m_settings.resources.fontPathList);
+    UI::InitializeM3(utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE, m_settings.appearance.schemeConfig);
 
     std::thread childWndThread([&ensureInitialized, this] -> void {
         try
@@ -282,7 +270,6 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
             ensureInitialized.set_value(true);
             // we can't call ensureInitialized after create child window, will cause deadlock.
             m_imeWnd.CreateHost(m_hWnd, m_settings);
-            m_imeWnd.ApplyUiSettings(m_settings);
             m_imeWnd.Run();
         }
         catch (...)
@@ -365,7 +352,7 @@ void ImeApp::Draw()
     }
     UI::NewFrame();
 
-    m_imeWnd.DrawIme(m_settings);
+    m_imeWnd.Draw(m_settings);
 
     UI::EndFrame();
     UI::Render();

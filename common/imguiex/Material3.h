@@ -197,7 +197,7 @@ public:
      * @note Some ImGui StyleColor also still config by ImGui `Styles` object, like WindowBg,ChildBg.
      * This can be reduce some style colors push.
      */
-    void RebuildColors(const ColorScheme::SchemeConfig &schemeConfig);
+    void RebuildColors(const SchemeConfig &schemeConfig);
 
     void RebuildColors(bool darkMode)
     {
@@ -364,7 +364,7 @@ namespace Context
  * @param schemeConfig Color configuration. Defaults to @c ColorScheme::GetM3ClassicSchemeConfig().
  * @return A reference to the initialized @c M3Styles instance.
  */
-auto CreateM3Styles(ImFont *iconFont, const ColorScheme::SchemeConfig &schemeConfig = ColorScheme::GetM3ClassicSchemeConfig()) -> M3Styles &;
+auto CreateM3Styles(ImFont *iconFont, const SchemeConfig &schemeConfig = GetM3ClassicSchemeConfig()) -> M3Styles &;
 auto DestroyM3Styles() -> void;
 
 auto GetM3Styles() -> M3Styles &;

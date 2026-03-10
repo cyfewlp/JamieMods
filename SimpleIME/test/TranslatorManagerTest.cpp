@@ -1,5 +1,4 @@
-#include "i18n/TranslationLoader.h"
-
+#include "i18n/translator_manager.h"
 #include "ui/Settings.h"
 
 #include <filesystem>
@@ -9,7 +8,7 @@
 
 namespace fs = std::filesystem;
 
-TEST(TranslationLoaderTest, ShouldStoreAsFullQualifyKey)
+TEST(TranslatorManagerTest, ShouldStoreAsFullQualifyKey)
 {
     const std::filesystem::path tempTranslateFile("translate_fakeLang.toml");
     std::ofstream               tempFile(tempTranslateFile);
@@ -24,19 +23,24 @@ s2k2 = "s2v2"
 )" << "\n";
     tempFile.close();
 
-    auto translatorOpt = i18n::LoadTranslation("fakeLang", fs::absolute(fs::path(".")));
+    Ime::i18n::UpdateTranslator("fakeLang", "english", fs::current_path());
 
-    ASSERT_TRUE(translatorOpt.has_value());
-    const auto &translator = translatorOpt.value();
-    ASSERT_EQ(translator.Translate(i18n::HashKey("Section1.k1"), ""), "v1");
-    ASSERT_EQ(translator.Translate(i18n::HashKey("Section1.ChildSection.k2"), ""), "v2");
-    ASSERT_EQ(translator.Translate(i18n::HashKey("Section2.s2k1"), ""), "s2v1");
-    ASSERT_EQ(translator.Translate(i18n::HashKey("Section2.Child.s2k2"), ""), "s2v2");
+    EXPECT_STREQ(Ime::Translate("Section1.k1").data(), "v1");
+    EXPECT_STREQ(Ime::Translate("Section1.ChildSection.k2").data(), "v2");
+    EXPECT_STREQ(Ime::Translate("Section2.s2k1").data(), "s2v1");
+    EXPECT_STREQ(Ime::Translate("Section2.Child.s2k2").data(), "s2v2");
 
     std::filesystem::remove(tempTranslateFile);
+    Ime::i18n::ReleaseTranslator();
 }
 
-TEST(TranslationLoaderTest, ShouldScanAllTranslateFiles)
+TEST(TranslatorManagerTest, should_return_key_if_not_found)
+{
+    EXPECT_STREQ(Ime::Translate("Section1.k1").data(), "Section1.k1");
+    EXPECT_STREQ(Ime::Translate("a invalid key").data(), "a invalid key");
+}
+
+TEST(TranslatorManagerTest, ShouldScanAllTranslateFiles)
 {
     std::ofstream fakeLang1("translate_fakeLang1.toml");
     fakeLang1.close();
@@ -48,7 +52,7 @@ TEST(TranslationLoaderTest, ShouldScanAllTranslateFiles)
     fakeLang3.close();
 
     std::vector<std::string> languages;
-    i18n::ScanLanguages(fs::path("."), languages);
+    Ime::i18n::ScanLanguages(fs::path("."), languages);
 
     ASSERT_EQ(languages.size(), 3);
     ASSERT_EQ(languages[0], "fakeLang1");

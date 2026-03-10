@@ -2,7 +2,7 @@
 // Created by jamie on 2026/1/28.
 //
 
-#include "i18n/TranslationLoader.h"
+#include "i18n/translator_manager.h"
 
 #include "log.h"
 #include "toml++/toml.hpp"
@@ -10,14 +10,28 @@
 #include <iostream>
 #include <regex>
 
-namespace i18n
+namespace Ime::i18n
 {
 namespace
 {
-auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator>;
-void ProcessTable(
-    toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, Translator::LanguageMap &languageMap
-);
+auto LoadFromFile(const std::filesystem::path &file) -> std::optional<::i18n::Translator>;
+void ProcessTable(toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, ::i18n::Translator::LanguageMap &languageMap);
+
+auto LoadTranslation(Language language, const std::filesystem::path &dir) -> std::optional<::i18n::Translator>
+{
+    if (!std::filesystem::is_directory(dir))
+    {
+        return std::nullopt;
+    }
+
+    auto translateFile = dir / std::format("translate_{}.toml", language);
+    if (!std::filesystem::exists(translateFile))
+    {
+        return std::nullopt;
+    }
+    return LoadFromFile(translateFile);
+}
+
 } // namespace
 
 void ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &languages)
@@ -48,28 +62,33 @@ void ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &l
     }
 }
 
-auto LoadTranslation(Language language, const std::filesystem::path &dir) -> std::optional<Translator>
+auto GetTranslator() -> std::unique_ptr<::i18n::Translator> &
 {
-    if (!std::filesystem::is_directory(dir))
-    {
-        return std::nullopt;
-    }
+    static std::unique_ptr<::i18n::Translator> g_translator{nullptr};
+    return g_translator;
+}
 
-    auto translateFile = dir / std::format("translate_{}.toml", language);
-    if (!std::filesystem::exists(translateFile))
+auto UpdateTranslator(std::string_view language, std::string_view fallbackLanguage, const std::filesystem::path &dir) -> void
+{
+    if (auto translator = LoadTranslation(language, dir); translator.has_value())
     {
-        return std::nullopt;
+        UpdateTranslator(std::move(translator.value()));
     }
-    return LoadFromFile(translateFile);
+    else if (auto fallbackTranslator = LoadTranslation(fallbackLanguage, dir); fallbackTranslator.has_value())
+    {
+        UpdateTranslator(std::move(fallbackTranslator.value()));
+    }
+    else
+    {
+        logger::warn("Failed to load translator for '{}' (and fallback '{}'). Translation will be unavailable.", language, fallbackLanguage);
+    }
 }
 
 namespace
 {
-void ProcessTable(
-    toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, Translator::LanguageMap &languageMap
-)
+void ProcessTable(toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, ::i18n::Translator::LanguageMap &languageMap)
 {
-    if (!a_table) return;
+    if (a_table == nullptr) return;
     for (auto it = a_table->begin(); it != a_table->end(); ++it)
     {
         auto        key = it->first.str();
@@ -84,7 +103,7 @@ void ProcessTable(
         }
         if (it->second.is_string())
         {
-            languageMap.emplace(i18n::HashKey(fullKey), it->second.value_or(""));
+            languageMap.emplace(::i18n::HashKey(fullKey), it->second.value_or(""));
         }
         else if (it->second.is_table())
         {
@@ -93,7 +112,7 @@ void ProcessTable(
     }
 }
 
-auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator>
+auto LoadFromFile(const std::filesystem::path &file) -> std::optional<::i18n::Translator>
 {
     try
     {
@@ -103,7 +122,7 @@ auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator
             return std::nullopt;
         }
 
-        Translator::LanguageMap languageMap;
+        ::i18n::Translator::LanguageMap languageMap;
 
         for (const auto &pair : table)
         {
@@ -114,7 +133,7 @@ auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator
             }
             else if (pair.second.is_string())
             {
-                languageMap.emplace(i18n::HashKey(key), pair.second.value_or(""));
+                languageMap.emplace(::i18n::HashKey(key), pair.second.value_or(""));
             }
             else
             {
@@ -127,7 +146,7 @@ auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator
             }
         }
 
-        return std::optional(Translator(std::move(languageMap)));
+        return std::optional(::i18n::Translator(std::move(languageMap)));
     }
     catch (std::exception &e)
     {
@@ -141,4 +160,4 @@ auto LoadFromFile(const std::filesystem::path &file) -> std::optional<Translator
 }
 
 } // namespace
-} // namespace i18n
+} // namespace Ime::i18n

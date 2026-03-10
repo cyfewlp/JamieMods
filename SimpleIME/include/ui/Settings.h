@@ -4,6 +4,7 @@
 #pragma once
 
 #include "imgui.h"
+#include "imguiex/m3/colors.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -23,8 +24,9 @@ struct Settings
     static constexpr std::string_view DEFAULT_MAIN_FONT_PATH  = "C:/Windows/Fonts/simsun.ttc";
     static constexpr std::string_view DEFAULT_EMOJI_FONT_PATH = "C:/Windows/Fonts/seguiemj.ttf";
     static constexpr std::string_view ICON_FILE               = "simple-ime-icons.ttf";
-    static constexpr float            MIN_FONT_SIZE_SCALE     = 0.1F;
-    static constexpr float            MAX_FONT_SIZE_SCALE     = 5.0F;
+    static constexpr auto             ZOOM_MAX                = 2.0F;
+    static constexpr auto             ZOOM_MIN                = 0.5F;
+    static constexpr int              ZOOM_STEP_PERCENT       = 25;
 
     //! Shortcut: support combination of Ctrl, Shift, Alt and a normal key. e.g. "ctrl+shift+f1", "alt+f2", "f3"...
     //! The named key is can't combine by bitwise operation, g.g. "F2 | A" will become to "F3".
@@ -36,29 +38,21 @@ struct Settings
     {
         spdlog::level::level_enum level;
         spdlog::level::level_enum flushLevel;
-
-        bool operator==(const Logging &other) const = default;
     } logging;
 
     struct Resources
     {
         std::string              translationDir;
         std::vector<std::string> fontPathList;
-
-        bool operator==(const Resources &other) const = default;
     } resources;
 
     struct Appearance
     {
-        uint32_t    themeSourceColor;
-        double      themeContrastLevel;
-        bool        themeDarkMode;
-        std::string language;
-        float       zoom;
-        int         errorDisplayDuration;
-        bool        showSettings;
-
-        bool operator==(const Appearance &other) const = default;
+        ImGuiEx::M3::SchemeConfig schemeConfig;
+        std::string               language;
+        float                     zoom;
+        int                       errorDisplayDuration;
+        bool                      showSettings;
     } appearance;
 
     struct Input
@@ -69,8 +63,6 @@ struct Settings
 
         bool operator==(const Input &other) const = default;
     } input;
-
-    bool operator==(const Settings &other) const = default;
 };
 
 inline auto GetDefaultSettings() -> Settings
@@ -82,11 +74,9 @@ inline auto GetDefaultSettings() -> Settings
         .logging   = {.level = spdlog::level::info, .flushLevel = spdlog::level::info},
         .resources = {.translationDir = "Data/interface/SimpleIME", .fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"}},
         .appearance =
-            {.themeSourceColor     = 0xFF673AB7,
-                      .themeContrastLevel   = 0.0,
-                      .themeDarkMode        = true,
+            {.schemeConfig         = ImGuiEx::M3::GetM3ClassicSchemeConfig(),
                       .language             = "english",
-                      .zoom                 = 1.0,
+                      .zoom                 = -1.0F,
                       .errorDisplayDuration = 10,
                       .showSettings         = false},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = Settings::WindowPosUpdatePolicy::BASED_ON_CARET}

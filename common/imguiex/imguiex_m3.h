@@ -592,7 +592,13 @@ class DialogModalScope
 {
     detail::FontScope m_supportingTextFontScope;
     bool              m_visible{false};
-    bool              m_submittedBody{false};
+    //! Applies padding between the content area (e.g., supporting text) and the action buttons.
+    //!
+    //! @note **Layout Consistency:** Always apply this padding even if supporting text is absent.
+    //! This ensures the component is content-agnostic, supporting more general use cases
+    //! such as dialogs with plots or image viewers that require a fixed buffer
+    //! between the main content and the action bar.
+    bool              m_submittedActionButton{false};
 
 public:
     explicit DialogModalScope(std::string_view name, WindowFlags flags = {});
@@ -603,7 +609,7 @@ public:
      * @param text the supporting text content, usually a description or instruction for the dialog.
      * @param wrapText true to enable text wrapping, false for single line. Default is false.
      */
-    void SupportingText(std::string_view text, bool wrapText = false);
+    void SupportingText(std::string_view text, bool wrapText = false) const;
 
     /**
      * @brief Add a action button(g.g. apply/cancel) to the dialog.
@@ -618,8 +624,9 @@ public:
      *
      * @note The action buttons won't aligned-right, not supported yet.
      * @param label the button label, e.g. "Apply", "Cancel".
+     * @param icon [optional] the button icon.
      */
-    auto ActionButton(std::string_view label) const -> bool;
+    auto ActionButton(std::string_view label, std::string_view icon = "") -> bool;
 
     explicit operator bool() const { return m_visible; }
 };

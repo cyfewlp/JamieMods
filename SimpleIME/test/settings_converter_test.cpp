@@ -2,10 +2,10 @@
 // Created by jamie on 2026/3/8.
 //
 
-#include "imgui.h"
 #include "RandomUtils.h"
 #include "configs/configuration.h"
 #include "configs/settings_converter.h"
+#include "imgui.h"
 #include "ui/Settings.h"
 
 #include <gtest/gtest.h>
@@ -42,7 +42,7 @@ TEST(SettingsConverterTest, should_convert_shortcut_string_to_ImGuiKeyChord)
 
     configuration.shortcut = " F7 +  ctrl +   alt + shift +super ";
     settings               = Ime::ConvertConfigurationToSettings(configuration);
-    EXPECT_EQ(settings.shortcut, ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiMod_Alt | ImGuiMod_Super | ImGuiKey_F5);
+    EXPECT_EQ(settings.shortcut, ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiMod_Alt | ImGuiMod_Super | ImGuiKey_F7);
 
     configuration.shortcut = " F6 +  ctrl +   alt + shift + ";
     settings               = Ime::ConvertConfigurationToSettings(configuration);
@@ -119,9 +119,9 @@ TEST(SettingsConverterTest, should_set_base_type_member_value_from_configuration
     EXPECT_EQ(settings.resources.translationDir, configuration.resources.translationDir);
     EXPECT_EQ(settings.resources.fontPathList, configuration.resources.fontPathList);
 
-    EXPECT_EQ(settings.appearance.themeSourceColor, configuration.appearance.themeSourceColor);
-    EXPECT_EQ(settings.appearance.themeContrastLevel, configuration.appearance.themeContrastLevel);
-    EXPECT_EQ(settings.appearance.themeDarkMode, configuration.appearance.themeDarkMode);
+    EXPECT_EQ(settings.appearance.schemeConfig.sourceColor, configuration.appearance.themeSourceColor);
+    EXPECT_EQ(settings.appearance.schemeConfig.contrastLevel, configuration.appearance.themeContrastLevel);
+    EXPECT_EQ(settings.appearance.schemeConfig.darkMode, configuration.appearance.themeDarkMode);
     EXPECT_EQ(settings.appearance.language, configuration.appearance.language);
     EXPECT_EQ(settings.appearance.zoom, configuration.appearance.zoom);
     EXPECT_EQ(settings.appearance.errorDisplayDuration, configuration.appearance.errorDisplayDuration);
@@ -141,7 +141,7 @@ TEST(SettingsConverterTest, should_convert_shortcut_ImGuiKeyChord_to_string)
 
     settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Super | ImGuiMod_Alt | ImGuiKey_F1;
     config            = Ime::ConvertSettingsToConfiguration(settings);
-    EXPECT_STREQ(config.shortcut.c_str(), "ctrl+super+alt+f1") << "should support all modifiers.";
+    EXPECT_STREQ(config.shortcut.c_str(), "ctrl+alt+super+f1") << "should support all modifiers.";
 
     settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Alt;
     config            = Ime::ConvertSettingsToConfiguration(settings);

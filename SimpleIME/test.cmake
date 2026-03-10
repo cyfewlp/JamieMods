@@ -10,7 +10,7 @@ add_executable(
     ${TEST_PROJ_NAME}
         "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/ConfigSerializer.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/settings_converter.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/TranslationLoader.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/translator_manager.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/ime/TextEditor.cpp"
     ${TEST_SOURCES}
 )
@@ -41,6 +41,7 @@ target_link_libraries(
         spdlog::spdlog
         benchmark::benchmark
 )
+target_compile_definitions(${TEST_PROJ_NAME} PRIVATE SIMPLE_IME="SimpleIME")
 target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23)
 target_compile_features(${PROJECT_NAME}Benchmark PRIVATE cxx_std_23)
 target_include_directories(

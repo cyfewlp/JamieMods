@@ -11,6 +11,8 @@
 #include <windows.h>
 #include <wrl/client.h>
 
+#pragma comment(lib, "dwrite.lib")
+
 using Microsoft::WRL::ComPtr;
 
 namespace Ime
@@ -72,56 +74,8 @@ auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
     }
     return filePath;
 }
-} // namespace
 
-void FontManager::FindInstalledFonts()
-{
-    if (!m_fontList.empty())
-    {
-        logger::warn("Already fill all installed fonts info.");
-        return;
-    }
-
-    ComPtr<IDWriteFactory3> factory;
-
-    HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
-    if (FAILED(hr)) return;
-
-    ComPtr<IDWriteFontSet> fontSet;
-    hr = factory->GetSystemFontSet(&fontSet);
-    if (FAILED(hr)) return;
-
-    const UINT32 fontCount = fontSet->GetFontCount();
-    for (UINT32 idx = 0; idx < fontCount; idx++)
-    {
-        BOOL                            exists = FALSE;
-        ComPtr<IDWriteLocalizedStrings> localizedStrings;
-
-        if (SUCCEEDED(fontSet->GetPropertyValues(idx, DWRITE_FONT_PROPERTY_ID_FULL_NAME, &exists, &localizedStrings)))
-        {
-            std::string fontFullName;
-            GetLocalizedString(localizedStrings.Get(), fontFullName);
-            if (fontFullName.empty())
-            {
-                continue;
-            }
-            m_fontList.emplace_back(FontInfo(static_cast<int32_t>(idx), fontFullName));
-        }
-    }
-}
-
-auto FontManager::GetFontFilePath(const FontInfo &fontInfo) -> std::string
-{
-    std::string result;
-
-    auto fontRef = GetFontRef(fontInfo);
-    if (!fontRef) return result;
-
-    const auto &filePath = GetPathFromReference(fontRef.Get());
-    return WCharUtils::ToString(filePath);
-}
-
-void FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result)
+void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result)
 {
     HRESULT hr     = S_OK;
     UINT32  index  = 0;
@@ -161,5 +115,54 @@ void FontManager::GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::str
     {
         result = WCharUtils::ToString(wstring);
     }
+}
+
+auto FindInstalledFonts() -> std::vector<FontInfo>
+{
+    std::vector<FontInfo>   fontList;
+    ComPtr<IDWriteFactory3> factory;
+    HRESULT                 hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
+    if (FAILED(hr)) return fontList;
+
+    ComPtr<IDWriteFontSet> fontSet;
+    hr = factory->GetSystemFontSet(&fontSet);
+    if (FAILED(hr)) return fontList;
+
+    const UINT32 fontCount = fontSet->GetFontCount();
+    for (UINT32 idx = 0; idx < fontCount; idx++)
+    {
+        BOOL                            exists = FALSE;
+        ComPtr<IDWriteLocalizedStrings> localizedStrings;
+
+        if (SUCCEEDED(fontSet->GetPropertyValues(idx, DWRITE_FONT_PROPERTY_ID_FULL_NAME, &exists, &localizedStrings)))
+        {
+            std::string fontFullName;
+            GetLocalizedString(localizedStrings.Get(), fontFullName);
+            if (fontFullName.empty())
+            {
+                continue;
+            }
+            fontList.emplace_back(FontInfo(static_cast<int32_t>(idx), fontFullName));
+        }
+    }
+    return fontList;
+}
+
+} // namespace
+
+FontManager::FontManager()
+{
+    m_fontList = FindInstalledFonts();
+}
+
+auto GetFontFilePath(const FontInfo &fontInfo) -> std::string
+{
+    std::string result;
+
+    auto fontRef = GetFontRef(fontInfo);
+    if (!fontRef) return result;
+
+    const auto &filePath = GetPathFromReference(fontRef.Get());
+    return WCharUtils::ToString(filePath);
 }
 } // namespace Ime

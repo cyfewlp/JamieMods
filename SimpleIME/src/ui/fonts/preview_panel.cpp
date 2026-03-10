@@ -6,7 +6,7 @@
 #include "ui/fonts/preview_panel.h"
 
 #include "i18n/Translator.h"
-#include "i18n/TranslatorHolder.h"
+#include "i18n/translator_manager.h"
 #include "icons.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -158,7 +158,7 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
         else
         {
             const auto &fontInfo = fontInfos[fontId];
-            const auto  filePath = FontManager::GetFontFilePath(fontInfo);
+            const auto  filePath = GetFontFilePath(fontInfo);
             m_imFont.Cleanup();
             if (!filePath.empty())
             {

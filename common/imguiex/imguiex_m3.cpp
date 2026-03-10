@@ -667,11 +667,13 @@ auto TextField(
     {
         return false;
     }
-    const auto          *state       = ImGui::GetInputTextState(id);
-    const bool           populated   = editable ? (state != nullptr && state->TextLen > 0) : !inputText.empty();
-    bool                 inputActive = editable && ImGui::TempInputIsActive(id);
-    Spec::TextFieldState tfState     = Spec::TextFieldState::Enabled;
+    const auto *state                   = ImGui::GetInputTextState(id);
+    const bool  inputTextStatePopulated = state != nullptr && state->TextLen > 0;
+    const bool  bufferValid             = buffer != nullptr && bufferSize > 0;
+    const bool  populated               = editable ? (inputTextStatePopulated || bufferValid) : !inputText.empty();
+    bool        inputActive             = editable && ImGui::TempInputIsActive(id);
 
+    Spec::TextFieldState tfState = Spec::TextFieldState::Enabled;
     if (IsItemDisabled())
     {
         tfState = Spec::TextFieldState::Disabled;
@@ -1957,18 +1959,20 @@ DialogModalScope::~DialogModalScope()
     }
 }
 
-void DialogModalScope::SupportingText(std::string_view text, const bool wrapText)
+void DialogModalScope::SupportingText(std::string_view text, const bool wrapText) const
 {
     TextUnformatted(text, Spec::Dialog::SupportingTextColor, wrapText ? 0.0F : -1.0F);
-    m_submittedBody = true;
 }
 
-auto DialogModalScope::ActionButton(std::string_view label) const -> bool
+auto DialogModalScope::ActionButton(std::string_view label, std::string_view icon) -> bool
 {
-    IM_ASSERT(m_submittedBody && "ActionButton should be called after SupportingText according to spec.");
     auto &m3Styles = Context::GetM3Styles();
-    ImGui::Dummy({0.F, m3Styles.GetPixels(Spec::Dialog::BodyActionsPadding)});
-    const auto clicked = Button(label, ButtonConfiguration().Text().Square());
+    if (!m_submittedActionButton)
+    {
+        ImGui::Dummy({0.F, m3Styles.GetPixels(Spec::Dialog::BodyActionsPadding)});
+    }
+    const auto clicked      = Button(label, ButtonConfiguration().Text().Square().Icon(icon));
+    m_submittedActionButton = true;
     if (m_visible && clicked)
     {
         ImGui::CloseCurrentPopup();

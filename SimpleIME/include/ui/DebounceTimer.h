@@ -22,11 +22,11 @@ public:
         m_Triggered    = false;
     }
 
-    bool Check()
+    auto Check() -> bool
     {
         if (!m_IsWaiting) return false;
 
-        auto now = Clock::now();
+        const auto now = Clock::now();
         if (now - m_LastPokeTime >= m_Delay)
         {
             m_IsWaiting = false;
@@ -36,10 +36,7 @@ public:
         return false;
     }
 
-    bool IsWaiting() const
-    {
-        return m_IsWaiting;
-    }
+    auto IsWaiting() const -> bool { return m_IsWaiting; }
 
     void Reset()
     {

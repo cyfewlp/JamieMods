@@ -76,7 +76,7 @@ void FillContentColors(ColorScheme::Colors &colors, const Scheme &scheme)
 }
 } // namespace
 
-auto ThemeBuilder::Build(const ColorScheme::SchemeConfig &config) -> ColorScheme
+auto ThemeBuilder::Build(const SchemeConfig &config) -> ColorScheme
 {
     ColorScheme::Colors colors;
 

@@ -76,6 +76,7 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
     };
     const Comments enableModComment = {" 是否启用 Mod 功能"};
     const Comments logLevelComment  = {R"( "trace", "debug", "info", "warn", "error", "critical", "off")"};
+    const Comments zoomComment      = {" UI缩放倍率，有效值为 0.5 - 2.0, 请使用 0.25 的整数倍", " 可以指定为负数，表示应用当前显示器的缩放倍率"};
 
     toml::table logging{
         {KEY_LOG_LEVEL,       {configuration.logging.level, logLevelComment}},
@@ -93,7 +94,7 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
         {KEY_FONTS,           configuration.resources.fontPathList                       },
     };
     toml::table appearance{
-        {KEY_ZOOM,                   {configuration.appearance.zoom, {" UI缩放倍率(0.5 - 2.0), 请使用 0.25 的整数倍"}}                },
+        {KEY_ZOOM,                   {configuration.appearance.zoom, zoomComment}                                                    },
         {KEY_LANGUAGE,               configuration.appearance.language                                                               },
         {KEY_THEME_SOURCE_COLOR,     configuration.appearance.themeSourceColor                                                       },
         {KEY_THEME_DARK_MODE,        configuration.appearance.themeDarkMode                                                          },

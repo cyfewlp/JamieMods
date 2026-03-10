@@ -1,16 +1,19 @@
 #include "ImeWnd.hpp"
 
-#include "ImeUI.h"
 #include "Utils.h"
 #include "configs/CustomMessage.h"
 #include "core/State.h"
+#include "i18n/translator_manager.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
 #include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
+#include "imguiex/Material3.h"
 #include "log.h"
 #include "menu/MenuNames.h"
 #include "ui/LanguageBar.h"
+#include "ui/SettingsWindow.h"
+#include "ui/ToolWindow.h"
 
 #include <chrono>
 #include <codecvt>
@@ -71,6 +74,60 @@ void TryEnableImeWndDpiAware()
         logger::info("Enable DPI aware successful!");
     }
 }
+
+//! Try hide game cursor when ImGui want capture mouse, and show game cursor when ImGui release mouse capture.
+void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
+{
+    auto      &io                = ImGui::GetIO();
+    const bool cWantCaptureMouse = io.WantCaptureMouse;
+    io.MouseDrawCursor           = cWantCaptureMouse;
+    if (justWantCaptureMouse == cWantCaptureMouse)
+    {
+        return;
+    }
+    if (auto ui = RE::UI::GetSingleton(); ui != nullptr)
+    {
+        if (auto toolWindow = ui->GetMenu(ToolWindowMenuName); toolWindow != nullptr)
+        {
+            if (cWantCaptureMouse)
+            {
+                toolWindow->menuFlags.reset(RE::UI_MENU_FLAGS::kUsesCursor);
+            }
+            else
+            {
+                toolWindow->menuFlags.set(RE::UI_MENU_FLAGS::kUsesCursor);
+            }
+        }
+    }
+    justWantCaptureMouse = cWantCaptureMouse;
+}
+
+/**
+ * The toolwindow and ImeWnd handle the shortcut at the same time.
+ * - ToolWindow already released ? -> ImeWnd handle shortcut to response the open ToolWindow request.
+ *                      alive    ? -> ToolWindow handle shortcut to response the open/pin/unpin/close ToolWindow request.
+ * - Debounce timer passed? -> If toolwindow is alive, close it and release translator; otherwise, open toolwindow and load translator.
+ */
+inline void ManageToolWindowOnDemand(std::unique_ptr<UI::ToolWindow> &toolWindow, DebounceTimer &debounceTimer, const Settings &settings)
+{
+    bool shouldOpenToolWindow = false;
+    if (toolWindow == nullptr && ImGui::Shortcut(settings.shortcut))
+    {
+        shouldOpenToolWindow = true;
+    }
+    // pass the first call
+    if (!debounceTimer.IsWaiting() || debounceTimer.Check())
+    {
+        if (toolWindow != nullptr)
+        {
+            toolWindow.reset();
+        }
+        else if (shouldOpenToolWindow)
+        {
+            toolWindow = std::make_unique<UI::ToolWindow>(settings.shortcut, settings.appearance.language);
+        }
+    }
+}
 } // namespace
 
 ImeWnd::~ImeWnd()
@@ -107,14 +164,12 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 
     InitializeTextService();
     m_pImeWindow = std::make_unique<ImeWindow>();
-    m_pImeUi     = std::make_unique<ImeUI>();
 
     m_pInputMethodManager = new InputMethodManager();
     if (FAILED(m_pInputMethodManager->Initialize(tsfSupport.GetThreadMgr())))
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
     }
-    m_pImeUi->Initialize();
 }
 
 void ImeWnd::UnInitialize() const noexcept
@@ -220,7 +275,7 @@ void ImeWnd::AbortIme() const
     }
 }
 
-void ImeWnd::DrawIme(Settings &settings)
+void ImeWnd::Draw(Settings &settings)
 {
 #ifdef DEBUG
     const auto frameStart = std::chrono::high_resolution_clock::now();
@@ -229,28 +284,28 @@ void ImeWnd::DrawIme(Settings &settings)
     if (m_fWantUpdateUiScale)
     {
         m_fWantUpdateUiScale = false;
-        ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_dpiScale);
+        ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_uiScale);
     }
     m_pTextService->UpdateIfDirty();
 
-    ImGui::PushFont(nullptr, settings.state.fontSize);
-    auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
-    const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+    AutoToggleGameCursorIfNeeded(m_fJustWantCaptureMouse);
+
+    ManageToolWindowOnDemand(m_toolWindow, m_translatorLoadDebounceTimer, settings);
+
     {
+        auto      &m3Styles  = ImGuiEx::M3::Context::GetM3Styles();
+        const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
         ErrorNotifier::GetInstance().Show();
         m_pImeWindow->Draw(m_pTextService->GetCompositionInfo(), m_pTextService->GetCandidateUi(), settings);
 
-        {
-            const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
-            const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
-            if (m_languageBar.Draw(activeLang, langProfiles))
-            {
-                settings.appearance.showSettings = true;
-            }
+        const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
+        const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
 
-            if (m_languageBar.IsShowing())
+        if (m_toolWindow != nullptr)
+        {
+            if (m_toolWindow->Draw(activeLang, langProfiles, settings))
             {
-                m_pImeUi->DrawSettings(settings);
+                m_translatorLoadDebounceTimer.Poke();
             }
         }
     }
@@ -269,11 +324,6 @@ void ImeWnd::DrawIme(Settings &settings)
     }
     ImGui::Value("Avg frame: ", static_cast<float>(avgMs));
 #endif
-}
-
-void ImeWnd::ApplyUiSettings(Settings &settings) const
-{
-    m_pImeUi->ApplySettings(settings.appearance);
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -303,7 +353,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case WM_SETTINGCHANGE: {
             if (pThis == nullptr) break;
-            pThis->m_dpiScale           = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+            pThis->m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
             pThis->m_fWantUpdateUiScale = true;
             return 0;
         }
@@ -311,7 +361,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             if (pThis == nullptr) break;
             const float g_dpi           = HIWORD(wParam);
             const auto  scale           = g_dpi / USER_DEFAULT_SCREEN_DPI;
-            pThis->m_dpiScale           = scale;
+            pThis->m_uiScale            = scale;
             pThis->m_fWantUpdateUiScale = true;
             return 0;
         }
@@ -422,10 +472,16 @@ void ImeWnd::OnCreated(Settings &settings)
 {
     logger::info("Ime window created, init TSF and core...");
     m_pTextService->OnStart(m_hWnd);
-    m_dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
+    m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
+    m_fWantUpdateUiScale = true;
+    float uiScale        = settings.appearance.zoom;
+    uiScale              = static_cast<float>(align_to(static_cast<int>(uiScale * 100), Settings::ZOOM_STEP_PERCENT)) / 100.F;
+    if (uiScale > 0.0F)
+    {
+        m_uiScale = std::clamp(uiScale, Settings::ZOOM_MIN, Settings::ZOOM_MAX);
+    }
 
     ImeController::GetInstance()->Init(this, m_hWndParent, settings);
-    m_languageBar.SetShortCut(settings.shortcut);
 }
 
 auto ImeWnd::OnDestroy() const -> LRESULT

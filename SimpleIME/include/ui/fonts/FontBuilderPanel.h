@@ -12,8 +12,6 @@ namespace ImGuiEx::M3
 class DockedToolbarScope;
 }
 
-struct ImGuiTextFilter;
-
 namespace Ime::UI
 {
 class FontBuilderPanel

@@ -9,18 +9,9 @@
 #include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
 #include "imguiex/Material3.h"
-#include "imguiex/m3/facade/base.h"
-#include "imguiex/m3/spec/color_roles.h"
+#include "imguiex/imguiex_m3.h"
 #include "log.h"
 #include "path_utils.h"
-
-#include <RE/C/ControlMap.h>
-#include <RE/C/CursorMenu.h>
-#include <RE/M/MenuCursor.h>
-#include <RE/U/UI.h>
-#include <RE/U/UserEvents.h>
-#include <d3d11.h>
-#include <windef.h>
 
 namespace Ime::UI
 {
@@ -159,6 +150,24 @@ auto AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
 auto AddFont(const std::string &filePath) -> ImFont *
 {
     return ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
+}
+
+void InitializeM3(const std::filesystem::path &iconFontPath, const ImGuiEx::M3::SchemeConfig &schemeConfig)
+{
+    auto *iconFont = AddFont(iconFontPath.generic_string());
+    if (iconFont == nullptr)
+    {
+        logger::error("Cannot find icon font from {}, fallback to default primary font!", iconFontPath.generic_string());
+        iconFont = ImGui::GetFont();
+    }
+
+    ImGuiEx::M3::Context::CreateM3Styles(iconFont, {schemeConfig});
+    ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
+}
+
+void DestroyM3()
+{
+    ImGuiEx::M3::Context::DestroyM3Styles();
 }
 
 void NewFrame()

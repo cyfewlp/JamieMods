@@ -10,6 +10,11 @@
 
 namespace Ime
 {
+inline int align_to(int value, int alignment)
+{
+    return ((value + alignment - 1) / alignment) * alignment;
+}
+
 class Utils
 {
     static constexpr auto ASCII_GRAVE_ACCENT = 0x60; // `

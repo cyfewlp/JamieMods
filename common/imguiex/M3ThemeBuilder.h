@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "Material3.h"
-
 namespace material_color_utilities
 {
 struct SchemeTonalSpot;
@@ -14,11 +12,12 @@ class Hct;
 
 namespace ImGuiEx::M3
 {
+struct SchemeConfig;
 class ColorScheme;
 
 namespace ThemeBuilder
 {
-auto Build(const ColorScheme::SchemeConfig &config) -> ColorScheme;
+auto Build(const SchemeConfig &config) -> ColorScheme;
 } // namespace ThemeBuilder
 
 } // namespace ImGuiEx::M3

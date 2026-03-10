@@ -5,7 +5,7 @@
 #include "ui/LanguageBar.h"
 
 #include "core/State.h"
-#include "i18n/TranslatorHolder.h"
+#include "i18n/translator_manager.h"
 #include "icons.h"
 #include "ime/ImeController.h"
 #include "imgui.h"
@@ -14,6 +14,7 @@
 #include "imguiex/imguiex_m3.h"
 #include "imguiex/m3/facade/button_groups.h"
 #include "menu/MenuNames.h"
+#include "tsf/LangProfile.h"
 
 #include <RE/U/UIMessage.h>
 #include <RE/U/UIMessageQueue.h>
@@ -56,67 +57,25 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
         ImeController::GetInstance()->ActivateLangProfile(langProfiles[clickedIndex].guidProfile);
     }
 }
-
-void TogglePinned(bool &pinned, bool &showing)
-{
-    if (pinned)
-    {
-        pinned = false;
-    }
-    else if (showing)
-    {
-        showing = false;
-    }
-    else
-    {
-        showing = true;
-    }
-}
 } // namespace
 
-auto LanguageBar::Draw(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool
+auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool
 {
-    if (ImGui::Shortcut(m_shortCut, ImGuiInputFlags_RouteGlobal))
-    {
-        TogglePinned(m_pinned, m_showing);
-
-        if (const auto messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
-        {
-            if (IsShowing())
-            {
-                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kShow, nullptr);
-            }
-            else
-            {
-                messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);
-            }
-        }
-    }
-
     bool openSettings = false;
-    if (m_showing)
-    {
-        DoDraw(openSettings, activeLangProfile, langProfiles);
-    }
-    return openSettings;
-}
-
-auto LanguageBar::DoDraw(bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> void
-{
-    auto flags = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
-    if (m_pinned)
+    auto flags        = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
+    if (pinned)
     {
         flags = flags.NoInputs();
     }
-    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, &m_showing, M3Spec::ToolBarColors::Vibrant, flags))
+    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, nullptr, M3Spec::ToolBarColors::Vibrant, flags))
     {
         ImGuiEx::M3::SmallIcon(ICON_MOVE);
         ImGui::SameLine();
 
         constexpr auto iconButtonColors = ImGuiEx::M3::Spec::IconButtonColors::Standard;
-        if (ImGuiEx::M3::SmallIconButton(m_pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, iconButtonColors))
+        if (ImGuiEx::M3::SmallIconButton(pinned ? static_cast<std::string_view>(ICON_PIN_OFF) : ICON_PIN, iconButtonColors))
         {
-            m_pinned = true;
+            pinned = true;
 
             if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton())
             {
@@ -130,7 +89,7 @@ auto LanguageBar::DoDraw(bool &openSettings, const LangProfile &activeLangProfil
         {
             openSettings = true;
         }
-        ImGui::SetItemTooltip("%s", Translate("Settings.Settings"));
+        ImGuiEx::M3::SetItemToolTip(Translate("Settings.Settings"));
 
         ImGui::SameLine();
 
@@ -150,6 +109,7 @@ auto LanguageBar::DoDraw(bool &openSettings, const LangProfile &activeLangProfil
 
         ImGuiEx::M3::EndFloatingToolbar();
     }
+    return openSettings;
 }
 
 } // namespace Ime

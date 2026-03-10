@@ -16,19 +16,10 @@ namespace Ime
 class FontBuilder
 {
 public:
-    void Initialize()
-    {
-        m_fontManager.FindInstalledFonts();
-    }
-
     constexpr bool IsBuilding() const;
 
     bool AddFont(int fontId, ImFontWrap &imFont);
 
-private:
-    bool MergeFont(ImFontWrap &imFontWrap);
-
-public:
     /**
      * Apply current build font to the default @c ImGui font
      * @return is applied?
@@ -41,18 +32,12 @@ public:
         m_usedFontIds.clear();
     }
 
-    [[nodiscard]] auto GetBaseFont() const -> const ImFontWrap &
-    {
-        return m_baseFont;
-    }
+    [[nodiscard]] auto GetBaseFont() const -> const ImFontWrap & { return m_baseFont; }
 
-    constexpr auto GetFontManager() const -> const FontManager &
-    {
-        return m_fontManager;
-    }
+    constexpr auto GetFontManager() const -> const FontManager & { return m_fontManager; }
 
 private:
-    FontManager      m_fontManager = {};
+    FontManager      m_fontManager;
     ImFontWrap       m_baseFont{};
     std::vector<int> m_usedFontIds; // font index in FontManger#fontInfo list.
 };

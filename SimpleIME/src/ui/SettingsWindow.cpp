@@ -1,57 +1,26 @@
-﻿//
-// Created by jamie on 25-1-21.
+//
+// Created by jamie on 2026/3/10.
 //
 
-#define IMGUI_DEFINE_MATH_OPERATORS
+#include "ui/SettingsWindow.h"
 
-#include "ImeUI.h"
-
-#include "ImeWnd.hpp"
-#include "core/State.h"
-#include "i18n/TranslatorHolder.h"
+#include "i18n/translator_manager.h"
 #include "icons.h"
 #include "ime/ImeController.h"
-#include "imgui.h"
-#include "imguiex/ImGuiEx.h"
-#include "imguiex/Material3.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
-#include "imguiex/m3/facade/others.h"
-#include "log.h"
-#include "ui/Settings.h"
 
-#include <cstdint>
-#include <format>
-#include <string>
-#include <utility>
-
-#pragma comment(lib, "dwrite.lib")
-
-namespace Ime
+namespace Ime::UI
 {
-void ImeUI::Initialize()
-{
-    logger::debug("Initializing ImeUI...");
-    m_fontBuilder.Initialize();
-}
 
-void ImeUI::ApplySettings(Settings::Appearance &appearance)
+void SettingsWindow::Draw(Settings &settings)
 {
-    m_panelAppearance.ApplySettings(appearance);
-}
-
-void ImeUI::DrawSettings(Settings &settings)
-{
-    if (!settings.appearance.showSettings)
-    {
-        return;
-    }
     auto      *imeManager = ImeController::GetInstance();
     const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
 
     const ImVec2 &viewportSize = ImGui::GetMainViewport()->Size;
-    ImGui::SetNextWindowSize(viewportSize * 0.5F, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(viewportSize * 0.25F, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize({viewportSize.x * 0.5F, viewportSize.y * 0.5F}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos({viewportSize.x * 0.25F, viewportSize.y * 0.25F}, ImGuiCond_FirstUseEver);
     if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings, ImGuiEx::WindowFlags().NoTitleBar()))
     {
         if (auto appBar = ImGuiEx::M3::AppBar(); appBar)
@@ -119,27 +88,27 @@ void ImeUI::DrawSettings(Settings &settings)
     imeManager->SyncImeStateIfDirty();
 }
 
-void ImeUI::DrawMenuAppearance(Settings &settings)
+void SettingsWindow::DrawMenuAppearance(Settings &settings)
 {
     m_panelAppearance.Draw(settings);
 
     // sync theme config
     const auto &m3Styles                               = ImGuiEx::M3::Context::GetM3Styles();
     const auto &[contrastLevel, sourceColor, darkMode] = m3Styles.Colors().GetSchemeConfig();
-    settings.appearance.themeSourceColor               = sourceColor;
-    settings.appearance.themeDarkMode                  = darkMode;
-    settings.appearance.themeContrastLevel             = contrastLevel;
+    settings.appearance.schemeConfig.sourceColor       = sourceColor;
+    settings.appearance.schemeConfig.darkMode          = darkMode;
+    settings.appearance.schemeConfig.contrastLevel     = contrastLevel;
 }
 
-void ImeUI::DrawMenuFontBuilder(Settings &settings)
+void SettingsWindow::DrawMenuFontBuilder(Settings &settings)
 {
     m_fontBuilderView.Draw(m_fontBuilder, settings);
 }
 
-void ImeUI::DrawMenuBehaviour(Settings &settings) const
+void SettingsWindow::DrawMenuBehaviour(Settings &settings) const
 {
     bool enableMod = settings.enableMod;
-    if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod"), &enableMod))
+    if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod").data(), &enableMod))
     {
         ImeController::GetInstance()->EnableMod(enableMod);
     }
@@ -153,76 +122,19 @@ void ImeUI::DrawMenuBehaviour(Settings &settings) const
     DrawFeatures(settings);
 }
 
-void ImeUI::DrawFeatures(Settings &settings)
+void SettingsWindow::DrawFeatures(Settings &settings)
 {
     DrawWindowPosUpdatePolicy(settings);
 
-    ImGui::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste"), &settings.input.enableUnicodePaste);
+    ImGui::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste").data(), &settings.input.enableUnicodePaste);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableUnicodePasteTooltip"));
 
     ImGui::SameLine();
-    if (ImGui::Checkbox(Translate("Settings.Behaviour.KeepImeOpen"), &settings.input.keepImeOpen))
+    if (ImGui::Checkbox(Translate("Settings.Behaviour.KeepImeOpen").data(), &settings.input.keepImeOpen))
     {
         ImeController::GetInstance()->MarkDirty();
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.KeepImeOpenTooltip"));
-}
-
-void ImeUI::DrawStates() const
-{
-    ImGui::SeparatorText(Translate("Settings.Behaviour.States"));
-
-    const auto &state = State::GetInstance();
-    ImGuiEx::M3::XSmallIcon(ICON_KEYBOARD);
-    ImGui::SameLine();
-    ImGui::Text("%s", Translate("Settings.Behaviour.ImeEnabled"));
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImeEnabledTooltip"));
-
-    ImGui::SameLine();
-
-    ImGuiEx::M3::XSmallIcon(ICON_FOCUS);
-    ImGui::SameLine();
-    ImGui::Text("%s", Translate("Settings.Behaviour.Focus"));
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FocusTooltip"));
-
-    ImGui::SameLine(0, ImGui::GetFontSize());
-    ImGui::TextDisabled("|");
-    ImGui::SameLine(0, ImGui::GetFontSize());
-    if (ImGui::Button(Translate("Settings.Behaviour.ForceFocusIme")))
-    {
-        ImeController::GetInstance()->ForceFocusIme();
-    }
-#ifdef DEBUG
-    auto action = [&state](const State::StateKey stateKey) -> void {
-        ImGui::SameLine();
-        if (state.Has(stateKey))
-        {
-            ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
-        }
-        else
-        {
-            ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
-        }
-    };
-    ImGui::Text("IN_COMPOSING: ");
-    action(State::IN_COMPOSING);
-    ImGui::Text("IN_CAND_CHOOSING: ");
-    action(State::IN_CAND_CHOOSING);
-    ImGui::Text("IN_ALPHANUMERIC: ");
-    action(State::IN_ALPHANUMERIC);
-    ImGui::Text("IME_OPEN: ");
-    action(State::IME_OPEN);
-    ImGui::Text("LANG_PROFILE_ACTIVATED: ");
-    action(State::LANG_PROFILE_ACTIVATED);
-    ImGui::Text("IME_DISABLED: ");
-    action(State::IME_DISABLED);
-    ImGui::Text("TSF_FOCUS: ");
-    action(State::TSF_FOCUS);
-    ImGui::Text("GAME_LOADING: ");
-    action(State::GAME_LOADING);
-    ImGui::Text("KEYBOARD_OPEN: ");
-    action(State::KEYBOARD_OPEN);
-#endif
 }
 
 template <typename T>
@@ -236,22 +148,78 @@ static constexpr auto RadioButton(const char *label, T *pValue, T value) -> bool
     return pressed;
 }
 
-void ImeUI::DrawWindowPosUpdatePolicy(Settings &settings)
+void SettingsWindow::DrawWindowPosUpdatePolicy(Settings &settings)
 {
     using Policy = Settings::WindowPosUpdatePolicy;
 
-    ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy"));
+    ImGui::SeparatorText(Translate("Settings.Behaviour.ImePos.Policy").data());
 
-    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByCursor"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CURSOR);
+    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByCursor").data(), &settings.input.posUpdatePolicy, Policy::BASED_ON_CURSOR);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImePos.UpdateByCursorTooltip"));
 
     ImGui::SameLine();
-    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByCaret"), &settings.input.posUpdatePolicy, Policy::BASED_ON_CARET);
+    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByCaret").data(), &settings.input.posUpdatePolicy, Policy::BASED_ON_CARET);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImePos.UpdateByCaretTooltip"));
 
     ImGui::SameLine();
-    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByNone"), &settings.input.posUpdatePolicy, Policy::NONE);
+    RadioButton(Translate("Settings.Behaviour.ImePos.UpdateByNone").data(), &settings.input.posUpdatePolicy, Policy::NONE);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImePos.UpdateByNoneTooltip"));
 }
 
-} // namespace Ime
+void SettingsWindow::DrawStates() const
+{
+    ImGui::SeparatorText(Translate("Settings.Behaviour.States").data());
+
+    const auto &state = Core::State::GetInstance();
+    ImGuiEx::M3::XSmallIcon(ICON_KEYBOARD);
+    ImGui::SameLine();
+    ImGuiEx::M3::TextUnformatted(Translate("Settings.Behaviour.ImeEnabled"));
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImeEnabledTooltip"));
+
+    ImGui::SameLine();
+
+    ImGuiEx::M3::XSmallIcon(ICON_FOCUS);
+    ImGui::SameLine();
+    ImGuiEx::M3::TextUnformatted(Translate("Settings.Behaviour.Focus"));
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FocusTooltip"));
+
+    ImGui::SameLine(0, ImGui::GetFontSize());
+    ImGui::TextDisabled("|");
+    ImGui::SameLine(0, ImGui::GetFontSize());
+    if (ImGuiEx::M3::SmallButton(Translate("Settings.Behaviour.ForceFocusIme"), ""))
+    {
+        ImeController::GetInstance()->ForceFocusIme();
+    }
+#ifdef DEBUG
+    auto action = [&state](const Core::State::StateKey stateKey) -> void {
+        ImGui::SameLine();
+        if (state.Has(stateKey))
+        {
+            ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+        else
+        {
+            ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+    };
+    ImGui::Text("IN_COMPOSING: ");
+    action(Core::State::IN_COMPOSING);
+    ImGui::Text("IN_CAND_CHOOSING: ");
+    action(Core::State::IN_CAND_CHOOSING);
+    ImGui::Text("IN_ALPHANUMERIC: ");
+    action(Core::State::IN_ALPHANUMERIC);
+    ImGui::Text("IME_OPEN: ");
+    action(Core::State::IME_OPEN);
+    ImGui::Text("LANG_PROFILE_ACTIVATED: ");
+    action(Core::State::LANG_PROFILE_ACTIVATED);
+    ImGui::Text("IME_DISABLED: ");
+    action(Core::State::IME_DISABLED);
+    ImGui::Text("TSF_FOCUS: ");
+    action(Core::State::TSF_FOCUS);
+    ImGui::Text("GAME_LOADING: ");
+    action(Core::State::GAME_LOADING);
+    ImGui::Text("KEYBOARD_OPEN: ");
+    action(Core::State::KEYBOARD_OPEN);
+#endif
+}
+} // namespace Ime::UI

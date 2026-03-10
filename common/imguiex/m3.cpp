@@ -30,7 +30,7 @@ void M3Styles::UpdateScaling(const float newScale)
     UpdateTypeScaleScaling(m_cachedTypeScale, m_currentScale);
 }
 
-void M3Styles::RebuildColors(const ColorScheme::SchemeConfig &schemeConfig)
+void M3Styles::RebuildColors(const SchemeConfig &schemeConfig)
 {
     m_scheme = ThemeBuilder::Build(schemeConfig);
 }
@@ -40,7 +40,7 @@ namespace
 std::unique_ptr<M3Styles> g_currentStyles = nullptr;
 }
 
-auto Context::CreateM3Styles(ImFont *iconFont, const ColorScheme::SchemeConfig &schemeConfig) -> M3Styles &
+auto Context::CreateM3Styles(ImFont *iconFont, const SchemeConfig &schemeConfig) -> M3Styles &
 {
     auto colors     = ImGuiEx::M3::ThemeBuilder::Build(schemeConfig);
     g_currentStyles = std::make_unique<ImGuiEx::M3::M3Styles>(colors, iconFont);

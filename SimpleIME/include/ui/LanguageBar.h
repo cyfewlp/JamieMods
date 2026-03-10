@@ -5,27 +5,17 @@
 #pragma once
 
 #include "imgui.h"
-#include "tsf/LangProfile.h"
 
 #include <vector>
 
 namespace Ime
 {
+struct LangProfile;
 
 class LanguageBar
 {
-    bool          m_pinned   = false;
-    bool          m_showing  = false;
-    ImGuiKeyChord m_shortCut = ImGuiKey_None;
-
 public:
-    auto Draw(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool;
-
-    [[nodiscard]] auto IsPinned() const -> bool { return m_pinned; }
-
-    [[nodiscard]] auto IsShowing() const -> bool { return m_showing; }
-
-    void SetShortCut(ImGuiKeyChord key) { m_shortCut = key; }
+    auto Draw(bool &pinned, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool;
 
 private:
     auto DoDraw(bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> void;

@@ -5,8 +5,7 @@
 #include "ui/panels/AppearancePanel.h"
 
 #include "cpp/scheme/scheme_tonal_spot.h"
-#include "i18n/TranslationLoader.h"
-#include "i18n/TranslatorHolder.h"
+#include "i18n/translator_manager.h"
 #include "icons.h"
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/Material3.h"
@@ -21,6 +20,7 @@
 #include "ui/Settings.h"
 #include "ui/imgui_system.h"
 
+#include <cassert>
 #include <imgui.h>
 
 namespace Ime
@@ -65,19 +65,19 @@ void DrawColorBar(ImDrawList *drawList, const ImVec2 &pos, const ImVec2 &size, c
 
 void DrawHuePicker(float &hue, float chroma, const ImVec2 &pickerSize)
 {
-    constexpr int   kHueSegments = 6;
-    constexpr float kHueMax      = 360.0F;
+    constexpr float kHueMax = 360.0F;
 
-    const Hct col_hues[kHueSegments + 1] = {
+    const std::array col_hues = {
         Hct(0xFFFF0000), Hct(0xFFFFFF00), Hct(0xFF00FF00), Hct(0xFF00FFFF), Hct(0xFF0000FF), Hct(0xFFFF00FF), Hct(0xFFFF0000)
     };
+    const auto kHueSegments = col_hues.size() - 1;
 
     auto *draw_list = ImGui::GetWindowDrawList();
 
     const ImVec2 picker_pos   = ImGui::GetCursorScreenPos();
     const float  segment_w    = pickerSize.x / static_cast<float>(kHueSegments);
     float        segment_minX = picker_pos.x;
-    for (int i = 0; i < kHueSegments; ++i)
+    for (size_t i = 0; i < kHueSegments; ++i)
     {
         const auto col1 = Hct(col_hues[i].get_hue(), chroma, kToneDefault);
         const auto col2 = Hct(col_hues[i + 1].get_hue(), chroma, kToneDefault);
@@ -180,57 +180,48 @@ void HexRgbInputText(AppearancePanel::HctCache &hctCache)
     }
 }
 
-// --------------------
-// |      picker      |
-// --------------------
-// |  apply  | cancel |
-// --------------------
 auto HctPickerPopup(const char *strId, AppearancePanel::HctCache &hctCache) -> bool
 {
     bool applied = false;
 
-    auto      &m3Styles        = ImGuiEx::M3::Context::GetM3Styles();
-    const auto popupStyleGuard = ImGuiEx::StyleGuard()
-                                     .Color<ImGuiCol_PopupBg>(m3Styles.Colors()[ColorRole::surfaceContainerHighest])
-                                     .Style<ImGuiStyleVar_WindowPadding>(m3Styles.GetPadding<M3Spec::Dialogs>());
-    if (!ImGui::BeginPopup(strId))
+    auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
+    if (auto dialog = ImGuiEx::M3::DialogModal(strId); dialog)
     {
-        return applied;
-    }
+        HexRgbInputText(hctCache);
 
-    HexRgbInputText(hctCache);
+        const ImVec2 pickerSSize(ImGui::GetContentRegionAvail().x, m3Styles.GetPixels(M3Spec::SmallSlider::frameHeight));
 
-    const auto   fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
-    const ImVec2 pickerSSize(m3Styles.GetPixels(M3Spec::Dialogs::minWidth), m3Styles.GetPixels(M3Spec::SmallSlider::frameHeight));
+        dialog.SupportingText(std::format("Hue: {:.3f}", hctCache.hue));
+        DrawHuePicker(hctCache.hue, hctCache.chroma, pickerSSize);
 
-    ImGuiEx::M3::TextUnformatted(std::format("Hue: {:.3f}", hctCache.hue));
-    DrawHuePicker(hctCache.hue, hctCache.chroma, pickerSSize);
+        dialog.SupportingText(std::format("Chroma: {:.3f}", hctCache.chroma));
+        DrawChromaPicker(hctCache.hue, hctCache.chroma, pickerSSize);
 
-    ImGuiEx::M3::TextUnformatted(std::format("Chroma: {:.3f}", hctCache.chroma));
-    DrawChromaPicker(hctCache.hue, hctCache.chroma, pickerSSize);
+        dialog.SupportingText(std::format("Tone: {:.3f}", hctCache.tone));
+        DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerSSize);
 
-    ImGuiEx::M3::TextUnformatted(std::format("Tone: {:.3f}", hctCache.tone));
-    DrawTonePicker(hctCache.hue, hctCache.chroma, hctCache.tone, pickerSSize);
-
-    {
-        if (ImGuiEx::M3::Button(Translate("Settings.Apply"), {ICON_CHECK}))
+        if (dialog.ActionButton(Translate("Settings.Apply"), ICON_CHECK))
         {
             applied = true;
             ImGui::CloseCurrentPopup();
         }
 
-        ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Cancel"), ICON_X))
+        ImGui::SameLine();
+        if (dialog.ActionButton(Translate("Settings.Cancel"), ICON_X))
         {
             ImGui::CloseCurrentPopup();
         }
     }
-
-    ImGui::EndPopup();
     return applied;
 }
 
 } // namespace
+
+AppearancePanel::AppearancePanel()
+{
+    i18n::ScanLanguages(utils::GetInterfacePath() / SIMPLE_IME, m_translateLanguages);
+    // Translator lifecycle is managed by ToolWindow. See docs/adr/0001-toolwindow-translator-lifecycle.md
+}
 
 void AppearancePanel::Draw(Settings &settings)
 {
@@ -273,22 +264,16 @@ void AppearancePanel::DrawZoomCombo()
     }
 }
 
-//! \todo need refactor ColorPicker style. maybe we can add a HUE wheel in the future.
 void AppearancePanel::DrawThemeBuilder()
 {
     auto       &m3Styles     = ImGuiEx::M3::Context::GetM3Styles();
-    const auto &colors       = m3Styles.Colors();
     const auto &schemeConfig = m3Styles.Colors().GetSchemeConfig();
     bool        openPopup    = false;
     const auto  fontScope    = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
 
     constexpr auto colorButtonFlags = ImGuiEx::ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
     {
-        const auto s = ImGuiEx::StyleGuard()
-                           .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::M]})
-                           .Color<ImGuiCol_ChildBg>(colors[ColorRole::surface]);
-
-        ImGuiEx::M3::ListItem([&] {
+        ImGuiEx::M3::ListItem([&] -> void {
             const auto size = ImGuiEx::M3::ListLeadingImageSize();
             openPopup       = ImGui::ColorButton("##SourceColor", ImGuiEx::M3::ArgbToImVec4(schemeConfig.sourceColor), colorButtonFlags, size);
             ImGui::SameLine();
@@ -299,7 +284,6 @@ void AppearancePanel::DrawThemeBuilder()
     if (openPopup)
     {
         ImGui::OpenPopup("ThemeBuilder");
-        ImGui::SetNextWindowSize({m3Styles.GetPixels(M3Spec::Layout::Medium::Breakpoint), 0.F});
         const Hct hct(schemeConfig.sourceColor);
         m_hctCache.hue    = static_cast<float>(hct.get_hue());
         m_hctCache.chroma = static_cast<float>(hct.get_chroma());
@@ -310,22 +294,20 @@ void AppearancePanel::DrawThemeBuilder()
     }
     constexpr auto HCT_PICKER_POPUP = "##HctPickerPopup";
 
-    const auto styleGuard = ImGuiEx::StyleGuard()
-                                .Style<ImGuiStyleVar_FramePadding>({0.f, m3Styles[ImGuiEx::M3::Spacing::S]})
-                                .Style<ImGuiStyleVar_WindowPadding>({m3Styles[ImGuiEx::M3::Spacing::M], m3Styles[ImGuiEx::M3::Spacing::M]})
-                                .Color<ImGuiCol_PopupBg>(colors[ColorRole::surfaceContainer]);
-    bool open = true;
-    if (ImGui::BeginPopupModal(Translate("Settings.Appearance.ThemeBuilder"), &open, ImGuiEx::WindowFlags()))
+    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.Appearance.ThemeBuilder")); dialog)
     {
         static std::unique_ptr<Scheme> scheme = nullptr;
 
         const auto hctPickerPopupId = ImGui::GetID(HCT_PICKER_POPUP);
 
         edited = HctPickerPopup(HCT_PICKER_POPUP, m_hctCache) || edited;
-        edited = ImGui::Checkbox(Translate("Settings.Appearance.DarkMode"), &m_darkModeTemp) || edited;
+        // TODO: add M3 style checkbox;
+        edited = ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_darkModeTemp) || edited;
         edited = ImGuiEx::M3::Slider::Draw(
                      Translate("Settings.Appearance.ContrastLevel"),
-                     ImGuiEx::M3::Slider::Params{m_contrastLevelTemp, ImGuiEx::M3::CONTRAST_MIN, ImGuiEx::M3::CONTRAST_MAX}
+                     ImGuiEx::M3::Slider::Params{
+                         .value = m_contrastLevelTemp, .minValue = ImGuiEx::M3::CONTRAST_MIN, .maxValue = ImGuiEx::M3::CONTRAST_MAX
+                     }
                  ) ||
                  edited;
         if (edited)
@@ -337,8 +319,8 @@ void AppearancePanel::DrawThemeBuilder()
         {
             const auto paletteSize = ImGuiEx::M3::ListLeadingImageSize();
 
-            auto draw_palette = [&](std::string_view label, const auto &palette) {
-                ImGuiEx::M3::ListItemPlain([&] {
+            auto draw_palette = [&](std::string_view label, const auto &palette) -> void {
+                ImGuiEx::M3::ListItemPlain([&] -> void {
                     const auto cursorPos = ImGui::GetCursorScreenPos();
                     ImGui::GetWindowDrawList()->AddRectFilled(
                         cursorPos,
@@ -351,7 +333,7 @@ void AppearancePanel::DrawThemeBuilder()
                 });
             };
 
-            ImGuiEx::M3::ListItem([&] {
+            ImGuiEx::M3::ListItem([&] -> void {
                 if (ImGui::ColorButton(
                         "Primary", ImGuiEx::M3::ArgbToImVec4(scheme->primary_palette.get_key_color().ToInt()), colorButtonFlags, paletteSize
                     ))
@@ -368,35 +350,33 @@ void AppearancePanel::DrawThemeBuilder()
             draw_palette("Error", scheme->error_palette);
         }
 
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Apply"), ICON_CHECK))
+        if (dialog.ActionButton(Translate("Settings.Apply"), ICON_CHECK))
         {
-            m3Styles.RebuildColors({m_contrastLevelTemp, Hct(m_hctCache.hue, m_hctCache.chroma, m_hctCache.tone).ToInt(), m_darkModeTemp});
+            m3Styles.RebuildColors(
+                {.contrastLevel = m_contrastLevelTemp,
+                 .sourceColor   = Hct(m_hctCache.hue, m_hctCache.chroma, m_hctCache.tone).ToInt(),
+                 .darkMode      = m_darkModeTemp}
+            );
             ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
             scheme.reset();
-            ImGui::CloseCurrentPopup();
         }
 
-        ImGui::SameLine(0.0F, m3Styles.GetPixels(M3Spec::StandardSmallButtonGroup::BetweenSpace));
-        if (ImGuiEx::M3::SmallButton(Translate("Settings.Cancel"), ICON_X))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
+        ImGui::SameLine();
+        (void)dialog.ActionButton(Translate("Settings.Cancel"), ICON_X);
     }
 }
 
 void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
 {
     bool clicked = false;
-    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language.c_str()))
+    if (ImGuiEx::M3::BeginCombo(Translate("Settings.Appearance.Languages"), appearance.language))
     {
         int32_t idx = 0;
         for (const auto &language : m_translateLanguages)
         {
             ImGui::PushID(idx);
             const bool isSelected = appearance.language == language;
-            if (ImGuiEx::M3::MenuItem(language.c_str(), isSelected) && !isSelected)
+            if (ImGuiEx::M3::MenuItem(language, isSelected) && !isSelected)
             {
                 appearance.language = language;
                 clicked             = true;
@@ -413,44 +393,7 @@ void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
 
     if (clicked)
     {
-        LoadTranslation(appearance.language);
-    }
-}
-
-void AppearancePanel::ApplySettings(Settings::Appearance &appearance)
-{
-    appearance.zoom = std::min(ZOOM_MAX, appearance.zoom);
-    appearance.zoom = std::max(ZOOM_MIN, appearance.zoom);
-
-    auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
-    m3Styles.UpdateScaling(appearance.zoom);
-    ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
-
-    i18n::ScanLanguages(utils::GetInterfacePath() / SIMPLE_IME, m_translateLanguages);
-
-    if (const auto langIt = std::ranges::find(m_translateLanguages, appearance.language); langIt == m_translateLanguages.end())
-    {
-        appearance.language = "english";
-    }
-
-    if (auto accessorOpt = TranslatorHolder::RequestUpdateHandle())
-    {
-        m_i18nHandle.emplace(accessorOpt.value());
-    }
-    else
-    {
-        throw SimpleIMEException("Already initialized TranslatorHolder! TranslatorHolder should init by ImeUI!");
-    }
-    LoadTranslation(appearance.language);
-}
-
-// FIXME: Handle error
-void AppearancePanel::LoadTranslation(std::string_view language) const
-{
-    if (!m_i18nHandle) return;
-    if (auto opt = i18n::LoadTranslation(language, utils::GetInterfacePath() / SIMPLE_IME); opt)
-    {
-        m_i18nHandle->Update(std::move(opt.value()));
+        i18n::UpdateTranslator(appearance.language, "english");
     }
 }
 } // namespace Ime

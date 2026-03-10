@@ -100,48 +100,49 @@ struct Converter<ImGuiKeyChord>
 {
     static auto fromString(std::string_view str) -> std::optional<ImGuiKeyChord>
     {
-        ImGuiKeyChord shortcut     = 0;
-        bool          parseSuccess = false;
-        bool          onlyModifier =
-            true; // shortcut can't be only modifier key, must have a normal key. e.g. "Ctrl+Shift" is invalid, but "Ctrl+F1" is valid.
+        ImGuiKeyChord shortcut      = 0;
+        bool          parseComplete = false;
+        // shortcut can't be only modifier key, must have a normal key. e.g. "Ctrl+Shift" is invalid, but "Ctrl+F1" is valid.
+        bool          onlyModifier  = true;
 
-        std::string shortcutErasedSpaced;
-        shortcutErasedSpaced.reserve(str.size());
+        std::string shortcutErasedSpace;
+        shortcutErasedSpace.reserve(str.size());
         for (char c : str)
         {
             if (!std::isspace(c))
             {
-                shortcutErasedSpaced.push_back(static_cast<char>(std::tolower(c)));
+                shortcutErasedSpace.push_back(static_cast<char>(std::tolower(c)));
             }
         }
 
-        size_t                 startPos               = 0;
-        size_t                 partPos                = 0;
-        const std::string_view shortcutErasedSpacedSv = shortcutErasedSpaced;
-        while (startPos < shortcutErasedSpaced.size() && partPos != std::string::npos)
+        size_t                 startPos              = 0;
+        size_t                 partPos               = 0;
+        const std::string_view shortcutErasedSpaceSv = shortcutErasedSpace;
+        while (startPos < shortcutErasedSpace.size() && partPos != std::string::npos)
         {
-            partPos            = shortcutErasedSpacedSv.find_first_of("+", startPos);
-            const auto keyName = (partPos == std::string::npos) ? shortcutErasedSpacedSv.substr(startPos)
-                                                                : shortcutErasedSpacedSv.substr(startPos, partPos - startPos);
+            partPos = shortcutErasedSpaceSv.find_first_of("+", startPos);
+            const auto keyName =
+                (partPos == std::string::npos) ? shortcutErasedSpaceSv.substr(startPos) : shortcutErasedSpaceSv.substr(startPos, partPos - startPos);
             if (const auto modOpt = TryParseKeyWithModifier(keyName); modOpt.has_value())
             {
                 startPos = partPos + 1;
                 shortcut |= modOpt.value();
+                parseComplete = (partPos == std::string::npos);
             }
             else if (const auto foundKeyOpt = FindKeyByName(keyName); foundKeyOpt.has_value())
             {
                 if (!onlyModifier) // already contain a named key!
                 {
-                    parseSuccess = false;
+                    parseComplete = false;
                     break;
                 }
                 startPos     = partPos + 1;
                 onlyModifier = false;
                 shortcut |= foundKeyOpt.value();
-                parseSuccess = (partPos == std::string::npos);
+                parseComplete = (partPos == std::string::npos);
             }
         }
-        if (parseSuccess && !onlyModifier)
+        if (parseComplete && !onlyModifier)
         {
             return shortcut;
         }
@@ -261,13 +262,13 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     settings.resources.fontPathList   = config.resources.fontPathList;
 
     // Appearance
-    settings.appearance.themeSourceColor     = config.appearance.themeSourceColor;
-    settings.appearance.themeContrastLevel   = config.appearance.themeContrastLevel;
-    settings.appearance.themeDarkMode        = config.appearance.themeDarkMode;
-    settings.appearance.language             = config.appearance.language;
-    settings.appearance.zoom                 = config.appearance.zoom;
-    settings.appearance.errorDisplayDuration = config.appearance.errorDisplayDuration;
-    settings.appearance.showSettings         = config.appearance.showSettings;
+    settings.appearance.schemeConfig.sourceColor   = config.appearance.themeSourceColor;
+    settings.appearance.schemeConfig.contrastLevel = config.appearance.themeContrastLevel;
+    settings.appearance.schemeConfig.darkMode      = config.appearance.themeDarkMode;
+    settings.appearance.language                   = config.appearance.language;
+    settings.appearance.zoom                       = config.appearance.zoom;
+    settings.appearance.errorDisplayDuration       = config.appearance.errorDisplayDuration;
+    settings.appearance.showSettings               = config.appearance.showSettings;
 
     // Input
     settings.input.enableUnicodePaste = config.input.enableUnicodePaste;
@@ -322,9 +323,9 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     configuration.resources.fontPathList   = settings.resources.fontPathList;
 
     // Appearance
-    configuration.appearance.themeSourceColor     = settings.appearance.themeSourceColor;
-    configuration.appearance.themeContrastLevel   = settings.appearance.themeContrastLevel;
-    configuration.appearance.themeDarkMode        = settings.appearance.themeDarkMode;
+    configuration.appearance.themeSourceColor     = settings.appearance.schemeConfig.sourceColor;
+    configuration.appearance.themeContrastLevel   = settings.appearance.schemeConfig.contrastLevel;
+    configuration.appearance.themeDarkMode        = settings.appearance.schemeConfig.darkMode;
     configuration.appearance.language             = settings.appearance.language;
     configuration.appearance.zoom                 = settings.appearance.zoom;
     configuration.appearance.errorDisplayDuration = settings.appearance.errorDisplayDuration;

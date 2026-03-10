@@ -26,7 +26,7 @@ namespace Ime::UI
 class FontPreviewPanel
 {
     ImGuiTextFilter       m_textFilter;
-    ImFontWrap            m_imFont;
+    ImFontWrap            m_imFont{};
     std::vector<FontInfo> m_displayFontInfos;
     DebounceTimer         m_previewDebounceTimer{std::chrono::milliseconds{300}};
     DebounceTimer         m_searchDebounceTimer{std::chrono::milliseconds{200}};
