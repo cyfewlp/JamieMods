@@ -40,6 +40,7 @@ ToolWindow::ToolWindow(ImGuiKeyChord shortcut, std::string_view language) : m_sh
 
 ToolWindow::~ToolWindow()
 {
+    // FIXME: ToolWindow won't immediately release when close. The need move to the draw function inner.
     if (auto *const messageQueue = RE::UIMessageQueue::GetSingleton(); messageQueue != nullptr)
     {
         messageQueue->AddMessage(ToolWindowMenuName, RE::UI_MESSAGE_TYPE::kHide, nullptr);

@@ -13,9 +13,19 @@ namespace Ime::UI
 {
 class SettingsWindow
 {
+public:
+    enum class Menu : int8_t
+    {
+        Appearance,
+        FontBuilder,
+        Behaviour,
+    };
+
+private:
     FontBuilder      m_fontBuilder;
     FontBuilderPanel m_fontBuilderView{};
     AppearancePanel  m_panelAppearance{};
+    Menu             m_currentMenu = Menu::Appearance;
 
 public:
     void Draw(Settings &settings);

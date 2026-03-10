@@ -1920,7 +1920,7 @@ DialogModalScope::DialogModalScope(std::string_view name, WindowFlags flags)
     auto       &m3Styles = Context::GetM3Styles();
     const float minWidth = m3Styles.GetPixels(DialogSpec::MinWidth);
     const float maxWidth = m3Styles.GetPixels(DialogSpec::MaxWidth);
-    ImGui::SetNextWindowSizeConstraints({minWidth, -1.0F}, {maxWidth, -1.0F});
+    ImGui::SetNextWindowSizeConstraints({minWidth, 0.0F}, {maxWidth, FLT_MAX});
 
     const auto paddingX    = m3Styles.GetPixels(DialogSpec::PaddingX);
     const auto paddingY    = paddingX; // see Dialog Spec;

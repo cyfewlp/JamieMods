@@ -9,19 +9,28 @@
 #include "ime/ImeController.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
+#include "imguiex/m3/spec/layout.h"
 
 namespace Ime::UI
 {
 
 void SettingsWindow::Draw(Settings &settings)
 {
-    auto      *imeManager = ImeController::GetInstance();
-    const auto windowName = std::format("{}###SettingsWindow", Translate("Settings.Settings"));
+    constexpr ImVec2 CENTER_ALIGN_PIVOT(0.5F, 0.5F);
+    constexpr float  DEFAULT_WINDOW_HEIGHT_FACTOR = 0.75F;
 
-    const ImVec2 &viewportSize = ImGui::GetMainViewport()->Size;
-    ImGui::SetNextWindowSize({viewportSize.x * 0.5F, viewportSize.y * 0.5F}, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos({viewportSize.x * 0.25F, viewportSize.y * 0.25F}, ImGuiCond_FirstUseEver);
-    if (ImGui::Begin(windowName.c_str(), &settings.appearance.showSettings, ImGuiEx::WindowFlags().NoTitleBar()))
+    const auto &viewport            = ImGui::GetMainViewport();
+    auto       &m3Styles            = ImGuiEx::M3::Context::GetM3Styles();
+    // At least two panel(font builder). So, the minimum width compute from Expanded layout.
+    const float minWidth            = m3Styles.GetPixels(M3Spec::Layout::Expanded::Breakpoint);
+    const float maxWidth            = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Breakpoint);
+    const float defaultWindowHeight = viewport->Size.y * DEFAULT_WINDOW_HEIGHT_FACTOR;
+
+    ImGui::SetNextWindowSize({minWidth, defaultWindowHeight}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_FirstUseEver, CENTER_ALIGN_PIVOT);
+
+    ImGui::SetNextWindowSizeConstraints({minWidth, 0.0F}, {maxWidth, FLT_MAX});
+    if (ImGui::Begin("SettingsWindow", &settings.appearance.showSettings, ImGuiEx::WindowFlags().NoTitleBar()))
     {
         if (auto appBar = ImGuiEx::M3::AppBar(); appBar)
         {
@@ -30,46 +39,35 @@ void SettingsWindow::Draw(Settings &settings)
             {
                 settings.appearance.showSettings = false;
             }
-            if (auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
-                appBar.TrailingIcon(m3Styles.Colors().IsDark() ? std::string_view(ICON_MOON) : ICON_SUN))
+            if (appBar.TrailingIcon(m3Styles.Colors().IsDark() ? std::string_view(ICON_MOON) : ICON_SUN))
             {
                 m3Styles.ToggleLightDarkScheme();
                 ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
             }
         }
 
-        enum class Menu : int8_t
-        {
-            Appearance,
-            FontBuilder,
-            Behaviour
-        };
-        static auto currentMenu = std::pair{Menu::Appearance, true};
-
         // Sidebar
+        if (ImGuiEx::M3::BeginResponsiveNavRail("Sidebar"))
         {
-            if (ImGuiEx::M3::BeginResponsiveNavRail("Sidebar"))
+            if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Appearance"), m_currentMenu == Menu::Appearance, ICON_PALETTE))
             {
-                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Appearance"), currentMenu.first == Menu::Appearance, ICON_PALETTE))
-                {
-                    currentMenu = {Menu::Appearance, true};
-                }
-                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.FontBuilder"), currentMenu.first == Menu::FontBuilder, ICON_CASE_UPPER))
-                {
-                    currentMenu = {Menu::FontBuilder, true};
-                }
-                if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Behaviour"), currentMenu.first == Menu::Behaviour, ICON_SETTINGS))
-                {
-                    currentMenu = {Menu::Behaviour, true};
-                }
-                ImGuiEx::M3::EndNavRail();
+                m_currentMenu = Menu::Appearance;
             }
+            if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.FontBuilder"), m_currentMenu == Menu::FontBuilder, ICON_CASE_UPPER))
+            {
+                m_currentMenu = Menu::FontBuilder;
+            }
+            if (ImGuiEx::M3::NavItem(Translate("Settings.Sidebar.Behaviour"), m_currentMenu == Menu::Behaviour, ICON_SETTINGS))
+            {
+                m_currentMenu = Menu::Behaviour;
+            }
+            ImGuiEx::M3::EndNavRail();
         }
 
         ImGui::SameLine(0, 0);
 
         ImGui::BeginGroup();
-        switch (currentMenu.first)
+        switch (m_currentMenu)
         {
             case Menu::Appearance:
                 DrawMenuAppearance(settings);
@@ -82,10 +80,9 @@ void SettingsWindow::Draw(Settings &settings)
                 break;
         }
         ImGui::EndGroup();
-        currentMenu.second = false;
     }
     ImGui::End();
-    imeManager->SyncImeStateIfDirty();
+    ImeController::GetInstance()->SyncImeStateIfDirty();
 }
 
 void SettingsWindow::DrawMenuAppearance(Settings &settings)
