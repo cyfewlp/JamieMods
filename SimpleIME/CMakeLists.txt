@@ -16,7 +16,7 @@ configure_file(
 #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
 set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
 
-file(GLOB_RECURSE headers *.h include/*.hpp)
+file(GLOB_RECURSE headers include/*.h include/*.hpp include/*.cpp)
 file(GLOB_RECURSE sources src/*.cpp)
 
 source_group(

@@ -8,12 +8,12 @@
 #include "RE/G/GFxEvent.h"
 #include "RE/U/UI.h"
 #include "RE/U/UIMessage.h"
-#include "Utils.h"
 #include "core/State.h"
 #include "ime/ImeController.h"
 #include "log.h"
 #include "menu/MenuNames.h"
 #include "menu/ToolWindowMenu.h"
+#include "utils/Utils.h"
 
 #include <unordered_map>
 
@@ -71,6 +71,11 @@ ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
 
 void ImeMenu::PostDisplay()
 {
+    for (RE::GFxEvent *gfxEvent : m_imeCharEvents)
+    {
+        RE::GMemory::Free(gfxEvent);
+    }
+    m_imeCharEvents.clear();
     ImeApp::GetInstance().Draw();
 }
 
@@ -128,18 +133,27 @@ auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI
         case RE::GFxEvent::EventType::kMouseWheel:
             return OnMouseWheelEvent(fxEvent);
         case RE::GFxEvent::EventType::kCharEvent: {
-            const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
+            const auto charEvent = reinterpret_cast<GFxCharEvent *>(fxEvent);
             return OnCharEvent(charEvent);
         }
+        case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeKeyUp): {
+            auto *keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(fxEvent);
+            m_imeCharEvents.push_back(keyEvent);
+            keyEvent->type = RE::GFxEvent::EventType::kKeyUp;
+            break;
+        }
         case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeCharEvent): {
-            // This cast is safe but its a bit hacky, since kImeCharEvent is not a real GFxEvent type, but we can use it to distinguish from normal
-            // CharEvent. The logic: intercept all the `RE::GFxEvent::EventType::kCharEvent` type events when IME activated. And call
-            // `Utils::SendStringToGame` when recived `WM_CHAR` message. pass all `GFxEventTypeEx::kImeCharEvent` event except for ToolWindowMenu is
-            // showing.
+            // This cast is safe but its a bit hacky, since `kImeCharEvent` is not a real GFxEvent type, but we can use it to distinguish from normal
+            // CharEvent.  THIS is key design that ensures our system functions properly and safety.
+            // The logic:
+            // 1. intercept all the `kCharEvent` type events when IME activated. And call `Skyrim::SendUiString` when received `WM_CHAR` message.
+            // 2. Pass all `GFxEventTypeEx::kImeCharEvent` event except for ToolWindowMenu is showing.
+            // 3. Record these event and release it in `PostDisplay` to avoid memory leak.
             // \todo Is this also worked when TSF disabled?
+            auto *charEvent = reinterpret_cast<GFxCharEvent *>(fxEvent);
+            m_imeCharEvents.push_back(charEvent);
             if (ToolWindowMenu::IsShowing())
             {
-                const auto charEvent = reinterpret_cast<RE::GFxCharEvent *>(fxEvent);
                 ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
                 return RE::UI_MESSAGE_RESULTS::kHandled;
             }
@@ -257,7 +271,7 @@ bool SendFakeControlUpEvent()
         if (auto *pScaleFormMessageData = pFactory->Create())
         {
             auto *pEvent                          = new RE::GFxKeyEvent();
-            pEvent->type                          = RE::GFxEvent::EventType::kKeyUp;
+            pEvent->type                          = static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeKeyUp);
             pEvent->keyCode                       = RE::GFxKey::kControl;
             pScaleFormMessageData->scaleformEvent = pEvent;
 
@@ -271,7 +285,7 @@ bool SendFakeControlUpEvent()
     return false;
 }
 
-auto ImeMenu::OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS
+auto ImeMenu::OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS
 {
     if (ToolWindowMenu::IsShowing())
     {
@@ -290,14 +304,14 @@ auto ImeMenu::OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_R
     }
 
     const auto &state = Core::State::GetInstance();
-    if (state.Has(Core::State::LANG_PROFILE_ACTIVATED))
+    if (!state.ImeDisabled() && state.Has(Core::State::LANG_PROFILE_ACTIVATED))
     {
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }
     return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
-bool ImeMenu::IsPaste(const RE::GFxCharEvent *charEvent) const
+bool ImeMenu::IsPaste(const GFxCharEvent *charEvent) const
 {
     return charEvent->wcharCode == 'v' && ctrlDown;
 }
@@ -323,7 +337,7 @@ bool ImeMenu::Paste()
     {
         if (auto *const textData = static_cast<LPTSTR>(GlobalLock(handle)); textData != nullptr)
         {
-            Utils::SendStringToGame(std::wstring(textData));
+            Skyrim::SendUiString(std::wstring(textData));
 
             GlobalUnlock(handle);
         }

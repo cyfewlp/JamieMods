@@ -13,9 +13,9 @@ namespace Ime
 
 auto ImeManager::Focus(const HWND hwnd) -> bool
 {
-    auto  hwndThread      = GetWindowThreadProcessId(hwnd, nullptr);
-    DWORD currentThreadId = GetCurrentThreadId();
-    bool  success         = true;
+    auto        hwndThread      = GetWindowThreadProcessId(hwnd, nullptr);
+    const DWORD currentThreadId = GetCurrentThreadId();
+    bool        success         = true;
     if (hwndThread != currentThreadId)
     {
         success = AttachThreadInput(hwndThread, currentThreadId, TRUE) != FALSE;
@@ -36,13 +36,12 @@ auto ImeManager::EnableIme(bool enable) -> Result
 {
     logger::debug("ImeManager::{} {}", __func__, enable ? "enable" : "disable");
 
-    if ((State::GetInstance().Has(State::IME_DISABLED) && enable) ||
-        (State::GetInstance().NotHas(State::IME_DISABLED) && !enable) || m_fForceUpdate)
+    auto &state = State::GetInstance();
+    if ((state.Has(State::IME_DISABLED) && enable) || (state.NotHas(State::IME_DISABLED) && !enable) || m_fForceUpdate)
     {
         m_fForceUpdate = false;
 
-        bool  success;
-        auto &state = State::GetInstance();
+        bool success = false;
         if (enable)
         {
             logger::debug("Clear IME_DISABLED and set TSF focus");

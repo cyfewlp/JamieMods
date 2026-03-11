@@ -85,7 +85,7 @@ void Imm32TextService::OnStartComposition()
 void Imm32TextService::OnEndComposition()
 {
     {
-        std::lock_guard lock(m_mutex);
+        const std::scoped_lock lock(m_mutex);
         if (m_OnEndCompositionCallback != nullptr)
         {
             m_OnEndCompositionCallback(m_textEditor.GetText());
@@ -175,7 +175,7 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     std::wstring compositionSting;
     if (GetCompStr(hIMC, compFlag, GCS_RESULTSTR, compositionSting))
     {
-        std::lock_guard lock(m_mutex);
+        const std::scoped_lock lock(m_mutex);
 
         m_textEditor.SelectAll();
         m_textEditor.InsertText(compositionSting);
@@ -187,7 +187,7 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     }
     else if (GetCompStr(hIMC, compFlag, GCS_COMPSTR, compositionSting))
     {
-        std::lock_guard lock(m_mutex);
+        const std::scoped_lock lock(m_mutex);
 
         const int32_t cursorPos  = ImmGetCompositionStringW(hIMC, GCS_CURSORPOS, nullptr, 0);
         const int32_t deltaStart = ImmGetCompositionStringW(hIMC, GCS_DELTASTART, nullptr, 0);
@@ -322,18 +322,17 @@ void Imm32TextService::DoUpdateCandidateList(LPCANDIDATELIST lpCandList)
     DWORD dwEndIndex   = dwStartIndex + lpCandList->dwPageSize;
     dwEndIndex         = std::min(dwEndIndex, lpCandList->dwCount);
 
-    std::lock_guard lock(m_mutex);
+    const std::scoped_lock lock(m_mutex);
 
     m_candidateUi.Close();
     m_candidateUi.Reserve(lpCandList->dwPageSize);
     auto *lpCandListByte = reinterpret_cast<LPCH>(lpCandList);
     for (DWORD index = 0; dwStartIndex < dwEndIndex; ++index, ++dwStartIndex)
     {
-        auto       *pcCandidate  = lpCandListByte + lpCandList->dwOffset[dwStartIndex];
-        auto       *pwcCandidate = reinterpret_cast<LPWCH>(pcCandidate);
-        std::string ansiStr      = WCharUtils::ToString(pwcCandidate, -1);
-        ansiStr.insert_range(ansiStr.begin(), std::format("{}. ", index + 1));
-        m_candidateUi.PushBack(ansiStr);
+        auto                   *pcCandidate = lpCandListByte + lpCandList->dwOffset[dwStartIndex];
+        const std::wstring_view wsvCandidate(reinterpret_cast<LPWCH>(pcCandidate));
+        const std::string       ansiStr = WCharUtils::ToString(wsvCandidate);
+        m_candidateUi.PushBack(std::format("{}. {}", index + 1, ansiStr));
     }
     m_candidateUi.SetSelection(lpCandList->dwSelection);
     MarkDirty(DirtyFlag::CandidateList);

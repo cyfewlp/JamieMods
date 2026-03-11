@@ -28,7 +28,7 @@ constexpr auto LANGID_ENG = 0x409;
 
 struct LangProfile
 {
-    std::string desc{};
+    std::string desc;
     CLSID       clsid{};
     GUID        guidProfile{};
     LANGID      langid{};
@@ -36,10 +36,12 @@ struct LangProfile
 
 const auto DEFAULT_LANG_PROFILE = LangProfile{"ENG", CLSID_NULL, GUID_NULL, LANGID_ENG};
 
-inline auto ToStringFromGUID2(const GUID &guid, std::wstring &wsGuid) -> void
+inline auto ToStringFromGUID2(const GUID &guid) -> std::wstring
 {
-    wsGuid.resize(40);
+    std::wstring wsGuid;
+    wsGuid.reserve(40LLU);
     StringFromGUID2(guid, wsGuid.data(), static_cast<int>(wsGuid.size()));
+    return wsGuid;
 }
 
 } // namespace Ime

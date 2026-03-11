@@ -14,8 +14,9 @@ namespace Ime
 {
 class ImeMenu final : public RE::IMenu
 {
-    bool m_fSShow = false;
-    bool ctrlDown = false;
+    std::vector<RE::GFxEvent *> m_imeCharEvents;
+    bool                        m_fSShow = false;
+    bool                        ctrlDown = false;
 
 public:
     static void RegisterMenu();
@@ -38,9 +39,9 @@ private:
     static auto MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey;
     static auto OnMouseEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
     static auto OnMouseWheelEvent(RE::GFxEvent *event) -> RE::UI_MESSAGE_RESULTS;
-    auto        OnCharEvent(const RE::GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
+    auto        OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
 
-    bool        IsPaste(const RE::GFxCharEvent *charEvent) const;
+    bool        IsPaste(const GFxCharEvent *charEvent) const;
     static bool Paste();
 };
 } // namespace Ime

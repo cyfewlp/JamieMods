@@ -63,10 +63,9 @@ void ImeController::ActivateLangProfile(const GUID &guidProfile) const
     AddTask([&] {
         if (FAILED(m_imeWnd->ActivateLanguageProfile(guidProfile)))
         {
-            std::wstring wsGuid;
-            ToStringFromGUID2(guidProfile, wsGuid);
-            auto strGuid = WCharUtils::ToString(wsGuid);
-            auto message = std::format("Can't switch Input Method, profile index {}", strGuid);
+            const auto wsGuid  = ToStringFromGUID2(guidProfile);
+            const auto strGuid = WCharUtils::ToString(wsGuid);
+            const auto message = std::format("Can't switch Input Method, profile index {}", strGuid);
             logger::warn("{}", message);
             ErrorNotifier::GetInstance().Warning(message);
         }
@@ -133,8 +132,7 @@ void ImeController::TryFocusIme() const
 
 auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
 {
-    const bool shouldEnableIme =
-        enable && (m_settings->input.keepImeOpen || ControlMap::GetSingleton()->HasTextEntry());
+    const bool shouldEnableIme = enable && (m_settings->input.keepImeOpen || ControlMap::GetSingleton()->HasTextEntry());
 
     auto result = DoEnableIme(shouldEnableIme);
 
@@ -266,7 +264,7 @@ void ImeController::AddTask(TaskQueue::Task &&task) const
 {
     TaskQueue::GetInstance().AddImeThreadTask(std::move(task));
 
-    if (!PostMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0))
+    if (FALSE == PostMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0))
     {
         logger::error("Failed to post CM_EXECUTE_TASK to ImeWnd.");
     }
@@ -288,7 +286,7 @@ void ImeController::Init(ImeWnd *imeWnd, HWND gameHwnd, Settings &settings)
 void ImeController::Shutdown()
 {
     m_settings = nullptr;
-    m_delegate.release();
+    m_delegate.reset();
     m_gameHwnd = nullptr;
     m_imeWnd   = nullptr;
     m_fInited  = false;

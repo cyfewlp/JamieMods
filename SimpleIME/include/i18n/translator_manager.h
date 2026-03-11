@@ -45,7 +45,7 @@ inline auto UpdateTranslator(std::string_view language, std::string_view fallbac
     UpdateTranslator(language, fallbackLanguage, utils::GetInterfacePath() / SIMPLE_IME);
 }
 
-inline constexpr auto ReleaseTranslator() -> void
+inline constexpr auto ReleaseTranslator() -> void // FIXME: may access released translator! e.g. dll unload.
 {
     GetTranslator().reset();
 }

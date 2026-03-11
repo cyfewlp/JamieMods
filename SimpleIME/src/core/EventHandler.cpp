@@ -2,10 +2,10 @@
 
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
-#include "Utils.h"
 #include "ime/ImeController.h"
 #include "log.h"
 #include "menu/MenuNames.h"
+#include "utils/Utils.h"
 
 #include <RE/B/BSInputDeviceManager.h>
 #include <RE/B/BSTEvent.h>
@@ -23,7 +23,7 @@ class MenuOpenCloseEventSink final : public RE::BSTEventSink<RE::MenuOpenCloseEv
     using Event = RE::MenuOpenCloseEvent;
 
 public:
-    RE::BSEventNotifyControl ProcessEvent(const Event *a_event, RE::BSTEventSource<Event> *) override;
+    auto ProcessEvent(const Event *a_event, RE::BSTEventSource<Event> * /*a_eventSource*/) -> RE::BSEventNotifyControl override;
 
 private:
     static void FixInconsistentTextEntryCount(const Event *event);
@@ -31,7 +31,7 @@ private:
 
 namespace
 {
-auto &GetMenuOpenCloseEventSink()
+auto GetMenuOpenCloseEventSink() -> std::unique_ptr<MenuOpenCloseEventSink> &
 {
     static std::unique_ptr<MenuOpenCloseEventSink> instance = nullptr;
     return instance;
@@ -94,7 +94,7 @@ void UnInstallEventSinks()
 // MenuOpenCloseEventSink
 //////////////////////////////////////////////////////////////////////////
 
-RE::BSEventNotifyControl MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/)
+auto MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/) -> RE::BSEventNotifyControl
 {
     logger::debug("Menu {} open {}", event->menuName.c_str(), event->opening);
     static bool firstOpenMainMenu = true;

@@ -4,9 +4,9 @@
 
 #include "ui/ToolWindow.h"
 
-#include "Utils.h"
 #include "i18n/translator_manager.h"
 #include "menu/MenuNames.h"
+#include "utils/Utils.h"
 
 namespace Ime::UI
 {

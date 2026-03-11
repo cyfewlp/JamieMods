@@ -17,10 +17,7 @@ class ImeController final
 public:
     void ApplySettings();
 
-    void SaveSettings(Settings &settings) const
-    {
-        settings.enableMod = m_fEnabledMod;
-    }
+    void SaveSettings(Settings &settings) const { settings.enableMod = m_fEnabledMod; }
 
     void SyncImeStateIfDirty()
     {
@@ -31,25 +28,13 @@ public:
         }
     }
 
-    void MarkDirty()
-    {
-        m_fDirty = true;
-    }
+    void MarkDirty() { m_fDirty = true; }
 
-    [[nodiscard]] constexpr auto IsDirty() const -> bool
-    {
-        return m_fDirty;
-    }
+    [[nodiscard]] constexpr auto IsDirty() const -> bool { return m_fDirty; }
 
-    auto IsReady() const -> bool
-    {
-        return m_fInited && m_imeWnd;
-    }
+    auto IsReady() const -> bool { return m_fInited && (m_imeWnd != nullptr); }
 
-    auto IsModEnabled() const -> bool
-    {
-        return m_fEnabledMod;
-    }
+    auto IsModEnabled() const -> bool { return m_fEnabledMod; }
 
     /**
      * notify @c ImeWnd activate a @c LangProfile by specify guid.
@@ -66,10 +51,7 @@ public:
     auto TryFocusIme() const -> void;
     auto EnableMod(bool enable) -> void;
 
-    [[nodiscard]] auto IsInited() const -> bool
-    {
-        return m_fInited;
-    }
+    [[nodiscard]] auto IsInited() const -> bool { return m_fInited; }
 
     static auto GetInstance() -> ImeController *
     {
@@ -97,7 +79,7 @@ private:
 
     auto UnlockKeyboard() const -> bool;
     auto RestoreKeyboard() const -> bool;
-    bool FocusImeOrGame(bool focusIme) const;
+    auto FocusImeOrGame(bool focusIme) const -> bool;
 
     void AddTask(TaskQueue::Task &&task) const;
 };

@@ -10,7 +10,7 @@
 
 namespace Ime
 {
-using OnEndCompositionCallback = void(const std::wstring &compositionString);
+using OnEndCompositionCallback = void(std::wstring_view compositionString);
 
 struct CompositionInfo
 {
@@ -30,25 +30,25 @@ public:
         All                = CandidateList | CandidateSelection | Composition
     };
 
-    inline friend constexpr DirtyFlag operator|(DirtyFlag lhs, DirtyFlag rhs)
+    friend constexpr auto operator|(DirtyFlag lhs, DirtyFlag rhs) -> DirtyFlag
     {
         using Underlying = std::underlying_type_t<DirtyFlag>;
         return static_cast<DirtyFlag>(static_cast<Underlying>(lhs) | static_cast<Underlying>(rhs));
     }
 
-    inline friend constexpr DirtyFlag operator&(DirtyFlag lhs, DirtyFlag rhs)
+    friend constexpr auto operator&(DirtyFlag lhs, DirtyFlag rhs) -> DirtyFlag
     {
         using Underlying = std::underlying_type_t<DirtyFlag>;
         return static_cast<DirtyFlag>(static_cast<Underlying>(lhs) & static_cast<Underlying>(rhs));
     }
 
-    inline friend constexpr DirtyFlag &operator|=(DirtyFlag &lhs, DirtyFlag rhs)
+    friend constexpr auto operator|=(DirtyFlag &lhs, DirtyFlag rhs) -> DirtyFlag &
     {
         lhs = lhs | rhs;
         return lhs;
     }
 
-    inline constexpr auto HasDirtyFlag(DirtyFlag flag, DirtyFlag rhs) -> bool { return (flag & rhs) != DirtyFlag::None; }
+    static constexpr auto HasDirtyFlag(DirtyFlag flag, DirtyFlag rhs) -> bool { return (flag & rhs) != DirtyFlag::None; }
 
     ITextService()                                                  = default;
     virtual ~ITextService()                                         = default;

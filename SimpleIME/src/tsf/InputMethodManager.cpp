@@ -4,7 +4,6 @@
 #include "core/State.h"
 #include "log.h"
 
-#include <atlcomcli.h>
 #include <future>
 #include <msctf.h>
 #include <stdexcept>
@@ -27,24 +26,24 @@ auto GetProfileCachedIndex(const std::vector<Ime::LangProfile> &langProfiles, co
 
 auto Ime::InputMethodManager::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
 {
-    _ATL_COM_BEGIN
     logger::debug("Initializing LangProfileUtil...");
-    HRESULT hresult = lpThreadMgr->QueryInterface(IID_PPV_ARGS(&m_lpThreadMgr));
-    ATLENSURE_SUCCEEDED(hresult);
+    m_lpThreadMgr = CComQIPtr<ITfThreadMgr>(lpThreadMgr);
+    if (m_lpThreadMgr == nullptr) return E_FAIL;
 
     if (CComQIPtr<ITfSource> const lpSource(m_lpThreadMgr); lpSource != nullptr)
     {
-        hresult = lpSource->AdviseSink(IID_ITfInputProcessorProfileActivationSink, this, &m_dwCookie);
-        ATLENSURE_RETURN(SUCCEEDED(hresult));
-
-        hresult = m_tfProfileMgr.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER);
-        ATLENSURE_RETURN(SUCCEEDED(hresult));
-        m_initialized = true;
-        RefreshProfiles();
-        UpdateActiveProfile();
-        return S_OK;
+        if (SUCCEEDED(lpSource->AdviseSink(IID_ITfInputProcessorProfileActivationSink, this, &m_dwCookie)))
+        {
+            if (SUCCEEDED(m_tfProfileMgr.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER)))
+            {
+                m_initialized = true;
+                RefreshProfiles();
+                UpdateActiveProfile();
+                return S_OK;
+            }
+        }
     }
-    _ATL_COM_END
+    return E_FAIL;
 }
 
 auto Ime::InputMethodManager::UnInitialize() -> void
@@ -64,7 +63,6 @@ auto Ime::InputMethodManager::UnInitialize() -> void
 auto Ime::InputMethodManager::RefreshProfiles() -> bool
 {
     m_langProfiles.clear();
-    m_langProfiles.push_back(DEFAULT_LANG_PROFILE);
 
     HRESULT hresult = TRUE;
     try
@@ -95,8 +93,9 @@ auto Ime::InputMethodManager::RefreshProfiles() -> bool
                 hr = lpProfiles->GetLanguageProfileDescription(profile.clsid, profile.langid, profile.guidProfile, &bStrDesc);
                 if (SUCCEEDED(hr))
                 {
-                    std::string desc;
-                    if (WCharUtils::ToString(bStrDesc, static_cast<int>(bStrDesc.Length()), desc))
+                    const std::wstring_view wsvDesc(bStrDesc, bStrDesc.Length());
+                    std::string             desc = WCharUtils::ToString(wsvDesc);
+                    if (!desc.empty())
                     {
                         m_langProfiles.emplace_back(std::move(desc), profile.clsid, profile.guidProfile, profile.langid);
                         logger::info("Load installed ime: {}", desc.c_str());

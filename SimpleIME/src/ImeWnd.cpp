@@ -1,6 +1,5 @@
 #include "ImeWnd.hpp"
 
-#include "Utils.h"
 #include "configs/CustomMessage.h"
 #include "core/State.h"
 #include "i18n/translator_manager.h"
@@ -14,6 +13,7 @@
 #include "ui/LanguageBar.h"
 #include "ui/SettingsWindow.h"
 #include "ui/ToolWindow.h"
+#include "utils/Utils.h"
 
 #include <chrono>
 #include <codecvt>
@@ -37,7 +37,7 @@ auto GetThis(HWND hWnd) -> ImeWnd *
     return reinterpret_cast<ImeWnd *>(ptr);
 }
 
-bool RegisterImeWindowClass(const WNDPROC wndProc)
+auto RegisterImeWindowClass(WNDPROC wndProc) -> bool
 {
     WNDCLASSEXW wc{};
     wc.cbSize        = sizeof(WNDCLASSEXW);
@@ -49,7 +49,7 @@ bool RegisterImeWindowClass(const WNDPROC wndProc)
     wc.hInstance     = Global::g_hModule;
 
     WNDCLASSEXW existingClass{};
-    if (!GetClassInfoExW(Global::g_hModule, wc.lpszClassName, &existingClass))
+    if (GetClassInfoExW(Global::g_hModule, wc.lpszClassName, &existingClass) == FALSE)
     {
         return RegisterClassExW(&wc) != 0;
     }
@@ -68,7 +68,7 @@ void TryEnableImeWndDpiAware()
     const auto pSetThreadDpiAwarenessContext =
         reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
 
-    if (pSetThreadDpiAwarenessContext)
+    if (pSetThreadDpiAwarenessContext != nullptr)
     {
         pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         logger::info("Enable DPI aware successful!");
@@ -85,7 +85,7 @@ void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
     {
         return;
     }
-    if (auto ui = RE::UI::GetSingleton(); ui != nullptr)
+    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
         if (auto toolWindow = ui->GetMenu(ToolWindowMenuName); toolWindow != nullptr)
         {
@@ -142,7 +142,9 @@ ImeWnd::~ImeWnd()
 void ImeWnd::InitializeTextService()
 {
     m_pTextService = TextServiceFactory::Create(m_fEnabledTsf);
-    m_pTextService->RegisterCallback(OnCompositionResult);
+    m_pTextService->RegisterCallback([](std::wstring_view compositionString) static -> void {
+        Skyrim::SendUiString(compositionString);
+    });
 }
 
 // FIXME: ImeUI should not dependency ImeWnd!!!
@@ -386,9 +388,12 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         }
         case WM_CHAR: {
             if (pThis == nullptr) break;
-            if (ImeController::GetInstance()->IsModEnabled() && Core::State::GetInstance().Has(State::LANG_PROFILE_ACTIVATED))
+            const auto &state = Core::State::GetInstance();
+            if (ImeController::GetInstance()->IsModEnabled() && //
+                (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
             {
-                Utils::SendStringToGame(std::wstring(1, LOWORD(wParam)));
+                const std::wstring wstring(1, LOWORD(wParam));
+                Skyrim::SendUiString(wstring);
             }
             return 0;
         }
@@ -406,11 +411,6 @@ auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
     pThis->m_hWnd       = hWnd;
     pThis->m_hWndParent = lpCreateStruct->hwndParent;
     return TRUE;
-}
-
-inline void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
-{
-    Utils::SendStringToGame(compositionString);
 }
 
 void ImeWnd::TsfMessageLoop()
@@ -435,7 +435,7 @@ void ImeWnd::TsfMessageLoop()
             continue;
         }
 
-        if (!fResult)
+        if (fResult == FALSE)
         {
             MsgWaitForMultipleObjectsEx(0, nullptr, 10, QS_INPUT, MWMO_INPUTAVAILABLE);
             continue;
@@ -448,16 +448,16 @@ void ImeWnd::TsfMessageLoop()
         BOOL fEaten = FALSE;
         if (msg.message == WM_KEYDOWN)
         {
-            if (SUCCEEDED(keystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten)) && fEaten &&
-                SUCCEEDED(keystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten)) && fEaten)
+            if (SUCCEEDED(keystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE) &&
+                SUCCEEDED(keystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE))
             {
                 continue;
             }
         }
         else if (msg.message == WM_KEYUP)
         {
-            if (SUCCEEDED(keystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten)) && fEaten &&
-                SUCCEEDED(keystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten)) && fEaten)
+            if (SUCCEEDED(keystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE) &&
+                SUCCEEDED(keystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE))
             {
                 continue;
             }
@@ -471,6 +471,7 @@ void ImeWnd::TsfMessageLoop()
 void ImeWnd::OnCreated(Settings &settings)
 {
     logger::info("Ime window created, init TSF and core...");
+    m_gameThreadId = GetWindowThreadProcessId(m_hWndParent, nullptr);
     m_pTextService->OnStart(m_hWnd);
     m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
     m_fWantUpdateUiScale = true;
@@ -495,15 +496,10 @@ auto ImeWnd::OnDestroy() const -> LRESULT
 
 void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
 {
-    static DWORD gameThread    = 0;
-    static DWORD currentThread = GetCurrentThreadId();
-    if (gameThread == 0)
+    const DWORD currentThread = GetCurrentThreadId();
+    if (m_gameThreadId != currentThread)
     {
-        gameThread = GetWindowThreadProcessId(m_hWndParent, nullptr);
-    }
-    if (gameThread != currentThread)
-    {
-        if (AttachThreadInput(gameThread, currentThread, TRUE) != FALSE)
+        if (AttachThreadInput(m_gameThreadId, currentThread, TRUE) != FALSE)
         {
             switch (uMsg)
             {
@@ -520,7 +516,7 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
                 default:
                     break;
             }
-            AttachThreadInput(gameThread, currentThread, FALSE);
+            AttachThreadInput(m_gameThreadId, currentThread, FALSE);
         }
     }
 }

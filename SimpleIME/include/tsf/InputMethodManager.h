@@ -35,21 +35,15 @@ public:
 
     auto GetActiveLangProfile() -> const LangProfile &;
 
-    [[nodiscard]] auto GetLangProfiles() const -> const std::vector<LangProfile> &
-    {
-        return m_langProfiles;
-    }
+    [[nodiscard]] auto GetLangProfiles() const -> const std::vector<LangProfile> & { return m_langProfiles; }
 
     auto QueryInterface(const IID &riid, void **ppvObject) -> HRESULT override;
     auto AddRef() -> ULONG override;
     auto Release() -> ULONG override;
+    auto OnActivated(DWORD dwProfileType, LANGID langid, const IID &clsid, const GUID &catid, const GUID &guidProfile, HKL hkl, DWORD dwFlags)
+        -> HRESULT override;
 
 private:
-    auto OnActivated(
-        DWORD dwProfileType, LANGID langid, const IID &clsid, const GUID &catid, const GUID &guidProfile, HKL hkl,
-        DWORD dwFlags
-    ) -> HRESULT override;
-
     std::vector<LangProfile>             m_langProfiles;
     CComPtr<ITfInputProcessorProfileMgr> m_tfProfileMgr = nullptr;
     CComPtr<ITfThreadMgr>                m_lpThreadMgr  = nullptr;

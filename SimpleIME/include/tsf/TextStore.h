@@ -38,6 +38,11 @@ struct FuncTracer
         }
     }
 
+    FuncTracer(const FuncTracer &other)                = delete;
+    FuncTracer(FuncTracer &&other) noexcept            = delete;
+    FuncTracer &operator=(const FuncTracer &other)     = delete;
+    FuncTracer &operator=(FuncTracer &&other) noexcept = delete;
+
     template <typename... Args>
     void log(std::format_string<Args...> fmt, Args &&...args)
     {
@@ -66,6 +71,11 @@ struct FuncTracer
     explicit constexpr FuncTracer(std::format_string<Args...> /*fmt*/, Args &&.../*args*/) noexcept
     {
     }
+
+    FuncTracer(const FuncTracer &other)                = delete;
+    FuncTracer(FuncTracer &&other) noexcept            = delete;
+    FuncTracer &operator=(const FuncTracer &other)     = delete;
+    FuncTracer &operator=(FuncTracer &&other) noexcept = delete;
 
     template <typename... Args>
     constexpr void log(std::format_string<Args...> /*fmt*/, Args &&.../*args*/) const noexcept
@@ -96,7 +106,7 @@ struct CandidateInfo
 
 class TextService;
 
-class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
+class TextStore : ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
 {
     static constexpr uint32_t MAX_COMPOSITIONS = 5;
     static constexpr uint32_t EDIT_VIEW_COOKIE = 0;
@@ -105,27 +115,26 @@ class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIEle
 public:
     explicit TextStore(TextService *pTextService) : m_pTextService(pTextService) {}
 
-    virtual ~TextStore();
+    virtual ~TextStore()                                      = default;
     TextStore(const TextStore &other)                         = delete;
     TextStore(TextStore &&other) noexcept                     = delete;
     auto operator=(const TextStore &other) -> TextStore &     = delete;
     auto operator=(TextStore &&other) noexcept -> TextStore & = delete;
 
-    auto Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT;
-    auto SetHWND(HWND hWnd) -> bool;
-    void UnInitialize();
-
-    auto Focus() -> HRESULT;
-
-    auto ClearFocus() const -> HRESULT;
-
-    [[nodiscard]] constexpr auto DocumentMgr() -> ITfDocumentMgr * { return m_documentMgr; }
-
-    auto __stdcall AddRef() -> ULONG override;
-    auto __stdcall Release() -> ULONG override;
+    [[nodiscard]] auto Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT;
+    auto               SetHWND(HWND hWnd) -> bool;
+    void               UnInitialize();
 
     void SetOnEndCompositionCallback(Ime::OnEndCompositionCallback *const callback) { m_OnEndCompositionCallback = callback; }
 
+    [[nodiscard]] auto Focus() -> HRESULT;
+    [[nodiscard]] auto ClearFocus() const -> HRESULT;
+    [[nodiscard]] auto CommitCandidate(UINT index) const -> bool;
+
+    auto STDMETHODCALLTYPE AddRef() -> ULONG override;
+    auto STDMETHODCALLTYPE Release() -> ULONG override;
+
+private:
     // ITextStoreACP functions
     // NOLINTBEGIN(*-use-trailing-return-type)
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject) override;
@@ -208,9 +217,6 @@ public:
     STDMETHODIMP UpdateUIElement(DWORD dwUIElementId) override;
     STDMETHODIMP EndUIElement(DWORD dwUIElementId) override;
 
-    bool CommitCandidate(UINT index) const;
-
-private:
     auto InitSinks() -> HRESULT;
 
     // NOLINTEND(*-use-trailing-return-type)
@@ -270,7 +276,7 @@ public:
 
     void OnStart(HWND hWnd) override { m_pTextStore->SetHWND(hWnd); }
 
-    bool OnFocus(bool focus) override
+    auto OnFocus(bool focus) -> bool override
     {
         HRESULT hr = E_FAIL;
         if (focus)
@@ -285,7 +291,7 @@ public:
         return SUCCEEDED(hr);
     }
 
-    virtual auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }
+    auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }
 
     [[nodiscard]] auto GetTextEditorWrite() -> Ime::TextEditor & { return m_textEditor; }
 
@@ -293,14 +299,14 @@ public:
 
     [[nodiscard]] auto GetReadLock() -> std::shared_lock<std::shared_mutex> { return std::shared_lock(m_mutex); }
 
-    [[nodiscard]] auto GetWriteLock() -> std::lock_guard<std::shared_mutex> { return std::lock_guard(m_mutex); }
+    [[nodiscard]] auto GetWriteLock() -> std::scoped_lock<std::shared_mutex> { return std::scoped_lock(m_mutex); }
 
     auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
 
 protected:
     void RequestUpdate(Ime::CompositionInfo &compositionInfo, Ime::CandidateUi &uiForRead, DirtyFlag flag) override
     {
-        const std::lock_guard lock(m_mutex);
+        const std::scoped_lock lock(m_mutex);
         if (HasDirtyFlag(flag, DirtyFlag::Composition))
         {
             compositionInfo.documentText = m_textEditor.GetText();

@@ -95,15 +95,9 @@ struct Scaleform_SetScaleModeTypeHook
         }
     }
 
-    static void Install()
-    {
-        hookData = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeType);
-    }
+    static void Install() { hookData = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeType); }
 
-    static void Uninstall()
-    {
-        FnHandler().reset();
-    }
+    static void Uninstall() { FnHandler().reset(); }
 };
 
 struct Scaleform_AllowTextInputHook
@@ -123,10 +117,7 @@ struct Scaleform_AllowTextInputHook
         return result;
     }
 
-    static void Install()
-    {
-        hookData = std::make_unique<Scaleform_AllowTextInput>(AllowTextInput);
-    }
+    static void Install() { hookData = std::make_unique<Scaleform_AllowTextInput>(AllowTextInput); }
 };
 
 } // namespace

@@ -79,11 +79,12 @@ public:
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
-    static void OnCompositionResult(const std::wstring &compositionString);
     static void TsfMessageLoop();
 
     auto OnCreated(Settings &settings) -> void;
-    auto OnDestroy() const -> LRESULT;
+
+    [[nodiscard]] auto OnDestroy() const -> LRESULT;
+
     void InitializeTextService();
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
@@ -94,6 +95,7 @@ private:
     CComPtr<InputMethodManager>     m_pInputMethodManager;
     HWND                            m_hWnd                  = nullptr;
     HWND                            m_hWndParent            = nullptr;
+    DWORD                           m_gameThreadId          = 0;
     float                           m_uiScale               = 1.0F;
     bool                            m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
     bool                            m_fFocused              = false;

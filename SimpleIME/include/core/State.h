@@ -8,11 +8,6 @@ namespace Ime::Core
 // \todo may replace this singleton with an explicit context object passed through the call stack.
 class State
 {
-    State(const State &other)           = delete;
-    State(State &&other)                = delete;
-    State operator=(const State &other) = delete;
-    State operator=(State &&other)      = delete;
-
 public:
     enum StateKey : std::uint32_t
     {
@@ -29,49 +24,49 @@ public:
         ALL                    = 0xFFFF
     };
 
-    State() = default;
+    using UnderlyingType = std::underlying_type_t<StateKey>;
 
     auto Set(StateKey state, bool set = true) -> void
     {
         if (set)
         {
-            m_state |= static_cast<uint32_t>(state);
+            m_state |= static_cast<UnderlyingType>(state);
         }
         else
         {
-            m_state &= ~static_cast<uint32_t>(state);
+            m_state &= ~static_cast<UnderlyingType>(state);
         }
     }
 
-    auto Clear(StateKey state) -> void { m_state &= ~static_cast<uint32_t>(state); }
+    auto Clear(StateKey state) -> void { m_state &= ~static_cast<UnderlyingType>(state); }
 
     [[nodiscard]] auto Has(StateKey state) const -> bool
     {
-        const auto mask = static_cast<uint32_t>(state);
+        const auto mask = static_cast<UnderlyingType>(state);
         return (m_state & mask) == mask;
     }
 
     template <typename... Args>
-    [[nodiscard]] auto HasAll(Args &&...states) const -> bool
-        requires((std::is_same_v<std::remove_cvref_t<Args>, StateKey> && ...))
+    [[nodiscard]] auto HasAll(Args... states) const -> bool
+        requires((std::is_same_v<Args, StateKey> && ...))
     {
-        const uint32_t mask = (static_cast<uint32_t>(states) | ...);
+        const auto mask = (static_cast<UnderlyingType>(states) | ...);
         return (m_state & mask) == mask;
     }
 
     template <typename... Args>
-    [[nodiscard]] auto HasAny(Args &&...states) const -> bool
-        requires((std::is_same_v<std::remove_cvref_t<Args>, StateKey> && ...))
+    [[nodiscard]] auto HasAny(Args... states) const -> bool
+        requires((std::is_same_v<Args, StateKey> && ...))
     {
-        const uint32_t mask = (static_cast<uint32_t>(states) | ...);
+        const auto mask = (static_cast<UnderlyingType>(states) | ...);
         return (m_state & mask) != 0U;
     }
 
     template <typename... Args>
-    [[nodiscard]] auto NotHas(Args &&...states) const -> bool
-        requires((std::is_same_v<std::remove_cvref_t<Args>, StateKey> && ...))
+    [[nodiscard]] auto NotHas(Args... states) const -> bool
+        requires((std::is_same_v<Args, StateKey> && ...))
     {
-        const uint32_t mask = (static_cast<uint32_t>(states) | ...);
+        const auto mask = (static_cast<UnderlyingType>(states) | ...);
         return (m_state & mask) == 0U;
     }
 
@@ -97,6 +92,6 @@ public:
     }
 
 private:
-    uint32_t m_state{0};
+    UnderlyingType m_state{0};
 };
 } // namespace Ime::Core

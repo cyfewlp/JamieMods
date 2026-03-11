@@ -15,11 +15,6 @@ namespace Tsf
 {
 using DirtyFlag = Ime::ITextService::DirtyFlag;
 
-TextStore::~TextStore()
-{
-    m_adviseSinkCache.Clear();
-}
-
 auto TextStore::InitSinks() -> HRESULT
 {
     auto                *pUnknownThis = reinterpret_cast<IUnknown *>(this);
@@ -118,7 +113,7 @@ auto TextStore::Focus() -> HRESULT
     auto &state = State::GetInstance();
     logger::debug("Associate Focus");
     m_pPrevDocMgr.Release();
-    HRESULT hr = m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
+    const HRESULT hr = m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
     if (SUCCEEDED(hr))
     {
         state.Set(State::TSF_FOCUS);
@@ -131,7 +126,7 @@ auto TextStore::ClearFocus() const -> HRESULT
     logger::debug("Clear Focus");
     auto                   &state = State::GetInstance();
     CComPtr<ITfDocumentMgr> tempDocMgr;
-    HRESULT                 hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
+    const HRESULT           hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
     if (SUCCEEDED(hr))
     {
         state.Clear(State::TSF_FOCUS);
@@ -355,7 +350,7 @@ auto TextStore::GetStatus(TS_STATUS *pStatus) -> HRESULT
     return S_OK;
 }
 
-auto TextStore::QueryInsert(LONG acpStart, LONG acpEnd, ULONG textSize, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
+auto TextStore::QueryInsert(LONG acpStart, LONG acpEnd, ULONG /*textSize*/, LONG *pacpResultStart, LONG *pacpResultEnd) -> HRESULT
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
     if (pacpResultStart == nullptr || pacpResultEnd == nullptr)
@@ -448,7 +443,7 @@ auto TextStore::GetText(
 
     auto                   &textEditor = m_pTextService->GetTextEditorWrite();
     const std::wstring_view editorText = textEditor.GetText();
-    size_t                  charSize   = editorText.size();
+    const size_t            charSize   = editorText.size();
     if (acpEnd == -1)
     {
         acpEnd = static_cast<LONG>(charSize);
@@ -466,7 +461,7 @@ auto TextStore::GetText(
         return S_OK;
     }
 
-    ULONG charCountToCopy = static_cast<ULONG>(uAcpEnd - uAcpStart);
+    auto charCountToCopy = static_cast<ULONG>(uAcpEnd - uAcpStart);
     if (textBuffer != nullptr && textBufferSize > 0U)
     {
         charCountToCopy                  = std::min(charCountToCopy, textBufferSize);
