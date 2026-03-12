@@ -6,7 +6,6 @@
 
 #include "log.h"
 #include "toml++/toml.hpp"
-#include "ui/ToolWindow.h"
 
 #include <iostream>
 #include <regex>
@@ -15,6 +14,9 @@ namespace Ime::i18n
 {
 namespace
 {
+
+::i18n::Translator *g_translator = nullptr;
+
 auto LoadFromFile(const std::filesystem::path &file) -> std::optional<::i18n::Translator>;
 void ProcessTable(toml::impl::wrap_node<toml::table> *a_table, const std::string &parentKey, ::i18n::Translator::LanguageMap &languageMap);
 
@@ -32,11 +34,6 @@ auto LoadTranslation(Language language, const std::filesystem::path &dir) -> std
     }
     return LoadFromFile(translateFile);
 }
-
-struct TranslatorManager
-{
-    static inline std::unique_ptr<::i18n::Translator> g_translator{nullptr};
-};
 
 } // namespace
 
@@ -68,9 +65,14 @@ void ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &l
     }
 }
 
-auto GetTranslator() -> std::unique_ptr<::i18n::Translator> &
+auto GetTranslator() -> ::i18n::Translator *
 {
-    return TranslatorManager::g_translator;
+    return g_translator;
+}
+
+auto SetTranslator(::i18n::Translator *currTranslator) -> void
+{
+    g_translator = currTranslator;
 }
 
 auto UpdateTranslator(std::string_view language, std::string_view fallbackLanguage, const std::filesystem::path &dir) -> void

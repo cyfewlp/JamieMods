@@ -6,6 +6,7 @@
 
 #include "LanguageBar.h"
 #include "SettingsWindow.h"
+#include "i18n/Translator.h"
 
 namespace Ime
 {
@@ -18,6 +19,7 @@ namespace UI
  */
 class ToolWindow
 {
+    ::i18n::Translator              m_translator{};
     std::unique_ptr<SettingsWindow> m_settingsWindow{nullptr};
     ImGuiKeyChord                   m_shortcut = ImGuiKey_None;
     bool                            m_pinned   = false;

@@ -25,7 +25,8 @@ class Translator
 public:
     using LanguageMap = std::unordered_map<uint64_t, std::string>;
 
-    Translator() {}
+    Translator()  = default;
+    ~Translator() = default;
 
     explicit Translator(const LanguageMap &map) : m_currentMap(map) {}
 
@@ -58,13 +59,6 @@ public:
         }
         return defaultText;
     }
-
-    // template <typename... Args>
-    // auto Format(uint64_t hash, std::string_view defaultFmt, Args &&...args) const -> std::string
-    // {
-    //     auto fmt = Translate(hash, defaultFmt);
-    //     return std::format(fmt, std::make_format_args(args...));
-    // }
 
 private:
     LanguageMap m_currentMap;

@@ -31,11 +31,17 @@ namespace i18n
 {
 using Language = std::string_view;
 
-auto GetTranslator() -> std::unique_ptr<::i18n::Translator> &;
+auto GetTranslator() -> ::i18n::Translator *;
+
+auto SetTranslator(::i18n::Translator *currTranslator) -> void;
 
 inline auto UpdateTranslator(::i18n::Translator &&newTranslator) -> void
 {
-    GetTranslator() = std::make_unique<::i18n::Translator>(std::move(newTranslator));
+    auto *currTranslator = GetTranslator();
+    if (currTranslator != nullptr)
+    {
+        *currTranslator = std::move(newTranslator);
+    }
 }
 
 auto UpdateTranslator(std::string_view language, std::string_view fallbackLanguage, const std::filesystem::path &dir) -> void;
@@ -45,17 +51,12 @@ inline auto UpdateTranslator(std::string_view language, std::string_view fallbac
     UpdateTranslator(language, fallbackLanguage, utils::GetInterfacePath() / SIMPLE_IME);
 }
 
-inline constexpr auto ReleaseTranslator() -> void // FIXME: may access released translator! e.g. dll unload.
-{
-    GetTranslator().reset();
-}
-
 void ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &languages);
 } // namespace i18n
 
 constexpr auto Translate(const std::string_view key) -> std::string_view
 {
-    auto *translator = i18n::GetTranslator().get();
+    auto *translator = i18n::GetTranslator();
     if (translator == nullptr)
     {
         return key;

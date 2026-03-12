@@ -32,12 +32,13 @@ void TogglePinned(bool &pinned, bool &showing)
 
 ToolWindow::ToolWindow(ImGuiKeyChord shortcut, std::string_view language) : m_shortcut(shortcut)
 {
+    i18n::SetTranslator(&m_translator);
     i18n::UpdateTranslator(language, "english");
 }
 
 ToolWindow::~ToolWindow()
 {
-    i18n::ReleaseTranslator();
+    i18n::SetTranslator(nullptr);
 }
 
 auto ToolWindow::Draw(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, Settings &settings) -> bool
