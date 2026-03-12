@@ -6,6 +6,7 @@
 #define ERRORNOTIFIER_H
 
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <string>
 
@@ -31,7 +32,7 @@ class ErrorNotifier
 
     std::deque<ErrorMsg> errors;
     ErrorMsg::Level      m_currentLevel = ErrorMsg::Level::debug;
-    std::chrono::seconds m_duration     = std::chrono::seconds(ULONG_LONG_MAX);
+    std::chrono::seconds m_duration     = std::chrono::seconds(LONG_LONG_MAX);
 
 public:
     void addError(std::string_view msg, ErrorMsg::Level level = ErrorMsg::Level::debug);

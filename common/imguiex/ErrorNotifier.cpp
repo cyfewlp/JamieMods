@@ -5,8 +5,25 @@
 #include "ErrorNotifier.h"
 
 #include "imgui.h"
+#include "imguiex_m3.h"
 
 #include <ctime>
+
+namespace
+{
+inline auto GetLevelString(ErrorMsg::Level level)
+{
+    switch (level)
+    {
+        case ErrorMsg::Level::debug:
+            return "Debug";
+        case ErrorMsg::Level::warning:
+            return "Warning";
+        case ErrorMsg::Level::error:
+            return "Error";
+    }
+}
+} // namespace
 
 void ErrorNotifier::addError(std::string_view msg, const ErrorMsg::Level level)
 {
@@ -28,21 +45,25 @@ void ErrorNotifier::Show()
     {
         return;
     }
-    ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiCond_FirstUseEver);
-    auto displaySize = ImGui::GetIO().DisplaySize;
-    ImGui::SetNextWindowPos({0, displaySize.y - 250}, ImGuiCond_Always);
 
-    if (!ImGui::Begin(
-            "ErrorNotifier",
-            nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing
-        ))
+    constexpr size_t visibleMessages = 10;
+
+    auto      &m3Styles       = ImGuiEx::M3::Context::GetM3Styles();
+    const auto fontScope      = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+    const auto width          = m3Styles.GetPixels(M3Spec::Layout::Compact::Breakpoint);
+    const auto height         = m3Styles.GetLastText().currText.lineHeight * visibleMessages;
+    const auto viewportHeight = ImGui::GetMainViewport()->Size.y;
+
+    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+    ImGui::SetNextWindowPos({0.F, viewportHeight - height}, ImGuiCond_Always);
+
+    if (!ImGui::Begin("ErrorNotifier", nullptr, ImGuiEx::WindowFlags().NoDecoration().NoSavedSettings().NoFocusOnAppearing()))
     {
         ImGui::End();
         return;
     }
 
-    if (ImGui::Button("Clear"))
+    if (ImGuiEx::M3::Button("Clear all", ImGuiEx::M3::ButtonConfiguration{}.Text().XSmall()))
     {
         errors.clear();
     }
@@ -54,16 +75,17 @@ void ErrorNotifier::Show()
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
-            const auto typeSafeIndex = static_cast<size_t>(i);
-            auto      &message       = errors[typeSafeIndex];
+            auto &message = errors[static_cast<size_t>(i)];
+            ImGui::PushID(i);
             if (message.level >= m_currentLevel)
             {
-                renderMessage(message, typeSafeIndex);
-                if (current - message.timestamp >= m_duration)
+                renderMessage(message, static_cast<size_t>(i));
+                if (static_cast<size_t>((current - message.timestamp).count()) >= (m_duration.count()))
                 {
                     message.confirmed = true;
                 }
             }
+            ImGui::PopID();
         }
     }
     clipper.End();
@@ -74,12 +96,12 @@ void ErrorNotifier::Show()
 
 void ErrorNotifier::renderMessage(const ErrorMsg &msg, size_t idx)
 {
-    ImGui::Text("%s", msg.text.c_str());
-    ImGui::SameLine();
-    if (ImGui::Button(("OK##" + std::to_string(idx)).c_str()))
+    if (ImGui::SmallButton("x"))
     {
         errors[idx].confirmed = true;
     }
+    ImGui::SameLine(0.F, 20.F);
+    ImGuiEx::M3::TextUnformatted(std::format("[{}] {}", GetLevelString(msg.level), msg.text));
 }
 
 std::string ErrorNotifier::currentTime()
