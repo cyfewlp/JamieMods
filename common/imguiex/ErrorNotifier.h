@@ -19,27 +19,28 @@ struct ErrorMsg
     };
 
     std::string text;
-    bool        confirmed = false;
     Level       level     = Level::error;
+    bool        confirmed = false;
 
     std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
 };
 
 class ErrorNotifier
 {
+    static constexpr size_t MaxMessages = 256;
+
     std::deque<ErrorMsg> errors;
-    const size_t         MaxMessages    = 64;
     ErrorMsg::Level      m_currentLevel = ErrorMsg::Level::debug;
     std::chrono::seconds m_duration     = std::chrono::seconds(ULONG_LONG_MAX);
 
 public:
-    void addError(const std::string &txt, ErrorMsg::Level level = ErrorMsg::Level::debug);
+    void addError(std::string_view msg, ErrorMsg::Level level = ErrorMsg::Level::debug);
 
-    constexpr void Debug(const std::string &txt) { addError(txt, ErrorMsg::Level::debug); }
+    constexpr void Debug(std::string_view msg) { addError(msg, ErrorMsg::Level::debug); }
 
-    constexpr void Warning(const std::string &txt) { addError(txt, ErrorMsg::Level::warning); }
+    constexpr void Warning(std::string_view msg) { addError(msg, ErrorMsg::Level::warning); }
 
-    constexpr void Error(const std::string &txt) { addError(txt, ErrorMsg::Level::error); }
+    constexpr void Error(std::string_view msg) { addError(msg, ErrorMsg::Level::error); }
 
     constexpr void clearConfirmed()
     {

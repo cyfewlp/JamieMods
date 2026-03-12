@@ -67,8 +67,8 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
         " 快捷键配置，格式: <key> 或 <modifier(s)> + <key>，多个部分用 '+' 分隔，忽略空格",
         " <key>      : F1-F12, NumPad0-9, A-Z, 0-9 等 ImGui 支持的按键名",
         " <modifier> : ctrl, shift, alt, super (可组合)",
-        R"( 示例: "F2", "ctrl + F2", "ctrl + shift + alt + F4")",
-        " 注意: 不支持多个普通键组合 (如 A + B)，末尾不能为 '+', 非法配置将使用默认值",
+        R"( 示例: "F2", "ctrl + A", "ctrl + shift + alt + A")",
+        " 注意: 不支持多个普通键组合 (如 A + B)，末尾不能为 '+', F1-F12 不能和任何 <modifier> 组合(游戏限制), 非法配置将使用默认值",
         "默认值为 F2"
     };
     const Comments enableTsfComment = {

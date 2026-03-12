@@ -8,7 +8,7 @@
 
 #include <ctime>
 
-void ErrorNotifier::addError(const std::string &txt, const ErrorMsg::Level level)
+void ErrorNotifier::addError(std::string_view msg, const ErrorMsg::Level level)
 {
     if (level < m_currentLevel)
     {
@@ -18,7 +18,7 @@ void ErrorNotifier::addError(const std::string &txt, const ErrorMsg::Level level
     {
         errors.pop_front();
     }
-    errors.push_back({txt, false, level});
+    errors.push_back({.text = std::string(msg), .level = level, .confirmed = false});
 }
 
 // \todo restyle by M3

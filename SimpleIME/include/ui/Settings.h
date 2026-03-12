@@ -13,7 +13,6 @@
 
 namespace Ime
 {
-// TODO: settings parse failed may should store a error message.
 
 struct Settings
 {

@@ -4,6 +4,7 @@
 #include "configs/settings_converter.h"
 
 #include "configs/configuration.h"
+#include "imguiex/ErrorNotifier.h"
 #include "log.h"
 #include "ui/Settings.h"
 
@@ -288,6 +289,7 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     configuration.enableMod = settings.enableMod;
     configuration.enableTsf = settings.enableTsf;
 
+    ErrorNotifier errorNotifier = ErrorNotifier::GetInstance();
     if (const auto shortcut = Converter<ImGuiKeyChord>::toString(settings.shortcut); shortcut.has_value())
     {
         configuration.shortcut = shortcut.value();
@@ -295,7 +297,8 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     else
     {
         configuration.shortcut = "f2";
-        logger::error("Convert shortcut key to string failed, fallback to default value: F2");
+
+        errorNotifier.Error("Config parse error: Convert shortcut key to string failed, fallback to default value: F2");
     }
 
     if (const auto levelOpt = Converter<spdlog::level::level_enum>::toString(settings.logging.level); levelOpt.has_value())
@@ -305,7 +308,7 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     else
     {
         configuration.logging.level = "info";
-        logger::error("Convert log level to string failed, fallback to default value: info");
+        errorNotifier.Error("Config parse error: Convert log level to string failed, fallback to default value: info");
     }
 
     if (const auto levelOpt = Converter<spdlog::level::level_enum>::toString(settings.logging.flushLevel); levelOpt.has_value())
@@ -315,7 +318,7 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     else
     {
         configuration.logging.flushLevel = "info";
-        logger::error("Convert log flush level to string failed, fallback to default value: info");
+        errorNotifier.Error("Config parse error: Convert log flush level to string failed, fallback to default value: info");
     }
 
     // Resources
@@ -342,7 +345,7 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     else
     {
         configuration.input.posUpdatePolicy = "based_on_caret";
-        logger::error("Convert window position update policy to string failed, fallback to default value: based_on_caret");
+        errorNotifier.Error("Config parse error: Convert window position update policy to string failed, fallback to default value: based_on_caret");
     }
     return configuration;
 }
