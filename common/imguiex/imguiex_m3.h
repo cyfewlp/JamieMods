@@ -305,6 +305,8 @@ auto Chip(std::string_view label, const ChipConfiguration &config = {}) -> bool;
 void BeginChipGroup();
 void EndChipGroup();
 
+auto Checkbox(std::string_view label, bool &selected, std::string_view icon) -> bool;
+
 /**
  * @brief Configuration for Material Design 3 text fields.
  */

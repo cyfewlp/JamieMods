@@ -300,8 +300,7 @@ void AppearancePanel::DrawThemeBuilder(Settings &settings)
         const auto hctPickerPopupId = ImGui::GetID(HCT_PICKER_POPUP);
 
         edited = HctPickerPopup(HCT_PICKER_POPUP, m_configuredHct) || edited;
-        // TODO: add M3 style checkbox;
-        edited = ImGui::Checkbox(Translate("Settings.Appearance.DarkMode").data(), &m_configuredDarkMode) || edited;
+        edited = ImGuiEx::M3::Checkbox(Translate("Settings.Appearance.DarkMode"), m_configuredDarkMode, ICON_CHECK) || edited;
         edited = ImGuiEx::M3::Slider::Draw(
                      Translate("Settings.Appearance.ContrastLevel"),
                      ImGuiEx::M3::Slider::Params{

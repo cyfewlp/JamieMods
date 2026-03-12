@@ -80,7 +80,7 @@ void ErrorNotifier::Show()
             if (message.level >= m_currentLevel)
             {
                 renderMessage(message, static_cast<size_t>(i));
-                if (static_cast<size_t>((current - message.timestamp).count()) >= (m_duration.count()))
+                if (static_cast<size_t>((current - message.timestamp).count()) >= static_cast<size_t>((m_duration.count())))
                 {
                     message.confirmed = true;
                 }

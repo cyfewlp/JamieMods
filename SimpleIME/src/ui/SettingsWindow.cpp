@@ -105,7 +105,7 @@ void SettingsWindow::DrawMenuFontBuilder(Settings &settings)
 void SettingsWindow::DrawMenuBehaviour(Settings &settings) const
 {
     bool enableMod = settings.enableMod;
-    if (ImGui::Checkbox(Translate("Settings.Behaviour.EnableMod").data(), &enableMod))
+    if (ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.EnableMod"), enableMod, ICON_CHECK))
     {
         ImeController::GetInstance()->EnableMod(enableMod);
     }
@@ -123,11 +123,11 @@ void SettingsWindow::DrawFeatures(Settings &settings)
 {
     DrawWindowPosUpdatePolicy(settings);
 
-    ImGui::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste").data(), &settings.input.enableUnicodePaste);
+    ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste"), settings.input.enableUnicodePaste, ICON_CHECK);
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableUnicodePasteTooltip"));
 
     ImGui::SameLine();
-    if (ImGui::Checkbox(Translate("Settings.Behaviour.KeepImeOpen").data(), &settings.input.keepImeOpen))
+    if (ImGuiEx::M3::Checkbox(Translate(Translate("Settings.Behaviour.KeepImeOpen")), settings.input.keepImeOpen, ICON_CHECK))
     {
         ImeController::GetInstance()->MarkDirty();
     }

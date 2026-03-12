@@ -15,6 +15,7 @@
 #include "m3/facade/menu.h"
 #include "m3/facade/nav_rail.h"
 #include "m3/facade/text_field.h"
+#include "m3/spec/checkbox.h"
 #include "m3/spec/dialog.h"
 #include "m3/spec/layout.h"
 #include "m3/spec/search.h"
@@ -135,6 +136,11 @@ inline auto GetDisplayLabel(std::string_view label) -> std::string_view
 {
     const auto *end = ImGui::FindRenderedTextEnd(TextStart(label), TextEnd(label));
     return {TextStart(label), end};
+}
+
+inline auto CalcTextWidth(std::string_view text) -> float
+{
+    return ImGui::CalcTextSize(TextStart(text), TextEnd(text)).x;
 }
 
 //! @brief Align the cursor position to the center of the line height if the line height is larger than the content height.
@@ -1216,6 +1222,93 @@ void BeginChipGroup()
 void EndChipGroup()
 {
     ImGui::PopStyleVar();
+}
+
+auto Checkbox(std::string_view label, bool &selected, std::string_view icon) -> bool
+{
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+    {
+        return false;
+    }
+
+    auto            &m3Styles     = Context::GetM3Styles();
+    const auto       id           = window->GetID(TextStart(label), TextEnd(label));
+    std::string_view displayLabel = GetDisplayLabel(label);
+
+    const auto   checkBoxLayoutSize = m3Styles.GetPixels(Spec::Checkbox::LayoutSize);
+    const auto   labelWidth         = CalcTextWidth(displayLabel);
+    const auto   containerSize      = m3Styles.GetPixels(Spec::Checkbox::ContainerSize);
+    const ImVec2 size               = {checkBoxLayoutSize + labelWidth, checkBoxLayoutSize};
+    const ImVec2 posMin             = GetAlignedCursorPos(window, size.y);
+    const ImRect bb(posMin, posMin + size);
+
+    ImGui::ItemSize(size);
+    if (!ImGui::ItemAdd(bb, id))
+    {
+        return false;
+    }
+    const auto   offset      = HalfDiff(checkBoxLayoutSize, containerSize);
+    const ImVec2 checkboxMin = bb.Min + ImVec2(offset, offset);
+    const ImVec2 checkboxMax = checkboxMin + ImVec2(containerSize, containerSize);
+
+    auto &g = *GImGui;
+
+    bool       hovered  = false;
+    bool       held     = false;
+    const bool pressed  = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    const bool disabled = IsItemDisabled();
+    const bool active   = hovered && held;
+    if (pressed) selected = !selected;
+
+    ImVec4 bgColor;
+    ImVec4 iconColor;
+    ImVec4 stateLayerColor = m3Styles.Colors()[selected ? Spec::Checkbox::SelectedStateLayerColor : Spec::Checkbox::StateLayerColor];
+    ImVec4 outlineColor    = m3Styles.Colors()[Spec::Checkbox::UnselectedOutlineColor];
+
+    if (disabled)
+    {
+        bgColor        = m3Styles.Colors()[DISABLED_CONTAINER_COLOR];
+        iconColor      = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        outlineColor   = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
+        bgColor.w      = DISABLED_CONTAINER_OPACITY;
+        iconColor.w    = DISABLED_CONTENT_OPACITY;
+        outlineColor.w = DISABLED_CONTENT_OPACITY;
+    }
+    else
+    {
+        if (selected)
+        {
+            bgColor   = m3Styles.Colors()[Spec::Checkbox::SelectedContainerColor];
+            iconColor = m3Styles.Colors()[Spec::Checkbox::SelectedIconColor];
+        }
+        if (hovered)
+        {
+            bgColor = ColorUtils::BlendHoveredOrMakeOverlay(bgColor, stateLayerColor);
+        }
+        else if (active)
+        {
+            bgColor = ColorUtils::BlendPressedOrMakeOverlay(bgColor, stateLayerColor);
+        }
+    }
+
+    ImGui::RenderNavCursor(bb, id);
+
+    window->DrawList->AddRectFilled(checkboxMin, checkboxMax, ImGui::ColorConvertFloat4ToU32(bgColor));
+    if (selected)
+    {
+        const auto iconSize = GetPixels(m3Styles, Spec::Checkbox::IconSize);
+        DrawIcon(window->DrawList, iconSize, checkboxMin, icon, m3Styles, iconColor);
+    }
+    else
+    {
+        window->DrawList->AddRect(checkboxMin, checkboxMax, ImGui::ColorConvertFloat4ToU32(outlineColor), 0.F, 0, Spec::Checkbox::OutlineWidth);
+    }
+    const auto textOffsetY = HalfDiff(checkBoxLayoutSize, m3Styles.GetLastText().currText.textSize);
+    DrawText(
+        window->DrawList, {bb.Min.x + checkBoxLayoutSize, bb.Min.y + textOffsetY}, displayLabel, m3Styles.Colors()[Spec::Checkbox::LabelTextColor]
+    );
+    return pressed;
 }
 
 auto FilledTextField(std::string_view label, char *buffer, size_t bufferSize, const TextFieldConfiguration &config) -> bool
