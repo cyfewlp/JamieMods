@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include "cpp/scheme/scheme_tonal_spot.h"
 #include "ui/Settings.h"
 
 namespace Ime
 {
 class AppearancePanel
 {
+    using Scheme                                   = material_color_utilities::SchemeTonalSpot;
     static constexpr uint32_t ZOOM_STEP_PERCENT    = 25U;
     static constexpr uint32_t ZOOM_MIN_PERCENT     = 50U;
     static constexpr uint32_t ZOOM_MAX_PERCENT     = 200U;
@@ -27,10 +29,11 @@ public:
 
 private:
     std::vector<std::string> m_translateLanguages;
-    HctCache                 m_hctCache{};
-    double                   m_contrastLevelTemp  = 0.0;
-    uint32_t                 m_currentZoomPercent = ZOOM_DEFAULT_PERCENT;
-    bool                     m_darkModeTemp       = false;
+    std::unique_ptr<Scheme>  m_configuredScheme{nullptr};
+    HctCache                 m_configuredHct{};
+    uint32_t                 m_currentZoomPercent      = ZOOM_DEFAULT_PERCENT;
+    double                   m_configuredContrastLevel = 0.0;
+    bool                     m_configuredDarkMode      = false;
 
 public:
     explicit AppearancePanel();
@@ -38,8 +41,8 @@ public:
     void Draw(Settings &settings);
 
 private:
-    void DrawZoomCombo();
-    void DrawThemeBuilder();
+    void DrawZoomCombo(Settings &settings);
+    void DrawThemeBuilder(Settings &settings);
     void DrawLanguagesCombo(Settings::Appearance &appearance) const;
 };
 

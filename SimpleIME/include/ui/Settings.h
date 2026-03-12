@@ -13,6 +13,8 @@
 
 namespace Ime
 {
+// TODO: settings parse failed may should store a error message.
+
 struct Settings
 {
     enum class WindowPosUpdatePolicy : std::uint16_t
@@ -31,7 +33,7 @@ struct Settings
     //! Shortcut: support combination of Ctrl, Shift, Alt and a normal key. e.g. "ctrl+shift+f1", "alt+f2", "f3"...
     //! The named key is can't combine by bitwise operation, g.g. "F2 | A" will become to "F3".
     ImGuiKeyChord shortcut;
-    bool          enableMod = true;
+    bool          enableMod = true; ///< modify once on Mod quit.
     bool          enableTsf = true;
 
     struct Logging
@@ -48,11 +50,11 @@ struct Settings
 
     struct Appearance
     {
-        ImGuiEx::M3::SchemeConfig schemeConfig;
+        ImGuiEx::M3::SchemeConfig schemeConfig; ///< modify in runtime by AppearancePanel; read once on Mod launch by ImeApp;
         std::string               language;
-        float                     zoom;
+        float                     zoom; ///< modify in runtime by AppearancePanel; read once on Mod launch by ImeApp;
         int                       errorDisplayDuration;
-        bool                      showSettings;
+        bool                      showSettings; ///< modify/read in runtime by UI thread(SettingsWindow).
     } appearance;
 
     struct Input
