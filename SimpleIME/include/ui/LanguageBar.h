@@ -12,13 +12,9 @@ namespace Ime
 {
 struct LangProfile;
 
-class LanguageBar
+namespace LanguageBar
 {
-public:
-    auto Draw(bool &pinned, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool;
-
-private:
-    auto DoDraw(bool &openSettings, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> void;
+auto Draw(bool &pinned, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool;
 };
 
 } // namespace Ime

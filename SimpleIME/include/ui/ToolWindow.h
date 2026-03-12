@@ -19,7 +19,6 @@ namespace UI
 class ToolWindow
 {
     std::unique_ptr<SettingsWindow> m_settingsWindow{nullptr};
-    LanguageBar                     m_languageBar;
     ImGuiKeyChord                   m_shortcut = ImGuiKey_None;
     bool                            m_pinned   = false;
     bool                            m_showing  = false;
@@ -30,13 +29,12 @@ public:
     ToolWindow(const ToolWindow &other)            = delete;
     ToolWindow &operator=(const ToolWindow &other) = delete;
 
-    ToolWindow(ToolWindow &&other) noexcept : m_settingsWindow(std::move(other.m_settingsWindow)), m_languageBar(std::move(other.m_languageBar)) {}
+    ToolWindow(ToolWindow &&other) noexcept : m_settingsWindow(std::move(other.m_settingsWindow)) {}
 
     ToolWindow &operator=(ToolWindow &&other) noexcept
     {
         if (this == &other) return *this;
         m_settingsWindow = std::move(other.m_settingsWindow);
-        m_languageBar    = std::move(other.m_languageBar);
         return *this;
     }
 

@@ -111,7 +111,7 @@ void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
 inline void ManageToolWindowOnDemand(std::unique_ptr<UI::ToolWindow> &toolWindow, DebounceTimer &debounceTimer, const Settings &settings)
 {
     bool shouldOpenToolWindow = false;
-    if (toolWindow == nullptr && ImGui::Shortcut(settings.shortcut))
+    if (toolWindow == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
     {
         shouldOpenToolWindow = true;
     }
@@ -330,7 +330,7 @@ void ImeWnd::Draw(Settings &settings)
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
 {
-    logger::debug("Message: {:#X} {} {}", uMsg, wParam, lParam);
+    // logger::debug("Message: {:#X} {} {}", uMsg, wParam, lParam);
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {

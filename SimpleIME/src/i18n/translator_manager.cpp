@@ -6,6 +6,7 @@
 
 #include "log.h"
 #include "toml++/toml.hpp"
+#include "ui/ToolWindow.h"
 
 #include <iostream>
 #include <regex>
@@ -31,6 +32,11 @@ auto LoadTranslation(Language language, const std::filesystem::path &dir) -> std
     }
     return LoadFromFile(translateFile);
 }
+
+struct TranslatorManager
+{
+    static inline std::unique_ptr<::i18n::Translator> g_translator{nullptr};
+};
 
 } // namespace
 
@@ -64,8 +70,7 @@ void ScanLanguages(const std::filesystem::path &dir, std::vector<std::string> &l
 
 auto GetTranslator() -> std::unique_ptr<::i18n::Translator> &
 {
-    static std::unique_ptr<::i18n::Translator> g_translator{nullptr};
-    return g_translator;
+    return TranslatorManager::g_translator;
 }
 
 auto UpdateTranslator(std::string_view language, std::string_view fallbackLanguage, const std::filesystem::path &dir) -> void

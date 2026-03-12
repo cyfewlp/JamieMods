@@ -42,10 +42,8 @@ ToolWindow::~ToolWindow()
 
 auto ToolWindow::Draw(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles, Settings &settings) -> bool
 {
-    // NOTE: Event if ToolWindow is opened using a shortcut processed by ImeWnd,
-    // the ToolWindow still receive a shortcut because they are in the same level(DEBUG window)
     bool showing = m_showing;
-    if (ImGui::Shortcut(m_shortcut, ImGuiInputFlags_RouteGlobal))
+    if (ImGui::IsKeyChordPressed(m_shortcut))
     {
         TogglePinned(m_pinned, showing);
     }
@@ -57,7 +55,7 @@ auto ToolWindow::Draw(const LangProfile &activeLangProfile, const std::vector<La
     m_showing = showing;
     if (m_showing)
     {
-        if (m_languageBar.Draw(m_pinned, activeLangProfile, langProfiles))
+        if (LanguageBar::Draw(m_pinned, activeLangProfile, langProfiles))
         {
             settings.appearance.showSettings = true;
         }
