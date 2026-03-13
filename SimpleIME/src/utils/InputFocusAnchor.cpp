@@ -7,9 +7,6 @@
 
 namespace
 {
-/// Console menu depth: CursorMenu, ImeMenu depth is 13.
-constexpr int8_t MENU_MAX_EFFECTIVE_DEPTH = 12;
-
 auto QueryFocusPath(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GFxValue &focusPath) -> bool
 {
     return movieView->Invoke("Selection.getFocus", &focusPath, nullptr, 0) && focusPath.IsString();
@@ -61,24 +58,44 @@ void GetBoundsRectFrom(const RE::GFxValue &bounds, RE::GRectF &rect)
     }
 }
 
-/// Get the first menu that has active input editor.
-/// The menu that depth priority great 12 (Console) will be ignored.
-/// @param movieView the result
-auto FindActiveInputMovie(RE::GPtr<RE::GFxMovieView> &movieView) -> void
+/**
+ * @brief Find the first movie in the menu stack that has an active text input field
+ * Search starts from the last focused menu index for efficiency, then falls back to a full search if needed.
+ */
+auto FindActiveInputMovie(RE::GPtr<RE::GFxMovieView> &movieView, Ime::InputFocusAnchor::size_type lastFocusedMenuIndex)
+    -> Ime::InputFocusAnchor::size_type
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
-        using size_type = typename RE::BSTArrayBase::size_type;
-        for (size_type i = ui->menuStack.size() - 1; i > 0; --i)
+        const auto menuCount = ui->menuStack.size();
+        if (lastFocusedMenuIndex < menuCount)
         {
-            auto &menu = ui->menuStack[i];
-            if (menu->depthPriority <= MENU_MAX_EFFECTIVE_DEPTH && menu->uiMovie != nullptr)
+            if (auto menu = ui->menuStack[lastFocusedMenuIndex]; menu != nullptr && menu->uiMovie != nullptr)
             {
-                movieView = menu->uiMovie;
-                break;
+                RE::GFxValue focusPath;
+                if (QueryFocusPath(menu->uiMovie, focusPath))
+                {
+                    movieView = menu->uiMovie;
+                    return lastFocusedMenuIndex;
+                }
             }
         }
+
+        for (auto i = menuCount - 1; i >= 0; --i)
+        {
+            if (const auto menu = ui->menuStack[i]; menu != nullptr && menu->uiMovie != nullptr)
+            {
+                RE::GFxValue focusPath;
+                if (QueryFocusPath(menu->uiMovie, focusPath))
+                {
+                    movieView = menu->uiMovie;
+                    return i;
+                }
+            }
+        }
+        return menuCount - 1;
     }
+    return Ime::InputFocusAnchor::RE_ARRAY_SIZE_MAX;
 }
 
 auto ComputeScreenMetrics(const RE::GPtr<RE::GFxMovieView> &movieView, RE::GRectF &boundariesCache) -> void
@@ -125,10 +142,10 @@ auto Ime::InputFocusAnchor::ComputeScreenMetrics() -> void
 {
     Reset();
 
-    RE::GPtr<RE::GFxMovieView> movieView;
-    FindActiveInputMovie(movieView);
-    if (movieView)
+    RE::GPtr<RE::GFxMovieView> gMovieView;
+    m_lastFocusedMenuIndex = FindActiveInputMovie(gMovieView, m_lastFocusedMenuIndex);
+    if (gMovieView != nullptr)
     {
-        ::ComputeScreenMetrics(movieView, m_cachedBounds);
+        ::ComputeScreenMetrics(gMovieView, m_cachedBounds);
     }
 }

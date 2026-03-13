@@ -8,6 +8,7 @@
 #include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
 #include "imguiex/Material3.h"
+#include "imguiex/imguiex_enum_wrap.h"
 #include "log.h"
 #include "menu/MenuNames.h"
 #include "ui/LanguageBar.h"
@@ -392,6 +393,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             if (ImeController::GetInstance()->IsModEnabled() && //
                 (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
             {
+                // FIXME: exclude: <-, ->, home, end, delete, backspace, enter, tab, etc.
                 const std::wstring wstring(1, LOWORD(wParam));
                 Skyrim::SendUiString(wstring);
             }

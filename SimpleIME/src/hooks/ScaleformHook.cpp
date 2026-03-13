@@ -9,7 +9,6 @@
 #include "hooks/Hooks.hpp"
 #include "ime/ImeController.h"
 #include "log.h"
-#include "utils/InputFocusAnchor.h"
 
 #include <memory>
 
@@ -49,13 +48,31 @@ public:
     // NOLINTEND(*-magic-numbers)
 };
 
+class SKSE_AllowTextInputFnHandler final : public RE::GFxFunctionHandler
+{
+    static inline std::uint8_t g_prevTextEntryCount = 0;
+
+public:
+    void Call(Params &params) override;
+
+    // call SKSE_AllowTextInput to allow and return its result
+    static auto AllowTextInput(bool allow) -> std::uint8_t;
+    // use our text-entry-count
+    static void OnTextEntryCountChanged(std::uint8_t entryCount);
+};
+
 struct Scaleform_SetScaleModeTypeHook
 {
+    // This unique_ptr wrap is fine because HookData can't uninstall by itself,
+    // and we never uninstall this hook, so no need to worry about the order of static destruction.
+    // But we need to promise `SKSE_AllowTextInputFnHandler` can be release because it means ImeApp already released,
+    // and the hook won't call `SKSE_AllowTextInputFnHandler::OnTextEntryCountChanged` anymore.
     static inline std::unique_ptr<Scaleform_SetScaleModeTypeHookData> hookData = nullptr;
 
-    static auto FnHandler() -> RE::GPtr<SKSE_AllowTextInputFnHandler> &
+    static auto FnHandler() -> SKSE_AllowTextInputFnHandler *&
     {
-        static auto fnHandler = RE::GPtr<SKSE_AllowTextInputFnHandler>();
+        // Don't use unique_ptr/GPtr to avoid release before ImeApp;
+        static auto fnHandler = new SKSE_AllowTextInputFnHandler();
         return fnHandler;
     }
 
@@ -85,7 +102,7 @@ struct Scaleform_SetScaleModeTypeHook
             skse.SetMember(SKSE_BACKUP_FN_AllowTextInput, skse_fn_AllowTextInput);
 
             RE::GFxValue fn_AllowTextInput;
-            pMovieView->CreateFunction(&fn_AllowTextInput, FnHandler().get());
+            pMovieView->CreateFunction(&fn_AllowTextInput, FnHandler());
             skse.SetMember(SKSE_ORIGINAL_FN_AllowTextInput, fn_AllowTextInput);
 
             logger::debug(
@@ -97,7 +114,7 @@ struct Scaleform_SetScaleModeTypeHook
 
     static void Install() { hookData = std::make_unique<Scaleform_SetScaleModeTypeHookData>(SetScaleModeType); }
 
-    static void Uninstall() { FnHandler().reset(); }
+    static void Uninstall() { FnHandler() = nullptr; }
 };
 
 struct Scaleform_AllowTextInputHook
@@ -109,15 +126,13 @@ struct Scaleform_AllowTextInputHook
         logger::debug("Scaleform_AllowTextInputHook");
         auto result = hookData->Original(self, allow);
 
-        if (allow)
-        {
-            Ime::InputFocusAnchor::GetInstance().ComputeScreenMetrics();
-        }
         SKSE_AllowTextInputFnHandler::OnTextEntryCountChanged(result);
         return result;
     }
 
     static void Install() { hookData = std::make_unique<Scaleform_AllowTextInput>(AllowTextInput); }
+
+    static void Uninstall() { hookData.reset(); }
 };
 
 } // namespace
@@ -159,8 +174,8 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
         logger::error("AllowInput called with insufficient args");
         return;
     }
-    const auto *fxMovieView = reinterpret_cast<RE::GFxMovieView *>(params.movie);
-    const bool  enable      = params.args[0].GetBool(); // NOLINT(*-pro-bounds-pointer-arithmetic)
+    auto      *fxMovieView = reinterpret_cast<RE::GFxMovieView *>(params.movie);
+    const bool enable      = params.args[0].GetBool(); // NOLINT(*-pro-bounds-pointer-arithmetic)
 
     RE::GFxValue skse;
     bool         calledOriginal = false;
@@ -191,10 +206,6 @@ void SKSE_AllowTextInputFnHandler::Call(Params &params)
     {
         AllowTextInput(enable);
     }
-    if (enable)
-    {
-        Ime::InputFocusAnchor::GetInstance().ComputeScreenMetrics();
-    }
 }
 
 void Install()
@@ -211,7 +222,7 @@ void Install()
 
 void Uninstall()
 {
+    Scaleform_AllowTextInputHook::Uninstall();
     Scaleform_SetScaleModeTypeHook::Uninstall();
-    Scaleform_AllowTextInputHook::hookData = nullptr;
 }
 } // namespace Hooks::Scaleform

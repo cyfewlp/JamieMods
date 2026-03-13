@@ -123,9 +123,9 @@ auto UpdateImeWindowPosByCaret(ImVec2 &windowPos) -> void
     windowPos.y = bounds.bottom;
 }
 
-auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
+auto UpdateImeWindowPos(Settings::WindowPosUpdatePolicy policy, ImVec2 &windowPos) -> void
 {
-    switch (settings.input.posUpdatePolicy)
+    switch (policy)
     {
         case Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR:
             if (const auto *cursor = RE::MenuCursor::GetSingleton(); cursor != nullptr)
@@ -150,13 +150,24 @@ auto UpdateImeWindowPos(const Settings &settings, ImVec2 &windowPos) -> void
  * engine-native logic to calculate the optimal position relative to the `avoidRect`
  * (the text input area) while respecting viewport boundaries.
  */
-void ClampWindowToViewport(ImVec2 &pos, const ImVec2 &size, ImGuiDir &lastAutoPosDir)
+void ClampWindowToViewport(Settings::WindowPosUpdatePolicy policy, ImVec2 &pos, const ImVec2 &size, ImGuiDir &lastAutoPosDir)
 {
     const auto &viewport = ImGui::GetMainViewport();
-    const auto &bounds   = InputFocusAnchor::GetInstance().GetLastBounds();
-
+    ImRect      avoidRect;
+    if (policy == Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR)
+    {
+        avoidRect.Min = pos;
+        avoidRect.Max = pos;
+    }
+    else
+    {
+        const auto &bounds = InputFocusAnchor::GetInstance().GetLastBounds();
+        avoidRect.Min.x    = bounds.left;
+        avoidRect.Min.y    = bounds.top;
+        avoidRect.Max.x    = bounds.right;
+        avoidRect.Max.y    = bounds.bottom;
+    }
     const ImRect viewPortRect(viewport->Pos, viewport->Pos + viewport->Size);
-    const ImRect avoidRect(bounds.left, bounds.top, bounds.right, bounds.bottom);
     pos = ImGui::FindBestWindowPosForPopupEx(pos, size, &lastAutoPosDir, viewPortRect, avoidRect, ImGuiPopupPositionPolicy_ComboBox);
 }
 } // namespace
@@ -173,13 +184,13 @@ void ImeWindow::Draw(const CompositionInfo &compositionInfo, const CandidateUi &
     if (currentFrame > m_lastShowFrame + 1)
     {
         m_shouldRelayout = true;
-        UpdateImeWindowPos(settings, m_imePos);
+        UpdateImeWindowPos(settings.input.posUpdatePolicy, m_imePos);
     }
     m_lastShowFrame = currentFrame;
     if (m_shouldRelayout)
     {
         m_shouldRelayout = false;
-        ClampWindowToViewport(m_imePos, m_imeSize, m_lastAutoPosDir);
+        ClampWindowToViewport(settings.input.posUpdatePolicy, m_imePos, m_imeSize, m_lastAutoPosDir);
         ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
     }
     constexpr auto flags          = ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();

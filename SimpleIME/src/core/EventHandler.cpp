@@ -98,10 +98,6 @@ auto MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource
 {
     logger::debug("Menu {} open {}", event->menuName.c_str(), event->opening);
     static bool firstOpenMainMenu = true;
-    if (event->menuName != RE::CursorMenu::MENU_NAME && event->menuName != RE::HUDMenu::MENU_NAME)
-    {
-        // FocusGFxCharacterInfo::GetInstance().Update(event->menuName.c_str(), event->opening);
-    }
     // before game load, all menus will be closed;
     if (event->menuName == RE::LoadingMenu::MENU_NAME)
     {
@@ -124,7 +120,9 @@ auto MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource
     }
     else
     {
-        FixInconsistentTextEntryCount(event);
+        // FIXME: may need remove or enable/disable fix by user setting.
+        // If some 3rd menu call RE::ControlMap::AllowTextInput but `CursorMenu` hided, this fix may cause IME accident disable.
+        // FixInconsistentTextEntryCount(event);
     }
     return RE::BSEventNotifyControl::kContinue;
 }
