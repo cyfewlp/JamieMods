@@ -144,20 +144,6 @@ if (ImGui::Button("Apply Theme")) {
 ### Why Material 3?
 
 By leveraging Google's research into color science, `SimpleIME` avoids the common pitfall of "clashing colors" in custom themes. Whether you choose a vibrant neon or a muted pastel, the algorithm ensures that text remains readable and the UI hierarchy remains clear.
-## 📝 Documentation & Contribution Guide
-
-This repository is optimized for [Obsidian](https://obsidian.md).
-We use it to track bugs, features, and technical notes.
-
-### How we use Obsidian:
-
-Tagging System: We use nested tags (e.g., `#status/todo`, `#type/bug`) to manage the development lifecycle.
-
-* Backlinks: Technical modules are connected via [[Double Brackets]] for better navigation.
-* Task Tracking: Please refer to our Tagging Convention Guide before contributing or logging issues.
-
-Please check [[TAGGING_GUIDE]]
-
 ## 🤝 Credits & Libraries
 
 * [CommonLibSSEVR/ng](https://github.com/alandtse/CommonLibVR): The backbone library for Skyrim reverse engineering.
