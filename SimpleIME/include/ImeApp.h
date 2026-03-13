@@ -9,6 +9,8 @@
 
 namespace Ime
 {
+void D3DInit();
+
 class ImeApp
 {
 public:
@@ -70,7 +72,7 @@ public:
     };
 
     explicit ImeApp(std::filesystem::path configPath);
-    ~ImeApp();
+    ~ImeApp() = default;
 
     ImeApp(const ImeApp &other)                   = delete;
     ImeApp(ImeApp &&other)                        = delete;
@@ -106,7 +108,7 @@ private:
     HIMC     m_hIMCDefault = nullptr; // Game main window default HIMC
     State    m_state;
 
-    friend void           D3DInit();
+    friend void           Ime::D3DInit();
     void                  DoD3DInit();
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;

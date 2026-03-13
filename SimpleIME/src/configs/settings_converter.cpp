@@ -239,9 +239,10 @@ struct Converter<Settings::WindowPosUpdatePolicy>
 
 auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
 {
-    Settings settings  = GetDefaultSettings();
-    settings.enableMod = config.enableMod;
-    settings.enableTsf = config.enableTsf;
+    Settings settings                      = GetDefaultSettings();
+    settings.enableMod                     = config.enableMod;
+    settings.enableTsf                     = config.enableTsf;
+    settings.fixInconsistentTextEntryCount = config.fixInconsistentTextEntryCount;
 
     if (const auto shortCut = Converter<ImGuiKeyChord>::fromString(config.shortcut); shortCut.has_value())
     {
@@ -259,17 +260,29 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     }
 
     // Resources
-    settings.resources.translationDir = config.resources.translationDir;
-    settings.resources.fontPathList   = config.resources.fontPathList;
+    if (!config.resources.translationDir.empty())
+    {
+        settings.resources.translationDir = config.resources.translationDir;
+    }
+    if (!config.resources.fontPathList.empty())
+    {
+        settings.resources.fontPathList = config.resources.fontPathList;
+    }
 
     // Appearance
-    settings.appearance.schemeConfig.sourceColor   = config.appearance.themeSourceColor;
+    if (config.appearance.themeSourceColor != UINT_MAX)
+    {
+        settings.appearance.schemeConfig.sourceColor = config.appearance.themeSourceColor & 0xFFFFFF;
+    }
     settings.appearance.schemeConfig.contrastLevel = config.appearance.themeContrastLevel;
     settings.appearance.schemeConfig.darkMode      = config.appearance.themeDarkMode;
-    settings.appearance.language                   = config.appearance.language;
-    settings.appearance.zoom                       = config.appearance.zoom;
-    settings.appearance.errorDisplayDuration       = config.appearance.errorDisplayDuration;
-    settings.appearance.showSettings               = config.appearance.showSettings;
+    if (!config.appearance.language.empty())
+    {
+        settings.appearance.language = config.appearance.language;
+    }
+    settings.appearance.zoom                 = config.appearance.zoom;
+    settings.appearance.errorDisplayDuration = config.appearance.errorDisplayDuration;
+    settings.appearance.showSettings         = config.appearance.showSettings;
 
     // Input
     settings.input.enableUnicodePaste = config.input.enableUnicodePaste;
@@ -286,8 +299,9 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
 auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
 {
     Configuration configuration{};
-    configuration.enableMod = settings.enableMod;
-    configuration.enableTsf = settings.enableTsf;
+    configuration.enableMod                     = settings.enableMod;
+    configuration.enableTsf                     = settings.enableTsf;
+    configuration.fixInconsistentTextEntryCount = settings.fixInconsistentTextEntryCount;
 
     ErrorNotifier errorNotifier = ErrorNotifier::GetInstance();
     if (const auto shortcut = Converter<ImGuiKeyChord>::toString(settings.shortcut); shortcut.has_value())

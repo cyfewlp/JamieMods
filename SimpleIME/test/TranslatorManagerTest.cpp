@@ -12,6 +12,8 @@ TEST(TranslatorManagerTest, ShouldStoreAsFullQualifyKey)
 {
     const std::filesystem::path tempTranslateFile("translate_fakeLang.toml");
     std::ofstream               tempFile(tempTranslateFile);
+    i18n::Translator            g_translator;
+    Ime::i18n::SetTranslator(&g_translator);
     tempFile << R"([Section1]
 k1 = "v1"
 [Section1.ChildSection]
@@ -31,7 +33,7 @@ s2k2 = "s2v2"
     EXPECT_STREQ(Ime::Translate("Section2.Child.s2k2").data(), "s2v2");
 
     std::filesystem::remove(tempTranslateFile);
-    Ime::i18n::ReleaseTranslator();
+    Ime::i18n::SetTranslator(nullptr);
 }
 
 TEST(TranslatorManagerTest, should_return_key_if_not_found)

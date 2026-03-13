@@ -1,5 +1,6 @@
 #include "core/EventHandler.h"
 
+#include "ImeApp.h"
 #include "ImeWnd.hpp"
 #include "RE/ControlMap.h"
 #include "ime/ImeController.h"
@@ -120,9 +121,11 @@ auto MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource
     }
     else
     {
-        // FIXME: may need remove or enable/disable fix by user setting.
         // If some 3rd menu call RE::ControlMap::AllowTextInput but `CursorMenu` hided, this fix may cause IME accident disable.
-        // FixInconsistentTextEntryCount(event);
+        if (ImeApp::GetInstance().GetSettings().fixInconsistentTextEntryCount)
+        {
+            FixInconsistentTextEntryCount(event);
+        }
     }
     return RE::BSEventNotifyControl::kContinue;
 }

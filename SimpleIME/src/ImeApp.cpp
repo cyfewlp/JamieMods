@@ -84,8 +84,6 @@ auto ConfigFilePath() -> std::filesystem::path
 {
     return utils::GetInterfacePath() / SIMPLE_IME / CONFIG_FILE_NAME;
 }
-
-void D3DInit();
 } // namespace
 
 namespace SksePlugin
@@ -93,7 +91,7 @@ namespace SksePlugin
 auto Initialize() -> bool
 {
     g_instance    = std::make_unique<Ime::ImeApp>(ConfigFilePath());
-    g_D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
+    g_D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(Ime::D3DInit);
     Hooks::WinHooks::Install();
 
     auto &errorNotifier = ErrorNotifier::GetInstance();
@@ -135,15 +133,10 @@ namespace Ime
 {
 ImeApp::ImeApp(std::filesystem::path configPath)
 {
-    const auto configuration = Ime::ConfigSerializer::LoadConfiguration(ConfigFilePath());
+    const auto configuration = Ime::ConfigSerializer::LoadConfiguration(configPath);
     m_settings               = Ime::ConvertConfigurationToSettings(configuration);
 
     SksePlugin::InitializeLogging({m_settings.logging.level, m_settings.logging.flushLevel});
-}
-
-ImeApp::~ImeApp()
-{
-    SaveSettings();
 }
 
 auto ImeApp::GetInstance() -> ImeApp &
@@ -177,6 +170,7 @@ void ImeApp::Uninitialize()
             RealWndProc = nullptr;
         }
     }
+    SaveSettings();
     m_state.SetState(State::StateKey::DORMANCY);
 }
 

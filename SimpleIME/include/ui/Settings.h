@@ -32,8 +32,9 @@ struct Settings
     //! Shortcut: support combination of Ctrl, Shift, Alt and a normal key. e.g. "ctrl+shift+f1", "alt+f2", "f3"...
     //! The named key is can't combine by bitwise operation, g.g. "F2 | A" will become to "F3".
     ImGuiKeyChord shortcut;
-    bool          enableMod = true; ///< modify once on Mod quit.
-    bool          enableTsf = true;
+    bool          enableMod                     = true; ///< modify once on Mod quit.
+    bool          enableTsf                     = true;
+    bool          fixInconsistentTextEntryCount = true; ///< modify in SettingsWindow(ImeMenu). no need sync because ImeMenu is the topmost menu;
 
     struct Logging
     {
@@ -69,17 +70,18 @@ struct Settings
 inline auto GetDefaultSettings() -> Settings
 {
     return {
-        .shortcut  = ImGuiKey_F2,
-        .enableMod = true,
-        .enableTsf = true,
-        .logging   = {.level = spdlog::level::info, .flushLevel = spdlog::level::info},
+        .shortcut                      = ImGuiKey_F2,
+        .enableMod                     = true,
+        .enableTsf                     = true,
+        .fixInconsistentTextEntryCount = true,
+        .logging                       = {.level = spdlog::level::info, .flushLevel = spdlog::level::info},
         .resources = {.translationDir = "Data/interface/SimpleIME", .fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"}},
         .appearance =
             {.schemeConfig         = ImGuiEx::M3::GetM3ClassicSchemeConfig(),
-                      .language             = "english",
-                      .zoom                 = -1.0F,
-                      .errorDisplayDuration = 10,
-                      .showSettings         = false},
+                                          .language             = "english",
+                                          .zoom                 = -1.0F,
+                                          .errorDisplayDuration = 10,
+                                          .showSettings         = false},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = Settings::WindowPosUpdatePolicy::BASED_ON_CARET}
     };
 }

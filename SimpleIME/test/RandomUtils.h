@@ -40,9 +40,10 @@ inline auto GetRandomConfiguation() -> Ime::Configuration
 {
     ImeTest::RandomUtils random;
     Ime::Configuration   configuration{};
-    configuration.shortcut  = random.NextString(10);
-    configuration.enableMod = random.NextBool();
-    configuration.enableTsf = random.NextBool();
+    configuration.shortcut                      = random.NextString(10);
+    configuration.enableMod                     = random.NextBool();
+    configuration.enableTsf                     = random.NextBool();
+    configuration.fixInconsistentTextEntryCount = random.NextBool();
 
     configuration.logging.level      = random.NextString(10);
     configuration.logging.flushLevel = random.NextString(10);

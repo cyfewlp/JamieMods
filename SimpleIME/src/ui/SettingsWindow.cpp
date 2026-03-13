@@ -115,6 +115,9 @@ void SettingsWindow::DrawMenuBehaviour(Settings &settings) const
         return;
     }
 
+    (void)ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.FixInconsistentTextEntryCount"), settings.fixInconsistentTextEntryCount, ICON_CHECK);
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FixInconsistentTextEntryCountToolTip"));
+
     DrawStates();
     DrawFeatures(settings);
 }
@@ -124,7 +127,7 @@ void SettingsWindow::DrawFeatures(Settings &settings)
     DrawWindowPosUpdatePolicy(settings);
 
     ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.EnableUnicodePaste"), settings.input.enableUnicodePaste, ICON_CHECK);
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableUnicodePasteTooltip"));
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableUnicodePasteToolTip"));
 
     ImGui::SameLine();
     if (ImGuiEx::M3::Checkbox(Translate(Translate("Settings.Behaviour.KeepImeOpen")), settings.input.keepImeOpen, ICON_CHECK))

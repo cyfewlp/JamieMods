@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 4.2)
 project(
     SimpleIME
-    VERSION 2.0.0.beta
+    VERSION 2.0.0
     DESCRIPTION "Simple IME support for Skyrim"
     LANGUAGES CXX
 )

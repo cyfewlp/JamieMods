@@ -6,9 +6,23 @@
 #include "configs/configuration.h"
 #include "configs/settings_converter.h"
 #include "imgui.h"
+#include "imguiex/ErrorNotifier.h"
 #include "ui/Settings.h"
 
 #include <gtest/gtest.h>
+
+void ErrorNotifier::addError(std::string_view msg, const ErrorMsg::Level level)
+{
+    if (level < m_currentLevel)
+    {
+        return;
+    }
+    if (errors.size() >= MaxMessages)
+    {
+        errors.pop_front();
+    }
+    errors.push_back({.text = std::string(msg), .level = level, .confirmed = false});
+}
 
 TEST(SettingsConverterTest, should_convert_shortcut_string_to_ImGuiKeyChord)
 {
@@ -150,4 +164,35 @@ TEST(SettingsConverterTest, should_convert_shortcut_ImGuiKeyChord_to_string)
     settings.shortcut = ImGuiKey_A;
     config            = Ime::ConvertSettingsToConfiguration(settings);
     EXPECT_STREQ(config.shortcut.c_str(), "a") << "should convert normal key without modifier to string, and keep the case";
+}
+
+TEST(SettingsConverterTest, should_convert_default_configuration_to_default_settings)
+{
+    Ime::Configuration configuration = Ime::GetDefaultConfiguration();
+
+    Ime::Settings defaultSettings = Ime::GetDefaultSettings();
+    auto          settings        = Ime::ConvertConfigurationToSettings(configuration);
+
+    EXPECT_EQ(settings.enableMod, defaultSettings.enableMod);
+    EXPECT_EQ(settings.enableTsf, defaultSettings.enableTsf);
+    EXPECT_EQ(settings.fixInconsistentTextEntryCount, defaultSettings.fixInconsistentTextEntryCount);
+    EXPECT_EQ(settings.shortcut, defaultSettings.shortcut);
+
+    EXPECT_EQ(settings.logging.level, defaultSettings.logging.level);
+    EXPECT_EQ(settings.logging.flushLevel, defaultSettings.logging.flushLevel);
+
+    EXPECT_EQ(settings.resources.translationDir, defaultSettings.resources.translationDir);
+    EXPECT_EQ(settings.resources.fontPathList, defaultSettings.resources.fontPathList);
+
+    EXPECT_EQ(settings.appearance.schemeConfig.sourceColor, defaultSettings.appearance.schemeConfig.sourceColor);
+    EXPECT_EQ(settings.appearance.schemeConfig.contrastLevel, defaultSettings.appearance.schemeConfig.contrastLevel);
+    EXPECT_EQ(settings.appearance.schemeConfig.darkMode, defaultSettings.appearance.schemeConfig.darkMode);
+    EXPECT_EQ(settings.appearance.language, defaultSettings.appearance.language);
+    EXPECT_EQ(settings.appearance.zoom, defaultSettings.appearance.zoom);
+    EXPECT_EQ(settings.appearance.errorDisplayDuration, defaultSettings.appearance.errorDisplayDuration);
+    EXPECT_EQ(settings.appearance.showSettings, defaultSettings.appearance.showSettings);
+
+    EXPECT_EQ(settings.input.posUpdatePolicy, defaultSettings.input.posUpdatePolicy);
+    EXPECT_EQ(settings.input.enableUnicodePaste, defaultSettings.input.enableUnicodePaste);
+    EXPECT_EQ(settings.input.keepImeOpen, defaultSettings.input.keepImeOpen);
 }
