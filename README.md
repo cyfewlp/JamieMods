@@ -1,155 +1,63 @@
 # Jamie Mods
 
-A personal collection of small mods and development examples for Skyrim.
-The primary project in this repository is **SimpleIME**, which adds IME (Input Method Editor)
-support to **Skyrim Special Edition** (SE) / **Anniversary Edition** (AE) so languages such as
-Chinese and Japanese can be entered in-game.
+A personal collection of mods for Skyrim Special Edition / Anniversary Edition.
+The primary project is **SimpleIME** — adds IME support so Chinese, Japanese, Korean and other
+multi-byte languages can be typed in-game.
 
 [![Nexus Mods](https://img.shields.io/badge/NexusMods-SimpleIME-orange?style=flat-square&logo=nexusmods)](https://www.nexusmods.com/skyrimspecialedition/mods/140136)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-## 📦 Project Overview
+## Projects
 
-### 🌟 [SimpleIME](SimpleIME/README.md)
+| Project | Description |
+|---------|-------------|
+| [SimpleIME](SimpleIME/README.md) | Native IME input support for Skyrim SE/AE |
 
-The primary project in this repository. **SimpleIME** provides native IME (Input Method Editor) support for Skyrim
-SE/AE, enabling players to type in Chinese, Japanese, Korean, and other multi-byte languages within the game console and
-UI.
-
-## Quick start
-
-Clone recursively to ensure any submodules are retrieved:
+## Getting started
 
 ```bash
 git clone --recursive https://github.com/cyfewlp/JamieMods.git
 cd JamieMods
 ```
 
-If you already cloned without `--recursive`, fetch submodules with:
+If you already cloned without `--recursive`:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-## Build requirements
+## Requirements
 
-- [Visual Studio 2022](https://visualstudio.microsoft.com/) (_the free Community edition_)
-- [LLVM](https://github.com/llvm/llvm-project)
-    - clang-format
-    - clang-tidy
-    - clang-cl(the compiler)
-- [CMake](https://cmake.org/)
-- [`vcpkg`](https://github.com/microsoft/vcpkg)
-    1. Clone the repository using git
-       OR [download it as a .zip](https://github.com/microsoft/vcpkg/archive/refs/heads/master.zip)
-    2. Go into the `vcpkg` folder and double-click on `bootstrap-vcpkg.bat`
-    3. Edit your system or user Environment Variables and add a new one:
-        - Name: `VCPKG_ROOT`
-          Value: `C:\path\to\wherever\your\vcpkg\folder\is`
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) (Community edition is fine)
+- [LLVM](https://github.com/llvm/llvm-project) — provides `clang-cl`, `clang-format`, `clang-tidy`
+- [CMake](https://cmake.org/) ≥ 4.2
+- [vcpkg](https://github.com/microsoft/vcpkg)
+  - Clone or download, run `bootstrap-vcpkg.bat`, then set `VCPKG_ROOT` to the vcpkg folder.
 
-<img src="https://raw.githubusercontent.com/SkyrimDev/Images/main/images/screenshots/Setting%20Environment%20Variables/VCPKG_ROOT.png" height="150" alt="">
+## Build
 
-## Build & open in IDE
+See [SimpleIME/README.md](SimpleIME/README.md) for project-specific configure, build, and test instructions.
 
-Please check Project-specific README.md
+## Python tools
 
-### Python
+Some scripts under `scripts/` and `SimpleIME/` require Python. Set up the environment once:
 
-project contains python scripts tool. Please configrue your `Python` environment:
-
-1. **Create and Activate Virtual Environment**:
 ```shell
 python -m venv .venv
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-# Linux/macOS source
-.venv/bin/activate
-```
-
-**Install Dependencies**:
-```shell
+.venv\Scripts\Activate.ps1   # PowerShell
 pip install -r requirements.txt
 ```
-#### Scripts
-- `SimpleIME/extract_i18n.py`: extract all translate keys from specify directory.
-	- Print warning message if some keys missing in translate files.
-	- Print warning message if some keys defined in translate files but not used in code;
-## 🛠️ Debug Setup: Configuring MO2 Path
 
-This project includes a pre-configured CLion run task (Run MO2 SKSE) that launches the game through `Mod Organizer 2`.
-To
-use this task, you must define the `MO2Path` variable in your CLION IDE settings to point to your local MO2 installation
-folder.
+Notable scripts:
 
-How to set the path variable:
+- `SimpleIME/extract_i18n.py` — checks translation key coverage; warns on missing or unused keys.
 
-- Open Settings (or Preferences on macOS) by pressing **Ctrl+Alt+S**.
-- Navigate to **Appearance & Behavior > Path Variables**.
-- Click the **+** (Add) button.
-- In the Name field, enter exactly: **MO2Path**
-- In the Value field, click the folder icon and select the root directory where your `ModOrganizer.exe` is located (
-  e.g., `C:
-/Games/Mod Organizer 2`).
-- Click OK and Apply.
-## 🎨 Dynamic Theming with Material You
+## Credits
 
-`SimpleIME` features a high-performance, dynamic theming engine powered by Google's [material-color-utilities](https://www.google.com/search?q=https://github.com/google/material-color-utilities). Instead of relying on static color presets, the project generates comprehensive, perceptually accurate UI themes in real-time based on a single "Seed Color."
-
-### Key Features
-
-- **Perceptual Color Logic**: Utilizes the **HCT (Hue, Chroma, Tone)** color space to ensure consistent contrast and accessibility across all generated themes.
-- **Live UI Customization**: Users can select any color via a picker, and the entire interface—including Primary, Surface, and Container roles—recalculates instantly to match.
-- **Dark & Light Mode Support**: A single click toggles between themes while maintaining the semantic relationship between color roles.
-### Technical Implementation
-
-The project implements a custom `ThemeBuilder` that bridges the Material Color Utilities (MCU) with the ImGui rendering pipeline.
-1.  **Generating Themes from Seed**
-   The core logic utilizes `SchemeTonalSpot` to generate balanced palettes. We perform manual bit-shifting to convert MCU's `ARGB` format into ImGui's expected color layout:
-
-```cpp
-void ThemeBuilder::BuildThemeFromSeed(uint32_t seedArgb, bool isDark, Colors &colors) {
-    using namespace material_color_utilities;
-
-    // Generate a Tonal Spot scheme based on the seed color and brightness mode
-    SchemeTonalSpot scheme(Hct(seedArgb), isDark, 0.0);
-
-    // Helper to bridge Material ARGB (0xAARRGGBB) to ImGui (0xAABBGGRR / ImColor)
-    auto argbToImColor = [](const Argb argb) -> ImU32 {
-        uint8_t a = (argb >> 24) & 0xFF;
-        uint8_t r = (argb >> 16) & 0xFF;
-        uint8_t g = (argb >> 8)  & 0xFF;
-        uint8_t b = argb & 0xFF;
-        return ImColor(r, g, b, a);
-    };
-
-    colors.primary          = argbToImColor(scheme.GetPrimary());
-    colors.onPrimary        = argbToImColor(scheme.GetOnPrimary());
-    colors.surfaceContainer = argbToImColor(scheme.GetSurfaceContainer());
-    // ... further mappings
-}
-```
-
-2. **Interactive Theme Editor**
-Within the **Appearance Panel**, users can interactively preview and apply new color schemes. The implementation ensures that color data flows seamlessly between the standard `ImGui::ColorPicker4` (floats) and the MCU engine (uint32).
-
-```cpp
-// Within the UI loop
-if (ImGui::Button("Apply Theme")) {
-    // Convert ImU32 back to MCU-compatible ARGB before processing
-    uint32_t seed = imU32ToArgb(m_colorInThemeBuilder);
-    ThemeBuilder::BuildThemeFromSeed(seed, darkMode, m_styles.colors);
-}
-```
-
-### Why Material 3?
-
-By leveraging Google's research into color science, `SimpleIME` avoids the common pitfall of "clashing colors" in custom themes. Whether you choose a vibrant neon or a muted pastel, the algorithm ensures that text remains readable and the UI hierarchy remains clear.
-## 🤝 Credits & Libraries
-
-* [CommonLibSSEVR/ng](https://github.com/alandtse/CommonLibVR): The backbone library for Skyrim reverse engineering.
-* [Dear ImGui](https://github.com/ocornut/imgui): Used for in-game overlays.
-* [ImThemes](https://github.com/Patitotective/ImThemes): ImGui styling browser.
-* [material-color-utilities](https://github.com/material-foundation/material-color-utilities.git): Color libraries for Material You
-* [Lucide](https://github.com/lucide-icons/lucide): Beautiful & consistent icon toolkit made by the community.
-  Open-source project and a fork of Feather Icons.
-  * We **repackaged** some of its SVG icons to build the _minimal_ TTF file we needed.
+| Library | Purpose |
+|---------|---------|
+| [CommonLibSSE-NG](https://github.com/alandtse/CommonLibVR) | Skyrim reverse-engineering backbone |
+| [Dear ImGui](https://github.com/ocornut/imgui) | In-game UI rendering |
+| [material-color-utilities](https://github.com/material-foundation/material-color-utilities) | Material You dynamic theming |
+| [ImThemes](https://github.com/Patitotective/ImThemes) | ImGui theme browser / exporter |
+| [Lucide](https://github.com/lucide-icons/lucide) | Icon SVGs (repackaged into a minimal TTF) |
