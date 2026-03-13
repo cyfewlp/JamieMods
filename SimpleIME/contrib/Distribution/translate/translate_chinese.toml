@@ -44,7 +44,7 @@ ImeEnabled = "IME 已启用"
 ImeEnabledTooltip = "IME 默认仅在存在输入框时启用"
 Focus = "焦点"
 FocusTooltip = "IME 仅在存在输入框以及键盘焦点时启用"
-ForceFocusIme = "强制 IME 焦点"
+ForceFocusIme = "请求焦点"
 
 [Settings.FontBuilder.PreviewPanel]
 Debouncing = "正在处理..."

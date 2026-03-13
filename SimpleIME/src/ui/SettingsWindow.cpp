@@ -170,30 +170,9 @@ void SettingsWindow::DrawStates() const
 {
     ImGui::SeparatorText(Translate("Settings.Behaviour.States").data());
 
-    const auto &state = Core::State::GetInstance();
-    ImGuiEx::M3::XSmallIcon(ICON_KEYBOARD);
-    ImGui::SameLine();
-    ImGuiEx::M3::TextUnformatted(Translate("Settings.Behaviour.ImeEnabled"));
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImeEnabledTooltip"));
-
-    ImGui::SameLine();
-
-    ImGuiEx::M3::XSmallIcon(ICON_FOCUS);
-    ImGui::SameLine();
-    ImGuiEx::M3::TextUnformatted(Translate("Settings.Behaviour.Focus"));
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FocusTooltip"));
-
-    ImGui::SameLine(0, ImGui::GetFontSize());
-    ImGui::TextDisabled("|");
-    ImGui::SameLine(0, ImGui::GetFontSize());
-    if (ImGuiEx::M3::SmallButton(Translate("Settings.Behaviour.ForceFocusIme"), ""))
-    {
-        ImeController::GetInstance()->ForceFocusIme();
-    }
-#ifdef DEBUG
-    auto action = [&state](const Core::State::StateKey stateKey) -> void {
-        ImGui::SameLine();
-        if (state.Has(stateKey))
+    const auto &state     = Core::State::GetInstance();
+    auto        StateIcon = [](bool enable) constexpr -> void {
+        if (enable)
         {
             ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
         }
@@ -202,24 +181,36 @@ void SettingsWindow::DrawStates() const
             ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
         }
     };
-    ImGui::Text("IN_COMPOSING: ");
-    action(Core::State::IN_COMPOSING);
-    ImGui::Text("IN_CAND_CHOOSING: ");
-    action(Core::State::IN_CAND_CHOOSING);
-    ImGui::Text("IN_ALPHANUMERIC: ");
-    action(Core::State::IN_ALPHANUMERIC);
-    ImGui::Text("IME_OPEN: ");
-    action(Core::State::IME_OPEN);
-    ImGui::Text("LANG_PROFILE_ACTIVATED: ");
-    action(Core::State::LANG_PROFILE_ACTIVATED);
-    ImGui::Text("IME_DISABLED: ");
-    action(Core::State::IME_DISABLED);
-    ImGui::Text("TSF_FOCUS: ");
-    action(Core::State::TSF_FOCUS);
-    ImGui::Text("GAME_LOADING: ");
-    action(Core::State::GAME_LOADING);
-    ImGui::Text("KEYBOARD_OPEN: ");
-    action(Core::State::KEYBOARD_OPEN);
+
+    StateIcon(state.NotHas(Core::State::IME_DISABLED));
+    ImGui::SameLine();
+    ImGuiEx::M3::AlignedLabel(Translate("Settings.Behaviour.ImeEnabled"));
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.ImeEnabledTooltip"));
+
+    const auto TextServiceFocused = state.Has(Core::State::TEXT_SERVICE_FOCUS);
+    StateIcon(TextServiceFocused);
+    ImGui::SameLine();
+    ImGuiEx::M3::AlignedLabel(Translate("Settings.Behaviour.Focus"));
+    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FocusTooltip"));
+
+    ImGui::SameLine(0, ImGui::GetFontSize());
+    ImGui::BeginDisabled(TextServiceFocused);
+    if (ImGuiEx::M3::XSmallButton(Translate("Settings.Behaviour.ForceFocusIme"), ""))
+    {
+        ImeController::GetInstance()->ForceFocusIme();
+    }
+    ImGui::EndDisabled();
+#ifdef DEBUG
+    // clang-format off
+    StateIcon(state.Has(Core::State::IN_COMPOSING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_COMPOSING");
+    StateIcon(state.Has(Core::State::IN_CAND_CHOOSING));    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_CAND_CHOOSING");
+    StateIcon(state.Has(Core::State::IN_ALPHANUMERIC));     ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_ALPHANUMERIC");
+    StateIcon(state.Has(Core::State::IME_OPEN));            ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IME_OPEN");
+    StateIcon(state.Has(Core::State::LANG_PROFILE_ACTIVATED)); ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("LANG_PROFILE_ACTIVATED");
+    StateIcon(state.Has(Core::State::IME_DISABLED));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IME_DISABLED");
+    StateIcon(state.Has(Core::State::GAME_LOADING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("GAME_LOADING");
+    StateIcon(state.Has(Core::State::KEYBOARD_OPEN));       ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("KEYBOARD_OPEN");
+    // clang-format on
 #endif
 }
 } // namespace Ime::UI

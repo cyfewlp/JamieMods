@@ -237,7 +237,7 @@ auto ImeWnd::Focus() const -> void
     }
 }
 
-auto ImeWnd::SetTsfFocus(const bool focus) const -> bool
+auto ImeWnd::FocusTextService(const bool focus) const -> bool
 {
     return m_pTextService->OnFocus(focus);
 }

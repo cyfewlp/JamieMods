@@ -46,13 +46,13 @@ auto ImeManager::EnableIme(bool enable) -> Result
         {
             logger::debug("Clear IME_DISABLED and set TSF focus");
             state.Clear(State::IME_DISABLED);
-            success = m_imeWnd->SetTsfFocus(true);
+            success = m_imeWnd->FocusTextService(true);
         }
         else
         {
             logger::debug("Set IME_DISABLED and clear TSF focus");
             state.Set(State::IME_DISABLED);
-            success = m_imeWnd->SetTsfFocus(false);
+            success = m_imeWnd->FocusTextService(false);
         }
 
         if (!success)

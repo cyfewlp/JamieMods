@@ -110,28 +110,16 @@ auto TextStore::Focus() -> HRESULT
         logger::debug("Can't associate focus. Please first Initialize & set hwnd");
         return E_FAIL;
     }
-    auto &state = State::GetInstance();
     logger::debug("Associate Focus");
     m_pPrevDocMgr.Release();
-    const HRESULT hr = m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
-    if (SUCCEEDED(hr))
-    {
-        state.Set(State::TSF_FOCUS);
-    }
-    return hr;
+    return m_threadMgr->AssociateFocus(m_hWnd, m_documentMgr, &m_pPrevDocMgr);
 }
 
 auto TextStore::ClearFocus() const -> HRESULT
 {
     logger::debug("Clear Focus");
-    auto                   &state = State::GetInstance();
     CComPtr<ITfDocumentMgr> tempDocMgr;
-    const HRESULT           hr = m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
-    if (SUCCEEDED(hr))
-    {
-        state.Clear(State::TSF_FOCUS);
-    }
-    return hr;
+    return m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
 }
 
 auto TextStore::QueryInterface(REFIID riid, void **ppvObject) -> HRESULT

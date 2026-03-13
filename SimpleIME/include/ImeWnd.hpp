@@ -53,7 +53,7 @@ public:
     void Run() const;
 
     auto Focus() const -> void;
-    auto SetTsfFocus(bool focus) const -> bool;
+    auto FocusTextService(bool focus) const -> bool;
     auto IsFocused() const -> bool;
     auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
     auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;

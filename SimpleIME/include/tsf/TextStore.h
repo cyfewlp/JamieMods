@@ -288,7 +288,9 @@ public:
         {
             hr = m_pTextStore->ClearFocus();
         }
-        return SUCCEEDED(hr);
+        const auto succeeded = SUCCEEDED(hr);
+        State::GetInstance().Set(State::TEXT_SERVICE_FOCUS, succeeded);
+        return succeeded;
     }
 
     auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }

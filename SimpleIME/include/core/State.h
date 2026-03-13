@@ -18,7 +18,7 @@ public:
         IME_OPEN               = 0x8,
         LANG_PROFILE_ACTIVATED = 0x10, ///< set when activate any non-english language profile
         IME_DISABLED           = 0x20, ///< if set, ignore any TextService change
-        TSF_FOCUS              = 0x40,
+        TEXT_SERVICE_FOCUS     = 0x40,
         GAME_LOADING           = 0x80,
         KEYBOARD_OPEN          = 0x100, ///< if not set this, we should pass game event
         ALL                    = 0xFFFF
@@ -70,7 +70,7 @@ public:
         return (m_state & mask) == 0U;
     }
 
-    [[nodiscard]] constexpr auto TsfFocus() const -> bool { return Has(TSF_FOCUS); }
+    [[nodiscard]] constexpr auto TsfFocus() const -> bool { return Has(TEXT_SERVICE_FOCUS); }
 
     [[nodiscard]] auto ImeDisabled() const -> bool { return Has(IME_DISABLED); }
 

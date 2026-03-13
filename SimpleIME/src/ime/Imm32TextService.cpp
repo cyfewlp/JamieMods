@@ -145,6 +145,7 @@ auto Imm32TextService::OnFocus(bool focus) -> bool
     {
         m_hIMC = ImmAssociateContext(m_imeHwnd, nullptr);
     }
+    State::GetInstance().Set(State::TEXT_SERVICE_FOCUS, focus);
     return ITextService::OnFocus(focus);
 }
 
