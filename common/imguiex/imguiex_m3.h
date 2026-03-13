@@ -120,7 +120,8 @@ auto EndNavRail() -> void;
 
 //! @brief Icon only, no interaction.
 //! This is the Standard `IconButton` special case: no bg and interaction, only render the icon with correct size and color.
-auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void;
+auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, Spec::ColorRole iconColorRole = Spec::StandardIconButtonEnabled::IconColor)
+    -> void;
 
 inline auto XSmallIcon(std::string_view icon) -> void
 {
@@ -453,16 +454,16 @@ inline auto DockedToolBar(std::string_view strId, uint8_t count, const Spec::Too
 auto BeginFloatingToolbar(const char *name, bool *p_open, Spec::ToolBarColors colors = Spec::ToolBarColors::Standard, WindowFlags flags = {}) -> bool;
 auto EndFloatingToolbar() -> void;
 
-auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool;
+auto MenuItem(std::string_view icon, std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool;
 
 inline auto MenuItem(std::string_view label, const bool selected) -> bool
 {
-    return MenuItem(label, selected, Spec::MenuColors::Standard);
+    return MenuItem("", label, selected, Spec::MenuColors::Standard);
 }
 
 inline auto MenuItemVibrant(std::string_view label, const bool selected) -> bool
 {
-    return MenuItem(label, selected, Spec::MenuColors::Vibrant);
+    return MenuItem("", label, selected, Spec::MenuColors::Vibrant);
 }
 
 constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4;
@@ -557,7 +558,7 @@ public:
     //! Renders the leading icon using `AppBarCommon::LeadingIconColor`.
     //! Must be called before `Title`. Leaves the cursor immediately after the icon
     //! via `SameLine` so that `Title` is positioned relative to it.
-    auto LeadingIcon(std::string_view icon) -> bool; // NOLINT(*-use-nodiscard)
+    auto LeadingIcon(std::string_view icon) -> void; // NOLINT(*-use-nodiscard)
 
     //! Renders the title (and optional subtitle) according to the active variant's
     //! typography and position spec. For `Small`, the cursor advances rightward for

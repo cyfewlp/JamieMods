@@ -423,7 +423,6 @@ auto BeginNavRail(std::string_view strId, const bool expanded) -> bool
 {
     auto &m3Styles = Context::GetM3Styles();
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertFloat4ToU32(m3Styles.Colors()[Spec::CollapsedNavRail::ContainerColor]));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.F, 0.F});
     auto       width   = m3Styles.GetPixels(Spec::CollapsedNavRail::ContainerWidth);
     bool       visible = false;
     ChildFlags flags{};
@@ -439,7 +438,6 @@ auto BeginNavRail(std::string_view strId, const bool expanded) -> bool
     if (!visible)
     {
         ImGui::EndChild();
-        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
     }
     else
@@ -459,7 +457,6 @@ auto BeginResponsiveNavRail(std::string_view strId, float minWidthToExpand) -> b
 auto EndNavRail() -> void
 {
     ImGui::EndChild();
-    ImGui::PopStyleVar();
     ImGui::PopStyleColor();
 }
 
@@ -778,7 +775,7 @@ auto TextField(
 }
 } // namespace
 
-auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void
+auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips, Spec::ColorRole iconColorRole) -> void
 {
     const ImGuiWindow *window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -809,12 +806,12 @@ auto Icon(const std::string_view icon, const Spec::SizeTips sizeTips) -> void
     ImVec4 iconColor;
     if (IsItemDisabled())
     {
-        iconColor   = m3Styles.Colors()[Spec::StandardIconButtonDisabled::IconColor];
+        iconColor   = m3Styles.Colors()[DISABLED_CONTENT_COLOR];
         iconColor.w = DISABLED_CONTENT_OPACITY;
     }
     else
     {
-        iconColor = m3Styles.Colors()[Spec::StandardIconButtonEnabled::IconColor];
+        iconColor = m3Styles.Colors()[iconColorRole];
     }
 
     const auto offsetX  = GetPixels(m3Styles, sizing.leadingSpace);
@@ -1251,8 +1248,6 @@ auto Checkbox(std::string_view label, bool &selected, std::string_view icon) -> 
     const auto   offset      = HalfDiff(checkBoxLayoutSize, containerSize);
     const ImVec2 checkboxMin = bb.Min + ImVec2(offset, offset);
     const ImVec2 checkboxMax = checkboxMin + ImVec2(containerSize, containerSize);
-
-    auto &g = *GImGui;
 
     bool       hovered  = false;
     bool       held     = false;
@@ -1701,9 +1696,8 @@ auto BeginMenu(ImGuiID id, const ImRect &avoidBB, const M3Styles &m3Styles, Spec
                                                                              : Spec::Menus<Spec::MenuColors::Vibrant>::ContainerColor;
     ImGui::PushStyleColor(ImGuiCol_PopupBg, m3Styles.Colors()[containerRole]);
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m3Styles.GetPixels(Spec::Menu::ContainerShape));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
     const auto visible = ImGui::BeginComboPopup(id, avoidBB, 0);
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar();
     ImGui::PopStyleColor();
     if (!visible)
     {
@@ -1714,9 +1708,9 @@ auto BeginMenu(ImGuiID id, const ImRect &avoidBB, const M3Styles &m3Styles, Spec
 
 } // namespace
 
-auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool
+auto MenuItem(std::string_view icon, std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool
 {
-    using MenusSpec    = Spec::MenusSizing<Spec::MenuLayout::Standard>;
+    using MenusSpec    = Spec::MenusSizing<Spec::MenuLayout::Horizontal>;
     using MenuItemSpec = MenusSpec::Item;
 
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -1725,12 +1719,14 @@ auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menu
         return false;
     }
     // \todo is first/last?
-    auto        &m3Styles       = Context::GetM3Styles();
-    const auto   labelFontScope = m3Styles.UseTextRole<MenuItemSpec::LabelTextRole>();
-    const auto   minWidth       = m3Styles.GetPixels(MenuItemSpec::MinWidthEx);
-    const auto   contentWidth   = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
-    const auto   width          = minWidth + contentWidth;
-    const auto   height         = m3Styles.GetPixels(MenusSpec::Item::OuterHeightEx);
+    auto        &m3Styles        = Context::GetM3Styles();
+    const auto   labelFontScope  = m3Styles.UseTextRole<MenuItemSpec::LabelTextRole>();
+    const auto   minWidth        = m3Styles.GetPixels(MenuItemSpec::MinWidthEx);
+    const auto   contentWidth    = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
+    const auto   leadingIconSize = m3Styles.GetPixels(MenuItemSpec::LeadingIconSize);
+    const auto   bewteenSpace    = m3Styles.GetPixels(MenuItemSpec::BetweenSpace);
+    const auto   width           = minWidth + contentWidth + (icon.empty() ? 0.F : leadingIconSize + bewteenSpace);
+    const auto   height          = m3Styles.GetPixels(MenusSpec::Item::OuterHeightEx);
     const ImVec2 size(width, height);
     const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2{ImMax(ImGui::GetContentRegionAvail().x, size.x), size.y});
     const auto   id = window->GetID(TextStart(label), TextEnd(label));
@@ -1756,22 +1752,11 @@ auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menu
 
     const ImVec2 contentOffset((m3Styles.GetPixels(MenuItemSpec::OffsetXEx)), m3Styles.GetPixels(MenusSpec::Gap));
     const ImRect contentBB(bb.Min + contentOffset, bb.Max - contentOffset);
-    Spec::Unit   rounding = 0U;
-    ImVec4       textColor;
-    ImVec4       bgColor;
-    const auto   colors = Spec::GetMenuItemColors(menuitemColors, disabled);
-    if (selected)
-    {
-        bgColor   = m3Styles.Colors()[colors.selectedContainerColor];
-        textColor = m3Styles.Colors()[colors.selectedLabelTextColor];
-        rounding  = MenuItemSpec::SelectedShape;
-    }
-    else
-    {
-        bgColor   = m3Styles.Colors()[colors.containerColor];
-        textColor = m3Styles.Colors()[colors.labelTextColor];
-        rounding  = MenuItemSpec::Shape;
-    }
+    const auto   colors    = Spec::GetMenuItemColors(menuitemColors, selected, disabled);
+    ImVec4       textColor = m3Styles.Colors()[colors.labelTextColor];
+    ImVec4       bgColor   = m3Styles.Colors()[colors.containerColor];
+    ImVec4       iconColor = m3Styles.Colors()[colors.iconColor];
+    Spec::Unit   rounding  = selected ? MenuItemSpec::SelectedShape : MenuItemSpec::Shape;
     if (disabled)
     {
         if (selected)
@@ -1788,10 +1773,16 @@ auto MenuItem(std::string_view label, const bool selected, Spec::MenuColors menu
     ImGui::RenderNavCursor(bb, id, ImGuiNavRenderCursorFlags_Compact);
     window->DrawList->AddRectFilled(contentBB.Min, contentBB.Max, ImGui::ColorConvertFloat4ToU32(bgColor), m3Styles.GetPixels(rounding));
 
-    const auto   leadingSpace = m3Styles.GetPixels(MenuItemSpec::LeadingSpace);
-    const auto   topSpace     = m3Styles.GetPixels(MenuItemSpec::TopSpaceEx);
-    const ImVec2 labelPos     = contentBB.Min + ImVec2(leadingSpace, topSpace + m3Styles.GetLastText().currHalfLineGap);
-    DrawText(window->DrawList, labelPos, label, textColor);
+    const auto leadingSpace = m3Styles.GetPixels(MenuItemSpec::LeadingSpace);
+    const auto topSpace     = m3Styles.GetPixels(MenuItemSpec::TopSpaceEx);
+    float      cursorPos    = contentBB.Min.x + leadingSpace;
+    if (!icon.empty())
+    {
+        DrawIcon(window->DrawList, leadingIconSize, {cursorPos, bb.Min.y + HalfDiff(size.y, leadingIconSize)}, icon, m3Styles, iconColor);
+        cursorPos += leadingIconSize + bewteenSpace;
+    }
+
+    DrawText(window->DrawList, {cursorPos, contentBB.Min.y + topSpace + m3Styles.GetLastText().currHalfLineGap}, label, textColor);
     return pressed;
 }
 
@@ -1859,7 +1850,6 @@ AppBarScope::AppBarScope(Spec::AppBarVariant variant) : m_variant(variant)
     }
 
     Spec::Unit containerHeight = 0U;
-    const auto paddingX        = Spec::AppBarCommon::LeadingSpace;
     switch (variant)
     {
         case Spec::AppBarVariant::Small:
@@ -1891,6 +1881,7 @@ AppBarScope::AppBarScope(Spec::AppBarVariant variant) : m_variant(variant)
     GImGui->GroupStack.back().EmitItem = false;
 
     m_visible                 = true;
+    const auto paddingX       = Spec::AppBarCommon::LeadingSpace;
     m_paddingX                = m3Styles.GetPixels(paddingX);
     m_iconLayoutWidth         = m3Styles.GetPixels(Spec::IconButtonCommon::MinLayoutSize);
     m_trailingIconCursorPosX  = bb.Max.x - m_paddingX;
@@ -1911,15 +1902,14 @@ AppBarScope::~AppBarScope()
     }
 }
 
-auto AppBarScope::LeadingIcon(std::string_view icon) -> bool
+auto AppBarScope::LeadingIcon(std::string_view icon) -> void
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
     // Can't call SameLine in there: the pre-line will be the Appbar's line.
     window->DC.CursorPos.x += m_paddingX;
     m_iconLineItemMaxPosX = window->DC.CursorPos.x + m_iconLayoutWidth;
-    const auto visible    = IconButton(icon, Spec::SizeTips::SMALL, {.iconColor = Spec::AppBarCommon::LeadingIconColor});
+    Icon(icon, Spec::SizeTips::SMALL, Spec::AppBarCommon::LeadingIconColor);
     ImGui::SameLine(0.F, 0.F);
-    return visible;
 }
 
 auto AppBarScope::Title(std::string_view title, std::string_view subTitle) -> void
@@ -2080,14 +2070,16 @@ void SetupDefaultImGuiStyles(ImGuiStyle &style)
     auto       &m3Styles = Context::GetM3Styles();
     const auto &scheme   = m3Styles.Colors();
 
+    style.WindowPadding = ImVec2{}; // Default window no padding, all padding should be defined in each component spec.
+
     style.Colors[ImGuiCol_Text]             = scheme[ColorRole::onSurface];
     style.Colors[ImGuiCol_TitleBg]          = scheme[ColorRole::surfaceContainer];
     style.Colors[ImGuiCol_TitleBgActive]    = scheme[ColorRole::surface];
     style.Colors[ImGuiCol_TitleBgCollapsed] = scheme[ColorRole::surfaceContainer];
 
     style.Colors[ImGuiCol_WindowBg] = scheme[ColorRole::surface];
-    style.Colors[ImGuiCol_ChildBg]  = scheme[ColorRole::surface];
-    style.Colors[ImGuiCol_PopupBg]  = scheme[ColorRole::primaryContainer];
+    style.Colors[ImGuiCol_ChildBg]  = scheme[ColorRole::surfaceContainer];
+    style.Colors[ImGuiCol_PopupBg]  = scheme[ColorRole::surfaceContainerHigh];
 
     style.Colors[ImGuiCol_FrameBg]        = scheme[ColorRole::secondaryContainer];
     style.Colors[ImGuiCol_FrameBgActive]  = scheme.Pressed(ColorRole::secondaryContainer, ColorRole::onSecondaryContainer);

@@ -168,17 +168,15 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
     auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
     m_PreviewPanel.Draw(fontBuilder, m3Styles);
-    ImGui::SameLine(0, M3Spec::Layout::ExtraLarge::Margin);
+
+    const auto margin = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Margin);
+    ImGui::SameLine(0, margin);
     {
         // The Font Builder child window.
         // \todo should support resize-x.
-        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
+        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
 
-        // right-align, fixed width. The left two child windows(submitted in preview panel)
-        // should auto resize along with the window resizing, and this child window should keep a fixed width
-        // and align to the right side of the panel.
-        const auto width = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::SideSheetsMaxWidth);
-        if (ImGui::BeginChild("FontBuilderFontInfo", {width, 0}, ImGuiEx::ChildFlags()))
+        if (ImGui::BeginChild("FontBuilderFontInfo", {-margin, 0}, ImGuiEx::ChildFlags()))
         {
             DrawToolBar(fontBuilder, settings);
 

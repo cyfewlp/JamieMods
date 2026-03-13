@@ -83,11 +83,8 @@ auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fon
 void DrawStatusBar(const StatusBar &statusBar)
 {
     ImGuiEx::M3::SmallIcon(statusBar.icon);
-    ImGui::SameLine();
-    ImGui::PushTextWrapPos(0.0F);
-    ImGuiEx::M3::TextUnformatted<ImGuiEx::M3::Spec::TextRole::LabelLarge>(statusBar.text, M3Spec::ColorRole::onSecondaryContainer);
-    ImGui::PopTextWrapPos();
-
+    ImGui::SameLine(0.0F, 0.0F);
+    ImGuiEx::M3::AlignedLabel(statusBar.text);
     ImGuiEx::M3::Divider();
 }
 
@@ -179,8 +176,8 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
 {
     {
-        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainer]);
-        if (ImGui::BeginChild("FontsView", {}, ImGuiEx::ChildFlags().AutoResizeX().Borders()))
+        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
+        if (ImGui::BeginChild("FontsView", {}, ImGuiEx::ChildFlags().AutoResizeX()))
         {
             DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList());
         }
@@ -193,7 +190,6 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
     }
 
     StatusBar statusBar;
-    statusBar.icon = ICON_FILE_CHECK;
     switch (m_state)
     {
         case State::DEBOUNCING:
@@ -215,24 +211,31 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
             break;
         }
         case State::PREVIEWING:
+            statusBar.icon = ICON_FILE_CHECK;
             statusBar.text = m_imFont.GetFontPathOr(0);
             break;
         default:
+            statusBar.icon = ICON_FILE_QUESTION_MARK;
             break;
     }
 
-    ImGui::SameLine(0, M3Spec::Layout::ExtraLarge::Margin);
-    const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_WindowBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
+    const auto margin = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Margin);
+    ImGui::SameLine(0, margin);
+    const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLowest]);
 
     // Ensures children can auto-extend along the X-axis.
     // Note: Due to limitations with nested tables in the current Table API, we cannot rely
     // on the table system for child layout. As a workaround, we must specify a
     // fixed negative width manually to ensure proper rendering.
     const auto SideSheetMaxWidth = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::SideSheetsMaxWidth);
-    if (ImGui::BeginChild("PreviewPanel", {-SideSheetMaxWidth, 0.F}, ImGuiEx::ChildFlags()))
+    const auto textPadding       = m3Styles.GetPixels(M3Spec::TextParagraph::PaddingX);
+    ImGui::SetNextWindowContentSize({-textPadding, 0.F});
+    if (ImGui::BeginChild("PreviewPanel", {-SideSheetMaxWidth - margin, 0.F}, ImGuiEx::ChildFlags()))
     {
         DrawStatusBar(statusBar);
+        ImGui::Indent(textPadding);
         auto clicked = PreviewPanel(m3Styles, m_imFont);
+        ImGui::Unindent(textPadding);
         if (clicked)
         {
             if (fontBuilder.AddFont(m_interactState.selectedIndex, m_imFont))

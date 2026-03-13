@@ -34,6 +34,7 @@ void SettingsWindow::Draw(Settings &settings)
     {
         if (auto appBar = ImGuiEx::M3::AppBar(); appBar)
         {
+            appBar.LeadingIcon(ICON_GITHUB);
             appBar.Title("SimpleIME", "Created By Jamie");
             if (appBar.TrailingIcon(ICON_X))
             {
@@ -104,22 +105,31 @@ void SettingsWindow::DrawMenuFontBuilder(Settings &settings)
 
 void SettingsWindow::DrawMenuBehaviour(Settings &settings) const
 {
-    bool enableMod = settings.enableMod;
-    if (ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.EnableMod"), enableMod, ICON_CHECK))
-    {
-        ImeController::GetInstance()->EnableMod(enableMod);
-    }
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableModToolTip"));
-    if (!settings.enableMod)
-    {
-        return;
-    }
+    auto      &m3Styles   = ImGuiEx::M3::Context::GetM3Styles();
+    const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLowest]);
 
-    (void)ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.FixInconsistentTextEntryCount"), settings.fixInconsistentTextEntryCount, ICON_CHECK);
-    ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FixInconsistentTextEntryCountToolTip"));
+    if (ImGui::BeginChild("Behaviour"))
+    {
+        bool enableMod = settings.enableMod;
+        if (ImGuiEx::M3::Checkbox(Translate("Settings.Behaviour.EnableMod"), enableMod, ICON_CHECK))
+        {
+            ImeController::GetInstance()->EnableMod(enableMod);
+        }
+        ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableModToolTip"));
+        if (!settings.enableMod)
+        {
+            return;
+        }
 
-    DrawStates();
-    DrawFeatures(settings);
+        (void)ImGuiEx::M3::Checkbox(
+            Translate("Settings.Behaviour.FixInconsistentTextEntryCount"), settings.fixInconsistentTextEntryCount, ICON_CHECK
+        );
+        ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FixInconsistentTextEntryCountToolTip"));
+
+        DrawStates();
+        DrawFeatures(settings);
+    }
+    ImGui::EndChild();
 }
 
 void SettingsWindow::DrawFeatures(Settings &settings)

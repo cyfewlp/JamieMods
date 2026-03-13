@@ -47,4 +47,9 @@ struct Tooltips
     static constexpr Unit paddingX = dp<8>();
 };
 
+struct TextParagraph
+{
+    static constexpr auto PaddingX = dp<16>();
+};
+
 } // namespace ImGuiEx::M3::Spec

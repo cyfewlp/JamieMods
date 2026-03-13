@@ -260,8 +260,6 @@ using MenuItemSizingStandard = MenusSizing<MenuLayout::Standard>::Item;
 template <>
 struct MenusSizing<MenuLayout::Horizontal> : MenusSizingStandard
 {
-    using MenusSizingStandard::MenusSizingStandard;
-
     //! Menu horizontal container bottom space
     static constexpr auto ContainerBottomSpace = dp<8>();
     //! Menu horizontal container top space
@@ -272,7 +270,6 @@ struct MenusSizing<MenuLayout::Horizontal> : MenusSizingStandard
 
     struct Item : public MenuItemSizingStandard
     {
-        using MenuItemSizingStandard::MenuItemSizingStandard;
         //! Menu horizontal menu item leading space
         static constexpr auto LeadingSpace         = dp<12>();
         //! Menu horizontal menu item bottom space
@@ -283,6 +280,9 @@ struct MenusSizing<MenuLayout::Horizontal> : MenusSizingStandard
         static constexpr auto BetweenSpace         = dp<12>();
         //! Menu horizontal menu item trailing space
         static constexpr auto TrailingSpace        = dp<12>();
+        //! The inherent fixed width of a text-only menu item (excluding label text).
+        //! Calculation: LeadingSpace + TrailingSpace + (OffsetXEx * 2)
+        static constexpr auto MinWidthEx           = LeadingSpace + TrailingSpace + (OffsetXEx * 2U);
         //! Menu horizontal menu item focused shape
         static constexpr auto FocusedShape         = ShapeCorner::Medium;
         //! Menu horizontal menu item hovered shape
@@ -328,33 +328,32 @@ struct MenusSizing<MenuLayout::HorizontalIconOnly> : public MenusHorizontal
 struct MenuItemColorsValues
 {
     ColorRole containerColor;
+    ColorRole iconColor;
     float     selectedContainerOpacity;
-    ColorRole selectedContainerColor;
-    ColorRole selectedLabelTextColor;
     ColorRole labelTextColor;
 };
 
 //! Get menu item colors values based on the menu colors and disabled state
 //! @note The disabled state is currently not used for menu item colors, as the M3 spec does not define different colors for disabled menu items.
 //! However, the parameter is included for future use in case the spec is updated to include disabled state colors.
-constexpr auto GetMenuItemColors(MenuColors colors, [[maybe_unused]] const bool disabled) -> MenuItemColorsValues
+constexpr auto GetMenuItemColors(MenuColors colors, const bool selected, [[maybe_unused]] const bool disabled) -> MenuItemColorsValues
 {
     MenuItemColorsValues values{};
     switch (colors)
     {
         case MenuColors::Standard: {
-            values.containerColor           = Menus<MenuColors::Standard>::Item::ContainerColor;
-            values.labelTextColor           = Menus<MenuColors::Standard>::Item::LabelTextColor;
-            values.selectedContainerColor   = Menus<MenuColors::Standard>::Item::SelectedContainerColor;
-            values.selectedLabelTextColor   = Menus<MenuColors::Standard>::Item::SelectedLabelTextColor;
-            values.selectedContainerOpacity = disabled ? Menus<MenuColors::Standard>::Item::SelectedDisabledContainerOpacity : 1.0F;
+            using ItemSpec                  = Menus<MenuColors::Standard>::Item;
+            values.containerColor           = selected ? ItemSpec::SelectedContainerColor : ItemSpec::ContainerColor;
+            values.iconColor                = selected ? ItemSpec::SelectedLeadingIconColor : ItemSpec::LeadingIconColor;
+            values.labelTextColor           = selected ? ItemSpec::SelectedLabelTextColor : ItemSpec::LabelTextColor;
+            values.selectedContainerOpacity = disabled ? ItemSpec::SelectedDisabledContainerOpacity : 1.0F;
             break;
         }
         case MenuColors::Vibrant: {
-            values.containerColor           = Menus<MenuColors::Vibrant>::Item::ContainerColor;
-            values.labelTextColor           = Menus<MenuColors::Vibrant>::Item::LabelTextColor;
-            values.selectedContainerColor   = Menus<MenuColors::Vibrant>::Item::SelectedContainerColor;
-            values.selectedLabelTextColor   = Menus<MenuColors::Vibrant>::Item::SelectedLabelTextColor;
+            using ItemSpec                  = Menus<MenuColors::Vibrant>::Item;
+            values.containerColor           = selected ? ItemSpec::SelectedContainerColor : ItemSpec::ContainerColor;
+            values.iconColor                = selected ? ItemSpec::SelectedLeadingIconColor : ItemSpec::LeadingIconColor;
+            values.labelTextColor           = selected ? ItemSpec::SelectedLabelTextColor : ItemSpec::LabelTextColor;
             values.selectedContainerOpacity = 1.0F;
             break;
         }

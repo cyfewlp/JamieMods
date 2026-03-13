@@ -224,6 +224,8 @@ AppearancePanel::AppearancePanel()
 
 void AppearancePanel::Draw(Settings &settings)
 {
+    auto      &m3Styles   = ImGuiEx::M3::Context::GetM3Styles();
+    const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLowest]);
     if (ImGui::BeginChild("##Appearance", {}, ImGuiEx::ChildFlags().AlwaysUseWindowPadding()))
     {
         if (ImGui::BeginTable("CenterAlignTable", 3, ImGuiEx::TableFlags().SizingStretchSame()))
