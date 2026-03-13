@@ -8,16 +8,6 @@
 
 namespace Hooks
 {
-// no longer unnecessary: replaced by ImeMenu#SendFakeControlUpEvent
-class OpenClipboardHook : public FunctionHook<BOOL(HWND)>
-{
-public:
-    explicit OpenClipboardHook(void *realFuncPtr, func_type *ptr) : FunctionHook(realFuncPtr, ptr)
-    {
-        logger::debug("Installed {}: {}", __func__, ToString());
-    }
-};
-
 class DirectInput8CreateHook : public FunctionHook<HRESULT(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN)>
 {
 public:
@@ -40,10 +30,7 @@ public:
 
     static void Uninstall();
 
-    static void DisablePaste(bool disable)
-    {
-        g_fDisablePaste = disable;
-    }
+    static void DisablePaste(bool disable) { g_fDisablePaste = disable; }
 
 private:
     static HRESULT MyDirectInput8CreateHook(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);

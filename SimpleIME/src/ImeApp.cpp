@@ -28,36 +28,84 @@
 
 namespace
 {
-constexpr auto               CONFIG_FILE_NAME     = "SimpleIME.toml";
-constexpr auto               INIT_TIMEOUT_SECONDS = 5s;
-std::unique_ptr<Ime::ImeApp> g_instance           = nullptr;
+class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+{
+    std::queue<std::string> m_message;
+    bool                    m_installedSink = false;
+
+public:
+    InitErrorMessageShow()
+    {
+        if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+        {
+            ui->AddEventSink(this);
+            m_installedSink = true;
+        }
+    }
+
+    ~InitErrorMessageShow()
+    {
+        if (auto *ui = RE::UI::GetSingleton(); m_installedSink && ui != nullptr)
+        {
+            ui->RemoveEventSink(this);
+        }
+    }
+
+    auto ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *) -> RE::BSEventNotifyControl override
+    {
+        if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
+        {
+            while (!m_message.empty())
+            {
+                RE::DebugMessageBox(m_message.front().c_str());
+                m_message.pop();
+            }
+            RE::UI::GetSingleton()->RemoveEventSink(this);
+        }
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
+    void PushMessage(std::string &&message)
+    {
+        if (m_installedSink)
+        {
+            m_message.emplace(std::move(message));
+        }
+    }
+};
+
+constexpr auto                          CONFIG_FILE_NAME     = "SimpleIME.toml";
+constexpr auto                          INIT_TIMEOUT_SECONDS = 5s;
+std::unique_ptr<Ime::ImeApp>            g_instance           = nullptr;
+std::unique_ptr<InitErrorMessageShow>   g_pInitErrorMessageShow(nullptr);
+std::unique_ptr<Hooks::D3DInitHookData> g_D3DInitHook = nullptr; ///< Only install once, should not be a member of `ImeApp`.
 
 auto ConfigFilePath() -> std::filesystem::path
 {
     return utils::GetInterfacePath() / SIMPLE_IME / CONFIG_FILE_NAME;
 }
+
+void D3DInit();
 } // namespace
 
 namespace SksePlugin
 {
 auto Initialize() -> bool
 {
+    g_instance    = std::make_unique<Ime::ImeApp>(ConfigFilePath());
+    g_D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
+    Hooks::WinHooks::Install();
+
+    auto &errorNotifier = ErrorNotifier::GetInstance();
+    errorNotifier.SetMessageDuration(g_instance->GetSettings().appearance.errorDisplayDuration);
+#ifdef DEBUG
+    errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
+#endif
+
     const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
     const auto  version = plugin->GetVersion();
+    logger::info("{}({}) has finished loading.", plugin->GetName(), version.string("."));
 
-    static Ime::Settings g_settings;
-
-    const auto configuration = Ime::ConfigSerializer::LoadConfiguration(ConfigFilePath());
-
-    g_settings = Ime::ConvertConfigurationToSettings(configuration);
-    InitializeLogging(SpdLogSettings(g_settings.logging.level, g_settings.logging.flushLevel));
-    g_instance = std::make_unique<Ime::ImeApp>(g_settings);
-
-    logger::info("{} {} is loading...", plugin->GetName(), version.string());
-
-    g_instance->Initialize();
-
-    logger::info("{} has finished loading.", plugin->GetName());
     InitializeMessaging();
     return true;
 }
@@ -85,29 +133,22 @@ void InitializeMessaging()
 
 namespace Ime
 {
+ImeApp::ImeApp(std::filesystem::path configPath)
+{
+    const auto configuration = Ime::ConfigSerializer::LoadConfiguration(ConfigFilePath());
+    m_settings               = Ime::ConvertConfigurationToSettings(configuration);
+
+    SksePlugin::InitializeLogging({m_settings.logging.level, m_settings.logging.flushLevel});
+}
+
+ImeApp::~ImeApp()
+{
+    SaveSettings();
+}
+
 auto ImeApp::GetInstance() -> ImeApp &
 {
     return *g_instance;
-}
-
-/**
- * Init ImeApp
- */
-void ImeApp::Initialize()
-{
-    if (!m_state.IsUnInitialized())
-    {
-        LogAlreadyInitialized();
-        return;
-    }
-    Hooks::WinHooks::Install();
-
-    D3DInitHook         = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
-    auto &errorNotifier = ErrorNotifier::GetInstance();
-    errorNotifier.SetMessageDuration(m_settings.appearance.errorDisplayDuration);
-#ifdef DEBUG
-    errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
-#endif
 }
 
 void ImeApp::OnInputLoaded()
@@ -123,13 +164,12 @@ void ImeApp::Uninitialize()
     UI::DestroyM3();
     UI::Shutdown();
     Events::UnInstallEventSinks(); // should safety
+    Hooks::WinHooks::Uninstall();  // should move to dll_detach, but it's safe.
+    g_pInitErrorMessageShow.reset();
     if (m_state.IsInitialized())
     {
         ImmAssociateContext(m_hWnd, m_hIMCDefault);
         m_hIMCDefault = nullptr;
-        Hooks::WinHooks::Uninstall();
-        D3DInitHook.reset();
-        D3DInitHook = nullptr;
         UninstallHooks();
         if (RealWndProc)
         {
@@ -137,64 +177,34 @@ void ImeApp::Uninitialize()
             RealWndProc = nullptr;
         }
     }
-    SaveSettings();
     m_state.SetState(State::StateKey::DORMANCY);
 }
 
-class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+void D3DInit()
 {
-    std::queue<std::string> m_message;
-
-public:
-    auto ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *) -> RE::BSEventNotifyControl override
-    {
-        if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
-        {
-            while (!m_message.empty())
-            {
-                RE::DebugMessageBox(m_message.front().c_str());
-                m_message.pop();
-            }
-            RE::UI::GetSingleton()->RemoveEventSink(this);
-        }
-        return RE::BSEventNotifyControl::kContinue;
-    }
-
-    void PushMessage(std::string &&message) { m_message.emplace(std::move(message)); }
-};
-
-static std::unique_ptr<InitErrorMessageShow> g_pInitErrorMessageShow(nullptr);
-
-void ImeApp::D3DInit()
-{
-    auto &app = GetInstance();
+    auto &app = ImeApp::GetInstance();
     if (!app.m_state.IsUnInitialized())
     {
-        app.LogAlreadyInitialized();
+        logger::warn("Already Initialized! Current state: {}", app.m_state.GetStateKetText());
         return;
     }
-    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
-    {
-        g_pInitErrorMessageShow = std::make_unique<InitErrorMessageShow>();
-        ui->AddEventSink(g_pInitErrorMessageShow.get());
-    }
+    g_pInitErrorMessageShow = std::make_unique<InitErrorMessageShow>();
     try
     {
         app.DoD3DInit();
-        RE::UI::GetSingleton()->RemoveEventSink(g_pInitErrorMessageShow.get());
         g_pInitErrorMessageShow.reset();
         return;
     }
     catch (std::exception &error)
     {
-        app.m_state.SetState(State::StateKey::INITIALIZE_FAILED);
+        app.m_state.SetState(ImeApp::State::StateKey::INITIALIZE_FAILED);
         auto message = std::format("SimpleIME initialize fail: \n {}", error.what());
         logger::error(message.c_str());
         g_pInitErrorMessageShow->PushMessage(std::move(message));
     }
     catch (...)
     {
-        app.m_state.SetState(State::StateKey::INITIALIZE_FAILED);
+        app.m_state.SetState(ImeApp::State::StateKey::INITIALIZE_FAILED);
         auto message = std::string("SimpleIME: Unknown fatal error during D3DInit.");
         logger::error(message.c_str());
         g_pInitErrorMessageShow->PushMessage(std::move(message));
@@ -206,7 +216,7 @@ void ImeApp::D3DInit()
 void ImeApp::DoD3DInit()
 {
     m_state.SetState(State::StateKey::INITIALIZING);
-    D3DInitHook->Original();
+    g_D3DInitHook->Original();
     OnD3DInit();
 }
 
@@ -321,7 +331,7 @@ void ImeApp::Shutdown()
     Uninitialize();
 }
 
-void ImeApp::SaveSettings() const
+void ImeApp::SaveSettings()
 {
     ImeController::GetInstance()->SaveSettings(m_settings);
 
@@ -337,11 +347,6 @@ void ImeApp::InstallHooks()
 void ImeApp::UninstallHooks()
 {
     Hooks::Scaleform::Uninstall();
-}
-
-void ImeApp::LogAlreadyInitialized() const
-{
-    logger::warn("Already Initialized! Current state: {}", m_state.GetStateKetText());
 }
 
 void ImeApp::Draw()
