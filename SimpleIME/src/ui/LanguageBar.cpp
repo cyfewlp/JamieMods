@@ -26,9 +26,6 @@ namespace
 {
 constexpr auto LANGUAGE_BAR = "LanguageBar";
 
-using ColorRole = M3Spec::ColorRole;
-using Spacing   = ImGuiEx::M3::Spacing;
-
 void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
 {
     uint32_t clickedIndex = UINT32_MAX;
