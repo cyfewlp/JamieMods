@@ -60,6 +60,11 @@ jobs:
         shell: pwsh
         run: choco install fontforge --yes --no-progress
 
+      - name: Set up CMake 4.x
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '4.x'
+
       # Python 3 is pre-installed on windows-latest; required by CMakeLists.
 
       # -----------------------------------------------------------------------
