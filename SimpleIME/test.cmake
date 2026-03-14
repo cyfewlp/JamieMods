@@ -20,10 +20,28 @@ add_executable(
 # NOTE: Local scratch-pads or transient design-phase tests should remain uncommitted.
 # To include permanent benchmarks in the build, append your source files to the
 # `Benchmark_TEST_SOURCES` list.
-add_executable(
-        ${PROJECT_NAME}Benchmark
-        ${Benchmark_TEST_SOURCES}
-)
+
+if (Benchmark_TEST_SOURCES)
+    add_executable(
+            ${PROJECT_NAME}Benchmark
+            ${Benchmark_TEST_SOURCES}
+    )
+    target_link_libraries(
+            ${PROJECT_NAME}Benchmark
+            PRIVATE
+            GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
+            spdlog::spdlog
+            benchmark::benchmark
+    )
+    target_compile_features(${PROJECT_NAME}Benchmark PRIVATE cxx_std_23)
+    target_include_directories(
+            ${PROJECT_NAME}Benchmark
+            PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+else ()
+    message(WARNING "No benchmark sources found. Skipping benchmark target creation.")
+endif ()
 #target_compile_options(${TEST_PROJ_NAME} PRIVATE -fsanitize=address /Zi -D_DISABLE_STRING_ANNOTATION -D_DISABLE_VECTOR_ANNOTATION  -g )
 target_link_libraries(
     ${TEST_PROJ_NAME}
@@ -32,29 +50,16 @@ target_link_libraries(
     spdlog::spdlog
     ${DETOURS_LIBRARY}
     Freetype::Freetype
-        benchmark::benchmark
 )
-target_link_libraries(
-        ${PROJECT_NAME}Benchmark
-        PRIVATE
-        GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
-        spdlog::spdlog
-        benchmark::benchmark
-)
+
 target_compile_definitions(${TEST_PROJ_NAME} PRIVATE SIMPLE_IME="SimpleIME")
 target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23)
-target_compile_features(${PROJECT_NAME}Benchmark PRIVATE cxx_std_23)
 target_include_directories(
         ${TEST_PROJ_NAME}
         PRIVATE
         ${CMAKE_SOURCE_DIR}/common
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${IMGUI_INCLUDE_DIRS}
-)
-target_include_directories(
-        ${PROJECT_NAME}Benchmark
-        PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 include(GoogleTest)
