@@ -58,12 +58,24 @@ cmake --build --preset build-debug-clangcl-ninja-vcpkg --target SimpleIMETest
 ctest --test-dir build/debug-clangcl-ninja-vcpkg/SimpleIME
 ```
 
+## Known issues
+
+### Crash during composition when switching windows via Win+Shift+S
+
+**Trigger:** While a CJK composition is in progress, press **Win+Shift+S** (Snipping Tool) and switch
+focus to another window at the right moment before the capture completes.
+
+**Symptom:** SimpleIME crashes. No PDB is available for that scenario, so the exact call site and
+root cause are unknown.
+
+**Hypothesis:** TSF or IMM32 posts a composition-end message that arrives after ImeWnd or its
+related objects have started tearing down, causing a use-after-free or null-deref inside
+`WM_KILLFOCUS` handling.
+
 ## Architecture notes
 
 See [`docs/adr/`](docs/adr/) for Architecture Decision Records.
 
 ## Gallery
 
-### IME Window & Language Bar
-
-![ImeWindow_LanguageBar](contrib/Distribution/IME_Languagebar.png)
+![SimpleIME.png](contrib/Distribution/SimpleIME.png)

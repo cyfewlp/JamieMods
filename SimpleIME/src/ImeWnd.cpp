@@ -383,6 +383,13 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             pThis->m_fFocused = false;
             ImGui::GetIO().ClearInputKeys();
             logger::info("IME window lost focus.");
+            // FIXME: crash when focus leaves ImeWnd during active composition via an OS-level window switch
+            // (e.g. Win+Shift+S snipping tool at the right timing). Root cause and exact site are unknown
+            // because no PDB is generated for that build configuration. Hypothesis: TSF/IMM32 posts a
+            // composition-end message that arrives after the ImeWnd or its related objects have been
+            // partially torn down, causing a use-after-free or null-deref.
+            // Repro: open any text field, start composing CJK text, immediately press Win+Shift+S and
+            // quickly click away to another window before the screenshot tool captures.
             return 0;
         }
         case WM_CHAR: {
