@@ -173,17 +173,17 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 //! Submit two child windows.
 //! Child1: Fonts info, auto resize along X-axis, fixed height, with border.
 //! Child2: Font preview, auto extend along X-axis, fill remaining height. contains a "apply" button to ensure if add font to @c FontBuilder
-void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
+void FontPreviewPanel::Draw(FontBuilder &fontBuilder)
 {
+    if (ImGui::BeginChild("FontsView", {}, ImGuiEx::ChildFlags().AutoResizeX()))
     {
-        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
-        if (ImGui::BeginChild("FontsView", {}, ImGuiEx::ChildFlags().AutoResizeX()))
-        {
-            DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList());
-        }
-        ImGui::EndChild();
+        DrawFontsView(fontBuilder.GetFontManager().GetFontInfoList());
     }
+    ImGui::EndChild();
+}
 
+void FontPreviewPanel::DrawPreviewPanel(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles)
+{
     if (m_state == State::NOT_SUPPORTED_FONTS)
     {
         return;
@@ -219,20 +219,12 @@ void FontPreviewPanel::Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Style
             break;
     }
 
-    const auto margin = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Margin);
-    ImGui::SameLine(0, margin);
+    const auto margin     = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Margin);
     const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLowest]);
-
-    // Ensures children can auto-extend along the X-axis.
-    // Note: Due to limitations with nested tables in the current Table API, we cannot rely
-    // on the table system for child layout. As a workaround, we must specify a
-    // fixed negative width manually to ensure proper rendering.
-    const auto SideSheetMaxWidth = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::SideSheetsMaxWidth);
-    const auto textPadding       = m3Styles.GetPixels(M3Spec::TextParagraph::PaddingX);
-    ImGui::SetNextWindowContentSize({-textPadding, 0.F});
-    if (ImGui::BeginChild("PreviewPanel", {-SideSheetMaxWidth - margin, 0.F}, ImGuiEx::ChildFlags()))
+    if (ImGui::BeginChild("PreviewPanel", {-margin, 0.F}, ImGuiEx::ChildFlags().AutoResizeY()))
     {
         DrawStatusBar(statusBar);
+        const auto textPadding = m3Styles.GetPixels(M3Spec::TextParagraph::PaddingX);
         ImGui::Indent(textPadding);
         auto clicked = PreviewPanel(m3Styles, m_imFont);
         ImGui::Unindent(textPadding);

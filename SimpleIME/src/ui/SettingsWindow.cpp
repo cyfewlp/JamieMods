@@ -23,7 +23,7 @@ void SettingsWindow::Draw(Settings &settings)
     auto       &m3Styles            = ImGuiEx::M3::Context::GetM3Styles();
     // At least two panel(font builder). So, the minimum width compute from Expanded layout.
     const float minWidth            = m3Styles.GetPixels(M3Spec::Layout::Expanded::Breakpoint);
-    const float maxWidth            = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Breakpoint);
+    const float maxWidth            = m3Styles.GetPixels(M3Spec::Layout::Large::Breakpoint);
     const float defaultWindowHeight = viewport->Size.y * DEFAULT_WINDOW_HEIGHT_FACTOR;
 
     ImGui::SetNextWindowSize({minWidth, defaultWindowHeight}, ImGuiCond_FirstUseEver);

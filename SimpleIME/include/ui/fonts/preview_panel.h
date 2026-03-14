@@ -52,7 +52,8 @@ public:
         int  selectedIndex = -1;
     };
 
-    void Draw(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
+    void Draw(FontBuilder &fontBuilder);
+    void DrawPreviewPanel(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
     void DrawFontsView(const std::vector<FontInfo> &fontInfos);

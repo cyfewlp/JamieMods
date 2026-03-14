@@ -167,26 +167,23 @@ auto FontBuilder::ApplyFont(Settings &settings) -> bool
 void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
 {
     auto &m3Styles = ImGuiEx::M3::Context::GetM3Styles();
-    m_PreviewPanel.Draw(fontBuilder, m3Styles);
+
+    const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surface]);
+    m_PreviewPanel.Draw(fontBuilder);
 
     const auto margin = m3Styles.GetPixels(M3Spec::Layout::ExtraLarge::Margin);
     ImGui::SameLine(0, margin);
+    ImGui::BeginGroup();
     {
-        // The Font Builder child window.
-        // \todo should support resize-x.
-        const auto styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_ChildBg>(m3Styles.Colors()[M3Spec::ColorRole::surfaceContainerLow]);
-
+        m_PreviewPanel.DrawPreviewPanel(fontBuilder, m3Styles);
         if (ImGui::BeginChild("FontBuilderFontInfo", {-margin, 0}, ImGuiEx::ChildFlags()))
         {
             DrawToolBar(fontBuilder, settings);
-
-            if (m_PreviewPanel.IsPreviewing())
-            {
-                DrawFontInfoTable(fontBuilder);
-            }
+            DrawFontInfoTable(fontBuilder);
         }
         ImGui::EndChild();
     }
+    ImGui::EndGroup();
 }
 
 void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder)
