@@ -148,7 +148,6 @@ void ImeWnd::InitializeTextService()
     });
 }
 
-// FIXME: ImeUI should not dependency ImeWnd!!!
 void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 {
     TryEnableImeWndDpiAware();
@@ -158,7 +157,6 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
     }
     m_fEnabledTsf = enableTsf;
 
-    // FIXME: refactor initialize flow to support IMM32 and TSF not available.
     auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
     if (FAILED(tsfSupport.InitializeTsf(true)))
     {
