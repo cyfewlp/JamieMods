@@ -27,6 +27,7 @@ public:
     [[nodiscard]] auto GetIndex() const -> Index { return index; }
 };
 
+// FIXME-OPT: Investigate performance of the query system  all installed font.
 class FontManager
 {
     std::vector<FontInfo> m_fontList;

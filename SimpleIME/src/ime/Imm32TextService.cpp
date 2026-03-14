@@ -12,6 +12,7 @@
 
 #pragma comment(lib, "imm32.lib")
 
+// FIXME: can't show composition with IMM32, TSF work normal.
 namespace Ime::Imm32
 {
 using State = Ime::Core::State;
