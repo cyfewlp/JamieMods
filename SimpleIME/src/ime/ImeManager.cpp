@@ -105,7 +105,6 @@ auto ImeManager::TryFocusIme() -> Result
 
 auto ImeManager::IsShouldEnableIme() const -> bool
 {
-    // TODO: ? m_settings.input.keepImeOpen
     return m_settings.input.keepImeOpen || ControlMap::GetSingleton()->HasTextEntry();
 }
 
