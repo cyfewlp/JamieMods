@@ -24,7 +24,7 @@ void ErrorNotifier::addError(std::string_view msg, const ErrorMsg::Level level)
     errors.push_back({.text = std::string(msg), .level = level, .confirmed = false});
 }
 
-TEST(SettingsConverterTest, should_convert_shortcut_string_to_ImGuiKeyChord)
+TEST(ConfigurattionToSettingsTest, should_convert_shortcut_string_to_ImGuiKeyChord)
 {
     Ime::Configuration configuration;
 
@@ -67,7 +67,7 @@ TEST(SettingsConverterTest, should_convert_shortcut_string_to_ImGuiKeyChord)
     EXPECT_EQ(settings.shortcut, defaultSettings.shortcut) << "Should not support shortcut when contains multiple normal keys";
 }
 
-TEST(SettingsConverterTest, should_convert_spdlog_level_string_to_spdlog_level_enum)
+TEST(ConfigurattionToSettingsTest, should_convert_spdlog_level_string_to_spdlog_level_enum)
 {
     Ime::Configuration configuration;
 
@@ -102,7 +102,7 @@ TEST(SettingsConverterTest, should_convert_spdlog_level_string_to_spdlog_level_e
     EXPECT_EQ(settings.logging.level, defaultSettings.logging.level) << "should not support unknown log level string, and keep the default value";
 }
 
-TEST(SettingsConverterTest, should_convert_WindowPolicy_string_to_enum)
+TEST(ConfigurattionToSettingsTest, should_convert_WindowPolicy_string_to_enum)
 {
     Ime::Configuration configuration;
 
@@ -121,7 +121,7 @@ TEST(SettingsConverterTest, should_convert_WindowPolicy_string_to_enum)
     EXPECT_EQ(settings.input.posUpdatePolicy, Ime::Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR) << "should case insensitive";
 }
 
-TEST(SettingsConverterTest, should_set_base_type_member_value_from_configuration)
+TEST(ConfigurattionToSettingsTest, should_set_base_type_member_value_from_configuration)
 {
     const auto configuration = ImeTest::GetRandomConfiguation();
 
@@ -145,28 +145,7 @@ TEST(SettingsConverterTest, should_set_base_type_member_value_from_configuration
     EXPECT_EQ(settings.input.keepImeOpen, configuration.input.keepImeOpen);
 }
 
-TEST(SettingsConverterTest, should_convert_shortcut_ImGuiKeyChord_to_string)
-{
-    Ime::Settings settings{};
-
-    settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Alt | ImGuiKey_F1;
-    auto config       = Ime::ConvertSettingsToConfiguration(settings);
-    EXPECT_STREQ(config.shortcut.c_str(), "ctrl+alt+f1") << "should convert ImGuiKeyChord to string with modifier and key, and all in lower case";
-
-    settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Super | ImGuiMod_Alt | ImGuiKey_F1;
-    config            = Ime::ConvertSettingsToConfiguration(settings);
-    EXPECT_STREQ(config.shortcut.c_str(), "ctrl+alt+super+f1") << "should support all modifiers.";
-
-    settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Alt;
-    config            = Ime::ConvertSettingsToConfiguration(settings);
-    EXPECT_STREQ(config.shortcut.c_str(), "f2") << "should unsupport if the shortcut does not contain any named key, and fallback to default value";
-
-    settings.shortcut = ImGuiKey_A;
-    config            = Ime::ConvertSettingsToConfiguration(settings);
-    EXPECT_STREQ(config.shortcut.c_str(), "a") << "should convert normal key without modifier to string, and keep the case";
-}
-
-TEST(SettingsConverterTest, should_convert_default_configuration_to_default_settings)
+TEST(ConfigurattionToSettingsTest, should_convert_default_configuration_to_default_settings)
 {
     Ime::Configuration configuration = Ime::GetDefaultConfiguration();
 
@@ -195,4 +174,34 @@ TEST(SettingsConverterTest, should_convert_default_configuration_to_default_sett
     EXPECT_EQ(settings.input.posUpdatePolicy, defaultSettings.input.posUpdatePolicy);
     EXPECT_EQ(settings.input.enableUnicodePaste, defaultSettings.input.enableUnicodePaste);
     EXPECT_EQ(settings.input.keepImeOpen, defaultSettings.input.keepImeOpen);
+}
+
+TEST(SettingsToConfigurationTest, should_convert_shortcut_ImGuiKeyChord_to_string)
+{
+    Ime::Settings settings{};
+
+    settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Alt | ImGuiKey_F1;
+    auto config       = Ime::ConvertSettingsToConfiguration(settings);
+    EXPECT_STREQ(config.shortcut.c_str(), "ctrl+alt+f1") << "should convert ImGuiKeyChord to string with modifier and key, and all in lower case";
+
+    settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Super | ImGuiMod_Alt | ImGuiKey_F1;
+    config            = Ime::ConvertSettingsToConfiguration(settings);
+    EXPECT_STREQ(config.shortcut.c_str(), "ctrl+alt+super+f1") << "should support all modifiers.";
+
+    settings.shortcut = ImGuiMod_Ctrl | ImGuiMod_Alt;
+    config            = Ime::ConvertSettingsToConfiguration(settings);
+    EXPECT_STREQ(config.shortcut.c_str(), "f2") << "should unsupport if the shortcut does not contain any named key, and fallback to default value";
+
+    settings.shortcut = ImGuiKey_A;
+    config            = Ime::ConvertSettingsToConfiguration(settings);
+    EXPECT_STREQ(config.shortcut.c_str(), "a") << "should convert normal key without modifier to string, and keep the case";
+}
+
+TEST(SettingsToConfigurationTest, should_apply_rgb_mask_to_source_color)
+{
+    Ime::Settings settings{};
+    settings.appearance.schemeConfig.sourceColor = 0x12345678; // the alpha channel should be ignored
+
+    auto config = Ime::ConvertSettingsToConfiguration(settings);
+    EXPECT_EQ(config.appearance.themeSourceColor, 0x00345678) << "should apply RGB mask to source color when convert settings to configuration";
 }

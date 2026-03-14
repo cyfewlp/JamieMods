@@ -99,10 +99,13 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
         {KEY_TRANSLATION_DIR, {configuration.resources.translationDir, {" 翻译文件目录"}}},
         {KEY_FONTS,           configuration.resources.fontPathList                       },
     };
+
+    toml::value sourceColor          = {configuration.appearance.themeSourceColor, {" RGB 颜色, 不包含 alpha"}};
+    sourceColor.as_integer_fmt().fmt = toml::integer_format::hex;
     toml::table appearance{
         {KEY_ZOOM,                   {configuration.appearance.zoom, zoomComment}                                                    },
         {KEY_LANGUAGE,               configuration.appearance.language                                                               },
-        {KEY_THEME_SOURCE_COLOR,     {configuration.appearance.themeSourceColor, {" RGB 颜色, 不包含 alpha"}}                        },
+        {KEY_THEME_SOURCE_COLOR,     sourceColor                                                                                     },
         {KEY_THEME_DARK_MODE,        configuration.appearance.themeDarkMode                                                          },
         {KEY_THEME_CONTRAST_LEVEL,   {configuration.appearance.themeContrastLevel, {" 对比度，-1.0 - 1.0，默认值为 0.0"}}            },
         {KEY_ERROR_DISPLAY_DURATION, {configuration.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},

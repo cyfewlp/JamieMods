@@ -58,6 +58,28 @@ cmake --build --preset build-debug-clangcl-ninja-vcpkg --target SimpleIMETest
 ctest --test-dir build/debug-clangcl-ninja-vcpkg/SimpleIME
 ```
 
+## Configuration
+
+- **Zero-config required** — the mod runs without a config file. Missing or malformed values fall back to built-in defaults automatically.
+- **Auto-save on exit** — SimpleIME rewrites the config file when the game exits, normalising any manual edits.
+- **MO2 users** — the generated/updated `SimpleIME.toml` may appear in your **Overwrite** folder rather than the mod's own directory.
+
+## Contributing
+
+### Configuration file
+
+The canonical source for all default values is `GetDefaultSettings()` in the code.
+When you add or change a config key, update that function first; the `.toml` file in
+`contrib/config/` is derived from it, not the other way around.
+
+To regenerate `contrib/config/SimpleIME.toml` with current defaults:
+
+1. Delete the existing `SimpleIME.toml` from the game's plugin interface directory.
+2. Launch the game once — SimpleIME writes a fresh file on game quit with all defaults.
+3. Copy the generated file to `contrib/config/SimpleIME.toml`.
+
+> **MO2 users:** the generated file may land in your **Overwrite** folder instead.
+
 ## Known issues
 
 ### Crash during composition when switching windows via Win+Shift+S
