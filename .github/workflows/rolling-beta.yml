@@ -58,7 +58,10 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Install FontForge
         shell: pwsh
-        run: choco install fontforge --yes --no-progress
+        run: |
+          choco install fontforge --yes --no-progress
+          $env:PATH = "C:\Program Files (x86)\FontForgeBuilds\bin;$env:PATH"
+          echo "C:\Program Files (x86)\FontForgeBuilds\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Set up CMake 4.x
         uses: jwlawson/actions-setup-cmake@v2
