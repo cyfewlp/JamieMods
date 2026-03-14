@@ -6,27 +6,5 @@
   <requiredInstallFiles>
     <folder source="SKSE/Plugins" destination="SKSE/Plugins"/>
     <folder source="interface/SimpleIME" destination="interface/SimpleIME"/>
-    <folder source="translate" destination="interface/SimpleIME"/>
-    <folder source="config" destination="SKSE/Plugins"/>
   </requiredInstallFiles>
-  <installSteps order="Explicit">
-    <installStep name="Theme Config">
-      <optionalFileGroups order="Explicit">
-        <group name="Theme Config" type="SelectExactlyOne">
-          <plugins order="Explicit">
-            <plugin name="Okay, got it!">
-              <description>
-                Mod uses ImThemes as theme configuration. Check it out: https://github.com/Patitotective/ImThemes.
-              </description>
-              <image path="fomod/ImThemes.png"/>
-              <typeDescriptor>
-                <type name="Required"/>
-              </typeDescriptor>
-            </plugin>
-          </plugins>
-        </group>
-      </optionalFileGroups>
-    </installStep>
-  </installSteps>
-
 </config>

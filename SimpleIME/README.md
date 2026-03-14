@@ -1,12 +1,81 @@
-## Environment Varibles  
-  
-`MO2_MODS_PATH`: The [ModOrganizer2](https://www.modorganizer.org/) mods folder. The `dll`, `pdb` and other required filed will auto copy to `MO2_MODS_PATH/{PLUGIN_NAME}` folder when build successful if seup this env varible; 
-## Build  
-```shell  
-cmake --preset debug-clangcl-ninjia-vcpkgcmake --build build\debug-clangcl-ninjia-vcpkg --target SimpleIMEcd build\debug-clangcl-ninjia-vcpkgcpack  
-```  
-## Test  
-  
-```shell  
-cmake --build build\debug-clangcl-ninjia-vcpkg --target SimpleIMETestcd build\debug-clangcl-ninjia-vcpkg\SimpleIME && ctest  
+# SimpleIME
+
+Native IME (Input Method Editor) support for Skyrim SE/AE — type Chinese, Japanese, Korean and
+other multi-byte languages in the game console and any text field.
+
+[![Nexus Mods](https://img.shields.io/badge/NexusMods-SimpleIME-orange?style=flat-square&logo=nexusmods)](https://www.nexusmods.com/skyrimspecialedition/mods/140136)
+
+## Features
+
+- TSF-based IME integration with candidate list and composition display
+- Follows the in-game text cursor automatically
+- Dynamic theming via Material You (seed-color → full palette)
+- Fully translatable UI (`.toml` translation files, hot-reload)
+- Font picker: choose any installed or local font per script (Latin / CJK / emoji)
+
+## Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `VCPKG_ROOT` | Path to your vcpkg installation (required) |
+| `MO2_MODS_PATH` | _(Optional)_ MO2 mods folder — build output is copied here automatically |
+
+## Configure
+
+**Debug** (default for development):
+```shell
+cmake --preset debug-clangcl-ninja-vcpkg
 ```
+
+**Release with debug info** (for distribution testing):
+```shell
+cmake --preset RelWithDebInfo-clangcl-ninja-vcpkg
+```
+
+## Build
+
+```shell
+# configure first if not done yet
+cmake --preset debug-clangcl-ninja-vcpkg
+
+# build the plugin
+cmake --build --preset build-debug-clangcl-ninja-vcpkg --target SimpleIME
+
+# package (creates the mod archive)
+cpack --config build/debug-clangcl-ninja-vcpkg/CPackConfig.cmake
+```
+
+For a release build substitute `build-debug-clangcl-ninja-vcpkg` with
+`build-relwithdebinfo-clangcl-ninja-vcpkg` or `build-release-clangcl-ninja-vcpkg`.
+
+## Test
+
+Tests are off by default. Pass `-DBUILD_TESTING=ON` at configure time:
+
+```shell
+cmake --preset debug-clangcl-ninja-vcpkg -DBUILD_TESTING=ON
+cmake --build --preset build-debug-clangcl-ninja-vcpkg --target SimpleIMETest
+ctest --test-dir build/debug-clangcl-ninja-vcpkg/SimpleIME
+```
+
+## Known issues
+
+### Crash during composition when switching windows via Win+Shift+S
+
+**Trigger:** While a CJK composition is in progress, press **Win+Shift+S** (Snipping Tool) and switch
+focus to another window at the right moment before the capture completes.
+
+**Symptom:** SimpleIME crashes. No PDB is available for that scenario, so the exact call site and
+root cause are unknown.
+
+**Hypothesis:** TSF or IMM32 posts a composition-end message that arrives after ImeWnd or its
+related objects have started tearing down, causing a use-after-free or null-deref inside
+`WM_KILLFOCUS` handling.
+
+## Architecture notes
+
+See [`docs/adr/`](docs/adr/) for Architecture Decision Records.
+
+## Gallery
+
+![SimpleIME.png](contrib/Distribution/SimpleIME.png)

@@ -12,7 +12,9 @@
 # Possible C++ build output directories and files
 out
 build
+# install: make dist: cpack
 install
+dist
 enc_temp_folder
 cmake-build*
 *.dll
@@ -20,6 +22,7 @@ cmake-build*
 *.exe
 *.obj
 imgui.ini
+*/benchmarks/scratch_*
 
 # Skyrim archive files
 *.bsa
@@ -27,3 +30,7 @@ imgui.ini
 Data/SKSE/Plugins/version*.bin
 /Folder.DotSettings.user
 /scripts/game-profile
+
+##
+dev/
+private/

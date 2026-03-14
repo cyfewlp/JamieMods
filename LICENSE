@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 cyfewlp
+Copyright (c) 2026 cyfewlp
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,16 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-================================================================================
-
-Third-Party Acknowledgments
-============================
-
-This project uses the “themes.toml” color schemes from the ImThemes project:
-
-    ImThemes — https://github.com/Patitotective/ImThemes
-
-ImThemes is itself licensed under the MIT License. Below is the text of
-the ImThemes license (as of its latest release). You must retain this
-license text in any redistribution of the ImThemes files.

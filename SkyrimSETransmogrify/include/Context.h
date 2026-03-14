@@ -7,15 +7,15 @@ class Context final
 {
 private:
     Context() {};
-    Config* config;
+    Config *config;
 
 public:
-    Context(const Context&) = delete;
-    Context& operator=(const Context&) = delete;
-    Context(Context&&) = delete;
-    Context& operator=(Context&&) = delete;
+    Context(const Context &)            = delete;
+    Context &operator=(const Context &) = delete;
+    Context(Context &&)                 = delete;
+    Context &operator=(Context &&)      = delete;
 
-    static auto& Singleton()
+    static auto &Singleton()
     {
         static Context context;
         return context;
@@ -23,5 +23,5 @@ public:
 
     void Init();
 
-    Config* LoadSettings(const char* path);
+    Config *LoadSettings(const char *path);
 };

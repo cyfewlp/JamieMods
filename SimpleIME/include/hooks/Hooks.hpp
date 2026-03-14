@@ -3,22 +3,14 @@
 
 #pragma once
 
-#include "common/config.h"
-#include "common/log.h"
+#include "REL/REL.h"
+#include "log.h"
 
 #include <cstdint>
 #include <type_traits>
 #include <vadefs.h>
 #include <windows.h>
 
-enum : std::uint8_t
-{
-    GET_MSG_PROC = 0,
-    NUMHOOKS
-};
-
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Hooks
 {
 template <typename func_t>
@@ -77,19 +69,24 @@ public:
     {
         if (detoured)
         {
-            log_debug(
-                "Detour {:#x} detach {:#x}",
-                reinterpret_cast<std::uintptr_t>(m_hook),
-                reinterpret_cast<std::uintptr_t>(m_originalFuncPtr)
+            const auto msg = std::format(
+                "Detour {:#x} detach {:#x}", reinterpret_cast<std::uintptr_t>(m_hook), reinterpret_cast<std::uintptr_t>(m_originalFuncPtr)
             );
+            if (spdlog::default_logger())
+            {
+                logger::debug("{}", msg);
+            }
+            else
+            {
+                OutputDebugStringA(msg.c_str());
+            }
+
             DetourUtil::DetourDetach(&reinterpret_cast<PVOID &>(m_originalFuncPtr), m_hook);
         }
+        detoured = false;
     }
 
-    [[nodiscard]] bool Detoured() const
-    {
-        return detoured;
-    }
+    [[nodiscard]] bool Detoured() const { return detoured; }
 
     auto ToString() -> std::string
     {
@@ -122,24 +119,6 @@ public:
     }
 };
 
-using FuncRegisterClass                              = ATOM (*)(const WNDCLASSA *);
-static inline FuncRegisterClass RealRegisterClassExA = nullptr;
-
-// Windows Hook
-using MYHOOKDATA = struct _MYHOOKDATA
-{
-    int      nType;
-    HOOKPROC hkprc;
-    HHOOK    hhook;
-} ATTR_PACKED;
-
-LRESULT CALLBACK MyGetMsgProc(int code, WPARAM wParam, LPARAM lParam);
-void             InstallRegisterClassHook();
-void             InstallWindowsHooks();
-
-auto WINAPI MyRegisterClassExA(const WNDCLASSA *wndClass) -> ATOM;
-
-}; // namespace SimpleIME
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace Hooks
 
 #endif

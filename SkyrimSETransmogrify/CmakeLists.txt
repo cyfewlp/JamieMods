@@ -1,6 +1,6 @@
 project(
     SkyrimSETransmogrify
-    VERSION 0.0.1 
+    VERSION 0.0.1
     DESCRIPTION "SkyrmiSE Transmogrify System"
     LANGUAGES CXX
 )
@@ -38,7 +38,7 @@ find_library(DETOURS_LIBRARY detours REQUIRED)
 #    REQUIRED
 #)
 
-add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
+add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     src/plugin.cpp
     src/input.cpp
     src/RenderManager.cpp
@@ -65,7 +65,7 @@ target_include_directories(
 
 # linkage
 target_link_libraries(
-	${PROJECT_NAME} 
+	${PROJECT_NAME}
 	PRIVATE
 		#CommonLibSSE_LIB
 		spdlog::spdlog

@@ -5,8 +5,6 @@
 #include <atlcomcli.h>
 #include <msctf.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
 auto ToErrorMessage(HRESULT hresult) -> std::string;
@@ -27,7 +25,8 @@ public:
      * Initialize TSF on current thread.
      * @param uiLessMode enable ui control by tsf app. use this flag
      * we can disable system IME candidate & read info UI
-     * @return true if initialize success, otherwise false. App should interrupt the any following TSF call if
+     * @return true if initialize success, otherwise false. App should interrupt
+     * the any following TSF call if
      * init failed.
      */
     auto InitializeTsf(bool uiLessMode) -> HRESULT;
@@ -50,7 +49,7 @@ public:
 
     [[nodiscard]] constexpr auto GetKeystrokeMgr() const -> CComPtr<ITfKeystrokeMgr>
     {
-        return m_keystrokeMgr;
+        return m_KeystrokeMgr;
     }
 
     [[nodiscard]] constexpr auto GetTfClientId() const -> const TfClientId &
@@ -58,26 +57,20 @@ public:
         return m_tfClientId;
     }
 
-    static auto GetSingleton(bool uiLessMode = true) -> TsfSupport const &
+    static auto GetSingleton() -> TsfSupport &
     {
-        if (!s_instance.m_initialized)
-        {
-            s_instance.InitializeTsf(uiLessMode);
-        }
-        return s_instance;
+        static TsfSupport g_TsfSupport{};
+        return g_TsfSupport;
     }
 
 private:
     CComPtr<ITfThreadMgrEx>  m_pThreadMgr;
     CComPtr<ITfMessagePump>  m_messagePump;
-    CComPtr<ITfKeystrokeMgr> m_keystrokeMgr;
+    CComPtr<ITfKeystrokeMgr> m_KeystrokeMgr;
 
     TfClientId m_tfClientId{};
     bool       m_initialized = false;
-
-    static TsfSupport s_instance;
 };
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL
 
 #endif

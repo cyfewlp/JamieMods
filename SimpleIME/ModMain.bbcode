@@ -1,122 +1,162 @@
-﻿[size=4][color=#2EB2FF][b]What?[/b][/color][/size]
-A SKSE plugin that enables IME (Input Method Editor) support for SkyrimSE/AE, primarily aimed at Chinese players. This is achieved using ImGui, Win32, and IMM/TSF.
-The mod essentially unlocks the OS IME, receiving and forwarding IME events and messages to the game. Consequently, it should also support other languages (such as Japanese, Korean, etc.). However, I'm uncertain if IME works with the same logic across different languages, so the composition and candidate windows for other languages may not function correctly.
+﻿[center][img]https://i.imgur.com/vLWXeTe.png[/img][/center]
 
-SKSE 插件, 使 SkyrimSE/A E支持输入法(IME), 主要针对中国用户, 使用 ImGui + Win32 + IMM/TSF 实现。实际上mod只是解锁了系统的 IME, 并将其事件, 消息转发到游戏中, 因此, 应该支持韩语, 日语等输入法, 但是我 并不清楚其他语言的输入法如何工作, 因此其他语言的 composition 和 candidate 窗口可能不会正常工作.
+[center][size=5][color=#2EB2FF][b]SimpleIME[/b][/color][/size]
+[size=3]Native IME support for Skyrim SE/AE · 为上古卷轴5 SE/AE 提供输入法支持[/size][/center]
 
-[img]https://i.imgur.com/vLWXeTe.png[/img]
-[size=4][color=#2EB2FF][b]
-Features[/b][/color][/size]
-[list=1]
-[*][size=3]Unlock System IME & Windows key;[/size]
-[*][size=3]Render IME composition & candidate window by ImGui;[/size]
-[*][size=3]ToolWindow(default F2 key) support sync and switch IME; Note: ToolWindow can pined in game, you can move it to right-bottom and pin it, just like os language bar;if you decrase Game Resolution, tool window may be can't found, To reset it position, you can go forward to Game install directory and delete file imgui.ini or the [i][Window][ToolWindow##SimpleIME] configuration section;[/i][/size]
-[/list]
-[size=4][color=#2EB2FF][b]Why?[/b][/color]
-[/size]
-IME for the SkyrimSE game is unnecessary. But, if you installed SkyUI or other mods based on SkyUi/UIExtension, there may be a need to support Unicode characters. In one word, by the time you can: Search armor/spell/item/NPC with Unicode character in SkyUI(or other mods based on it).
-基础游戏并不需要输入法, 但是如果安装了 SKyUI 或者其他任何基于游戏UI 的 mod, 可能会需要用来进行搜索。
-简单来说：
-使用此mod可以使得在 SkyUI以及任何基于游戏UI的mod支持unicode 字符输入。
+[line]
 
-[size=3][color=#2EB2FF][b]Theme Config[/b][/color][/size]
- Mod use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] as theme provider. By default, mod add "classic", "darcula“, ”modern", "light", and "Visual Studio" themes.
-If you want to add other themes:
-[list=1]
-[*]Use [url=https://github.com/Patitotective/ImThemes?tab=MIT-1-ov-file]ImThemes[/url] and export you interested theme with TOML format, copy it;
-[*]Add new ini file in mod directory: "interface/SimpleIME_Themes/" and name it by "\w+_theme.ini" pattern, e.g. "darcula_theme.ini"
-[*]Paste your export theme content and add "[style]" as first line;
-[*]The default theme file can be used as a reference.
-[/list]
-[size=4][color=#2EB2FF] [b]Usage[/b][/color] [/size]
-[list=1]
-[*]Use your os shortcut(in my case win + space) keys or the tool window (default key `F2`) to switch different IMEs.
-[*]You must install your language font.
-[*]check your input method's usage you using 
-[*]By config "Focus Manage" and choose "Temporary" to obtain the most compatibility with other mods
-[/list]
-[list=1]
-[*]使用系统快捷键(win + 空格)或者ToolWindow (默认为 F2) 切换输入法切换不同的输入法
-[*]显而易见的, 必须安装具有中文支持的mod。
-[*]用法与系统的输入法相关
-[*]通过配置 "焦点管理" 并选择”临时“，以获取与其他 mod 的最大程度兼容。
-[/list]
-[spoiler]
-The [b]Focus[/b] means which window can receive keyboard message? If some mod modify game keyboard 
-setting and depend Windows message to work, you need to use "Temporary" focus manage to obtain compatibility
+[size=4][color=#2EB2FF][b]What is this? · 这是什么？[/b][/color][/size]
 
-[b]焦点[/b]是指哪个窗口可以接收键盘消息？如果某些模组修改了游戏键盘设置，并且依赖 Windows 消息才能工作，则需要使用“临时”焦点管理来获得兼容性。
+SimpleIME is a SKSE plugin that unlocks full IME (Input Method Editor) support in Skyrim SE/AE. It intercepts the OS input pipeline and renders a custom composition and candidate window using ImGui, allowing you to type Chinese, Japanese, Korean, and other multi-byte languages anywhere the game accepts text input.
+
+SimpleIME 是一个 SKSE 插件，为上古卷轴5 SE/AE 解锁完整的输入法（IME）支持。它接管系统输入管道，并使用 ImGui 渲染合成窗口和候选词窗口，让你能够在游戏任意文本框中输入中文、日文、韩文等多字节语言。
+
+[line]
+
+[size=4][color=#2EB2FF][b]Why do I need it? · 为什么需要它？[/b][/color][/size]
+
+The base game doesn't require IME. But if you use [b]SkyUI[/b] or any mod built on the game's UI layer (inventory search, NPC search, crafting filters…), you will want to type in your own language.
+
+基础游戏不需要输入法，但如果你使用 [b]SkyUI[/b] 或任何基于游戏 UI 层的 Mod（如物品搜索、NPC 搜索、合成过滤……），你就需要用自己的语言输入。
+
+[line]
+
+[size=4][color=#2EB2FF][b]Features · 功能[/b][/color][/size]
+
+[list]
+[*][b]TSF-based IME[/b] — uses the modern Text Services Framework; composition and candidate list are rendered natively in-game via ImGui.
+[b]基于 TSF 的输入法集成[/b] —— 使用现代文字服务框架（TSF），合成字符串与候选词通过 ImGui 在游戏内原生渲染。
+[*][b]Auto caret tracking[/b] — the IME window automatically follows the active text cursor on screen, including in scrollable fields.
+[b]自动追踪光标位置[/b] —— IME 窗口自动跟随当前激活的文本光标，支持可滚动的文本框。
+[*][b]Font Builder[/b] — browse all installed fonts (or load from a file path), preview them in real time, and assign separate fonts for Latin, CJK, and emoji glyphs. UI icons are provided by a repackaged minimal [url=https://lucide.dev]Lucide[/url] TTF.
+[b]字体构建器[/b] —— 浏览所有已安装字体（或从路径加载），实时预览，可为拉丁字符、CJK 字符、Emoji 分别指定不同字体。UI 图标由仅包含所用图标的精简版 [url=https://lucide.dev]Lucide[/url] 字体提供。
+[*][b]Theme Builder (Material You)[/b] — pick any seed color; the entire UI palette is generated in real time using Google's HCT color space. Supports dark and light mode.
+[b]主题构建器（Material You）[/b] —— 选择任意种子颜色，整套 UI 配色由 Google HCT 色彩空间实时生成，支持深色/浅色模式切换。
+[*][b]Unicode paste[/b] — paste Unicode text from the clipboard into any text field (Ctrl+V).
+[b]Unicode 粘贴[/b] —— 支持从剪贴板粘贴 Unicode 文本（Ctrl+V）到任意文本框。
+[*][b]Bilingual UI[/b] — Settings panel fully translated in English and Simplified Chinese. Hot-reload supported.
+[b]双语界面[/b] —— 设置面板完整提供英文和简体中文，支持热重载切换。
+[*][b]Persistent settings[/b] — all settings (fonts, theme, language…) are saved and restored automatically.
+[b]持久化设置[/b] —— 所有设置（字体、主题、语言……）自动保存并在下次启动时恢复。
+[/list]
+
+[line]
+
+[size=4][color=#2EB2FF][b]Quick Start · 快速开始[/b][/color][/size]
+
+[list=1]
+[*]Install a font mod that covers your language (e.g. a Chinese or Japanese font mod on Nexus).
+安装支持你语言的游戏字体 Mod（如支持中文/日文的字体 Mod）。
+[*]Enable your OS input method (e.g. Microsoft PinYin, Google Japanese IME).
+在系统中启用你的输入法（如微软拼音、Google 日语输入法）。
+[*]Launch the game. Press [b]F2[/b] (default) to open the Tool Window and verify the active input method is shown.
+启动游戏，按 [b]F2[/b]（默认）打开工具窗口，确认已显示当前激活的输入法。
+[*]Open any searchable UI (SkyUI inventory, console, etc.) and start typing.
+打开任意可搜索的界面（SkyUI 物品栏、控制台等），直接输入。
+[/list]
+
+[spoiler=Tool Window tips · 工具窗口提示]
+[list]
+[*]Press [b]F2[/b] to show/hide. Pin it to keep it always visible; move it to a corner as a compact language bar.
+按 [b]F2[/b] 显示/隐藏，固定（Pin）后可常驻，移到角落作为小型语言栏使用。
+[*]If the window goes off-screen after a resolution change, delete [i]imgui.ini[/i] in the game directory (or remove the [i][Window][ToolWindow##SimpleIME][/i] section) to reset its position.
+如果修改分辨率后窗口消失，删除游戏目录下的 [i]imgui.ini[/i]（或移除其中 [i][Window][ToolWindow##SimpleIME][/i] 配置段）即可重置位置。
+[/list]
 [/spoiler]
-[spoiler]
-[size=4] [color=#2EB2FF][b]How to implement?[/b][/color] [/size]
-[list=1]
-[*]By default, game will lock the player keyboard input event. All other window can't receive any keyboard input event;
-[*]Game window is a ANSI window. For some unicode character may can't receive(like emoji);
-[*]In fact, you can Imagine this mod is a invisible input control and always capture keyboard focus.
-[/list]
-[list=1]
-[*]默认情况下, 游戏会锁定键盘, 导致其他所有程序都无法读取键盘输入(也包括IME);
-[*]游戏窗口是 ANSI 窗口, 无法接受部分 unicode 字符(emoji)
-[*]实际上, mod 可以被认为是一个[i]不可见[/i]的, 永远捕获键盘输入的[b]输入框[/b]
-[/list]
-[/spoiler]
-[size=4][color=#2EB2FF][b]Compatibility/Supports[/b][/color][/size]
-[list=1]
-[*]Should no compatibility issue. only hooks some functions that usually also hooked by other UI mod.
-[*]May incompatibility with: sse-gui , must load after sse-gui;
-[*]Supports SkyUi & all other mods based on it(like mod `WhereAreYou`) ;
-[*]Not support other custom UI mod(dmenu, Modex). Because these mod has their self render & message handle logic, only if another mod support and load unicode font and handle `WM_CHAR` message.
-[/list]
-[list=1]
-[*]应该不存在兼容性问题。仅挂接一些通常也由其他 UI 模组挂接的函数。
-[*]可能与 sse-gui不兼容
-[*]支持 SkyUI 和所有其他基于它的模组（如 `WhereAreYou` 模组）;
-[*]不支持其他自定义 UI 模组(dmenu、Modex)。因为这些模块有自己的渲染和消息处理逻辑
+
+[line]
+
+[size=4][color=#2EB2FF][b]Compatibility · 兼容性[/b][/color][/size]
+
+[list]
+[*][b]SkyUI[/b] and all mods built on it — fully supported.
+完全支持 SkyUI 及所有基于它的 Mod。
+[*][b]RaceMenu[/b] — text entries work correctly via the [i]AllowTextInput[/i] hook.
+RaceMenu 文本框已修复，输入法可正常使用。
+[*][b]Console[/b] — fixed in the same hook.
+控制台已同步修复。
+[*][b]KreatE, WhereAreYou, Completionist[/b] and other SkyUI-based mods — compatible.
+兼容 KreatE、WhereAreYou、Completionist 等基于 SkyUI 的 Mod。
+[*][b]Modex[/b] — compatible; Modex implements the [i]AllowTextInput[/i] integration.
+兼容 Modex；Modex 已采用 AllowTextInput 方案集成。
+[*][b]dMenu[/b] — not supported; dMenu implements its own render and message pipeline.
+不支持 dMenu；dMenu 有独立的渲染和消息管线。
+[*][b]sse-gui[/b] — potential conflict; load SimpleIME after sse-gui.
+可能冲突，请将 SimpleIME 排在 sse-gui 之后加载。
+[*][b]Steam Overlay[/b] — keyboard input is unavailable while the Steam Overlay is open. Disable the mod before opening Steam Overlay if needed.
+Steam 界面打开时键盘输入不可用，如有需要请在打开 Steam 界面前禁用 Mod。
 [/list]
 
-[size=4][color=#2EB2FF] [b]For Other Mod Author[/b][/color] [/size]
-For other third-party mods, such as those implementing extended menus using ImGui, the simplest way to integrate with my IME mod is by invoking the AllowTextInput function:
+[line]
+
+[size=4][color=#2EB2FF][b]For Mod Authors · 给 Mod 作者[/b][/color][/size]
+
+If your mod uses ImGui or custom menus and wants seamless IME support, call the game's [i]AllowTextInput[/i] when an input widget gains or loses focus:
+
+如果你的 Mod 使用 ImGui 或自定义菜单，只需在输入控件获得/失去焦点时调用游戏的 [i]AllowTextInput[/i] 函数：
 
 [code]
-void SosGui::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
-{
-	using func_t = decltype(&SosGui::AllowTextInput1);
-	REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
-	func(controlMap, allow);
+// Hook AllowTextInput (RELOCATION_ID 67252 / 68552)
+void AllowTextInput(RE::ControlMap* controlMap, bool allow) {
+    using func_t = decltype(&AllowTextInput);
+    REL::Relocation<func_t> func{ RELOCATION_ID(67252, 68552) };
+    func(controlMap, allow);
 }
+
+// In your render loop:
+static bool sPrevWantText = false;
+const  bool sCurrWantText = ImGui::GetIO().WantTextInput;
+if (!sPrevWantText && sCurrWantText)  AllowTextInput(RE::ControlMap::GetSingleton(), true);
+if ( sPrevWantText && !sCurrWantText) AllowTextInput(RE::ControlMap::GetSingleton(), false);
+sPrevWantText = sCurrWantText;
 [/code]
 
-This function effectively adds a text entry. Therefore, for ImGui implementations, you can utilize the ImGuiIO::WantTextInput field to determine when to call this function as input widgets gain or lose focus:
+[line]
 
-[code]
-static bool fWantTextInput = false;
-bool cWantTextInput = ImGui::GetIO().WantTextInput;
-if (!fWantTextInput && cWantTextInput)
-{
-	AllowTextInput(true);
-}
-else if (fWantTextInput && !cWantTextInput)
-{
-	AllowTextInput(false);
-}
-fWantTextInput = cWantTextInput;
-[/code]
+[size=4][color=#2EB2FF][b]Known Issues · 已知问题[/b][/color][/size]
 
-This approach ensures seamless compatibility between your mod's input handling and the IME mod's functionality.
-
-
-[size=4][color=#2EB2FF] [b]Known Issue[/b][/color] [/size]
-[list=1]
-[*][size=2]iFly can't listen english mode switch: iFly not send conversion mode message[/size]
-[*][size=2]CompassNavigationOverhaul exception when quit game. Is causeed by our mod?[/size]
-[*][size=2]Use IME in [b]SteamOverlay: [/b]disable mod or use [b]Temporary Focus Manage[/b][/size]
+[list]
+[*][b]Win+Shift+S during composition[/b] — pressing the Snipping Tool shortcut while a CJK composition is active and switching windows at exactly the right moment can cause a crash. Root cause is under investigation.
+[b]合成中使用 Win+Shift+S 截图[/b] —— 在输入法处于合成阶段按下截图快捷键并在恰当时机切换窗口时，可能导致崩溃。根本原因正在排查中。
+[*][b]iFly input method[/b] — English/Chinese mode switch is not detected because iFly does not send a conversion-mode message.
+[b]讯飞输入法[/b] —— 英/中模式切换无法检测，因为讯飞不发送转换模式消息。
+[*][b]Steam Overlay[/b] — keyboard input does not work while the Steam Overlay is open. Disable the mod before opening it.
+[b]Steam 界面[/b] —— Steam 界面打开时键盘输入不可用，请在打开前禁用 Mod。
 [/list]
-[size=4] [color=#2EB2FF][b]Source Code[/b][/color] [/size]
-[url=https://github.com/cyfewlp/JamieMods]Github
-[/url]
-[size=4] [b]Other[/b] [/size]
-I'm a C++ & mod newcomer. So this mod may have some I not found bugs. If you meet a bug, report it, I will fix it quick soon.
-By the way, the mod supports emoji input. However, the game font renderer is implemented by Scaleform GFX. In my Google results, 
-GFX SDK does not support emoji font. I found a GTA modder article about this: [url=https://cookbook.fivem.net/2019/06/09/our-work-on-supporting-emoji-in-scaleform-gfx/]Our work on supporting emoji in Scaleform GFx[/url]
-But, it's too complex......🥲
-我是 C++ 和 mod 新手。因此这个 mod 可能有一些我没发现的错误。如果您发现错误, 请报告, 我会尽快修复。
+
+[line]
+
+[size=4][color=#2EB2FF][b]Changelog highlights (v2.0.0-beta) · 更新摘要[/b][/color][/size]
+
+This is a major rewrite relative to v1.3.0. Key changes:
+
+相较于 v1.3.0 的重大重写版本，主要变更：
+
+[list]
+[*]Complete UI redesign using the [b]Material 3[/b] design system; icons provided by a minimal repackaged [url=https://lucide.dev]Lucide[/url] font.
+基于 Material 3 设计系统完全重写 UI；图标由精简重打包的 Lucide 字体提供。
+[*][b]Font Builder[/b]: browse, preview, and assign installed fonts per script.
+字体构建器：按字符集浏览、预览、分配字体。
+[*][b]Theme Builder[/b]: real-time Material You palette from a single seed color; dark/light toggle.
+主题构建器：基于单一种子颜色实时生成 Material You 配色，支持深/浅色切换。
+[*][b]Auto caret tracking[/b] with scroll support.
+支持滚动的自动光标追踪。
+[*]Fixed TSF message-pump deadlock causing [b]Microsoft Pinyin Shift-key[/b] to stop responding.
+修复 TSF 消息泵死锁，解决了微软拼音 Shift 键失效问题。
+[*]Fixed [b]RaceMenu[/b] and [b]Console[/b] text-entry IME support.
+修复了 RaceMenu 和控制台文本框的输入法支持。
+[*]All settings are now persistent across sessions.
+所有设置现支持跨会话持久化。
+[*]Removed focus-mode system; simplified to a single stable focus model. Use the [b]Enable/Disable Mod[/b] toggle when you need to temporarily release keyboard control.
+移除焦点模式系统，简化为单一稳定焦点模型。需要临时释放键盘控制时，使用 [b]启用/禁用 Mod[/b] 开关即可。
+[/list]
+
+Full history: [url=https://github.com/cyfewlp/JamieMods/blob/main/SimpleIME/CHANGELOG.md]CHANGELOG.md[/url]
+
+[line]
+
+[size=4][color=#2EB2FF][b]Source Code · 源代码[/b][/color][/size]
+
+[url=https://github.com/cyfewlp/JamieMods]https://github.com/cyfewlp/JamieMods[/url]
+
+Bug reports and pull requests are welcome. · 欢迎提交 Issue 和 PR。

@@ -1,47 +1,51 @@
 #pragma once
 
-#include "common/config.h"
+#include "IImeModule.h"
 #include "core/State.h"
+#include "ui/Settings.h"
 
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
+
 class ImeWnd;
 
-class ImeManager
+class ImeManager final : public IImeModule
 {
     using State = Core::State;
-    HWND m_gameHwnd;
+    HWND            m_gameHwnd;
+    ImeWnd         *m_imeWnd;
+    bool            m_fForceUpdate;
+    const Settings &m_settings;
 
 public:
-    ImeManager(HWND hwnd) : m_gameHwnd(hwnd) {}
+    ImeManager(HWND hwnd, ImeWnd *imeWnd, Settings &settings)
+        : m_gameHwnd(hwnd), m_imeWnd(imeWnd), m_fForceUpdate(false), m_settings(settings)
+    {
+    }
 
-    virtual ~ImeManager()               = default;
+    ~ImeManager() override              = default;
     ImeManager(const ImeManager &other) = delete;
     ImeManager(ImeManager &&other)      = delete;
 
-    virtual auto EnableIme(bool enable) -> bool = 0;
-    virtual auto EnableMod(bool enable) -> bool = 0;
-    virtual auto GiveUpFocus() const -> bool    = 0;
-    virtual auto ForceFocusIme() -> bool        = 0;
-    virtual auto SyncImeState() -> bool         = 0;
+    auto EnableIme(bool enable) -> Result override;
+    auto ForceFocusIme() -> Result override;
+    auto SyncImeState() -> Result override;
     /// <summary>
     /// Try to focus IME when mod is enabled
     /// </summary>
     /// <returns>true if mod enabled and focus success, otherwise false</returns>
-    virtual auto TryFocusIme() -> bool = 0;
-
-    static auto Focus(HWND hwnd) -> bool;
-    auto        UnlockKeyboard() const -> bool;
-    auto        RestoreKeyboard() const -> bool;
+    auto TryFocusIme() -> Result override;
 
     auto GetGameHwnd() const -> HWND
     {
         return m_gameHwnd;
     }
+
+    static auto Focus(HWND hwnd) -> bool;
+
+private:
+    auto IsShouldEnableIme() const -> bool;
 };
-}
-}
+} // namespace Ime

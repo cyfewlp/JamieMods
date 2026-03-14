@@ -1,105 +1,175 @@
 #include "ImeWnd.hpp"
 
-#include "ImeUI.h"
-#include "Utils.h"
-#include "common/imgui/ErrorNotifier.h"
-#include "common/log.h"
-#include "configs/AppConfig.h"
 #include "configs/CustomMessage.h"
-#include "context.h"
 #include "core/State.h"
+#include "i18n/translator_manager.h"
 #include "ime/ITextServiceFactory.h"
-#include "ime/ImeManagerComposer.h"
-#include "imgui.h"
-#include "imgui_impl_dx11.h"
+#include "ime/ImeController.h"
 #include "imgui_impl_win32.h"
-#include "misc/freetype/imgui_freetype.h"
+#include "imguiex/ErrorNotifier.h"
+#include "imguiex/Material3.h"
+#include "imguiex/imguiex_enum_wrap.h"
+#include "log.h"
+#include "menu/MenuNames.h"
+#include "ui/LanguageBar.h"
+#include "ui/SettingsWindow.h"
+#include "ui/ToolWindow.h"
+#include "utils/Utils.h"
 
-#include <d3d11.h>
+#include <chrono>
+#include <codecvt>
 #include <msctf.h>
 #include <windows.h>
 #include <windowsx.h>
 
-// extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-extern auto ImGui_ImplWin32_GetDpiScaleForHwnd(void *hwnd) -> float;
-
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
-ImeWnd::ImeWnd(Settings &settings) : m_settings(settings)
+namespace Global
 {
-    wc = {};
-    ZeroMemory(&wc, sizeof(wc));
-    wc.cbSize        = sizeof(wc);
+extern HINSTANCE g_hModule;
+}
+
+namespace
+{
+auto GetThis(HWND hWnd) -> ImeWnd *
+{
+    const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
+    if (ptr == 0) return nullptr;
+    return reinterpret_cast<ImeWnd *>(ptr);
+}
+
+auto RegisterImeWindowClass(WNDPROC wndProc) -> bool
+{
+    WNDCLASSEXW wc{};
+    wc.cbSize        = sizeof(WNDCLASSEXW);
     wc.style         = CS_PARENTDC;
     wc.cbClsExtra    = 0;
-    wc.lpfnWndProc   = WndProc;
+    wc.lpfnWndProc   = wndProc;
     wc.cbWndExtra    = 0;
     wc.lpszClassName = g_tMainClassName;
+    wc.hInstance     = Global::g_hModule;
+
+    WNDCLASSEXW existingClass{};
+    if (GetClassInfoExW(Global::g_hModule, wc.lpszClassName, &existingClass) == FALSE)
+    {
+        return RegisterClassExW(&wc) != 0;
+    }
+    return true;
 }
+
+//! DPI awareness for support different monitor that has different physical DPI, avoid blurry when move between
+//! monitors.
+// ！@see WndProc::WM_DIPCHANGED
+void TryEnableImeWndDpiAware()
+{
+    logger::info("Try to enable DPI aware for IME Wnd...");
+    using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
+
+    HMODULE    hUser32 = GetModuleHandleW(L"user32.dll");
+    const auto pSetThreadDpiAwarenessContext =
+        reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
+
+    if (pSetThreadDpiAwarenessContext != nullptr)
+    {
+        pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        logger::info("Enable DPI aware successful!");
+    }
+}
+
+//! Try hide game cursor when ImGui want capture mouse, and show game cursor when ImGui release mouse capture.
+void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
+{
+    auto      &io                = ImGui::GetIO();
+    const bool cWantCaptureMouse = io.WantCaptureMouse;
+    io.MouseDrawCursor           = cWantCaptureMouse;
+    if (justWantCaptureMouse == cWantCaptureMouse)
+    {
+        return;
+    }
+    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+    {
+        if (auto toolWindow = ui->GetMenu(ToolWindowMenuName); toolWindow != nullptr)
+        {
+            if (cWantCaptureMouse)
+            {
+                toolWindow->menuFlags.reset(RE::UI_MENU_FLAGS::kUsesCursor);
+            }
+            else
+            {
+                toolWindow->menuFlags.set(RE::UI_MENU_FLAGS::kUsesCursor);
+            }
+        }
+    }
+    justWantCaptureMouse = cWantCaptureMouse;
+}
+
+/**
+ * The toolwindow and ImeWnd handle the shortcut at the same time.
+ * - ToolWindow already released ? -> ImeWnd handle shortcut to response the open ToolWindow request.
+ *                      alive    ? -> ToolWindow handle shortcut to response the open/pin/unpin/close ToolWindow request.
+ * - Debounce timer passed? -> If toolwindow is alive, close it and release translator; otherwise, open toolwindow and load translator.
+ */
+inline void ManageToolWindowOnDemand(std::unique_ptr<UI::ToolWindow> &toolWindow, DebounceTimer &debounceTimer, const Settings &settings)
+{
+    bool shouldOpenToolWindow = false;
+    if (toolWindow == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
+    {
+        shouldOpenToolWindow = true;
+    }
+    // pass the first call
+    if (!debounceTimer.IsWaiting() || debounceTimer.Check())
+    {
+        if (toolWindow != nullptr)
+        {
+            toolWindow.reset();
+        }
+        else if (shouldOpenToolWindow)
+        {
+            toolWindow = std::make_unique<UI::ToolWindow>(settings.shortcut, settings.appearance.language);
+        }
+    }
+}
+} // namespace
 
 ImeWnd::~ImeWnd()
 {
     UnInitialize();
     if (m_hWnd != nullptr)
     {
-        UnregisterClassW(wc.lpszClassName, wc.hInstance);
         DestroyWindow(m_hWnd);
     }
 }
 
-void ImeWnd::InitializeTextService(const AppConfig &pAppConfig)
+void ImeWnd::InitializeTextService()
 {
-    m_fEnableTsf               = pAppConfig.EnableTsf();
-    ITextService *pTextService = nullptr;
-    ITextServiceFactory::CreateInstance(m_fEnableTsf, &pTextService);
-    if (FAILED(pTextService->Initialize()))
-    {
-        throw SimpleIMEException("Can't initialize TextService");
-    }
-    m_pTextService.reset(pTextService);
-    m_pTextService->RegisterCallback(OnCompositionResult);
-    m_pLangProfileUtil = new LangProfileUtil();
+    m_pTextService = TextServiceFactory::Create(m_fEnabledTsf);
+    m_pTextService->RegisterCallback([](std::wstring_view compositionString) static -> void {
+        Skyrim::SendUiString(compositionString);
+    });
 }
 
-static void TryEnableImeWndDpiAware()
-{
-    log_info("Try to enable DPI aware for IME Wnd...");
-    using PFN_SetThreadDpiAwarenessContext = DPI_AWARENESS_CONTEXT(WINAPI *)(DPI_AWARENESS_CONTEXT);
-
-    HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
-    auto    pSetThreadDpiAwarenessContext =
-        reinterpret_cast<PFN_SetThreadDpiAwarenessContext>(GetProcAddress(hUser32, "SetThreadDpiAwarenessContext"));
-
-    if (pSetThreadDpiAwarenessContext)
-    {
-        pSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-        log_info("Enable DPI aware successful!");
-    }
-}
-
-void ImeWnd::Initialize() noexcept(false)
+void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 {
     TryEnableImeWndDpiAware();
-    wc.hInstance = GetModuleHandle(nullptr);
-    if (RegisterClassExW(&wc) == 0U)
+    if (!RegisterImeWindowClass(WndProc))
     {
         throw SimpleIMEException("Can't register class");
     }
+    m_fEnabledTsf = enableTsf;
 
-    const auto &appConfig = AppConfig::GetConfig();
-    InitializeTextService(appConfig);
-    m_pImeUi = std::make_unique<ImeUI>(appConfig.GetAppUiConfig(), this, m_pTextService.get());
+    auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
+    if (FAILED(tsfSupport.InitializeTsf(true)))
+    {
+        m_fEnabledTsf = false;
+    }
 
-    auto const &tsfSupport = Tsf::TsfSupport::GetSingleton();
-    if (FAILED(m_pLangProfileUtil->Initialize(tsfSupport.GetThreadMgr())))
+    InitializeTextService();
+    m_pImeWindow = std::make_unique<ImeWindow>();
+
+    m_pInputMethodManager = new InputMethodManager();
+    if (FAILED(m_pInputMethodManager->Initialize(tsfSupport.GetThreadMgr())))
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
-    }
-    if (!m_pImeUi->Initialize(m_pLangProfileUtil))
-    {
-        throw SimpleIMEException("Can't initialize ImeUI");
     }
 }
 
@@ -109,278 +179,52 @@ void ImeWnd::UnInitialize() const noexcept
     {
         m_pTextService->UnInitialize();
     }
-    if (m_pLangProfileUtil != nullptr)
+    if (m_pInputMethodManager != nullptr)
     {
-        m_pLangProfileUtil->UnInitialize();
+        m_pInputMethodManager->UnInitialize();
     }
 }
 
-auto ImeWnd::IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr)
+void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 {
-    BOOL fEaten = FALSE;
-    if (msg.message == WM_KEYDOWN)
-    {
-        // does an IME want it?
-        if (pKeystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
-            pKeystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
-        {
-            return true;
-        }
-    }
-    else if (msg.message == WM_KEYUP)
-    {
-        // does an IME want it?
-        if (pKeystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten &&
-            pKeystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten) == S_OK && fEaten)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-void ImeWnd::Start(HWND hWndParent, Settings *pSettings)
-{
-    log_info("Start ImeWnd Thread...");
-    m_hWnd =
-        CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, wc.hInstance, this);
+    logger::info("Start ImeWnd Thread...");
+    m_hWnd = CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, Global::g_hModule, this);
     if (m_hWnd == nullptr)
     {
         throw SimpleIMEException("Create ImeWnd failed");
     }
-    OnStart(pSettings);
-
-    MSG msg = {};
-    ZeroMemory(&msg, sizeof(msg));
-    auto const &tsfSupport    = Tsf::TsfSupport::GetSingleton();
-    auto const  pMessagePump  = tsfSupport.GetMessagePump();
-    auto const  pKeystrokeMgr = tsfSupport.GetKeystrokeMgr();
-    bool        done          = false;
-    while (!done)
-    {
-        BOOL fResult = 0;
-        if (pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult) != S_OK)
-        {
-            done = true;
-        }
-
-        if (fResult != FALSE)
-        {
-            continue;
-        }
-
-        if (GetMessageW(&msg, nullptr, 0, 0) <= 0)
-        {
-            break;
-        }
-        if (IsImeWantMessage(msg, pKeystrokeMgr))
-        {
-            continue;
-        }
-
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-        if (msg.message == WM_QUIT)
-        {
-            done = true;
-        }
-        if (done)
-        {
-            break;
-        }
-    }
-    log_info("Exit ImeWnd Thread...");
+    OnCreated(settings);
 }
 
-void ImeWnd::OnStart(Settings *pSettings)
+void ImeWnd::Run() const
 {
-    m_pTextService->OnStart(m_hWnd);
-    Context::GetInstance()->SetHwndIme(m_hWnd);
-
-    ImeManagerComposer::Init(this, m_hWndParent, pSettings);
-    ApplyUiSettings(pSettings);
-}
-
-void ImeWnd::AddFonts(const Settings &settings)
-{
-    const auto &uiConfig   = AppConfig::GetConfig().GetAppUiConfig();
-    float const pxFontSize = settings.dpiScale * settings.fontSize;
-
-    auto &io = ImGui::GetIO();
-    io.Fonts->Clear();
-    if (!io.Fonts->AddFontFromFileTTF(uiConfig.EastAsiaFontFile().c_str(), pxFontSize))
+    if (m_fEnabledTsf)
     {
-        io.Fonts->AddFontDefault();
+        TsfMessageLoop();
     }
-
-    // config font
-    static ImFontConfig cfg;
-    cfg.OversampleH = cfg.OversampleV = 1;
-    cfg.MergeMode                     = true;
-    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF(uiConfig.EmojiFontFile().c_str(), pxFontSize, &cfg);
-}
-
-auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
-{
-    ImeWnd *pThis = GetThis(hWnd);
-    if (pThis != nullptr)
+    else
     {
-        pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
-        if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
+        MSG msg = {};
+        ZeroMemory(&msg, sizeof(msg));
+        bool done = false;
+        while (!done)
         {
-            return S_OK;
-        }
-    }
-
-    switch (uMsg)
-    {
-        HANDLE_MSG(hWnd, WM_NCCREATE, OnNccCreate);
-        case WM_CREATE: {
-            if (pThis == nullptr) break;
-            return pThis->OnCreate();
-        }
-        case WM_DESTROY: {
-            if (pThis == nullptr) break;
-            return pThis->OnDestroy();
-        }
-        case WM_DPICHANGED: {
-            if (pThis == nullptr) break;
-            // pThis->OnDpiChanged(hWnd);
-            return S_OK;
-        }
-        case CM_EXECUTE_TASK: {
-            TaskQueue::GetInstance().ExecuteImeThreadTasks();
-            return S_OK;
-        }
-        case CM_ACTIVATE_PROFILE: {
-            if (pThis == nullptr) break;
-            pThis->m_pLangProfileUtil->ActivateProfile(reinterpret_cast<GUID *>(lParam));
-            return S_OK;
-        }
-        case WM_SETFOCUS:
-            if (pThis == nullptr) break;
-            pThis->m_fFocused = true;
-            log_info("IME window get focus.");
-            return S_OK;
-        case WM_KILLFOCUS: {
-            if (pThis == nullptr) break;
-            pThis->m_fFocused = false;
-            ImGui::GetIO().ClearInputKeys();
-            log_info("IME window lost focus.");
-            return S_OK;
-        }
-        default:
-            // ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
-            break;
-    }
-    return DefWindowProcW(hWnd, uMsg, wParam, lParam);
-}
-
-auto ImeWnd::GetThis(HWND hWnd) -> ImeWnd *
-{
-    const auto ptr = GetWindowLongPtr(hWnd, GWLP_USERDATA);
-    if (ptr == 0) return nullptr;
-    return reinterpret_cast<ImeWnd *>(ptr);
-}
-
-void ImeWnd::InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings) const
-    noexcept(false)
-{
-    log_info("Initializing ImGui...");
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    if (!ImGui_ImplWin32_Init(hWnd)) // avoid use member m_hWndParent: async with ImeWnd thread
-    {
-        throw SimpleIMEException("ImGui initialization failed (Win32)");
-    }
-
-    if (!ImGui_ImplDX11_Init(device, context))
-    {
-        throw SimpleIMEException("ImGui initialization failed (DX11)");
-    }
-
-    RECT     rect = {0, 0, 0, 0};
-    ImGuiIO &io   = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Keyboard Controls
-    io.ConfigNavMoveSetMousePos = false;
-    GetClientRect(m_hWndParent, &rect);
-    io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
-
-    settings.dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
-    AddFonts(settings);
-
-    ImGuiStyle &style = ImGui::GetStyle();
-    if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        style.WindowRounding              = 0.0F;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
-    }
-    if (settings.dpiScale != 1.0F)
-    {
-        style.ScaleAllSizes(settings.dpiScale);
-    }
-    log_info("ImGui initialized!");
-}
-
-auto ImeWnd::OnCreate() -> LRESULT
-{
-    return S_OK;
-}
-
-void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
-{
-    static DWORD gameThread    = 0;
-    static DWORD currentThread = GetCurrentThreadId();
-    if (gameThread == 0)
-    {
-        gameThread = GetWindowThreadProcessId(m_hWndParent, nullptr);
-    }
-    if (gameThread != currentThread)
-    {
-        if (AttachThreadInput(gameThread, currentThread, TRUE) != FALSE)
-        {
-            switch (uMsg)
+            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE) != FALSE)
             {
-                case WM_KEYDOWN:
-                case WM_KEYUP:
-                case WM_SYSKEYDOWN:
-                case WM_SYSKEYUP: {
-                    if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
-                    {
-                        log_debug("Post message to game failed.");
-                    }
+                if (msg.message == WM_QUIT)
+                {
+                    done = TRUE;
                     break;
                 }
-                default:
-                    break;
+
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
             }
-            AttachThreadInput(gameThread, currentThread, FALSE);
+            MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
         }
     }
-}
 
-auto ImeWnd::SaveSettings() const -> void
-{
-    m_settings.fontSizeScale = ImGui::GetIO().FontGlobalScale;
-    AppConfig::GetConfig().Set(m_settings);
-
-    const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
-    const auto  configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
-    AppConfig::SaveIni(configFilePath.c_str());
-}
-
-auto ImeWnd::OnDestroy() const -> LRESULT
-{
-    log_info("Save ui settings...");
-    SaveSettings();
-
-    log_info("Destroy IME Window");
-    UnInitialize();
-    PostQuitMessage(0);
-    return S_OK;
+    logger::info("Exit ImeWnd Thread...");
 }
 
 auto ImeWnd::Focus() const -> void
@@ -391,7 +235,7 @@ auto ImeWnd::Focus() const -> void
     }
 }
 
-auto ImeWnd::SetTsfFocus(const bool focus) const -> bool
+auto ImeWnd::FocusTextService(const bool focus) const -> bool
 {
     return m_pTextService->OnFocus(focus);
 }
@@ -401,27 +245,27 @@ auto ImeWnd::IsFocused() const -> bool
     return m_fFocused;
 }
 
-auto ImeWnd::SendMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
+auto ImeWnd::SendMessageToIme(const UINT uMsg, const WPARAM wParam, const LPARAM lParam) const -> LRESULT
 {
     if (m_hWnd == nullptr)
     {
-        return false;
+        return FALSE;
     }
-    return SendMessageW(m_hWnd, uMsg, wParam, lParam) == S_OK;
+    return SendMessageW(m_hWnd, uMsg, wParam, lParam);
 }
 
 auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) const -> bool
 {
     if (m_hWnd == nullptr)
     {
-        return false;
+        return true;
     }
     return SendNotifyMessageW(m_hWnd, uMsg, wParam, lParam) != FALSE;
 }
 
-auto ImeWnd::GetImeThreadId() const -> DWORD
+auto ImeWnd::ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT
 {
-    return GetWindowThreadProcessId(m_hWnd, nullptr);
+    return m_pInputMethodManager->ActivateProfile(guidProfile);
 }
 
 void ImeWnd::AbortIme() const
@@ -432,76 +276,258 @@ void ImeWnd::AbortIme() const
     }
 }
 
-/**
- * If Game cursor no showing/update, update ImGui cursor from system cursor pos
- */
-void ImeWnd::NewFrame(Settings &settings)
+void ImeWnd::Draw(Settings &settings)
 {
-    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+#ifdef DEBUG
+    const auto frameStart = std::chrono::high_resolution_clock::now();
+#endif
+
+    if (m_fWantUpdateUiScale)
     {
-        POINT cursorPos;
-        if (ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
+        m_fWantUpdateUiScale = false;
+        ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_uiScale);
+    }
+    m_pTextService->UpdateIfDirty();
+
+    AutoToggleGameCursorIfNeeded(m_fJustWantCaptureMouse);
+
+    ManageToolWindowOnDemand(m_toolWindow, m_translatorLoadDebounceTimer, settings);
+
+    {
+        auto      &m3Styles  = ImGuiEx::M3::Context::GetM3Styles();
+        const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+        ErrorNotifier::GetInstance().Show();
+        m_pImeWindow->Draw(m_pTextService->GetCompositionInfo(), m_pTextService->GetCandidateUi(), settings);
+
+        const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
+        const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
+
+        if (m_toolWindow != nullptr)
         {
-            auto *menuCursor = RE::MenuCursor::GetSingleton();
-            ImGui::GetIO().AddMousePosEvent(menuCursor->cursorPosX, menuCursor->cursorPosY);
+            if (m_toolWindow->Draw(activeLang, langProfiles, settings))
+            {
+                m_translatorLoadDebounceTimer.Poke();
+            }
         }
-        else if (GetCursorPos(&cursorPos) != FALSE)
+    }
+
+#ifdef DEBUG
+    const auto      frameEnd     = std::chrono::high_resolution_clock::now();
+    const auto      frameUs      = std::chrono::duration_cast<std::chrono::microseconds>(frameEnd - frameStart).count();
+    static uint64_t s_frameCount = 0;
+    static int64_t  s_accumUs    = 0;
+    s_accumUs += frameUs;
+    double avgMs = 0;
+    if (++s_frameCount % 60 == 0)
+    {
+        avgMs     = static_cast<double>(s_accumUs) / 60000.0;
+        s_accumUs = 0;
+    }
+    ImGui::Value("Avg frame: ", static_cast<float>(avgMs));
+#endif
+}
+
+auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
+{
+    // logger::debug("Message: {:#X} {} {}", uMsg, wParam, lParam);
+    ImeWnd *pThis = GetThis(hWnd);
+    if (pThis != nullptr)
+    {
+        pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
+        if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
         {
-            ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
+            return 0;
         }
     }
-    if (settings.wantResizeFont)
+
+    switch (uMsg)
     {
-        settings.wantResizeFont    = false;
-        ImGui::GetStyle().FontSize = settings.fontSize * settings.dpiScale;
+        HANDLE_MSG(hWnd, WM_NCCREATE, OnNccCreate);
+        case WM_CREATE: {
+            if (pThis == nullptr) break;
+            return 0;
+        }
+        case WM_DESTROY: {
+            if (pThis == nullptr) break;
+            ImmAssociateContextEx(hWnd, nullptr, IACE_DEFAULT);
+            return pThis->OnDestroy();
+        }
+        case WM_SETTINGCHANGE: {
+            if (pThis == nullptr) break;
+            pThis->m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+            pThis->m_fWantUpdateUiScale = true;
+            return 0;
+        }
+        case WM_DPICHANGED: {
+            if (pThis == nullptr) break;
+            const float g_dpi           = HIWORD(wParam);
+            const auto  scale           = g_dpi / USER_DEFAULT_SCREEN_DPI;
+            pThis->m_uiScale            = scale;
+            pThis->m_fWantUpdateUiScale = true;
+            return 0;
+        }
+        case CM_EXECUTE_TASK: {
+            TaskQueue::GetInstance().ExecuteImeThreadTasks();
+            return 0;
+        }
+        case WM_IME_SETCONTEXT:
+            lParam &= ~(ISC_SHOWUICOMPOSITIONWINDOW | ISC_SHOWUICANDIDATEWINDOW);
+            return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+        case WM_SETFOCUS:
+            if (pThis == nullptr) break;
+            pThis->m_fFocused = true;
+            logger::info("IME window get focus.");
+            return 0;
+        case WM_KILLFOCUS: {
+            if (pThis == nullptr) break;
+            pThis->m_fFocused = false;
+            ImGui::GetIO().ClearInputKeys();
+            logger::info("IME window lost focus.");
+            // FIXME: crash when focus leaves ImeWnd during active composition via an OS-level window switch
+            // (e.g. Win+Shift+S snipping tool at the right timing). Root cause and exact site are unknown
+            // because no PDB is generated for that build configuration. Hypothesis: TSF/IMM32 posts a
+            // composition-end message that arrives after the ImeWnd or its related objects have been
+            // partially torn down, causing a use-after-free or null-deref.
+            // Repro: open any text field, start composing CJK text, immediately press Win+Shift+S and
+            // quickly click away to another window before the screenshot tool captures.
+            return 0;
+        }
+        case WM_CHAR: {
+            if (pThis == nullptr) break;
+            const auto &state = Core::State::GetInstance();
+            if (ImeController::GetInstance()->IsModEnabled() && (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
+            {
+                const std::uint32_t wcharCode   = static_cast<std::uint32_t>(wParam);
+                static const auto   ignoredKeys = {VK_TAB, VK_RETURN, VK_BACK, VK_ESCAPE, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT};
+                if (std::find(std::begin(ignoredKeys), std::end(ignoredKeys), wcharCode) == std::end(ignoredKeys))
+                {
+                    const std::wstring wstring(1, LOWORD(wParam));
+                    Skyrim::SendUiString(wstring);
+                }
+            }
+            return 0;
+        }
+        default:
+            // ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+            break;
     }
-}
-
-void ImeWnd::DrawIme(Settings &settings) const
-{
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    NewFrame(settings);
-    ImGui::NewFrame();
-
-    ErrorNotifier::GetInstance().Show();
-    m_pImeUi->RenderToolWindow(settings);
-    m_pImeUi->Draw(settings);
-
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-    // Update and Render additional Platform Windows
-    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
-}
-
-void ImeWnd::ShowToolWindow() const
-{
-    m_pImeUi->ShowToolWindow();
-}
-
-void ImeWnd::ApplyUiSettings(Settings *pSettings) const
-{
-    m_pImeUi->ApplyUiSettings(*pSettings);
-    ImeManagerComposer::GetInstance()->ApplyUiSettings(*pSettings);
+    return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
 auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
 {
     auto *pThis = static_cast<ImeWnd *>(lpCreateStruct->lpCreateParams);
-    SetWindowLongPtr(hWnd, GWLP_USERDATA, Utils::ToLongPtr(pThis));
+    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
     pThis->m_hWnd       = hWnd;
     pThis->m_hWndParent = lpCreateStruct->hwndParent;
     return TRUE;
 }
 
-inline void ImeWnd::OnCompositionResult(const std::wstring &compositionString)
+void ImeWnd::TsfMessageLoop()
 {
-    Utils::SendStringToGame(compositionString);
+    auto const &tsfSupport   = Tsf::TsfSupport::GetSingleton();
+    auto const  pMessagePump = tsfSupport.GetMessagePump();
+    const auto &keystrokeMgr = tsfSupport.GetKeystrokeMgr();
+    MSG         msg{};
+    BOOL        fResult = FALSE;
+    while (true)
+    {
+        HRESULT hr = pMessagePump->PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE, &fResult);
+
+        if (FAILED(hr))
+        {
+            if (hr == E_FAIL || hr == E_UNEXPECTED)
+            {
+                logger::error("TSF message pump failed irrecoverably (HRESULT: {:#x}). Exiting loop.", hr);
+                break;
+            }
+            MsgWaitForMultipleObjectsEx(0, nullptr, 1, QS_INPUT, MWMO_INPUTAVAILABLE);
+            continue;
+        }
+
+        if (fResult == FALSE)
+        {
+            MsgWaitForMultipleObjectsEx(0, nullptr, 10, QS_INPUT, MWMO_INPUTAVAILABLE);
+            continue;
+        }
+        if (msg.message == WM_QUIT)
+        {
+            break;
+        }
+
+        BOOL fEaten = FALSE;
+        if (msg.message == WM_KEYDOWN)
+        {
+            if (SUCCEEDED(keystrokeMgr->TestKeyDown(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE) &&
+                SUCCEEDED(keystrokeMgr->KeyDown(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE))
+            {
+                continue;
+            }
+        }
+        else if (msg.message == WM_KEYUP)
+        {
+            if (SUCCEEDED(keystrokeMgr->TestKeyUp(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE) &&
+                SUCCEEDED(keystrokeMgr->KeyUp(msg.wParam, msg.lParam, &fEaten)) && (fEaten != FALSE))
+            {
+                continue;
+            }
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 }
+
+void ImeWnd::OnCreated(Settings &settings)
+{
+    logger::info("Ime window created, init TSF and core...");
+    m_gameThreadId = GetWindowThreadProcessId(m_hWndParent, nullptr);
+    m_pTextService->OnStart(m_hWnd);
+    m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
+    m_fWantUpdateUiScale = true;
+    float uiScale        = settings.appearance.zoom;
+    uiScale              = static_cast<float>(align_to(static_cast<int>(uiScale * 100), Settings::ZOOM_STEP_PERCENT)) / 100.F;
+    if (uiScale > 0.0F)
+    {
+        m_uiScale = std::clamp(uiScale, Settings::ZOOM_MIN, Settings::ZOOM_MAX);
+    }
+
+    ImeController::GetInstance()->Init(this, m_hWndParent, settings);
 }
+
+auto ImeWnd::OnDestroy() const -> LRESULT
+{
+    logger::info("Destroy IME Window");
+    ImeController::GetInstance()->Shutdown();
+    UnInitialize();
+    PostQuitMessage(0);
+    return S_OK;
 }
+
+void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
+{
+    const DWORD currentThread = GetCurrentThreadId();
+    if (m_gameThreadId != currentThread)
+    {
+        if (AttachThreadInput(m_gameThreadId, currentThread, TRUE) != FALSE)
+        {
+            switch (uMsg)
+            {
+                case WM_KEYDOWN:
+                case WM_KEYUP:
+                case WM_SYSKEYDOWN:
+                case WM_SYSKEYUP: {
+                    if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
+                    {
+                        logger::debug("Post message to game failed.");
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            AttachThreadInput(m_gameThreadId, currentThread, FALSE);
+        }
+    }
+}
+} // namespace Ime

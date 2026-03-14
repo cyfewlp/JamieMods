@@ -1,18 +1,16 @@
 #include "tsf/TsfCompartment.h"
 
-#include "common/log.h"
+#include "log.h"
 
 #include <atlcomcli.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 auto Tsf::TsfCompartment::Initialize(
     ITfThreadMgr *pThreadMgr, REFGUID guidCompartment, const CompartmentChangeCallback &callback
 ) -> HRESULT
 {
     if (IsEqualGUID(m_guidCompartment, GUID_NULL) == 0)
     {
-        log_warn("TsfCompartment already initialized.");
+        logger::warn("TsfCompartment already initialized.");
         return S_FALSE;
     }
     HRESULT hresult   = E_FAIL;
@@ -114,4 +112,3 @@ auto Tsf::TsfCompartment::OnChange(const GUID &rguid) -> HRESULT
     }
     return hresult;
 }
-} // namespace LIBC_NAMESPACE_DECL

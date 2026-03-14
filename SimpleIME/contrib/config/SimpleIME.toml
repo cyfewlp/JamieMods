@@ -1,0 +1,45 @@
+[core]
+# 快捷键配置 (使用标准的 Hex 格式)
+# DIK_F1 = 0x3B, DIK_F2 = 0x3C...
+shortcut_key = 0x3C
+
+# 是否启用 Mod 功能
+enable_mod = true
+
+# 是否启用 Windows Text Services Framework (TSF)
+# 现代输入法建议开启，旧版输入法可能不兼容
+enable_tsf = true
+
+[core.logging]
+# 日志级别: "trace", "debug", "info", "warn", "error", "critical", "off"
+level = "info"
+flush_level = "trace"
+
+[resources]
+# 字体文件路径 (建议使用正斜杠 / 避免转义问题)
+main_font = "C:/Windows/Fonts/simsun.ttc"
+emoji_font = "C:/Windows/Fonts/seguiemj.ttf"
+
+# 翻译文件目录
+translation_dir = "Data/interface/SimpleIME"
+
+[appearance]
+
+# 界面语言 (需在 translation_dir 下有对应的 translate_{lang}.toml)
+language = "chinese"
+
+theme_seed_argb = 0xFF673AB7
+theme_dark_mode = true
+
+# 错误信息显示持续时间 (秒)，-1 为不自动关闭
+error_display_duration = 10
+
+show_settings = false
+
+[input]
+# 输入法窗口位置更新策略: "None", "BASED_ON_CURSOR", "BASED_ON_CARET"
+pos_update_policy = "BASED_ON_CARET"
+
+# 增强功能
+enable_unicode_paste = true
+keep_ime_open = false

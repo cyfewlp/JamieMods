@@ -8,14 +8,17 @@ class GFxCharEvent : public RE::GFxEvent
 {
 public:
     GFxCharEvent() = default;
+
     GFxCharEvent(UINT32 a_wcharCode, UINT8 a_keyboardIndex = 0)
         : GFxEvent(RE::GFxEvent::EventType::kCharEvent), wcharCode(a_wcharCode), keyboardIndex(a_keyboardIndex)
     {
     }
+
     // @members
     std::uint32_t wcharCode;     // 04
     std::uint32_t keyboardIndex; // 08
 };
+
 static_assert(sizeof(GFxCharEvent) == 0x0C);
 
 Transmogrify::ImeUI::ImeUI()
@@ -106,8 +109,9 @@ void Transmogrify::ImeUI::SendResultStringToSkyrim()
         pScaleFormMessageData->scaleformEvent = pCharEvent;
 
         LOG(debug, "send code {} to Skyrim", code);
-        RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent,
-                                                       pScaleFormMessageData);
+        RE::UIMessageQueue::GetSingleton()->AddMessage(
+            menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
+        );
     }
 }
 
@@ -125,9 +129,11 @@ void Transmogrify::ImeUI::RenderCompWindow(WcharBuf *compStrBuf)
     windowFlags |= ImGuiWindowFlags_NoInputs;
     ImGui::BeginChild("CompositionWindow", childSize, 0, windowFlags);
     // render a underline
-    ImGui::GetForegroundDrawList()->AddLine({caretPos.x, caretPos.y + childSize.y},
-                                            {caretPos.x + childSize.x, caretPos.y + childSize.y},
-                                            IM_COL32(125, 125, 125, 255)); // gray
+    ImGui::GetForegroundDrawList()->AddLine(
+        {caretPos.x, caretPos.y + childSize.y},
+        {caretPos.x + childSize.x, caretPos.y + childSize.y},
+        IM_COL32(125, 125, 125, 255)
+    ); // gray
     auto str = Transmogrify::utils::WideStrToStrUTF8(compStrBuf->szStr);
     ImGui::Text(str.c_str());
     ImGui::EndChild();

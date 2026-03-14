@@ -1,0 +1,62 @@
+[Settings]
+IME = "IME"
+Settings = "设置"
+Apply = "确定"
+Cancel = "取消"
+
+[Settings.Sidebar]
+Appearance = "外观"
+FontBuilder = "字体构建器"
+Behaviour = "行为"
+
+[Settings.Appearance]
+DarkMode = "黑暗模式"
+Languages = "语言"
+Zoom = "缩放"
+ThemeColor = "主题颜色"
+ThemeBuilder = "主题构建器###ThemeBuilder"
+ContrastLevel = "对比度"
+
+[Settings.FontBuilder]
+Add = "添加字体"
+SetAsDefault = "设置为默认字体"
+Reset = "重置"
+Preview = "预览"
+Warning = "警告"
+WarningTitle = "警告###Warning"
+Help = "帮助"
+HelpTitle = "什么是字体构建器?"
+Warning1 = "为确保稳定性和性能，请避免添加过多字体或使用体积过大的字体文件。大字体占用高内存，可能导致卡顿。"
+Help1 = "您可以为不同的 Unicode 字符范围（如拉丁语、中日韩文字）分配特定的字体文件。"
+Help2 = "字形查询依赖于字体的优先级。如果第一个字体中不包含某个字符，系统将按照您定义的顺序在后续字体中查找。"
+
+[Settings.Behaviour]
+EnableMod = "启用Mod"
+EnableModToolTip = "取消勾选以禁用所有 mod 功能(禁用键盘)"
+EnableUnicodePaste = "启用 Unicode 粘贴"
+EnableUnicodePasteToolTip = "启用或关闭 Mod 提供的 unicode 粘贴功能"
+FixInconsistentTextEntryCount = "修复不一致的文本输入框数量"
+FixInconsistentTextEntryCountToolTip = "如果选中，mod 将尝试在检测到不一致的文本输入框数量时禁用 IME。如果存在一个第三方禁用了光标但存在活动文本输入框，可能会导致一些问题。"
+KeepImeOpen = "保持 IME 开启"
+KeepImeOpenTooltip = "主要用于在一些不支持 IME 的输入框中临时启用 IME"
+States = "状态"
+ImeEnabled = "IME 已启用"
+ImeEnabledTooltip = "IME 默认仅在存在输入框时启用"
+Focus = "焦点"
+FocusTooltip = "IME 仅在存在输入框以及键盘焦点时启用"
+ForceFocusIme = "请求焦点"
+
+[Settings.FontBuilder.PreviewPanel]
+Debouncing = "正在处理..."
+BuilderFont = "正在预览构建结果"
+NotSelectedFont = "未选字体 (预览默认)"
+NotSupportedFont = "字体格式不受支持"
+
+[Settings.Behaviour.ImePos]
+Policy = "IME 窗口位置更新策略"
+UpdateByCursor = "基于鼠标位置"
+UpdateByCursorTooltip = "根据当前鼠标的位置更新 IME 窗口位置"
+UpdateByCaret = "基于插入符位置"
+UpdateByCaretTooltip = "根据当前活动的输入框的插入符位置，自动更新 IME 窗口"
+UpdateByNone = "无"
+UpdateByNoneTooltip = "不会自动更新 IME 窗口位置"

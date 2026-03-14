@@ -3,10 +3,10 @@
 #define DEFINE_MEMBER_FN_LONG(className, functionName, retnType, address, ...)                                         \
     typedef retnType (className::*_##functionName##_type)(__VA_ARGS__);                                                \
                                                                                                                        \
-    inline _##functionName##_type* _##functionName##_GetPtr(void)                                                      \
+    inline _##functionName##_type *_##functionName##_GetPtr(void)                                                      \
     {                                                                                                                  \
         static const UInt32 _address = address;                                                                        \
-        return (_##functionName##_type*)&_address;                                                                     \
+        return (_##functionName##_type *)&_address;                                                                    \
     }
 
 #define DEFINE_MEMBER_FN(functionName, retnType, address, ...)                                                         \

@@ -4,27 +4,28 @@
 
 using MapToSet = std::unordered_map<std::string, std::unordered_set<std::string>>;
 
-namespace Transmogrify {
+namespace Transmogrify
+{
 
-    void AccessPlayerInventory();
+void AccessPlayerInventory();
 
-    void GetAllArmors(MapToSet* modToArmors);
+void GetAllArmors(MapToSet *modToArmors);
 
-    class CombineEventSinks
-      : public Singleton<CombineEventSinks>
-      , public RE::BSTEventSink<RE::TESActorLocationChangeEvent>
-    {
-        friend class Singleton<CombineEventSinks>;
+class CombineEventSinks : public Singleton<CombineEventSinks>, public RE::BSTEventSink<RE::TESActorLocationChangeEvent>
+{
+    friend class Singleton<CombineEventSinks>;
 
-    public:
-        static void Install();
+public:
+    static void Install();
 
-        RE::BSEventNotifyControl ProcessEvent(const RE::TESActorLocationChangeEvent* a_event,
-                                              RE::BSTEventSource<RE::TESActorLocationChangeEvent>* a_eventSource);
+    RE::BSEventNotifyControl ProcessEvent(
+        const RE::TESActorLocationChangeEvent               *a_event,
+        RE::BSTEventSource<RE::TESActorLocationChangeEvent> *a_eventSource
+    );
 
-    private:
-        CombineEventSinks() = default;
-        ~CombineEventSinks() = default;
-    };
+private:
+    CombineEventSinks()  = default;
+    ~CombineEventSinks() = default;
+};
 
 } // namespace Transmogrify

@@ -7,6 +7,7 @@
 // - Introduction, links and more at the top of imgui.cpp
 
 #include "RenderManager.h"
+
 #include "Hooks.h"
 #include "ImeUI.hpp"
 #include "Window.hpp"
@@ -15,6 +16,7 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "utils.hpp"
+
 #include <unordered_set>
 
 // void            RenderManager::UpdateCandStrings(HWND hWnd)
@@ -47,14 +49,14 @@ RenderManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
-    case WM_SETFOCUS: {
-        if (hideChildWnd)
-        {
-            LOG(debug, "focus to hide child window.");
-            hideChildWnd->Focus();
+        case WM_SETFOCUS: {
+            if (hideChildWnd)
+            {
+                LOG(debug, "focus to hide child window.");
+                hideChildWnd->Focus();
+            }
+            break;
         }
-        break;
-    }
     }
     if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) return true;
     return RealWndProc(hWnd, uMsg, wParam, lParam);
@@ -83,33 +85,33 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam)
     MSG *msg = (MSG *)(lParam);
     switch (msg->message)
     {
-    case WM_CREATE:
-        LOG(debug, "SkyrimSE Window creating!");
-        break;
-    case WM_IME_COMPOSITION:
-    case WM_IME_CHAR:
-    case WM_CHAR:
-        LOG(trace, "MSG Hook: {:#x}, {:#x}, {:#x}", msg->message, msg->wParam, msg->lParam);
-        if (msg->wParam >= 0xd800 && msg->wParam <= 0xdfff)
-        {
-            UINT original = msg->message;
-            // msg->lParam = msg->message; // store original message
-            switch (msg->message)
+        case WM_CREATE:
+            LOG(debug, "SkyrimSE Window creating!");
+            break;
+        case WM_IME_COMPOSITION:
+        case WM_IME_CHAR:
+        case WM_CHAR:
+            LOG(trace, "MSG Hook: {:#x}, {:#x}, {:#x}", msg->message, msg->wParam, msg->lParam);
+            if (msg->wParam >= 0xd800 && msg->wParam <= 0xdfff)
             {
-            case WM_IME_COMPOSITION:
-                msg->message = WM_CUSTOM_IME_COMPPOSITION;
-                break;
-            case WM_IME_CHAR:
-                msg->message = WM_CUSTOM_IME_CHAR;
-                break;
-            case WM_CHAR:
-                msg->message = WM_CUSTOM_CHAR;
-                break;
-            }
+                UINT original = msg->message;
+                // msg->lParam = msg->message; // store original message
+                switch (msg->message)
+                {
+                    case WM_IME_COMPOSITION:
+                        msg->message = WM_CUSTOM_IME_COMPPOSITION;
+                        break;
+                    case WM_IME_CHAR:
+                        msg->message = WM_CUSTOM_IME_CHAR;
+                        break;
+                    case WM_CHAR:
+                        msg->message = WM_CUSTOM_CHAR;
+                        break;
+                }
 
-            LOG(debug, "Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
-        }
-        break;
+                LOG(debug, "Replace {:#x} to {:#x}: {:#x}", original, msg->message, msg->wParam);
+            }
+            break;
     }
     return CallNextHookEx(0, code, wParam, lParam);
 }
@@ -173,7 +175,8 @@ void RenderManager::D3DInit()
 
     LOG(debug, "Hooking Skyrim WndProc...");
     RealWndProc = reinterpret_cast<WNDPROC>(
-        SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RenderManager::WndProc)));
+        SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RenderManager::WndProc))
+    );
     if (!RealWndProc)
     {
         LOG(err, "Hook WndProc failed!");
@@ -202,8 +205,9 @@ void RenderManager::ConfigImGui(HWND hwnd)
     io.MouseDrawCursor          = true;
     io.ConfigNavMoveSetMousePos = true;
 
-    io.Fonts->AddFontFromFileTTF(config->eastAsiaFontFile.c_str(), config->fontSize, nullptr,
-                                 io.Fonts->GetGlyphRangesChineseFull());
+    io.Fonts->AddFontFromFileTTF(
+        config->eastAsiaFontFile.c_str(), config->fontSize, nullptr, io.Fonts->GetGlyphRangesChineseFull()
+    );
 
     static ImFontConfig cfg;
     cfg.OversampleH = cfg.OversampleV = 1;

@@ -3,33 +3,34 @@
 
 #pragma once
 
-#include "ImeUI.h"
 #include "core/State.h"
 #include "ime/ITextService.h"
-#include "tsf/LangProfileUtil.h"
+#include "tsf/InputMethodManager.h"
+#include "ui/ImeWindow.h"
+#include "ui/ToolWindow.h"
 
 #include <atlcomcli.h>
-#include <d3d11.h>
 #include <windows.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-namespace LIBC_NAMESPACE_DECL
+namespace ImGuiEx::M3
 {
+class M3Styles;
+}
+
 namespace Ime
 {
-class ImmImeHandler;
-static inline auto g_tMainClassName = L"SimpleIME";
+static inline auto      g_tMainClassName                 = L"SimpleIME";
+static constexpr size_t TRANSLATOR_DEBONCE_DELAY_SECONDS = 10LLU;
 
 class ImeWnd
 {
-    static constexpr WORD ID_EDIT_COPY  = 1;
-    static constexpr WORD ID_EDIT_PASTE = 2;
-    using State                         = Core::State;
+    using State = Core::State;
 
 public:
-    ImeWnd(Settings &settings);
+    ImeWnd() = default;
     ~ImeWnd();
 
     ImeWnd(ImeWnd &&a_imeWnd)                 = delete;
@@ -37,7 +38,7 @@ public:
     ImeWnd &operator=(ImeWnd &&a_imeWnd)      = delete;
     ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
-    void Initialize() noexcept(false);
+    void Initialize(bool enableTsf) noexcept(false);
     void UnInitialize() const noexcept;
 
     /**
@@ -46,61 +47,61 @@ public:
      * with COINIT_MULTITHREADED(crash logger) to affect our TSF code.
      *
      * @param hWndParent Main window (game window)
-     * @param pSettings
+     * @param settings @Settings
      */
-    void Start(HWND hWndParent, Settings *pSettings);
-    /**
-     * initialize ImGui. Work on UI thread.
-     */
-    void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context, Settings &settings) const
-        noexcept(false);
-    auto Focus() const -> void;
-    auto SetTsfFocus(bool focus) const -> bool;
-    auto IsFocused() const -> bool;
-    auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
-    auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
-    auto GetImeThreadId() const -> DWORD;
+    void CreateHost(HWND hWndParent, Settings &settings);
+    void Run() const;
 
-    constexpr auto GetHWND() const -> HWND
+    auto Focus() const -> void;
+    auto FocusTextService(bool focus) const -> bool;
+    auto IsFocused() const -> bool;
+    auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
+    auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
+
+    void CommitCandidate(const DWORD index) const
     {
-        return m_hWnd;
+        if (m_pTextService)
+        {
+            m_pTextService->CommitCandidate(index);
+        }
     }
+
+    auto ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT;
+
+    auto GetHWND() const -> HWND { return m_hWnd; }
 
     /**
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings) const;
-    void ShowToolWindow() const;
-    void ApplyUiSettings(Settings *pSettings) const;
+    void Draw(Settings &settings);
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-    static auto GetThis(HWND hWnd) -> ImeWnd *;
-    static void NewFrame(Settings &settings);
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
-    static void OnCompositionResult(const std::wstring &compositionString);
+    static void TsfMessageLoop();
 
-    void        OnStart(Settings *pSettings);
-    static void AddFonts(const Settings &settings);
-    static auto OnCreate() -> LRESULT;
-    auto        SaveSettings() const -> void;
-    auto        OnDestroy() const -> LRESULT;
-    void        InitializeTextService(const AppConfig &pAppConfig);
-    static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
-    void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+    auto OnCreated(Settings &settings) -> void;
 
-    Settings                     &m_settings;
-    std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
-    std::unique_ptr<ITextService> m_pTextService = nullptr;
-    CComPtr<LangProfileUtil>      m_pLangProfileUtil;
-    HWND                          m_hWnd       = nullptr;
-    HWND                          m_hWndParent = nullptr;
-    WNDCLASSEXW                   wc{};
-    bool                          m_fEnableTsf = false;
-    bool                          m_fFocused   = false;
+    [[nodiscard]] auto OnDestroy() const -> LRESULT;
+
+    void InitializeTextService();
+    void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+
+    DebounceTimer                   m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
+    std::unique_ptr<ImeWindow>      m_pImeWindow   = nullptr;
+    std::unique_ptr<UI::ToolWindow> m_toolWindow   = nullptr;
+    std::unique_ptr<ITextService>   m_pTextService = nullptr;
+    CComPtr<InputMethodManager>     m_pInputMethodManager;
+    HWND                            m_hWnd                  = nullptr;
+    HWND                            m_hWndParent            = nullptr;
+    DWORD                           m_gameThreadId          = 0;
+    float                           m_uiScale               = 1.0F;
+    bool                            m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
+    bool                            m_fFocused              = false;
+    bool                            m_fEnabledTsf           = true;
+    bool                            m_fJustWantCaptureMouse = false;
 };
-} // namespace SimpleIME
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace Ime
 
 #endif

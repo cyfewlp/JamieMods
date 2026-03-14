@@ -1,17 +1,15 @@
 //
 // Created by jamie on 25-1-22.
 //
-#include "common/common.h"
-#include "common/log.h"
-#include "configs/AppConfig.h"
-#include "ime/ImeManagerComposer.h"
+#include "common.h"
+#include "configs/ConfigSerializer.h"
+#include "log.h"
 
-#include <spdlog/common.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SksePlugin
 {
-void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::level::level_enum flushLevel)
+void InitializeLogging(SpdLogSettings settings)
 {
     auto path = SKSE::log::log_directory();
     if (!path)
@@ -23,63 +21,73 @@ void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::l
 
     auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
     auto log  = std::make_shared<spdlog::logger>(std::string("global log"), std::move(sink));
-    log->set_level(logLevel);
-    log->flush_on(flushLevel);
+    log->set_level(settings.level);
+    log->flush_on(settings.flushLevel);
 
     spdlog::set_default_logger(std::move(log));
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%#] %v");
 }
 
-bool PluginLoad(const SKSE::LoadInterface *skse)
+auto PluginLoad(const SKSE::LoadInterface *skse) -> bool
 {
     try
     {
-        const auto *plugin         = SKSE::PluginDeclaration::GetSingleton();
-        auto        configFilePath = std::format(R"(Data\SKSE\Plugins\{}.ini)", plugin->GetName());
-        Ime::AppConfig::LoadIni(configFilePath.c_str());
-
-        const auto &pConfig = Ime::AppConfig::GetConfig();
-        InitializeLogging(pConfig.GetLogLevel(), pConfig.GetFlushLevel());
-
-        Init(skse);
-
-        const auto version = plugin->GetVersion();
-        log_info("{} {} is loading...", plugin->GetName(), version.string());
-
-        PluginInit();
-
-        log_info("{} has finished loading.", plugin->GetName());
+        Init(skse, false);
+        Initialize();
         return true;
     }
     catch (std::exception &exception)
     {
-        log_error("Fatal error, SimpleIME init fail: {}", exception.what());
-        LogStacktrace();
+        logger::error("Fatal error, SimpleIME init fail: {}", exception.what());
+        logger::LogStacktrace();
     }
     catch (...)
     {
-        log_error("Fatal error. occur unknown exception.");
-        LogStacktrace();
+        logger::error("Fatal error. occur unknown exception.");
+        logger::LogStacktrace();
     }
     return false;
 }
 
-int ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *)
+auto ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *) -> int
 {
-    log_critical("System exception (code {}) raised during plugin initialization.", code);
-    LogStacktrace();
+    logger::critical("System exception (code {}) raised during plugin initialization.", code);
+    logger::LogStacktrace();
     return EXCEPTION_CONTINUE_SEARCH;
 }
-}
+} // namespace SksePlugin
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse)
 {
     __try
     {
-        return LIBC_NAMESPACE::PluginLoad(skse);
+        return SksePlugin::PluginLoad(skse);
     }
-    __except (LIBC_NAMESPACE::ErrorHandler(GetExceptionCode(), GetExceptionInformation()))
+    __except (SksePlugin::ErrorHandler(GetExceptionCode(), GetExceptionInformation()))
     {
     }
     return false;
+}
+
+namespace Ime::Global
+{
+auto g_hModule = HMODULE();
+}
+
+extern "C" auto APIENTRY DllMain(const HMODULE hModule, const DWORD ul_reason, LPVOID /*unused*/) -> BOOL
+{
+    switch (ul_reason)
+    {
+        case DLL_THREAD_ATTACH:
+        case DLL_THREAD_DETACH:
+            break;
+        case DLL_PROCESS_ATTACH:
+            Ime::Global::g_hModule = hModule;
+            break;
+        case DLL_PROCESS_DETACH:
+            spdlog::shutdown();
+            break;
+        default:;
+    }
+    return TRUE;
 }

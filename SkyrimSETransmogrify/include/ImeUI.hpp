@@ -12,54 +12,54 @@
 
 namespace Transmogrify
 {
-    class ImeUI
+class ImeUI
+{
+private:
+    class WcharBuf
     {
-    private:
-        class WcharBuf
-        {
-        public:
-            LPWSTR szStr;
-            DWORD  dwCapacity;
-            DWORD  dwSize;
-            HANDLE m_heap;
-
-        public:
-            WcharBuf(HANDLE heap, DWORD initSize);
-            ~WcharBuf();
-            bool TryReAlloc(DWORD bufLen);
-            void Clear();
-            bool IsEmpty();
-        };
-
-    private:
-        static inline float g_caretPos[] = {0.0f, 0.0f};
-
-    private:
-        HANDLE      m_pHeap;
-        WcharBuf   *m_CompStr;
-        WcharBuf   *m_CompResult;
-        std::string m_langNameStr;
-        bool        m_enableSkyrimIME;
+    public:
+        LPWSTR szStr;
+        DWORD  dwCapacity;
+        DWORD  dwSize;
+        HANDLE m_heap;
 
     public:
-        ImeUI();
-        ~ImeUI();
-
-        void StartComposition();
-        void EndComposition();
-        void CompositionString(HWND hwnd, LPARAM lParam);
-        // Render To ImGui
-        void RenderCompStr();
-        void UpdateLanguage(HKL hkl);
-        void UpdateCaretPos(float x, float y);
-        bool IsSkyrimIMEEnabled();
-
-    private:
-        // return true if got str from IMM, otherwise false;
-        bool GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf);
-        void SendResultString();
-        void SendResultStringToSkyrim();
-        void RenderCompWindow(WcharBuf *compStrBuf);
+        WcharBuf(HANDLE heap, DWORD initSize);
+        ~WcharBuf();
+        bool TryReAlloc(DWORD bufLen);
+        void Clear();
+        bool IsEmpty();
     };
+
+private:
+    static inline float g_caretPos[] = {0.0f, 0.0f};
+
+private:
+    HANDLE      m_pHeap;
+    WcharBuf   *m_CompStr;
+    WcharBuf   *m_CompResult;
+    std::string m_langNameStr;
+    bool        m_enableSkyrimIME;
+
+public:
+    ImeUI();
+    ~ImeUI();
+
+    void StartComposition();
+    void EndComposition();
+    void CompositionString(HWND hwnd, LPARAM lParam);
+    // Render To ImGui
+    void RenderCompStr();
+    void UpdateLanguage(HKL hkl);
+    void UpdateCaretPos(float x, float y);
+    bool IsSkyrimIMEEnabled();
+
+private:
+    // return true if got str from IMM, otherwise false;
+    bool GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, WcharBuf *pWcharBuf);
+    void SendResultString();
+    void SendResultStringToSkyrim();
+    void RenderCompWindow(WcharBuf *compStrBuf);
+};
 
 } // namespace Transmogrify

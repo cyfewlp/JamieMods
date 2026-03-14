@@ -1,77 +1,116 @@
-#ifndef IMEAPP_H
-#define IMEAPP_H
-
 //
 // Created by jamie on 25-1-22.
 //
 #pragma once
 
 #include "ImeWnd.hpp"
-#include "common/hook.h"
-#include "hooks/UiHooks.h"
+#include "hook.h"
+#include "ui/Settings.h"
 
-#include <RE/B/BSTEvent.h>
-#include <RE/I/InputEvent.h>
-
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Ime
 {
+void D3DInit();
+
 class ImeApp
 {
 public:
-    ImeApp()                              = default;
-    ~ImeApp()                             = default;
-    ImeApp(const ImeApp &other)           = delete;
-    ImeApp(ImeApp &&other)                = delete;
-    ImeApp operator=(const ImeApp &other) = delete;
-    ImeApp operator=(ImeApp &&other)      = delete;
-
-    static auto GetInstance() -> ImeApp &
+    struct State
     {
-        static ImeApp instance;
-        return instance;
-    }
+        enum class StateKey : std::uint8_t
+        {
+            UNINITIALIZED,
+            INITIALIZING,
+            INITIALIZED,
+            INITIALIZE_FAILED,
+            SHUTDOWN,
+            DORMANCY
+        };
 
-    void Initialize();
-    void Uninitialize();
+    private:
+        std::atomic<StateKey> m_stateKey = StateKey::UNINITIALIZED;
+
+    public:
+        static constexpr auto GetStateKetText(StateKey stateKey) -> std::string
+        {
+            switch (stateKey)
+            {
+                case StateKey::INITIALIZED:
+                    return "Initialized";
+                case StateKey::INITIALIZING:
+                    return "Initializing";
+                case StateKey::INITIALIZE_FAILED:
+                    return "Initialization failed";
+                case StateKey::UNINITIALIZED:
+                    return "Uninitialized";
+                case StateKey::SHUTDOWN:
+                    return "Shutdown";
+                case StateKey::DORMANCY:
+                    return "Dormancy";
+            }
+            return "Unknown state";
+        }
+
+        constexpr auto GetStateKetText() const -> std::string { return GetStateKetText(m_stateKey); }
+
+        void SetState(const StateKey stateKey)
+        {
+            if (stateKey <= m_stateKey)
+            {
+                logger::error("The state cannot be rolled back from [{}] to [{}]!", GetStateKetText(m_stateKey), GetStateKetText(stateKey));
+                return;
+            }
+            m_stateKey.exchange(stateKey);
+        }
+
+        constexpr auto IsUnInitialized() const { return m_stateKey == StateKey::UNINITIALIZED; }
+
+        constexpr auto IsInitializing() const { return m_stateKey == StateKey::INITIALIZING; }
+
+        constexpr auto IsInitializeFailed() const { return m_stateKey == StateKey::INITIALIZE_FAILED; }
+
+        constexpr auto IsInitialized() const { return m_stateKey == StateKey::INITIALIZED; }
+    };
+
+    explicit ImeApp(std::filesystem::path configPath);
+    ~ImeApp() = default;
+
+    ImeApp(const ImeApp &other)                   = delete;
+    ImeApp(ImeApp &&other)                        = delete;
+    auto operator=(const ImeApp &other) -> ImeApp = delete;
+    auto operator=(ImeApp &&other) -> ImeApp      = delete;
+
+    static auto GetInstance() -> ImeApp &;
+
     void OnInputLoaded();
+    void Draw();
+    void Uninitialize();
 
-    constexpr auto GetGameHWND() const -> HWND
-    {
-        return m_hWnd;
-    }
+    constexpr auto GetGameHWND() const -> HWND { return m_hWnd; }
 
-    constexpr auto GetImeWnd() -> ImeWnd &
-    {
-        return m_imeWnd;
-    }
+    constexpr auto GetImeWnd() -> ImeWnd & { return m_imeWnd; }
+
+    constexpr auto GetState() const -> const State & { return m_state; }
+
+    constexpr auto GetSettings() const -> const Settings & { return m_settings; }
 
 private:
-    std::unique_ptr<Hooks::D3DInitHookData>            D3DInitHook            = nullptr;
-    std::unique_ptr<Hooks::D3DPresentHookData>         D3DPresentHook         = nullptr;
-    std::unique_ptr<Hooks::DispatchInputEventHookData> DispatchInputEventHook = nullptr;
-
     void OnD3DInit();
-    void SetSettings();
     void Start(const RE::BSGraphics::RendererData &renderData);
-    void InstallHooks();
-    void UninstallHooks();
+    void Shutdown();
+    void SaveSettings();
 
-    HWND             m_hWnd = nullptr;
-    Settings         m_settings{};
-    ImeWnd           m_imeWnd{m_settings};
-    std::atomic_bool m_fInitialized = false;
+    static void InstallHooks();
+    static void UninstallHooks();
 
-    static void           D3DInit();
-    static void           DoD3DInit();
-    static void           D3DPresent(std::uint32_t ptr);
-    void                  DoD3DPresent();
-    static void           DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events);
+    Settings m_settings;
+    ImeWnd   m_imeWnd{};
+    HWND     m_hWnd        = nullptr;
+    HIMC     m_hIMCDefault = nullptr; // Game main window default HIMC
+    State    m_state;
+
+    friend void           Ime::D3DInit();
+    void                  DoD3DInit();
     static auto           MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
     static inline WNDPROC RealWndProc;
 };
-}
-}
-
-#endif
+} // namespace Ime

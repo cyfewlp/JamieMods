@@ -1,6 +1,8 @@
 #include "SKSEDetours.h"
+
 #include "detours/detours.h"
 #include "utils.hpp"
+
 #include <windows.h>
 
 inline void doLogDetours(const WNDCLASSEXW *wndClass, const char *funcName)

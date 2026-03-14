@@ -7,6 +7,9 @@
 cmake_minimum_required(VERSION 3.21)
 message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # [BEGIN set_project_name]
@@ -18,7 +21,13 @@ set(COMMON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 cmake_minimum_required(VERSION 3.21)
 
 add_subdirectory(extern/CommonLibSSE-NG EXCLUDE_FROM_ALL)
-#add_subdirectory(extern)
-add_subdirectory(dev)
+add_subdirectory(extern)
+add_subdirectory(common)
 add_subdirectory(SimpleIME)
 add_subdirectory(SkyrimSETransmogrify)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/CMakeLists.txt")
+    add_subdirectory(private EXCLUDE_FROM_ALL)
+else()
+    message(STATUS "Private directory not found, skipping...")
+endif()

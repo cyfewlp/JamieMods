@@ -12,25 +12,39 @@
 #include <atlcomcli.h>
 #include <msctf.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
+
+/**
+ * @brief RAII function call tracer for TSF debugging.
+ *
+ * Produces indented trace-level log output showing TSF call sequences and nesting.
+ * In release builds (when SIMPLE_IME_TRACE is not defined), this entire class and
+ * all its call sites are eliminated by the compiler as dead code — zero overhead.
+ *
+ * **Enable at compile time** by adding `-DSIMPLE_IME_TRACE` to your build flags,
+ * or passing `-DSIMPLE_IME_TRACE=1` in CMake.
+ */
+#ifdef SIMPLE_IME_TRACE
 struct FuncTracer
 {
     template <typename... Args>
-    explicit constexpr FuncTracer(std::format_string<Args...> fmt, Args &&...args)
+    explicit FuncTracer(std::format_string<Args...> fmt, Args &&...args)
     {
         if (spdlog::should_log(spdlog::level::trace))
         {
             spdlog::trace("{:>{}}{}", "", g_indent, std::format(fmt, std::forward<Args>(args)...));
-            // spdlog::log(spdlog::level::trace, "{:>{}}{}", "", g_indent, fmt, std::forward<Args>(args)...);
             g_indent += 4;
         }
     }
 
+    FuncTracer(const FuncTracer &other)                = delete;
+    FuncTracer(FuncTracer &&other) noexcept            = delete;
+    FuncTracer &operator=(const FuncTracer &other)     = delete;
+    FuncTracer &operator=(FuncTracer &&other) noexcept = delete;
+
     template <typename... Args>
-    constexpr void log(std::format_string<Args...> fmt, Args &&...args)
+    void log(std::format_string<Args...> fmt, Args &&...args)
     {
         if (spdlog::should_log(spdlog::level::trace))
         {
@@ -41,11 +55,34 @@ struct FuncTracer
     ~FuncTracer()
     {
         g_indent -= 4;
+        log("---");
     }
 
 private:
-    static inline uint32_t g_indent;
+    static inline uint32_t g_indent = 0;
 };
+#else
+// Release / non-trace build: FuncTracer is a completely empty type.
+// The compiler will eliminate every `auto tracer = FuncTracer(...)` call site,
+// including argument evaluation for trivial arguments like __func__.
+struct FuncTracer
+{
+    template <typename... Args>
+    explicit constexpr FuncTracer(std::format_string<Args...> /*fmt*/, Args &&.../*args*/) noexcept
+    {
+    }
+
+    FuncTracer(const FuncTracer &other)                = delete;
+    FuncTracer(FuncTracer &&other) noexcept            = delete;
+    FuncTracer &operator=(const FuncTracer &other)     = delete;
+    FuncTracer &operator=(FuncTracer &&other) noexcept = delete;
+
+    template <typename... Args>
+    constexpr void log(std::format_string<Args...> /*fmt*/, Args &&.../*args*/) const noexcept
+    {
+    }
+};
+#endif
 
 struct AdviseSinkCache
 {
@@ -59,74 +96,60 @@ struct AdviseSinkCache
         pTextStoreAcpSink.Release();
         dwMask = 0;
     }
-} PACKED_ALIGN(32);
+};
 
 struct CandidateInfo
 {
-    UINT  candidateCount = 0;
-    UINT  pageSize       = 0;
-    DWORD firstIndex     = 0;
-} ALIGN(16);
+    DWORD pageStart = 0;
+    UINT  pageEnd   = 0;
+};
 
-class TextStore : public ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
+class TextService;
+
+class TextStore : ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSink, ITfTextEditSink
 {
     static constexpr uint32_t MAX_COMPOSITIONS = 5;
     static constexpr uint32_t EDIT_VIEW_COOKIE = 0;
     using State                                = Ime::Core::State;
 
 public:
-    explicit TextStore(Ime::ITextService *pTextService, Ime::TextEditor *pTextEditor)
-        : m_pTextService(pTextService), m_pTextEditor(pTextEditor)
-    {
-    }
+    explicit TextStore(TextService *pTextService) : m_pTextService(pTextService) {}
 
-    virtual ~TextStore();
+    virtual ~TextStore()                                      = default;
     TextStore(const TextStore &other)                         = delete;
     TextStore(TextStore &&other) noexcept                     = delete;
     auto operator=(const TextStore &other) -> TextStore &     = delete;
     auto operator=(TextStore &&other) noexcept -> TextStore & = delete;
 
-    auto Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT;
-    auto SetHWND(HWND hWnd) -> bool;
-    void UnInitialize();
+    [[nodiscard]] auto Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT;
+    auto               SetHWND(HWND hWnd) -> bool;
+    void               UnInitialize();
 
-    auto Focus() -> HRESULT;
+    void SetOnEndCompositionCallback(Ime::OnEndCompositionCallback *const callback) { m_OnEndCompositionCallback = callback; }
 
-    auto ClearFocus() const -> HRESULT;
+    [[nodiscard]] auto Focus() -> HRESULT;
+    [[nodiscard]] auto ClearFocus() const -> HRESULT;
+    [[nodiscard]] auto CommitCandidate(UINT index) const -> bool;
 
-    [[nodiscard]] constexpr auto IsSupportCandidateUi() const -> bool
-    {
-        return m_supportCandidateUi;
-    }
+    auto STDMETHODCALLTYPE AddRef() -> ULONG override;
+    auto STDMETHODCALLTYPE Release() -> ULONG override;
 
-    [[nodiscard]] constexpr auto DocumentMgr() -> ITfDocumentMgr *
-    {
-        return m_documentMgr;
-    }
-
-    auto __stdcall AddRef() -> ULONG override;
-    auto __stdcall Release() -> ULONG override;
-
-    void SetOnEndCompositionCallback(Ime::OnEndCompositionCallback *const callback)
-    {
-        m_OnEndCompositionCallback = callback;
-    }
-
+private:
     // ITextStoreACP functions
     // NOLINTBEGIN(*-use-trailing-return-type)
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject) override;
-    STDMETHODIMP AdviseSink(REFIID riid, IUnknown *punk, DWORD dwMask) override;
-    STDMETHODIMP UnadviseSink(IUnknown *punk) override;
+    STDMETHODIMP AdviseSink(REFIID riid, IUnknown *pUnknown, DWORD dwMask) override;
+    STDMETHODIMP UnadviseSink(IUnknown *pUnknown) override;
     STDMETHODIMP RequestLock(DWORD dwLockFlags, HRESULT *phrSession) override;
-    STDMETHODIMP GetStatus(TS_STATUS *pdcs) override;
+    STDMETHODIMP GetStatus(TS_STATUS *pStatus) override;
     /**
      * determines whether the specified start and end character positions are valid. Use this method to adjust
      * an edit to a document before executing the edit. The method must not return values outside the range of
      * the document.
-     * @param acpTestStart Starting application character position for inserted text.
-     * @param acpTestEnd Ending application character position for the inserted text. This value is equal to
-     * acpTextStart if the text is inserted at a point instead of replacing selected text.
-     * @param cch Length of replacement text.
+     * @param acpStart Starting application character position for inserted text.
+     * @param acpEnd Ending application character position for the inserted text. This value is equal to
+     * acpStart if the text is inserted at a point instead of replacing selected text.
+     * @param textSize Length of replacement text.
      * @param pacpResultStart Returns the new starting application character position of the inserted text. If
      * this parameter is NULL, then text cannot be inserted at the specified position. This value cannot be
      * outside the document range.
@@ -135,58 +158,54 @@ public:
      * position. This value cannot be outside the document range.
      * @return
      */
-    STDMETHODIMP QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG cch, LONG *pacpResultStart, LONG *pacpResultEnd)
-        override;
+    STDMETHODIMP QueryInsert(LONG acpStart, LONG acpEnd, ULONG textSize, LONG *pacpResultStart, LONG *pacpResultEnd) override;
     /**
      * returns the character position of a text selection in a document. This method supports multiple text
      * selections. The caller must have a read-only lock on the document before calling this method.
-     * @param ulIndex Specifies the text selections that start the process. If the TF_DEFAULT_SELECTION constant
+     * @param startIndex Specifies the text selections that start the process. If the TF_DEFAULT_SELECTION constant
      * is specified for this parameter, the input selection starts the process.
-     * @param ulCount Specifies the maximum number of selections to return.
-     * @param pSelection Receives the style, start, and end character positions of the selected text. These
+     * @param selectionSize Specifies the maximum number of selections to return.
+     * @param pSelections Receives the style, start, and end character positions of the selected text. These
      * values are put into the TS_SELECTION_ACP structure.
-     * @param pcFetched Receives the number of pSelection structures returned.
+     * @param pcFetched Receives the number of pSelections structures returned.
      * @return
      */
-    STDMETHODIMP GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_ACP *pSelection, ULONG *pcFetched) override;
-    STDMETHODIMP SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSelection) override;
+    STDMETHODIMP GetSelection(ULONG startIndex, ULONG selectionSize, TS_SELECTION_ACP *pSelections, ULONG *pcFetched) override;
+    /**
+     * The ITextStoreACP::SetSelection method selects text within the document.
+     * The application must have a read/write lock on the document before calling this method.
+     * @param selectionCount Specifies the number of text selections in pSelections.
+     * @param pSelections Specifies the style, start, and end character positions of the text selected through the TS_SELECTION_ACP structure.
+     * @return
+     */
+    STDMETHODIMP SetSelection(ULONG selectionCount, const TS_SELECTION_ACP *pSelections) override;
     STDMETHODIMP GetText(
-        LONG acpStart, LONG acpEnd, WCHAR *pchPlain, ULONG cchPlainReq, ULONG *pcchPlainRet, TS_RUNINFO *prgRunInfo,
-        ULONG cRunInfoReq, ULONG *pcRunInfoRet, LONG *pacpNext
+        LONG acpStart, LONG acpEnd, WCHAR *textBuffer, ULONG textBufferSize, ULONG *textBufferCopied, TS_RUNINFO *runInfoBuffer, ULONG cRunInfoReq,
+        ULONG *runInfoBufferCopied, LONG *pacpNext
     ) override;
-    STDMETHODIMP SetText(
-        DWORD dwFlags, LONG acpStart, LONG acpEnd, const WCHAR *pchText, ULONG cch, TS_TEXTCHANGE *pChange
-    ) override;
+    STDMETHODIMP SetText(DWORD dwFlags, LONG acpStart, LONG acpEnd, const WCHAR *pchText, ULONG cch, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP GetFormattedText(LONG acpStart, LONG acpEnd, IDataObject **ppDataObject) override;
-    STDMETHODIMP GetEmbedded(LONG acpPos, REFGUID rguidService, REFIID riid, IUnknown **ppunk) override;
-    STDMETHODIMP QueryInsertEmbedded(const GUID *pguidService, const FORMATETC *pFormatEtc, BOOL *pfInsertable)
-        override;
-    STDMETHODIMP InsertEmbedded(
-        DWORD dwFlags, LONG acpStart, LONG acpEnd, IDataObject *pDataObject, TS_TEXTCHANGE *pChange
-    ) override;
+    STDMETHODIMP GetEmbedded(LONG acpPos, REFGUID rguidService, REFIID riid, IUnknown **ppObject) override;
+    STDMETHODIMP QueryInsertEmbedded(const GUID *pguidService, const FORMATETC *pFormatEtc, BOOL *pfInsertable) override;
+    STDMETHODIMP InsertEmbedded(DWORD dwFlags, LONG acpStart, LONG acpEnd, IDataObject *pDataObject, TS_TEXTCHANGE *pChange) override;
     STDMETHODIMP InsertTextAtSelection(
-        DWORD dwFlags, const WCHAR *pchText, ULONG cch, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
+        DWORD dwFlags, const WCHAR *textBuffer, ULONG textBufferSize, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
     ) override;
-    STDMETHODIMP InsertEmbeddedAtSelection(
-        DWORD dwFlags, IDataObject *pDataObject, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange
-    ) override;
-    STDMETHODIMP RequestSupportedAttrs(DWORD dwFlags, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs) override;
-    STDMETHODIMP RequestAttrsAtPosition(LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags)
-        override;
-    STDMETHODIMP RequestAttrsTransitioningAtPosition(
-        LONG acpPos, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags
-    ) override;
+    STDMETHODIMP InsertEmbeddedAtSelection(DWORD dwFlags, IDataObject *pDataObject, LONG *pacpStart, LONG *pacpEnd, TS_TEXTCHANGE *pChange) override;
+    STDMETHODIMP RequestSupportedAttrs(DWORD dwFlags, ULONG filterAttrCount, const TS_ATTRID *filterAttrs) override;
+    STDMETHODIMP RequestAttrsAtPosition(LONG acpPos, ULONG filterAttrCount, const TS_ATTRID *filterAttrs, DWORD dwFlags) override;
+    STDMETHODIMP RequestAttrsTransitioningAtPosition(LONG acpPos, ULONG filterAttrCount, const TS_ATTRID *filterAttrs, DWORD dwFlags) override;
     STDMETHODIMP FindNextAttrTransition(
-        LONG acpStart, LONG acpHalt, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags, LONG *pacpNext,
-        BOOL *pfFound, LONG *plFoundOffset
+        LONG acpStart, LONG acpStop, ULONG filterAttrCount, const TS_ATTRID *filterAttrs, DWORD dwFlags, LONG *pacpNext, BOOL *pfFoundTransition,
+        LONG *foundOffset
     ) override;
-    STDMETHODIMP RetrieveRequestedAttrs(ULONG ulCount, TS_ATTRVAL *paAttrVals, ULONG *pcFetched) override;
-    STDMETHODIMP GetEndACP(LONG *pacp) override;
-    STDMETHODIMP GetActiveView(TsViewCookie *pvcView) override;
-    STDMETHODIMP GetACPFromPoint(TsViewCookie vcView, const POINT *ptScreen, DWORD dwFlags, LONG *pacp) override;
-    STDMETHODIMP GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT *prc, BOOL *pfClipped) override;
-    STDMETHODIMP GetScreenExt(TsViewCookie vcView, RECT *prc) override;
-    STDMETHODIMP GetWnd(TsViewCookie vcView, HWND *phwnd) override;
+    STDMETHODIMP RetrieveRequestedAttrs(ULONG attrCount, TS_ATTRVAL *attrVals, ULONG *pcFetched) override;
+    STDMETHODIMP GetEndACP(LONG *pacpEnd) override;
+    STDMETHODIMP GetActiveView(TsViewCookie *pViewCookie) override;
+    STDMETHODIMP GetACPFromPoint(TsViewCookie vcView, const POINT *ptScreenPos, DWORD dwFlags, LONG *pacpPos) override;
+    STDMETHODIMP GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT *pRect, BOOL *pfIsClipped) override;
+    STDMETHODIMP GetScreenExt(TsViewCookie vcView, RECT *pRect) override;
+    STDMETHODIMP GetWnd(TsViewCookie vcView, HWND *pHwnd) override;
 
     // ITfContextOwnerCompositionSink functions
     STDMETHODIMP OnStartComposition(ITfCompositionView *pComposition, BOOL *pfOk) override;
@@ -198,53 +217,40 @@ public:
     STDMETHODIMP UpdateUIElement(DWORD dwUIElementId) override;
     STDMETHODIMP EndUIElement(DWORD dwUIElementId) override;
 
-    bool CommitCandidate(UINT index) const;
-
-private:
     auto InitSinks() -> HRESULT;
 
     // NOLINTEND(*-use-trailing-return-type)
-    auto DoUpdateUIElement() -> HRESULT;
-    auto GetCandidateInterface(DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const -> HRESULT;
+    auto        DoUpdateUIElement() -> HRESULT;
+    auto        GetCandidateInterface(DWORD dwUIElementId, ITfCandidateListUIElementBehavior **pInterface) const -> HRESULT;
     static auto GetCandInfo(ITfCandidateListUIElementBehavior *pCandidateList, CandidateInfo &candidateInfo) -> HRESULT;
-    auto        OnEndEdit([in] ITfContext *pic, [in] TfEditCookie ecReadOnly, [in] ITfEditRecord *pEditRecord)
-        -> HRESULT override;
+    auto        OnEndEdit([in] ITfContext *pic, [in] TfEditCookie ecReadOnly, [in] ITfEditRecord *pEditRecord) -> HRESULT override;
 
     void               LockDocument(DWORD dwLockFlags);
     void               UnlockDocument();
     [[nodiscard]] auto IsLocked(DWORD dwLockType) const -> bool;
 
-    // lock vars
-    DWORD m_refCount{0};
-    DWORD m_dwLockType{0};
-    bool  m_fPendingLockUpgrade{false};
-    bool  m_fLocked{false};
-    bool  m_fLayoutChanged{false};
-    HWND  m_hWnd{nullptr};
-    bool  m_supportCandidateUi = true;
-
-    Ime::ITextService             *m_pTextService             = nullptr;
-    Ime::TextEditor               *m_pTextEditor              = nullptr;
-    Ime::OnEndCompositionCallback *m_OnEndCompositionCallback = nullptr;
-
-    //
-    AdviseSinkCache                                           m_adviseSinkCache{};
-    ULONG                                                     m_cCompositions{0};
-    std::array<CComPtr<ITfCompositionView>, MAX_COMPOSITIONS> m_rgCompositions{};
-
-    // TSF com ptr
-    CComPtr<ITextStoreACPServices>             m_textStoreAcpServices   = nullptr;
-    CComPtr<ITfThreadMgr>                      m_threadMgr              = nullptr;
-    CComPtr<ITfDocumentMgr>                    m_documentMgr            = nullptr;
-    CComPtr<ITfDocumentMgr>                    m_pPrevDocMgr            = nullptr;
-    CComPtr<ITfUIElementMgr>                   m_uiElementMgr           = nullptr;
-    CComPtr<ITfContext>                        m_context                = nullptr;
-    CComPtr<ITfCompositionView>                m_currentCompositionView = nullptr;
-    CComPtr<ITfCandidateListUIElementBehavior> m_currentCandidateUi     = nullptr;
-
-    TfEditCookie m_editCookie{0};
-    DWORD        m_uiElementCookie{0};
-    DWORD        m_textEditCookie{0};
+    AdviseSinkCache                            m_adviseSinkCache{};
+    HWND                                       m_hWnd{nullptr};
+    TextService                               *m_pTextService{nullptr};
+    Ime::OnEndCompositionCallback             *m_OnEndCompositionCallback = nullptr;
+    CComPtr<ITextStoreACPServices>             m_textStoreAcpServices     = nullptr;
+    CComPtr<ITfThreadMgr>                      m_threadMgr                = nullptr;
+    CComPtr<ITfDocumentMgr>                    m_documentMgr              = nullptr;
+    CComPtr<ITfDocumentMgr>                    m_pPrevDocMgr              = nullptr;
+    CComPtr<ITfUIElementMgr>                   m_uiElementMgr             = nullptr;
+    CComPtr<ITfContext>                        m_context                  = nullptr;
+    CComPtr<ITfCandidateListUIElementBehavior> m_currentCandidateUi       = nullptr;
+    DWORD                                      m_currentUiElementId{TF_INVALID_UIELEMENTID};
+    DWORD                                      m_refCount{0};
+    DWORD                                      m_dwLockType{0};
+    TfEditCookie                               m_editCookie{0};
+    DWORD                                      m_uiElementCookie{0};
+    DWORD                                      m_textEditCookie{0};
+    // Pending change flags. Be Updated in a edit session and consume in OnEndEdit or at the end of RequestLock.
+    Ime::ITextService::DirtyFlag               m_pendingChangeFlags{Ime::ITextService::DirtyFlag::None};
+    bool                                       m_fPendingLockUpgrade{false};
+    bool                                       m_fLocked{false};
+    bool                                       m_fLayoutChanged{false};
 };
 
 class TextService : public Ime::ITextService
@@ -266,17 +272,11 @@ public:
         }
     }
 
-    void RegisterCallback(Ime::OnEndCompositionCallback *callback) override
-    {
-        m_pTextStore->SetOnEndCompositionCallback(callback);
-    }
+    void RegisterCallback(Ime::OnEndCompositionCallback *callback) override { m_pTextStore->SetOnEndCompositionCallback(callback); }
 
-    void OnStart(HWND hWnd) override
-    {
-        m_pTextStore->SetHWND(hWnd);
-    }
+    void OnStart(HWND hWnd) override { m_pTextStore->SetHWND(hWnd); }
 
-    bool OnFocus(bool focus) override
+    auto OnFocus(bool focus) -> bool override
     {
         HRESULT hr = E_FAIL;
         if (focus)
@@ -288,37 +288,54 @@ public:
         {
             hr = m_pTextStore->ClearFocus();
         }
-        return SUCCEEDED(hr);
+        const auto succeeded = SUCCEEDED(hr);
+        State::GetInstance().Set(State::TEXT_SERVICE_FOCUS, succeeded);
+        return succeeded;
     }
 
-    auto CommitCandidate(HWND /*hwnd*/, UINT index) -> bool override
-    {
-        return m_pTextStore->CommitCandidate(index);
-    }
+    auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }
 
-    [[nodiscard]] auto GetCandidateUi() -> Ime::CandidateUi & override
-    {
-        return m_candidateUi;
-    }
+    [[nodiscard]] auto GetTextEditorWrite() -> Ime::TextEditor & { return m_textEditor; }
 
-    [[nodiscard]] auto GetTextEditor() -> Ime::TextEditor & override
-    {
-        return m_textEditor;
-    }
+    [[nodiscard]] auto GetCandidateUiWrite() -> Ime::CandidateUi & { return m_candidateUi; }
+
+    [[nodiscard]] auto GetReadLock() -> std::shared_lock<std::shared_mutex> { return std::shared_lock(m_mutex); }
+
+    [[nodiscard]] auto GetWriteLock() -> std::scoped_lock<std::shared_mutex> { return std::scoped_lock(m_mutex); }
 
     auto ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool override;
+
+protected:
+    void RequestUpdate(Ime::CompositionInfo &compositionInfo, Ime::CandidateUi &uiForRead, DirtyFlag flag) override
+    {
+        const std::scoped_lock lock(m_mutex);
+        if (HasDirtyFlag(flag, DirtyFlag::Composition))
+        {
+            compositionInfo.documentText = m_textEditor.GetText();
+            compositionInfo.caretPos     = m_textEditor.GetStart();
+        }
+
+        if (HasDirtyFlag(flag, DirtyFlag::CandidateList))
+        {
+            uiForRead = m_candidateUi;
+        }
+        else if (HasDirtyFlag(flag, DirtyFlag::CandidateSelection))
+        {
+            uiForRead.SetSelection(m_candidateUi.Selection());
+        }
+    }
 
 private:
     void        UpdateConversionMode() const;
     static void DoUpdateConversionMode(ULONG convertionMode);
 
-    Ime::CandidateUi             m_candidateUi;
-    Ime::TextEditor              m_textEditor;
-    Ime::Imm32::Imm32TextService m_fallbackTextService;
-    CComPtr<TsfCompartment>      m_pCompartment         = nullptr;
-    CComPtr<TsfCompartment>      m_pCompartmentKeyBoard = nullptr;
-    CComPtr<TextStore>           m_pTextStore           = nullptr;
+    Ime::TextEditor           m_textEditor;
+    Ime::CandidateUi          m_candidateUi;
+    CComPtr<TsfCompartment>   m_pCompartment         = nullptr;
+    CComPtr<TsfCompartment>   m_pCompartmentKeyBoard = nullptr;
+    CComPtr<TextStore>        m_pTextStore           = nullptr;
+    mutable std::shared_mutex m_mutex;
 };
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL
+
 #endif
