@@ -9,8 +9,8 @@ multi-byte languages can be typed in-game.
 
 ## Projects
 
-| Project | Description |
-|---------|-------------|
+| Project                          | Description                               |
+|----------------------------------|-------------------------------------------|
 | [SimpleIME](SimpleIME/README.md) | Native IME input support for Skyrim SE/AE |
 
 ## Getting started
