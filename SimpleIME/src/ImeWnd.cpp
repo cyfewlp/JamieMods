@@ -390,12 +390,15 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         case WM_CHAR: {
             if (pThis == nullptr) break;
             const auto &state = Core::State::GetInstance();
-            if (ImeController::GetInstance()->IsModEnabled() && //
-                (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
+            if (ImeController::GetInstance()->IsModEnabled() && (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
             {
-                // FIXME: exclude: <-, ->, home, end, delete, backspace, enter, tab, etc.
-                const std::wstring wstring(1, LOWORD(wParam));
-                Skyrim::SendUiString(wstring);
+                const std::uint32_t wcharCode   = static_cast<std::uint32_t>(wParam);
+                static const auto   ignoredKeys = {VK_TAB, VK_RETURN, VK_BACK, VK_ESCAPE, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT};
+                if (std::find(std::begin(ignoredKeys), std::end(ignoredKeys), wcharCode) == std::end(ignoredKeys))
+                {
+                    const std::wstring wstring(1, LOWORD(wParam));
+                    Skyrim::SendUiString(wstring);
+                }
             }
             return 0;
         }
