@@ -52,6 +52,38 @@ auto MergeFont(ImFontWrap &target, ImFontWrap &source) -> bool
     target.AddFontInfo(source.GetFontNameOr(0), source.GetFontPathOr(0));
     return true;
 }
+
+void DrawFontInfoTable(const FontBuilder &fontBuilder)
+{
+    if (!fontBuilder.IsBuilding())
+    {
+        return;
+    }
+    for (const auto &fontName : fontBuilder.GetBaseFont().GetFontNames())
+    {
+        ImGuiEx::M3::MenuItem(fontName, false);
+    }
+}
+
+void DrawHelpModal()
+{
+    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.FontBuilder.HelpTitle")); dialog)
+    {
+        dialog.SupportingText(Translate("Settings.FontBuilder.Help1"), true);
+        dialog.SupportingText(Translate("Settings.FontBuilder.Help2"), true);
+        dialog.ActionButton(Translate("Settings.Apply"));
+    }
+}
+
+void DrawWarningsModal()
+{
+    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.FontBuilder.WarningTitle")); dialog)
+    {
+        dialog.SupportingText(Translate("Settings.FontBuilder.Warning1"), true);
+        dialog.ActionButton(Translate("Settings.Apply"));
+    }
+}
+
 } // namespace
 
 ImFontWrap::ImFontWrap(ImFont *imFont, std::string_view fontName, std::string_view fontPath, bool a_owner)
@@ -186,18 +218,6 @@ void UI::FontBuilderPanel::Draw(FontBuilder &fontBuilder, Settings &settings)
     ImGui::EndGroup();
 }
 
-void UI::FontBuilderPanel::DrawFontInfoTable(const FontBuilder &fontBuilder)
-{
-    if (!fontBuilder.IsBuilding())
-    {
-        return;
-    }
-    for (const auto &fontName : fontBuilder.GetBaseFont().GetFontNames())
-    {
-        ImGuiEx::M3::MenuItem(fontName, false);
-    }
-}
-
 void UI::FontBuilderPanel::DrawToolBar(FontBuilder &fontBuilder, Settings &settings)
 {
     if (const auto toolBar = ImGuiEx::M3::DockedToolBar("FontBuilderToolBar", 5))
@@ -246,25 +266,6 @@ void UI::FontBuilderPanel::DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarSc
         ImGui::OpenPopup(Translate("Settings.FontBuilder.HelpTitle").data());
     }
     ImGuiEx::M3::SetItemToolTip(Translate("Settings.FontBuilder.Help"));
-}
-
-void UI::FontBuilderPanel::DrawHelpModal()
-{
-    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.FontBuilder.HelpTitle")); dialog)
-    {
-        dialog.SupportingText(Translate("Settings.FontBuilder.Help1"), true);
-        dialog.SupportingText(Translate("Settings.FontBuilder.Help2"), true);
-        dialog.ActionButton(Translate("Settings.Apply"));
-    }
-}
-
-void UI::FontBuilderPanel::DrawWarningsModal()
-{
-    if (auto dialog = ImGuiEx::M3::DialogModal(Translate("Settings.FontBuilder.WarningTitle")); dialog)
-    {
-        dialog.SupportingText(Translate("Settings.FontBuilder.Warning1"), true);
-        dialog.ActionButton(Translate("Settings.Apply"));
-    }
 }
 
 } // namespace Ime

@@ -25,12 +25,8 @@ public:
     void Draw(FontBuilder &fontBuilder, Settings &settings);
 
 private:
-    // FIXME: refactor
-    static void DrawFontInfoTable(const FontBuilder &fontBuilder);
-    void        DrawToolBar(FontBuilder &fontBuilder, Settings &settings);
-    void        DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarScope &toolBar, FontBuilder &fontBuilder, Settings &settings);
-    static void DrawHelpModal();
-    static void DrawWarningsModal();
+    void DrawToolBar(FontBuilder &fontBuilder, Settings &settings);
+    void DrawToolBarButtons(const ImGuiEx::M3::DockedToolbarScope &toolBar, FontBuilder &fontBuilder, Settings &settings);
 
     FontPreviewPanel m_PreviewPanel{};
 };
