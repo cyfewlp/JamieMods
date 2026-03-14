@@ -181,6 +181,7 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
 
         m_textEditor.SelectAll();
         m_textEditor.InsertText(compositionSting);
+        MarkDirty(DirtyFlag::Composition);
         if (spdlog::should_log(spdlog::level::trace))
         {
             const auto str = WCharUtils::ToString(compositionSting);
@@ -207,7 +208,7 @@ void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
     ImmReleaseContext(hWnd, hIMC);
 }
 
-void Imm32TextService::UpdateComposition(const std::wstring &compStr, size_t cursorPos, size_t deltaStart)
+void Imm32TextService::UpdateComposition(std::wstring_view compStr, size_t cursorPos, size_t deltaStart)
 {
     const auto prevSize = m_textEditor.GetTextSize();
 
@@ -215,13 +216,13 @@ void Imm32TextService::UpdateComposition(const std::wstring &compStr, size_t cur
 
     m_textEditor.Select(static_cast<int32_t>(deltaStart), -1);
 
-    const auto length = compStr.length();
-    deltaStart        = std::min(deltaStart, length);
+    deltaStart = std::min(deltaStart, compStr.length());
     m_textEditor.InsertText(compStr.substr(deltaStart));
 
     cursorPos = std::clamp(cursorPos, 0LLU, m_textEditor.GetTextSize());
     m_textEditor.Select(static_cast<int32_t>(cursorPos), static_cast<int32_t>(cursorPos));
 
+    MarkDirty(DirtyFlag::Composition);
     if (spdlog::should_log(spdlog::level::trace))
     {
         const auto str = WCharUtils::ToString(compStr);

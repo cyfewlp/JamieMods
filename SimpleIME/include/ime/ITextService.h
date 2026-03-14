@@ -141,7 +141,7 @@ public:
 protected:
     void RequestUpdate(CompositionInfo &compositionInfo, CandidateUi &uiForRead, DirtyFlag flag) override
     {
-        std::lock_guard lock(m_mutex);
+        const std::scoped_lock lock(m_mutex);
         if (HasDirtyFlag(flag, DirtyFlag::Composition))
         {
             compositionInfo.documentText = m_textEditor.GetText();
@@ -157,7 +157,7 @@ private:
     static void OnStartComposition();
     void        OnEndComposition();
     void        OnComposition(HWND hWnd, LPARAM compFlag);
-    void        UpdateComposition(const std::wstring &compStr, size_t cursorPos, size_t deltaStart);
+    void        UpdateComposition(std::wstring_view compStr, size_t cursorPos, size_t deltaStart);
     auto        OnImeNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) -> void;
 
     void OpenCandidate(HIMC hIMC);
