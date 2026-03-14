@@ -1,0 +1,139 @@
+# Runs on every push to main.
+# Builds the mod, then replaces all assets in the rolling "v2.0.0-beta" GitHub
+# Release and updates its release notes from CHANGELOG.md.
+# The tag v2.0.0-beta is force-moved to the current HEAD on every run so that
+# "latest pre-release" always points at the most recently built commit.
+
+name: Rolling beta release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write   # required to push tags and edit releases
+
+    steps:
+      # -----------------------------------------------------------------------
+      # Sources
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0          # needed for force-tagging
+
+      # -----------------------------------------------------------------------
+      # Toolchain: initialise the MSVC x64 developer environment so that
+      # clang-cl / lld-link can locate the MSVC CRT and Windows SDK headers.
+      # -----------------------------------------------------------------------
+      - name: Set up MSVC x64 environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # -----------------------------------------------------------------------
+      # vcpkg — use the version pre-installed on the runner; its path is
+      # already in VCPKG_INSTALLATION_ROOT.
+      # -----------------------------------------------------------------------
+      - name: Export VCPKG_ROOT
+        shell: pwsh
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      - name: Cache vcpkg installed packages
+        uses: actions/cache@v4
+        with:
+          path: build/vcpkg_modules
+          key: vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-${{ runner.os }}
+          restore-keys: vcpkg-
+
+      # -----------------------------------------------------------------------
+      # FontForge — required by the CMake icon-font build step.
+      # The fontforge executable must be on PATH before cmake configure.
+      # -----------------------------------------------------------------------
+      - name: Install FontForge
+        shell: pwsh
+        run: choco install fontforge --yes --no-progress
+
+      # Python 3 is pre-installed on windows-latest; required by CMakeLists.
+
+      # -----------------------------------------------------------------------
+      # Build
+      # -----------------------------------------------------------------------
+      - name: Configure (Release)
+        run: cmake --preset release-clangcl-ninja-vcpkg
+
+      - name: Build
+        run: cmake --build --preset build-release-clangcl-ninja-vcpkg --target SimpleIME
+
+      - name: Package (CPack → dist/)
+        run: cpack --config build/release-clangcl-ninja-vcpkg/CPackConfig.cmake
+
+      # -----------------------------------------------------------------------
+      # Release notes — extract the ## 2.0.0-beta section from CHANGELOG.md
+      # -----------------------------------------------------------------------
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        shell: pwsh
+        run: |
+          $raw = Get-Content SimpleIME/CHANGELOG.md -Raw -Encoding UTF8
+          # Grab everything between "## 2.0.0-beta" and the next "## " heading.
+          if ($raw -match '(?s)## 2\.0\.0-beta\r?\n(.*?)(?=\r?\n## |\z)') {
+            $body = $matches[1].Trim()
+          } else {
+            $body = "See [CHANGELOG.md](SimpleIME/CHANGELOG.md) for details."
+          }
+          $body | Set-Content release_notes.md -Encoding UTF8
+          Write-Host "--- release notes preview ---"
+          Get-Content release_notes.md
+
+      # -----------------------------------------------------------------------
+      # Rolling tag — force-move v2.0.0-beta to the current HEAD so that the
+      # GitHub Release zip always contains the latest build.
+      # -----------------------------------------------------------------------
+      - name: Move rolling tag to HEAD
+        shell: pwsh
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git tag -f v2.0.0-beta
+          git push -f origin v2.0.0-beta
+
+      # -----------------------------------------------------------------------
+      # GitHub Release — create on first run, edit on subsequent runs;
+      # always replace the packaged asset via --clobber.
+      # -----------------------------------------------------------------------
+      - name: Create or update GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $asset = (Get-ChildItem dist\*.7z | Select-Object -First 1).FullName
+          if (-not $asset) {
+            Write-Error "No .7z found in dist\"; exit 1
+          }
+          Write-Host "Asset: $asset"
+
+          # Does the release already exist?
+          $exists = gh release view v2.0.0-beta 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Updating existing release..."
+            gh release edit v2.0.0-beta `
+              --title "SimpleIME v2.0.0-beta" `
+              --notes-file release_notes.md `
+              --prerelease
+          } else {
+            Write-Host "Creating new release..."
+            gh release create v2.0.0-beta `
+              --title "SimpleIME v2.0.0-beta" `
+              --notes-file release_notes.md `
+              --prerelease
+          }
+
+          # Upload / replace the mod archive
+          gh release upload v2.0.0-beta $asset --clobber

@@ -13,6 +13,8 @@ namespace Ime
 
 namespace
 {
+constexpr std::uint32_t RGB_MASK = 0x00FFFFFF;
+
 // clang-format off
 // ReSharper disable All
 static const char* const GKeyNames[] =
@@ -272,7 +274,7 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     // Appearance
     if (config.appearance.themeSourceColor != UINT_MAX)
     {
-        settings.appearance.schemeConfig.sourceColor = config.appearance.themeSourceColor & 0xFFFFFF;
+        settings.appearance.schemeConfig.sourceColor = config.appearance.themeSourceColor & RGB_MASK;
     }
     settings.appearance.schemeConfig.contrastLevel = config.appearance.themeContrastLevel;
     settings.appearance.schemeConfig.darkMode      = config.appearance.themeDarkMode;
@@ -340,7 +342,7 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     configuration.resources.fontPathList   = settings.resources.fontPathList;
 
     // Appearance
-    configuration.appearance.themeSourceColor     = settings.appearance.schemeConfig.sourceColor;
+    configuration.appearance.themeSourceColor     = RGB_MASK & settings.appearance.schemeConfig.sourceColor;
     configuration.appearance.themeContrastLevel   = settings.appearance.schemeConfig.contrastLevel;
     configuration.appearance.themeDarkMode        = settings.appearance.schemeConfig.darkMode;
     configuration.appearance.language             = settings.appearance.language;
