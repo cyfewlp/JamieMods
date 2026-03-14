@@ -4,6 +4,79 @@ A condensed history of significant changes to SimpleIME.
 
 ---
 
+## 2.0.0-beta
+
+### Breaking Changes
+- **Focus Mode removed** — The Permanent / Temporary focus-mode system has been
+  entirely removed. To disable IME input, disable the mod via its toggle; the
+  mod will stop intercepting events and yield control back to the game.
+- **Config keys removed** — `FocusType`, `PermanentFocusManager`-related keys
+  are no longer read. Use `fixInconsistentTextEntryCount = true` (new default)
+  if you previously needed permanent-mode workarounds.
+
+### Core
+- **IMenu-based charEvent interception** — Replaced the `DispatchInputEvent`
+  global hook (v1.3.0) with `RE::IMenu` at depth-priority 13. `ImeMenu` now
+  sits in the menu stack and intercepts every `GFxCharEvent` while IME
+  composition is active. Characters that should reach the game are
+  re-dispatched as a custom `kImeCharEvent` scaleform event type — a value not
+  used by the vanilla game — so they bypass the interception guard and arrive
+  at the underlying menu cleanly, with no global hook required.
+  Also removes `AddMessageHook` and the old `UiHooks` plumbing.
+- **Flicker-free candidate buffering** — Double-buffered candidate list to fix
+  Microsoft Pinyin (MSPY) one-frame blink. TSF/IMM32 writes to a write-buffer;
+  the render thread reads from a read-buffer, synchronised via
+  `UpdateCandidateUiIfDirty`. `EndUIElement` no longer clears the cache,
+  preventing blinks during MSPY state transitions.
+
+### Bug Fixes
+- **GFxCharEvent memory leak** — `BSUIScaleformData`'s destructor does not
+  free `scaleformEvent`. ImeMenu now collects `kImeCharEvent` pointers during
+  `ProcessMessage` and frees them in `PostDisplay` via `RE::GMemory::Free`.
+  Safe because `PostDisplay` always runs after `ProcessMessage` on the same
+  render thread within a given frame.
+- **LANG_PROFILE_ACTIVATED mis-retention** — `RefreshProfiles` no longer
+  auto-inserts `DEFAULT_LANG_PROFILE`; `OnCharEvent` is gated on
+  `!ImeDisabled()` in addition to `LANG_PROFILE_ACTIVATED`.
+- **imgui.ini location** — ImGui layout is now saved to the plugin interface
+  directory so it persists across game launches and mod updates.
+- **ToolWindow shortcut** — Use `IsKeyChordPressed` to avoid routing through
+  ImGui focus (call-site no longer needs to belong to an ImGui window).
+- **Translator lifetime** — Switched to `static inline` instance to guarantee
+  `ImeWnd` is destroyed before the translator.
+
+### Features
+- **Material Design 3 UI** — Full MD3 component library: AppBar, Navigation
+  Rail, Floating Toolbar, Dialog, Chip / ChipGroup, ListItem, FAB, SearchBar,
+  TextField (outlined & filled), CheckBox, Divider, and more. ImeWindow
+  migrated to MD3 components; popup positioning uses
+  `ImGui::FindBestWindowPosForPopupEx`.
+- **Font Builder** — Build and preview custom icon fonts in-game. Nerd Font
+  dependency removed; replaced with a minimal repackaged Lucide TTF containing
+  only the icons actually used, generated at CMake configure time via
+  `fontforge` + Python.
+- **Theme Builder** — HCT / M3 tonal-palette color-scheme editor with
+  live preview and light/dark theme toggle.
+- **New config: `fixInconsistentTextEntryCount`** (default `true`) — Corrects
+  text-entry-count state mismatch that could leave IME enabled when no input
+  field is focused.
+- **RAII UI lifecycle** — Translator and ImeWnd teardown order is now safe;
+  no destruction-order crashes on game exit.
+
+### Refactoring
+- **`Configuration` struct** — Decouples raw TOML field names from the runtime
+  `Settings` struct. Converters synchronise between the two; raw TOML keys no
+  longer pollute application code.
+- **`InputFocusAnchor`** — Replaced menu-stack iteration with a focused-item
+  search (`m_lastFocusMenuIndex` for O(1) updates). Removed the
+  `ComputeScreenMetrics` scaleform hook (called directly from ImeWindow).
+- **`WCharUtils`** — Converted from static-method class to a namespace of free
+  functions; only `std::wstring_view` overloads kept.
+- **`ImeApp` cleanup** — `g_settings` moved into `ImeApp`; `D3DInitHook`
+  renamed to `g_D3DInitHook`; dead/unused hook registrations removed.
+
+---
+
 ## 1.3.0
 - Font size configurable in Settings panel.
 - Full `ImThemes` support; deprecated obsolete color names (`TabActive`, `TabUnfocused`, etc.).
