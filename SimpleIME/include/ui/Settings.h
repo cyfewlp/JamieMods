@@ -34,7 +34,7 @@ struct Settings
     ImGuiKeyChord shortcut;
     bool          enableMod                     = true; ///< modify once on Mod quit.
     bool          enableTsf                     = true;
-    bool          fixInconsistentTextEntryCount = true; ///< modify in SettingsWindow(ImeMenu). no need sync because ImeMenu is the topmost menu;
+    bool          fixInconsistentTextEntryCount = true; ///< modify in ToolWindow(ImeMenu). no need sync because ImeMenu is the topmost menu;
 
     struct Logging
     {
@@ -54,7 +54,7 @@ struct Settings
         std::string               language;
         float                     zoom; ///< modify in runtime by AppearancePanel; read once on Mod launch by ImeApp;
         int                       errorDisplayDuration;
-        bool                      showSettings; ///< modify/read in runtime by UI thread(SettingsWindow).
+        bool                      showSettings; ///< modify/read in runtime by UI thread(ToolWindow).
     } appearance;
 
     struct Input
@@ -62,8 +62,6 @@ struct Settings
         bool                  enableUnicodePaste;
         bool                  keepImeOpen;
         WindowPosUpdatePolicy posUpdatePolicy;
-
-        bool operator==(const Input &other) const = default;
     } input;
 };
 

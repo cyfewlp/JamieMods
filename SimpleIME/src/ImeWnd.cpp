@@ -11,11 +11,11 @@
 #include "imguiex/imguiex_enum_wrap.h"
 #include "log.h"
 #include "menu/MenuNames.h"
+#include "ui/ImeUI.h"
 #include "ui/LanguageBar.h"
-#include "ui/SettingsWindow.h"
-#include "ui/ToolWindow.h"
 #include "utils/Utils.h"
 
+#include <algorithm>
 #include <chrono>
 #include <codecvt>
 #include <msctf.h>
@@ -109,23 +109,23 @@ void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
  *                      alive    ? -> ToolWindow handle shortcut to response the open/pin/unpin/close ToolWindow request.
  * - Debounce timer passed? -> If toolwindow is alive, close it and release translator; otherwise, open toolwindow and load translator.
  */
-inline void ManageToolWindowOnDemand(std::unique_ptr<UI::ToolWindow> &toolWindow, DebounceTimer &debounceTimer, const Settings &settings)
+inline void ManageImeUIOnDemand(std::unique_ptr<UI::ImeUI> &imeUI, DebounceTimer &debounceTimer, const Settings &settings)
 {
-    bool shouldOpenToolWindow = false;
-    if (toolWindow == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
+    bool shouldOpenImeUI = false;
+    if (imeUI == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
     {
-        shouldOpenToolWindow = true;
+        shouldOpenImeUI = true;
     }
     // pass the first call
     if (!debounceTimer.IsWaiting() || debounceTimer.Check())
     {
-        if (toolWindow != nullptr)
+        if (imeUI != nullptr)
         {
-            toolWindow.reset();
+            imeUI.reset();
         }
-        else if (shouldOpenToolWindow)
+        else if (shouldOpenImeUI)
         {
-            toolWindow = std::make_unique<UI::ToolWindow>(settings.shortcut, settings.appearance.language);
+            imeUI = std::make_unique<UI::ImeUI>(settings.shortcut, settings.appearance.language);
         }
     }
 }
@@ -291,7 +291,7 @@ void ImeWnd::Draw(Settings &settings)
 
     AutoToggleGameCursorIfNeeded(m_fJustWantCaptureMouse);
 
-    ManageToolWindowOnDemand(m_toolWindow, m_translatorLoadDebounceTimer, settings);
+    ManageImeUIOnDemand(m_imeUI, m_translatorLoadDebounceTimer, settings);
 
     {
         auto      &m3Styles  = ImGuiEx::M3::Context::GetM3Styles();
@@ -302,9 +302,9 @@ void ImeWnd::Draw(Settings &settings)
         const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
         const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
 
-        if (m_toolWindow != nullptr)
+        if (m_imeUI != nullptr)
         {
-            if (m_toolWindow->Draw(activeLang, langProfiles, settings))
+            if (m_imeUI->Draw(activeLang, langProfiles, settings))
             {
                 m_translatorLoadDebounceTimer.Poke();
             }
@@ -397,9 +397,11 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
             const auto &state = Core::State::GetInstance();
             if (ImeController::GetInstance()->IsModEnabled() && (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
             {
-                const std::uint32_t wcharCode   = static_cast<std::uint32_t>(wParam);
-                static const auto   ignoredKeys = {VK_TAB, VK_RETURN, VK_BACK, VK_ESCAPE, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT};
-                if (std::find(std::begin(ignoredKeys), std::end(ignoredKeys), wcharCode) == std::end(ignoredKeys))
+                const auto wcharCode = static_cast<std::uint32_t>(wParam);
+
+                // The direct keys(arrow keys, etc.) are not sent via WM_CHAR messages
+                static const auto ignoredKeys = {VK_TAB, VK_RETURN, VK_BACK, VK_ESCAPE /*, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT*/};
+                if (std::ranges::find(ignoredKeys, wcharCode) == std::end(ignoredKeys))
                 {
                     const std::wstring wstring(1, LOWORD(wParam));
                     Skyrim::SendUiString(wstring);

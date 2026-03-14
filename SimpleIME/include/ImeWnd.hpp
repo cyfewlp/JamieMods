@@ -6,8 +6,8 @@
 #include "core/State.h"
 #include "ime/ITextService.h"
 #include "tsf/InputMethodManager.h"
+#include "ui/ImeUI.h"
 #include "ui/ImeWindow.h"
-#include "ui/ToolWindow.h"
 
 #include <atlcomcli.h>
 #include <windows.h>
@@ -88,19 +88,19 @@ private:
     void InitializeTextService();
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
-    DebounceTimer                   m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
-    std::unique_ptr<ImeWindow>      m_pImeWindow   = nullptr;
-    std::unique_ptr<UI::ToolWindow> m_toolWindow   = nullptr;
-    std::unique_ptr<ITextService>   m_pTextService = nullptr;
-    CComPtr<InputMethodManager>     m_pInputMethodManager;
-    HWND                            m_hWnd                  = nullptr;
-    HWND                            m_hWndParent            = nullptr;
-    DWORD                           m_gameThreadId          = 0;
-    float                           m_uiScale               = 1.0F;
-    bool                            m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
-    bool                            m_fFocused              = false;
-    bool                            m_fEnabledTsf           = true;
-    bool                            m_fJustWantCaptureMouse = false;
+    DebounceTimer                 m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
+    std::unique_ptr<ImeWindow>    m_pImeWindow   = nullptr;
+    std::unique_ptr<UI::ImeUI>    m_imeUI        = nullptr;
+    std::unique_ptr<ITextService> m_pTextService = nullptr;
+    CComPtr<InputMethodManager>   m_pInputMethodManager;
+    HWND                          m_hWnd                  = nullptr;
+    HWND                          m_hWndParent            = nullptr;
+    DWORD                         m_gameThreadId          = 0;
+    float                         m_uiScale               = 1.0F;
+    bool                          m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
+    bool                          m_fFocused              = false;
+    bool                          m_fEnabledTsf           = true;
+    bool                          m_fJustWantCaptureMouse = false;
 };
 } // namespace Ime
 
