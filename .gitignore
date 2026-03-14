@@ -12,7 +12,9 @@
 # Possible C++ build output directories and files
 out
 build
+# install: make dist: cpack
 install
+dist
 enc_temp_folder
 cmake-build*
 *.dll
