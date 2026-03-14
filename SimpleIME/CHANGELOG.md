@@ -11,8 +11,7 @@ A condensed history of significant changes to SimpleIME.
   entirely removed. To disable IME input, disable the mod via its toggle; the
   mod will stop intercepting events and yield control back to the game.
 - **Config keys removed** — `FocusType`, `PermanentFocusManager`-related keys
-  are no longer read. Use `fixInconsistentTextEntryCount = true` (new default)
-  if you previously needed permanent-mode workarounds.
+  are no longer read.
 
 ### Core
 - **IMenu-based charEvent interception** — Replaced the `DispatchInputEvent`
