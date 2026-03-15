@@ -1,4 +1,4 @@
-# add MaterialYou
+# compile material color utilities as a static library
 set(MATERIAL_YOU_PATH ${CMAKE_CURRENT_SOURCE_DIR}/material-color-utilities)
 set(MCU_SOURCES
     "${MATERIAL_YOU_PATH}/cpp/cam/cam.cc"

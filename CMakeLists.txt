@@ -23,7 +23,7 @@ add_subdirectory(extern/CommonLibSSE-NG EXCLUDE_FROM_ALL)
 set(BUILD_TESTS ${_OLD_BUILD_TESTS})
 
 add_subdirectory(imguiex)
-add_subdirectory(extern) # FIXME: the extern contains a MaterialYou static library, but it also contains some other header-only libraries. It would be better to split the MaterialYou static library into its own directory, and then we can just add_subdirectory that one directory here instead of the entire extern directory.
+add_subdirectory(cmake/material-you)
 if (ENABLE_SIMPLE_IME)
     add_subdirectory(SimpleIME)
 endif ()
