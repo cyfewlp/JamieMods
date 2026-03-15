@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
 
-include(${CMAKE_SOURCE_DIR}/cmake/jamiemods.common.cmake)
-
 project(
     SimpleIME
     VERSION 2.0.0
@@ -126,7 +124,7 @@ set(ICONS_DIR ${lucide_SOURCE_DIR})
 find_program(FONTFORGE_EXECUTABLE fontforge REQUIRED)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-set(ICON_LIST_FILE ${JAMIE_MODS_DIR}/assets/lucide/lucide-icons.txt)
+set(ICON_LIST_FILE ${CMAKE_CURRENT_SOURCE_DIR}/assets/lucide/lucide-icons.txt)
 set(ICON_BUILD_SCRIPT ${JAMIE_MODS_DIR}/scripts/build_icons_font.py)
 
 set(ICON_GEN_DIR ${CMAKE_BINARY_DIR}/generated/icons)

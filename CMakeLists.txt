@@ -15,7 +15,7 @@ endif ()
 # Set your project name. This will be the name of your SKSE .dll file.
 project(JamieMods)
 
-set(COMMON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+include(${CMAKE_SOURCE_DIR}/cmake/jamiemods.common.cmake)
 
 set(_OLD_BUILD_TESTS ${BUILD_TESTS})
 set(BUILD_TESTS OFF) # forbid CommonLibSSE-NG from building its tests, since we only want to build our own tests, and CommonLibSSE-NG's tests are not relevant to us and would just slow down the build
