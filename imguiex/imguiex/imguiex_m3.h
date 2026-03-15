@@ -25,6 +25,9 @@ namespace ImGuiEx::M3
 constexpr int CHANNEL_FG = 1;
 constexpr int CHANNEL_BG = 0;
 
+//! Same with Imgui::SameLine, but apply the current `M3Styles` scale.
+auto SameLine(float offsetFromStartX = 0.F, float spacingW = -1.F) -> void;
+
 template <typename Derived>
 struct BaseConfiguration
 {

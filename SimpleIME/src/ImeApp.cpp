@@ -268,6 +268,7 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     UI::InitializeM3(utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE, m_settings.appearance.schemeConfig);
 
     std::thread childWndThread([&ensureInitialized, this] -> void {
+        SetThreadDescription(GetCurrentThread(), L"SimpleIME Message Thread");
         try
         {
             m_imeWnd.Initialize(m_settings.enableTsf);

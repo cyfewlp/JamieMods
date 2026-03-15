@@ -360,7 +360,7 @@ auto ImeMenu::Creator() -> IMenu *
     using flags = RE::UI_MENU_FLAGS;
     auto *pMenu = new ImeMenu();
     pMenu->menuFlags.set(flags::kCustomRendering);
-    pMenu->menuFlags.set(flags::kAlwaysOpen);
+    pMenu->menuFlags.set(flags::kAlwaysOpen, flags::kAllowSaving);
     pMenu->depthPriority = 13;
 
     // pMenu->inputContext.set(Context::kCursor);

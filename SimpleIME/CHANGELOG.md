@@ -29,6 +29,7 @@ A condensed history of significant changes to SimpleIME.
   preventing blinks during MSPY state transitions.
 
 ### Bug Fixes
+- **Unable to save game** `(user-reported)` — Add `kAllowSaving` flag to `ImeMenu` to avoid user can't save game issue caused by `kAlwaysOpen` flag.
 - **GFxCharEvent memory leak** — `BSUIScaleformData`'s destructor does not
   free `scaleformEvent`. ImeMenu now collects `kImeCharEvent` pointers during
   `ProcessMessage` and frees them in `PostDisplay` via `RE::GMemory::Free`.
