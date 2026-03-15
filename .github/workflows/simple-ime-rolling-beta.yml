@@ -73,19 +73,19 @@ jobs:
       # -----------------------------------------------------------------------
       # Build
       # -----------------------------------------------------------------------
-      - name: Configure (Release)
-        run: cmake --preset release-clangcl-ninja-vcpkg
+      - name: Configure SimpleIME (Release)
+        run: cmake --preset simple-ime-release-clangcl-ninja-vcpkg
 
-      - name: Build
-        run: cmake --build --preset build-release-clangcl-ninja-vcpkg --target SimpleIME
+      - name: Build SimpleIME
+        run: cmake --build --preset simple-ime-release-clangcl-ninja-vcpkg --target SimpleIME
 
-      - name: Package (CPack → dist/)
-        run: cpack --config build/release-clangcl-ninja-vcpkg/CPackConfig.cmake
+      - name: Package SimpleIME (CPack → dist/)
+        run: cpack --config build/simple-ime-release-clangcl-ninja-vcpkg/CPackConfig.cmake
 
       # -----------------------------------------------------------------------
       # Release notes — extract the ## 2.0.0-beta section from CHANGELOG.md
       # -----------------------------------------------------------------------
-      - name: Extract release notes from CHANGELOG
+      - name: Extract SimpleIME release notes from CHANGELOG
         id: notes
         shell: pwsh
         run: |
@@ -96,7 +96,8 @@ jobs:
           } else {
             $body = "See [CHANGELOG.md](SimpleIME/CHANGELOG.md) for details."
           }
-          $body | Set-Content release_notes.md -Encoding UTF8
+          $content = $body -replace "([\s])\n([\s])", ''
+          $content | Set-Content release_notes.md -Encoding UTF8
           Write-Host "--- release notes preview ---"
           Get-Content release_notes.md
 
