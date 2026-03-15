@@ -6,6 +6,7 @@
 #include "ime/ImeController.h"
 #include "log.h"
 #include "menu/MenuNames.h"
+#include "utils/InputFocusAnchor.h"
 #include "utils/Utils.h"
 
 #include <RE/B/BSInputDeviceManager.h>
@@ -95,9 +96,12 @@ void UnInstallEventSinks()
 // MenuOpenCloseEventSink
 //////////////////////////////////////////////////////////////////////////
 
+// Called from main thread(UI thread).
 auto MenuOpenCloseEventSink::ProcessEvent(const Event *event, RE::BSTEventSource<Event> * /*eventSource*/) -> RE::BSEventNotifyControl
 {
     logger::debug("Menu {} open {}", event->menuName.c_str(), event->opening);
+    InputFocusAnchor::GetInstance().InvalidateCachedMenuIndex();
+
     static bool firstOpenMainMenu = true;
     // before game load, all menus will be closed;
     if (event->menuName == RE::LoadingMenu::MENU_NAME)
