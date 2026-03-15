@@ -273,7 +273,7 @@ void AppearancePanel::DrawThemeBuilder(Settings &settings)
     const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
 
     bool           edited           = false;
-    constexpr auto colorButtonFlags = ImGuiEx::ColorEditFlags().NoAlpha().NoPicker().NoTooltip();
+    constexpr auto colorButtonFlags = ImGuiEx::ColorEditFlags().NoAlpha().AlphaOpaque().NoPicker().NoTooltip();
     {
         const auto &schemeConfig = m3Styles.Colors().GetSchemeConfig();
         bool        openPopup    = false;
