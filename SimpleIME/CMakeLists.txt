@@ -205,7 +205,7 @@ install(FILES
     COMPONENT doc
 )
 install(FILES
-    "${JAMIE_MODS_DIR}/assets/lucide/Lucide License"
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/lucide/Lucide License"
     DESTINATION "third_party"
     COMPONENT 3rd
 )
