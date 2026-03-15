@@ -77,7 +77,7 @@ jobs:
         run: cmake --preset simple-ime-release-clangcl-ninja-vcpkg
 
       - name: Build SimpleIME
-        run: cmake --build --preset simple-ime-release-clangcl-ninja-vcpkg --target SimpleIME
+        run: cmake --build --preset build-simple-ime-release-clangcl-ninja-vcpkg --target SimpleIME
 
       - name: Package SimpleIME (CPack → dist/)
         run: cpack --config build/simple-ime-release-clangcl-ninja-vcpkg/CPackConfig.cmake

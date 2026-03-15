@@ -253,5 +253,22 @@
         "simple-ime"
       ]
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-simple-ime-debug-clangcl-ninja-vcpkg",
+      "displayName": "Debug SimpleIME (clang-cl ninja vcpkg)",
+      "configurePreset": "simple-ime-debug-clangcl-ninja-vcpkg"
+    },
+    {
+      "name": "build-simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg",
+      "displayName": "RelWithDebInfo SimpleIME (clang-cl ninja vcpkg)",
+      "configurePreset": "simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg"
+    },
+    {
+      "name": "build-simple-ime-release-clangcl-ninja-vcpkg",
+      "displayName": "Release SimpleIME (clang-cl ninja vcpkg)",
+      "configurePreset": "simple-ime-release-clangcl-ninja-vcpkg"
+    }
   ]
 }

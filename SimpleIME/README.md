@@ -39,7 +39,7 @@ cmake --preset simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg
 cmake --preset simple-ime-debug-clangcl-ninja-vcpkg
 
 # build the plugin
-cmake --build --preset simple-ime-debug-clangcl-ninja-vcpkg --target SimpleIME
+cmake --build --preset build-simple-ime-release-clangcl-ninja-vcpkg --target SimpleIME
 
 # package (creates the mod archive)
 cpack --config build/simple-ime-debug-clangcl-ninja-vcpkg/CPackConfig.cmake
@@ -54,7 +54,7 @@ Tests are off by default. Pass `-DBUILD_TESTING=ON` at configure time:
 
 ```shell
 cmake --preset simple-ime-debug-clangcl-ninja-vcpkg -DBUILD_TESTING=ON
-cmake --build --preset simple-ime-debug-clangcl-ninja-vcpkg --target SimpleIMETest
+cmake --build --preset build-simple-ime-debug-clangcl-ninja-vcpkg --target SimpleIMETest
 ctest --test-dir build/simple-ime-debug-clangcl-ninja-vcpkg/SimpleIME
 ```
 
