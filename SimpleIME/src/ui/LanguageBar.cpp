@@ -91,12 +91,10 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
         }
         DrawInputMethodsCombo(activeLangProfile, langProfiles);
 
-        ImGui::SameLine();
+        ImGuiEx::M3::SameLine(0.F, M3Spec::StandardSmallButtonGroup::BetweenSpace);
         if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))
         {
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("ENG");
-            ImGui::SameLine();
+            ImGuiEx::M3::AlignedLabel("ENG");
         }
 
         ImGuiEx::M3::EndFloatingToolbar();

@@ -182,6 +182,12 @@ inline auto GetButtonState(const ImRect &bb, ImGuiID id, Spec::States &states) -
 
 } // namespace
 
+auto SameLine(float offsetFromStartX, float spacingW) -> void
+{
+    auto &m3Styles = Context::GetM3Styles();
+    ImGui::SameLine(m3Styles.GetPixels(offsetFromStartX), m3Styles.GetPixels(spacingW));
+}
+
 void TextUnformatted(std::string_view text, const Spec::ColorRole contentRole, const float wrapPos)
 {
     ImGuiWindow *window = ImGui::GetCurrentWindow();
