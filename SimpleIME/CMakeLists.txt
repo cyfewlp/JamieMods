@@ -88,9 +88,9 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_include_directories(${PROJECT_NAME}
-        SYSTEM PRIVATE
-        ${DETOURS_INCLUDE_DIRS}
-        ${IMGUI_INCLUDE_DIRS}
+    SYSTEM PRIVATE
+    ${DETOURS_INCLUDE_DIRS}
+    ${IMGUI_INCLUDE_DIRS}
 )
 
 # linkage
@@ -111,9 +111,9 @@ include(FetchContent)
 ############################################################
 # Auto pack icons
 FetchContent_Declare(
-        lucide
-        URL https://github.com/lucide-icons/lucide/releases/download/0.575.0/lucide-icons-0.575.0.zip
-        URL_HASH SHA256=254cca92a5686b03756b077cb931b935d1550982d1c6d64893eeb7ba047d5caa
+    lucide
+    URL https://github.com/lucide-icons/lucide/releases/download/0.575.0/lucide-icons-0.575.0.zip
+    URL_HASH SHA256=254cca92a5686b03756b077cb931b935d1550982d1c6d64893eeb7ba047d5caa
 )
 
 FetchContent_MakeAvailable(lucide)
@@ -150,14 +150,14 @@ foreach(name IN LISTS ICON_NAMES)
 endforeach()
 
 add_custom_command(
-        OUTPUT ${ICON_OUT_TTF} ${ICON_OUT_HEADER}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${ICON_GEN_DIR}
+    OUTPUT ${ICON_OUT_TTF} ${ICON_OUT_HEADER}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${ICON_GEN_DIR}
 
-        COMMAND ${FONTFORGE_EXECUTABLE} -script ${ICON_BUILD_SCRIPT}  --icons_dir ${ICONS_DIR} --list ${ICON_LIST_FILE} --out ${ICON_GEN_DIR}
+    COMMAND ${FONTFORGE_EXECUTABLE} -script ${ICON_BUILD_SCRIPT} --icons_dir ${ICONS_DIR} --list ${ICON_LIST_FILE} --out ${ICON_GEN_DIR}
 
-        DEPENDS ${ICON_LIST_FILE} ${ICON_BUILD_SCRIPT} ${ICON_SVG_DEPS}
-        COMMENT "Generating icon font from Lucide (fetched via FetchContent)"
-        VERBATIM
+    DEPENDS ${ICON_LIST_FILE} ${ICON_BUILD_SCRIPT} ${ICON_SVG_DEPS}
+    COMMENT "Generating icon font from Lucide (fetched via FetchContent)"
+    VERBATIM
 )
 
 add_custom_target(icons DEPENDS ${ICON_OUT_TTF} ${ICON_OUT_HEADER})
@@ -179,23 +179,23 @@ set(interface_path interface/${PROJECT_NAME})
 
 install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.toml"
-        "${ICON_OUT_TTF}"
-        DESTINATION ${interface_path}
-        COMPONENT mod_interface_files
+    "${ICON_OUT_TTF}"
+    DESTINATION ${interface_path}
+    COMPONENT mod_interface_files
 )
 install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate/
-        DESTINATION ${interface_path}
-        COMPONENT mod_interface_files
+    DESTINATION ${interface_path}
+    COMPONENT mod_interface_files
 )
 install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION SKSE/Plugins
-        COMPONENT mod_runtime
+    RUNTIME DESTINATION SKSE/Plugins
+    COMPONENT mod_runtime
 )
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-          DESTINATION SKSE/Plugins
-          COMPONENT mod_runtime
+      DESTINATION SKSE/Plugins
+      COMPONENT mod_runtime
   )
 endif ()
 
@@ -206,9 +206,9 @@ install(FILES
     COMPONENT doc
 )
 install(FILES
-        "${JAMIE_MODS_DIR}/assets/lucide/Lucide License"
-        DESTINATION "third_party"
-        COMPONENT 3rd
+    "${JAMIE_MODS_DIR}/assets/lucide/Lucide License"
+    DESTINATION "third_party"
+    COMPONENT 3rd
 )
 install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/fomod

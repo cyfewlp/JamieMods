@@ -12,14 +12,14 @@ set(ImGui_Basic_Sources
    ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui_draw.cpp
 )
 set(ImGui_Backend_Win32_Dx11_Sources
-       ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_win32.h
-       ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_win32.cpp
-       ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_dx11.h
-       ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_dx11.cpp
+   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_win32.h
+   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_win32.cpp
+   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_dx11.h
+   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_dx11.cpp
 )
 set(ImGui_FreeType_Sources
-       ${JAMIE_MODS_EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.h
-       ${JAMIE_MODS_EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.cpp
+   ${JAMIE_MODS_EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.h
+   ${JAMIE_MODS_EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.cpp
 )
 set(ImGui_Demo_Sources
    ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui_demo.cpp
