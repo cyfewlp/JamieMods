@@ -15,47 +15,47 @@ other multi-byte languages in the game console and any text field.
 
 ## Environment variables
 
-| Variable | Description |
-|----------|-------------|
-| `VCPKG_ROOT` | Path to your vcpkg installation (required) |
+| Variable        | Description                                                              |
+|-----------------|--------------------------------------------------------------------------|
+| `VCPKG_ROOT`    | Path to your vcpkg installation (required)                               |
 | `MO2_MODS_PATH` | _(Optional)_ MO2 mods folder — build output is copied here automatically |
 
 ## Configure
 
 **Debug** (default for development):
 ```shell
-cmake --preset debug-clangcl-ninja-vcpkg
+cmake --preset simple-ime-debug-clangcl-ninja-vcpkg
 ```
 
 **Release with debug info** (for distribution testing):
 ```shell
-cmake --preset RelWithDebInfo-clangcl-ninja-vcpkg
+cmake --preset simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg
 ```
 
 ## Build
 
 ```shell
 # configure first if not done yet
-cmake --preset debug-clangcl-ninja-vcpkg
+cmake --preset simple-ime-debug-clangcl-ninja-vcpkg
 
 # build the plugin
-cmake --build --preset build-debug-clangcl-ninja-vcpkg --target SimpleIME
+cmake --build --preset simple-ime-debug-clangcl-ninja-vcpkg --target SimpleIME
 
 # package (creates the mod archive)
-cpack --config build/debug-clangcl-ninja-vcpkg/CPackConfig.cmake
+cpack --config build/simple-ime-debug-clangcl-ninja-vcpkg/CPackConfig.cmake
 ```
 
-For a release build substitute `build-debug-clangcl-ninja-vcpkg` with
-`build-relwithdebinfo-clangcl-ninja-vcpkg` or `build-release-clangcl-ninja-vcpkg`.
+For a release build substitute `simple-ime-debug-clangcl-ninja-vcpkg` with
+`simple-ime-relwithdebinfo-clangcl-ninja-vcpkg` or `simple-ime-release-clangcl-ninja-vcpkg`.
 
 ## Test
 
 Tests are off by default. Pass `-DBUILD_TESTING=ON` at configure time:
 
 ```shell
-cmake --preset debug-clangcl-ninja-vcpkg -DBUILD_TESTING=ON
-cmake --build --preset build-debug-clangcl-ninja-vcpkg --target SimpleIMETest
-ctest --test-dir build/debug-clangcl-ninja-vcpkg/SimpleIME
+cmake --preset simple-ime-debug-clangcl-ninja-vcpkg -DBUILD_TESTING=ON
+cmake --build --preset simple-ime-debug-clangcl-ninja-vcpkg --target SimpleIMETest
+ctest --test-dir build/simple-ime-debug-clangcl-ninja-vcpkg/SimpleIME
 ```
 
 ## Configuration
