@@ -30,9 +30,9 @@ class ErrorNotifier
 {
     static constexpr size_t MaxMessages = 256;
 
-    std::deque<ErrorMsg> errors;
-    ErrorMsg::Level      m_currentLevel = ErrorMsg::Level::debug;
-    std::chrono::seconds m_duration     = std::chrono::seconds(LONG_LONG_MAX);
+    std::deque<ErrorMsg>      errors;
+    ErrorMsg::Level           m_currentLevel = ErrorMsg::Level::debug;
+    std::chrono::milliseconds m_duration     = std::chrono::milliseconds::max();
 
 public:
     void addError(std::string_view msg, ErrorMsg::Level level = ErrorMsg::Level::debug);
@@ -60,11 +60,7 @@ public:
 
     void SetMessageLevel(ErrorMsg::Level level) { m_currentLevel = level; }
 
-    void SetMessageDuration(const int seconds)
-    {
-        size_t seconds1 = seconds < 0 ? ULONG_LONG_MAX : static_cast<size_t>(seconds);
-        m_duration      = std::chrono::seconds(seconds1);
-    }
+    void SetMessageDuration(const int seconds) { m_duration = seconds < 0 ? std::chrono::seconds::max() : std::chrono::seconds(seconds); }
 
     static auto GetInstance() -> ErrorNotifier &
     {

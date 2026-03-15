@@ -312,18 +312,19 @@ void ImeWnd::Draw(Settings &settings)
     }
 
 #ifdef DEBUG
-    const auto      frameEnd     = std::chrono::high_resolution_clock::now();
-    const auto      frameUs      = std::chrono::duration_cast<std::chrono::microseconds>(frameEnd - frameStart).count();
-    static uint64_t s_frameCount = 0;
-    static int64_t  s_accumUs    = 0;
-    s_accumUs += frameUs;
-    double avgMs = 0;
+    const auto frameEnd = std::chrono::high_resolution_clock::now();
+    const auto frameMs  = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart).count();
+
+    static uint64_t                       s_frameCount = 0;
+    static std::chrono::milliseconds::rep s_accumMs    = 0;
+    static double                         avgMs        = 0;
+    s_accumMs += frameMs;
     if (++s_frameCount % 60 == 0)
     {
-        avgMs     = static_cast<double>(s_accumUs) / 60000.0;
-        s_accumUs = 0;
+        avgMs     = static_cast<double>(s_accumMs) / 60.0;
+        s_accumMs = 0;
     }
-    ImGui::Value("Avg frame: ", static_cast<float>(avgMs));
+    ImGui::Value("Avg frame(ms): ", static_cast<float>(avgMs));
 #endif
 }
 

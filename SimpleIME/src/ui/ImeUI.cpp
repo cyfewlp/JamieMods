@@ -56,19 +56,18 @@ auto ImeUI::Draw(const LangProfile &activeLangProfile, const std::vector<LangPro
         {
             settings.appearance.showSettings = true;
         }
-
-        if (settings.appearance.showSettings)
+    }
+    if (m_showingLanguageBar && settings.appearance.showSettings)
+    {
+        if (m_toolWindow == nullptr)
         {
-            if (m_toolWindow == nullptr)
-            {
-                m_toolWindow = std::make_unique<UI::ToolWindow>();
-            }
-            m_toolWindow->Draw(settings);
+            m_toolWindow = std::make_unique<UI::ToolWindow>();
         }
-        else if (m_toolWindow != nullptr)
-        {
-            m_toolWindow.reset();
-        }
+        m_toolWindow->Draw(settings);
+    }
+    else if (m_toolWindow != nullptr)
+    {
+        m_toolWindow.reset();
     }
     return m_showingLanguageBar;
 }

@@ -38,7 +38,6 @@ void ErrorNotifier::addError(std::string_view msg, const ErrorMsg::Level level)
     errors.push_back({.text = std::string(msg), .level = level, .confirmed = false});
 }
 
-// \todo restyle by M3
 void ErrorNotifier::Show()
 {
     if (errors.empty())
@@ -80,7 +79,8 @@ void ErrorNotifier::Show()
             if (message.level >= m_currentLevel)
             {
                 renderMessage(message, static_cast<size_t>(i));
-                if (static_cast<size_t>((current - message.timestamp).count()) >= static_cast<size_t>((m_duration.count())))
+                const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(current - message.timestamp);
+                if (m_duration < ms)
                 {
                     message.confirmed = true;
                 }
