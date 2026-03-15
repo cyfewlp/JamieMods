@@ -85,9 +85,6 @@ public:
 
     static void Cleanup();
 
-    [[nodiscard]] auto GetThemes() const -> const std::vector<Theme> &
-    {
-        return m_availableThemes;
-    }
+    [[nodiscard]] auto GetThemes() const -> const std::vector<Theme> & { return m_availableThemes; }
 };
 } // namespace ImGuiUtil

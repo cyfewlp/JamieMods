@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "../path_utils.h"
-
 #include <imgui.h>
 #include <utility>
 
@@ -37,10 +35,7 @@ public:
     StyleGuard(const StyleGuard &)            = delete;
     StyleGuard &operator=(const StyleGuard &) = delete;
 
-    StyleGuard(StyleGuard &&other) noexcept
-        : m_varCount(std::exchange(other.m_varCount, 0)), m_colorCount(std::exchange(other.m_colorCount, 0))
-    {
-    }
+    StyleGuard(StyleGuard &&other) noexcept : m_varCount(std::exchange(other.m_varCount, 0)), m_colorCount(std::exchange(other.m_colorCount, 0)) {}
 
     StyleGuard &operator=(StyleGuard &&other) noexcept
     {

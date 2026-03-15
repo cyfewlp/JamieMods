@@ -1,8 +1,13 @@
+# only cotains tests
+if (NOT BUILD_TESTING)
+    return()
+endif ()
+
 enable_testing()
 
 file(GLOB_RECURSE TEST_SOURCES test/*.cpp)
 
-include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
+include(${JAMIE_MODS_DIR}/cmake/imgui-config.cmake)
 
 find_package(GTest CONFIG REQUIRED)
 set(TEST_PROJ_NAME "CommonTest")
@@ -12,14 +17,14 @@ add_executable(
     imguiex/m3.cpp
     imguiex/imguiex_m3.cpp
     imguiex/M3ThemeBuilder.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_capture_tool.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_context.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_coroutine.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_engine.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_exporters.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_perftool.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_ui.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine/imgui_te_utils.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_capture_tool.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_context.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_coroutine.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_engine.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_exporters.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_perftool.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_ui.cpp
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine/imgui_te_utils.cpp
     ${ImGui_Basic_Sources}
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_Demo_Sources}
@@ -32,9 +37,9 @@ target_include_directories(
     ${TEST_PROJ_NAME}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/extern/imgui
-    ${CMAKE_SOURCE_DIR}/extern/imgui/backends
-    ${CMAKE_SOURCE_DIR}/extern/imgui_test_engine/imgui_test_engine
+    ${JAMIE_MODS_EXTERN_DIR}/imgui
+    ${JAMIE_MODS_EXTERN_DIR}/imgui/backends
+    ${JAMIE_MODS_EXTERN_DIR}/imgui_test_engine/imgui_test_engine
 )
 
 target_link_libraries(

@@ -60,12 +60,12 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_FreeType_Sources}
 #    ${IMGUI_DEMO_SOURCES}
-    ${JAMIE_MODS_COMMON_DIR}/imguiex/m3.cpp
-    ${JAMIE_MODS_COMMON_DIR}/imguiex/imguiex_m3.cpp
-    ${JAMIE_MODS_COMMON_DIR}/imguiex/imguiex_m3_slider.cpp
-    ${JAMIE_MODS_COMMON_DIR}/imguiex/M3ThemeBuilder.cpp
-    ${JAMIE_MODS_COMMON_DIR}/imguiex/ErrorNotifier.cpp
-    ${JAMIE_MODS_COMMON_DIR}/imguiex/ThemesLoader.cpp
+    ${IMGUIEX_DIR}/imguiex/m3.cpp
+    ${IMGUIEX_DIR}/imguiex/imguiex_m3.cpp
+    ${IMGUIEX_DIR}/imguiex/imguiex_m3_slider.cpp
+    ${IMGUIEX_DIR}/imguiex/M3ThemeBuilder.cpp
+    ${IMGUIEX_DIR}/imguiex/ErrorNotifier.cpp
+    ${IMGUIEX_DIR}/imguiex/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
@@ -83,6 +83,7 @@ target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
     ${JAMIE_MODS_COMMON_DIR}
+    ${IMGUIEX_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_include_directories(${PROJECT_NAME}

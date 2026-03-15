@@ -12,15 +12,9 @@ public:
 
     constexpr explicit FlagBuilder(EnumType f) : flags_(f) {}
 
-    constexpr operator EnumType() const
-    {
-        return flags_;
-    }
+    constexpr operator EnumType() const { return flags_; }
 
-    constexpr Derived set(EnumType f) const
-    {
-        return Derived(static_cast<EnumType>(flags_ | f));
-    }
+    constexpr Derived set(EnumType f) const { return Derived(static_cast<EnumType>(flags_ | f)); }
 };
 
 /////////////////////////////////////////////////

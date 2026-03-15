@@ -22,10 +22,7 @@ set(BUILD_TESTS OFF) # forbid CommonLibSSE-NG from building its tests, since we 
 add_subdirectory(extern/CommonLibSSE-NG EXCLUDE_FROM_ALL)
 set(BUILD_TESTS ${_OLD_BUILD_TESTS})
 
-if (BUILD_TESTING)
-    add_subdirectory(common) # FIXME: common only contains imguiex test. imguiex should move out from common.
-endif ()
-
+add_subdirectory(imguiex)
 add_subdirectory(extern) # FIXME: the extern contains a MaterialYou static library, but it also contains some other header-only libraries. It would be better to split the MaterialYou static library into its own directory, and then we can just add_subdirectory that one directory here instead of the entire extern directory.
 if (ENABLE_SIMPLE_IME)
     add_subdirectory(SimpleIME)

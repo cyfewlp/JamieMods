@@ -90,9 +90,8 @@ struct NavRailItemHorizontal : public NavRailItem
     static constexpr auto IconLabelSpace = dp<8>();
 
     //! Extend field. Not contain label size, only contain icon size and related space.
-    static constexpr auto ActiveIndicatorMinWidthEx = NavRailItem::ActiveIndicatorLeadingSpace +
-                                                      NavRailItem::ActiveIndicatorTrailingSpace +
-                                                      NavRailItem::IconSize + IconLabelSpace;
+    static constexpr auto ActiveIndicatorMinWidthEx =
+        NavRailItem::ActiveIndicatorLeadingSpace + NavRailItem::ActiveIndicatorTrailingSpace + NavRailItem::IconSize + IconLabelSpace;
 };
 
 struct NavRailCommon

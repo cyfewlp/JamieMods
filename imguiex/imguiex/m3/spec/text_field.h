@@ -43,50 +43,50 @@ struct TextFieldCommon
     static constexpr auto TrailingLabelTextSpace     = dp<16>();
     //! extent field. Outlined text field leading icon size
     ///< \todo may reference the icon button spec when it's ready.
-    static constexpr auto IconLeadingSpace   = dp<12>(); ///< Equivalent to the extra-small icon button leading space.
+    static constexpr auto IconLeadingSpace           = dp<12>(); ///< Equivalent to the extra-small icon button leading space.
     //! extent field. Outlined text field trailing icon size
     ///< \todo may reference the icon button spec when it's ready.
-    static constexpr auto IconTrailingSpace  = dp<12>(); ///< Equivalent to the extra-small icon button trailing space.
+    static constexpr auto IconTrailingSpace          = dp<12>(); ///< Equivalent to the extra-small icon button trailing space.
     //! extent field. Outlined text field icon space.
-    static constexpr auto IconSpace          = IconLeadingSpace + LeadingIconSize + IconTrailingSpace;
+    static constexpr auto IconSpace                  = IconLeadingSpace + LeadingIconSize + IconTrailingSpace;
     //! Outlined text field supporting text size
-    static constexpr auto SupportingTextRole = TextRole::BodySmall;
+    static constexpr auto SupportingTextRole         = TextRole::BodySmall;
     //! Outlined text field input text size
-    static constexpr auto InputTextRole      = TextRole::BodyLarge;
+    static constexpr auto InputTextRole              = TextRole::BodyLarge;
     //! Outlined text field label text size
-    static constexpr auto LabelTextRole      = TextRole::BodyLarge;
+    static constexpr auto LabelTextRole              = TextRole::BodyLarge;
     //! Outlined text field label text populated size
-    static constexpr auto LabelTextPopulatedRole    = TextRole::BodySmall;
+    static constexpr auto LabelTextPopulatedRole     = TextRole::BodySmall;
     //! Outlined text field caret color
-    static constexpr auto CaretColor                = ColorRole::primary;
+    static constexpr auto CaretColor                 = ColorRole::primary;
     //! Outlined text field trailing icon color
-    static constexpr auto TrailingIconColor         = ColorRole::onSurfaceVariant;
+    static constexpr auto TrailingIconColor          = ColorRole::onSurfaceVariant;
     //! Outlined text field leading icon color
-    static constexpr auto LeadingIconColor          = ColorRole::onSurfaceVariant;
+    static constexpr auto LeadingIconColor           = ColorRole::onSurfaceVariant;
     //! Outlined text field supporting text color
-    static constexpr auto SupportingTextColor       = ColorRole::onSurfaceVariant;
+    static constexpr auto SupportingTextColor        = ColorRole::onSurfaceVariant;
     //! Outlined text field input text color
-    static constexpr auto InputTextColor            = ColorRole::onSurface;
+    static constexpr auto InputTextColor             = ColorRole::onSurface;
     //! Outlined text field input text placeholder color
-    static constexpr auto InputTextPlaceholderColor = ColorRole::onSurfaceVariant;
+    static constexpr auto InputTextPlaceholderColor  = ColorRole::onSurfaceVariant;
     //! Outlined text field input text prefix color
-    static constexpr auto InputTextPrefixColor      = ColorRole::onSurfaceVariant;
+    static constexpr auto InputTextPrefixColor       = ColorRole::onSurfaceVariant;
     //! Outlined text field input text suffix color
-    static constexpr auto InputTextSuffixColor      = ColorRole::onSurfaceVariant;
+    static constexpr auto InputTextSuffixColor       = ColorRole::onSurfaceVariant;
     //! Outlined text field error trailing icon color
-    static constexpr auto ErrorTrailingIconColor    = ColorRole::error;
+    static constexpr auto ErrorTrailingIconColor     = ColorRole::error;
     //! Outlined text field error leading icon color
-    static constexpr auto ErrorLeadingIconColor     = ColorRole::onSurfaceVariant;
+    static constexpr auto ErrorLeadingIconColor      = ColorRole::onSurfaceVariant;
     //! Outlined text field error supporting text color
-    static constexpr auto ErrorSupportingTextColor  = ColorRole::error;
+    static constexpr auto ErrorSupportingTextColor   = ColorRole::error;
     //! Outlined text field error input text color
-    static constexpr auto ErrorInputTextColor       = ColorRole::onSurface;
+    static constexpr auto ErrorInputTextColor        = ColorRole::onSurface;
     //! Outlined text field error label text color
-    static constexpr auto ErrorLabelTextColor       = ColorRole::error;
+    static constexpr auto ErrorLabelTextColor        = ColorRole::error;
     //! Outlined text field label text color
-    static constexpr auto LabelTextColor            = ColorRole::onSurfaceVariant;
+    static constexpr auto LabelTextColor             = ColorRole::onSurfaceVariant;
     //! Outlined text field container shape
-    static constexpr auto ContainerShape            = ShapeCorner::ExtraSmall;
+    static constexpr auto ContainerShape             = ShapeCorner::ExtraSmall;
 };
 
 template <TextFieldVariant Variant, TextFieldState State>

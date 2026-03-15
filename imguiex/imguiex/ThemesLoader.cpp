@@ -338,8 +338,7 @@ void UseTheme_(toml::table &table, ImGuiStyle &style)
 
 static toml::table g_themesTable;
 
-auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle &style) const noexcept
-    -> std::expected<void, std::string>
+auto ImGuiUtil::ThemesLoader::UseTheme(const size_t themeIndex, ImGuiStyle &style) const noexcept -> std::expected<void, std::string>
 {
     if (themeIndex >= m_availableThemes.size())
     {
