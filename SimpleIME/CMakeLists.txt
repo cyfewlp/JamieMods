@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 4.2)
+
+include(${CMAKE_SOURCE_DIR}/cmake/jamiemods.common.cmake)
+
 project(
     SimpleIME
     VERSION 2.0.0
@@ -14,15 +17,14 @@ if(PROJECT_VERSION_PRERELEASE)
 else()
     set(PROJECT_VERSION_DISPLAY "${PROJECT_VERSION}")
 endif()
-option(BUILD_TESTING "Build tests" OFF)
 
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
+    ${JAMIE_MODS_DIR}/cmake/version.rc.in
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     @ONLY
 )
 
-#set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy;--extra-arg=/EHsc")
+#set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=*,-llvmlibc-*,-fuchsia-*;--config-file=${JAMIE_MODS_DIR}/.clang-tidy;--extra-arg=/EHsc")
 set(TEST_PROJ_NAME "${PROJECT_NAME}Test")
 
 file(GLOB_RECURSE headers include/*.h include/*.hpp include/*.cpp)
@@ -46,8 +48,8 @@ find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
-include(${CMAKE_SOURCE_DIR}/cmake/imgui-config.cmake)
-include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
+include(${JAMIE_MODS_DIR}/cmake/imgui-config.cmake)
+include(${JAMIE_MODS_EXTERN_DIR}/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 
 if (BUILD_TESTING)
   include(${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
@@ -60,12 +62,12 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_FreeType_Sources}
 #    ${IMGUI_DEMO_SOURCES}
-    ${CMAKE_SOURCE_DIR}/common/imguiex/m3.cpp
-    ${CMAKE_SOURCE_DIR}/common/imguiex/imguiex_m3.cpp
-    ${CMAKE_SOURCE_DIR}/common/imguiex/imguiex_m3_slider.cpp
-    ${CMAKE_SOURCE_DIR}/common/imguiex/M3ThemeBuilder.cpp
-    ${CMAKE_SOURCE_DIR}/common/imguiex/ErrorNotifier.cpp
-    ${CMAKE_SOURCE_DIR}/common/imguiex/ThemesLoader.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imguiex/m3.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imguiex/imguiex_m3.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imguiex/imguiex_m3_slider.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imguiex/M3ThemeBuilder.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imguiex/ErrorNotifier.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imguiex/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
@@ -82,9 +84,8 @@ target_compile_definitions(${PROJECT_NAME}
 target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
-    ${CMAKE_SOURCE_DIR}/common
+    ${JAMIE_MODS_COMMON_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_include_directories(${PROJECT_NAME}
         SYSTEM PRIVATE
@@ -125,8 +126,8 @@ set(ICONS_DIR ${lucide_SOURCE_DIR})
 find_program(FONTFORGE_EXECUTABLE fontforge REQUIRED)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-set(ICON_LIST_FILE ${CMAKE_SOURCE_DIR}/assets/lucide/lucide-icons.txt)
-set(ICON_BUILD_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/build_icons_font.py)
+set(ICON_LIST_FILE ${JAMIE_MODS_DIR}/assets/lucide/lucide-icons.txt)
+set(ICON_BUILD_SCRIPT ${JAMIE_MODS_DIR}/scripts/build_icons_font.py)
 
 set(ICON_GEN_DIR ${CMAKE_BINARY_DIR}/generated/icons)
 set(ICON_OUT_TTF ${ICON_GEN_DIR}/${ICON_FILE})
@@ -168,8 +169,8 @@ set(CPACK_GENERATOR "7Z")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_DISPLAY})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_BUILD_TYPE}")
-set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_SOURCE_DIR}/dist")
-set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
+set(CPACK_OUTPUT_FILE_PREFIX "${JAMIE_MODS_DIR}/dist")
+set(CPACK_PACKAGE_DIRECTORY "${JAMIE_MODS_DIR}/dist")
 include(CPack)
 
 ############################################################
@@ -177,13 +178,13 @@ include(CPack)
 set(interface_path interface/${PROJECT_NAME})
 
 install(FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.toml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.toml"
         "${ICON_OUT_TTF}"
         DESTINATION ${interface_path}
         COMPONENT mod_interface_files
 )
 install(DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate/
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/translate/
         DESTINATION ${interface_path}
         COMPONENT mod_interface_files
 )
@@ -200,12 +201,12 @@ endif ()
 
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
-    ${CMAKE_SOURCE_DIR}/LICENSE
+    ${JAMIE_MODS_DIR}/LICENSE
     DESTINATION .
     COMPONENT doc
 )
 install(FILES
-        "${CMAKE_SOURCE_DIR}/assets/lucide/Lucide License"
+        "${JAMIE_MODS_DIR}/assets/lucide/Lucide License"
         DESTINATION "third_party"
         COMPONENT 3rd
 )

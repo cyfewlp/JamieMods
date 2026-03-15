@@ -139,6 +139,7 @@
     },
     {
       "name": "debug-cl-vs-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -151,6 +152,7 @@
     },
     {
       "name": "debug-clang-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -163,6 +165,7 @@
     },
     {
       "name": "debug-clangcl-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -175,6 +178,7 @@
     },
     {
       "name": "RelWithDebInfo-clangcl-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -187,6 +191,7 @@
     },
     {
       "name": "release-cl-vs-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "packaging-vcpkg",
@@ -197,6 +202,7 @@
     },
     {
       "name": "release-clangcl-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -206,26 +212,46 @@
         "packaging-vcpkg",
         "compiler-clang-cl"
       ]
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "build-debug-clangcl-ninja-vcpkg",
-      "description": "build debug with clang-cl",
-      "displayName": "Debug (clang-cl ninja vcpkg)",
-      "configurePreset": "debug-clangcl-ninja-vcpkg"
     },
     {
-      "name": "build-release-clangcl-ninja-vcpkg",
-      "description": "build release with clang-cl",
-      "displayName": "Release (clang-cl ninja vcpkg)",
-      "configurePreset": "release-clangcl-ninja-vcpkg"
+      "name": "general-debug-clangcl-ninja-vcpkg-imgui",
+      "description": "General debug configuration with clang-cl, Ninja, and vcpkg, including ImGui dependencies.",
+      "hidden": true,
+      "inherits": [
+        "debug-clangcl-ninja-vcpkg"
+      ],
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "imgui-deps"
+      }
     },
     {
-      "name": "build-relwithdebinfo-clangcl-ninja-vcpkg",
-      "description": "build RelWithDebInfo with clang-cl",
-      "displayName": "RelWithDebInfo (clang-cl ninja vcpkg)",
-      "configurePreset": "RelWithDebInfo-clangcl-ninja-vcpkg"
+      "name": "simple-ime",
+      "hidden": true,
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "simple-ime-deps;imgui-deps;commonlib-sse-deps",
+        "ENABLE_SIMPLE_IME": "ON"
+      }
+    },
+    {
+      "name": "simple-ime-debug-clangcl-ninja-vcpkg",
+      "inherits": [
+        "debug-clangcl-ninja-vcpkg",
+        "simple-ime"
+      ]
+    },
+    {
+      "name": "simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg",
+      "inherits": [
+        "RelWithDebInfo-clangcl-ninja-vcpkg",
+        "simple-ime"
+      ]
+    },
+    {
+      "name": "simple-ime-release-clangcl-ninja-vcpkg",
+      "inherits": [
+        "release-clangcl-ninja-vcpkg",
+        "simple-ime"
+      ]
     }
   ]
 }
