@@ -38,7 +38,7 @@ auto ImeController::EnableMod(bool enable) -> void
 
     if (m_fEnabledMod != enable)
     {
-        AddTask([this, enable] {
+        AddTask([this, enable] -> void {
             const bool prev = m_fEnabledMod;
             if (!prev)
             {
@@ -130,7 +130,8 @@ void ImeController::TryFocusIme() const
     });
 }
 
-auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
+// FIXME: if some operations failed, SimpleIME may be in an inconsistent state.
+auto ImeController::DoEnableMod(const bool enable) -> IImeModule::Result
 {
     const bool shouldEnableIme = enable && (m_settings->input.keepImeOpen || ControlMap::GetSingleton()->HasTextEntry());
 
@@ -141,6 +142,18 @@ auto ImeController::DoEnableMod(const bool enable) const -> IImeModule::Result
     {
         fResult = enable ? UnlockKeyboard() : RestoreKeyboard();
         fResult = fResult && FocusImeOrGame(enable);
+    }
+    if (fResult)
+    {
+        if (enable)
+        {
+            m_gameHIMC = ImmAssociateContext(m_gameHwnd, nullptr);
+        }
+        else if (m_gameHIMC != nullptr)
+        {
+            auto *lastHIMC = ImmAssociateContext(m_gameHwnd, std::exchange(m_gameHIMC, nullptr));
+            assert(lastHIMC == nullptr && "Unexpected non-null HIMC. Any other mod changed it?");
+        }
     }
 
     if (!fResult)
