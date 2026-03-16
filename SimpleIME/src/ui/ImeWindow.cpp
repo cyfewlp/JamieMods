@@ -150,12 +150,14 @@ auto UpdateImeWindowPos(Settings::WindowPosUpdatePolicy policy, ImVec2 &windowPo
  * engine-native logic to calculate the optimal position relative to the `avoidRect`
  * (the text input area) while respecting viewport boundaries.
  *
- * **IsNeedRelayout** already removed because `FindBestWindowPosForPopupEx` is fast and designed for this purpose,
+ * @note **IsNeedRelayout** already removed because `FindBestWindowPosForPopupEx` is fast and designed for this purpose,
  * eliminating the need for a separate relayout check. The function will always compute the best position, ensuring the
  * IME window is correctly placed without additional overhead.
  */
 void ClampWindowToViewport(Settings::WindowPosUpdatePolicy policy, ImVec2 &pos, const ImVec2 &size, ImGuiDir &lastAutoPosDir)
 {
+    if (policy == Settings::WindowPosUpdatePolicy::NONE) return;
+
     const auto &viewport = ImGui::GetMainViewport();
     ImRect      avoidRect;
     if (policy == Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR)
