@@ -23,12 +23,8 @@ class ImeWindow
     ImVec2   m_imeSize;
     ImGuiDir m_lastAutoPosDir = ImGuiDir_Down;
     int      m_lastShowFrame  = -1;
-    bool     m_shouldRelayout = true;
 
 public:
     void Draw(const CompositionInfo &compositionInfo, const CandidateUi &candidateUi, const Settings &settings);
-
-private:
-    [[nodiscard]] auto IsImeNeedRelayout() const -> bool;
 };
 } // namespace Ime
