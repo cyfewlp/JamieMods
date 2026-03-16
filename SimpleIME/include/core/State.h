@@ -92,6 +92,7 @@ public:
     }
 
 private:
-    UnderlyingType m_state{0};
+    // UnderlyingType m_state{0};
+    std::atomic<UnderlyingType> m_state{0};
 };
 } // namespace Ime::Core
