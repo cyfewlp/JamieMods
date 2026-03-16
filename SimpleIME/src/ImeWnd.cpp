@@ -377,13 +377,13 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         case WM_SETFOCUS:
             if (pThis == nullptr) break;
             pThis->m_fFocused = true;
-            logger::info("IME window get focus.");
+            logger::debug("IME window get focus.");
             return 0;
         case WM_KILLFOCUS: {
             if (pThis == nullptr) break;
             pThis->m_fFocused = false;
             ImGui::GetIO().ClearInputKeys();
-            logger::info("IME window lost focus.");
+            logger::debug("IME window lost focus.");
             // FIXME: crash when focus leaves ImeWnd during active composition via an OS-level window switch
             // (e.g. Win+Shift+S snipping tool at the right timing). Root cause and exact site are unknown
             // because no PDB is generated for that build configuration. Hypothesis: TSF/IMM32 posts a

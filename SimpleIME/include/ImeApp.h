@@ -104,8 +104,7 @@ private:
 
     Settings m_settings;
     ImeWnd   m_imeWnd{};
-    HWND     m_hWnd        = nullptr;
-    HIMC     m_hIMCDefault = nullptr; // Game main window default HIMC
+    HWND     m_hWnd = nullptr;
     State    m_state;
 
     friend void           Ime::D3DInit();

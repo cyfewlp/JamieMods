@@ -161,8 +161,6 @@ void ImeApp::Uninitialize()
     g_pInitErrorMessageShow.reset();
     if (m_state.IsInitialized())
     {
-        ImmAssociateContext(m_hWnd, m_hIMCDefault);
-        m_hIMCDefault = nullptr;
         UninstallHooks();
         if (RealWndProc)
         {
@@ -237,8 +235,7 @@ void ImeApp::OnD3DInit()
         throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
     }
 
-    m_hWnd        = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-    m_hIMCDefault = ImmAssociateContext(m_hWnd, nullptr);
+    m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
 
     Start(renderData);
 

@@ -67,11 +67,12 @@ private:
     std::unique_ptr<ImeManager> m_delegate    = nullptr;
     ImeWnd                     *m_imeWnd      = nullptr;
     HWND                        m_gameHwnd    = nullptr;
+    HIMC                        m_gameHIMC    = nullptr;
     bool                        m_fDirty      = false;
     bool                        m_fEnabledMod = false;
     std::atomic_bool            m_fInited     = false;
 
-    auto DoEnableMod(bool enable) const -> IImeModule::Result;
+    auto DoEnableMod(bool enable) -> IImeModule::Result;
     auto DoEnableIme(bool enable) const -> IImeModule::Result;
     auto DoForceFocusIme() const -> IImeModule::Result;
     auto DoSyncImeState() -> IImeModule::Result;
