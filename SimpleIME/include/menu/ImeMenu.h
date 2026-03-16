@@ -15,8 +15,8 @@ namespace Ime
 class ImeMenu final : public RE::IMenu
 {
     std::vector<RE::GFxEvent *> m_imeCharEvents;
-    bool                        m_fSShow = false;
-    bool                        ctrlDown = false;
+    bool                        m_fSShow   = false;
+    bool                        m_ctrlDown = false;
 
 public:
     static void RegisterMenu();
@@ -30,18 +30,11 @@ public:
     void OnHide();
 
 private:
-    static auto Creator() -> IMenu *;
-
     /// is handled?
-    auto        ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS;
-    auto        OnKeyEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
-    static void SendKeyEventToImGui(const RE::GFxKeyEvent *keyEvent, bool down);
-    static auto MapToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey;
-    static auto OnMouseEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
-    static auto OnMouseWheelEvent(RE::GFxEvent *event) -> RE::UI_MESSAGE_RESULTS;
-    auto        OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
+    auto ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS;
+    auto OnKeyEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
+    auto OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
 
-    bool        IsPaste(const GFxCharEvent *charEvent) const;
-    static bool Paste();
+    bool IsPaste(const GFxCharEvent *charEvent) const;
 };
 } // namespace Ime
