@@ -81,7 +81,7 @@ auto FindActiveInputMovie(RE::GPtr<RE::GFxMovieView> &movieView, Ime::InputFocus
             }
         }
 
-        for (auto i = menuCount - 1; i >= 0; --i)
+        for (auto i = menuCount - 1; i < menuCount; --i)
         {
             if (const auto menu = ui->menuStack[i]; menu != nullptr && menu->uiMovie != nullptr)
             {

@@ -225,26 +225,7 @@ void ImeMenu::PostDisplay()
         RE::GMemory::Free(gfxEvent);
     }
     m_imeCharEvents.clear();
-
-#ifdef DEBUG
-    const auto frameStart = std::chrono::high_resolution_clock::now();
     ImeApp::GetInstance().Draw();
-    const auto frameEnd = std::chrono::high_resolution_clock::now();
-    const auto frameMs  = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart).count();
-
-    static uint64_t                       s_frameCount = 0;
-    static std::chrono::milliseconds::rep s_accumMs    = 0;
-    static double                         avgMs        = 0;
-    s_accumMs += frameMs;
-    if (++s_frameCount % 60 == 0)
-    {
-        avgMs     = static_cast<double>(s_accumMs) / 60.0;
-        s_accumMs = 0;
-    }
-    ImGui::Value("Avg frame(ms): ", static_cast<float>(avgMs));
-#else
-    ImeApp::GetInstance().Draw();
-#endif
 }
 
 auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
