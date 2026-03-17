@@ -97,6 +97,8 @@ jobs:
             $body = "See [CHANGELOG.md](SimpleIME/CHANGELOG.md) for details."
           }
           $content = $body -replace "([\s])\n([\s])", ''
+          $releaseDate = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-dd HH:mm 'UTC'")
+          $content = "_Release date: $releaseDate_`n`n$content"
           $content | Set-Content release_notes.md -Encoding UTF8
           Write-Host "--- release notes preview ---"
           Get-Content release_notes.md
@@ -108,10 +110,11 @@ jobs:
       - name: Move rolling tag to HEAD
         shell: pwsh
         run: |
+          $betaTag = "SimpleIME-v2.0.0-beta"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name  "github-actions[bot]"
-          git tag -f v2.0.0-beta
-          git push -f origin v2.0.0-beta
+          git tag -f $betaTag
+          git push -f origin $betaTag
 
       # -----------------------------------------------------------------------
       # GitHub Release — create on first run, edit on subsequent runs;
