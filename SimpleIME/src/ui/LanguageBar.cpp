@@ -14,6 +14,7 @@
 #include "imguiex/imguiex_m3.h"
 #include "imguiex/m3/facade/button_groups.h"
 #include "menu/MenuNames.h"
+#include "tsf/ConversionModeUtil.h"
 #include "tsf/LangProfile.h"
 
 #include <RE/U/UIMessage.h>
@@ -85,16 +86,19 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
 
         ImGui::SameLine();
 
-        if (ImGuiEx::M3::SmallButton(activeLangProfile.desc.c_str(), ""))
+        if (ImGuiEx::M3::Button(activeLangProfile.desc, ImGuiEx::M3::ButtonConfiguration().XSmall().Text()))
         {
             ImGui::OpenPopup("###InstalledIME");
         }
         DrawInputMethodsCombo(activeLangProfile, langProfiles);
 
-        ImGuiEx::M3::SameLine(0.F, M3Spec::StandardSmallButtonGroup::BetweenSpace);
-        if (Core::State::GetInstance().Has(Core::State::IN_ALPHANUMERIC))
+        auto      &state          = Core::State::GetInstance();
+        auto      &conversionMode = state.GetConversionMode();
+        const auto cModeName      = GetConversionModeNameShort(activeLangProfile.langid, conversionMode, state.IsKeyboardOpen());
+        if (!cModeName.empty())
         {
-            ImGuiEx::M3::AlignedLabel("ENG");
+            ImGuiEx::M3::SameLine(0.F, M3Spec::StandardSmallButtonGroup::BetweenSpace);
+            ImGuiEx::M3::AlignedLabel(cModeName);
         }
 
         ImGuiEx::M3::EndFloatingToolbar();

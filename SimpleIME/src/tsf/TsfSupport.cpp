@@ -49,5 +49,5 @@ auto Tsf::TsfSupport::InitializeTsf(const bool uiLessMode) -> HRESULT
 
 Tsf::TsfSupport::~TsfSupport()
 {
-    CoUninitialize();
+    UnInitializeTsf();
 }

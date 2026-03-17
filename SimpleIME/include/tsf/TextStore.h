@@ -115,13 +115,14 @@ class TextStore : ITextStoreACP, ITfContextOwnerCompositionSink, ITfUIElementSin
 public:
     explicit TextStore(TextService *pTextService) : m_pTextService(pTextService) {}
 
-    virtual ~TextStore()                                      = default;
+    virtual ~TextStore() { UnInitialize(); }
+
     TextStore(const TextStore &other)                         = delete;
     TextStore(TextStore &&other) noexcept                     = delete;
     auto operator=(const TextStore &other) -> TextStore &     = delete;
     auto operator=(TextStore &&other) noexcept -> TextStore & = delete;
 
-    [[nodiscard]] auto Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT;
+    [[nodiscard]] auto Initialize(ITfThreadMgr *threadMgr, const TfClientId &tfClientId) -> HRESULT;
     auto               SetHWND(HWND hWnd) -> bool;
     void               UnInitialize();
 
@@ -246,7 +247,7 @@ private:
     TfEditCookie                               m_editCookie{0};
     DWORD                                      m_uiElementCookie{0};
     DWORD                                      m_textEditCookie{0};
-    // Pending change flags. Be Updated in a edit session and consume in OnEndEdit or at the end of RequestLock.
+    // Pending change flags. Be Updated in an edit session and consume in OnEndEdit or at the end of RequestLock.
     Ime::ITextService::DirtyFlag               m_pendingChangeFlags{Ime::ITextService::DirtyFlag::None};
     bool                                       m_fPendingLockUpgrade{false};
     bool                                       m_fLocked{false};
@@ -258,42 +259,34 @@ class TextService : public Ime::ITextService
     using State = Ime::Core::State;
 
 public:
-    auto Initialize() -> HRESULT override;
+    auto Initialize(ITfThreadMgr *threadMgr, TfClientId clientId) -> HRESULT;
 
     void UnInitialize() override
     {
-        if (m_pCompartment != nullptr)
+        if (m_conversionModeCompartment != nullptr)
         {
-            m_pCompartment->UnInitialize();
+            m_conversionModeCompartment->UnInitialize();
         }
-        if (m_pTextStore != nullptr)
+        if (m_keyboardOpenCloseCompartment != nullptr)
         {
-            m_pTextStore->UnInitialize();
+            m_keyboardOpenCloseCompartment->UnInitialize();
         }
+        if (m_textStore != nullptr)
+        {
+            m_textStore->UnInitialize();
+        }
+        m_threadMgr.Release();
     }
 
-    void RegisterCallback(Ime::OnEndCompositionCallback *callback) override { m_pTextStore->SetOnEndCompositionCallback(callback); }
+    void RegisterCallback(Ime::OnEndCompositionCallback *callback) override { m_textStore->SetOnEndCompositionCallback(callback); }
 
-    void OnStart(HWND hWnd) override { m_pTextStore->SetHWND(hWnd); }
+    void OnStart(HWND hWnd) override { m_textStore->SetHWND(hWnd); }
 
-    auto OnFocus(bool focus) -> bool override
-    {
-        HRESULT hr = E_FAIL;
-        if (focus)
-        {
-            hr = m_pTextStore->Focus();
-            UpdateConversionMode();
-        }
-        else
-        {
-            hr = m_pTextStore->ClearFocus();
-        }
-        const auto succeeded = SUCCEEDED(hr);
-        State::GetInstance().Set(State::TEXT_SERVICE_FOCUS, succeeded);
-        return succeeded;
-    }
+    auto OnFocus(bool focus) -> bool override;
 
-    auto CommitCandidate(DWORD index) -> bool override { return m_pTextStore->CommitCandidate(index); }
+    auto CommitCandidate(DWORD index) -> bool override { return m_textStore->CommitCandidate(index); }
+
+    auto SetConversionMode(DWORD conversionMode) -> bool override;
 
     [[nodiscard]] auto GetTextEditorWrite() -> Ime::TextEditor & { return m_textEditor; }
 
@@ -327,14 +320,16 @@ protected:
 
 private:
     void        UpdateConversionMode() const;
-    static void DoUpdateConversionMode(ULONG convertionMode);
+    static void UpdateConversionMode(ULONG conversionMode);
 
     Ime::TextEditor           m_textEditor;
     Ime::CandidateUi          m_candidateUi;
-    CComPtr<TsfCompartment>   m_pCompartment         = nullptr;
-    CComPtr<TsfCompartment>   m_pCompartmentKeyBoard = nullptr;
-    CComPtr<TextStore>        m_pTextStore           = nullptr;
+    CComPtr<ITfThreadMgr>     m_threadMgr{nullptr};
+    CComPtr<TsfCompartment>   m_conversionModeCompartment    = nullptr;
+    CComPtr<TsfCompartment>   m_keyboardOpenCloseCompartment = nullptr;
+    CComPtr<TextStore>        m_textStore                    = nullptr;
     mutable std::shared_mutex m_mutex;
+    TfClientId                m_clientId;
 };
 } // namespace Tsf
 

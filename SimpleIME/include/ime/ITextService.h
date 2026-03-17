@@ -57,8 +57,6 @@ public:
     auto operator=(const ITextService &other) -> ITextService &     = delete;
     auto operator=(ITextService &&other) noexcept -> ITextService & = delete;
 
-    virtual auto Initialize() -> HRESULT { return S_OK; }
-
     virtual void UnInitialize() {}
 
     virtual void OnStart([[maybe_unused]] HWND hWnd) {}
@@ -100,7 +98,8 @@ public:
         }
     }
 
-    virtual auto CommitCandidate(DWORD index) -> bool = 0;
+    virtual auto CommitCandidate(DWORD index) -> bool            = 0;
+    virtual auto SetConversionMode(DWORD conversionMode) -> bool = 0;
 
     virtual void RegisterCallback(OnEndCompositionCallback *callback) { m_OnEndCompositionCallback = callback; }
 
@@ -121,7 +120,6 @@ class Imm32TextService final : public ITextService
 {
 public:
     Imm32TextService()                                                      = default;
-    ~Imm32TextService() override                                            = default;
     Imm32TextService(const Imm32TextService &other)                         = delete;
     Imm32TextService(Imm32TextService &&other) noexcept                     = delete;
     auto operator=(const Imm32TextService &other) -> Imm32TextService &     = delete;
@@ -137,6 +135,8 @@ public:
     bool OnFocus(bool focus) override;
 
     auto CommitCandidate(DWORD index) -> bool override;
+
+    auto SetConversionMode(DWORD conversionMode) -> bool override;
 
 protected:
     void RequestUpdate(CompositionInfo &compositionInfo, CandidateUi &uiForRead, DirtyFlag flag) override

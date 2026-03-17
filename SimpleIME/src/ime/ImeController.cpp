@@ -61,13 +61,10 @@ void ImeController::ActivateLangProfile(const GUID &guidProfile) const
     if (!IsReady()) return;
 
     AddTask([&] {
-        if (FAILED(m_imeWnd->ActivateLanguageProfile(guidProfile)))
+        if (IsModEnabled() && FAILED(m_imeWnd->ActivateLanguageProfile(guidProfile)))
         {
-            const auto wsGuid  = ToStringFromGUID2(guidProfile);
-            const auto strGuid = WCharUtils::ToString(wsGuid);
-            const auto message = std::format("Can't switch Input Method, profile index {}", strGuid);
-            logger::warn("{}", message);
-            ErrorNotifier::GetInstance().Warning(message);
+            const auto strGuid = WCharUtils::ToString(ToStringFromGUID2(guidProfile));
+            ErrorNotifier::GetInstance().Warning(std::format("Can't switch Input Method, profile index {}", strGuid));
         }
     });
 }
@@ -77,9 +74,23 @@ auto ImeController::CommitCandidate(DWORD index) const -> void
     if (!IsReady()) return;
 
     AddTask([this, index] {
-        m_imeWnd->CommitCandidate(index);
+        if (IsModEnabled())
+        {
+            m_imeWnd->CommitCandidate(index);
+        }
     });
-    PostMessageA(m_imeWnd->GetHWND(), CM_EXECUTE_TASK, 0, 0);
+}
+
+auto ImeController::SetConversionMode(DWORD conversionMode) const -> void
+{
+    if (!IsReady()) return;
+
+    AddTask([this, conversionMode] {
+        if (IsModEnabled())
+        {
+            m_imeWnd->SetConversionMode(conversionMode);
+        }
+    });
 }
 
 void ImeController::EnableIme(bool enable) const

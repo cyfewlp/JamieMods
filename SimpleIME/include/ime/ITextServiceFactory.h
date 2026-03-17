@@ -16,7 +16,9 @@ inline auto Create(const bool enableTsf) -> std::unique_ptr<ITextService>
 {
     if (enableTsf)
     {
-        if (auto textService = std::make_unique<Tsf::TextService>(); SUCCEEDED(textService->Initialize()))
+        const auto &tsfSupport = Tsf::TsfSupport::GetSingleton();
+        if (auto textService = std::make_unique<Tsf::TextService>();
+            SUCCEEDED(textService->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId())))
         {
             return textService;
         }

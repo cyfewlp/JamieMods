@@ -23,32 +23,20 @@ void UpdateConversionMode(HIMC hIMC)
 {
     DWORD conversion = 0;
     DWORD sentence   = 0;
-    if (ImmGetConversionStatus(hIMC, &conversion, &sentence) != 0)
+    if (ImmGetConversionStatus(hIMC, &conversion, &sentence) != FALSE)
     {
-        switch (conversion & IME_CMODE_LANGUAGE)
-        {
-            case IME_CMODE_ALPHANUMERIC:
-                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
-                logger::debug("CMODE:ALPHANUMERIC, Disable IME");
-                break;
-            default:
-                State::GetInstance().Clear(State::IN_ALPHANUMERIC);
-                break;
-        }
+        State::GetInstance().GetConversionMode().Set(conversion);
     }
 }
 
-void OnSetOpenStatus(HIMC hIMC)
+inline void UpdateOpenStatus(HIMC hIMC)
 {
-    if (ImmGetOpenStatus(hIMC) != 0)
-    {
-        State::GetInstance().Set(State::IME_OPEN);
-        UpdateConversionMode(hIMC);
-    }
-    else
-    {
-        State::GetInstance().Clear(State::IME_OPEN);
-    }
+    State::GetInstance().Set(State::KEYBOARD_OPEN, ImmGetOpenStatus(hIMC) != 0);
+}
+
+inline void UpdateOpenStatus(HIMC hIMC, BOOL open)
+{
+    ImmSetOpenStatus(hIMC, open);
 }
 
 auto GetCompStr(HIMC hIMC, LPARAM compFlag, LPARAM flagToCheck, std::wstring &pWcharBuf) -> bool
@@ -140,6 +128,13 @@ auto Imm32TextService::OnFocus(bool focus) -> bool
             m_hIMC = ImmCreateContext();
         }
         ImmAssociateContext(m_imeHwnd, m_hIMC);
+
+        if (HIMC himc = ImmGetContext(m_imeHwnd); himc != nullptr)
+        {
+            UpdateOpenStatus(himc, focus ? TRUE : FALSE);
+            UpdateConversionMode(himc);
+            ImmReleaseContext(m_imeHwnd, himc);
+        }
     }
     else
     {
@@ -163,6 +158,23 @@ auto Imm32TextService::CommitCandidate(DWORD index) -> bool
 
     ImmReleaseContext(m_imeHwnd, hImc);
     return result;
+}
+
+auto Imm32TextService::SetConversionMode(DWORD conversionMode) -> bool
+{
+    HIMC himc    = ImmGetContext(m_imeHwnd);
+    bool success = false;
+    if (himc != nullptr)
+    {
+        DWORD oldConversion = 0;
+        DWORD oldSentence   = 0;
+        if (ImmGetConversionStatus(himc, &oldConversion, &oldSentence) != FALSE)
+        {
+            success = FALSE != ImmSetConversionStatus(himc, conversionMode, oldSentence);
+        }
+        ImmReleaseContext(m_imeHwnd, himc);
+    }
+    return success;
 }
 
 void Imm32TextService::OnComposition(HWND hWnd, LPARAM compFlag)
@@ -269,7 +281,8 @@ auto Imm32TextService::OnImeNotify(HWND hWnd, WPARAM wParam, LPARAM /*lParam*/) 
             HIMC hIMC = ImmGetContext(hWnd);
             if (hIMC != nullptr)
             {
-                OnSetOpenStatus(hIMC);
+                UpdateOpenStatus(hIMC);
+                UpdateConversionMode(hIMC);
                 ImmReleaseContext(hWnd, hIMC);
             }
             break;

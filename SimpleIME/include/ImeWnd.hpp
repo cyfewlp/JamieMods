@@ -58,14 +58,28 @@ public:
     auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
     auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
 
+    //! Must call from IME thread.
+    //! @see ImeController::CommitCandidate
     void CommitCandidate(const DWORD index) const
     {
-        if (m_pTextService)
+        if (m_textService)
         {
-            m_pTextService->CommitCandidate(index);
+            m_textService->CommitCandidate(index);
         }
     }
 
+    //! Must call from IME thread.
+    //! @see ImeController::SetConversionMode
+    void SetConversionMode(const DWORD conversionMode) const
+    {
+        if (m_textService)
+        {
+            m_textService->SetConversionMode(conversionMode);
+        }
+    }
+
+    //! Must call from IME thread.
+    //! @see ImeController::ActivateLangProfile
     auto ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT;
 
     auto GetHWND() const -> HWND { return m_hWnd; }
@@ -89,10 +103,10 @@ private:
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
     DebounceTimer                 m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
-    std::unique_ptr<ImeWindow>    m_pImeWindow   = nullptr;
-    std::unique_ptr<UI::ImeUI>    m_imeUI        = nullptr;
-    std::unique_ptr<ITextService> m_pTextService = nullptr;
-    CComPtr<InputMethodManager>   m_pInputMethodManager;
+    std::unique_ptr<ImeWindow>    m_imeWindow             = nullptr;
+    std::unique_ptr<UI::ImeUI>    m_imeUI                 = nullptr;
+    std::unique_ptr<ITextService> m_textService           = nullptr;
+    CComPtr<InputMethodManager>   m_inputMethodManager    = nullptr;
     HWND                          m_hWnd                  = nullptr;
     HWND                          m_hWndParent            = nullptr;
     DWORD                         m_gameThreadId          = 0;

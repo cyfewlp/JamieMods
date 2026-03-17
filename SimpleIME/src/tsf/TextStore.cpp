@@ -8,6 +8,7 @@
 
 #include <InputScope.h>
 #include <atlcomcli.h>
+#include <iostream>
 #include <olectl.h>
 #include <string>
 
@@ -34,13 +35,13 @@ auto TextStore::InitSinks() -> HRESULT
     return E_FAIL;
 }
 
-auto TextStore::Initialize(const CComPtr<ITfThreadMgrEx> &lpThreadMgr, const TfClientId &tfClientId) -> HRESULT
+auto TextStore::Initialize(ITfThreadMgr *threadMgr, const TfClientId &tfClientId) -> HRESULT
 {
     HRESULT __hrAtlComMethod;
     try
     {
         logger::debug("Initializing TextStore...");
-        ATLENSURE_SUCCEEDED(lpThreadMgr.QueryInterface(&m_threadMgr));
+        ATLENSURE_SUCCEEDED(threadMgr->QueryInterface(&m_threadMgr));
         ATLENSURE_SUCCEEDED(m_threadMgr->CreateDocumentMgr(&m_documentMgr));
 
         __hrAtlComMethod = m_documentMgr->CreateContext(
@@ -784,7 +785,7 @@ auto TextStore::OnEndComposition(ITfCompositionView * /*pComposition*/) -> HRESU
 
 auto TextStore::BeginUIElement(DWORD dwUIElementId, BOOL *pbShow) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{} {}", __func__, ImGui::GetFrameCount());
+    auto tracer = FuncTracer("TextStore::{}", __func__);
     if (dwUIElementId == TF_INVALID_UIELEMENTID || pbShow == nullptr)
     {
         return E_INVALIDARG;
@@ -803,7 +804,7 @@ auto TextStore::BeginUIElement(DWORD dwUIElementId, BOOL *pbShow) -> HRESULT
 
 auto TextStore::UpdateUIElement(const DWORD dwUIElementId) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{} {}", __func__, ImGui::GetFrameCount());
+    auto tracer = FuncTracer("TextStore::{}", __func__);
     if (dwUIElementId == TF_INVALID_UIELEMENTID)
     {
         return E_INVALIDARG;
@@ -828,7 +829,7 @@ auto TextStore::UpdateUIElement(const DWORD dwUIElementId) -> HRESULT
 
 auto TextStore::EndUIElement(DWORD dwUIElementId) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{} {}", __func__, ImGui::GetFrameCount());
+    auto tracer = FuncTracer("TextStore::{}", __func__);
     if (dwUIElementId == TF_INVALID_UIELEMENTID)
     {
         return E_INVALIDARG;
