@@ -4,7 +4,7 @@
 # The tag v2.0.0-beta is force-moved to the current HEAD on every run so that
 # "latest pre-release" always points at the most recently built commit.
 
-name: Rolling beta release
+name: SimpleIME Rolling beta release
 
 on:
   push:
@@ -97,6 +97,8 @@ jobs:
             $body = "See [CHANGELOG.md](SimpleIME/CHANGELOG.md) for details."
           }
           $content = $body -replace "([\s])\n([\s])", ''
+          $releaseDate = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-dd HH:mm 'UTC'")
+          $content = "_Release date: $releaseDate_`n`n$content"
           $content | Set-Content release_notes.md -Encoding UTF8
           Write-Host "--- release notes preview ---"
           Get-Content release_notes.md
@@ -108,10 +110,11 @@ jobs:
       - name: Move rolling tag to HEAD
         shell: pwsh
         run: |
+          $betaTag = "SimpleIME-v2.0.0-beta"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name  "github-actions[bot]"
-          git tag -f v2.0.0-beta
-          git push -f origin v2.0.0-beta
+          git tag -f $betaTag
+          git push -f origin $betaTag
 
       # -----------------------------------------------------------------------
       # GitHub Release — create on first run, edit on subsequent runs;
@@ -129,20 +132,21 @@ jobs:
           Write-Host "Asset: $asset"
 
           # Does the release already exist?
-          $exists = gh release view v2.0.0-beta 2>&1
+          $betaTag = "SimpleIME-v2.0.0-beta"
+          $exists = gh release view $betaTag 2>&1
           if ($LASTEXITCODE -eq 0) {
             Write-Host "Updating existing release..."
-            gh release edit v2.0.0-beta `
+            gh release edit $betaTag `
               --title "SimpleIME v2.0.0-beta" `
               --notes-file release_notes.md `
               --prerelease
           } else {
             Write-Host "Creating new release..."
-            gh release create v2.0.0-beta `
+            gh release create $betaTag `
               --title "SimpleIME v2.0.0-beta" `
               --notes-file release_notes.md `
               --prerelease
           }
 
           # Upload / replace the mod archive
-          gh release upload v2.0.0-beta $asset --clobber
+          gh release upload $betaTag $asset --clobber

@@ -2,6 +2,7 @@
 
 #include "WCharUtils.h"
 #include "core/State.h"
+#include "imguiex/ErrorNotifier.h"
 #include "log.h"
 
 #include <future>
@@ -24,19 +25,19 @@ auto GetProfileCachedIndex(const std::vector<Ime::LangProfile> &langProfiles, co
 }
 } // namespace
 
-auto Ime::InputMethodManager::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
+auto Ime::InputMethodManager::Initialize(ITfThreadMgr *threadMgr, TfClientId clientId) -> HRESULT
 {
     logger::debug("Initializing LangProfileUtil...");
-    m_lpThreadMgr = CComQIPtr<ITfThreadMgr>(lpThreadMgr);
-    if (m_lpThreadMgr == nullptr) return E_FAIL;
+    m_threadMgr = CComQIPtr<ITfThreadMgr>(threadMgr);
+    m_clientId  = clientId;
+    if (m_threadMgr == nullptr) return E_FAIL;
 
-    if (CComQIPtr<ITfSource> const lpSource(m_lpThreadMgr); lpSource != nullptr)
+    if (CComQIPtr<ITfSource> const lpSource(m_threadMgr); lpSource != nullptr)
     {
         if (SUCCEEDED(lpSource->AdviseSink(IID_ITfInputProcessorProfileActivationSink, this, &m_dwCookie)))
         {
             if (SUCCEEDED(m_tfProfileMgr.CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER)))
             {
-                m_initialized = true;
                 RefreshProfiles();
                 UpdateActiveProfile();
                 return S_OK;
@@ -48,16 +49,15 @@ auto Ime::InputMethodManager::Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT
 
 auto Ime::InputMethodManager::UnInitialize() -> void
 {
-    if (m_lpThreadMgr != nullptr)
+    if (m_threadMgr != nullptr)
     {
-        if (CComQIPtr<ITfSource> const lpSource(m_lpThreadMgr); lpSource != nullptr)
+        if (CComQIPtr<ITfSource> const lpSource(m_threadMgr); lpSource != nullptr)
         {
             lpSource->UnadviseSink(m_dwCookie);
         }
         m_tfProfileMgr.Release();
-        m_lpThreadMgr.Release();
+        m_threadMgr.Release();
     }
-    m_initialized = false;
 }
 
 auto Ime::InputMethodManager::RefreshProfiles() -> bool
@@ -206,13 +206,45 @@ auto Ime::InputMethodManager::OnActivated(
     if ((dwFlags & TF_IPSINK_FLAG_ACTIVE) != 0)
     {
         auto &state = State::GetInstance();
+        state.GetConversionMode().Clear();
+
+        UpdateConversionAndKeyboard(state);
 
         m_activatedProfile = GetProfileCachedIndex(m_langProfiles, guidProfile);
-
         state.Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile < m_langProfiles.size());
-        state.Clear(State::IN_ALPHANUMERIC);
         state.Clear(State::IN_CAND_CHOOSING);
         state.Clear(State::IN_COMPOSING);
     }
     return S_OK;
+}
+
+auto Ime::InputMethodManager::UpdateConversionAndKeyboard(State &state) -> void
+{
+    if (const CComQIPtr<ITfCompartmentMgr> compartmentMgr(m_threadMgr); compartmentMgr != nullptr)
+    {
+        CComPtr<ITfCompartment> compartment;
+        if (SUCCEEDED(compartmentMgr->GetCompartment(GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, &compartment)))
+        {
+            CComVariant variant;
+            if (SUCCEEDED(compartment->GetValue(&variant)) && variant.vt == VT_I4)
+            {
+                state.GetConversionMode().Set(variant.ulVal);
+            }
+        }
+
+        if (!state.ImeDisabled())
+        {
+            CComPtr<ITfCompartment> keyboardOpenCloseCompartment;
+            if (SUCCEEDED(compartmentMgr->GetCompartment(GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, &keyboardOpenCloseCompartment)))
+            {
+                VARIANT var;
+                var.vt      = VT_I4;
+                var.boolVal = TRUE;
+                if (FAILED(keyboardOpenCloseCompartment->SetValue(m_clientId, &var)))
+                {
+                    ErrorNotifier::GetInstance().Warning("Can't open keyboard, IME may can't work.");
+                }
+            }
+        }
+    }
 }

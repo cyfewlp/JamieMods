@@ -46,6 +46,9 @@ A condensed history of significant changes to SimpleIME.
   `ImeWnd` is destroyed before the translator.
 
 ### Features
+- **Improved East Asian IME mode feedback** — LanguageBar now shows compact
+  Chinese/Japanese conversion-mode labels, and IME enable/disable keeps the
+  keyboard open state synchronized more consistently across TSF/IMM32 paths.
 - **Material Design 3 UI** — Full MD3 component library: AppBar, Navigation
   Rail, Floating Toolbar, Dialog, Chip / ChipGroup, ListItem, FAB, SearchBar,
   TextField (outlined & filled), CheckBox, Divider, and more. ImeWindow

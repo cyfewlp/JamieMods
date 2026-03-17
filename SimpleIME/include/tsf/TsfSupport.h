@@ -21,6 +21,13 @@ constexpr void throw_fail(const HRESULT hresult, const char *msg) noexcept(false
 class TsfSupport
 {
 public:
+    TsfSupport() = default;
+    ~TsfSupport();
+    TsfSupport(const TsfSupport &other)                         = delete;
+    TsfSupport(TsfSupport &&other) noexcept                     = delete;
+    auto operator=(const TsfSupport &other) -> TsfSupport &     = delete;
+    auto operator=(TsfSupport &&other) noexcept -> TsfSupport & = delete;
+
     /**
      * Initialize TSF on current thread.
      * @param uiLessMode enable ui control by tsf app. use this flag
@@ -30,32 +37,23 @@ public:
      * init failed.
      */
     auto InitializeTsf(bool uiLessMode) -> HRESULT;
-    TsfSupport() = default;
-    ~TsfSupport();
-    TsfSupport(const TsfSupport &other)                         = delete;
-    TsfSupport(TsfSupport &&other) noexcept                     = delete;
-    auto operator=(const TsfSupport &other) -> TsfSupport &     = delete;
-    auto operator=(TsfSupport &&other) noexcept -> TsfSupport & = delete;
 
-    [[nodiscard]] constexpr auto GetThreadMgr() const -> const CComPtr<ITfThreadMgrEx> &
+    auto UnInitializeTsf() -> void
     {
-        return m_pThreadMgr;
+        m_KeystrokeMgr.Release();
+        m_messagePump.Release();
+        m_pThreadMgr.Release();
+        CoUninitialize();
+        m_initialized = false;
     }
 
-    [[nodiscard]] constexpr auto GetMessagePump() const -> CComPtr<ITfMessagePump>
-    {
-        return m_messagePump;
-    }
+    [[nodiscard]] constexpr auto GetThreadMgr() const -> const CComPtr<ITfThreadMgrEx> & { return m_pThreadMgr; }
 
-    [[nodiscard]] constexpr auto GetKeystrokeMgr() const -> CComPtr<ITfKeystrokeMgr>
-    {
-        return m_KeystrokeMgr;
-    }
+    [[nodiscard]] constexpr auto GetMessagePump() const -> CComPtr<ITfMessagePump> { return m_messagePump; }
 
-    [[nodiscard]] constexpr auto GetTfClientId() const -> const TfClientId &
-    {
-        return m_tfClientId;
-    }
+    [[nodiscard]] constexpr auto GetKeystrokeMgr() const -> CComPtr<ITfKeystrokeMgr> { return m_KeystrokeMgr; }
+
+    [[nodiscard]] constexpr auto GetTfClientId() const -> const TfClientId & { return m_tfClientId; }
 
     static auto GetSingleton() -> TsfSupport &
     {

@@ -15,9 +15,6 @@
 #include "ui/LanguageBar.h"
 #include "utils/Utils.h"
 
-#include <algorithm>
-#include <chrono>
-#include <codecvt>
 #include <msctf.h>
 #include <windows.h>
 #include <windowsx.h>
@@ -142,8 +139,8 @@ ImeWnd::~ImeWnd()
 
 void ImeWnd::InitializeTextService()
 {
-    m_pTextService = TextServiceFactory::Create(m_fEnabledTsf);
-    m_pTextService->RegisterCallback([](std::wstring_view compositionString) static -> void {
+    m_textService = TextServiceFactory::Create(m_fEnabledTsf);
+    m_textService->RegisterCallback([](std::wstring_view compositionString) static -> void {
         Skyrim::SendUiString(compositionString);
     });
 }
@@ -164,10 +161,10 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
     }
 
     InitializeTextService();
-    m_pImeWindow = std::make_unique<ImeWindow>();
+    m_imeWindow = std::make_unique<ImeWindow>();
 
-    m_pInputMethodManager = new InputMethodManager();
-    if (FAILED(m_pInputMethodManager->Initialize(tsfSupport.GetThreadMgr())))
+    m_inputMethodManager = new InputMethodManager();
+    if (FAILED(m_inputMethodManager->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId())))
     {
         throw SimpleIMEException("Can't initialize LangProfileUtil");
     }
@@ -175,14 +172,15 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 
 void ImeWnd::UnInitialize() const noexcept
 {
-    if (m_pTextService != nullptr)
+    if (m_textService != nullptr)
     {
-        m_pTextService->UnInitialize();
+        m_textService->UnInitialize();
     }
-    if (m_pInputMethodManager != nullptr)
+    if (m_inputMethodManager != nullptr)
     {
-        m_pInputMethodManager->UnInitialize();
+        m_inputMethodManager->UnInitialize();
     }
+    Tsf::TsfSupport::GetSingleton().UnInitializeTsf();
 }
 
 void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
@@ -237,7 +235,7 @@ auto ImeWnd::Focus() const -> void
 
 auto ImeWnd::FocusTextService(const bool focus) const -> bool
 {
-    return m_pTextService->OnFocus(focus);
+    return m_textService->OnFocus(focus);
 }
 
 auto ImeWnd::IsFocused() const -> bool
@@ -265,7 +263,7 @@ auto ImeWnd::SendNotifyMessageToIme(UINT uMsg, WPARAM wParam, LPARAM lParam) con
 
 auto ImeWnd::ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT
 {
-    return m_pInputMethodManager->ActivateProfile(guidProfile);
+    return m_inputMethodManager->ActivateProfile(guidProfile);
 }
 
 void ImeWnd::AbortIme() const
@@ -278,16 +276,12 @@ void ImeWnd::AbortIme() const
 
 void ImeWnd::Draw(Settings &settings)
 {
-#ifdef DEBUG
-    const auto frameStart = std::chrono::high_resolution_clock::now();
-#endif
-
     if (m_fWantUpdateUiScale)
     {
         m_fWantUpdateUiScale = false;
         ImGuiEx::M3::Context::GetM3Styles().UpdateScaling(m_uiScale);
     }
-    m_pTextService->UpdateIfDirty();
+    m_textService->UpdateIfDirty();
 
     AutoToggleGameCursorIfNeeded(m_fJustWantCaptureMouse);
 
@@ -297,10 +291,10 @@ void ImeWnd::Draw(Settings &settings)
         auto      &m3Styles  = ImGuiEx::M3::Context::GetM3Styles();
         const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
         ErrorNotifier::GetInstance().Show();
-        m_pImeWindow->Draw(m_pTextService->GetCompositionInfo(), m_pTextService->GetCandidateUi(), settings);
+        m_imeWindow->Draw(m_textService->GetCompositionInfo(), m_textService->GetCandidateUi(), settings);
 
-        const auto &activeLang   = m_pInputMethodManager->GetActiveLangProfile();
-        const auto &langProfiles = m_pInputMethodManager->GetLangProfiles();
+        const auto &activeLang   = m_inputMethodManager->GetActiveLangProfile();
+        const auto &langProfiles = m_inputMethodManager->GetLangProfiles();
 
         if (m_imeUI != nullptr)
         {
@@ -310,22 +304,6 @@ void ImeWnd::Draw(Settings &settings)
             }
         }
     }
-
-#ifdef DEBUG
-    const auto frameEnd = std::chrono::high_resolution_clock::now();
-    const auto frameMs  = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart).count();
-
-    static uint64_t                       s_frameCount = 0;
-    static std::chrono::milliseconds::rep s_accumMs    = 0;
-    static double                         avgMs        = 0;
-    s_accumMs += frameMs;
-    if (++s_frameCount % 60 == 0)
-    {
-        avgMs     = static_cast<double>(s_accumMs) / 60.0;
-        s_accumMs = 0;
-    }
-    ImGui::Value("Avg frame(ms): ", static_cast<float>(avgMs));
-#endif
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -335,7 +313,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
     if (pThis != nullptr)
     {
         pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
-        if (pThis->m_pTextService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
+        if (pThis->m_textService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
         {
             return 0;
         }
@@ -485,7 +463,7 @@ void ImeWnd::OnCreated(Settings &settings)
 {
     logger::info("Ime window created, init TSF and core...");
     m_gameThreadId = GetWindowThreadProcessId(m_hWndParent, nullptr);
-    m_pTextService->OnStart(m_hWnd);
+    m_textService->OnStart(m_hWnd);
     m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
     m_fWantUpdateUiScale = true;
     float uiScale        = settings.appearance.zoom;

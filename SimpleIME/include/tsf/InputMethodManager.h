@@ -19,14 +19,16 @@ class InputMethodManager : public ITfInputProcessorProfileActivationSink
     static constexpr auto DEFAULT_PROFILE_INDEX = 0;
 
 public:
-    InputMethodManager()                                                        = default;
-    virtual ~InputMethodManager()                                               = default;
+    InputMethodManager() = default;
+
+    virtual ~InputMethodManager() { UnInitialize(); }
+
     InputMethodManager(const InputMethodManager &other)                         = delete;
     InputMethodManager(InputMethodManager &&other) noexcept                     = delete;
     auto operator=(const InputMethodManager &other) -> InputMethodManager &     = delete;
     auto operator=(InputMethodManager &&other) noexcept -> InputMethodManager & = delete;
 
-    auto Initialize(ITfThreadMgrEx *lpThreadMgr) -> HRESULT;
+    auto Initialize(ITfThreadMgr *threadMgr, TfClientId clientId) -> HRESULT;
     auto UnInitialize() -> void;
 
     auto RefreshProfiles() -> bool;
@@ -44,13 +46,15 @@ public:
         -> HRESULT override;
 
 private:
+    auto UpdateConversionAndKeyboard(State &state) -> void;
+
     std::vector<LangProfile>             m_langProfiles;
     CComPtr<ITfInputProcessorProfileMgr> m_tfProfileMgr = nullptr;
-    CComPtr<ITfThreadMgr>                m_lpThreadMgr  = nullptr;
+    CComPtr<ITfThreadMgr>                m_threadMgr    = nullptr;
+    TfClientId                           m_clientId;
     DWORD                                m_refCount{};
     DWORD                                m_dwCookie{};
     uint32_t                             m_activatedProfile = 0;
-    bool                                 m_initialized      = false;
 };
 } // namespace Ime
 

@@ -8,48 +8,81 @@
 
 namespace Tsf
 {
-HRESULT TextService::Initialize()
+auto TextService::Initialize(ITfThreadMgr *threadMgr, TfClientId clientId) -> HRESULT
 {
-    m_pTextStore           = new TextStore(this);
-    auto const &tsfSupport = TsfSupport::GetSingleton();
-    // callback
-    auto        callback   = [](const GUID          */*guid*/, const ULONG ulong) {
-        DoUpdateConversionMode(ulong);
-        return S_OK;
-    };
-    m_pCompartment         = new TsfCompartment();
-    m_pCompartmentKeyBoard = new TsfCompartment();
-    HRESULT hresult        = m_pCompartment->Initialize(tsfSupport.GetThreadMgr(), GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, callback);
-
-    if (SUCCEEDED(hresult))
+    HRESULT hr = threadMgr->QueryInterface(__uuidof(ITfThreadMgr), reinterpret_cast<void **>(&m_threadMgr));
+    if (FAILED(hr))
     {
-        hresult =
-            m_pCompartmentKeyBoard->Initialize(tsfSupport.GetThreadMgr(), GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, [](const GUID *, const ULONG ulong) {
+        logger::error("Can't get ITfThreadMgr: {:#X}", static_cast<uint32_t>(hr));
+        return hr;
+    }
+    m_clientId                     = clientId;
+    m_textStore                    = new TextStore(this);
+    m_conversionModeCompartment    = new TsfCompartment();
+    m_keyboardOpenCloseCompartment = new TsfCompartment();
+
+    hr = m_conversionModeCompartment->Initialize(
+        m_threadMgr, clientId, GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, [](const GUID * /*guid*/, const ULONG ulong) {
+            UpdateConversionMode(ulong);
+            return S_OK;
+        }
+    );
+
+    if (SUCCEEDED(hr))
+    {
+        hr = m_keyboardOpenCloseCompartment->Initialize(
+            m_threadMgr, clientId, GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, [](const GUID *, const ULONG ulong) {
                 State::GetInstance().Set(State::KEYBOARD_OPEN, ulong != 0);
                 return S_OK;
-            });
+            }
+        );
     }
-    if (SUCCEEDED(hresult))
+    if (SUCCEEDED(hr))
     {
-        hresult = m_pTextStore->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId());
+        hr = m_textStore->Initialize(threadMgr, clientId);
     }
 
-    return hresult;
+    return hr;
 }
 
 void TextService::UpdateConversionMode() const
 {
-    ULONG convertionMode = 0;
-    if (SUCCEEDED(m_pCompartment->GetValue(convertionMode)))
+    ULONG conversionMode = 0;
+    if (SUCCEEDED(m_conversionModeCompartment->GetValue(conversionMode)))
     {
-        DoUpdateConversionMode(convertionMode);
+        UpdateConversionMode(conversionMode);
     }
 }
 
-void TextService::DoUpdateConversionMode(const ULONG convertionMode)
+void TextService::UpdateConversionMode(const ULONG conversionMode)
 {
-    logger::trace("DoUpdateConversionMode");
-    State::GetInstance().Set(State::IN_ALPHANUMERIC, (convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC);
+    State::GetInstance().GetConversionMode().Set(conversionMode);
+}
+
+auto TextService::OnFocus(bool focus) -> bool
+{
+    HRESULT hr = E_FAIL;
+    if (focus)
+    {
+        hr = m_textStore->Focus();
+        UpdateConversionMode();
+    }
+    else
+    {
+        hr = m_textStore->ClearFocus();
+    }
+    m_keyboardOpenCloseCompartment->SetValue(static_cast<DWORD>(focus)); // true -> open, false -> close
+    const auto succeeded = SUCCEEDED(hr);
+    if (succeeded)
+    {
+        State::GetInstance().Set(State::TEXT_SERVICE_FOCUS, focus);
+    }
+    return succeeded;
+}
+
+auto TextService::SetConversionMode(DWORD conversionMode) -> bool
+{
+    return SUCCEEDED(m_conversionModeCompartment->SetValue(conversionMode));
 }
 
 auto TextService::ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool

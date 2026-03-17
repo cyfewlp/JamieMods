@@ -42,6 +42,7 @@ public:
      */
     void ActivateLangProfile(const GUID &guidProfile) const;
     auto CommitCandidate(DWORD index) const -> void;
+    auto SetConversionMode(DWORD conversionMode) const -> void;
 
     //////////////////////////////////////////////////
 

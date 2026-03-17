@@ -149,9 +149,15 @@ auto UpdateImeWindowPos(Settings::WindowPosUpdatePolicy policy, ImVec2 &windowPo
  * Replaces manual clamping with ImGui internal `FindBestWindowPosForPopupEx`. This leverages
  * engine-native logic to calculate the optimal position relative to the `avoidRect`
  * (the text input area) while respecting viewport boundaries.
+ *
+ * @note **IsNeedRelayout** already removed because `FindBestWindowPosForPopupEx` is fast and designed for this purpose,
+ * eliminating the need for a separate relayout check. The function will always compute the best position, ensuring the
+ * IME window is correctly placed without additional overhead.
  */
 void ClampWindowToViewport(Settings::WindowPosUpdatePolicy policy, ImVec2 &pos, const ImVec2 &size, ImGuiDir &lastAutoPosDir)
 {
+    if (policy == Settings::WindowPosUpdatePolicy::NONE) return;
+
     const auto &viewport = ImGui::GetMainViewport();
     ImRect      avoidRect;
     if (policy == Settings::WindowPosUpdatePolicy::BASED_ON_CURSOR)
@@ -183,16 +189,11 @@ void ImeWindow::Draw(const CompositionInfo &compositionInfo, const CandidateUi &
     const auto currentFrame = ImGui::GetFrameCount();
     if (currentFrame > m_lastShowFrame + 1)
     {
-        m_shouldRelayout = true;
         UpdateImeWindowPos(settings.input.posUpdatePolicy, m_imePos);
     }
     m_lastShowFrame = currentFrame;
-    if (m_shouldRelayout)
-    {
-        m_shouldRelayout = false;
-        ClampWindowToViewport(settings.input.posUpdatePolicy, m_imePos, m_imeSize, m_lastAutoPosDir);
-        ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
-    }
+    ClampWindowToViewport(settings.input.posUpdatePolicy, m_imePos, m_imeSize, m_lastAutoPosDir);
+    ImGui::SetNextWindowPos({m_imePos.x, m_imePos.y});
     constexpr auto flags          = ImGuiEx::WindowFlags().NoDecoration().AlwaysAutoResize().NoFocusOnAppearing().NoSavedSettings().NoNav();
     const auto     mainStyleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_WindowPadding>({});
 
@@ -219,17 +220,5 @@ void ImeWindow::Draw(const CompositionInfo &compositionInfo, const CandidateUi &
         m_imeSize = ImGui::GetWindowSize();
     }
     ImGui::End();
-    if (IsImeNeedRelayout())
-    {
-        m_shouldRelayout = true;
-    }
-}
-
-auto ImeWindow::IsImeNeedRelayout() const -> bool
-{
-    const auto &viewport    = ImGui::GetMainViewport();
-    const auto  rectMax     = m_imePos + m_imeSize;
-    const auto  viewportMax = viewport->Size + viewport->Pos;
-    return rectMax.x > viewportMax.x || rectMax.y > viewportMax.y;
 }
 } // namespace Ime
