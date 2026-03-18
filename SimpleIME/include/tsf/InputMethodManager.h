@@ -35,6 +35,10 @@ public:
     auto UpdateActiveProfile() noexcept -> bool;
     auto ActivateProfile(const GUID &guidProfile) -> HRESULT;
 
+private:
+    auto ActivateProfile(const LangProfile &langProfile) -> HRESULT;
+
+public:
     auto GetActiveLangProfile() -> const LangProfile &;
 
     [[nodiscard]] auto GetLangProfiles() const -> const std::vector<LangProfile> & { return m_langProfiles; }
