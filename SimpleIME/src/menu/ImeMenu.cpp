@@ -321,7 +321,7 @@ auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE
     {
         m_ctrlDown = down;
     }
-    if (ToolWindowMenu::IsShowing())
+    if (Core::State::GetInstance().IsImeInputting() || ToolWindowMenu::IsShowing())
     {
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }
