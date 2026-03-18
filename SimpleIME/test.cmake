@@ -57,6 +57,7 @@ target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23)
 target_include_directories(
         ${TEST_PROJ_NAME}
         PRIVATE
+        ${CMAKE_SOURCE_DIR}/imguiex
         ${CMAKE_SOURCE_DIR}/common
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${IMGUI_INCLUDE_DIRS}

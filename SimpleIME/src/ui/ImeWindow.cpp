@@ -97,7 +97,7 @@ void DrawCandidates(const CandidateUi &candidateUi)
         {
             ImGui::PushID(static_cast<int>(index));
             configuration.selected = index == candidateUi.Selection();
-            if (ImGuiEx::M3::Chip(candidate.c_str(), configuration))
+            if (ImGuiEx::M3::Chip(candidate, configuration))
             {
                 clicked = index;
             }
@@ -110,6 +110,31 @@ void DrawCandidates(const CandidateUi &candidateUi)
             ImeController::GetInstance()->CommitCandidate(static_cast<DWORD>(clicked));
         }
         ImGuiEx::M3::EndChipGroup();
+    }
+}
+
+auto DrawVerticalCandidates(const CandidateUi &candidateUi) -> void
+{
+    using size_type = CandidateUi::size_type;
+
+    if (const auto candidateList = candidateUi.CandidateList(); !candidateList.empty())
+    {
+        size_type clicked = candidateList.size();
+        for (size_type index = 0; const auto &candidate : candidateList)
+        {
+            ImGui::PushID(static_cast<int>(index));
+            const auto selected = index == candidateUi.Selection();
+            if (ImGuiEx::M3::MenuItem(candidate, selected))
+            {
+                clicked = index;
+            }
+            ImGui::PopID();
+            index++;
+        }
+        if (clicked < candidateList.size())
+        {
+            ImeController::GetInstance()->CommitCandidate(static_cast<DWORD>(clicked));
+        }
     }
 }
 
@@ -207,15 +232,22 @@ void ImeWindow::Draw(const CompositionInfo &compositionInfo, const CandidateUi &
     {
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
 
-        ImGuiEx::M3::ListItemPlain([&] {
+        ImGuiEx::M3::ListItemPlain([&] -> void {
             DrawComposition(compositionInfo);
         });
 
         ImGuiEx::M3::Divider();
 
-        ImGuiEx::M3::ListItemPlain([&] {
-            DrawCandidates(candidateUi);
-        });
+        if (settings.appearance.verticalCandidateList)
+        {
+            DrawVerticalCandidates(candidateUi);
+        }
+        else
+        {
+            ImGuiEx::M3::ListItemPlain([&] -> void {
+                DrawCandidates(candidateUi);
+            });
+        }
 
         m_imeSize = ImGui::GetWindowSize();
     }

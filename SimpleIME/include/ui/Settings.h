@@ -54,7 +54,8 @@ struct Settings
         std::string               language;
         float                     zoom; ///< modify in runtime by AppearancePanel; read once on Mod launch by ImeApp;
         int                       errorDisplayDuration;
-        bool                      showSettings; ///< modify/read in runtime by UI thread(ToolWindow).
+        bool                      showSettings;          ///< modify/read in runtime by UI thread(ToolWindow).
+        bool                      verticalCandidateList; ///< modify/read in runtime by UI thread.
     } appearance;
 
     struct Input
@@ -75,11 +76,12 @@ inline auto GetDefaultSettings() -> Settings
         .logging                       = {.level = spdlog::level::info, .flushLevel = spdlog::level::info},
         .resources = {.translationDir = "Data/interface/SimpleIME", .fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"}},
         .appearance =
-            {.schemeConfig         = ImGuiEx::M3::GetM3ClassicSchemeConfig(),
-                                          .language             = "english",
-                                          .zoom                 = -1.0F,
-                                          .errorDisplayDuration = 10,
-                                          .showSettings         = false},
+            {.schemeConfig          = ImGuiEx::M3::GetM3ClassicSchemeConfig(),
+                                          .language              = "english",
+                                          .zoom                  = -1.0F,
+                                          .errorDisplayDuration  = 10,
+                                          .showSettings          = false,
+                                          .verticalCandidateList = false},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = Settings::WindowPosUpdatePolicy::BASED_ON_CARET}
     };
 }

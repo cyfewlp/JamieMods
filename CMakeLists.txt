@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_TESTING "Build tests" OFF)
 
 if (BUILD_TESTING)
-    list(APPEND VCPKG_MANIFEST_FEATURES "tests")
+    list(APPEND VCPKG_MANIFEST_FEATURES "test-deps")
 endif ()
 
 # [BEGIN set_project_name]

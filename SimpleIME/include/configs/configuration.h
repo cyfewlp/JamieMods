@@ -37,6 +37,7 @@ struct Configuration
         float       zoom;
         int         errorDisplayDuration;
         bool        showSettings;
+        bool        verticalCandidateList;
     };
 
     struct Input
@@ -68,13 +69,14 @@ constexpr auto GetDefaultConfiguration() -> Configuration
         .logging                       = {.level = "", .flushLevel = ""},
         .resources                     = {.translationDir = "", .fontPathList = {}},
         .appearance =
-            {.themeSourceColor     = Configuration::INVALID_COLOR,
-                                          .themeContrastLevel   = 0.0,
-                                          .themeDarkMode        = true,
-                                          .language             = "",
-                                          .zoom                 = -1.0F,
-                                          .errorDisplayDuration = 10,
-                                          .showSettings         = false},
+            {.themeSourceColor      = Configuration::INVALID_COLOR,
+                                          .themeContrastLevel    = 0.0,
+                                          .themeDarkMode         = true,
+                                          .language              = "",
+                                          .zoom                  = -1.0F,
+                                          .errorDisplayDuration  = 10,
+                                          .showSettings          = false,
+                                          .verticalCandidateList = false},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = ""}
     };
 }
