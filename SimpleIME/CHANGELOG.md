@@ -49,6 +49,13 @@ A condensed history of significant changes to SimpleIME.
 - **Improved East Asian IME mode feedback** — LanguageBar now shows compact
   Chinese/Japanese conversion-mode labels, and IME enable/disable keeps the
   keyboard open state synchronized more consistently across TSF/IMM32 paths.
+- **Auto-detect system default font** — When no fonts are configured, SimpleIME
+  now queries the system UI font via `SPI_GETNONCLIENTMETRICS` +
+  `IDWriteGdiInterop::CreateFontFromLOGFONT`, then probes for a supplementary
+  emoji font (`Segoe UI Emoji` → `Segoe UI Symbol` as fallback) using
+  `IDWriteFontCollection::FindFamilyName`. Hardcoded `simsun.ttc` /
+  `seguiemj.ttf` paths are removed. User-configured font paths still take
+  priority; the system font is only used as the fallback.
 - **Material Design 3 UI** — Full MD3 component library: AppBar, Navigation
   Rail, Floating Toolbar, Dialog, Chip / ChipGroup, ListItem, FAB, SearchBar,
   TextField (outlined & filled), CheckBox, Divider, and more. ImeWindow
