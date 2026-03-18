@@ -40,4 +40,7 @@ public:
 
 auto GetFontFilePath(const FontInfo &fontInfo) -> std::string;
 
+auto GetDefaultFontFilePath() -> std::wstring;
+auto GetFirstFontFilePathInFamily(std::wstring_view familyName) -> std::wstring;
+
 } // namespace Ime

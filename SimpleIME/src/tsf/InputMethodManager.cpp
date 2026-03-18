@@ -97,8 +97,8 @@ auto Ime::InputMethodManager::RefreshProfiles() -> bool
                     std::string             desc = WCharUtils::ToString(wsvDesc);
                     if (!desc.empty())
                     {
+                        logger::info("Load installed ime: {}", desc);
                         m_langProfiles.emplace_back(std::move(desc), profile.clsid, profile.guidProfile, profile.langid);
-                        logger::info("Load installed ime: {}", desc.c_str());
                     }
                 }
             }
@@ -128,14 +128,23 @@ auto Ime::InputMethodManager::UpdateActiveProfile() noexcept -> bool
 
 auto Ime::InputMethodManager::ActivateProfile(const GUID &guidProfile) -> HRESULT
 {
+    if (guidProfile == DEFAULT_LANG_PROFILE.guidProfile)
+    {
+        return ActivateProfile(DEFAULT_LANG_PROFILE);
+    }
+
     const auto index = GetProfileCachedIndex(m_langProfiles, guidProfile);
     if (index >= m_langProfiles.size())
     {
         return E_INVALIDARG;
     }
-    const auto &activeLangProfile = GetActiveLangProfile();
 
-    auto &langProfile = m_langProfiles[index];
+    return ActivateProfile(m_langProfiles[index]);
+}
+
+auto Ime::InputMethodManager::ActivateProfile(const LangProfile &langProfile) -> HRESULT
+{
+    const auto &activeLangProfile = GetActiveLangProfile();
     if (IsEqualGUID(langProfile.guidProfile, activeLangProfile.guidProfile) == TRUE)
     {
         return S_OK;

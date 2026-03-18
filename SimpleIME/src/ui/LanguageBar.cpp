@@ -33,11 +33,17 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
     if (ImGuiEx::M3::BeginMenu("###InstalledIME", ImGuiEx::M3::Spec::MenuColors::Vibrant))
     {
         uint32_t idx = 0;
+
+        if (ImGuiEx::M3::MenuItemVibrant(DEFAULT_LANG_PROFILE.desc, activeLangProfile.guidProfile == DEFAULT_LANG_PROFILE.guidProfile))
+        {
+            ImeController::GetInstance()->ActivateLangProfile(DEFAULT_LANG_PROFILE.guidProfile);
+        }
+
         for (const auto &langProfile : langProfiles)
         {
             ImGui::PushID(static_cast<int>(idx));
             const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile) == TRUE;
-            if (ImGuiEx::M3::MenuItemVibrant(langProfile.desc.c_str(), isSelected) && !isSelected)
+            if (ImGuiEx::M3::MenuItemVibrant(langProfile.desc, isSelected) && !isSelected)
             {
                 clickedIndex = idx;
             }

@@ -6,6 +6,7 @@
 
 #include "imgui.h"
 #include "imguiex_m3.h"
+#include "m3/facade/buttons.h"
 
 #include <ctime>
 
@@ -54,7 +55,7 @@ void ErrorNotifier::Show()
     const auto viewportHeight = ImGui::GetMainViewport()->Size.y;
 
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
-    ImGui::SetNextWindowPos({0.F, viewportHeight - height}, ImGuiCond_Always);
+    ImGui::SetNextWindowPos({0.F, viewportHeight - height}, ImGuiCond_FirstUseEver);
 
     if (!ImGui::Begin("ErrorNotifier", nullptr, ImGuiEx::WindowFlags().NoDecoration().NoSavedSettings().NoFocusOnAppearing()))
     {
@@ -67,6 +68,7 @@ void ErrorNotifier::Show()
         errors.clear();
     }
 
+    const auto       styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::FilledButtonEnabled::LabelTextColor]);
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(errors.size()));
     auto current = std::chrono::system_clock::now();

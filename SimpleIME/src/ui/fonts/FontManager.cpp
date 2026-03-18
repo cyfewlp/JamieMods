@@ -4,8 +4,6 @@
 #include "ui/fonts/FontManager.h"
 
 #include "WCharUtils.h"
-#include "log.h"
-#include "toml/toml.hpp"
 
 #include <dwrite_3.h>
 #include <windows.h>
@@ -18,61 +16,88 @@ using Microsoft::WRL::ComPtr;
 namespace Ime
 {
 
-using Microsoft::WRL::ComPtr;
-
 namespace
 {
+auto GetDWriteFactory3() -> ComPtr<IDWriteFactory3>
+{
+    ComPtr<IDWriteFactory3> factory;
+    HRESULT                 hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
+    if (FAILED(hr)) return nullptr;
+    return factory;
+}
+
 auto GetFontRef(const FontInfo &fontInfo) -> ComPtr<IDWriteFontFaceReference>
 {
     if (fontInfo.IsInvalid()) return nullptr;
 
-    ComPtr<IDWriteFactory3> factory;
-
-    HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
-    if (FAILED(hr)) return nullptr;
+    ComPtr<IDWriteFactory3> factory = GetDWriteFactory3();
+    if (factory == nullptr) return nullptr;
 
     ComPtr<IDWriteFontSet> fontSet;
-    hr = factory->GetSystemFontSet(&fontSet);
-    if (FAILED(hr)) return nullptr;
+    if (FAILED(factory->GetSystemFontSet(&fontSet))) return nullptr;
 
     ComPtr<IDWriteFontFaceReference> fontRef;
-    hr = fontSet->GetFontFaceReference(static_cast<uint32_t>(fontInfo.GetIndex()), &fontRef);
-    if (FAILED(hr)) return nullptr;
+    if (FAILED(fontSet->GetFontFaceReference(static_cast<uint32_t>(fontInfo.GetIndex()), &fontRef)))
+    {
+        return nullptr;
+    }
     return fontRef;
 }
 
-auto GetPathFromReference(IDWriteFontFaceReference *fontRef) -> std::wstring
+auto GetFontFilePath(IDWriteFontFile *dWriteFontFile) -> std::wstring
 {
-    std::wstring            filePath;
-    ComPtr<IDWriteFontFile> dwFontFile;
-    HRESULT                 hr = fontRef->GetFontFile(&dwFontFile);
-    if (FAILED(hr)) return filePath;
-
     ComPtr<IDWriteFontFileLoader> loader;
-    hr = dwFontFile->GetLoader(&loader);
-    if (FAILED(hr)) return filePath;
+    if (FAILED(dWriteFontFile->GetLoader(&loader))) return {};
 
     ComPtr<IDWriteLocalFontFileLoader> localLoader;
-    if (FAILED(loader.As(&localLoader))) return filePath;
+    if (FAILED(loader.As(&localLoader))) return {};
 
     const void *key     = nullptr;
     UINT32      keySize = 0;
-    if (SUCCEEDED(dwFontFile->GetReferenceKey(&key, &keySize)) && keySize > 0)
+    if (SUCCEEDED(dWriteFontFile->GetReferenceKey(&key, &keySize)) && keySize > 0)
     {
         UINT32 pathLen = 0;
-        hr             = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
-        if (SUCCEEDED(hr) && pathLen > 0)
+        if (SUCCEEDED(localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen)) && pathLen > 0)
         {
+            std::wstring filePath;
             filePath.resize(pathLen + 1);
-            hr = localLoader->GetFilePathFromKey(key, keySize, filePath.data(), pathLen + 1);
-            if (SUCCEEDED(hr))
+            if (SUCCEEDED(localLoader->GetFilePathFromKey(key, keySize, filePath.data(), pathLen + 1)))
             {
                 filePath.resize(pathLen); // remove the extra null terminator
                 return filePath;
             }
         }
     }
-    return filePath;
+    return {};
+}
+
+auto GetFontFilePath(IDWriteFontFaceReference *fontRef) -> std::wstring
+{
+    ComPtr<IDWriteFontFile> fontFile;
+    if (SUCCEEDED(fontRef->GetFontFile(&fontFile)))
+    {
+        return GetFontFilePath(fontFile.Get());
+    }
+    return {};
+}
+
+auto GetFontFilePath(IDWriteFont *dWriteFont) -> std::wstring
+{
+    ComPtr<IDWriteFontFace> pFontFace = nullptr;
+    if (SUCCEEDED(dWriteFont->CreateFontFace(&pFontFace)))
+    {
+        UINT32 availableFileCount = 0;
+        if (SUCCEEDED(pFontFace->GetFiles(&availableFileCount, nullptr)) && availableFileCount > 0)
+        {
+            UINT32                  requestFileCount = 1; // we only need the first file path, even if there are multiple files for this font face
+            ComPtr<IDWriteFontFile> fontFile;
+            if (SUCCEEDED(pFontFace->GetFiles(&requestFileCount, &fontFile)))
+            {
+                return GetFontFilePath(fontFile.Get());
+            }
+        }
+    }
+    return {};
 }
 
 void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result)
@@ -162,7 +187,58 @@ auto GetFontFilePath(const FontInfo &fontInfo) -> std::string
     auto fontRef = GetFontRef(fontInfo);
     if (!fontRef) return result;
 
-    const auto &filePath = GetPathFromReference(fontRef.Get());
+    const auto &filePath = GetFontFilePath(fontRef.Get());
     return WCharUtils::ToString(filePath);
 }
+
+auto GetDefaultFontFilePath() -> std::wstring
+{
+    ComPtr<IDWriteFactory3> dWriteFactory = GetDWriteFactory3();
+    if (dWriteFactory == nullptr) return {};
+
+    NONCLIENTMETRICS ncm = {};
+    ncm.cbSize           = sizeof(ncm);
+    if (FALSE == SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0))
+    {
+        return {};
+    }
+
+    ComPtr<IDWriteGdiInterop> gdiInterop = nullptr;
+    if (SUCCEEDED(dWriteFactory->GetGdiInterop(&gdiInterop)))
+    {
+        ComPtr<IDWriteFont> font;
+        if (SUCCEEDED(gdiInterop->CreateFontFromLOGFONT(&ncm.lfMessageFont, &font)))
+        {
+            return GetFontFilePath(font.Get());
+        }
+    }
+    return {};
+}
+
+auto GetFirstFontFilePathInFamily(std::wstring_view familyName) -> std::wstring
+{
+    ComPtr<IDWriteFactory3> dWriteFactory = GetDWriteFactory3();
+    if (dWriteFactory == nullptr) return {};
+
+    ComPtr<IDWriteFontCollection> fontCollection = nullptr;
+    if (SUCCEEDED(dWriteFactory->GetSystemFontCollection(&fontCollection, FALSE)))
+    {
+        UINT32 index  = 0;
+        BOOL   exists = FALSE;
+        if (SUCCEEDED(fontCollection->FindFamilyName(familyName.data(), &index, &exists)) && exists != FALSE)
+        {
+            ComPtr<IDWriteFontFamily> fontFamily;
+            if (SUCCEEDED(fontCollection->GetFontFamily(index, &fontFamily)))
+            {
+                ComPtr<IDWriteFont> firstFont;
+                if (SUCCEEDED(fontFamily->GetFont(0, &firstFont)))
+                {
+                    return GetFontFilePath(firstFont.Get());
+                }
+            }
+        }
+    }
+    return {};
+}
+
 } // namespace Ime

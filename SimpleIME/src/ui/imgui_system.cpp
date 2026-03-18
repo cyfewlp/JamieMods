@@ -36,11 +36,20 @@ auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *
     cfg.PixelSnapH  = true;
     for (const auto &path : fontPaths)
     {
-        cfg.MergeMode = imFont != nullptr;
-        imFont        = io.Fonts->AddFontFromFileTTF(path.c_str(), 0.F, &cfg);
-        if (imFont == nullptr)
+        const bool isSupplementary = imFont != nullptr;
+        cfg.MergeMode              = isSupplementary;
+        ImFont *result             = io.Fonts->AddFontFromFileTTF(path.c_str(), 0.F, &cfg);
+        if (result == nullptr)
         {
-            break;
+            if (!isSupplementary)
+            {
+                return nullptr; // primary font failed: hard fail
+            }
+            logger::warn("Supplementary font failed to load, skipping: {}", path);
+        }
+        else
+        {
+            imFont = result;
         }
     }
     return imFont;
@@ -76,20 +85,20 @@ void EnableTextInputIfNeed()
 {
     static bool fWantTextInput = false;
     const bool  cWantTextInput = ImGui::GetIO().WantTextInput;
-    const auto *imeManager     = ImeController::GetInstance();
+    const auto *imeController  = ImeController::GetInstance();
 
     auto *controlMap = RE::ControlMap::GetSingleton();
     if (!fWantTextInput && cWantTextInput)
     {
         controlMap->AllowTextInput(true);
-        imeManager->EnableIme(true);
+        imeController->EnableIme(true);
         controlMap->StoreControls();
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false, false);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
         controlMap->AllowTextInput(false);
-        imeManager->EnableIme(false);
+        imeController->EnableIme(false);
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true, false);
         controlMap->LoadStoredControls();
     }
@@ -125,20 +134,22 @@ void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
     logger::info("ImGui initialized!");
 }
 
-auto AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *
+auto AddPrimaryFont(const std::vector<std::string> &fontsPathList, const std::vector<std::string> &fallbackFontPathList) -> ImFont *
 {
     ImFont *imFont = AddFonts(fontsPathList);
     auto   &io     = ImGui::GetIO();
     if (imFont == nullptr)
     {
-        ErrorNotifier::GetInstance().addError("Can't load fonts! Try fallback to the default fonts settings...", ErrorMsg::Level::warning);
+        if (!fontsPathList.empty())
+        {
+            ErrorNotifier::GetInstance().Warning("Can't load configured fonts! Falling back to system default fonts...");
+        }
         io.Fonts->Clear();
-        auto defaultFonts = std::vector{std::string(Settings::DEFAULT_MAIN_FONT_PATH), std::string(Settings::DEFAULT_EMOJI_FONT_PATH)};
-        imFont            = AddFonts(defaultFonts);
+        imFont = AddFonts(fallbackFontPathList);
     }
     if (imFont == nullptr)
     {
-        ErrorNotifier::GetInstance().addError("Can't load fonts! Fallback to ImGui embedded font...", ErrorMsg::Level::warning);
+        ErrorNotifier::GetInstance().Warning("Can't load fonts! Fallback to ImGui embedded font...");
         io.Fonts->Clear();
         imFont = io.Fonts->AddFontDefault();
     }
