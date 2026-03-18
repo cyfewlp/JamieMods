@@ -97,8 +97,8 @@ auto Ime::InputMethodManager::RefreshProfiles() -> bool
                     std::string             desc = WCharUtils::ToString(wsvDesc);
                     if (!desc.empty())
                     {
+                        logger::info("Load installed ime: {}", desc);
                         m_langProfiles.emplace_back(std::move(desc), profile.clsid, profile.guidProfile, profile.langid);
-                        logger::info("Load installed ime: {}", desc.c_str());
                     }
                 }
             }

@@ -1,6 +1,7 @@
 #include "ImeApp.h"
 
 #include "ImeWnd.hpp"
+#include "WCharUtils.h"
 #include "common.h"
 #include "configs/ConfigSerializer.h"
 #include "configs/CustomMessage.h"
@@ -18,6 +19,7 @@
 #include "menu/ToolWindowMenu.h"
 #include "path_utils.h"
 #include "ui/Settings.h"
+#include "ui/fonts/FontManager.h"
 #include "ui/imgui_system.h"
 
 #include <basetsd.h>
@@ -131,6 +133,35 @@ void InitializeMessaging()
 
 namespace Ime
 {
+namespace
+{
+auto GetDefaultFontFilePathList() -> std::vector<std::string>
+{
+    std::vector<std::string> fonts{};
+
+    const auto primaryFontFilePath = GetDefaultFontFilePath();
+    if (primaryFontFilePath.empty())
+    {
+        ErrorNotifier::GetInstance().Warning("Can't get default font. Fallback to ImGui embedded font.");
+        return std::vector<std::string>{};
+    }
+    fonts.push_back(WCharUtils::ToString(primaryFontFilePath));
+    logger::info("Primary font: {}", fonts.back());
+
+    std::wstring emojiFontFilePath = GetFirstFontFilePathInFamily(Settings::DEFAULT_EMOJI_FONT_FAMILY);
+    if (emojiFontFilePath.empty())
+    {
+        emojiFontFilePath = GetFirstFontFilePathInFamily(Settings::DEFAULT_SYMBOL_FONT_FAMILY);
+    }
+    if (!emojiFontFilePath.empty())
+    {
+        fonts.push_back(WCharUtils::ToString(emojiFontFilePath));
+        logger::info("Supplementary font: {}", fonts.back());
+    }
+    return fonts;
+}
+} // namespace
+
 ImeApp::ImeApp(std::filesystem::path configPath)
 {
     const auto configuration = Ime::ConfigSerializer::LoadConfiguration(configPath);
@@ -261,7 +292,8 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto              *context     = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
     UI::Initialize(m_hWnd, device, context);
-    (void)UI::AddPrimaryFont(m_settings.resources.fontPathList);
+    const auto defaultFontFilePathList = GetDefaultFontFilePathList();
+    (void)UI::AddPrimaryFont(m_settings.resources.fontPathList, defaultFontFilePathList);
     UI::InitializeM3(utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE, m_settings.appearance.schemeConfig);
 
     std::thread childWndThread([&ensureInitialized, this] -> void {

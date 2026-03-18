@@ -23,9 +23,11 @@ void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context);
  * Add the primary font, supporting the passing of multiple fonts as fallback fonts, which will be automatically
  * merged and set as the default font
  * @param fontsPathList the primary font and fallback fonts file path list
+ * @param fallbackFontsPathList if the primary font load failed, will fallback to these fonts in order. If the primary font load successfully, these
+ * fonts will be ignored. Can be empty.
  * @return the ImFont pointer.
  */
-auto AddPrimaryFont(const std::vector<std::string> &fontsPathList) -> ImFont *;
+auto AddPrimaryFont(const std::vector<std::string> &fontsPathList, const std::vector<std::string> &fallbackFontsPathList) -> ImFont *;
 
 /**
  * Add an independent ICON font.

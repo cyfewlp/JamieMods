@@ -22,12 +22,12 @@ struct Settings
         BASED_ON_CURSOR,
         BASED_ON_CARET
     };
-    static constexpr std::string_view DEFAULT_MAIN_FONT_PATH  = "C:/Windows/Fonts/simsun.ttc";
-    static constexpr std::string_view DEFAULT_EMOJI_FONT_PATH = "C:/Windows/Fonts/seguiemj.ttf";
-    static constexpr std::string_view ICON_FILE               = "simple-ime-icons.ttf";
-    static constexpr auto             ZOOM_MAX                = 2.0F;
-    static constexpr auto             ZOOM_MIN                = 0.5F;
-    static constexpr int              ZOOM_STEP_PERCENT       = 25;
+    static constexpr std::wstring_view DEFAULT_EMOJI_FONT_FAMILY  = L"Segoe UI Emoji";
+    static constexpr std::wstring_view DEFAULT_SYMBOL_FONT_FAMILY = L"Segoe UI Symbol";
+    static constexpr std::string_view  ICON_FILE                  = "simple-ime-icons.ttf";
+    static constexpr auto              ZOOM_MAX                   = 2.0F;
+    static constexpr auto              ZOOM_MIN                   = 0.5F;
+    static constexpr int               ZOOM_STEP_PERCENT          = 25;
 
     //! Shortcut: support combination of Ctrl, Shift, Alt and a normal key. e.g. "ctrl+shift+f1", "alt+f2", "f3"...
     //! The named key is can't combine by bitwise operation, g.g. "F2 | A" will become to "F3".
@@ -74,7 +74,7 @@ inline auto GetDefaultSettings() -> Settings
         .enableTsf                     = true,
         .fixInconsistentTextEntryCount = true,
         .logging                       = {.level = spdlog::level::info, .flushLevel = spdlog::level::info},
-        .resources = {.translationDir = "Data/interface/SimpleIME", .fontPathList = {"C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/seguiemj.ttf"}},
+        .resources                     = {.translationDir = "Data/interface/SimpleIME", .fontPathList = {}},
         .appearance =
             {.schemeConfig          = ImGuiEx::M3::GetM3ClassicSchemeConfig(),
                                           .language              = "english",

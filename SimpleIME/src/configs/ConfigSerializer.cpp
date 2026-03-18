@@ -83,6 +83,11 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
         " 罕见的修复开关，打开时: 如果鼠标不可见，但依然存在激活的输入框, Mod 会主动禁用 IME 输入. 因为鼠标不可见通常意味着当前处于正常游戏阶段",
         " 但是如果第三方 Menu 存在激活的输入框，但禁用了鼠标(例如某些极简 UI)，此开关可能会错误的禁用 IME，需要关闭此开关来修复这个问题",
     };
+    const Comments fontPathListComment = {
+        " [可选] 用于 SimpleIME 的字体文件路径列表，支持 ttf 和 otf 格式，Mod 会按照列表顺序加载字体并合并到一起",
+        " 如果列表为空或所有字体文件都无效，将使用系统默认字体",
+        " 示例: [\"C:/Windows/Fonts/simhei.ttf\", \"C:/Windows/Fonts/seguiemj.ttf\"]"
+    };
 
     toml::table logging{
         {KEY_LOG_LEVEL,       {configuration.logging.level, logLevelComment}},
@@ -98,7 +103,7 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
     };
     toml::table resources{
         {KEY_TRANSLATION_DIR, {configuration.resources.translationDir, {" 翻译文件目录"}}},
-        {KEY_FONTS,           configuration.resources.fontPathList                       },
+        {KEY_FONTS,           {configuration.resources.fontPathList, fontPathListComment}},
     };
 
     toml::value sourceColor          = {configuration.appearance.themeSourceColor, {" RGB 颜色, 不包含 alpha"}};

@@ -22,10 +22,10 @@ flush_level = "info"
 [resources]
 # 翻译文件目录
 translation_dir = "Data/interface/SimpleIME"
-fonts = [
-    "C:/Windows/Fonts/simsun.ttc",
-    "C:/Windows/Fonts/seguiemj.ttf",
-]
+# [可选] 用于 SimpleIME 的字体文件路径列表，支持 ttf 和 otf 格式，Mod 会按照列表顺序加载字体并合并到一起
+# 如果列表为空或所有字体文件都无效，将使用系统默认字体
+# 示例: ["C:/Windows/Fonts/simhei.ttf", "C:/Windows/Fonts/seguiemj.ttf"]
+fonts = []
 
 [appearance]
 # UI缩放倍率，有效值为 0.5 - 2.0, 请使用 0.25 的整数倍
