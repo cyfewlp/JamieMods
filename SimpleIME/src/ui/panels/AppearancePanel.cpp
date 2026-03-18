@@ -239,6 +239,7 @@ void AppearancePanel::Draw(Settings &settings)
                 ImGui::Spacing();
                 DrawThemeBuilder(settings);
                 DrawLanguagesCombo(settings.appearance);
+                ImGuiEx::M3::Checkbox(Translate("Settings.Appearance.VerticalCandidateList"), settings.appearance.verticalCandidateList, ICON_CHECK);
             }
 
             ImGui::TableNextColumn();

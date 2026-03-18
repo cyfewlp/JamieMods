@@ -282,9 +282,10 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     {
         settings.appearance.language = config.appearance.language;
     }
-    settings.appearance.zoom                 = config.appearance.zoom;
-    settings.appearance.errorDisplayDuration = config.appearance.errorDisplayDuration;
-    settings.appearance.showSettings         = config.appearance.showSettings;
+    settings.appearance.zoom                  = config.appearance.zoom;
+    settings.appearance.errorDisplayDuration  = config.appearance.errorDisplayDuration;
+    settings.appearance.showSettings          = config.appearance.showSettings;
+    settings.appearance.verticalCandidateList = config.appearance.verticalCandidateList;
 
     // Input
     settings.input.enableUnicodePaste = config.input.enableUnicodePaste;
@@ -342,13 +343,14 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     configuration.resources.fontPathList   = settings.resources.fontPathList;
 
     // Appearance
-    configuration.appearance.themeSourceColor     = RGB_MASK & settings.appearance.schemeConfig.sourceColor;
-    configuration.appearance.themeContrastLevel   = settings.appearance.schemeConfig.contrastLevel;
-    configuration.appearance.themeDarkMode        = settings.appearance.schemeConfig.darkMode;
-    configuration.appearance.language             = settings.appearance.language;
-    configuration.appearance.zoom                 = settings.appearance.zoom;
-    configuration.appearance.errorDisplayDuration = settings.appearance.errorDisplayDuration;
-    configuration.appearance.showSettings         = settings.appearance.showSettings;
+    configuration.appearance.themeSourceColor      = RGB_MASK & settings.appearance.schemeConfig.sourceColor;
+    configuration.appearance.themeContrastLevel    = settings.appearance.schemeConfig.contrastLevel;
+    configuration.appearance.themeDarkMode         = settings.appearance.schemeConfig.darkMode;
+    configuration.appearance.language              = settings.appearance.language;
+    configuration.appearance.zoom                  = settings.appearance.zoom;
+    configuration.appearance.errorDisplayDuration  = settings.appearance.errorDisplayDuration;
+    configuration.appearance.showSettings          = settings.appearance.showSettings;
+    configuration.appearance.verticalCandidateList = settings.appearance.verticalCandidateList;
 
     // Input
     configuration.input.enableUnicodePaste = settings.input.enableUnicodePaste;

@@ -98,7 +98,7 @@ jobs:
           }
           $content = $body -replace "([\s])\n([\s])", ''
           $releaseDate = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-dd HH:mm 'UTC'")
-          $content = "_Release date: $releaseDate_`n`n$content"
+          $content = "_Release date: $releaseDate `n`n$content"
           $content | Set-Content release_notes.md -Encoding UTF8
           Write-Host "--- release notes preview ---"
           Get-Content release_notes.md

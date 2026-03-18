@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "ImeWnd.hpp"
+
 #include "imguiex/icon.h"
 
 namespace Ime

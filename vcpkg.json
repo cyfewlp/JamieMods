@@ -17,7 +17,7 @@
         "rapidcsv"
       ]
     },
-    "test": {
+    "test-deps": {
       "description": "Adds dependencies for testing.",
       "dependencies": [
         "gtest",

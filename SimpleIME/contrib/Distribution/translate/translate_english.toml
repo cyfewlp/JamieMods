@@ -10,6 +10,7 @@ Zoom = "Zoom"
 ThemeColor = "Theme Color"
 ThemeBuilder = "Theme Builder###ThemeBuilder"
 ContrastLevel = "Contrast Level"
+VerticalCandidateList = "Show Candidate List Vertically"
 
 [Settings.Behaviour]
 EnableMod = "Enable Mod"

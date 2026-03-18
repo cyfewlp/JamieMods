@@ -45,13 +45,14 @@ static constexpr auto KEY_TRANSLATION_DIR = "translation_dir";
 static constexpr auto KEY_FONTS           = "fonts";
 
 // Appearance keys
-static constexpr auto KEY_ZOOM                   = "zoom";
-static constexpr auto KEY_LANGUAGE               = "language";
-static constexpr auto KEY_THEME_SOURCE_COLOR     = "theme_source_color";
-static constexpr auto KEY_THEME_DARK_MODE        = "theme_dark_mode";
-static constexpr auto KEY_THEME_CONTRAST_LEVEL   = "theme_contrast_level";
-static constexpr auto KEY_ERROR_DISPLAY_DURATION = "error_display_duration";
-static constexpr auto KEY_SHOW_SETTINGS          = "show_settings";
+static constexpr auto KEY_ZOOM                    = "zoom";
+static constexpr auto KEY_LANGUAGE                = "language";
+static constexpr auto KEY_THEME_SOURCE_COLOR      = "theme_source_color";
+static constexpr auto KEY_THEME_DARK_MODE         = "theme_dark_mode";
+static constexpr auto KEY_THEME_CONTRAST_LEVEL    = "theme_contrast_level";
+static constexpr auto KEY_ERROR_DISPLAY_DURATION  = "error_display_duration";
+static constexpr auto KEY_SHOW_SETTINGS           = "show_settings";
+static constexpr auto KEY_VERTICAL_CANDIDATE_LIST = "vertical_candidate_list";
 
 // Input keys
 static constexpr auto KEY_ENABLE_UNICODE_PASTE = "enable_unicode_paste";
@@ -103,13 +104,14 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
     toml::value sourceColor          = {configuration.appearance.themeSourceColor, {" RGB 颜色, 不包含 alpha"}};
     sourceColor.as_integer_fmt().fmt = toml::integer_format::hex;
     toml::table appearance{
-        {KEY_ZOOM,                   {configuration.appearance.zoom, zoomComment}                                                    },
-        {KEY_LANGUAGE,               configuration.appearance.language                                                               },
-        {KEY_THEME_SOURCE_COLOR,     sourceColor                                                                                     },
-        {KEY_THEME_DARK_MODE,        configuration.appearance.themeDarkMode                                                          },
-        {KEY_THEME_CONTRAST_LEVEL,   {configuration.appearance.themeContrastLevel, {" 对比度，-1.0 - 1.0，默认值为 0.0"}}            },
-        {KEY_ERROR_DISPLAY_DURATION, {configuration.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
-        {KEY_SHOW_SETTINGS,          configuration.appearance.showSettings                                                           },
+        {KEY_ZOOM,                    {configuration.appearance.zoom, zoomComment}                                                    },
+        {KEY_LANGUAGE,                configuration.appearance.language                                                               },
+        {KEY_THEME_SOURCE_COLOR,      sourceColor                                                                                     },
+        {KEY_THEME_DARK_MODE,         configuration.appearance.themeDarkMode                                                          },
+        {KEY_THEME_CONTRAST_LEVEL,    {configuration.appearance.themeContrastLevel, {" 对比度，-1.0 - 1.0，默认值为 0.0"}}            },
+        {KEY_ERROR_DISPLAY_DURATION,  {configuration.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
+        {KEY_SHOW_SETTINGS,           configuration.appearance.showSettings                                                           },
+        {KEY_VERTICAL_CANDIDATE_LIST, {configuration.appearance.verticalCandidateList, {" 垂直显示候选词列表"}}                       },
     };
     toml::table input{
         {KEY_ENABLE_UNICODE_PASTE, configuration.input.enableUnicodePaste},
@@ -166,6 +168,7 @@ auto ParseConfigurationFromToml(toml::value &rawToml) -> Configuration
         findAndSet(appearanceToml, KEY_THEME_CONTRAST_LEVEL, config.appearance.themeContrastLevel);
         findAndSet(appearanceToml, KEY_ERROR_DISPLAY_DURATION, config.appearance.errorDisplayDuration);
         findAndSet(appearanceToml, KEY_SHOW_SETTINGS, config.appearance.showSettings);
+        findAndSet(appearanceToml, KEY_VERTICAL_CANDIDATE_LIST, config.appearance.verticalCandidateList);
     }
 
     if (rawToml.contains(KEY_SECTION_INPUT))
