@@ -118,10 +118,6 @@ public:
         return *this;
     }
 
-    auto LastTypeScale() const -> const CachedTypeScale & { return m_lastTypeScale; }
-
-    auto CurrTypeScale() const -> const CachedTypeScale & { return *m_currTypeScale; }
-
     //! @brief early pop the font before the scope ends.
     //! This may be used to avoid the ImGui "ASSERT" before EndChild/End/EndPopup and etc.
     void _PopFont()

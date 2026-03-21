@@ -1777,9 +1777,7 @@ auto MenuItem(std::string_view label, const bool selected, MenuItemConfiguration
     }
     else
     {
-        DrawText(
-            window->DrawList, {cursorPosX, contentBB.Min.y + HalfDiff(height, labelFontScope.CurrTypeScale().currText.textSize)}, label, textColor
-        );
+        DrawText(window->DrawList, {cursorPosX, contentBB.Min.y + HalfDiff(height, m3Styles.GetLastText().currText.textSize)}, label, textColor);
     }
 
     return pressed;
@@ -1998,15 +1996,15 @@ auto AppBarScope::Title(std::string_view title, std::string_view subTitle) -> vo
         const auto fontScope = m3Styles.UseTextRole(titleText);
         const auto textColor = m3Styles.Colors()[Spec::AppBarCommon::TitleColor];
         maxTextWidth         = ImGui::CalcTextSize(TextStart(title), TextEnd(title)).x;
-        DrawText(window->DrawList, ImVec2(cursor.x, cursor.y + fontScope.CurrTypeScale().currHalfLineGap), title, textColor);
-        cursor.y += titleBottomSpace + fontScope.CurrTypeScale().currText.lineHeight;
+        DrawText(window->DrawList, ImVec2(cursor.x, cursor.y + m3Styles.GetLastText().currHalfLineGap), title, textColor);
+        cursor.y += titleBottomSpace + m3Styles.GetLastText().currText.lineHeight;
     }
     if (!subTitle.empty())
     {
         const auto fontScope = m3Styles.UseTextRole(subtitleText);
         const auto textColor = m3Styles.Colors()[Spec::AppBarCommon::SubtitleColor];
         maxTextWidth         = std::max(maxTextWidth, ImGui::CalcTextSize(TextStart(subTitle), TextEnd(subTitle)).x);
-        DrawText(window->DrawList, ImVec2(cursor.x, cursor.y + fontScope.CurrTypeScale().currHalfLineGap), subTitle, textColor);
+        DrawText(window->DrawList, ImVec2(cursor.x, cursor.y + m3Styles.GetLastText().currHalfLineGap), subTitle, textColor);
     }
     if (needBackupCursorPos)
     {
