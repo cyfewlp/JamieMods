@@ -17,33 +17,27 @@
 #include "tsf/ConversionModeUtil.h"
 #include "tsf/LangProfile.h"
 
-#include <RE/U/UIMessage.h>
-#include <RE/U/UIMessageQueue.h>
-
 namespace Ime
 {
 
 namespace
 {
-constexpr auto LANGUAGE_BAR = "LanguageBar";
+constexpr auto LANGUAGE_BAR              = "LanguageBar";
+constexpr auto LanguageProfilesMenuTitle = "##LanguageProfiles";
 
 void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles)
 {
     uint32_t clickedIndex = UINT32_MAX;
-    if (ImGuiEx::M3::BeginMenu("###InstalledIME", ImGuiEx::M3::Spec::MenuColors::Vibrant))
+    uint32_t idx          = 0;
+    if (ImGuiEx::M3::BeginMenu(LanguageProfilesMenuTitle, ImGui::GetItemRectMin(), ImGui::GetItemRectMax()))
     {
-        uint32_t idx = 0;
-
-        if (ImGuiEx::M3::MenuItemVibrant(DEFAULT_LANG_PROFILE.desc, activeLangProfile.guidProfile == DEFAULT_LANG_PROFILE.guidProfile))
-        {
-            ImeController::GetInstance()->ActivateLangProfile(DEFAULT_LANG_PROFILE.guidProfile);
-        }
-
         for (const auto &langProfile : langProfiles)
         {
             ImGui::PushID(static_cast<int>(idx));
+            ImGuiEx::M3::MenuItemConfiguration config{};
+            config.supportingText = langProfile.desc;
             const bool isSelected = IsEqualGUID(activeLangProfile.guidProfile, langProfile.guidProfile) == TRUE;
-            if (ImGuiEx::M3::MenuItemVibrant(langProfile.desc, isSelected) && !isSelected)
+            if (ImGuiEx::M3::MenuItem(langProfile.localeDisplayName, isSelected, config) && !isSelected)
             {
                 clickedIndex = idx;
             }
@@ -71,7 +65,7 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
     {
         flags = flags.NoInputs();
     }
-    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, nullptr, M3Spec::ToolBarColors::Vibrant, flags))
+    if (ImGuiEx::M3::BeginFloatingToolbar(LANGUAGE_BAR, nullptr, M3Spec::ToolBarColors::Standard, flags))
     {
         ImGuiEx::M3::SmallIcon(ICON_MOVE);
         ImGui::SameLine();
@@ -92,20 +86,22 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
 
         ImGui::SameLine();
 
-        if (ImGuiEx::M3::Button(activeLangProfile.desc, ImGuiEx::M3::ButtonConfiguration().XSmall().Text()))
-        {
-            ImGui::OpenPopup("###InstalledIME");
-        }
-        DrawInputMethodsCombo(activeLangProfile, langProfiles);
-
         auto      &state          = Core::State::GetInstance();
         auto      &conversionMode = state.GetConversionMode();
         const auto cModeName      = GetConversionModeNameShort(activeLangProfile.langid, conversionMode, state.IsKeyboardOpen());
         if (!cModeName.empty())
         {
-            ImGuiEx::M3::SameLine(0.F, M3Spec::StandardSmallButtonGroup::BetweenSpace);
             ImGuiEx::M3::AlignedLabel(cModeName);
+            ImGuiEx::M3::SameLine(0.F, M3Spec::StandardSmallButtonGroup::BetweenSpace);
         }
+
+        ImGuiEx::M3::MenuItemConfiguration config{};
+        config.supportingText = activeLangProfile.desc;
+        if (ImGuiEx::M3::MenuItem(activeLangProfile.language, false, config))
+        {
+            ImGui::OpenPopup(LanguageProfilesMenuTitle);
+        }
+        DrawInputMethodsCombo(activeLangProfile, langProfiles);
 
         ImGuiEx::M3::EndFloatingToolbar();
     }

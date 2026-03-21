@@ -128,18 +128,16 @@ void ToolWindow::DrawMenuBehaviour(Settings &settings) const
             ImeController::GetInstance()->EnableMod(enableMod);
         }
         ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.EnableModToolTip"));
-        if (!settings.enableMod)
+        if (settings.enableMod)
         {
-            return;
+            (void)ImGuiEx::M3::Checkbox(
+                Translate("Settings.Behaviour.FixInconsistentTextEntryCount"), settings.fixInconsistentTextEntryCount, ICON_CHECK
+            );
+            ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FixInconsistentTextEntryCountToolTip"));
+
+            DrawStates();
+            DrawFeatures(settings);
         }
-
-        (void)ImGuiEx::M3::Checkbox(
-            Translate("Settings.Behaviour.FixInconsistentTextEntryCount"), settings.fixInconsistentTextEntryCount, ICON_CHECK
-        );
-        ImGuiEx::M3::SetItemToolTip(Translate("Settings.Behaviour.FixInconsistentTextEntryCountToolTip"));
-
-        DrawStates();
-        DrawFeatures(settings);
     }
     ImGui::EndChild();
 }

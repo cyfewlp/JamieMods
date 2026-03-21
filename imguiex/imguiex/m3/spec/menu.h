@@ -212,9 +212,6 @@ struct MenusSizing<MenuLayout::Standard>
         //! Menu item outer height. The total height of a menu item, including the inherent height and the top and
         //! bottom gaps.
         static constexpr auto  OuterHeightEx                       = Height + TotalGapEx;
-        //! M3 spec defined TopSpace length inconsistent with that length defined in Figma.
-        //! We follow the Figma design in this case, and use a different name to avoid confusion.
-        static constexpr auto  TopSpaceEx                          = dp<12>();
         //! M3 spec defined BetweenSpaceEx length inconsistent with that length defined in Figma.
         //! We follow the Figma design in this case, and use a different name to avoid confusion.
         static constexpr auto  BetweenSpaceEx                      = dp<8>();
@@ -235,6 +232,7 @@ struct MenusSizing<MenuLayout::Standard>
         static constexpr auto  TrailingSupportingTextRole          = TextRole::LabelLarge;
         //! Menu item supporting text size
         static constexpr auto  SupportingTextRole                  = TextRole::BodySmall;
+        static constexpr auto  TopSpaceEx                          = dp<4>();
         //! Menu item focus indicator outline offset
         static constexpr float MenuItemFocusIndicatorOutlineOffset = -3.0F;
         //! Menu item focus indicator thickness
@@ -331,6 +329,7 @@ struct MenuItemColorsValues
     ColorRole iconColor;
     float     selectedContainerOpacity;
     ColorRole labelTextColor;
+    ColorRole supportingTextColor;
 };
 
 //! Get menu item colors values based on the menu colors and disabled state
@@ -346,6 +345,7 @@ constexpr auto GetMenuItemColors(MenuColors colors, const bool selected, [[maybe
             values.containerColor           = selected ? ItemSpec::SelectedContainerColor : ItemSpec::ContainerColor;
             values.iconColor                = selected ? ItemSpec::SelectedLeadingIconColor : ItemSpec::LeadingIconColor;
             values.labelTextColor           = selected ? ItemSpec::SelectedLabelTextColor : ItemSpec::LabelTextColor;
+            values.supportingTextColor      = selected ? ItemSpec::SelectedSupportingTextColor : ItemSpec::SupportingTextColor;
             values.selectedContainerOpacity = disabled ? ItemSpec::SelectedDisabledContainerOpacity : 1.0F;
             break;
         }
@@ -354,6 +354,7 @@ constexpr auto GetMenuItemColors(MenuColors colors, const bool selected, [[maybe
             values.containerColor           = selected ? ItemSpec::SelectedContainerColor : ItemSpec::ContainerColor;
             values.iconColor                = selected ? ItemSpec::SelectedLeadingIconColor : ItemSpec::LeadingIconColor;
             values.labelTextColor           = selected ? ItemSpec::SelectedLabelTextColor : ItemSpec::LabelTextColor;
+            values.supportingTextColor      = selected ? ItemSpec::SelectedSupportingTextColor : ItemSpec::SupportingTextColor;
             values.selectedContainerOpacity = 1.0F;
             break;
         }

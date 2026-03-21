@@ -457,21 +457,32 @@ inline auto DockedToolBar(std::string_view strId, uint8_t count, const Spec::Too
 auto BeginFloatingToolbar(const char *name, bool *p_open, Spec::ToolBarColors colors = Spec::ToolBarColors::Standard, WindowFlags flags = {}) -> bool;
 auto EndFloatingToolbar() -> void;
 
-auto MenuItem(std::string_view icon, std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool;
-
-inline auto MenuItem(std::string_view label, const bool selected) -> bool
+struct MenuItemConfiguration
 {
-    return MenuItem("", label, selected, Spec::MenuColors::Standard);
-}
+    std::string_view icon;
+    std::string_view supportingText;
+    Spec::MenuColors menuitemColors = Spec::MenuColors::Standard;
+};
+
+auto MenuItem(std::string_view label, const bool selected, MenuItemConfiguration config = {}) -> bool;
 
 inline auto MenuItemVibrant(std::string_view label, const bool selected) -> bool
 {
-    return MenuItem("", label, selected, Spec::MenuColors::Vibrant);
+    MenuItemConfiguration config{};
+    config.menuitemColors = Spec::MenuColors::Vibrant;
+    return MenuItem(label, selected, config);
 }
 
 constexpr int32_t SMALL_MAX_MENU_ITEM_COUNT  = 4;
 constexpr int32_t MEDIUM_MAX_MENU_ITEM_COUNT = 8;
 constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16;
+
+struct MenuConfiguration
+{
+    Spec::MenuColors menuColors = Spec::MenuColors::Standard;
+    int32_t maxItemCount    = SMALL_MAX_MENU_ITEM_COUNT; ///<  Optional limit for visible items before scrolling. Pass a negative value for no limit.
+    bool    widthFitPreview = false;
+};
 
 /**
  * @brief M3-styled Menu popup (Internal wrapper of ImGui::BeginComboPopup).
@@ -480,26 +491,22 @@ constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16;
  * @note **Implementation:** Reuses `BeginComboPopup` for stable positioning logic.
  *
  * @param strId      Popup ID.
- * @param m3Styles   M3 style configuration.
- * @param menuitemColors  Color scheme for menu items, affecting background.
- * @param maxItemCount Optional limit for visible items before scrolling. Pass a negative value for no limit.
  * @return true if the menu is open and ready for item rendering; false if the popup is closed or failed to open.
  */
-auto BeginMenu(std::string_view strId, Spec::MenuColors menuitemColors, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool;
+auto BeginMenu(std::string_view strId, ImVec2 avoidRectMin, ImVec2 avoidRectMax, MenuConfiguration configuration = {}) -> bool;
 
-inline auto BeginMenu(std::string_view strId, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
-{
-    return BeginMenu(strId, Spec::MenuColors::Standard, maxItemCount);
-}
+auto BeginMenu(std::string_view strId, MenuConfiguration configuration = {}) -> bool;
 
-inline auto BeginMenuVibrant(std::string_view strId, int32_t maxItemCount = SMALL_MAX_MENU_ITEM_COUNT) -> bool
+inline auto BeginMenuVibrant(std::string_view strId) -> bool
 {
-    return BeginMenu(strId, Spec::MenuColors::Vibrant, maxItemCount);
+    MenuConfiguration config{};
+    config.menuColors = Spec::MenuColors::Vibrant;
+    return BeginMenu(strId, config);
 }
 
 void EndMenu();
 
-auto BeginCombo(std::string_view label, std::string_view previewValue) -> bool;
+auto BeginCombo(std::string_view label, std::string_view previewValue, bool widthFitPreview = false) -> bool;
 void EndCombo();
 
 void SetItemToolTip(std::string_view text);

@@ -24,17 +24,20 @@ struct std::hash<GUID>
 
 namespace Ime
 {
-constexpr auto LANGID_ENG = 0x409;
+constexpr auto        LANGID_ENG         = 0x409;
+constexpr std::size_t MAX_GUID_CHAR_SIZE = 64;
 
 struct LangProfile
 {
-    std::string desc;
+    std::string localeDisplayName; ///< e.g. 简体中文(中国大陆)
+    std::string desc;              ///< e.g. 微软拼音
+    std::string language;          ///< e.g. ENG, 简体中文
     CLSID       clsid{};
     GUID        guidProfile{};
     LANGID      langid{};
 };
 
-const auto DEFAULT_LANG_PROFILE = LangProfile{"ENG", CLSID_NULL, GUID_NULL, LANGID_ENG};
+inline const auto DEFAULT_LANG_PROFILE = LangProfile{"English(UK)", "ENG", "English", CLSID_NULL, GUID_NULL, LANGID_ENG};
 
 inline auto ToStringFromGUID2(const GUID &guid) -> std::wstring
 {

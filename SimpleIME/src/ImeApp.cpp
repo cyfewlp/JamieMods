@@ -76,9 +76,13 @@ public:
     }
 };
 
-constexpr auto                          CONFIG_FILE_NAME     = "SimpleIME.toml";
-constexpr auto                          INIT_TIMEOUT_SECONDS = 5s;
-std::unique_ptr<Ime::ImeApp>            g_instance           = nullptr;
+#ifdef DEBUG
+constexpr auto INIT_TIMEOUT_SECONDS = 500s;
+#else
+constexpr auto INIT_TIMEOUT_SECONDS = 5s;
+#endif
+constexpr auto                          CONFIG_FILE_NAME = "SimpleIME.toml";
+std::unique_ptr<Ime::ImeApp>            g_instance       = nullptr;
 std::unique_ptr<InitErrorMessageShow>   g_pInitErrorMessageShow(nullptr);
 std::unique_ptr<Hooks::D3DInitHookData> g_D3DInitHook = nullptr; ///< Only install once, should not be a member of `ImeApp`.
 
@@ -185,6 +189,7 @@ void ImeApp::OnInputLoaded()
 
 void ImeApp::Uninitialize()
 {
+    SaveSettings();
     UI::DestroyM3();
     UI::Shutdown();
     Events::UnInstallEventSinks(); // should safety
@@ -199,7 +204,6 @@ void ImeApp::Uninitialize()
             RealWndProc = nullptr;
         }
     }
-    SaveSettings();
     m_state.SetState(State::StateKey::DORMANCY);
 }
 
@@ -357,8 +361,6 @@ void ImeApp::Shutdown()
 
 void ImeApp::SaveSettings()
 {
-    ImeController::GetInstance()->SaveSettings(m_settings);
-
     const auto config = Ime::ConvertSettingsToConfiguration(m_settings);
     Ime::ConfigSerializer::SaveConfiguration(ConfigFilePath(), config);
 }

@@ -58,9 +58,9 @@ auto GetConversionModeNameShort(LANGID langId, Core::State::ConversionMode conve
         const auto native    = conversionMode.IsNative();
         const auto fullShape = conversionMode.IsFullShape();
         if (native && fullShape) return "全角";
-        if (fullShape) return "英(全)";
+        if (fullShape) return "英(全角)";
         if (!native) return "英";
-        // 半角无需提示
+        return "中";
     }
     return "";
 }

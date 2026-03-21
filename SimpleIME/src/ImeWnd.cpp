@@ -170,8 +170,9 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
     }
 }
 
-void ImeWnd::UnInitialize() const noexcept
+void ImeWnd::UnInitialize() noexcept
 {
+    m_imeUI.reset(); // must release before ImGui shutdown
     if (m_textService != nullptr)
     {
         m_textService->UnInitialize();
@@ -304,6 +305,7 @@ void ImeWnd::Draw(Settings &settings)
             }
         }
     }
+    ImeController::GetInstance()->SaveSettings(settings);
 }
 
 auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -476,7 +478,7 @@ void ImeWnd::OnCreated(Settings &settings)
     ImeController::GetInstance()->Init(this, m_hWndParent, settings);
 }
 
-auto ImeWnd::OnDestroy() const -> LRESULT
+auto ImeWnd::OnDestroy() -> LRESULT
 {
     logger::info("Destroy IME Window");
     ImeController::GetInstance()->Shutdown();

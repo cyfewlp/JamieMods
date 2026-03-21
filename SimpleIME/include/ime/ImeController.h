@@ -17,7 +17,13 @@ class ImeController final
 public:
     void ApplySettings();
 
-    void SaveSettings(Settings &settings) const { settings.enableMod = m_fEnabledMod; }
+    void SaveSettings(Settings &settings) const
+    {
+        if (IsReady())
+        {
+            settings.enableMod = m_fEnabledMod;
+        }
+    }
 
     void SyncImeStateIfDirty()
     {

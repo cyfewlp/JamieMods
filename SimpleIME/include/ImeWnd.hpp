@@ -39,7 +39,7 @@ public:
     ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
     void Initialize(bool enableTsf) noexcept(false);
-    void UnInitialize() const noexcept;
+    void UnInitialize() noexcept;
 
     /**
      * Work on standalone thread and run own message loop.
@@ -97,7 +97,7 @@ private:
 
     auto OnCreated(Settings &settings) -> void;
 
-    [[nodiscard]] auto OnDestroy() const -> LRESULT;
+    [[nodiscard]] auto OnDestroy() -> LRESULT;
 
     void InitializeTextService();
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;

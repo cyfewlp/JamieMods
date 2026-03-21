@@ -656,24 +656,25 @@ auto TextField(
     const auto fontScope = m3Styles.UseTextRole<TfcSpec::LabelTextRole>();
 
     const auto displayLabel = GetDisplayLabel(label);
-    float      minWidth     = ImGui::CalcTextSize(TextStart(displayLabel), TextEnd(displayLabel)).x +
-                     GetPixels(m3Styles, TfcSpec::LeadingLabelTextSpace, TfcSpec::TrailingLabelTextSpace);
+    float      width        = ImGui::CalcTextSize(TextStart(displayLabel), TextEnd(displayLabel)).x +
+                  GetPixels(m3Styles, TfcSpec::LeadingLabelTextSpace, TfcSpec::TrailingLabelTextSpace);
     const auto iconSpace = GetPixels(m3Styles, TfcSpec::IconSpace);
     if (!config.leadingIcon.empty())
     {
-        minWidth += iconSpace;
+        width += iconSpace;
     }
     if (!config.trailingIcon.empty())
     {
-        minWidth += iconSpace;
+        width += iconSpace;
     }
     const auto   height = m3Styles.GetPixels(TfcSpec::Height);
-    const ImVec2 size(ImMax(ImGui::GetContentRegionAvail().x, minWidth), height);
+    const ImVec2 layoutSize(width, height);
+    const ImVec2 size(ImMax(ImGui::GetContentRegionAvail().x, width), height);
     const ImVec2 posMin = GetAlignedCursorPos(window, height);
     const ImRect bb(posMin, posMin + size);
     const bool   editable = buffer != nullptr;
 
-    ImGui::ItemSize(size);
+    ImGui::ItemSize(layoutSize);
     if (!ImGui::ItemAdd(bb, id, nullptr, editable ? ImGuiItemFlags_Inputable : 0))
     {
         return false;
@@ -1684,39 +1685,7 @@ auto EndFloatingToolbar() -> void
     ImGui::PopStyleVar();
 }
 
-namespace
-{
-auto BeginMenu(ImGuiID id, const ImRect &avoidBB, const M3Styles &m3Styles, Spec::MenuColors menuColors, const int32_t maxItemCount) -> bool
-{
-    if (ImGui::IsPopupOpen(id, ImGuiPopupFlags_None))
-    {
-        ImVec2 max(FLT_MAX, FLT_MAX);
-        if (maxItemCount > 0)
-        {
-            max.y = m3Styles.GetPixels(Spec::MenuItemSizingStandard::OuterHeightEx) * static_cast<float>(maxItemCount);
-        }
-        ImGui::SetNextWindowSizeConstraints({avoidBB.GetWidth(), 0.F}, max);
-    }
-
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.F, 0.F});
-
-    Spec::ColorRole containerRole = menuColors == Spec::MenuColors::Standard ? Spec::Menus<Spec::MenuColors::Standard>::ContainerColor
-                                                                             : Spec::Menus<Spec::MenuColors::Vibrant>::ContainerColor;
-    ImGui::PushStyleColor(ImGuiCol_PopupBg, m3Styles.Colors()[containerRole]);
-    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m3Styles.GetPixels(Spec::Menu::ContainerShape));
-    const auto visible = ImGui::BeginComboPopup(id, avoidBB, 0);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor();
-    if (!visible)
-    {
-        ImGui::PopStyleVar();
-    }
-    return visible;
-}
-
-} // namespace
-
-auto MenuItem(std::string_view icon, std::string_view label, const bool selected, Spec::MenuColors menuitemColors) -> bool
+auto MenuItem(std::string_view label, const bool selected, MenuItemConfiguration config) -> bool
 {
     using MenusSpec    = Spec::MenusSizing<Spec::MenuLayout::Horizontal>;
     using MenuItemSpec = MenusSpec::Item;
@@ -1727,16 +1696,23 @@ auto MenuItem(std::string_view icon, std::string_view label, const bool selected
         return false;
     }
     // \todo is first/last?
-    auto        &m3Styles        = Context::GetM3Styles();
-    const auto   labelFontScope  = m3Styles.UseTextRole<MenuItemSpec::LabelTextRole>();
-    const auto   minWidth        = m3Styles.GetPixels(MenuItemSpec::MinWidthEx);
-    const auto   contentWidth    = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
-    const auto   leadingIconSize = m3Styles.GetPixels(MenuItemSpec::LeadingIconSize);
-    const auto   bewteenSpace    = m3Styles.GetPixels(MenuItemSpec::BetweenSpace);
-    const auto   width           = minWidth + contentWidth + (icon.empty() ? 0.F : leadingIconSize + bewteenSpace);
-    const auto   height          = m3Styles.GetPixels(MenusSpec::Item::OuterHeightEx);
+    auto      &m3Styles        = Context::GetM3Styles();
+    const auto minWidth        = m3Styles.GetPixels(MenuItemSpec::MinWidthEx);
+    const auto leadingIconSize = m3Styles.GetPixels(MenuItemSpec::LeadingIconSize);
+    const auto bewteenSpace    = m3Styles.GetPixels(MenuItemSpec::BetweenSpace);
+
+    const auto labelFontScope = m3Styles.UseTextRole<MenuItemSpec::LabelTextRole>();
+    auto       contentWidth   = ImGui::CalcTextSize(TextStart(label), TextEnd(label)).x;
+    if (!config.supportingText.empty())
+    {
+        const auto supportingTextFontScope = m3Styles.UseTextRole<MenuItemSpec::SupportingTextRole>();
+        contentWidth                       = std::max(contentWidth, CalcTextWidth(config.supportingText));
+    }
+    const auto   width  = minWidth + contentWidth + (config.icon.empty() ? 0.F : leadingIconSize + bewteenSpace);
+    const auto   height = m3Styles.GetPixels(MenusSpec::Item::OuterHeightEx);
     const ImVec2 size(width, height);
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2{ImMax(ImGui::GetContentRegionAvail().x, size.x), size.y});
+    const ImVec2 posMin = GetAlignedCursorPos(window, height);
+    const ImRect bb(posMin, posMin + ImVec2{ImMax(ImGui::GetContentRegionAvail().x, size.x), size.y});
     const auto   id = window->GetID(TextStart(label), TextEnd(label));
     ImGui::ItemSize(size);
     if (!ImGui::ItemAdd(bb, id))
@@ -1760,18 +1736,20 @@ auto MenuItem(std::string_view icon, std::string_view label, const bool selected
 
     const ImVec2 contentOffset((m3Styles.GetPixels(MenuItemSpec::OffsetXEx)), m3Styles.GetPixels(MenusSpec::Gap));
     const ImRect contentBB(bb.Min + contentOffset, bb.Max - contentOffset);
-    const auto   colors    = Spec::GetMenuItemColors(menuitemColors, selected, disabled);
-    ImVec4       textColor = m3Styles.Colors()[colors.labelTextColor];
-    ImVec4       bgColor   = m3Styles.Colors()[colors.containerColor];
-    ImVec4       iconColor = m3Styles.Colors()[colors.iconColor];
-    Spec::Unit   rounding  = selected ? MenuItemSpec::SelectedShape : MenuItemSpec::Shape;
+    const auto   colors              = Spec::GetMenuItemColors(config.menuitemColors, selected, disabled);
+    ImVec4       textColor           = m3Styles.Colors()[colors.labelTextColor];
+    ImVec4       supportingTextColor = m3Styles.Colors()[colors.supportingTextColor];
+    ImVec4       bgColor             = m3Styles.Colors()[colors.containerColor];
+    ImVec4       iconColor           = m3Styles.Colors()[colors.iconColor];
+    Spec::Unit   rounding            = selected ? MenuItemSpec::SelectedShape : MenuItemSpec::Shape;
     if (disabled)
     {
         if (selected)
         {
             bgColor.w = colors.selectedContainerOpacity;
         }
-        textColor.w = DISABLED_CONTENT_OPACITY;
+        textColor.w           = DISABLED_CONTENT_OPACITY;
+        supportingTextColor.w = DISABLED_CONTENT_OPACITY;
     }
     else
     {
@@ -1782,24 +1760,80 @@ auto MenuItem(std::string_view icon, std::string_view label, const bool selected
     window->DrawList->AddRectFilled(contentBB.Min, contentBB.Max, ImGui::ColorConvertFloat4ToU32(bgColor), m3Styles.GetPixels(rounding));
 
     const auto leadingSpace = m3Styles.GetPixels(MenuItemSpec::LeadingSpace);
-    const auto topSpace     = m3Styles.GetPixels(MenuItemSpec::TopSpaceEx);
-    float      cursorPos    = contentBB.Min.x + leadingSpace;
-    if (!icon.empty())
+    float      cursorPosX   = contentBB.Min.x + leadingSpace;
+    if (!config.icon.empty())
     {
-        DrawIcon(window->DrawList, leadingIconSize, {cursorPos, bb.Min.y + HalfDiff(size.y, leadingIconSize)}, icon, m3Styles, iconColor);
-        cursorPos += leadingIconSize + bewteenSpace;
+        DrawIcon(window->DrawList, leadingIconSize, {cursorPosX, bb.Min.y + HalfDiff(size.y, leadingIconSize)}, config.icon, m3Styles, iconColor);
+        cursorPosX += leadingIconSize + bewteenSpace;
     }
 
-    DrawText(window->DrawList, {cursorPos, contentBB.Min.y + topSpace + m3Styles.GetLastText().currHalfLineGap}, label, textColor);
+    float cursorPosY = contentBB.Min.y + m3Styles.GetPixels(MenuItemSpec::TopSpaceEx);
+    if (!config.supportingText.empty())
+    {
+        DrawText(window->DrawList, {cursorPosX, cursorPosY + m3Styles.GetLastText().currHalfLineGap}, label, textColor);
+        cursorPosY += m3Styles.GetLastText().currText.lineHeight;
+        const auto supportingFontScope = m3Styles.UseTextRole<MenuItemSpec::SupportingTextRole>();
+        DrawText(window->DrawList, {cursorPosX, cursorPosY + m3Styles.GetLastText().currHalfLineGap}, config.supportingText, supportingTextColor);
+    }
+    else
+    {
+        DrawText(
+            window->DrawList, {cursorPosX, contentBB.Min.y + HalfDiff(height, labelFontScope.CurrTypeScale().currText.textSize)}, label, textColor
+        );
+    }
+
     return pressed;
 }
 
-auto BeginMenu(std::string_view strId, Spec::MenuColors menuitemColors, const int32_t maxItemCount) -> bool
+namespace
+{
+auto BeginMenu(ImGuiID id, ImVec2 avoidRectMin, ImVec2 avoidRectMax, MenuConfiguration configuration) -> bool
+{
+    const M3Styles &m3Styles = Context::GetM3Styles();
+    ImRect          avoidBB(avoidRectMin, avoidRectMax);
+    const auto      maxItemCount = configuration.maxItemCount;
+    if (ImGui::IsPopupOpen(id, ImGuiPopupFlags_None))
+    {
+        ImVec2 max(FLT_MAX, FLT_MAX);
+        if (maxItemCount > 0)
+        {
+            max.y = m3Styles.GetPixels(Spec::MenuItemSizingStandard::OuterHeightEx) * static_cast<float>(maxItemCount);
+        }
+        ImGui::SetNextWindowSizeConstraints({avoidBB.GetWidth(), 0.F}, max);
+    }
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.F, 0.F});
+
+    Spec::ColorRole containerRole = configuration.menuColors == Spec::MenuColors::Standard ? Spec::Menus<Spec::MenuColors::Standard>::ContainerColor
+                                                                                           : Spec::Menus<Spec::MenuColors::Vibrant>::ContainerColor;
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, m3Styles.Colors()[containerRole]);
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m3Styles.GetPixels(Spec::Menu::ContainerShape));
+    ImGuiEx::ComboFlags flags;
+    if (configuration.widthFitPreview)
+    {
+        flags = flags.WidthFitPreview();
+    }
+    const auto visible = ImGui::BeginComboPopup(id, avoidBB, flags);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+    if (!visible)
+    {
+        ImGui::PopStyleVar();
+    }
+    return visible;
+}
+} // namespace
+
+auto BeginMenu(std::string_view strId, ImVec2 avoidRectMin, ImVec2 avoidRectMax, MenuConfiguration configuration) -> bool
+{
+    const auto popupId = ImGui::GetID(TextStart(strId), TextEnd(strId));
+    return BeginMenu(popupId, avoidRectMin, avoidRectMax, configuration);
+}
+
+auto BeginMenu(std::string_view strId, MenuConfiguration configuration) -> bool
 {
     const auto avoidRect = ImRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos());
-    const auto popupId   = ImGui::GetID(TextStart(strId), TextEnd(strId));
-    auto      &m3Styles  = Context::GetM3Styles();
-    return BeginMenu(popupId, avoidRect, m3Styles, menuitemColors, maxItemCount);
+    return BeginMenu(strId, avoidRect.Min, avoidRect.Max, configuration);
 }
 
 void EndMenu()
@@ -1808,7 +1842,7 @@ void EndMenu()
     ImGui::PopStyleVar();
 }
 
-auto BeginCombo(std::string_view label, std::string_view previewValue) -> bool
+auto BeginCombo(std::string_view label, std::string_view previewValue, bool widthFitPreview) -> bool
 {
     if (ImGui::GetCurrentWindow()->SkipItems)
     {
@@ -1827,7 +1861,9 @@ auto BeginCombo(std::string_view label, std::string_view previewValue) -> bool
         ImGui::OpenPopupEx(popupId);
         popupOpen = true;
     }
-    return popupOpen && BeginMenu(popupId, g.LastItemData.Rect, m3Styles, Spec::MenuColors::Standard, SMALL_MAX_MENU_ITEM_COUNT);
+    MenuConfiguration config{};
+    config.widthFitPreview = widthFitPreview;
+    return popupOpen && BeginMenu(popupId, g.LastItemData.Rect.Min, g.LastItemData.Rect.Max, config);
 }
 
 void EndCombo()
@@ -2079,6 +2115,7 @@ void SetupDefaultImGuiStyles(ImGuiStyle &style)
     const auto &scheme   = m3Styles.Colors();
 
     style.WindowPadding = ImVec2{}; // Default window no padding, all padding should be defined in each component spec.
+    style.ScrollbarSize = m3Styles.GetPixels(8.0F);
 
     style.Colors[ImGuiCol_Text]             = scheme[ColorRole::onSurface];
     style.Colors[ImGuiCol_TitleBg]          = scheme[ColorRole::surfaceContainer];

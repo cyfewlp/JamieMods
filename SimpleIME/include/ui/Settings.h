@@ -32,7 +32,7 @@ struct Settings
     //! Shortcut: support combination of Ctrl, Shift, Alt and a normal key. e.g. "ctrl+shift+f1", "alt+f2", "f3"...
     //! The named key is can't combine by bitwise operation, g.g. "F2 | A" will become to "F3".
     ImGuiKeyChord shortcut;
-    bool          enableMod                     = true; ///< modify once on Mod quit.
+    bool          enableMod                     = true; ///< modify on UI thread every frame.
     bool          enableTsf                     = true;
     bool          fixInconsistentTextEntryCount = true; ///< modify in ToolWindow(ImeMenu). no need sync because ImeMenu is the topmost menu;
 

@@ -5,9 +5,12 @@
 #include "imguiex/ErrorNotifier.h"
 #include "log.h"
 
+#include <Shlwapi.h>
 #include <future>
 #include <msctf.h>
 #include <stdexcept>
+
+#pragma comment(lib, "Shlwapi.lib")
 
 namespace
 {
@@ -23,6 +26,81 @@ auto GetProfileCachedIndex(const std::vector<Ime::LangProfile> &langProfiles, co
     }
     return UINT32_MAX;
 }
+
+template <std::size_t SIZE>
+using WStringBuffer = std::array<wchar_t, SIZE>;
+
+auto GetKeyboardLayoutDisplayName(HKL hkl) -> std::string
+{
+    constexpr size_t maxLayoutDisplayNameSize = 256;
+
+    const auto keyboardRegPath = std::format(L"SYSTEM\\CurrentControlSet\\Control\\Keyboard Layouts\\{:08x}", HandleToUlong(hkl) >> 16);
+
+    HKEY hKey = nullptr;
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, keyboardRegPath.data(), 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+    {
+        return {};
+    }
+
+    std::string result;
+    DWORD       bufferBytes = 0;
+    if (RegQueryValueExW(hKey, L"Layout Display Name", nullptr, nullptr, nullptr, &bufferBytes) == ERROR_SUCCESS)
+    {
+        std::vector<wchar_t> displayNameBuf(static_cast<size_t>(bufferBytes) / sizeof(wchar_t));
+        if (RegQueryValueExW(hKey, L"Layout Display Name", nullptr, nullptr, reinterpret_cast<LPBYTE>(displayNameBuf.data()), &bufferBytes) ==
+            ERROR_SUCCESS)
+        {
+            WStringBuffer<maxLayoutDisplayNameSize> resolvedName = {};
+            if (SUCCEEDED(SHLoadIndirectString(displayNameBuf.data(), resolvedName.data(), resolvedName.size(), nullptr)))
+            {
+                result = WCharUtils::ToString(std::wstring_view(resolvedName.data()));
+            }
+        }
+    }
+    RegCloseKey(hKey);
+    return result;
+}
+
+auto GetLangProfileDesc(ITfInputProcessorProfiles *processorProfiles, const TF_INPUTPROCESSORPROFILE &profile) -> std::string
+{
+    if (profile.dwProfileType == TF_PROFILETYPE_KEYBOARDLAYOUT && profile.hkl != nullptr)
+    {
+        return GetKeyboardLayoutDisplayName(profile.hkl);
+    }
+
+    CComBSTR bStrDesc = nullptr;
+    if (SUCCEEDED(processorProfiles->GetLanguageProfileDescription(profile.clsid, profile.langid, profile.guidProfile, &bStrDesc)))
+    {
+        const std::wstring_view wsvDesc(bStrDesc, bStrDesc.Length());
+        return WCharUtils::ToString(wsvDesc);
+    }
+    return {};
+}
+
+auto GetLocaleName(LANGID langid) -> std::wstring
+{
+    const int len = LCIDToLocaleName(MAKELCID(langid, SORT_DEFAULT), nullptr, 0, 0);
+    if (len <= 0) return {};
+    std::wstring buf(static_cast<size_t>(len), L'\0');
+    if (LCIDToLocaleName(MAKELCID(langid, SORT_DEFAULT), buf.data(), len, 0) <= 0) return {};
+    buf.resize(static_cast<size_t>(len) - 1); // strip trailing null
+    return buf;
+}
+
+auto GetLocaleInfo(std::wstring_view localeName, LCTYPE LCType) -> std::wstring
+{
+    const auto infoLen = GetLocaleInfoEx(localeName.data(), LCType, nullptr, 0);
+    if (infoLen > 0)
+    {
+        std::wstring infoBuf(static_cast<size_t>(infoLen) - 1, '\0');
+        if (GetLocaleInfoEx(localeName.data(), LCType, infoBuf.data(), infoLen) > 0)
+        {
+            return infoBuf;
+        }
+    }
+    return {};
+}
+
 } // namespace
 
 auto Ime::InputMethodManager::Initialize(ITfThreadMgr *threadMgr, TfClientId clientId) -> HRESULT
@@ -58,6 +136,7 @@ auto Ime::InputMethodManager::UnInitialize() -> void
         m_tfProfileMgr.Release();
         m_threadMgr.Release();
     }
+    m_langProfiles.clear();
 }
 
 auto Ime::InputMethodManager::RefreshProfiles() -> bool
@@ -81,26 +160,33 @@ auto Ime::InputMethodManager::RefreshProfiles() -> bool
         while (lpEnum->Next(1, &profile, &fetched) == S_OK)
         {
             if ((profile.dwFlags & TF_IPP_FLAG_ENABLED) == 0) continue;
+            // if (profile.dwProfileType == TF_PROFILETYPE_KEYBOARDLAYOUT) continue; should allow keyboard layout?
+            if (profile.catid == GUID_NULL) continue; ///< "触控输入更正" profile has no catid.
 
-            BOOL     bEnabled = FALSE;
-            CComBSTR bStrDesc = nullptr;
-
+            BOOL bEnabled = FALSE;
             // Skip profile that failed to load.
-            auto hr = lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled);
-
-            if (SUCCEEDED(hr) && bEnabled == TRUE)
+            if (FAILED(lpProfiles->IsEnabledLanguageProfile(profile.clsid, profile.langid, profile.guidProfile, &bEnabled)) || bEnabled == FALSE)
             {
-                hr = lpProfiles->GetLanguageProfileDescription(profile.clsid, profile.langid, profile.guidProfile, &bStrDesc);
-                if (SUCCEEDED(hr))
-                {
-                    const std::wstring_view wsvDesc(bStrDesc, bStrDesc.Length());
-                    std::string             desc = WCharUtils::ToString(wsvDesc);
-                    if (!desc.empty())
-                    {
-                        logger::info("Load installed ime: {}", desc);
-                        m_langProfiles.emplace_back(std::move(desc), profile.clsid, profile.guidProfile, profile.langid);
-                    }
-                }
+                continue;
+            }
+
+            const auto localeName = GetLocaleName(profile.langid);
+
+            auto localeDisplayName = GetLocaleInfo(localeName, LOCALE_SLOCALIZEDDISPLAYNAME);
+            auto language          = GetLocaleInfo(localeName, LOCALE_SLOCALIZEDLANGUAGENAME);
+            auto desc              = GetLangProfileDesc(lpProfiles, profile);
+            if (!desc.empty())
+            {
+                std::string localeDisplayNameStr = WCharUtils::ToString(localeDisplayName);
+                logger::info("Load installed ime: {} {}", localeDisplayNameStr, desc);
+                m_langProfiles.emplace_back(
+                    std::move(localeDisplayNameStr),
+                    std::move(desc),
+                    WCharUtils::ToString(language),
+                    profile.clsid,
+                    profile.guidProfile,
+                    profile.langid
+                );
             }
         }
     }
