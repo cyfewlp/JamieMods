@@ -42,7 +42,7 @@ void ToolWindow::Draw(Settings &settings)
     ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_FirstUseEver, CENTER_ALIGN_PIVOT);
 
     ImGui::SetNextWindowSizeConstraints({minWidth, 0.0F}, {maxWidth, FLT_MAX});
-    if (ImGui::Begin("ToolWindow", &settings.appearance.showSettings, ImGuiEx::WindowFlags().NoTitleBar()))
+    if (ImGui::Begin("ToolWindow", nullptr, ImGuiEx::WindowFlags().NoTitleBar()))
     {
         if (auto appBar = ImGuiEx::M3::AppBar(); appBar)
         {
@@ -50,7 +50,7 @@ void ToolWindow::Draw(Settings &settings)
             appBar.Title("SimpleIME", "Created By Jamie");
             if (appBar.TrailingIcon(ICON_X))
             {
-                settings.appearance.showSettings = false;
+                settings.runtimeData.toolWindowShowing = false;
             }
             if (appBar.TrailingIcon(m3Styles.Colors().IsDark() ? std::string_view(ICON_MOON) : ICON_SUN))
             {
@@ -236,7 +236,7 @@ void ToolWindow::DrawStates() const
     stateIcon(conversionMode.IsEudc());                     ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: EUDC"); ImGui::SameLine();
     stateIcon(conversionMode.IsSymbol());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SYMBOL"); ImGui::SameLine();
     stateIcon(conversionMode.IsFixed());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FIXED");
-    stateIcon(state.Has(Core::State::LANG_PROFILE_ACTIVATED)); ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("LANG_PROFILE_ACTIVATED");
+    stateIcon(state.Has(Core::State::INPUT_PROCESSOR_ACTIVATED)); ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("INPUT_PROCESSOR_ACTIVATED");
     stateIcon(state.Has(Core::State::IME_DISABLED));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IME_DISABLED");
     stateIcon(state.Has(Core::State::GAME_LOADING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("GAME_LOADING");
     stateIcon(state.Has(Core::State::KEYBOARD_OPEN));       ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("KEYBOARD_OPEN");

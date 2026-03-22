@@ -6,7 +6,7 @@
 #include "core/State.h"
 #include "ime/ITextService.h"
 #include "tsf/InputMethodManager.h"
-#include "ui/ImeUI.h"
+#include "ui/ImeOverlay.h"
 #include "ui/ImeWindow.h"
 
 #include <atlcomcli.h>
@@ -102,19 +102,19 @@ private:
     void InitializeTextService();
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
 
-    DebounceTimer                 m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
-    std::unique_ptr<ImeWindow>    m_imeWindow             = nullptr;
-    std::unique_ptr<UI::ImeUI>    m_imeUI                 = nullptr;
-    std::unique_ptr<ITextService> m_textService           = nullptr;
-    CComPtr<InputMethodManager>   m_inputMethodManager    = nullptr;
-    HWND                          m_hWnd                  = nullptr;
-    HWND                          m_hWndParent            = nullptr;
-    DWORD                         m_gameThreadId          = 0;
-    float                         m_uiScale               = 1.0F;
-    bool                          m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
-    bool                          m_fFocused              = false;
-    bool                          m_fEnabledTsf           = true;
-    bool                          m_fJustWantCaptureMouse = false;
+    DebounceTimer                   m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
+    std::unique_ptr<ImeWindow>      m_imeWindow             = nullptr;
+    std::unique_ptr<UI::ImeOverlay> m_imeOverlay            = nullptr;
+    std::unique_ptr<ITextService>   m_textService           = nullptr;
+    CComPtr<InputMethodManager>     m_inputMethodManager    = nullptr;
+    HWND                            m_hWnd                  = nullptr;
+    HWND                            m_hWndParent            = nullptr;
+    DWORD                           m_gameThreadId          = 0;
+    float                           m_uiScale               = 1.0F;
+    bool                            m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
+    bool                            m_fFocused              = false;
+    bool                            m_fEnabledTsf           = true;
+    bool                            m_fJustWantCaptureMouse = false;
 };
 } // namespace Ime
 

@@ -29,6 +29,17 @@ struct Settings
     static constexpr auto              ZOOM_MIN                   = 0.5F;
     static constexpr int               ZOOM_STEP_PERCENT          = 25;
 
+    //! UI layer is immediate mode(ImGui), no event callback, no commpoent search. So we need a way to present the UI layer state.
+    //! This struct is for that.
+    struct RuntimeData
+    {
+        bool requestCloseTopWindow = false; ///< Request to close the current top-level UI window on the next frame.
+
+        bool overlayPinned     = false; ///< Overlay has been pinned by the user and should not auto-hide automatically.
+        bool overlayShowing    = false; ///< Overlay is currently visible/rendered in this frame.
+        bool toolWindowShowing = false; ///< Auxiliary tool/settings window is currently visible.
+    } runtimeData;
+
     //! Shortcut: support combination of Ctrl, Shift, Alt and a normal key. e.g. "ctrl+shift+f1", "alt+f2", "f3"...
     //! The named key is can't combine by bitwise operation, g.g. "F2 | A" will become to "F3".
     ImGuiKeyChord shortcut;
@@ -54,7 +65,6 @@ struct Settings
         std::string               language;
         float                     zoom; ///< modify in runtime by AppearancePanel; read once on Mod launch by ImeApp;
         int                       errorDisplayDuration;
-        bool                      showSettings;          ///< modify/read in runtime by UI thread(ToolWindow).
         bool                      verticalCandidateList; ///< modify/read in runtime by UI thread.
     } appearance;
 
@@ -69,6 +79,7 @@ struct Settings
 inline auto GetDefaultSettings() -> Settings
 {
     return {
+        .runtimeData                   = {},
         .shortcut                      = ImGuiKey_F2,
         .enableMod                     = true,
         .enableTsf                     = true,
@@ -80,7 +91,6 @@ inline auto GetDefaultSettings() -> Settings
                                           .language              = "english",
                                           .zoom                  = -1.0F,
                                           .errorDisplayDuration  = 10,
-                                          .showSettings          = false,
                                           .verticalCandidateList = false},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = Settings::WindowPosUpdatePolicy::BASED_ON_CARET}
     };

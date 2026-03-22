@@ -480,7 +480,7 @@ constexpr int32_t LARGE_MAX_MENU_ITEM_COUNT  = 16;
 struct MenuConfiguration
 {
     Spec::MenuColors menuColors = Spec::MenuColors::Standard;
-    int32_t maxItemCount    = SMALL_MAX_MENU_ITEM_COUNT; ///<  Optional limit for visible items before scrolling. Pass a negative value for no limit.
+    int32_t maxItemCount    = MEDIUM_MAX_MENU_ITEM_COUNT; ///<  Optional limit for visible items before scrolling. Pass a negative value for no limit.
     bool    widthFitPreview = false;
 };
 

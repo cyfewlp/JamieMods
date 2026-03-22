@@ -11,6 +11,22 @@
 
 namespace Ime
 {
+namespace
+{
+
+auto OnUserEvent(RE::BSUIMessageData *uiMessageData) -> void
+{
+    RE::UserEvents *userEvents = RE::UserEvents::GetSingleton();
+
+    auto &runtimeData = ImeApp::GetInstance().GetSettings().runtimeData;
+    if (uiMessageData->fixedStr == userEvents->cancel)
+    {
+        runtimeData.requestCloseTopWindow = true;
+    }
+}
+
+} // namespace
+
 void ToolWindowMenu::RegisterMenu()
 {
     logger::info("Registering ToolWindowMenu...");
@@ -26,39 +42,39 @@ auto ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_
     {
         return RE::UI_MESSAGE_RESULTS::kPassOn;
     }
+    RE::ControlMap *controlMap = RE::ControlMap::GetSingleton();
     switch (a_message.type.get())
     {
-        case RE::UI_MESSAGE_TYPE::kShow:
-            g_showing = true;
-            return RE::UI_MESSAGE_RESULTS::kHandled;
+        case RE::UI_MESSAGE_TYPE::kShow: {
+            controlMap->PushInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+            break;
+        }
         case RE::UI_MESSAGE_TYPE::kHide: {
-            g_showing = false;
-            ImeController::GetInstance()->SyncImeState();
-            return RE::UI_MESSAGE_RESULTS::kHandled;
+            ImeController::GetInstance()->SyncImeState(); // TODO: really need this?
+            controlMap->PopInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+            break;
         }
         case RE::UI_MESSAGE_TYPE::kUserEvent: {
-            const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
-            if (data->fixedStr == "Cancel")
-            {
-                Skyrim::HideMenu(ToolWindowMenuName);
-            }
+            auto *uiMessageData = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
+            OnUserEvent(uiMessageData);
+            break;
         }
-        break;
         default:;
     }
-    return IMenu::ProcessMessage(a_message);
+    return RE::UI_MESSAGE_RESULTS::kHandled;
 }
 
 auto ToolWindowMenu::Creator() -> IMenu *
 {
-    using flags = RE::UI_MENU_FLAGS;
     auto *pMenu = new ToolWindowMenu();
-    pMenu->menuFlags.set(flags::kPausesGame, flags::kUsesCursor);
+    pMenu->menuFlags.set(Flag::kPausesGame, Flag::kUsesCursor);
+    pMenu->menuFlags.set(Flag::kUsesMenuContext);
     pMenu->depthPriority = 11;
+
+    // pMenu->inputContext.set(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
     // Priority 7: no render but no events
     // Priority 8: render but no events
     // Priority 9: render and have events
-
     return pMenu;
 }
 

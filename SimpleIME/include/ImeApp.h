@@ -93,6 +93,8 @@ public:
 
     constexpr auto GetSettings() const -> const Settings & { return m_settings; }
 
+    constexpr auto GetSettings() -> Settings & { return m_settings; }
+
 private:
     void OnD3DInit();
     void Start(const RE::BSGraphics::RendererData &renderData);

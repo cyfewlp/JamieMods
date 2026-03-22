@@ -16,6 +16,7 @@
 #include "menu/MenuNames.h"
 #include "tsf/ConversionModeUtil.h"
 #include "tsf/LangProfile.h"
+#include "ui/ToolWindow.h"
 
 namespace Ime
 {
@@ -57,10 +58,11 @@ void DrawInputMethodsCombo(const LangProfile &activeLangProfile, const std::vect
 }
 } // namespace
 
-auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> bool
+namespace UI::LanguageBar
 {
-    bool openSettings = false;
-    auto flags        = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
+auto Draw(bool &pinned, bool &toolWindowShowing, const LangProfile &activeLangProfile, const std::vector<LangProfile> &langProfiles) -> void
+{
+    auto flags = ImGuiEx::WindowFlags().AlwaysAutoResize().NoNav().NoDecoration();
     if (pinned)
     {
         flags = flags.NoInputs();
@@ -80,7 +82,7 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
 
         if (ImGuiEx::M3::SmallIconButton(ICON_SETTINGS, iconButtonColors))
         {
-            openSettings = true;
+            toolWindowShowing = true;
         }
         ImGuiEx::M3::SetItemToolTip(Translate("Settings.Settings"));
 
@@ -105,7 +107,6 @@ auto LanguageBar::Draw(bool &pinned, const LangProfile &activeLangProfile, const
 
         ImGuiEx::M3::EndFloatingToolbar();
     }
-    return openSettings;
 }
-
+} // namespace UI::LanguageBar
 } // namespace Ime

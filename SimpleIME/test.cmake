@@ -8,10 +8,10 @@ find_package(benchmark CONFIG REQUIRED)
 
 add_executable(
     ${TEST_PROJ_NAME}
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/ConfigSerializer.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/settings_converter.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/translator_manager.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/ime/TextEditor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/ConfigSerializer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/configs/settings_converter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/translator_manager.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ime/TextEditor.cpp"
     ${TEST_SOURCES}
 )
 
@@ -23,21 +23,21 @@ add_executable(
 
 if (Benchmark_TEST_SOURCES)
     add_executable(
-            ${PROJECT_NAME}Benchmark
-            ${Benchmark_TEST_SOURCES}
+        ${PROJECT_NAME}Benchmark
+        ${Benchmark_TEST_SOURCES}
     )
     target_link_libraries(
-            ${PROJECT_NAME}Benchmark
-            PRIVATE
-            GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
-            spdlog::spdlog
-            benchmark::benchmark
+        ${PROJECT_NAME}Benchmark
+        PRIVATE
+        GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
+        spdlog::spdlog
+        benchmark::benchmark
     )
     target_compile_features(${PROJECT_NAME}Benchmark PRIVATE cxx_std_23)
     target_include_directories(
-            ${PROJECT_NAME}Benchmark
-            PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${PROJECT_NAME}Benchmark
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 else ()
     message(WARNING "No benchmark sources found. Skipping benchmark target creation.")
@@ -55,12 +55,12 @@ target_link_libraries(
 target_compile_definitions(${TEST_PROJ_NAME} PRIVATE SIMPLE_IME="SimpleIME")
 target_compile_features(${TEST_PROJ_NAME} PRIVATE cxx_std_23)
 target_include_directories(
-        ${TEST_PROJ_NAME}
-        PRIVATE
-        ${CMAKE_SOURCE_DIR}/imguiex
-        ${CMAKE_SOURCE_DIR}/common
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${IMGUI_INCLUDE_DIRS}
+    ${TEST_PROJ_NAME}
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}/imguiex
+    ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${IMGUI_INCLUDE_DIRS}
 )
 
 include(GoogleTest)

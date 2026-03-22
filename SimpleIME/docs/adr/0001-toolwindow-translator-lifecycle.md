@@ -101,7 +101,7 @@ directly to hot-reload when the user picks a different language — no handle ne
 
 **Implement Option C.**  Concretely:
 
-1. Delete `TranslatorHolder` (`include/i18n/TranslatorHolder.h`, `src/i18n/ImeUI.cpp`)
+1. Delete `TranslatorHolder` (`include/i18n/TranslatorHolder.h`, `src/i18n/ImeOverlay.cpp`)
 2. Replace with `translator_manager.h/cpp`:
     - `GetTranslator() -> unique_ptr<Translator> &`
     - `UpdateTranslator(language, fallback)` (loads from disk)

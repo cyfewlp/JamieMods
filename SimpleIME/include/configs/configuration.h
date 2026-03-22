@@ -36,7 +36,6 @@ struct Configuration
         std::string language;
         float       zoom;
         int         errorDisplayDuration;
-        bool        showSettings;
         bool        verticalCandidateList;
     };
 
@@ -75,7 +74,6 @@ constexpr auto GetDefaultConfiguration() -> Configuration
                                           .language              = "",
                                           .zoom                  = -1.0F,
                                           .errorDisplayDuration  = 10,
-                                          .showSettings          = false,
                                           .verticalCandidateList = false},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = ""}
     };

@@ -11,7 +11,7 @@
 #include "imguiex/imguiex_enum_wrap.h"
 #include "log.h"
 #include "menu/MenuNames.h"
-#include "ui/ImeUI.h"
+#include "ui/ImeOverlay.h"
 #include "ui/LanguageBar.h"
 #include "utils/Utils.h"
 
@@ -106,23 +106,23 @@ void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
  *                      alive    ? -> ToolWindow handle shortcut to response the open/pin/unpin/close ToolWindow request.
  * - Debounce timer passed? -> If toolwindow is alive, close it and release translator; otherwise, open toolwindow and load translator.
  */
-inline void ManageImeUIOnDemand(std::unique_ptr<UI::ImeUI> &imeUI, DebounceTimer &debounceTimer, const Settings &settings)
+inline void ManageImeOverlayOnDemand(std::unique_ptr<UI::ImeOverlay> &imeOverlay, DebounceTimer &debounceTimer, const Settings &settings)
 {
-    bool shouldOpenImeUI = false;
-    if (imeUI == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
+    bool shouldOpenImeOverlay = false;
+    if (imeOverlay == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
     {
-        shouldOpenImeUI = true;
+        shouldOpenImeOverlay = true;
     }
     // pass the first call
     if (!debounceTimer.IsWaiting() || debounceTimer.Check())
     {
-        if (imeUI != nullptr)
+        if (imeOverlay != nullptr)
         {
-            imeUI.reset();
+            imeOverlay.reset();
         }
-        else if (shouldOpenImeUI)
+        else if (shouldOpenImeOverlay)
         {
-            imeUI = std::make_unique<UI::ImeUI>(settings.shortcut, settings.appearance.language);
+            imeOverlay = std::make_unique<UI::ImeOverlay>(settings.shortcut, settings.appearance.language);
         }
     }
 }
@@ -172,7 +172,7 @@ void ImeWnd::Initialize(const bool enableTsf) noexcept(false)
 
 void ImeWnd::UnInitialize() noexcept
 {
-    m_imeUI.reset(); // must release before ImGui shutdown
+    m_imeOverlay.reset(); // must release before ImGui shutdown
     if (m_textService != nullptr)
     {
         m_textService->UnInitialize();
@@ -286,7 +286,7 @@ void ImeWnd::Draw(Settings &settings)
 
     AutoToggleGameCursorIfNeeded(m_fJustWantCaptureMouse);
 
-    ManageImeUIOnDemand(m_imeUI, m_translatorLoadDebounceTimer, settings);
+    ManageImeOverlayOnDemand(m_imeOverlay, m_translatorLoadDebounceTimer, settings);
 
     {
         auto      &m3Styles  = ImGuiEx::M3::Context::GetM3Styles();
@@ -297,9 +297,10 @@ void ImeWnd::Draw(Settings &settings)
         const auto &activeLang   = m_inputMethodManager->GetActiveLangProfile();
         const auto &langProfiles = m_inputMethodManager->GetLangProfiles();
 
-        if (m_imeUI != nullptr)
+        if (m_imeOverlay != nullptr)
         {
-            if (m_imeUI->Draw(activeLang, langProfiles, settings))
+            m_imeOverlay->Draw(activeLang, langProfiles, settings);
+            if (settings.runtimeData.overlayShowing)
             {
                 m_translatorLoadDebounceTimer.Poke();
             }
@@ -376,7 +377,7 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
         case WM_CHAR: {
             if (pThis == nullptr) break;
             const auto &state = Core::State::GetInstance();
-            if (ImeController::GetInstance()->IsModEnabled() && (state.NotHas(State::IME_DISABLED) && state.Has(State::LANG_PROFILE_ACTIVATED)))
+            if (ImeController::GetInstance()->IsModEnabled() && (state.NotHas(State::IME_DISABLED) && state.Has(State::INPUT_PROCESSOR_ACTIVATED)))
             {
                 const auto wcharCode = static_cast<std::uint32_t>(wParam);
 

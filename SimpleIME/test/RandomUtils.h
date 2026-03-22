@@ -57,7 +57,6 @@ inline auto GetRandomConfiguation() -> Ime::Configuration
     configuration.appearance.themeContrastLevel    = 0.5;
     configuration.appearance.language              = random.NextString(10);
     configuration.appearance.errorDisplayDuration  = random.NextInt(0, 0xffff);
-    configuration.appearance.showSettings          = random.NextBool();
     configuration.appearance.verticalCandidateList = random.NextBool();
 
     configuration.input.enableUnicodePaste = random.NextBool();

@@ -11,20 +11,20 @@ class State
 public:
     enum StateKey : std::uint32_t
     {
-        NONE                   = 0,
-        IN_COMPOSING           = 0x1, ///< set when composition is active. UI should not rely on this state.
-        IN_CAND_CHOOSING       = 0x2, ///< set when candidate list is active. UI should not rely on this state.
+        NONE                      = 0,
+        IN_COMPOSING              = 0x1, ///< set when composition is active. UI should not rely on this state.
+        IN_CAND_CHOOSING          = 0x2, ///< set when candidate list is active. UI should not rely on this state.
         // IME_OPEN               = 0x8, ///< [Deprecated] Specific to Imm32. Equivalence to TSF `Keyboard Open close`
-        LANG_PROFILE_ACTIVATED = 0x10, ///< set when activate any non-english language profile
-        IME_DISABLED           = 0x20, ///< if set, ignore any TextService change
-        TEXT_SERVICE_FOCUS     = 0x40,
-        GAME_LOADING           = 0x80,
+        INPUT_PROCESSOR_ACTIVATED = 0x10, ///< set when activate any input processor
+        IME_DISABLED              = 0x20, ///< if set, ignore any TextService change
+        TEXT_SERVICE_FOCUS        = 0x40,
+        GAME_LOADING              = 0x80,
         /// For chinese: Keyboard open -> active chinese input, keyboard close -> active english input.
         ///              Equivalence to press [shift] to toggle chinese/english input.
         /// For Japanese: Keyboard open -> active japanese input, keyboard close -> active english input.
         ///              Equivalence to press [alt + `] to toggle japanese/english input.
-        KEYBOARD_OPEN          = 0x100, ///< if not set this, we should pass game event
-        ALL                    = 0xFFFF
+        KEYBOARD_OPEN             = 0x100, ///< if not set this, we should pass game event
+        ALL                       = 0xFFFF
     };
 
     struct ConversionMode

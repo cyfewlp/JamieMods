@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include "RE/B/BSUIScaleformData.h"
 #include "RE/GFxCharEvent.h"
-#include "RE/I/IMenu.h"
 
 enum ImGuiKey : int;
 
@@ -25,11 +23,9 @@ public:
 
     auto ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS override;
 
-    void OnShow();
-
-    void OnHide();
-
 private:
+    void OnShow();
+    void OnHide();
     /// is handled?
     auto ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS;
     auto OnKeyEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;

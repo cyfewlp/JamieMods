@@ -13,6 +13,7 @@
 #include "log.h"
 #include "menu/MenuNames.h"
 #include "menu/ToolWindowMenu.h"
+#include "ui/Settings.h"
 #include "utils/Utils.h"
 
 #include <unordered_map>
@@ -29,7 +30,8 @@ auto ImeMenuCreator() -> RE::IMenu *
     pMenu->menuFlags.set(flags::kAlwaysOpen, flags::kAllowSaving);
     pMenu->depthPriority = 13;
 
-    // pMenu->inputContext.set(Context::kCursor);
+    // using Context = RE::UserEvents::INPUT_CONTEXT_ID;
+    // pMenu->inputContext.set(Context::kMenuMode);
     // Priority 7: no render but no events
     // Priority 8: render but no events
     // Priority 9: render and have events
@@ -188,11 +190,6 @@ auto OnMouseEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE_RESULT
     io.AddMouseSourceEvent(mouseSource);
     io.AddMouseButtonEvent(static_cast<int>(mouseEvent->button), down);
 
-    if (ToolWindowMenu::IsShowing())
-    {
-        return RE::UI_MESSAGE_RESULTS::kHandled;
-    }
-
     if (Core::State::GetInstance().IsImeInputting())
     {
         if (!io.WantCaptureMouse)
@@ -209,12 +206,20 @@ auto OnMouseWheelEvent(RE::GFxEvent *event) -> RE::UI_MESSAGE_RESULTS
 {
     const auto *mouseEvent = reinterpret_cast<RE::GFxMouseEvent *>(event);
     ImGui::GetIO().AddMouseWheelEvent(0, mouseEvent->scrollDelta);
-
-    if (ToolWindowMenu::IsShowing())
-    {
-        return RE::UI_MESSAGE_RESULTS::kHandled;
-    }
     return RE::UI_MESSAGE_RESULTS::kPassOn;
+}
+
+inline void SendCharEventToImGuiIfWant(const GFxCharEvent *charEvent)
+{
+    if (auto &io = ImGui::GetIO(); io.WantTextInput)
+    {
+        io.AddInputCharacter(charEvent->wcharCode);
+    }
+}
+
+inline auto IsToolWindowMenuShowing() -> bool
+{
+    return RE::UI::GetSingleton()->IsMenuOpen(ToolWindowMenuName);
 }
 } // namespace
 
@@ -230,29 +235,46 @@ void ImeMenu::PostDisplay()
 
 auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
 {
-    if (!ImeApp::GetInstance().GetState().IsInitialized())
+    auto &imeApp = ImeApp::GetInstance();
+    if (!imeApp.GetState().IsInitialized())
     {
         return RE::UI_MESSAGE_RESULTS::kPassOn;
     }
+    RE::UI_MESSAGE_RESULTS results = RE::UI_MESSAGE_RESULTS::kPassOn;
     switch (a_message.type.get())
     {
-        case RE::UI_MESSAGE_TYPE::kShow:
+        case RE::UI_MESSAGE_TYPE::kShow: {
             OnShow();
+            results = RE::UI_MESSAGE_RESULTS::kHandled;
             break;
-        case RE::UI_MESSAGE_TYPE::kHide:
+        }
+        case RE::UI_MESSAGE_TYPE::kHide: {
             OnHide();
+            results = RE::UI_MESSAGE_RESULTS::kHandled;
             break;
+        }
         case RE::UI_MESSAGE_TYPE::kScaleformEvent: {
             auto *scaleformData = reinterpret_cast<RE::BSUIScaleformData *>(a_message.data);
             if (scaleformData != nullptr && scaleformData->scaleformEvent != nullptr)
             {
-                return ProcessScaleformEvent(scaleformData);
+                results = ProcessScaleformEvent(scaleformData);
             }
+
+            // In main menu: allow events to bubble unless the settings ToolWindow is open,
+            //   so other menus (e.g. mod test menus) can still receive input while LanguageBar is visible.
+            // In game: block all events while ToolWindowMenu is alive (overlay showing and not pinned),
+            //   regardless of whether the settings ToolWindow itself is open.
+            const auto ingame = !RE::UI::GetSingleton()->IsMenuOpen(RE::MainMenu::MENU_NAME);
+            if ((ingame && IsToolWindowMenuShowing()) || imeApp.GetSettings().runtimeData.toolWindowShowing)
+            {
+                results = RE::UI_MESSAGE_RESULTS::kHandled;
+            }
+            break;
         }
-        break;
-        default:;
+        default:
+            break;
     }
-    return IMenu::ProcessMessage(a_message);
+    return results;
 }
 
 void ImeMenu::OnShow()
@@ -269,21 +291,33 @@ void ImeMenu::OnHide()
 
 auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI_MESSAGE_RESULTS
 {
+    RE::UI_MESSAGE_RESULTS results = RE::UI_MESSAGE_RESULTS::kPassOn;
     switch (auto *fxEvent = data->scaleformEvent; fxEvent->type.get())
     {
-        case RE::GFxEvent::EventType::kKeyDown:
-            return OnKeyEvent(fxEvent, true);
-        case RE::GFxEvent::EventType::kKeyUp:
-            return OnKeyEvent(fxEvent, false);
-        case RE::GFxEvent::EventType::kMouseDown:
-            return OnMouseEvent(fxEvent, true);
-        case RE::GFxEvent::EventType::kMouseUp:
-            return OnMouseEvent(fxEvent, false);
-        case RE::GFxEvent::EventType::kMouseWheel:
-            return OnMouseWheelEvent(fxEvent);
+        case RE::GFxEvent::EventType::kKeyDown: {
+            results = OnKeyEvent(fxEvent, true);
+            break;
+        }
+        case RE::GFxEvent::EventType::kKeyUp: {
+            results = OnKeyEvent(fxEvent, false);
+            break;
+        }
+        case RE::GFxEvent::EventType::kMouseDown: {
+            results = OnMouseEvent(fxEvent, true);
+            break;
+        }
+        case RE::GFxEvent::EventType::kMouseUp: {
+            results = OnMouseEvent(fxEvent, false);
+            break;
+        }
+        case RE::GFxEvent::EventType::kMouseWheel: {
+            results = OnMouseWheelEvent(fxEvent);
+            break;
+        }
         case RE::GFxEvent::EventType::kCharEvent: {
             const auto *charEvent = reinterpret_cast<GFxCharEvent *>(fxEvent);
-            return OnCharEvent(charEvent);
+            results               = OnCharEvent(charEvent);
+            break;
         }
         case static_cast<RE::GFxEvent::EventType>(GFxEventTypeEx::kImeKeyUp): {
             auto *keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(fxEvent);
@@ -298,19 +332,15 @@ auto ImeMenu::ProcessScaleformEvent(const RE::BSUIScaleformData *data) -> RE::UI
             // 2. Pass all `GFxEventTypeEx::kImeCharEvent` event except for ToolWindowMenu is showing.
             // 3. Record these event and release it in `PostDisplay` to avoid memory leak.
             auto *charEvent = reinterpret_cast<GFxCharEvent *>(fxEvent);
+            fxEvent->type   = RE::GFxEvent::EventType::kCharEvent;
             m_imeCharEvents.push_back(charEvent);
-            if (ToolWindowMenu::IsShowing())
-            {
-                ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
-                return RE::UI_MESSAGE_RESULTS::kHandled;
-            }
-            fxEvent->type = RE::GFxEvent::EventType::kCharEvent;
+            SendCharEventToImGuiIfWant(charEvent);
             break;
         }
         default:
             break;
     }
-    return RE::UI_MESSAGE_RESULTS::kPassOn;
+    return results;
 }
 
 auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE_RESULTS
@@ -321,7 +351,7 @@ auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE
     {
         m_ctrlDown = down;
     }
-    if (Core::State::GetInstance().IsImeInputting() || ToolWindowMenu::IsShowing())
+    if (Core::State::GetInstance().IsImeInputting())
     {
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }
@@ -330,12 +360,7 @@ auto ImeMenu::OnKeyEvent(RE::GFxEvent *event, const bool down) -> RE::UI_MESSAGE
 
 auto ImeMenu::OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS
 {
-    if (ToolWindowMenu::IsShowing())
-    {
-        ImGui::GetIO().AddInputCharacter(charEvent->wcharCode);
-        return RE::UI_MESSAGE_RESULTS::kHandled;
-    }
-
+    SendCharEventToImGuiIfWant(charEvent);
     if (!ImeController::GetInstance()->IsModEnabled())
     {
         return RE::UI_MESSAGE_RESULTS::kPassOn;
@@ -347,7 +372,7 @@ auto ImeMenu::OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESUL
     }
 
     const auto &state = Core::State::GetInstance();
-    if (!state.ImeDisabled() && state.Has(Core::State::LANG_PROFILE_ACTIVATED))
+    if (!state.ImeDisabled() && state.Has(Core::State::INPUT_PROCESSOR_ACTIVATED))
     {
         return RE::UI_MESSAGE_RESULTS::kHandled;
     }

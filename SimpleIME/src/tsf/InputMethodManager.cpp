@@ -204,7 +204,7 @@ auto Ime::InputMethodManager::UpdateActiveProfile() noexcept -> bool
     if (SUCCEEDED(m_tfProfileMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile)))
     {
         m_activatedProfile = GetProfileCachedIndex(m_langProfiles, profile.guidProfile);
-        Core::State::GetInstance().Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile < m_langProfiles.size());
+        Core::State::GetInstance().Set(State::INPUT_PROCESSOR_ACTIVATED, m_activatedProfile < m_langProfiles.size());
         return true;
     }
 
@@ -305,8 +305,9 @@ auto Ime::InputMethodManager::OnActivated(
 
         UpdateConversionAndKeyboard(state);
 
-        m_activatedProfile = GetProfileCachedIndex(m_langProfiles, guidProfile);
-        state.Set(State::LANG_PROFILE_ACTIVATED, m_activatedProfile < m_langProfiles.size());
+        m_activatedProfile          = GetProfileCachedIndex(m_langProfiles, guidProfile);
+        const auto isInputProcessor = dwProfileType == TF_PROFILETYPE_INPUTPROCESSOR && m_activatedProfile < m_langProfiles.size();
+        state.Set(State::INPUT_PROCESSOR_ACTIVATED, isInputProcessor);
         state.Clear(State::IN_CAND_CHOOSING);
         state.Clear(State::IN_COMPOSING);
     }

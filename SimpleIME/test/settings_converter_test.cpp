@@ -139,7 +139,6 @@ TEST(ConfigurattionToSettingsTest, should_set_base_type_member_value_from_config
     EXPECT_EQ(settings.appearance.language, configuration.appearance.language);
     EXPECT_EQ(settings.appearance.zoom, configuration.appearance.zoom);
     EXPECT_EQ(settings.appearance.errorDisplayDuration, configuration.appearance.errorDisplayDuration);
-    EXPECT_EQ(settings.appearance.showSettings, configuration.appearance.showSettings);
     EXPECT_EQ(settings.appearance.verticalCandidateList, configuration.appearance.verticalCandidateList);
 
     EXPECT_EQ(settings.input.enableUnicodePaste, configuration.input.enableUnicodePaste);
@@ -170,7 +169,6 @@ TEST(ConfigurattionToSettingsTest, should_convert_default_configuration_to_defau
     EXPECT_EQ(settings.appearance.language, defaultSettings.appearance.language);
     EXPECT_EQ(settings.appearance.zoom, defaultSettings.appearance.zoom);
     EXPECT_EQ(settings.appearance.errorDisplayDuration, defaultSettings.appearance.errorDisplayDuration);
-    EXPECT_EQ(settings.appearance.showSettings, defaultSettings.appearance.showSettings);
     EXPECT_EQ(settings.appearance.verticalCandidateList, defaultSettings.appearance.verticalCandidateList);
 
     EXPECT_EQ(settings.input.posUpdatePolicy, defaultSettings.input.posUpdatePolicy);

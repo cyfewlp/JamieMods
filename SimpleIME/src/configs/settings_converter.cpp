@@ -284,7 +284,6 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     }
     settings.appearance.zoom                  = config.appearance.zoom;
     settings.appearance.errorDisplayDuration  = config.appearance.errorDisplayDuration;
-    settings.appearance.showSettings          = config.appearance.showSettings;
     settings.appearance.verticalCandidateList = config.appearance.verticalCandidateList;
 
     // Input
@@ -349,7 +348,6 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     configuration.appearance.language              = settings.appearance.language;
     configuration.appearance.zoom                  = settings.appearance.zoom;
     configuration.appearance.errorDisplayDuration  = settings.appearance.errorDisplayDuration;
-    configuration.appearance.showSettings          = settings.appearance.showSettings;
     configuration.appearance.verticalCandidateList = settings.appearance.verticalCandidateList;
 
     // Input
