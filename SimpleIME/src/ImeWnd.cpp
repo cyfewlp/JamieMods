@@ -325,7 +325,6 @@ void ImeWnd::AbortIme() const
 
 void ImeWnd::Draw(Settings &settings)
 {
-    DrawImeStates(); // draw ing ImGui default Debug window;
     if (m_fWantUpdateUiScale)
     {
         m_fWantUpdateUiScale = false;
@@ -340,6 +339,7 @@ void ImeWnd::Draw(Settings &settings)
     {
         auto      &m3Styles  = ImGuiEx::M3::Context::GetM3Styles();
         const auto fontScope = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
+        DrawImeStates(); // draw ing ImGui default Debug window;
         ErrorNotifier::GetInstance().Show();
         m_imeWindow->Draw(m_textService->GetCompositionInfo(), m_textService->GetCandidateUi(), settings);
 

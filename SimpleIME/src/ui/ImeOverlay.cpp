@@ -75,10 +75,6 @@ auto ImeOverlay::Draw(const LangProfile &activeLangProfile, const std::vector<La
     // Handle before overlay render: avoid override the user request.
     HandleRequestAndSyncOverlayState(runtimeData);
 
-    // ToolWindow (and therefore ToolWindowMenu) is alive whenever the overlay is visible and not pinned.
-    // This applies in both main-menu and in-game contexts: ToolWindowMenu's kPausesGame + kMenuMode
-    // input context are desirable in both cases. In main menu the ImeMenu event filter still allows
-    // bubbling unless the settings window itself is open (see ImeMenu::ProcessMessage).
     const auto notPinnedOverlay = !runtimeData.overlayPinned && runtimeData.overlayShowing;
     if (notPinnedOverlay)
     {

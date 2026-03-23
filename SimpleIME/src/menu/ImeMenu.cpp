@@ -260,12 +260,8 @@ auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
                 results = ProcessScaleformEvent(scaleformData);
             }
 
-            // In main menu: allow events to bubble unless the settings ToolWindow is open,
-            //   so other menus (e.g. mod test menus) can still receive input while LanguageBar is visible.
-            // In game: block all events while ToolWindowMenu is alive (overlay showing and not pinned),
-            //   regardless of whether the settings ToolWindow itself is open.
             const auto ingame = !RE::UI::GetSingleton()->IsMenuOpen(RE::MainMenu::MENU_NAME);
-            if ((ingame && IsToolWindowMenuShowing()) || imeApp.GetSettings().runtimeData.toolWindowShowing)
+            if (imeApp.GetSettings().runtimeData.toolWindowShowing)
             {
                 results = RE::UI_MESSAGE_RESULTS::kHandled;
             }
