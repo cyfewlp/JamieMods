@@ -76,7 +76,7 @@ public:
     }
 };
 
-#ifdef DEBUG
+#ifdef _DEBUG
 constexpr auto INIT_TIMEOUT_SECONDS = 500s;
 #else
 constexpr auto INIT_TIMEOUT_SECONDS = 5s;
@@ -102,7 +102,7 @@ auto Initialize() -> bool
 
     auto &errorNotifier = ErrorNotifier::GetInstance();
     errorNotifier.SetMessageDuration(g_instance->GetSettings().appearance.errorDisplayDuration);
-#ifdef DEBUG
+#ifdef _DEBUG
     errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
 #endif
 

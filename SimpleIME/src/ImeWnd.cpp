@@ -3,12 +3,14 @@
 #include "configs/CustomMessage.h"
 #include "core/State.h"
 #include "i18n/translator_manager.h"
+#include "icons.h"
 #include "ime/ITextServiceFactory.h"
 #include "ime/ImeController.h"
 #include "imgui_impl_win32.h"
 #include "imguiex/ErrorNotifier.h"
 #include "imguiex/Material3.h"
 #include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
 #include "log.h"
 #include "menu/MenuNames.h"
 #include "ui/ImeOverlay.h"
@@ -125,6 +127,52 @@ inline void ManageImeOverlayOnDemand(std::unique_ptr<UI::ImeOverlay> &imeOverlay
             imeOverlay = std::make_unique<UI::ImeOverlay>(settings.shortcut, settings.appearance.language);
         }
     }
+}
+
+auto DrawImeStates()
+{
+#ifdef _DEBUG
+    const auto &state     = Core::State::GetInstance();
+    auto        stateIcon = [](bool enable) constexpr -> void {
+        if (enable)
+        {
+            ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+        else
+        {
+            ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+    };
+
+    const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_WindowPadding>(ImVec2(20.0F, 20.0F));
+    if (!ImGui::Begin("SimpleIme Debug", nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()))
+    {
+        ImGui::End();
+        return;
+    }
+
+    // clang-format off
+    const auto & conversionMode = state.GetConversionMode();
+    stateIcon(state.Has(Core::State::IN_COMPOSING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_COMPOSING");
+    stateIcon(state.Has(Core::State::IN_CAND_CHOOSING));    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_CAND_CHOOSING");
+    stateIcon(conversionMode.IsAlphanumeric());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMODE Native"); ImGui::SameLine();
+    stateIcon(conversionMode.IsNative());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: NATIVE"); ImGui::SameLine();
+    stateIcon(conversionMode.IsKatakana());                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: KATAKANA"); ImGui::SameLine();
+    stateIcon(conversionMode.IsFullShape());                ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FULLSHAPE"); ImGui::SameLine();
+    stateIcon(conversionMode.IsRoman());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: ROMAN"); ImGui::SameLine();
+    stateIcon(conversionMode.IsCharCode());                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: CHARCODE"); ImGui::SameLine();
+    stateIcon(conversionMode.IsSoftKeyboard());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SOFTKEYBOARD"); ImGui::SameLine();
+    stateIcon(conversionMode.IsNoConversion());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: NOCONVERSION"); ImGui::SameLine();
+    stateIcon(conversionMode.IsEudc());                     ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: EUDC"); ImGui::SameLine();
+    stateIcon(conversionMode.IsSymbol());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SYMBOL"); ImGui::SameLine();
+    stateIcon(conversionMode.IsFixed());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FIXED");
+    stateIcon(state.Has(Core::State::INPUT_PROCESSOR_ACTIVATED)); ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("INPUT_PROCESSOR_ACTIVATED");
+    stateIcon(state.Has(Core::State::IME_DISABLED));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IME_DISABLED");
+    stateIcon(state.Has(Core::State::GAME_LOADING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("GAME_LOADING");
+    stateIcon(state.Has(Core::State::KEYBOARD_OPEN));       ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("KEYBOARD_OPEN");
+    // clang-format on
+    ImGui::End();
+#endif
 }
 } // namespace
 
@@ -277,6 +325,7 @@ void ImeWnd::AbortIme() const
 
 void ImeWnd::Draw(Settings &settings)
 {
+    DrawImeStates(); // draw ing ImGui default Debug window;
     if (m_fWantUpdateUiScale)
     {
         m_fWantUpdateUiScale = false;
