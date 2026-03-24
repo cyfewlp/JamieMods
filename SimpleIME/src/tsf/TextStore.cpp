@@ -37,32 +37,16 @@ auto TextStore::InitSinks() -> HRESULT
 
 auto TextStore::Initialize(ITfThreadMgr *threadMgr, const TfClientId &tfClientId) -> HRESULT
 {
-    HRESULT __hrAtlComMethod;
-    try
-    {
-        logger::debug("Initializing TextStore...");
-        ATLENSURE_SUCCEEDED(threadMgr->QueryInterface(&m_threadMgr));
-        ATLENSURE_SUCCEEDED(m_threadMgr->CreateDocumentMgr(&m_documentMgr));
-
-        __hrAtlComMethod = m_documentMgr->CreateContext(
-            tfClientId,
-            0,
-            static_cast<ITextStoreACP *>(this), //
-            &m_context,
-            &m_editCookie
-        );
-        ATLENSURE_SUCCEEDED(__hrAtlComMethod);
-        ATLENSURE_SUCCEEDED(m_documentMgr->Push(m_context));
-        ATLENSURE_SUCCEEDED(m_threadMgr.QueryInterface(&m_uiElementMgr));
-        ATLENSURE_SUCCEEDED(InitSinks());
-        return S_OK;
-    }
-    _AFX_COM_END_PART catch (...)
-    {
-        __hrAtlComMethod = E_FAIL;
-    }
-    logger::error("Failed initialize TextStore: {}", ToErrorMessage(__hrAtlComMethod));
-    return __hrAtlComMethod;
+    _ATL_COM_BEGIN
+    logger::debug("Initializing TextStore...");
+    ATLENSURE_SUCCEEDED(threadMgr->QueryInterface(&m_threadMgr));
+    ATLENSURE_SUCCEEDED(m_threadMgr->CreateDocumentMgr(&m_documentMgr));
+    ATLENSURE_SUCCEEDED(m_documentMgr->CreateContext(tfClientId, 0, static_cast<ITextStoreACP *>(this), &m_context, &m_editCookie));
+    ATLENSURE_SUCCEEDED(m_documentMgr->Push(m_context));
+    ATLENSURE_SUCCEEDED(m_threadMgr.QueryInterface(&m_uiElementMgr));
+    ATLENSURE_SUCCEEDED(InitSinks());
+    return S_OK;
+    _ATL_COM_END
 }
 
 auto TextStore::SetHWND(HWND hWnd) -> bool
@@ -119,8 +103,27 @@ auto TextStore::Focus() -> HRESULT
 auto TextStore::ClearFocus() const -> HRESULT
 {
     logger::debug("Clear Focus");
-    CComPtr<ITfDocumentMgr> tempDocMgr;
-    return m_threadMgr->AssociateFocus(m_hWnd, nullptr, &tempDocMgr);
+    // Terminate any active composition before clearing focus.
+    // Passing nullptr to AssociateFocus suspends the IME state machine instead of
+    // cleanly ending it; the next Focus() call may then fail to recover, causing
+    // the IME to silently swallow keystrokes without producing output.
+    if (m_context != nullptr)
+    {
+        if (CComQIPtr<ITfContextOwnerCompositionServices> pComposSvcs(m_context); pComposSvcs != nullptr)
+        {
+            pComposSvcs->TerminateComposition(nullptr);
+        }
+    }
+    // Use an empty (but valid) DocumentMgr instead of nullptr.
+    // This tells TSF "focus is here but there is no editable content",
+    // allowing the IME to transition cleanly rather than hang.
+    CComPtr<ITfDocumentMgr> emptyDocMgr;
+    if (FAILED(m_threadMgr->CreateDocumentMgr(&emptyDocMgr)))
+    {
+        logger::warn("ClearFocus: failed to create empty DocumentMgr, falling back to nullptr");
+    }
+    CComPtr<ITfDocumentMgr> prevDocMgr;
+    return m_threadMgr->AssociateFocus(m_hWnd, emptyDocMgr, &prevDocMgr);
 }
 
 auto TextStore::QueryInterface(REFIID riid, void **ppvObject) -> HRESULT
@@ -262,13 +265,10 @@ auto TextStore::RequestLock(DWORD dwLockFlags, HRESULT *phrSession) -> HRESULT
             *phrSession = TS_E_SYNCHRONOUS;
             return S_OK;
         }
-        if ((m_dwLockType & TS_LF_READWRITE) == TS_LF_READ && ((dwLockFlags & TS_LF_READWRITE) == TS_LF_READWRITE))
-        {
-            m_fPendingLockUpgrade = TRUE;
-            *phrSession           = TS_S_ASYNC;
-            return S_OK;
-        }
-        return E_FAIL;
+
+        m_lockQueue.push_back(dwLockFlags & TS_LF_READWRITE);
+        *phrSession = TS_S_ASYNC;
+        return S_OK;
     }
 
     LockDocument(dwLockFlags);
@@ -285,7 +285,7 @@ auto TextStore::RequestLock(DWORD dwLockFlags, HRESULT *phrSession) -> HRESULT
         //
         // IMPORTANT - scope must end BEFORE UnlockDocument():
         //   UnlockDocument() may immediately call RequestLock(READWRITE) again to service
-        //   a pending lock upgrade (m_fPendingLockUpgrade). That call needs GetWriteLock(),
+        //   a pending lock upgrade. That call needs GetWriteLock(),
         //   which would deadlock if the shared_lock from the read branch is still held.
         //   The closing `}` below guarantees the C++ lock is released first.
         //
@@ -607,11 +607,11 @@ auto TextStore::InsertEmbedded(
     return E_NOTIMPL;
 }
 
-auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG /*filterAttrCount*/, const TS_ATTRID * /*filterAttrs*/) -> HRESULT
+auto TextStore::RequestSupportedAttrs(DWORD /*dwFlags*/, ULONG filterAttrCount, const TS_ATTRID * /*filterAttrs*/) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{}", __func__);
+    auto tracer = FuncTracer("TextStore::{} filterAttrCount {}", __func__, filterAttrCount);
 
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 auto TextStore::RequestAttrsAtPosition(
@@ -620,7 +620,7 @@ auto TextStore::RequestAttrsAtPosition(
 {
     auto tracer = FuncTracer("TextStore::{}", __func__);
 
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 auto TextStore::RequestAttrsTransitioningAtPosition(
@@ -642,11 +642,11 @@ auto TextStore::FindNextAttrTransition(
     return E_NOTIMPL;
 }
 
-auto TextStore::RetrieveRequestedAttrs(ULONG /*attrCount*/, TS_ATTRVAL * /*attrVals*/, ULONG * /*pcFetched*/) -> HRESULT
+auto TextStore::RetrieveRequestedAttrs(ULONG attrCount, TS_ATTRVAL * /*attrVals*/, ULONG * /*pcFetched*/) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{}", __func__);
+    auto tracer = FuncTracer("TextStore::{} attrCount {}", __func__, attrCount);
 
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 auto TextStore::GetEndACP(LONG *pacpEnd) -> HRESULT
@@ -713,7 +713,7 @@ auto TextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd, RECT
 
 auto TextStore::GetScreenExt(TsViewCookie vcView, RECT *pRect) -> HRESULT
 {
-    auto tracer = FuncTracer("TextStore::{}", __func__);
+    auto tracer = FuncTracer("TextStore::{} cookie {}", __func__, vcView);
 
     if (nullptr == pRect || EDIT_VIEW_COOKIE != vcView)
     {
@@ -979,10 +979,11 @@ void TextStore::UnlockDocument()
     m_dwLockType = 0;
 
     // if there is a pending lock upgrade, grant it
-    if (m_fPendingLockUpgrade)
+    while (!m_lockQueue.empty())
     {
-        m_fPendingLockUpgrade = FALSE;
-        RequestLock(TS_LF_READWRITE, &hresult);
+        const DWORD currentLockType = m_lockQueue.front();
+        m_lockQueue.pop_front();
+        RequestLock(currentLockType, &hresult);
     }
 
     // if any layout changes occurred during the lock, notify the manager

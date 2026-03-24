@@ -230,6 +230,7 @@ private:
     void               UnlockDocument();
     [[nodiscard]] auto IsLocked(DWORD dwLockType) const -> bool;
 
+    std::deque<DWORD>                          m_lockQueue;
     AdviseSinkCache                            m_adviseSinkCache{};
     HWND                                       m_hWnd{nullptr};
     TextService                               *m_pTextService{nullptr};
@@ -249,7 +250,6 @@ private:
     DWORD                                      m_textEditCookie{0};
     // Pending change flags. Be Updated in an edit session and consume in OnEndEdit or at the end of RequestLock.
     Ime::ITextService::DirtyFlag               m_pendingChangeFlags{Ime::ITextService::DirtyFlag::None};
-    bool                                       m_fPendingLockUpgrade{false};
     bool                                       m_fLocked{false};
     bool                                       m_fLayoutChanged{false};
 };

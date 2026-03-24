@@ -404,9 +404,6 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
                 ImeController::GetInstance()->TryFocusIme();
             }
             break;
-        case WM_SETFOCUS:
-            ImeController::GetInstance()->TryFocusIme();
-            return 0;
         case WM_IME_SETCONTEXT:
             return ::DefWindowProc(hWnd, uMsg, wParam, 0);
         case WM_NCDESTROY: {

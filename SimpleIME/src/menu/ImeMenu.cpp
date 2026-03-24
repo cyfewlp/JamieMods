@@ -217,10 +217,6 @@ inline void SendCharEventToImGuiIfWant(const GFxCharEvent *charEvent)
     }
 }
 
-inline auto IsToolWindowMenuShowing() -> bool
-{
-    return RE::UI::GetSingleton()->IsMenuOpen(ToolWindowMenuName);
-}
 } // namespace
 
 void ImeMenu::PostDisplay()
@@ -260,7 +256,6 @@ auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
                 results = ProcessScaleformEvent(scaleformData);
             }
 
-            const auto ingame = !RE::UI::GetSingleton()->IsMenuOpen(RE::MainMenu::MENU_NAME);
             if (imeApp.GetSettings().runtimeData.toolWindowShowing)
             {
                 results = RE::UI_MESSAGE_RESULTS::kHandled;

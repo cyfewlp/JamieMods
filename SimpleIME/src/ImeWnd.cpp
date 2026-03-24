@@ -45,7 +45,7 @@ auto RegisterImeWindowClass(WNDPROC wndProc) -> bool
     wc.cbClsExtra    = 0;
     wc.lpfnWndProc   = wndProc;
     wc.cbWndExtra    = 0;
-    wc.lpszClassName = g_tMainClassName;
+    wc.lpszClassName = g_MainClassName;
     wc.hInstance     = Global::g_hModule;
 
     WNDCLASSEXW existingClass{};
@@ -128,52 +128,6 @@ inline void ManageImeOverlayOnDemand(std::unique_ptr<UI::ImeOverlay> &imeOverlay
         }
     }
 }
-
-auto DrawImeStates()
-{
-#ifdef _DEBUG
-    const auto &state     = Core::State::GetInstance();
-    auto        stateIcon = [](bool enable) constexpr -> void {
-        if (enable)
-        {
-            ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
-        }
-        else
-        {
-            ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
-        }
-    };
-
-    const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_WindowPadding>(ImVec2(20.0F, 20.0F));
-    if (!ImGui::Begin("SimpleIme Debug", nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()))
-    {
-        ImGui::End();
-        return;
-    }
-
-    // clang-format off
-    const auto & conversionMode = state.GetConversionMode();
-    stateIcon(state.Has(Core::State::IN_COMPOSING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_COMPOSING");
-    stateIcon(state.Has(Core::State::IN_CAND_CHOOSING));    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_CAND_CHOOSING");
-    stateIcon(conversionMode.IsAlphanumeric());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMODE Native"); ImGui::SameLine();
-    stateIcon(conversionMode.IsNative());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: NATIVE"); ImGui::SameLine();
-    stateIcon(conversionMode.IsKatakana());                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: KATAKANA"); ImGui::SameLine();
-    stateIcon(conversionMode.IsFullShape());                ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FULLSHAPE"); ImGui::SameLine();
-    stateIcon(conversionMode.IsRoman());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: ROMAN"); ImGui::SameLine();
-    stateIcon(conversionMode.IsCharCode());                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: CHARCODE"); ImGui::SameLine();
-    stateIcon(conversionMode.IsSoftKeyboard());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SOFTKEYBOARD"); ImGui::SameLine();
-    stateIcon(conversionMode.IsNoConversion());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: NOCONVERSION"); ImGui::SameLine();
-    stateIcon(conversionMode.IsEudc());                     ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: EUDC"); ImGui::SameLine();
-    stateIcon(conversionMode.IsSymbol());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SYMBOL"); ImGui::SameLine();
-    stateIcon(conversionMode.IsFixed());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FIXED");
-    stateIcon(state.Has(Core::State::INPUT_PROCESSOR_ACTIVATED)); ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("INPUT_PROCESSOR_ACTIVATED");
-    stateIcon(state.Has(Core::State::IME_DISABLED));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IME_DISABLED");
-    stateIcon(state.Has(Core::State::GAME_LOADING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("GAME_LOADING");
-    stateIcon(state.Has(Core::State::KEYBOARD_OPEN));       ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("KEYBOARD_OPEN");
-    // clang-format on
-    ImGui::End();
-#endif
-}
 } // namespace
 
 ImeWnd::~ImeWnd()
@@ -235,7 +189,7 @@ void ImeWnd::UnInitialize() noexcept
 void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 {
     logger::info("Start ImeWnd Thread...");
-    m_hWnd = CreateWindowExW(0, g_tMainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, Global::g_hModule, this);
+    m_hWnd = CreateWindowExW(0, g_MainClassName, L"Hide", WS_CHILD, 0, 0, 0, 0, hWndParent, nullptr, Global::g_hModule, this);
     if (m_hWnd == nullptr)
     {
         throw SimpleIMEException("Create ImeWnd failed");
@@ -245,30 +199,22 @@ void ImeWnd::CreateHost(HWND hWndParent, Settings &settings)
 
 void ImeWnd::Run() const
 {
-    if (m_fEnabledTsf)
+    MSG  msg  = {};
+    bool done = false;
+    while (!done)
     {
-        TsfMessageLoop();
-    }
-    else
-    {
-        MSG msg = {};
-        ZeroMemory(&msg, sizeof(msg));
-        bool done = false;
-        while (!done)
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE) != FALSE)
         {
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE) != FALSE)
+            if (msg.message == WM_QUIT)
             {
-                if (msg.message == WM_QUIT)
-                {
-                    done = TRUE;
-                    break;
-                }
-
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                done = TRUE;
+                break;
             }
-            MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
+
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
+        MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
     }
 
     logger::info("Exit ImeWnd Thread...");
@@ -456,6 +402,49 @@ auto ImeWnd::OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT
     return TRUE;
 }
 
+/**
+ * @deprecated Use Run() with a plain Win32 PeekMessage loop instead.
+ *
+ * ## Why ITfMessagePump / ITfKeystrokeMgr are unnecessary for SimpleIME
+ *
+ * ITfMessagePump is a TSF wrapper around GetMessage/PeekMessage that adds pre- and
+ * post-processing hooks so the TSF manager can intercept preserved keys (e.g. Shift for
+ * Microsoft Pinyin's CN/EN toggle) before they reach the application.
+ * ITfKeystrokeMgr routes those intercepted keys to the active text service.
+ *
+ * In a normal text editor this makes sense. In SimpleIME it does not, for two reasons:
+ *
+ * 1. **Skyrim does not expose keyboard messages to mods.**
+ *    The base game handles all raw input internally; WM_KEYDOWN/WM_KEYUP never reach
+ *    mod-side code through the normal game loop. The only keyboard signal that matters
+ *    here is WM_CHAR, which is already handled by the WndProc WM_CHAR branch and forwarded
+ *    to the game via the existing "message compensation" mechanism. ITfKeystrokeMgr adds
+ *    nothing to that path.
+ *
+ * 2. **Microsoft Pinyin (mspy) has a confirmed OS-level bug when ITfMessagePump and
+ *    ITfKeystrokeMgr are used together.**
+ *    When the user presses Shift during an active composition (mspy's preserved key for
+ *    CN/EN mode toggle), mspy triggers a nested message loop inside the ITfMessagePump
+ *    pre-processing stage. That nested loop devours all subsequent messages until
+ *    AssociateFocus is called to clear the document focus, effectively freezing the
+ *    application. Switching to a plain PeekMessage loop bypasses the TSF pre-processing
+ *    layer entirely and avoids the hang.
+ *
+ *    This is a known Microsoft bug, acknowledged in KB4564002:
+ *    https://support.microsoft.com/en-us/topic/kb4564002-you-might-have-issues-on-windows-10-version-20h2-and-windows-10-version-2004-when-using-some-microsoft-imes-63696506-47d2-9997-0b72-41a68e328692
+ *
+ *    The same freeze has been independently reported and confirmed by multiple projects:
+ *    - KiCad issue #9882 (open since 2021, marked out-of-scope — Microsoft's bug):
+ *      https://gitlab.com/kicad/code/kicad/-/issues/9882
+ *    - Audacity issue #1618:
+ *      https://github.com/audacity/audacity/issues/1618
+ *    - SimpleIME author's StackOverflow question (note: the accepted answer still uses
+ *      ITfMessagePump and therefore still carries the bug):
+ *      https://stackoverflow.com/questions/79527691/tsf-prevent-keyboard-event-when-use-microsoft-pinyin
+ *
+ * The current message loop in Run() uses plain PeekMessageW and is the correct approach.
+ * This function is kept only for reference and must not be called.
+ */
 void ImeWnd::TsfMessageLoop()
 {
     auto const &tsfSupport   = Tsf::TsfSupport::GetSingleton();
@@ -519,7 +508,7 @@ void ImeWnd::OnCreated(Settings &settings)
     m_uiScale            = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
     m_fWantUpdateUiScale = true;
     float uiScale        = settings.appearance.zoom;
-    uiScale              = static_cast<float>(align_to(static_cast<int>(uiScale * 100), Settings::ZOOM_STEP_PERCENT)) / 100.F;
+    uiScale              = static_cast<float>(align_to(static_cast<int>(uiScale * 100.0F), Settings::ZOOM_STEP_PERCENT)) / 100.F;
     if (uiScale > 0.0F)
     {
         m_uiScale = std::clamp(uiScale, Settings::ZOOM_MIN, Settings::ZOOM_MAX);
@@ -562,5 +551,61 @@ void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) con
             AttachThreadInput(m_gameThreadId, currentThread, FALSE);
         }
     }
+}
+
+void ImeWnd::DrawImeStates()
+{
+#ifdef _DEBUG
+    const auto &state     = Core::State::GetInstance();
+    auto        stateIcon = [](bool enable) constexpr -> void {
+        if (enable)
+        {
+            ImGuiEx::M3::Icon(ICON_EYE, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+        else
+        {
+            ImGuiEx::M3::Icon(ICON_EYE_OFF, ImGuiEx::M3::Spec::SizeTips::SMALL);
+        }
+    };
+
+    const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_WindowPadding>(ImVec2(20.0F, 20.0F));
+    if (!ImGui::Begin("SimpleIme Debug", nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize()))
+    {
+        ImGui::End();
+        return;
+    }
+    ImGui::Value("IME focused", m_fFocused);
+    bool textServiceFocused = state.Has(Core::State::TEXT_SERVICE_FOCUS);
+    if (ImGui::Checkbox("Toggle TSF Focus", &textServiceFocused))
+    {
+        if (!m_textService->OnFocus(textServiceFocused))
+        {
+            ErrorNotifier::GetInstance().Debug("Failed to toggle text service focus.");
+        }
+    }
+
+    // clang-format off
+    const auto & conversionMode = state.GetConversionMode();
+    stateIcon(textServiceFocused);                                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("TEXT_SERVICE_FOCUS");
+    stateIcon(state.Has(Core::State::IN_COMPOSING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_COMPOSING");
+    stateIcon(state.Has(Core::State::IN_CAND_CHOOSING));    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IN_CAND_CHOOSING");
+    stateIcon(conversionMode.IsAlphanumeric());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMODE Native"); ImGui::SameLine();
+    stateIcon(conversionMode.IsNative());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: NATIVE"); ImGui::SameLine();
+    stateIcon(conversionMode.IsKatakana());                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: KATAKANA"); ImGui::SameLine();
+    stateIcon(conversionMode.IsFullShape());                ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FULLSHAPE"); ImGui::SameLine();
+    stateIcon(conversionMode.IsRoman());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: ROMAN"); ImGui::SameLine();
+    stateIcon(conversionMode.IsCharCode());                 ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: CHARCODE"); ImGui::SameLine();
+    stateIcon(conversionMode.IsSoftKeyboard());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SOFTKEYBOARD"); ImGui::SameLine();
+    stateIcon(conversionMode.IsNoConversion());             ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: NOCONVERSION"); ImGui::SameLine();
+    stateIcon(conversionMode.IsEudc());                     ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: EUDC"); ImGui::SameLine();
+    stateIcon(conversionMode.IsSymbol());                   ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: SYMBOL"); ImGui::SameLine();
+    stateIcon(conversionMode.IsFixed());                    ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("CMode: FIXED");
+    stateIcon(state.Has(Core::State::INPUT_PROCESSOR_ACTIVATED)); ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("INPUT_PROCESSOR_ACTIVATED");
+    stateIcon(state.Has(Core::State::IME_DISABLED));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("IME_DISABLED");
+    stateIcon(state.Has(Core::State::GAME_LOADING));        ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("GAME_LOADING");
+    stateIcon(state.Has(Core::State::KEYBOARD_OPEN));       ImGui::SameLine(); ImGuiEx::M3::AlignedLabel("KEYBOARD_OPEN");
+    // clang-format on
+    ImGui::End();
+#endif
 }
 } // namespace Ime

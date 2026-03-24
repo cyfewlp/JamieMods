@@ -22,7 +22,7 @@ class M3Styles;
 
 namespace Ime
 {
-static inline auto      g_tMainClassName                 = L"SimpleIME";
+static inline auto      g_MainClassName                  = L"SimpleIME";
 static constexpr size_t TRANSLATOR_DEBONCE_DELAY_SECONDS = 10LLU;
 
 class ImeWnd
@@ -101,6 +101,7 @@ private:
 
     void InitializeTextService();
     void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+    void DrawImeStates();
 
     DebounceTimer                   m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
     std::unique_ptr<ImeWindow>      m_imeWindow             = nullptr;

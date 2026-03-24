@@ -157,11 +157,11 @@ void SKSE_AllowTextInputFnHandler::OnTextEntryCountChanged(std::uint8_t entryCou
     g_prevTextEntryCount = entryCount;
     auto *imeManager     = Ime::ImeController::GetInstance();
     imeManager->SyncImeStateIfDirty();
-    if (oldValue == 0 && entryCount > 0)
+    if (oldValue == 0)
     {
         imeManager->EnableIme(true);
     }
-    else if (oldValue > 0 && entryCount == 0)
+    else if (entryCount == 0)
     {
         imeManager->EnableIme(false);
     }

@@ -17,32 +17,42 @@ public:
 
     void AddImeThreadTask(Task &&task)
     {
+        const std::scoped_lock lock(m_mutex);
         m_imeThreadTasks.push(std::forward<Task>(task));
     }
 
     void AddMainThreadTask(Task &&task)
     {
+        const std::scoped_lock lock(m_mutex);
         m_mainThreadTasks.push(std::forward<Task>(task));
     }
 
     void ExecuteImeThreadTasks()
     {
+        const std::scoped_lock lock(m_mutex);
         if (m_imeThreadTasks.empty())
         {
             return;
         }
-        m_imeThreadTasks.front()();
-        m_imeThreadTasks.pop();
+        while (!m_imeThreadTasks.empty())
+        {
+            m_imeThreadTasks.front()();
+            m_imeThreadTasks.pop();
+        }
     }
 
     void ExecuteMainThreadTasks()
     {
+        const std::scoped_lock lock(m_mutex);
         if (m_mainThreadTasks.empty())
         {
             return;
         }
-        m_mainThreadTasks.front()();
-        m_mainThreadTasks.pop();
+        while (!m_mainThreadTasks.empty())
+        {
+            m_mainThreadTasks.front()();
+            m_mainThreadTasks.pop();
+        }
     }
 
     static auto GetInstance() -> TaskQueue &
@@ -52,6 +62,7 @@ public:
     }
 
 private:
+    std::mutex       m_mutex;
     std::queue<Task> m_imeThreadTasks;
     std::queue<Task> m_mainThreadTasks;
 };
