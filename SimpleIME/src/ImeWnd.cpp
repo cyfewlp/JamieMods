@@ -310,7 +310,6 @@ auto ImeWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRES
     ImeWnd *pThis = GetThis(hWnd);
     if (pThis != nullptr)
     {
-        pThis->ForwardKeyboardMessage(uMsg, wParam, lParam);
         if (pThis->m_textService->ProcessImeMessage(hWnd, uMsg, wParam, lParam))
         {
             return 0;
@@ -524,33 +523,6 @@ auto ImeWnd::OnDestroy() -> LRESULT
     UnInitialize();
     PostQuitMessage(0);
     return S_OK;
-}
-
-void ImeWnd::ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
-{
-    const DWORD currentThread = GetCurrentThreadId();
-    if (m_gameThreadId != currentThread)
-    {
-        if (AttachThreadInput(m_gameThreadId, currentThread, TRUE) != FALSE)
-        {
-            switch (uMsg)
-            {
-                case WM_KEYDOWN:
-                case WM_KEYUP:
-                case WM_SYSKEYDOWN:
-                case WM_SYSKEYUP: {
-                    if (PostMessageA(m_hWndParent, uMsg, wParam, lParam) == FALSE)
-                    {
-                        logger::debug("Post message to game failed.");
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-            AttachThreadInput(m_gameThreadId, currentThread, FALSE);
-        }
-    }
 }
 
 void ImeWnd::DrawImeStates()

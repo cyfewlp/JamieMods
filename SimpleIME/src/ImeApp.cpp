@@ -401,7 +401,7 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
         case WM_NCACTIVATE:
             if (wParam == TRUE)
             {
-                ImeController::GetInstance()->TryFocusIme();
+                ImeController::GetInstance()->SyncImeState();
             }
             break;
         case WM_IME_SETCONTEXT:

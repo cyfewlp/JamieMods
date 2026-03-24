@@ -24,14 +24,10 @@ public:
     [[nodiscard]] virtual auto SyncImeState() -> Result         = 0;
     [[nodiscard]] virtual auto TryFocusIme() -> Result          = 0;
 
-    static bool IsSuccess(const Result res)
-    {
-        return res == Result::SUCCESS;
-    }
+    static auto ToResult(bool success) -> Result { return success ? Result::SUCCESS : Result::FAILED; }
 
-    static bool IsFailed(const Result res)
-    {
-        return res == Result::FAILED;
-    }
+    static auto IsSuccess(const Result res) -> bool { return res == Result::SUCCESS; }
+
+    static auto IsFailed(const Result res) -> bool { return res == Result::FAILED; }
 };
 } // namespace Ime

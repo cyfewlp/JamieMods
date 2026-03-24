@@ -152,7 +152,6 @@ auto ImeController::DoEnableMod(const bool enable) -> IImeModule::Result
     if (fResult)
     {
         fResult = enable ? UnlockKeyboard() : RestoreKeyboard();
-        fResult = fResult && FocusImeOrGame(enable);
     }
     if (fResult)
     {
@@ -210,13 +209,7 @@ auto ImeController::DoTryFocusIme() const -> IImeModule::Result
     {
         return IImeModule::Result::DISABLED;
     }
-    const auto result = m_delegate->TryFocusIme();
-    if (!IImeModule::IsSuccess(result))
-    {
-        ErrorNotifier::GetInstance().Warning("Unexpected error: TryFocusIme failed");
-        return result;
-    }
-    return result;
+    return m_delegate->TryFocusIme();
 }
 
 auto ImeController::DoSyncImeState() -> IImeModule::Result
@@ -263,25 +256,6 @@ auto ImeController::UnlockKeyboard() const -> bool
         logger::error("Failed unlock keyboard.");
     }
     return SUCCEEDED(hr);
-}
-
-bool ImeController::FocusImeOrGame(const bool focusIme) const
-{
-    bool success = true;
-    if (focusIme)
-    {
-        m_imeWnd->Focus();
-    }
-    else
-    {
-        success = ImeManager::Focus(m_gameHwnd);
-    }
-
-    if (!success)
-    {
-        logger::error("Failed focus to {}", focusIme ? "IME" : "Game");
-    }
-    return success;
 }
 
 void ImeController::AddTask(TaskQueue::Task &&task) const

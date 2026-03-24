@@ -68,23 +68,23 @@ The base game doesn't require IME. But if you use [b]SkyUI[/b] or any mod built 
 
 [size=4][color=#2EB2FF][b]Compatibility · 兼容性[/b][/color][/size]
 
+[b]Compatibility boundary · 兼容边界[/b]
+
+During active text input, SimpleIME holds keyboard focus on the IME thread and owns that thread's Win32 message loop. This is the minimum state required for TSF to function correctly. SimpleIME does not attempt to work around mods that intercept the same pipeline — if another mod manipulates keyboard focus or hooks [i]WM_CHAR[/i] for the same window during this period, the two are considered incompatible.
+
+SimpleIME 在处理文本输入期间，会在 IME 线程持有键盘焦点并管理该线程的消息循环，这是 TSF 正常工作的最低状态要求。SimpleIME 不会主动为干预相同管线的 Mod 提供兼容适配——如果另一个 Mod 在此期间操作同一窗口的键盘焦点或 Hook [i]WM_CHAR[/i]，二者将被视为不兼容。
+
 [list]
 [*][b]SkyUI[/b] and all mods built on it — fully supported.
 完全支持 SkyUI 及所有基于它的 Mod。
-[*][b]RaceMenu[/b] — text entries work correctly via the [i]AllowTextInput[/i] hook.
-RaceMenu 文本框已修复，输入法可正常使用。
-[*][b]Console[/b] — fixed in the same hook.
-控制台已同步修复。
-[*][b]KreatE, WhereAreYou, Completionist[/b] and other SkyUI-based mods — compatible.
-兼容 KreatE、WhereAreYou、Completionist 等基于 SkyUI 的 Mod。
+[*][b]WhereAreYou, Completionist[/b] and other SkyUI-based mods — compatible.
+兼容 WhereAreYou、Completionist 等基于 SkyUI 的 Mod。
 [*][b]Modex[/b] — compatible; Modex implements the [i]AllowTextInput[/i] integration.
 兼容 Modex；Modex 已采用 AllowTextInput 方案集成。
 [*][b]dMenu[/b] — not supported; dMenu implements its own render and message pipeline.
 不支持 dMenu；dMenu 有独立的渲染和消息管线。
 [*][b]sse-gui[/b] — potential conflict; load SimpleIME after sse-gui.
 可能冲突，请将 SimpleIME 排在 sse-gui 之后加载。
-[*][b]Steam Overlay[/b] — keyboard input is unavailable while the Steam Overlay is open. Disable the mod before opening Steam Overlay if needed.
-Steam 界面打开时键盘输入不可用，如有需要请在打开 Steam 界面前禁用 Mod。
 [/list]
 
 [line]
@@ -139,14 +139,8 @@ This is a major rewrite relative to v1.3.0. Key changes:
 字体构建器：按字符集浏览、预览、分配字体。
 [*][b]Theme Builder[/b]: real-time Material You palette from a single seed color; dark/light toggle.
 主题构建器：基于单一种子颜色实时生成 Material You 配色，支持深/浅色切换。
-[*][b]Auto caret tracking[/b] with scroll support.
-支持滚动的自动光标追踪。
 [*]Fixed TSF message-pump deadlock causing [b]Microsoft Pinyin Shift-key[/b] to stop responding.
 修复 TSF 消息泵死锁，解决了微软拼音 Shift 键失效问题。
-[*]Fixed [b]RaceMenu[/b] and [b]Console[/b] text-entry IME support.
-修复了 RaceMenu 和控制台文本框的输入法支持。
-[*]All settings are now persistent across sessions.
-所有设置现支持跨会话持久化。
 [*]Removed focus-mode system; simplified to a single stable focus model. Use the [b]Enable/Disable Mod[/b] toggle when you need to temporarily release keyboard control.
 移除焦点模式系统，简化为单一稳定焦点模型。需要临时释放键盘控制时，使用 [b]启用/禁用 Mod[/b] 开关即可。
 [/list]

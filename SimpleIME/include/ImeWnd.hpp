@@ -100,7 +100,6 @@ private:
     [[nodiscard]] auto OnDestroy() -> LRESULT;
 
     void InitializeTextService();
-    void ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
     void DrawImeStates();
 
     DebounceTimer                   m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};

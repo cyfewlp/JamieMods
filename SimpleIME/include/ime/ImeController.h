@@ -87,7 +87,6 @@ private:
 
     auto UnlockKeyboard() const -> bool;
     auto RestoreKeyboard() const -> bool;
-    auto FocusImeOrGame(bool focusIme) const -> bool;
 
     void AddTask(TaskQueue::Task &&task) const;
 };

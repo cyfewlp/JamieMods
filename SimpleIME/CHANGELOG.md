@@ -74,6 +74,7 @@ A condensed history of significant changes to SimpleIME.
   no destruction-order crashes on game exit.
 
 ### Refactoring
+- **Focus system simplified** — Removed `FocusImeOrGame` and the permanent/temporary focus-mode split. `WM_NCACTIVATE` now triggers `SyncImeState` (focus is only transferred when the IME actually needs to be active). `TryFocusIme` is reduced to a plain `SetFocus` call; `EnableIme` calls it unconditionally when enabling, and does nothing for focus when disabling. SimpleIME no longer returns keyboard focus to the game window after input ends, as the game's input pipeline (`DirectInput`) does not depend on Win32 focus. Third-party mods that hook into the same keyboard-focus or `WM_CHAR` pipeline during active IME input will conflict.
 - **`Configuration` struct** — Decouples raw TOML field names from the runtime
   `Settings` struct. Converters synchronise between the two; raw TOML keys no
   longer pollute application code.

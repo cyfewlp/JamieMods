@@ -16,14 +16,11 @@ class ImeManager final : public IImeModule
     using State = Core::State;
     HWND            m_gameHwnd;
     ImeWnd         *m_imeWnd;
-    bool            m_fForceUpdate;
+    bool            m_isForceUpdate;
     const Settings &m_settings;
 
 public:
-    ImeManager(HWND hwnd, ImeWnd *imeWnd, Settings &settings)
-        : m_gameHwnd(hwnd), m_imeWnd(imeWnd), m_fForceUpdate(false), m_settings(settings)
-    {
-    }
+    ImeManager(HWND hwnd, ImeWnd *imeWnd, Settings &settings) : m_gameHwnd(hwnd), m_imeWnd(imeWnd), m_isForceUpdate(false), m_settings(settings) {}
 
     ~ImeManager() override              = default;
     ImeManager(const ImeManager &other) = delete;
@@ -38,10 +35,7 @@ public:
     /// <returns>true if mod enabled and focus success, otherwise false</returns>
     auto TryFocusIme() -> Result override;
 
-    auto GetGameHwnd() const -> HWND
-    {
-        return m_gameHwnd;
-    }
+    auto GetGameHwnd() const -> HWND { return m_gameHwnd; }
 
     static auto Focus(HWND hwnd) -> bool;
 
