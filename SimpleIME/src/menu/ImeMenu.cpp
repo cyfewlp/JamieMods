@@ -392,9 +392,12 @@ void ImeMenu::ToggleMenuModeContextIfNeed(bool push)
 {
     if (RE::ControlMap *controlMap = RE::ControlMap::GetSingleton(); controlMap != nullptr)
     {
-        if (push && !m_isPushedMenuContext)
+        if (push)
         {
-            controlMap->PushInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+            if (!m_isPushedMenuContext)
+            {
+                controlMap->PushInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+            }
         }
         else if (m_isPushedMenuContext)
         {
