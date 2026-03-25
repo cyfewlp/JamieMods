@@ -1,0 +1,48 @@
+[center][size=5][color=#2EB2FF][b]SimpleIME — Compatibility & Mod Author Guide[/b][/color][/size][/center]
+
+[line]
+
+[size=4][color=#2EB2FF][b]Compatibility Boundary[/b][/color][/size]
+
+During active text input, SimpleIME holds keyboard focus on the IME thread and owns that thread's Win32 message loop. This is the minimum state required for TSF to function correctly. SimpleIME does not attempt to work around mods that intercept the same pipeline — if another mod manipulates keyboard focus or hooks [i]WM_CHAR[/i] for the same window during this period, the two are considered incompatible.
+
+[list]
+[*][b]SkyUI[/b] and all mods built on it — fully supported.
+[*][b]WhereAreYou, Completionist[/b] and other SkyUI-based mods — compatible.
+[*][b][url=https://www.nexusmods.com/skyrimspecialedition/mods/137877]Modex[/url][/b] — compatible; Modex implements the [i]AllowTextInput[/i] integration.
+[*][b]dMenu[/b] — not supported; dMenu implements its own render and message pipeline.
+[*][b]sse-gui[/b] — potential conflict; load SimpleIME after sse-gui.
+[/list]
+
+[line]
+
+[size=4][color=#2EB2FF][b]For Mod Authors[/b][/color][/size]
+
+Supporting SimpleIME in your mod is easy if you follow the game's existing text input conventions.
+
+[list]
+[*][b]Custom UI (ImGui, Nuklear, etc.)[/b] — call the game's [i]AllowTextInput[/i] function when your input field gains or loses focus.
+[*][b]Native UI (SkyUI, .gfx, etc.)[/b] — call [i]skse.AllowTextInput(true)[/i] when your input field gains focus and [i]skse.AllowTextInput(false)[/i] when it loses focus.
+[/list]
+
+[i]SimpleIME[/i] hooks [i]RE::ControlMap::AllowTextInput[/i], which is the game's built-in signal for text input focus changes. Any UI that correctly calls this function will automatically activate and deactivate the IME.
+
+[size=3][b]NOTE — IME window positioning for custom renderers[/b][/size]
+
+By default, SimpleIME positions the IME window by the [i]GFxMovieView[/i] caret position, which works for most cases. If your mod uses custom rendering (like ImGui), SimpleIME cannot track the caret. Please prompt the user to change the IME window position policy in the Tool Window to [b]Follow Cursor[/b] or [b]None[/b].
+
+[code]
+// Hook AllowTextInput (RELOCATION_ID 67252 / 68552)
+void AllowTextInput(RE::ControlMap* controlMap, bool allow) {
+    using func_t = decltype(&AllowTextInput);
+    REL::Relocation<func_t> func{ RELOCATION_ID(67252, 68552) };
+    func(controlMap, allow);
+}
+
+// In your render loop:
+static bool sPrevWantText = false;
+const  bool sCurrWantText = ImGui::GetIO().WantTextInput;
+if (!sPrevWantText && sCurrWantText)  AllowTextInput(RE::ControlMap::GetSingleton(), true);
+if ( sPrevWantText && !sCurrWantText) AllowTextInput(RE::ControlMap::GetSingleton(), false);
+sPrevWantText = sCurrWantText;
+[/code]
