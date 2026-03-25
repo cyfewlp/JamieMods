@@ -180,10 +180,23 @@ auto ImeController::DoEnableIme(bool enable) const -> IImeModule::Result
         return IImeModule::Result::DISABLED;
     }
     const auto result = m_delegate->EnableIme(m_settings->input.keepImeOpen || enable);
-    if (!IImeModule::IsSuccess(result))
+    if (IImeModule::IsSuccess(result))
+    {
+        if (m_settings->appearance.autoToggleLanguageBar)
+        {
+            if (enable)
+            {
+                m_settings->runtimeData.requestShowOverlay = true;
+            }
+            else
+            {
+                m_settings->runtimeData.requestHideOverlay = true;
+            }
+        }
+    }
+    else
     {
         ErrorNotifier::GetInstance().Warning(std::format("Unexpected error: EnableIme({}) failed.", enable));
-        return result;
     }
     return result;
 }

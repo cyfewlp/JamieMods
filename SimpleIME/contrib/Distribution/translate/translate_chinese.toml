@@ -17,6 +17,7 @@ ThemeColor = "主题颜色"
 ThemeBuilder = "主题构建器###ThemeBuilder"
 ContrastLevel = "对比度"
 VerticalCandidateList = "垂直显示候选列表"
+AutoToggleLanguageBar = "自动显示/隐藏语言栏"
 
 [Settings.FontBuilder]
 Add = "添加字体"

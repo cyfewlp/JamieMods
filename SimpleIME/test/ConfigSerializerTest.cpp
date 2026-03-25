@@ -32,6 +32,7 @@ TEST(ConfigSerializerTest, should_return_default_configuration_if_file_not_exist
     EXPECT_EQ(configuration.appearance.zoom, defaultConfiguration.appearance.zoom);
     EXPECT_EQ(configuration.appearance.errorDisplayDuration, defaultConfiguration.appearance.errorDisplayDuration);
     EXPECT_EQ(configuration.appearance.verticalCandidateList, defaultConfiguration.appearance.verticalCandidateList);
+    EXPECT_EQ(configuration.appearance.autoToggleLanguageBar, defaultConfiguration.appearance.autoToggleLanguageBar);
 
     EXPECT_EQ(configuration.input.enableUnicodePaste, defaultConfiguration.input.enableUnicodePaste);
     EXPECT_EQ(configuration.input.keepImeOpen, defaultConfiguration.input.keepImeOpen);
@@ -66,6 +67,7 @@ TEST(ConfigSerializerTest, should_save_load_configuration)
     EXPECT_EQ(loadedConfig.appearance.zoom, toSaveConfiguration.appearance.zoom);
     EXPECT_EQ(loadedConfig.appearance.errorDisplayDuration, toSaveConfiguration.appearance.errorDisplayDuration);
     EXPECT_EQ(loadedConfig.appearance.verticalCandidateList, toSaveConfiguration.appearance.verticalCandidateList);
+    EXPECT_EQ(loadedConfig.appearance.autoToggleLanguageBar, toSaveConfiguration.appearance.autoToggleLanguageBar);
 
     EXPECT_EQ(loadedConfig.input.enableUnicodePaste, toSaveConfiguration.input.enableUnicodePaste);
     EXPECT_EQ(loadedConfig.input.keepImeOpen, toSaveConfiguration.input.keepImeOpen);

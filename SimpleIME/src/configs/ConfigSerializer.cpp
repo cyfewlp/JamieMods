@@ -22,41 +22,42 @@ namespace Ime::ConfigSerializer
 namespace
 {
 
-static constexpr auto KEY_SHORTCUT = "shortcut";
+constexpr auto KEY_SHORTCUT = "shortcut";
 
 // Section keys
-static constexpr auto KEY_SECTION_CORE       = "core";
-static constexpr auto KEY_SECTION_RESOURCES  = "resources";
-static constexpr auto KEY_SECTION_APPEARANCE = "appearance";
-static constexpr auto KEY_SECTION_INPUT      = "input";
-static constexpr auto KEY_SECTION_LOGGING    = "logging";
+constexpr auto KEY_SECTION_CORE       = "core";
+constexpr auto KEY_SECTION_RESOURCES  = "resources";
+constexpr auto KEY_SECTION_APPEARANCE = "appearance";
+constexpr auto KEY_SECTION_INPUT      = "input";
+constexpr auto KEY_SECTION_LOGGING    = "logging";
 
 // Core keys
-static constexpr auto KEY_ENABLE_TSF                        = "enable_tsf";
-static constexpr auto KEY_ENABLE_MOD                        = "enable_mod";
-static constexpr auto KEY_FIX_INCONSISTENT_TEXT_ENTRY_COUNT = "fix_inconsistent_text_entry_count";
+constexpr auto KEY_ENABLE_TSF                        = "enable_tsf";
+constexpr auto KEY_ENABLE_MOD                        = "enable_mod";
+constexpr auto KEY_FIX_INCONSISTENT_TEXT_ENTRY_COUNT = "fix_inconsistent_text_entry_count";
 
 // Logging keys
-static constexpr auto KEY_LOG_LEVEL       = "level";
-static constexpr auto KEY_LOG_FLUSH_LEVEL = "flush_level";
+constexpr auto KEY_LOG_LEVEL       = "level";
+constexpr auto KEY_LOG_FLUSH_LEVEL = "flush_level";
 
 // Resources keys
-static constexpr auto KEY_TRANSLATION_DIR = "translation_dir";
-static constexpr auto KEY_FONTS           = "fonts";
+constexpr auto KEY_TRANSLATION_DIR = "translation_dir";
+constexpr auto KEY_FONTS           = "fonts";
 
 // Appearance keys
-static constexpr auto KEY_ZOOM                    = "zoom";
-static constexpr auto KEY_LANGUAGE                = "language";
-static constexpr auto KEY_THEME_SOURCE_COLOR      = "theme_source_color";
-static constexpr auto KEY_THEME_DARK_MODE         = "theme_dark_mode";
-static constexpr auto KEY_THEME_CONTRAST_LEVEL    = "theme_contrast_level";
-static constexpr auto KEY_ERROR_DISPLAY_DURATION  = "error_display_duration";
-static constexpr auto KEY_VERTICAL_CANDIDATE_LIST = "vertical_candidate_list";
+constexpr auto KEY_ZOOM                     = "zoom";
+constexpr auto KEY_LANGUAGE                 = "language";
+constexpr auto KEY_THEME_SOURCE_COLOR       = "theme_source_color";
+constexpr auto KEY_THEME_DARK_MODE          = "theme_dark_mode";
+constexpr auto KEY_THEME_CONTRAST_LEVEL     = "theme_contrast_level";
+constexpr auto KEY_ERROR_DISPLAY_DURATION   = "error_display_duration";
+constexpr auto KEY_VERTICAL_CANDIDATE_LIST  = "vertical_candidate_list";
+constexpr auto KEY_AUTO_TOGGLE_LANGUAGE_BAR = "auto_toggle_language_bar";
 
 // Input keys
-static constexpr auto KEY_ENABLE_UNICODE_PASTE = "enable_unicode_paste";
-static constexpr auto KEY_KEEP_IME_OPEN        = "keep_ime_open";
-static constexpr auto KEY_POS_UPDATE_POLICY    = "pos_update_policy";
+constexpr auto KEY_ENABLE_UNICODE_PASTE = "enable_unicode_paste";
+constexpr auto KEY_KEEP_IME_OPEN        = "keep_ime_open";
+constexpr auto KEY_POS_UPDATE_POLICY    = "pos_update_policy";
 
 //! @brief Format the configuration to a TOML string with comments for better readability.
 //! May throw `toml::exception` if the configuration contains unsupported types or values.
@@ -88,40 +89,41 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
         " 示例: [\"C:/Windows/Fonts/simhei.ttf\", \"C:/Windows/Fonts/seguiemj.ttf\"]"
     };
 
-    toml::table logging{
+    const toml::table logging{
         {KEY_LOG_LEVEL,       {configuration.logging.level, logLevelComment}},
         {KEY_LOG_FLUSH_LEVEL, configuration.logging.flushLevel              },
     };
 
-    toml::table core{
+    const toml::table core{
         {{KEY_SHORTCUT, {configuration.shortcut, shortcutComment}},
          {KEY_ENABLE_TSF, {configuration.enableTsf, enableTsfComment}},
          {KEY_ENABLE_MOD, {configuration.enableMod, enableModComment}},
          {KEY_FIX_INCONSISTENT_TEXT_ENTRY_COUNT, {configuration.fixInconsistentTextEntryCount, fixInconsistentTextEntryCountComment}},
          {KEY_SECTION_LOGGING, logging}}
     };
-    toml::table resources{
+    const toml::table resources{
         {KEY_TRANSLATION_DIR, {configuration.resources.translationDir, {" 翻译文件目录"}}},
         {KEY_FONTS,           {configuration.resources.fontPathList, fontPathListComment}},
     };
 
     toml::value sourceColor          = {configuration.appearance.themeSourceColor, {" RGB 颜色, 不包含 alpha"}};
     sourceColor.as_integer_fmt().fmt = toml::integer_format::hex;
-    toml::table appearance{
-        {KEY_ZOOM,                    {configuration.appearance.zoom, zoomComment}                                                    },
-        {KEY_LANGUAGE,                configuration.appearance.language                                                               },
-        {KEY_THEME_SOURCE_COLOR,      sourceColor                                                                                     },
-        {KEY_THEME_DARK_MODE,         configuration.appearance.themeDarkMode                                                          },
-        {KEY_THEME_CONTRAST_LEVEL,    {configuration.appearance.themeContrastLevel, {" 对比度，-1.0 - 1.0，默认值为 0.0"}}            },
-        {KEY_ERROR_DISPLAY_DURATION,  {configuration.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
-        {KEY_VERTICAL_CANDIDATE_LIST, {configuration.appearance.verticalCandidateList, {" 垂直显示候选词列表"}}                       },
+    const toml::table appearance{
+        {KEY_ZOOM,                     {configuration.appearance.zoom, zoomComment}                                                    },
+        {KEY_LANGUAGE,                 configuration.appearance.language                                                               },
+        {KEY_THEME_SOURCE_COLOR,       sourceColor                                                                                     },
+        {KEY_THEME_DARK_MODE,          configuration.appearance.themeDarkMode                                                          },
+        {KEY_THEME_CONTRAST_LEVEL,     {configuration.appearance.themeContrastLevel, {" 对比度，-1.0 - 1.0，默认值为 0.0"}}            },
+        {KEY_ERROR_DISPLAY_DURATION,   {configuration.appearance.errorDisplayDuration, {" 错误信息显示持续时间 (秒)，-1 为不自动关闭"}}},
+        {KEY_VERTICAL_CANDIDATE_LIST,  {configuration.appearance.verticalCandidateList, {" 垂直显示候选词列表"}}                       },
+        {KEY_AUTO_TOGGLE_LANGUAGE_BAR, {configuration.appearance.autoToggleLanguageBar, {" IME 激活/隐藏的同时，自动激活/隐藏语言栏"}} },
     };
-    toml::table input{
+    const toml::table input{
         {KEY_ENABLE_UNICODE_PASTE, configuration.input.enableUnicodePaste},
         {KEY_KEEP_IME_OPEN,        configuration.input.keepImeOpen       },
         {KEY_POS_UPDATE_POLICY,    configuration.input.posUpdatePolicy   },
     };
-    toml::value tomlTable = {
+    const toml::value tomlTable = {
         toml::table{
                     {KEY_SECTION_CORE, core},
                     {KEY_SECTION_RESOURCES, resources},
@@ -135,7 +137,7 @@ auto FormatConfigurationToToml(const Configuration &configuration) -> std::strin
 
 auto ParseConfigurationFromToml(toml::value &rawToml) -> Configuration
 {
-    auto findAndSet = [](auto &tomlTable, const char *key, auto &value) {
+    auto findAndSet = [](auto &tomlTable, const char *key, auto &value) -> void {
         value = toml::find_or(tomlTable, key, value);
     };
     Configuration config = GetDefaultConfiguration();
@@ -171,6 +173,7 @@ auto ParseConfigurationFromToml(toml::value &rawToml) -> Configuration
         findAndSet(appearanceToml, KEY_THEME_CONTRAST_LEVEL, config.appearance.themeContrastLevel);
         findAndSet(appearanceToml, KEY_ERROR_DISPLAY_DURATION, config.appearance.errorDisplayDuration);
         findAndSet(appearanceToml, KEY_VERTICAL_CANDIDATE_LIST, config.appearance.verticalCandidateList);
+        findAndSet(appearanceToml, KEY_AUTO_TOGGLE_LANGUAGE_BAR, config.appearance.autoToggleLanguageBar);
     }
 
     if (rawToml.contains(KEY_SECTION_INPUT))

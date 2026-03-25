@@ -34,6 +34,8 @@ struct Settings
     struct RuntimeData
     {
         bool requestCloseTopWindow = false; ///< Request to close the current top-level UI window on the next frame.
+        bool requestShowOverlay    = false; ///< Written by IME thread only. Show the overlay on next frame.
+        bool requestHideOverlay    = false; ///< Written by IME thread only. Hide the overlay on next frame (if not pinned).
 
         bool overlayPinned     = false; ///< Overlay has been pinned by the user and should not auto-hide automatically.
         bool overlayShowing    = false; ///< Overlay is currently visible/rendered in this frame.
@@ -66,6 +68,7 @@ struct Settings
         float                     zoom; ///< modify in runtime by AppearancePanel; read once on Mod launch by ImeApp;
         int                       errorDisplayDuration;
         bool                      verticalCandidateList; ///< modify/read in runtime by UI thread.
+        bool                      autoToggleLanguageBar; ///< modify/read in runtime by UI thread.
     } appearance;
 
     struct Input
@@ -91,7 +94,8 @@ inline auto GetDefaultSettings() -> Settings
                                           .language              = "english",
                                           .zoom                  = -1.0F,
                                           .errorDisplayDuration  = 10,
-                                          .verticalCandidateList = false},
+                                          .verticalCandidateList = false,
+                                          .autoToggleLanguageBar = true},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = Settings::WindowPosUpdatePolicy::BASED_ON_CARET}
     };
 }

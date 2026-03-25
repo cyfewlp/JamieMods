@@ -11,6 +11,7 @@ ThemeColor = "Theme Color"
 ThemeBuilder = "Theme Builder###ThemeBuilder"
 ContrastLevel = "Contrast Level"
 VerticalCandidateList = "Show Candidate List Vertically"
+AutoToggleLanguageBar = "Auto Show/Hide Language Bar"
 
 [Settings.Behaviour]
 EnableMod = "Enable Mod"
