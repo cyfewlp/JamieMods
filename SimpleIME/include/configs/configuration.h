@@ -14,7 +14,7 @@ namespace Ime
 //! and should not contain any logic or data that is not directly related to the configuration file.
 struct Configuration
 {
-    static constexpr std::uint32_t INVALID_COLOR = UINT_MAX;
+    static constexpr std::uint32_t INVALID_COLOR = std::numeric_limits<uint32_t>::max();
 
     struct Logging
     {
@@ -37,6 +37,7 @@ struct Configuration
         float       zoom;
         int         errorDisplayDuration;
         bool        verticalCandidateList;
+        bool        autoToggleLanguageBar;
     };
 
     struct Input
@@ -74,7 +75,8 @@ constexpr auto GetDefaultConfiguration() -> Configuration
                                           .language              = "",
                                           .zoom                  = -1.0F,
                                           .errorDisplayDuration  = 10,
-                                          .verticalCandidateList = false},
+                                          .verticalCandidateList = false,
+                                          .autoToggleLanguageBar = true},
         .input = {.enableUnicodePaste = true, .keepImeOpen = false, .posUpdatePolicy = ""}
     };
 }

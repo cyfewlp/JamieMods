@@ -82,16 +82,16 @@ auto TryParseKeyWithModifier(std::string_view name) -> std::optional<ImGuiKeyCho
 auto CompareString(std::string_view str1, std::string_view str2) -> bool
 {
     if (str1.length() != str2.length()) return false;
-    return std::ranges::equal(str1, str2, [](char a, char b) {
+    return std::ranges::equal(str1, str2, [](char a, char b) -> bool {
         return tolower(a) == tolower(b);
     });
 }
 
 auto Trim(std::string_view str) -> std::string_view
 {
-    size_t startPos = str.find_first_not_of(" \t");
+    const size_t startPos = str.find_first_not_of(" \t");
     if (startPos == std::string::npos) return ""; // str is all whitespace
-    size_t endPos = str.find_last_not_of(" \t");
+    const size_t endPos = str.find_last_not_of(" \t");
     return std::string_view(str).substr(startPos, endPos - startPos + 1);
 }
 
@@ -110,7 +110,7 @@ struct Converter<ImGuiKeyChord>
 
         std::string shortcutErasedSpace;
         shortcutErasedSpace.reserve(str.size());
-        for (char c : str)
+        for (const char c : str)
         {
             if (!std::isspace(c))
             {
@@ -123,7 +123,7 @@ struct Converter<ImGuiKeyChord>
         const std::string_view shortcutErasedSpaceSv = shortcutErasedSpace;
         while (startPos < shortcutErasedSpace.size() && partPos != std::string::npos)
         {
-            partPos = shortcutErasedSpaceSv.find_first_of("+", startPos);
+            partPos = shortcutErasedSpaceSv.find_first_of('+', startPos);
             const auto keyName =
                 (partPos == std::string::npos) ? shortcutErasedSpaceSv.substr(startPos) : shortcutErasedSpaceSv.substr(startPos, partPos - startPos);
             if (const auto modOpt = TryParseKeyWithModifier(keyName); modOpt.has_value())
@@ -160,7 +160,7 @@ struct Converter<ImGuiKeyChord>
         if ((chord & ImGuiMod_Alt) == ImGuiMod_Alt) result += "alt+";
         if ((chord & ImGuiMod_Super) == ImGuiMod_Super) result += "super+";
 
-        ImGuiKey key = (ImGuiKey)(chord & ~ImGuiMod_Mask_);
+        const auto key = static_cast<ImGuiKey>(chord & ~ImGuiMod_Mask_);
         // Unsupported multiple key!
         if (key >= ImGuiKey_NamedKey_BEGIN && key <= ImGuiKey_NamedKey_END)
         {
@@ -272,7 +272,7 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     }
 
     // Appearance
-    if (config.appearance.themeSourceColor != UINT_MAX)
+    if (config.appearance.themeSourceColor != Configuration::INVALID_COLOR)
     {
         settings.appearance.schemeConfig.sourceColor = config.appearance.themeSourceColor & RGB_MASK;
     }
@@ -285,6 +285,7 @@ auto ConvertConfigurationToSettings(const Configuration &config) -> Settings
     settings.appearance.zoom                  = config.appearance.zoom;
     settings.appearance.errorDisplayDuration  = config.appearance.errorDisplayDuration;
     settings.appearance.verticalCandidateList = config.appearance.verticalCandidateList;
+    settings.appearance.autoToggleLanguageBar = config.appearance.autoToggleLanguageBar;
 
     // Input
     settings.input.enableUnicodePaste = config.input.enableUnicodePaste;
@@ -349,6 +350,7 @@ auto ConvertSettingsToConfiguration(const Settings &settings) -> Configuration
     configuration.appearance.zoom                  = settings.appearance.zoom;
     configuration.appearance.errorDisplayDuration  = settings.appearance.errorDisplayDuration;
     configuration.appearance.verticalCandidateList = settings.appearance.verticalCandidateList;
+    configuration.appearance.autoToggleLanguageBar = settings.appearance.autoToggleLanguageBar;
 
     // Input
     configuration.input.enableUnicodePaste = settings.input.enableUnicodePaste;

@@ -58,6 +58,7 @@ inline auto GetRandomConfiguation() -> Ime::Configuration
     configuration.appearance.language              = random.NextString(10);
     configuration.appearance.errorDisplayDuration  = random.NextInt(0, 0xffff);
     configuration.appearance.verticalCandidateList = random.NextBool();
+    configuration.appearance.autoToggleLanguageBar = random.NextBool();
 
     configuration.input.enableUnicodePaste = random.NextBool();
     configuration.input.keepImeOpen        = random.NextBool();

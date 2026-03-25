@@ -14,15 +14,17 @@ namespace Ime
 namespace
 {
 
-auto OnUserEvent(RE::BSUIMessageData *uiMessageData) -> void
+auto OnUserEvent(RE::BSUIMessageData *uiMessageData) -> RE::UI_MESSAGE_RESULTS
 {
-    RE::UserEvents *userEvents = RE::UserEvents::GetSingleton();
+    const RE::UserEvents *userEvents = RE::UserEvents::GetSingleton();
 
     auto &runtimeData = ImeApp::GetInstance().GetSettings().runtimeData;
     if (uiMessageData->fixedStr == userEvents->cancel)
     {
         runtimeData.requestCloseTopWindow = true;
+        return RE::UI_MESSAGE_RESULTS::kHandled;
     }
+    return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
 } // namespace
@@ -42,33 +44,32 @@ auto ToolWindowMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_
     {
         return RE::UI_MESSAGE_RESULTS::kPassOn;
     }
-    RE::ControlMap *controlMap = RE::ControlMap::GetSingleton();
+    RE::UI_MESSAGE_RESULTS results = RE::UI_MESSAGE_RESULTS::kPassOn;
     switch (a_message.type.get())
     {
         case RE::UI_MESSAGE_TYPE::kShow: {
-            controlMap->PushInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+            results = RE::UI_MESSAGE_RESULTS::kHandled;
             break;
         }
         case RE::UI_MESSAGE_TYPE::kHide: {
             ImeController::GetInstance()->SyncImeState(); // TODO: really need this?
-            controlMap->PopInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+            results = RE::UI_MESSAGE_RESULTS::kHandled;
             break;
         }
         case RE::UI_MESSAGE_TYPE::kUserEvent: {
             auto *uiMessageData = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
-            OnUserEvent(uiMessageData);
+            results             = OnUserEvent(uiMessageData);
             break;
         }
         default:;
     }
-    return RE::UI_MESSAGE_RESULTS::kHandled;
+    return results;
 }
 
 auto ToolWindowMenu::Creator() -> IMenu *
 {
     auto *pMenu = new ToolWindowMenu();
     pMenu->menuFlags.set(Flag::kPausesGame, Flag::kUsesCursor);
-    pMenu->menuFlags.set(Flag::kUsesMenuContext);
     pMenu->depthPriority = 11;
 
     // pMenu->inputContext.set(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);

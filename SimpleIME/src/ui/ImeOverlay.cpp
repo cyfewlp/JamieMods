@@ -50,6 +50,15 @@ void HandleRequestAndSyncOverlayState(Settings::RuntimeData &runtimeData)
             runtimeData.overlayShowing = false;
         }
     }
+
+    if (std::exchange(runtimeData.requestShowOverlay, false))
+    {
+        runtimeData.overlayShowing = true;
+    }
+    else if (std::exchange(runtimeData.requestHideOverlay, false) && !runtimeData.overlayPinned)
+    {
+        runtimeData.overlayShowing = false;
+    }
 }
 } // namespace
 

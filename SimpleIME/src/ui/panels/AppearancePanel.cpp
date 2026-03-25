@@ -240,6 +240,7 @@ void AppearancePanel::Draw(Settings &settings)
                 DrawThemeBuilder(settings);
                 DrawLanguagesCombo(settings.appearance);
                 ImGuiEx::M3::Checkbox(Translate("Settings.Appearance.VerticalCandidateList"), settings.appearance.verticalCandidateList, ICON_CHECK);
+                ImGuiEx::M3::Checkbox(Translate("Settings.Appearance.AutoToggleLanguageBar"), settings.appearance.autoToggleLanguageBar, ICON_CHECK);
             }
 
             ImGui::TableNextColumn();
