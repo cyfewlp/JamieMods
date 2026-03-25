@@ -226,7 +226,20 @@ void ImeMenu::PostDisplay()
         RE::GMemory::Free(gfxEvent);
     }
     m_imeCharEvents.clear();
-    ImeApp::GetInstance().Draw();
+    auto &imeApp = ImeApp::GetInstance();
+
+    const auto oldToolWindowShowing = imeApp.GetSettings().runtimeData.toolWindowShowing;
+
+    imeApp.Draw();
+
+    // Push MenuMode input context if ToolWindow showing.
+    // This can make language bar open at the top of other menus but allow pass all user events to
+    // the underlying menu. Only block user events when ToolWindow showing.
+    // But open LanguageBar still pause the game. See ToolWindowMenu
+    if (oldToolWindowShowing != imeApp.GetSettings().runtimeData.toolWindowShowing)
+    {
+        ToggleMenuModeContextIfNeed(imeApp.GetSettings().runtimeData.toolWindowShowing);
+    }
 }
 
 auto ImeMenu::ProcessMessage(RE::UIMessage &a_message) -> RE::UI_MESSAGE_RESULTS
@@ -370,9 +383,25 @@ auto ImeMenu::OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESUL
     return RE::UI_MESSAGE_RESULTS::kPassOn;
 }
 
-bool ImeMenu::IsPaste(const GFxCharEvent *charEvent) const
+auto ImeMenu::IsPaste(const GFxCharEvent *charEvent) const -> bool
 {
     return charEvent->wcharCode == 'v' && m_ctrlDown;
+}
+
+void ImeMenu::ToggleMenuModeContextIfNeed(bool push)
+{
+    if (RE::ControlMap *controlMap = RE::ControlMap::GetSingleton(); controlMap != nullptr)
+    {
+        if (push && !m_isPushedMenuContext)
+        {
+            controlMap->PushInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+        }
+        else if (m_isPushedMenuContext)
+        {
+            controlMap->PopInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kMenuMode);
+        }
+        m_isPushedMenuContext = push;
+    }
 }
 
 void ImeMenu::RegisterMenu()
@@ -382,5 +411,10 @@ void ImeMenu::RegisterMenu()
     {
         ui->Register(ImeMenuName, ImeMenuCreator);
     }
+}
+
+ImeMenu::~ImeMenu()
+{
+    ToggleMenuModeContextIfNeed(false);
 }
 } // namespace Ime

@@ -13,11 +13,16 @@ namespace Ime
 class ImeMenu final : public RE::IMenu
 {
     std::vector<RE::GFxEvent *> m_imeCharEvents;
-    bool                        m_fSShow   = false;
-    bool                        m_ctrlDown = false;
+    bool                        m_fSShow              = false;
+    bool                        m_ctrlDown            = false;
+    // record is already pushed MenuMode input context.
+    // Be used pop MenuMode input context when deconstructed.
+    bool                        m_isPushedMenuContext = false;
 
 public:
     static void RegisterMenu();
+
+    ~ImeMenu() override;
 
     void PostDisplay() override;
 
@@ -31,6 +36,7 @@ private:
     auto OnKeyEvent(RE::GFxEvent *event, bool down) -> RE::UI_MESSAGE_RESULTS;
     auto OnCharEvent(const GFxCharEvent *charEvent) -> RE::UI_MESSAGE_RESULTS;
 
-    bool IsPaste(const GFxCharEvent *charEvent) const;
+    auto IsPaste(const GFxCharEvent *charEvent) const -> bool;
+    void ToggleMenuModeContextIfNeed(bool push);
 };
 } // namespace Ime
