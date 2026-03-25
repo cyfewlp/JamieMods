@@ -38,7 +38,7 @@ vertical_candidate_list = false
 # RGB 颜色, 不包含 alpha
 theme_source_color = 0x673AB7
 # IME 激活/隐藏的同时，自动激活/隐藏语言栏
-auto_toggle_language_bar = false
+auto_toggle_language_bar = true
 # 对比度，-1.0 - 1.0，默认值为 0.0
 theme_contrast_level = 0.0
 # 错误信息显示持续时间 (秒)，-1 为不自动关闭
