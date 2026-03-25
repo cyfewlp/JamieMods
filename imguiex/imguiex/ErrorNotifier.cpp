@@ -6,6 +6,7 @@
 
 #include "imgui.h"
 #include "imguiex_m3.h"
+#include "log.h"
 #include "m3/facade/buttons.h"
 
 #include <ctime>
@@ -28,6 +29,18 @@ inline auto GetLevelString(ErrorMsg::Level level)
 
 void ErrorNotifier::addError(std::string_view msg, const ErrorMsg::Level level)
 {
+    switch (level)
+    {
+        case ErrorMsg::Level::debug:
+            logger::debug("{}", msg);
+            break;
+        case ErrorMsg::Level::warning:
+            logger::warn("{}", msg);
+            break;
+        case ErrorMsg::Level::error:
+            logger::error("{}", msg);
+            break;
+    }
     if (level < m_currentLevel)
     {
         return;

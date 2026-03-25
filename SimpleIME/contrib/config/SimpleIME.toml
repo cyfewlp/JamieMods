@@ -41,7 +41,6 @@ theme_source_color = 0x673AB7
 theme_contrast_level = 0.0
 # 错误信息显示持续时间 (秒)，-1 为不自动关闭
 error_display_duration = 10
-show_settings = false
 
 [input]
 pos_update_policy = "based_on_caret"
