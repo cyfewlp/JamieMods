@@ -1,6 +1,6 @@
 
-#include "common/common.h"
-#include "common/log.h"
+#include "common.h"
+#include "log.h"
 
 #include <exception>
 #include <excpt.h>
@@ -12,9 +12,9 @@
 #include <string>
 #include <type_traits>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SksePlugin
 {
-void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::level::level_enum flushLevel)
+void InitializeLogging(SpdLogSettings settings)
 {
     auto path = SKSE::log::log_directory();
     if (!path)
@@ -26,8 +26,8 @@ void InitializeLogging(const spdlog::level::level_enum logLevel, const spdlog::l
 
     auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
     auto log  = std::make_shared<spdlog::logger>(std::string("global log"), std::move(sink));
-    log->set_level(logLevel);
-    log->flush_on(flushLevel);
+    log->set_level(settings.level);
+    log->flush_on(settings.flushLevel);
 
     spdlog::set_default_logger(std::move(log));
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%-8l] [%t] [%s:%#] %v");
@@ -39,46 +39,46 @@ bool PluginLoad(const SKSE::LoadInterface *skse)
     {
         const auto *plugin = SKSE::PluginDeclaration::GetSingleton();
 
-        InitializeLogging(spdlog::level::debug, spdlog::level::trace);
+        InitializeLogging({spdlog::level::debug, spdlog::level::trace});
 
         Init(skse);
 
         const auto version = plugin->GetVersion();
-        log_info("{} {} is loading...", plugin->GetName(), version.string());
+        logger::info("{} {} is loading...", plugin->GetName(), version.string());
 
-        PluginInit();
+        Initialize();
 
-        log_info("{} has finished loading.", plugin->GetName());
+        logger::info("{} has finished loading.", plugin->GetName());
         return true;
     }
     catch (std::exception &exception)
     {
-        log_error("Fatal error, SimpleIME init fail: {}", exception.what());
-        LogStacktrace();
+        logger::error("Fatal error, SimpleIME init fail: {}", exception.what());
+        logger::LogStacktrace();
     }
     catch (...)
     {
-        log_error("Fatal error. occur unknown exception.");
-        LogStacktrace();
+        logger::error("Fatal error. occur unknown exception.");
+        logger::LogStacktrace();
     }
     return false;
 }
 
 int ErrorHandler(unsigned int code, _EXCEPTION_POINTERS *)
 {
-    log_critical("System exception (code {}) raised during plugin initialization.", code);
-    LogStacktrace();
+    logger::critical("System exception (code {}) raised during plugin initialization.", code);
+    logger::LogStacktrace();
     return EXCEPTION_CONTINUE_SEARCH;
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SksePlugin
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse)
 {
     __try
     {
-        return LIBC_NAMESPACE::PluginLoad(skse);
+        return SksePlugin::PluginLoad(skse);
     }
-    __except (LIBC_NAMESPACE::ErrorHandler(GetExceptionCode(), GetExceptionInformation()))
+    __except (SksePlugin::ErrorHandler(GetExceptionCode(), GetExceptionInformation()))
     {
     }
     return false;

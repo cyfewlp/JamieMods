@@ -1,8 +1,6 @@
 #include "data/ArmorContainer.h"
 
-#include "common/config.h"
-
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
 void ArmorContainer::Insert(Armor *armor)
 {
@@ -60,5 +58,4 @@ auto ArmorContainer::GetRank(const char *armorName, RE::FormID formId) const -> 
 
     return std::distance(m_container.begin(), foundIt);
 }
-
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

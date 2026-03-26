@@ -9,7 +9,6 @@
 #include <spdlog/sinks/msvc_sink.h>
 
 #define LIBC_NAMESPACE __llvm_libc_sosgui
-
-#include "common/config.h" // NOLINT
+// NOLINT
 
 using namespace std::literals;

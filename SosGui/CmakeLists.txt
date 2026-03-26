@@ -11,17 +11,9 @@ configure_file(
     @ONLY
 )
 
-## test set
-set(TEST_PROJ_NAME ${PROJECT_NAME}Test)
-enable_testing()
-find_package(GTest CONFIG REQUIRED)
-add_executable(
-    ${TEST_PROJ_NAME}
-    test/ClipperTest.cpp
-)
-add_test(AllTestsInMain ${TEST_PROJ_NAME})
-target_link_libraries(${TEST_PROJ_NAME} PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
-
+if (BUILD_TESTING)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
+endif ()
 
 ## Set Output folder
 
@@ -36,22 +28,8 @@ find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)
 find_package(Freetype REQUIRED) # for imgui_freetype
 
-file(GLOB_RECURSE headers include/*.h include/*.cpp)
+file(GLOB_RECURSE headers src/*.h)
 file(GLOB_RECURSE sources src/*.cpp)
-
-# ImGui
-set(IMGUI_SOURCES
-    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_widgets.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_tables.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui/imgui_draw.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui/misc/freetype/imgui_freetype.h
-    ${CMAKE_SOURCE_DIR}/extern/imgui/misc/freetype/imgui_freetype.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_win32.h
-    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_win32.cpp
-    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_dx11.h
-    ${CMAKE_SOURCE_DIR}/extern/imgui/backends/imgui_impl_dx11.cpp
-)
 
 source_group(
     TREE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -59,18 +37,27 @@ source_group(
     ${sources} ${headers}
 )
 
+include(${JAMIE_MODS_DIR}/cmake/imgui-config.cmake)
 include(${CMAKE_SOURCE_DIR}/extern/CommonLibSSE-NG/cmake/CommonLibSSE.cmake)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${sources}
     ${headers}
-    ${IMGUI_SOURCES}
+    ${ImGui_Basic_Sources}
+    ${ImGui_Backend_Win32_Dx11_Sources}
+    ${ImGui_FreeType_Sources}
     ${CMAKE_SOURCE_DIR}/common/imgui/ImThemeLoader.cpp
+    ${IMGUIEX_DIR}/imguiex/m3.cpp
+    ${IMGUIEX_DIR}/imguiex/imguiex_m3.cpp
+    ${IMGUIEX_DIR}/imguiex/imguiex_m3_slider.cpp
+    ${IMGUIEX_DIR}/imguiex/M3ThemeBuilder.cpp
+    ${IMGUIEX_DIR}/imguiex/ErrorNotifier.cpp
+    ${IMGUIEX_DIR}/imguiex/ThemesLoader.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.5.97"
     AUTHOR "Jamie"
 )
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h) # <--- PCH.h is required!
 target_compile_definitions(${PROJECT_NAME} PRIVATE IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h")
 
@@ -78,10 +65,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE IMGUI_USER_CONFIG="${CMAKE_CU
 target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/extern/imgui
-    ${CMAKE_SOURCE_DIR}/extern/imgui/backends
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${IMGUI_INCLUDE_DIRS}
+    ${JAMIE_MODS_COMMON_DIR}
+    ${IMGUIEX_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${DETOURS_INCLUDE_DIRS}
     $ENV{BOOST_DIR}
 )
@@ -94,14 +81,9 @@ target_link_libraries(
     CommonLibSSE
     ${DETOURS_LIBRARY}
     Freetype::Freetype
+    MaterialYou
 )
-
-#target_compile_options(${PROJECT_NAME}
-#  PRIVATE
-#    -Xclang -ast-print -fsyntax-only
-#    $<$<CONFIG:Debug>:-O0>
-#    $<$<CONFIG:Release>:-O3>
-#)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion -Wno-unused-command-line-argument)
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)

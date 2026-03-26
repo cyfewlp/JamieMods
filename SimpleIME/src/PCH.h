@@ -5,8 +5,6 @@
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
-#define LIBC_NAMESPACE __llvm_libc_simpleime
-
 #include <stdexcept>
 
 using namespace std::literals;

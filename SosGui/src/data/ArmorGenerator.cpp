@@ -1,17 +1,11 @@
 #include "data/ArmorGenerator.h"
 
-#include "common/config.h"
-#include "common/log.h"
+#include "log.h"
 #include "util/utils.h"
 
-#include <RE/B/BSContainer.h>
-#include <RE/F/FormTypes.h>
-#include <RE/I/InventoryEntryData.h>
-#include <RE/T/TESDataHandler.h>
-#include <RE/T/TESObjectARMO.h>
 #include <functional>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
 auto ArmorItemVisitor::Visit(RE::InventoryEntryData *a_entryData) -> RE::BSContainer::ForEachResult
 {
@@ -122,4 +116,4 @@ void BasicArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor)>
         }
     }
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

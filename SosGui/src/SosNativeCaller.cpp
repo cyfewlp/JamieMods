@@ -1,7 +1,6 @@
 #include "SosNativeCaller.h"
 
 #include "SosDataType.h"
-#include "common/config.h"
 
 #include <RE/F/FunctionArguments.h>
 #include <RE/V/Variable.h>
@@ -11,7 +10,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
 void SosNativeCaller::Awaitable::CallbackFunctor::operator()(RE::BSScript::Variable a_result)
 {
@@ -241,4 +240,4 @@ auto SosNativeCaller::IsEnabled() -> Awaitable
 {
     return StaticCall(SosFunction::IsEnabled);
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

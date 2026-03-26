@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run MO2 SKSE" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="&quot;moshortcut://Skyrim Special Edition:SKSE&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$MO2Path$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JamieMods" TARGET_NAME="SimpleIME" CONFIG_NAME="debug-clangcl-ninja-vcpkg - build-debug-clangcl-ninja-vcpkg" RUN_PATH="ModOrganizer.exe">
+  <configuration default="false" name="Run MO2 SKSE" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="&quot;moshortcut://Skyrim Special Edition:SKSE&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$MO2Path$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JamieMods" TARGET_NAME="SimpleIME" CONFIG_NAME="simple-ime-debug-clangcl-ninja-vcpkg" RUN_PATH="ModOrganizer.exe">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>

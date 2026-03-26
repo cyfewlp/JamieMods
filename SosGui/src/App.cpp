@@ -2,40 +2,44 @@
 
 #include "PapyrusFunctions.h"
 #include "SosGuiMenu.h"
-#include "common/common.h"
-#include "common/imgui/ImThemeLoader.h"
-#include "common/log.h"
+#include "common.h"
 #include "gui/UiSettings.h"
+#include "imgui/ImThemeLoader.h"
+#include "log.h"
 #include "util/UiSettingsLoader.h"
 
 #include <exception>
 #include <memory>
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SksePlugin
 {
-auto PluginInit() -> bool
+auto Initialize() -> bool
 {
     using Message = SKSE::MessagingInterface::Message;
     SKSE::GetMessagingInterface()->RegisterListener([](Message *message) {
         if (message->type == SKSE::MessagingInterface::kPostLoadGame)
         {
-            log_debug("Send Event with Init");
+            logger::debug("Send Event with Init");
         }
     });
-    SKSE::GetPapyrusInterface()->Register(PapyrusFunctions::Register);
+    SKSE::GetPapyrusInterface()->Register(SosGui::PapyrusFunctions::Register);
 
-    const auto themeFilePath = util::GetInterfaceFile(ImTheme::THEME_FILE_NAME);
+    const auto themeFilePath = SosGui::util::GetInterfaceFile(ImTheme::THEME_FILE_NAME);
     ImTheme::Loader::GetInstance().LoadThemes(themeFilePath);
-    App::GetInstance().Init();
+    SosGui::App::GetInstance().Init();
     return true;
 }
+} // namespace SksePlugin
+
+namespace SosGui
+{
 
 auto App::Init() -> void
 {
-    log_info("Initializing....");
+    logger::info("Initializing....");
 
-    log_info("Install D3DInitHook....");
+    logger::info("Install D3DInitHook....");
     D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
 }
 
@@ -63,14 +67,14 @@ void App::D3DInit()
     catch (std::exception &error)
     {
         const auto message = std::format("SimpleIME initialize fail: \n {}", error.what());
-        log_error(message.c_str());
+        logger::error(message.c_str());
     }
     catch (...)
     {
         const auto message = std::string("SimpleIME initialize fail: \n occur unexpected error.");
-        log_error(message.c_str());
+        logger::error(message.c_str());
     }
-    LogStacktrace();
+    logger::LogStacktrace();
 }
 
 void App::DoD3DInit()
@@ -83,14 +87,14 @@ void App::DoD3DInit()
         throw InitFail("Cannot find render manager.");
     }
 
-    const auto &renderData = renderer->data;
-    log_debug("Getting SwapChain...");
+    const auto &renderData = renderer->GetRuntimeData();
+    logger::debug("Getting SwapChain...");
     auto *pSwapChain = renderData.renderWindows[0].swapChain;
     if (pSwapChain == nullptr)
     {
         throw InitFail("Cannot find SwapChain.");
     }
-    log_debug("Getting SwapChain desc...");
+    logger::debug("Getting SwapChain desc...");
     REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
     if (pSwapChain->GetDesc(&swapChainDesc) < 0)
     {
@@ -98,7 +102,7 @@ void App::DoD3DInit()
     }
 
     m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-    if (!SosGui::Init(renderData, m_hWnd))
+    if (!SosGuiWindow::Init(renderData, m_hWnd))
     {
         throw InitFail("Can't initialize SosGui.");
     }
@@ -110,4 +114,4 @@ void App::DoD3DInit()
     m_fInitialized.store(true);
     SosGuiMenu::RegisterMenu();
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

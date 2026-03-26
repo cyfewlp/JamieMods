@@ -6,8 +6,9 @@
 
 #include "SosGui.h"
 #include "imgui.h"
+#include "log.h"
 
-#include <common/log.h>
+#include <unordered_map>
 
 namespace RE
 {
@@ -29,16 +30,17 @@ public:
 static_assert(sizeof(GFxCharEvent) == 0x0C);
 } // namespace RE
 
-struct
+namespace SosGui
 {
-    RE::GFxKey::Code gfxCode;
-    ImGuiKey         imGuiKey;
-} GFxCodeToImGuiKeyTable[] = {
+namespace
+{
+
+std::unordered_map<RE::GFxKey::Code, ImGuiKey> GFxCodeToImGuiKeyTable = {
     {RE::GFxKey::kAlt,          ImGuiMod_Alt           },
     {RE::GFxKey::kControl,      ImGuiMod_Ctrl          },
     {RE::GFxKey::kShift,        ImGuiMod_Shift         },
     {RE::GFxKey::kCapsLock,     ImGuiKey_CapsLock      },
-    // {RE::GFxKey::kTab,          ImGuiKey_Tab           }, // Don't sent tab key: bug when use tab close menu
+    // {RE::GFxKey::kTab,          ImGuiKey_Tab
     {RE::GFxKey::kHome,         ImGuiKey_Home          },
     {RE::GFxKey::kEnd,          ImGuiKey_End           },
     {RE::GFxKey::kPageUp,       ImGuiKey_PageUp        },
@@ -71,15 +73,14 @@ struct
     {RE::GFxKey::kVoidSymbol,   ImGuiKey_None          }
 };
 
-namespace LIBC_NAMESPACE_DECL
-{
-static ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
+ImGuiMouseSource ImGui_ImplWin32_GetMouseSourceFromMessageExtraInfo()
 {
     LPARAM extra_info = ::GetMessageExtraInfo();
     if ((extra_info & 0xFFFFFF80) == 0xFF515700) return ImGuiMouseSource_Pen;
     if ((extra_info & 0xFFFFFF80) == 0xFF515780) return ImGuiMouseSource_TouchScreen;
     return ImGuiMouseSource_Mouse;
 }
+} // namespace
 
 void SosGuiMenu::RegisterMenu()
 {
@@ -97,8 +98,8 @@ void SosGuiMenu::PostDisplay()
 void SosGuiMenu::OnShow()
 {
     m_fShow = true;
-    log_debug("SosGuiMenu::kShow");
-    m_sosGui = std::make_unique<SosGui>();
+    logger::debug("SosGuiMenu::kShow");
+    m_sosGui = std::make_unique<SosGuiWindow>();
     m_sosGui->Refresh();
     m_sosGui->Show();
 }
@@ -108,7 +109,7 @@ void SosGuiMenu::OnHide()
     m_fShow = false;
     m_sosGui->Cleanup();
     m_sosGui = nullptr;
-    log_debug("SosGuiMenu::kHide");
+    logger::debug("SosGuiMenu::kHide");
     auto &io = ImGui::GetIO();
     io.ClearInputKeys();
 }
@@ -121,7 +122,7 @@ RE::UI_MESSAGE_RESULTS SosGuiMenu::ProcessMessage(RE::UIMessage &a_message)
             break;
         case RE::UI_MESSAGE_TYPE::kUserEvent: {
             const auto &data = reinterpret_cast<RE::BSUIMessageData *>(a_message.data);
-            // log_debug("SosGuiMenu::kUserEvent {}", data->fixedStr.c_str());
+            // logger::debug("SosGuiMenu::kUserEvent {}", data->fixedStr.c_str());
             if (data->fixedStr == "Cancel")
             {
                 auto *messageQueue = RE::UIMessageQueue::GetSingleton();
@@ -216,7 +217,7 @@ void SosGuiMenu::OnMouseWheelEvent(RE::GFxEvent *event)
 void SosGuiMenu::OnKeyEvent(RE::GFxEvent *event, const bool down)
 {
     const auto keyEvent = reinterpret_cast<RE::GFxKeyEvent *>(event);
-    const auto imguiKey = GFxKeyToImGuiKey(keyEvent->keyCode);
+    auto       imguiKey = GFxKeyToImGuiKey(keyEvent->keyCode);
     ImGui::GetIO().AddKeyEvent(imguiKey, down);
 }
 
@@ -259,4 +260,4 @@ auto SosGuiMenu::GFxKeyToImGuiKey(const RE::GFxKey::Code keyCode) -> ImGuiKey
     }
     return imguiKey;
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

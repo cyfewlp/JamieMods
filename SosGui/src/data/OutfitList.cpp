@@ -1,11 +1,10 @@
 #include "data/OutfitList.h"
 
-#include "common/config.h"
 #include "data/id.h"
 
 #include <string>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
 [[nodiscard]]
 auto OutfitList::SetFavoriteOutfit(const OutfitId id, bool favorite) -> std::expected<void, unassociated_outfit_error>
@@ -105,5 +104,4 @@ auto OutfitList::findIdByName(const std::string &outfitName) const -> OutfitId
     }
     return itByName->GetId();
 }
-
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

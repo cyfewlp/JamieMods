@@ -4,17 +4,15 @@
 
 #include "gui/CharacterEditPanel.h"
 
-#include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScope.h"
 #include "data/SosUiData.h"
-#include "gui/Table.h"
 #include "gui/icon.h"
 #include "gui/widgets.h"
 #include "imgui.h"
+#include "imguiex/imguiex_enum_wrap.h"
 #include "service/SosDataCoordinator.h"
 #include "task.h"
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
 void CharacterEditPanel::Focus()
 {
@@ -114,59 +112,62 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
 {
     const auto &actors = uiData.GetActors();
 
-    const ImGuiScope::Table charactersTable("##CharactersTable", 3, ImGuiUtil::TableFlags().Resizable().SizingStretchProp().flags);
-    if (!charactersTable)
+    if (ImGui::BeginTable("##CharactersTable", 3, ImGuiEx::TableFlags().Resizable().SizingStretchProp()))
     {
-        return;
-    }
-    TableHeadersBuilder().Column("$Characters").Column("$SosGui_TableHeader_ActiveOutfit").Column("$Delete").CommitHeadersRow();
+        ImGui::TableSetupColumn("$Characters"_T.c_str());
+        ImGui::TableSetupColumn("$SosGui_TableHeader_ActiveOutfit"_T.c_str());
+        ImGui::TableSetupColumn("$Delete"_T.c_str());
+        ImGui::TableHeadersRow();
 
-    int wantDeleteActorIndex = -1;
-    int idx                  = 0;
-    for (const auto &actor : actors)
-    {
-        ImGuiScope::PushId pushId(idx);
-
-        ImGui::TableNextColumn(); // character column
+        int wantDeleteActorIndex = -1;
+        int idx                  = 0;
+        for (const auto &actor : actors)
         {
-            const bool isSelected = m_selectedActorIndex == idx;
-            if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowOverlap().SpanAllColumns().flags;
-                ImGui::Selectable(actor->GetName(), isSelected, flags))
-            {
-                m_selectedActorIndex = idx;
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
+            ImGui::PushID(idx);
 
-        ImGui::TableNextColumn(); // active outfit column
+            ImGui::TableNextColumn(); // character column
+            {
+                const bool isSelected = m_selectedActorIndex == idx;
+                if (constexpr auto flags = ImGuiEx::SelectableFlags().AllowOverlap().SpanAllColumns();
+                    ImGui::Selectable(actor->GetName(), isSelected, flags))
+                {
+                    m_selectedActorIndex = idx;
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::TableNextColumn(); // active outfit column
+            {
+                auto outfitName = GetActorOutfitName(uiData, actor);
+                if (ImGui::Selectable(outfitName.c_str(), false))
+                {
+                    m_selectedActorIndex = idx;
+                    m_outfitSelectPopup  = std::make_unique<OutfitSelectPopup>();
+                    m_outfitSelectPopup->UpdateView(uiData.GetOutfitList());
+                }
+            }
+
+            ImGui::TableNextColumn(); // remove character column
+            if (ImGuiUtil::Button("$Delete"))
+            {
+                wantDeleteActorIndex = idx;
+            }
+            ImGui::PopID();
+            idx++;
+        }
+        if (actors.empty()) return;
+
+        if (wantDeleteActorIndex != -1)
         {
-            auto outfitName = GetActorOutfitName(uiData, actor);
-            if (ImGui::Selectable(outfitName.c_str(), false))
-            {
-                m_selectedActorIndex = idx;
-                m_outfitSelectPopup  = std::make_unique<OutfitSelectPopup>();
-                m_outfitSelectPopup->UpdateView(uiData.GetOutfitList());
-            }
+            auto actor = actors[wantDeleteActorIndex];
+            +[&, actor] {
+                return dataCoordinator.RequestRemoveActor(actor);
+            };
         }
-
-        ImGui::TableNextColumn(); // remove character column
-        if (ImGuiUtil::Button("$Delete"))
-        {
-            wantDeleteActorIndex = idx;
-        }
-        idx++;
-    }
-    if (actors.empty()) return;
-
-    if (wantDeleteActorIndex != -1)
-    {
-        auto actor = actors[wantDeleteActorIndex];
-        +[&, actor] {
-            return dataCoordinator.RequestRemoveActor(actor);
-        };
+        ImGui::EndTable();
     }
 }
 
@@ -178,4 +179,4 @@ inline auto CharacterEditPanel::GetSelectedActor(SosUiData &uiData) const -> RE:
     }
     return nullptr;
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

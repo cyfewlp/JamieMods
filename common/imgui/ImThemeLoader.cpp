@@ -2,12 +2,11 @@
 // Created by jamie on 2025/4/16.
 //
 
-#include "common/imgui/ImThemeLoader.h"
+#include "imgui/ImThemeLoader.h"
 
-#include "common/log.h"
+#include "log.h"
+#include "toml++/toml.hpp"
 
-namespace LIBC_NAMESPACE_DECL
-{
 void ImTheme::Loader::LoadThemes(const std::string_view filePath)
 {
     auto config = toml::parse_file(filePath);
@@ -15,7 +14,7 @@ void ImTheme::Loader::LoadThemes(const std::string_view filePath)
 
     if (!config.contains("themes") || !config["themes"].is_array())
     {
-        log_error("Invalid themes file");
+        logger::error("Invalid themes file");
         return;
     }
     const auto &themesArray = config["themes"].as_array();
@@ -68,7 +67,7 @@ void ImTheme::Loader::UseTheme(const size_t themeIndex, const std::string_view f
     }
     catch (std::exception &e)
     {
-        log_error("Theme loading error: {}", e.what());
+        logger::error("Theme loading error: {}", e.what());
         throw Error{std::format("Unexpected error, parse {} fail: {}", filePath, e.what())};
     }
 }
@@ -134,7 +133,7 @@ void ImTheme::Loader::ConfigImGuiStyle(const toml::node_view<toml::node> &style_
     CONFIG_STYLE(ImVec2, SeparatorTextPadding);
     CONFIG_STYLE(ImVec2, DisplayWindowPadding);
     CONFIG_STYLE(ImVec2, DisplaySafeAreaPadding);
-    CONFIG_STYLE(float, DockingSeparatorSize);
+    // CONFIG_STYLE(float, DockingSeparatorSize);
     CONFIG_STYLE(float, MouseCursorScale);
     CONFIG_STYLE(float, CurveTessellationTol);
     CONFIG_STYLE(float, CircleTessellationMaxError);
@@ -190,8 +189,8 @@ void ImTheme::Loader::ConfigImGuiColor(const toml::node_view<toml::node> &colors
     CONFIG_COLOR(TabDimmed);
     CONFIG_COLOR(TabDimmedSelected);
     CONFIG_COLOR(TabDimmedSelectedOverline);
-    CONFIG_COLOR(DockingPreview);
-    CONFIG_COLOR(DockingEmptyBg);
+    // CONFIG_COLOR(DockingPreview);
+    // CONFIG_COLOR(DockingEmptyBg);
     CONFIG_COLOR(PlotLines);
     CONFIG_COLOR(PlotLinesHovered);
     CONFIG_COLOR(PlotHistogram);
@@ -233,5 +232,4 @@ void ImTheme::Loader::ColorConvert(const char *colorString, ImVec4 &color)
             converter<float>::convert(base_match[4].str().data(), color.w);
         }
     }
-}
 }

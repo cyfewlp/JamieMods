@@ -1,19 +1,17 @@
 #include "SosGui.h"
 
-#include "common/config.h"
-#include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScope.h"
-#include "common/imgui/ImThemeLoader.h"
-#include "common/log.h"
-#include "gui/Table.h"
 #include "gui/UiSettings.h"
 #include "gui/font/FontManager.h"
 #include "gui/icon.h"
 #include "gui/popup/AboutPopup.h"
 #include "gui/popup/SettingsPopup.h"
 #include "imgui.h"
+#include "imgui/ImThemeLoader.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/imguiex_enum_wrap.h"
+#include "log.h"
 #include "task.h"
 #include "util/ImGuiUtil.h"
 #include "util/UiSettingsLoader.h"
@@ -30,26 +28,25 @@
 #include <SKSE/Impl/PCH.h>
 #include <windows.h>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
-
-inline void SosGui::OutfitDebounceInput::Clear()
+inline void SosGuiWindow::OutfitDebounceInput::Clear()
 {
     DebounceInput::Clear();
     viewData.clear();
 }
 
-void SosGui::OutfitDebounceInput::OnInput()
+void SosGuiWindow::OutfitDebounceInput::OnInput()
 {
     DebounceInput::OnInput();
     viewData.clear();
 }
 
-void SosGui::OutfitDebounceInput::updateView(const OutfitList &outfitList)
+void SosGuiWindow::OutfitDebounceInput::updateView(const OutfitList &outfitList)
 {
     dirty = false;
     viewData.clear();
-    outfitList.for_each([&](const auto &outfit, size_t) {
+    outfitList.for_each([&](const auto &outfit, int64_t) {
         if (filter.PassFilter(outfit.GetName().c_str()))
         {
             viewData.push_back(&outfit);
@@ -57,14 +54,14 @@ void SosGui::OutfitDebounceInput::updateView(const OutfitList &outfitList)
     });
 }
 
-auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, const HWND hWnd) -> bool
+auto SosGuiWindow::Init(const RE::BSGraphics::RendererData &renderData, const HWND hWnd) -> bool
 {
     auto *device    = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto *context   = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
-    auto *uiSetting = Settings::UiSettings::GetInstance();
-    log_info("Initializing ImGui...");
+    auto *uiSetting = ::SosGui::Settings::UiSettings::GetInstance();
+    logger::info("Initializing ImGui...");
 
-    Settings::UiSettingsLoader::Load(*uiSetting);
+    Settings::Load(*uiSetting);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -81,11 +78,10 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, const HWND hWn
 
     RECT     rect = {0, 0, 0, 0};
     ImGuiIO &io   = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiUtil::ConfigFlags().NavEnableKeyboard().DockingEnable();
+    io.ConfigFlags |= ImGuiEx::ConfigFlags().NavEnableKeyboard();
     io.ConfigNavMoveSetMousePos = false;
     ::GetClientRect(hWnd, &rect);
-    io.DisplaySize     = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
-    io.FontGlobalScale = uiSetting->globalFontScale;
+    io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
     ImGui::StyleColorsDark();
     static std::string IniFileName;
@@ -95,27 +91,21 @@ auto SosGui::Init(const RE::BSGraphics::RendererData &renderData, const HWND hWn
     IniFileName    = util::GetInterfaceFile(io.IniFilename);
     io.IniFilename = IniFileName.c_str();
 
-    ImGuiStyle &style = ImGui::GetStyle();
-    if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        style.WindowRounding              = 0.0F;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0F;
-    }
-    log_info("ImGui initialized!");
+    logger::info("ImGui initialized!");
     return true;
 }
 
-auto SosGui::ShutDown() -> void
+auto SosGuiWindow::ShutDown() -> void
 {
     auto *uiSetting = Settings::UiSettings::GetInstance();
     FontManager::GetInstance().SyncSettings(uiSetting);
-    Settings::UiSettingsLoader::Save(*uiSetting);
+    Settings::Save(*uiSetting);
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 }
 
-auto SosGui::Cleanup() -> void
+auto SosGuiWindow::Cleanup() -> void
 {
     m_characterEditPanel.Cleanup();
     m_outfitListTable.Cleanup();
@@ -123,7 +113,7 @@ auto SosGui::Cleanup() -> void
     m_fShowPanels = true;
 }
 
-void SosGui::DrawTopModalPopup()
+void SosGuiWindow::DrawTopModalPopup()
 {
     if (m_context.popupList.empty())
     {
@@ -131,10 +121,11 @@ void SosGui::DrawTopModalPopup()
     }
 
     ImGui::PushStyleVarX(ImGuiStyleVar_WindowPadding, 25.0F);
-    ImGuiScope::FontSize fontSize4(Settings::UiSettings::GetInstance()->Title4PxSize());
-    const auto          &modalPopup = m_context.popupList.front();
-    bool                 confirmed  = false;
-    const bool           toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
+
+    ImGui::PushFont(nullptr, Settings::UiSettings::GetInstance()->Title4PxSize());
+    const auto &modalPopup = m_context.popupList.front();
+    bool        confirmed  = false;
+    const bool  toErase    = !modalPopup->Draw(m_uiData, confirmed, ImGuiWindowFlags_AlwaysAutoResize);
     if (confirmed && !m_outfitListTable.OnModalPopupConfirmed(modalPopup.get()))
     {
         m_outfitEditPanel.OnModalPopupConfirmed(modalPopup.get());
@@ -144,14 +135,15 @@ void SosGui::DrawTopModalPopup()
         m_context.popupList.pop_front();
     }
     ImGui::PopStyleVar();
+    ImGui::PopFont();
 }
 
-auto SosGui::Refresh() const -> EagerTask
+auto SosGuiWindow::Refresh() const -> EagerTask
 {
     co_await m_dataCoordinator.Refresh();
 }
 
-void SosGui::NewFrame()
+void SosGuiWindow::NewFrame()
 {
     if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
     {
@@ -169,7 +161,7 @@ void SosGui::NewFrame()
     }
 }
 
-auto SosGui::Render() -> void
+auto SosGuiWindow::Render() -> void
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -183,23 +175,16 @@ auto SosGui::Render() -> void
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-    // Update and Render additional Platform Windows
-    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
 }
 
-void SosGui::OnImportSettings()
+void SosGuiWindow::OnImportSettings()
 {
     m_characterEditPanel.OnRefresh();
     m_outfitListTable.OnRefresh();
     m_outfitEditPanel.OnRefresh();
 }
 
-void SosGui::TrySetAllowTextInput()
+void SosGuiWindow::TrySetAllowTextInput()
 {
     const bool cWantTextInput = ImGui::GetIO().WantTextInput;
     if (!m_fWantTextInput && cWantTextInput)
@@ -214,10 +199,10 @@ void SosGui::TrySetAllowTextInput()
     m_fWantTextInput = cWantTextInput;
 }
 
-auto SosGui::DrawPanels() -> void
+auto SosGuiWindow::DrawPanels() -> void
 {
     DockSpace();
-    m_uiData.GetErrorNotifier().show();
+    ErrorNotifier::GetInstance().Show();
 
     if (!m_fShowPanels)
     {
@@ -238,28 +223,27 @@ auto SosGui::DrawPanels() -> void
     }
     catch (const std::exception &e)
     {
-        LogStacktrace();
-        m_uiData.PushErrorMessage(e.what());
+        logger::LogStacktrace();
+        ErrorNotifier::GetInstance().Error(e.what());
     }
 }
 
-auto SosGui::DrawSidebar() -> float
+auto SosGuiWindow::DrawSidebar() -> float
 {
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos({0, viewport->WorkPos.y});
     ImGui::SetNextWindowSize({0, viewport->WorkSize.y});
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {5.0f, 10.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {5.0F, 10.0F});
 
-    const float offsetY = viewport->WorkSize.y * 0.25;
+    const float offsetY = viewport->WorkSize.y * 0.25F;
 
     float width = 0.0;
-    if (ImGui::Begin("##MainSidebar", nullptr, ImGuiUtil::WindowFlags().AlwaysAutoResize().NoDecoration().NoDocking().NoMove()))
+    if (ImGui::Begin("##MainSidebar", nullptr, ImGuiEx::WindowFlags().AlwaysAutoResize().NoDecoration().NoMove()))
     {
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
-        auto framePadding      = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
-        auto buttonColor       = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-        auto fontSize          = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
+        const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({5.0F, 5.0F}).Color<ImGuiCol_Button>({});
+        ImGui::PushFont(nullptr, Settings::UiSettings::GetInstance()->Title3PxSize());
         auto FocusWindowButton = [](const char *iconClass, const char *tooltip, BaseGui &baseGui) {
             auto isClick = ImGui::Button(iconClass);
             ImGui::SetItemTooltip("%s", tooltip);
@@ -277,50 +261,49 @@ auto SosGui::DrawSidebar() -> float
         };
 
         FocusWindowButton(NF_OCT_PEOPLE, "$SosGui_CharacterEditPanel"_T.c_str(), m_characterEditPanel);
-        ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
         FocusWindowButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
-
-        ImGui::Dummy(ImVec2{1, fontSize * 0.5f});
         FocusWindowButton(NF_FA_EDIT, "$SosGui_EditOutfit"_T.c_str(), m_outfitEditPanel);
+        ImGui::PopFont();
     }
     ImGui::End();
     ImGui::PopStyleVar();
     return width;
 }
 
-void SosGui::DockSpace()
+void SosGuiWindow::DockSpace()
 {
     float sideBarWidth = DrawSidebar();
 
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos({sideBarWidth, viewport->WorkPos.y});
     ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
+    // ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    auto windowFlags = ImGuiUtil::WindowFlags().MenuBar().NoDocking().NoTitleBar().NoCollapse().NoResize().NoMove();
-    windowFlags |= ImGuiUtil::WindowFlags().NoBringToFrontOnFocus().NoNavFocus().NoBackground();
+    constexpr auto windowFlags =
+        ImGuiEx::WindowFlags().MenuBar().NoTitleBar().NoCollapse().NoResize().NoMove().NoBringToFrontOnFocus().NoNavFocus().NoBackground();
     ImGui::PushStyleVarY(ImGuiStyleVar_FramePadding, ImGui::GetFontSize() * 0.3f); // padding menu bar
     ImGui::Begin("DockSpace Demo", nullptr, windowFlags);
     ImGui::PopStyleVar(4);
 
     // Submit the DockSpace
-    const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
-    ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+    // const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
+    // ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 
-    if (auto menuBar = ImGuiScope::MenuBar())
+    if (ImGui::BeginMenuBar())
     {
         Toolbar();
+        ImGui::EndMenuBar();
     }
 
     ImGui::End();
 }
 
-void SosGui::Toolbar()
+void SosGuiWindow::Toolbar()
 {
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 15);
-    ImGuiScope::StyleVar::FramePadding({3, 3});
+    const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({3.0F, 3.0F});
     if (ImGui::BeginMenu(std::format("{} {}", NF_OCT_FILE, "$SosGui_ToolBar_File"_T).c_str()))
     {
         {
@@ -389,11 +372,11 @@ void SosGui::Toolbar()
 
 EagerTask waitImport(const SosDataCoordinator &dataCoordinator)
 {
-    log_debug("wait import");
+    logger::debug("wait import");
     co_await dataCoordinator.RequestImportSettings();
 }
 
-auto SosGui::EnableQuickslot(const bool enable) -> bool
+auto SosGuiWindow::EnableQuickslot(const bool enable) -> bool
 {
     const auto &player = RE::PlayerCharacter::GetSingleton();
     if (auto *spell = RE::TESForm::LookupByEditorID<RE::SpellItem>(SOS_SPELL_EDITOR_ID); spell != nullptr)
@@ -404,16 +387,15 @@ auto SosGui::EnableQuickslot(const bool enable) -> bool
     return false;
 }
 
-void SosGui::AllowTextInput(const bool allow)
+void SosGuiWindow::AllowTextInput(const bool allow)
 {
     AllowTextInput1(RE::ControlMap::GetSingleton(), allow);
 }
 
-void SosGui::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
+void SosGuiWindow::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
 {
-    using func_t = decltype(&SosGui::AllowTextInput1);
+    using func_t = decltype(&SosGuiWindow::AllowTextInput1);
     static REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
     func(controlMap, allow);
 }
-
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

@@ -9,7 +9,7 @@
 
 #include <ranges>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
 bool ArmorView::ArmorFilter::PassFilter(const Armor *armor) const
 {
@@ -107,13 +107,13 @@ void ArmorView::remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot)
     }
 }
 
-void ArmorView::add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editingOutfit)
+void ArmorView::add_armors_in_outfit(const SosUiOutfit *editingOutfit)
 {
     for (const auto &armor : editingOutfit->GetUniqueArmors())
     {
         if (auto result = add_armor(armor); !result.has_value())
         {
-            uiData.PushErrorMessage(std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName()));
+            ErrorNotifier::GetInstance().Error(std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName()));
         }
     }
 }
@@ -247,7 +247,7 @@ void ArmorView::update_view_data(ArmorGenerator *generator, const SosUiOutfit *e
         catch (const std::runtime_error &e)
         {
             // TODO: add error message to notifier?
-            log_error("WARNING: Invalid armor generator: {}", e.what());
+            logger::error("WARNING: Invalid armor generator: {}", e.what());
         }
         remove_armors_in_outfit(editingOutfit);
     }
@@ -297,4 +297,4 @@ bool ArmorView::no_select_any_slot() const
 {
     return !checkAllSlot && slotFiltererSelected == 0;
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

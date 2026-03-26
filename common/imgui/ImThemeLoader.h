@@ -2,20 +2,14 @@
 // Created by jamie on 2025/4/16.
 //
 
-#ifndef IMTHEMELOADER_H
-#define IMTHEMELOADER_H
-
 #pragma once
 
-#include "common/config.h"
-#include "common/toml++/toml.hpp"
 #include "imgui.h"
+#include "toml++/toml.hpp"
 
 #include <expected>
 #include <ranges>
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace ImTheme
 {
 static constexpr std::string_view THEME_FILE_NAME = "themes.toml";
@@ -158,10 +152,7 @@ public:
         explicit Error(const std::string &message) : std::runtime_error(message) {}
     };
 
-    auto IsIndexInRange(int32_t index) const -> bool
-    {
-        return index >= 0 && index < static_cast<int32_t>(m_availableThemes.size());
-    }
+    auto IsIndexInRange(int32_t index) const -> bool { return index >= 0 && index < static_cast<int32_t>(m_availableThemes.size()); }
 
     void LoadThemes(std::string_view filePath);
 
@@ -172,10 +163,7 @@ public:
      */
     void UseTheme(size_t themeIndex, std::string_view filePath) const noexcept(false);
 
-    [[nodiscard]] auto GetAvailableThemes() const -> const std::vector<Theme> &
-    {
-        return m_availableThemes;
-    }
+    [[nodiscard]] auto GetAvailableThemes() const -> const std::vector<Theme> & { return m_availableThemes; }
 
     static auto GetInstance() -> Loader &
     {
@@ -190,7 +178,4 @@ private:
     static void ConfigImGuiColor(const toml::node_view<toml::node> &colors_node, ImGuiStyle &style);
     static void ColorConvert(const char *colorString, ImVec4 &color);
 };
-};
-}
-
-#endif // IMTHEMELOADER_H
+}; // namespace ImTheme

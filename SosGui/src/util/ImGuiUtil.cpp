@@ -1,16 +1,7 @@
 #include "util/ImGuiUtil.h"
 
-#include "common/config.h"
-
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
-auto ImGuiUtil::TextScale(const char *content, float scale) -> void
-{
-    Translation::Translate(content, g_widgetName);
-    ImGui::PushFontSize(scale);
-    ImGui::Text("%s", g_widgetName.c_str());
-    ImGui::PopFontSize();
-}
 
 void ImGuiUtil::AddItemRectWithCol(const ImGuiCol colorIndex, const float thickness)
 {
@@ -50,5 +41,4 @@ void ImGuiUtil::DebounceInput::Clear()
     dirty = true;
     filter.Clear();
 }
-
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui

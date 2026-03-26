@@ -4,11 +4,9 @@
 
 #include "Translation.h"
 
-#include <common/log.h>
+#include "log.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
-namespace Translation
+namespace SosGui::Translation
 {
 void Translate(const char *key, std::string &result)
 {
@@ -50,7 +48,7 @@ auto TranslateIgnoreNested(const std::string &a_key, std::string &a_result) -> b
 
     if (!translator)
     {
-        log_warn("Failed to get Scaleform translator");
+        logger::warn("Failed to get Scaleform translator");
         return false;
     }
 
@@ -81,5 +79,4 @@ auto TranslateIgnoreNested(const std::string &a_key) -> std::string
     TranslateIgnoreNested(a_key, result);
     return result;
 }
-} // namespace Translation
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui::Translation

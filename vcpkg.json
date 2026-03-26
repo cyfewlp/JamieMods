@@ -29,6 +29,12 @@
       "dependencies": [
         "detours"
       ]
+    },
+    "sos-gui-deps": {
+      "description": "Adds dependencies for SosGui.",
+      "dependencies": [
+        "detours"
+      ]
     }
   }
 }

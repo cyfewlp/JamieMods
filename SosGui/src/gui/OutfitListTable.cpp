@@ -1,22 +1,19 @@
 #include "gui/OutfitListTable.h"
 
 #include "Translation.h"
-#include "common/config.h"
-#include "common/imgui/ImGuiFlags.h"
-#include "common/imgui/ImGuiScope.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
 #include "data/SosUiOutfit.h"
 #include "data/id.h"
-#include "gui/Table.h"
 #include "gui/UiSettings.h"
 #include "gui/icon.h"
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "imguiex/ImGuiEx.h"
+#include "imguiex/imguiex_enum_wrap.h"
 #include "util/ImGuiUtil.h"
 
-#include <RE/A/Actor.h>
 #include <array>
 #include <boost/optional/detail/optional_reference_spec.hpp>
 #include <d3d11.h>
@@ -27,9 +24,8 @@
 #include <utility>
 #include <vector>
 
-namespace LIBC_NAMESPACE_DECL
+namespace SosGui
 {
-
 void OutfitListTable::Show()
 {
     BaseGui::Show();
@@ -119,7 +115,7 @@ void OutfitListTable::CreateOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
     ImGui::InputTextWithHint("##CreateNewInput", "$SosGui_Hint_CreateOutfit"_T.c_str(), m_outfitNameBuf.data(), m_outfitNameBuf.size());
     ImGui::PopItemWidth();
 
-    ImGuiScope::Disabled disabled(m_outfitNameBuf[0] == '\0');
+    ImGui::BeginDisabled(m_outfitNameBuf[0] == '\0');
     if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
     {
         ConfirmAndClose(confirmed);
@@ -131,6 +127,7 @@ void OutfitListTable::CreateOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
         ConfirmAndClose(confirmed);
         m_flags = Flags::CREATE_FROM_WORN;
     }
+    ImGui::EndDisabled();
 }
 
 void OutfitListTable::Draw(Context &context, RE::Actor *editingActor)
@@ -147,8 +144,7 @@ void OutfitListTable::Draw(Context &context, RE::Actor *editingActor)
 
     ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_LIST_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH_SMALL, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
-    if (constexpr auto flags = ImGuiUtil::WindowFlags().flags;
-        ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), &m_show, flags))
+    if (ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), &m_show, ImGuiEx::WindowFlags()))
     {
         DrawToolWidgets();
         DrawOutfitTable(context, editingActor);
@@ -185,59 +181,47 @@ void OutfitListTable::DrawToolWidgets()
     ImGui::AlignTextToFramePadding();
     ImGui::Text(NF_OCT_SEARCH);
     ImGui::SameLine(0, 5);
-    ImGuiScope::ItemWidth fltMinItemWidth(-FLT_MIN);
+
+    ImGui::PushItemWidth(-FLT_MIN);
     if (m_outfitFilterInput.Draw("##filter", "$SosGui_Hint_FilterOutfit"_T.c_str()) || prevOutfitSize != outfitList.size())
     {
         m_outfitFilterInput.OnUpdate(outfitList, uiSetting->showFavoriteOutfits);
         prevOutfitSize = outfitList.size();
     }
+    ImGui::PopItemWidth();
 }
 
 void OutfitListTable::DrawOutfitTable(Context &context, RE::Actor *editingActor)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10, 5));
-    ImGuiScope::Table outfitListTable(
-        "##OutfitLists",
-        2,
-        ImGuiUtil::TableFlags()
-            .Borders()
-            .Resizable()
-            .Hideable()
-            .Reorderable()
-            .Sortable()
-            .SizingStretchProp()
-            .ScrollY()
-            .NoHostExtendX()
-            .ContextMenuInBody()
-            .flags
-    );
-    if (outfitListTable)
+    const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_CellPadding>(ImVec2(10, 5));
+    if (ImGui::BeginTable(
+            "##OutfitLists",
+            2,
+            ImGuiEx::TableFlags()
+                .Borders()
+                .Resizable()
+                .Hideable()
+                .Reorderable()
+                .Sortable()
+                .SizingStretchProp()
+                .ScrollY()
+                .NoHostExtendX()
+                .ContextMenuInBody()
+        ))
     {
         DrawOutfitTableContent(context, editingActor);
+        ImGui::EndTable();
     }
-    ImGui::PopStyleVar();
 }
 
 #define INVALID_INDEX SIZE_MAX
 
 void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editingActor)
 {
-    auto       &outfitList      = m_uiData.GetOutfitList();
-    //////////////////////////////////////////////////////////
-    // Table Content
-    const auto &actorOutfitMap  = m_uiData.GetActorOutfitMap();
-    const auto  activeOutfitOpt = actorOutfitMap.TryGetOutfitId(editingActor).flat_map([&](auto &outfitId) {
-        return outfitList.GetOutfitById(outfitId);
-    });
-
-    // When the current actor has active outfit: draw and freeze it on the first row.
-    const auto activeOutfitId = activeOutfitOpt.map(GetOutfitId).value_or(INVALID_OUTFIT_ID);
-
     ImGui::TableSetupScrollFreeze(1, 1);
-    // clang-format off
-    TableHeadersBuilder().Column("##Number").WidthOrWeight(56 /*14 * 4*/).Flags(ImGuiUtil::TableColumnFlags().NoSort().WidthFixed())
-                         .Column("$SkyOutSys_MCM_OutfitList").Flags(ImGuiUtil::TableColumnFlags().DefaultSort()).Setup();
-    // clang-format on
+    ImGui::TableSetupColumn("##Number", ImGuiEx::TableColumnFlags().NoSort().WidthFixed(), 56);
+    ImGui::TableSetupColumn("$SkyOutSys_MCM_OutfitList"_T.c_str(), ImGuiEx::TableColumnFlags().DefaultSort());
+    ImGui::TableHeadersRow();
 
     // Render our custom table header
     ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
@@ -246,18 +230,15 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
 
     ImGui::TableNextColumn();
     {
-        auto fontSize     = ImGuiScope::FontSize(Settings::UiSettings::GetInstance()->Title3PxSize());
-        auto framePadding = ImGuiScope::StyleVar::FramePadding({0, 0});
+        ImGui::PushFont(nullptr, Settings::UiSettings::GetInstance()->Title3PxSize());
+        if (ImGui::Button(NF_OCT_DIFF_ADDED))
         {
-            auto buttonColor = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-            if (ImGui::Button(NF_OCT_DIFF_ADDED))
-            {
-                context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
-            }
+            context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
         }
         ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit"_T.c_str());
         ImGui::SameLine();
         ImGui::TableHeader(ImGui::TableGetColumnName(1));
+        ImGui::PopFont();
     }
 
     static bool ascend = true;
@@ -265,13 +246,12 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
 
     size_t clickedFavoriteId = INVALID_INDEX;
     auto   drawOutfitEntry   = [&](const auto &outfit, const size_t index) {
-        ImGuiScope::PushId pushId(index);
+        ImGui::PushID(index);
         ImGui::TableNextRow();
         ImGui::TableNextColumn(); // number column
         {
-            auto framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::ICON_PADDING);
-            auto buttonColor  = ImGuiScope::StyleColor::Button(ImVec4(0, 0, 0, 0));
-            bool clicked      = false;
+            const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({5.0F, 5.0F}).Color<ImGuiCol_Button>(ImVec4());
+            bool       clicked    = false;
             if (outfit->IsFavorite())
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertFloat4ToU32(ImColor(234, 51, 35)));
@@ -312,7 +292,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
                 {
                     if (renameBuf[0] != '\0' && strcmp(renameBuf.data(), outfit->GetName().c_str()) != 0)
                     {
-                        log_info("Rename outfit {} to {}", outfit->GetName(), renameBuf.data());
+                        logger::info("Rename outfit {} to {}", outfit->GetName(), renameBuf.data());
                         +[&] {
                             return m_outfitService.RenameOutfit(outfit->GetId(), outfit->GetName(), std::string(renameBuf.data()));
                         };
@@ -325,7 +305,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
             {
                 bool const isSelected = m_outfitMultiSelection.Contains(static_cast<ImGuiID>(index));
                 ImGui::SetNextItemSelectionUserData(index);
-                if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowDoubleClick().AllowOverlap().SpanAllColumns().flags;
+                if (constexpr auto flags = ImGuiEx::SelectableFlags().AllowDoubleClick().AllowOverlap().SpanAllColumns();
                     ImGui::Selectable(outfit->GetName().c_str(), isSelected, flags))
                 {
                     const EditingOutfit currentEditing(outfit);
@@ -344,10 +324,12 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
                 }
             }
         }
+        ImGui::PopID();
     };
 
-    auto &viewData     = m_outfitFilterInput.viewData;
-    auto  framePadding = ImGuiScope::StyleVar::FramePadding(Settings::UiSettings::TABLE_ROW_PADDING);
+    auto &viewData = m_outfitFilterInput.viewData;
+
+    const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({3.0F, 3.0F});
     DrawOutfitTableContent(viewData, ascend, drawOutfitEntry);
 
     if (clickedFavoriteId != INVALID_INDEX)
@@ -418,9 +400,9 @@ void OutfitListTable::OpenContextMenu(
     Context &context, const uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit *outfit, __out bool &acceptRename
 )
 {
-    ImGuiScope::PopupContextItem popUp("##OutfitListContextMenu");
-    if (!popUp)
+    if (!ImGui::BeginPopupContextItem("##OutfitListContextMenu"))
     {
+        ImGui::EndPopup();
         return;
     }
     const auto &outfitName = outfit->GetName();
@@ -430,7 +412,7 @@ void OutfitListTable::OpenContextMenu(
 
     if (selectedItemCount == 1)
     {
-        ImGuiScope::Disabled disabled(noEditingActor);
+        ImGui::BeginDisabled(noEditingActor);
         if (noEditingActor)
         {
             ImGuiUtil::Text("$SosGui_Hint_Select{$Characters}");
@@ -452,6 +434,7 @@ void OutfitListTable::OpenContextMenu(
         {
             acceptRename = true;
         }
+        ImGui::EndDisabled();
     }
 
     ImGui::Separator();
@@ -478,6 +461,7 @@ void OutfitListTable::OpenContextMenu(
             OnAcceptDeleteOutfits();
         }
     }
+    ImGui::EndPopup();
 }
 
 void OutfitListTable::OnAcceptEditOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editingOutfit) const
@@ -541,4 +525,4 @@ void OutfitListTable::OnAcceptDeleteOutfits()
     }
     m_outfitMultiSelection.Clear();
 }
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace SosGui
