@@ -59,7 +59,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_Basic_Sources}
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_FreeType_Sources}
-#    ${IMGUI_DEMO_SOURCES}
+    ${JAMIE_MODS_COMMON_DIR}/fonts/FontManager.cpp
     ${IMGUIEX_DIR}/imguiex/m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3_slider.cpp
@@ -83,6 +83,7 @@ target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
     ${JAMIE_MODS_COMMON_DIR}
+    ${JAMIE_MODS_EXTERN_DIR}
     ${IMGUIEX_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

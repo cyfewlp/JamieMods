@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "fonts/FontManager.h"
 #include "ui/Settings.h"
-#include "ui/fonts/FontManager.h"
 #include "ui/fonts/ImFontWrap.h"
 
 struct ImFont;
@@ -16,15 +16,15 @@ namespace Ime
 class FontBuilder
 {
 public:
-    constexpr bool IsBuilding() const;
+    [[nodiscard]] constexpr auto IsBuilding() const -> bool;
 
-    bool AddFont(int fontId, ImFontWrap &imFont);
+    auto AddFont(int fontId, ImFontWrap &imFont) -> bool;
 
     /**
      * Apply current build font to the default @c ImGui font
      * @return is applied?
      */
-    bool ApplyFont(Settings &settings);
+    auto ApplyFont(Settings &settings) -> bool;
 
     void Reset()
     {
@@ -34,11 +34,11 @@ public:
 
     [[nodiscard]] auto GetBaseFont() const -> const ImFontWrap & { return m_baseFont; }
 
-    constexpr auto GetFontManager() const -> const FontManager & { return m_fontManager; }
+    [[nodiscard]] constexpr auto GetFontManager() const -> const Fonts::FontManager & { return m_fontManager; }
 
 private:
-    FontManager      m_fontManager;
-    ImFontWrap       m_baseFont{};
-    std::vector<int> m_usedFontIds; // font index in FontManger#fontInfo list.
+    Fonts::FontManager m_fontManager;
+    ImFontWrap         m_baseFont;
+    std::vector<int>   m_usedFontIds; // font index in FontManger#fontInfo list.
 };
 } // namespace Ime

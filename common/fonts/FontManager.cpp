@@ -1,7 +1,7 @@
 //
 // Created by jamie on 2026/1/11.
 //
-#include "ui/fonts/FontManager.h"
+#include "FontManager.h"
 
 #include "WCharUtils.h"
 
@@ -13,7 +13,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace Ime
+namespace Fonts
 {
 
 namespace
@@ -21,7 +21,7 @@ namespace
 auto GetDWriteFactory3() -> ComPtr<IDWriteFactory3>
 {
     ComPtr<IDWriteFactory3> factory;
-    HRESULT                 hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
+    const auto              hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3), &factory);
     if (FAILED(hr)) return nullptr;
     return factory;
 }
@@ -30,7 +30,7 @@ auto GetFontRef(const FontInfo &fontInfo) -> ComPtr<IDWriteFontFaceReference>
 {
     if (fontInfo.IsInvalid()) return nullptr;
 
-    ComPtr<IDWriteFactory3> factory = GetDWriteFactory3();
+    const ComPtr<IDWriteFactory3> factory = GetDWriteFactory3();
     if (factory == nullptr) return nullptr;
 
     ComPtr<IDWriteFontSet> fontSet;
@@ -100,46 +100,43 @@ auto GetFontFilePath(IDWriteFont *dWriteFont) -> std::wstring
     return {};
 }
 
-void GetLocalizedString(IDWriteLocalizedStrings *pStrings, std::string &result)
+auto GetLocalizedString(IDWriteLocalizedStrings *pStrings) -> std::wstring
 {
     HRESULT hr     = S_OK;
     UINT32  index  = 0;
-    BOOL    exists = false;
+    BOOL    exists = FALSE;
 
-    wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+    std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName{};
 
     // Get the default locale for this user.
 
     // If the default locale is returned, find that locale name, otherwise use "en-us".
-    if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+    if (FALSE == GetUserDefaultLocaleName(localeName.data(), localeName.size()))
     {
-        hr = pStrings->FindLocaleName(localeName, &index, &exists);
+        hr = pStrings->FindLocaleName(localeName.data(), &index, &exists);
     }
-    if (SUCCEEDED(hr) && !exists) // if the above find did not find a match, retry with US English
+    if (SUCCEEDED(hr) && FALSE == exists) // if the above find did not find a match, retry with US English
     {
         hr = pStrings->FindLocaleName(L"en-us", &index, &exists);
     }
 
     // If the specified locale doesn't exist, select the first on the list.
-    if (!exists) index = 0;
+    if (FALSE == exists) index = 0;
 
     UINT32 length = 0;
-
-    // Get the string length.
     if (SUCCEEDED(hr))
     {
         hr = pStrings->GetStringLength(index, &length);
     }
-    std::wstring wstring(length, L'\0');
-    // Get the family name.
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && length > 0)
     {
-        hr = pStrings->GetString(index, wstring.data(), length + 1);
+        std::wstring wstring(length, L'\0');
+        if (SUCCEEDED(pStrings->GetString(index, wstring.data(), length + 1)))
+        {
+            return wstring;
+        }
     }
-    if (SUCCEEDED(hr))
-    {
-        result = WCharUtils::ToString(wstring);
-    }
+    return {};
 }
 
 auto FindInstalledFonts() -> std::vector<FontInfo>
@@ -161,13 +158,12 @@ auto FindInstalledFonts() -> std::vector<FontInfo>
 
         if (SUCCEEDED(fontSet->GetPropertyValues(idx, DWRITE_FONT_PROPERTY_ID_FULL_NAME, &exists, &localizedStrings)))
         {
-            std::string fontFullName;
-            GetLocalizedString(localizedStrings.Get(), fontFullName);
+            const auto fontFullName = GetLocalizedString(localizedStrings.Get());
             if (fontFullName.empty())
             {
                 continue;
             }
-            fontList.emplace_back(FontInfo(static_cast<int32_t>(idx), fontFullName));
+            fontList.emplace_back(static_cast<int32_t>(idx), WCharUtils::ToString(fontFullName));
         }
     }
     return fontList;
@@ -180,20 +176,18 @@ FontManager::FontManager()
     m_fontList = FindInstalledFonts();
 }
 
-auto GetFontFilePath(const FontInfo &fontInfo) -> std::string
+auto GetFontFilePath(const FontInfo &fontInfo) -> std::wstring
 {
-    std::string result;
-
-    auto fontRef = GetFontRef(fontInfo);
-    if (!fontRef) return result;
-
-    const auto &filePath = GetFontFilePath(fontRef.Get());
-    return WCharUtils::ToString(filePath);
+    if (auto fontRef = GetFontRef(fontInfo); fontRef != nullptr)
+    {
+        return GetFontFilePath(fontRef.Get());
+    }
+    return {};
 }
 
 auto GetDefaultFontFilePath() -> std::wstring
 {
-    ComPtr<IDWriteFactory3> dWriteFactory = GetDWriteFactory3();
+    const ComPtr<IDWriteFactory3> dWriteFactory = GetDWriteFactory3();
     if (dWriteFactory == nullptr) return {};
 
     NONCLIENTMETRICS ncm = {};
@@ -217,7 +211,7 @@ auto GetDefaultFontFilePath() -> std::wstring
 
 auto GetFirstFontFilePathInFamily(std::wstring_view familyName) -> std::wstring
 {
-    ComPtr<IDWriteFactory3> dWriteFactory = GetDWriteFactory3();
+    const ComPtr<IDWriteFactory3> dWriteFactory = GetDWriteFactory3();
     if (dWriteFactory == nullptr) return {};
 
     ComPtr<IDWriteFontCollection> fontCollection = nullptr;
@@ -225,7 +219,7 @@ auto GetFirstFontFilePathInFamily(std::wstring_view familyName) -> std::wstring
     {
         UINT32 index  = 0;
         BOOL   exists = FALSE;
-        if (SUCCEEDED(fontCollection->FindFamilyName(familyName.data(), &index, &exists)) && exists != FALSE)
+        if (SUCCEEDED(fontCollection->FindFamilyName(std::wstring(familyName).c_str(), &index, &exists)) && exists != FALSE)
         {
             ComPtr<IDWriteFontFamily> fontFamily;
             if (SUCCEEDED(fontCollection->GetFontFamily(index, &fontFamily)))
@@ -241,4 +235,4 @@ auto GetFirstFontFilePathInFamily(std::wstring_view familyName) -> std::wstring
     return {};
 }
 
-} // namespace Ime
+} // namespace Fonts

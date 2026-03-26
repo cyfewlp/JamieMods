@@ -9,6 +9,7 @@
 #include "configs/settings_converter.h"
 #include "core/EventHandler.h"
 #include "core/State.h"
+#include "fonts/FontManager.h"
 #include "hook.h"
 #include "hooks/ScaleformHook.h"
 #include "hooks/WinHooks.h"
@@ -19,7 +20,6 @@
 #include "menu/ToolWindowMenu.h"
 #include "path_utils.h"
 #include "ui/Settings.h"
-#include "ui/fonts/FontManager.h"
 #include "ui/imgui_system.h"
 
 #include <basetsd.h>
@@ -143,7 +143,7 @@ auto GetDefaultFontFilePathList() -> std::vector<std::string>
 {
     std::vector<std::string> fonts{};
 
-    const auto primaryFontFilePath = GetDefaultFontFilePath();
+    const auto primaryFontFilePath = Fonts::GetDefaultFontFilePath();
     if (primaryFontFilePath.empty())
     {
         ErrorNotifier::GetInstance().Warning("Can't get default font. Fallback to ImGui embedded font.");
@@ -152,10 +152,10 @@ auto GetDefaultFontFilePathList() -> std::vector<std::string>
     fonts.push_back(WCharUtils::ToString(primaryFontFilePath));
     logger::info("Primary font: {}", fonts.back());
 
-    std::wstring emojiFontFilePath = GetFirstFontFilePathInFamily(Settings::DEFAULT_EMOJI_FONT_FAMILY);
+    std::wstring emojiFontFilePath = Fonts::GetFirstFontFilePathInFamily(Settings::DEFAULT_EMOJI_FONT_FAMILY);
     if (emojiFontFilePath.empty())
     {
-        emojiFontFilePath = GetFirstFontFilePathInFamily(Settings::DEFAULT_SYMBOL_FONT_FAMILY);
+        emojiFontFilePath = Fonts::GetFirstFontFilePathInFamily(Settings::DEFAULT_SYMBOL_FONT_FAMILY);
     }
     if (!emojiFontFilePath.empty())
     {

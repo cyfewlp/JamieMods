@@ -4,9 +4,10 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
-namespace Ime
+namespace Fonts
 {
 class FontInfo
 {
@@ -18,7 +19,7 @@ private:
     std::string name;
 
 public:
-    FontInfo(const Index index, const std::string &name) : index(index), name(name) {}
+    FontInfo(const Index index, std::string name) : index(index), name(std::move(name)) {}
 
     [[nodiscard]] auto IsInvalid() const -> bool { return index == -1; }
 
@@ -38,9 +39,9 @@ public:
     [[nodiscard]] auto GetFontInfoList() const -> const std::vector<FontInfo> & { return m_fontList; }
 };
 
-auto GetFontFilePath(const FontInfo &fontInfo) -> std::string;
+auto GetFontFilePath(const FontInfo &fontInfo) -> std::wstring;
 
 auto GetDefaultFontFilePath() -> std::wstring;
 auto GetFirstFontFilePathInFamily(std::wstring_view familyName) -> std::wstring;
 
-} // namespace Ime
+} // namespace Fonts

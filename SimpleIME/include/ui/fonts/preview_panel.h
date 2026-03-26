@@ -25,11 +25,11 @@ namespace Ime::UI
 {
 class FontPreviewPanel
 {
-    ImGuiTextFilter       m_textFilter;
-    ImFontWrap            m_imFont{};
-    std::vector<FontInfo> m_displayFontInfos;
-    DebounceTimer         m_previewDebounceTimer{std::chrono::milliseconds{300}};
-    DebounceTimer         m_searchDebounceTimer{std::chrono::milliseconds{200}};
+    ImGuiTextFilter              m_textFilter;
+    ImFontWrap                   m_imFont{};
+    std::vector<Fonts::FontInfo> m_displayFontInfos;
+    DebounceTimer                m_previewDebounceTimer{std::chrono::milliseconds{300}};
+    DebounceTimer                m_searchDebounceTimer{std::chrono::milliseconds{200}};
 
     enum class State : int8_t
     {
@@ -56,8 +56,8 @@ public:
     void DrawPreviewPanel(FontBuilder &fontBuilder, const ImGuiEx::M3::M3Styles &m3Styles);
 
 private:
-    void DrawFontsView(const std::vector<FontInfo> &fontInfos);
-    void UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList);
+    void DrawFontsView(const std::vector<Fonts::FontInfo> &fontInfos);
+    void UpdateDisplayFontInfos(const std::vector<Fonts::FontInfo> &sourceList);
 
 public:
     [[nodiscard]] auto IsPreviewing() const -> bool { return m_state == State::PREVIEWING; }

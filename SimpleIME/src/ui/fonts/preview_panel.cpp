@@ -5,6 +5,8 @@
 
 #include "ui/fonts/preview_panel.h"
 
+#include "WCharUtils.h"
+#include "fonts/FontManager.h"
 #include "i18n/Translator.h"
 #include "i18n/translator_manager.h"
 #include "icons.h"
@@ -16,7 +18,6 @@
 #include "imguiex/imguiex_m3.h"
 #include "imguiex/m3/facade/base.h"
 #include "imguiex/m3/spec/layout.h"
-#include "ui/fonts/FontManager.h"
 #include "ui/fonts/ImFontWrap.h"
 
 namespace Ime::UI
@@ -50,7 +51,7 @@ struct StatusBar
  * @param selectedIndex current selected FontInfo index. will be set if select a new.
  * @return is select a new row.
  */
-auto FontsTable(FontInfo::Index &selectedIndex, const std::vector<FontInfo> &fontInfos) -> bool
+auto FontsTable(Fonts::FontInfo::Index &selectedIndex, const std::vector<Fonts::FontInfo> &fontInfos) -> bool
 {
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(fontInfos.size()));
@@ -89,7 +90,7 @@ void DrawStatusBar(const StatusBar &statusBar)
 }
 
 /**
- * contains a "apply" button to ensure if add font to @c FontBuilder
+ * contains an "apply" button to ensure if add font to @c FontBuilder
  * @return true if click the "apply" button, false otherwise.
  */
 auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles, ImFontWrap &displayFont) -> bool
@@ -121,7 +122,7 @@ auto PreviewPanel(const ImGuiEx::M3::M3Styles &m3Styles, ImFontWrap &displayFont
 
 } // namespace
 
-void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
+void FontPreviewPanel::DrawFontsView(const std::vector<Fonts::FontInfo> &fontInfos)
 {
     ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
     const bool edited = ImGuiEx::M3::SearchBar("Filter", m_textFilter.InputBuf, IM_COUNTOF(m_textFilter.InputBuf), {.icon = ICON_SEARCH});
@@ -159,7 +160,7 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
             m_imFont.Cleanup();
             if (!filePath.empty())
             {
-                PreviewFont(fontInfo.GetName(), filePath);
+                PreviewFont(fontInfo.GetName(), WCharUtils::ToString(filePath));
                 m_state = State::PREVIEWING;
             }
             else
@@ -172,7 +173,7 @@ void FontPreviewPanel::DrawFontsView(const std::vector<FontInfo> &fontInfos)
 
 //! Submit two child windows.
 //! Child1: Fonts info, auto resize along X-axis, fixed height, with border.
-//! Child2: Font preview, auto extend along X-axis, fill remaining height. contains a "apply" button to ensure if add font to @c FontBuilder
+//! Child2: Font preview, auto extend along X-axis, fill remaining height. contains an "apply" button to ensure if add font to @c FontBuilder
 void FontPreviewPanel::Draw(FontBuilder &fontBuilder)
 {
     if (ImGui::BeginChild("FontsView", {}, ImGuiEx::ChildFlags().AutoResizeX()))
@@ -239,7 +240,7 @@ void FontPreviewPanel::DrawPreviewPanel(FontBuilder &fontBuilder, const ImGuiEx:
     ImGui::EndChild();
 }
 
-void FontPreviewPanel::UpdateDisplayFontInfos(const std::vector<FontInfo> &sourceList)
+void FontPreviewPanel::UpdateDisplayFontInfos(const std::vector<Fonts::FontInfo> &sourceList)
 {
     m_displayFontInfos.clear();
     for (const auto &fontInfo : sourceList)
