@@ -1,24 +1,36 @@
-# This file configures the "build" of this SKSE plugin
-# - how to compile the C++ plugin (in addition to settings found in CMakePresets.json)
-# - where to output the resulting .dll file
-
-# It's recommended to set a minimum CMake version.
-# If you use CMake features from higher versions, update this to match.
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 4.2)
 message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(BUILD_TESTING "Build tests" OFF)
+
+if (BUILD_TESTING)
+    list(APPEND VCPKG_MANIFEST_FEATURES "test-deps")
+endif ()
 
 # [BEGIN set_project_name]
 # Set your project name. This will be the name of your SKSE .dll file.
 project(JamieMods)
 
-set(COMMON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+include(${CMAKE_SOURCE_DIR}/cmake/jamiemods.common.cmake)
 
-cmake_minimum_required(VERSION 3.21)
-
+set(_OLD_BUILD_TESTS ${BUILD_TESTS})
+set(BUILD_TESTS OFF) # forbid CommonLibSSE-NG from building its tests, since we only want to build our own tests, and CommonLibSSE-NG's tests are not relevant to us and would just slow down the build
 add_subdirectory(extern/CommonLibSSE-NG EXCLUDE_FROM_ALL)
-#add_subdirectory(extern)
-add_subdirectory(dev)
-add_subdirectory(SimpleIME)
-add_subdirectory(SosGui)
+set(BUILD_TESTS ${_OLD_BUILD_TESTS})
+
+add_subdirectory(imguiex)
+add_subdirectory(cmake/material-you)
+if (ENABLE_SIMPLE_IME)
+    add_subdirectory(SimpleIME)
+endif ()
+add_subdirectory(SkyrimSETransmogrify EXCLUDE_FROM_ALL)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/CMakeLists.txt")
+    add_subdirectory(private EXCLUDE_FROM_ALL)
+else()
+    message(STATUS "Private directory not found, skipping...")
+endif()

@@ -1,38 +1,123 @@
-
 #include "ImeApp.h"
 
 #include "ImeWnd.hpp"
-#include "common/common.h"
-#include "common/hook.h"
-#include "common/log.h"
+#include "WCharUtils.h"
+#include "common.h"
+#include "configs/ConfigSerializer.h"
 #include "configs/CustomMessage.h"
-#include "context.h"
+#include "configs/configuration.h"
+#include "configs/settings_converter.h"
 #include "core/EventHandler.h"
 #include "core/State.h"
+#include "hook.h"
 #include "hooks/ScaleformHook.h"
-#include "hooks/UiHooks.h"
 #include "hooks/WinHooks.h"
-#include "ime/ImeManagerComposer.h"
+#include "ime/ImeController.h"
+#include "imguiex/ErrorNotifier.h"
+#include "log.h"
+#include "menu/ImeMenu.h"
+#include "menu/ToolWindowMenu.h"
+#include "path_utils.h"
+#include "ui/Settings.h"
+#include "ui/fonts/FontManager.h"
+#include "ui/imgui_system.h"
 
 #include <basetsd.h>
-#include <cstdint>
 #include <future>
 #include <memory>
+#include <queue>
 #include <thread>
 
-namespace LIBC_NAMESPACE_DECL
+namespace
 {
+class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+{
+    std::queue<std::string> m_message;
+    bool                    m_installedSink = false;
 
-bool PluginInit()
+public:
+    InitErrorMessageShow()
+    {
+        if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+        {
+            ui->AddEventSink(this);
+            m_installedSink = true;
+        }
+    }
+
+    ~InitErrorMessageShow()
+    {
+        if (auto *ui = RE::UI::GetSingleton(); m_installedSink && ui != nullptr)
+        {
+            ui->RemoveEventSink(this);
+        }
+    }
+
+    auto ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *) -> RE::BSEventNotifyControl override
+    {
+        if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
+        {
+            while (!m_message.empty())
+            {
+                RE::DebugMessageBox(m_message.front().c_str());
+                m_message.pop();
+            }
+            RE::UI::GetSingleton()->RemoveEventSink(this);
+        }
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
+    void PushMessage(std::string &&message)
+    {
+        if (m_installedSink)
+        {
+            m_message.emplace(std::move(message));
+        }
+    }
+};
+
+#ifdef _DEBUG
+constexpr auto INIT_TIMEOUT_SECONDS = 500s;
+#else
+constexpr auto INIT_TIMEOUT_SECONDS = 5s;
+#endif
+constexpr auto                          CONFIG_FILE_NAME = "SimpleIME.toml";
+std::unique_ptr<Ime::ImeApp>            g_instance       = nullptr;
+std::unique_ptr<InitErrorMessageShow>   g_pInitErrorMessageShow(nullptr);
+std::unique_ptr<Hooks::D3DInitHookData> g_D3DInitHook = nullptr; ///< Only install once, should not be a member of `ImeApp`.
+
+auto ConfigFilePath() -> std::filesystem::path
 {
+    return utils::GetInterfacePath() / SIMPLE_IME / CONFIG_FILE_NAME;
+}
+} // namespace
+
+namespace SksePlugin
+{
+auto Initialize() -> bool
+{
+    g_instance    = std::make_unique<Ime::ImeApp>(ConfigFilePath());
+    g_D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(Ime::D3DInit);
+    Hooks::WinHooks::Install();
+
+    auto &errorNotifier = ErrorNotifier::GetInstance();
+    errorNotifier.SetMessageDuration(g_instance->GetSettings().appearance.errorDisplayDuration);
+#ifdef _DEBUG
+    errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
+#endif
+
+    const auto *plugin  = SKSE::PluginDeclaration::GetSingleton();
+    const auto  version = plugin->GetVersion();
+    logger::info("{}({}) has finished loading.", plugin->GetName(), version.string("."));
+
     InitializeMessaging();
-    Ime::ImeApp::GetInstance().Initialize();
     return true;
 }
 
 void InitializeMessaging()
 {
     using State = Ime::Core::State;
+    // ReSharper disable once CppParameterMayBeConstPtrOrRef
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *a_msg) {
         if (a_msg->type == SKSE::MessagingInterface::kPreLoadGame)
         {
@@ -48,175 +133,182 @@ void InitializeMessaging()
         }
     });
 }
+} // namespace SksePlugin
 
 namespace Ime
 {
-/**
- * Init ImeApp
- */
-void ImeApp::Initialize()
+namespace
 {
-    m_fInitialized.store(false);
-    Hooks::WinHooks::Install();
+auto GetDefaultFontFilePathList() -> std::vector<std::string>
+{
+    std::vector<std::string> fonts{};
 
-    D3DInitHook = std::make_unique<Hooks::D3DInitHookData>(D3DInit);
-    auto & errorNotifier = ErrorNotifier::GetInstance();
-    const auto & uiConfig = AppConfig::GetConfig().GetAppUiConfig();
-    errorNotifier.SetMessageDuration(uiConfig.ErrorMessageDuration());
-#ifdef SIMPLE_IME_DEBUG
-    errorNotifier.SetMessageLevel(ErrorMsg::Level::debug);
-#endif
+    const auto primaryFontFilePath = GetDefaultFontFilePath();
+    if (primaryFontFilePath.empty())
+    {
+        ErrorNotifier::GetInstance().Warning("Can't get default font. Fallback to ImGui embedded font.");
+        return std::vector<std::string>{};
+    }
+    fonts.push_back(WCharUtils::ToString(primaryFontFilePath));
+    logger::info("Primary font: {}", fonts.back());
+
+    std::wstring emojiFontFilePath = GetFirstFontFilePathInFamily(Settings::DEFAULT_EMOJI_FONT_FAMILY);
+    if (emojiFontFilePath.empty())
+    {
+        emojiFontFilePath = GetFirstFontFilePathInFamily(Settings::DEFAULT_SYMBOL_FONT_FAMILY);
+    }
+    if (!emojiFontFilePath.empty())
+    {
+        fonts.push_back(WCharUtils::ToString(emojiFontFilePath));
+        logger::info("Supplementary font: {}", fonts.back());
+    }
+    return fonts;
+}
+} // namespace
+
+ImeApp::ImeApp(std::filesystem::path configPath)
+{
+    const auto configuration = Ime::ConfigSerializer::LoadConfiguration(configPath);
+    m_settings               = Ime::ConvertConfigurationToSettings(configuration);
+
+    SksePlugin::InitializeLogging({m_settings.logging.level, m_settings.logging.flushLevel});
 }
 
-void ImeApp::Uninitialize()
+auto ImeApp::GetInstance() -> ImeApp &
 {
-    if (m_fInitialized)
-    {
-        Hooks::WinHooks::Uninstall();
-        D3DInitHook.reset();
-        D3DInitHook = nullptr;
-        UninstallHooks();
-    }
-    ImeManagerComposer::GetInstance()->PopType();
-    m_fInitialized.store(false);
+    return *g_instance;
 }
 
 void ImeApp::OnInputLoaded()
 {
-    Core::EventHandler::InstallEventSink(&m_imeWnd);
+    if (m_state.IsInitialized())
+    {
+        Events::InstallEventSinks();
+    }
 }
 
-class InitErrorMessageShow final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+void ImeApp::Uninitialize()
 {
-public:
-    RE::BSEventNotifyControl
-    ProcessEvent(const RE::MenuOpenCloseEvent *a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent> *) override
+    SaveSettings();
+    UI::DestroyM3();
+    UI::Shutdown();
+    Events::UnInstallEventSinks(); // should safety
+    Hooks::WinHooks::Uninstall();  // should move to dll_detach, but it's safe.
+    g_pInitErrorMessageShow.reset();
+    if (m_state.IsInitialized())
     {
-        if (a_event->menuName == RE::MainMenu::MENU_NAME && a_event->opening)
+        UninstallHooks();
+        if (RealWndProc)
         {
-            auto &messages = Context::GetInstance()->Messages();
-            while (!messages.empty())
-            {
-                RE::DebugMessageBox(messages.front().c_str());
-                messages.pop();
-            }
+            SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RealWndProc));
+            RealWndProc = nullptr;
         }
-        return RE::BSEventNotifyControl::kContinue;
     }
-};
+    m_state.SetState(State::StateKey::DORMANCY);
+}
 
-std::unique_ptr<InitErrorMessageShow> g_pInitErrorMessageShow(nullptr);
-
-void ImeApp::D3DInit()
+void D3DInit()
 {
-    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
+    auto &app = ImeApp::GetInstance();
+    if (!app.m_state.IsUnInitialized())
     {
-        g_pInitErrorMessageShow.reset(new InitErrorMessageShow());
-        ui->AddEventSink(g_pInitErrorMessageShow.get());
+        logger::warn("Already Initialized! Current state: {}", app.m_state.GetStateKetText());
+        return;
     }
+    g_pInitErrorMessageShow = std::make_unique<InitErrorMessageShow>();
     try
     {
-        DoD3DInit();
+        app.DoD3DInit();
+        g_pInitErrorMessageShow.reset();
         return;
     }
     catch (std::exception &error)
     {
-        const auto message = std::format("SimpleIME initialize fail: \n {}", error.what());
-        log_error(message.c_str());
-        Context::GetInstance()->PushMessage(message);
+        app.m_state.SetState(ImeApp::State::StateKey::INITIALIZE_FAILED);
+        auto message = std::format("SimpleIME initialize fail: \n {}", error.what());
+        logger::error(message.c_str());
+        g_pInitErrorMessageShow->PushMessage(std::move(message));
     }
     catch (...)
     {
-        const auto message = std::string("SimpleIME initialize fail: \n occur unexpected error.");
-        log_error(message.c_str());
-        Context::GetInstance()->PushMessage(message);
+        app.m_state.SetState(ImeApp::State::StateKey::INITIALIZE_FAILED);
+        auto message = std::string("SimpleIME: Unknown fatal error during D3DInit.");
+        logger::error(message.c_str());
+        g_pInitErrorMessageShow->PushMessage(std::move(message));
     }
-    LogStacktrace();
-    log_info("Force close ImeWnd.");
 
-    if (GetInstance().m_imeWnd.SendNotifyMessageToIme(WM_QUIT, -1, 0) != S_OK)
-    {
-        log_error("Send WM_QUIT to ImeWnd failed.");
-    }
+    app.Shutdown();
 }
 
 void ImeApp::DoD3DInit()
 {
-    auto &app = GetInstance();
-    app.D3DInitHook->Original();
-    if (app.m_fInitialized.load())
-    {
-        return;
-    }
-
-    app.OnD3DInit();
+    m_state.SetState(State::StateKey::INITIALIZING);
+    g_D3DInitHook->Original();
+    OnD3DInit();
 }
 
 void ImeApp::OnD3DInit()
 {
-    auto *render_manager = RE::BSGraphics::Renderer::GetSingleton();
-    if (render_manager == nullptr)
+    auto *renderManager = RE::BSGraphics::Renderer::GetSingleton();
+    if (renderManager == nullptr)
     {
         throw SimpleIMEException("Cannot find render manager. Initialization failed!");
     }
 
-    const auto &render_data = render_manager->data;
-    log_debug("Getting SwapChain...");
-    auto *pSwapChain = render_data.renderWindows->swapChain;
+    const auto &renderData = renderManager->GetRuntimeData();
+    logger::debug("Getting SwapChain...");
+    auto *pSwapChain = renderData.renderWindows->swapChain;
     if (pSwapChain == nullptr)
     {
         throw SimpleIMEException("Cannot find SwapChain. Initialization failed!");
     }
 
-    log_debug("Getting SwapChain desc...");
-    REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc;
+    logger::debug("Getting SwapChain desc...");
+    REX::W32::DXGI_SWAP_CHAIN_DESC swapChainDesc{};
     if (pSwapChain->GetDesc(&swapChainDesc) < 0)
     {
         throw SimpleIMEException("IDXGISwapChain::GetDesc failed.");
     }
 
     m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-    Start(render_data);
-    m_fInitialized.store(true);
 
-    log_debug("Hooking Skyrim WndProc...");
-    RealWndProc = reinterpret_cast<WNDPROC>(
-        SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(ImeApp::MainWndProc))
-    );
+    Start(renderData);
+
+    logger::debug("Hooking Skyrim WndProc...");
+    RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
     if (RealWndProc == nullptr)
     {
         throw SimpleIMEException("Hook WndProc failed!");
     }
     InstallHooks();
-}
 
-void ImeApp::SetSettings()
-{
-    const auto &settingsConfig = AppConfig::GetConfig().GetSettingsConfig();
-
-    m_settings.windowPosUpdatePolicy = settingsConfig.GetWindowPosUpdatePolicy();
-    m_settings.enableUnicodePaste    = settingsConfig.GetEnableUnicodePaste();
-    m_settings.fontSizeScale         = settingsConfig.GetFontSizeScale();
-    m_settings.showSettings          = settingsConfig.GetShowSettings();
-    m_settings.keepImeOpen           = settingsConfig.GetKeepImeOpen();
-    m_settings.enableMod             = settingsConfig.GetEnableMod();
-    m_settings.focusType             = settingsConfig.GetFocusType();
-    m_settings.language              = settingsConfig.GetLanguage();
-    m_settings.theme                 = settingsConfig.GetTheme();
+    ImeMenu::RegisterMenu();
+    ToolWindowMenu::RegisterMenu();
+    m_state.SetState(State::StateKey::INITIALIZED);
 }
 
 void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
 {
     std::promise<bool> ensureInitialized;
-    std::future<bool>  initialized = ensureInitialized.get_future();
+    const auto         initialized = ensureInitialized.get_future();
     // run ImeWnd in a standalone thread
-    SetSettings();
-    std::thread childWndThread([&ensureInitialized, this] {
+    auto              *device      = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+    auto              *context     = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
+
+    UI::Initialize(m_hWnd, device, context);
+    const auto defaultFontFilePathList = GetDefaultFontFilePathList();
+    (void)UI::AddPrimaryFont(m_settings.resources.fontPathList, defaultFontFilePathList);
+    UI::InitializeM3(utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE, m_settings.appearance.schemeConfig);
+
+    std::thread childWndThread([&ensureInitialized, this] -> void {
+        SetThreadDescription(GetCurrentThread(), L"SimpleIME Message Thread");
         try
         {
-            m_imeWnd.Initialize();
+            m_imeWnd.Initialize(m_settings.enableTsf);
             ensureInitialized.set_value(true);
-            m_imeWnd.Start(m_hWnd, &m_settings);
+            // we can't call ensureInitialized after create child window, will cause deadlock.
+            m_imeWnd.CreateHost(m_hWnd, m_settings);
+            m_imeWnd.Run();
         }
         catch (...)
         {
@@ -225,59 +317,76 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
                 ensureInitialized.set_exception(std::current_exception());
             }
             catch (...)
-            { // set_exception() may throw too
+            {
+                // set_exception() may throw too
             }
         }
     });
 
-    initialized.get();
+    if (initialized.wait_for(INIT_TIMEOUT_SECONDS) == std::future_status::timeout)
+    {
+        logger::error("IME Window initialization timed out!");
+
+        if (childWndThread.joinable())
+        {
+            if (!m_imeWnd.SendNotifyMessageToIme(WM_CLOSE, 0, 0))
+            {
+                logger::warn("IME thread did not respond to WM_CLOSE, detaching...");
+            }
+            std::thread([t = std::move(childWndThread)]() mutable -> void {
+                if (t.joinable())
+                {
+                    t.join();
+                    logger::info("IME child thread successfully joined after timeout.");
+                }
+            }).detach();
+        }
+        throw SimpleIMEException("IME Thread initialization timeout.");
+    }
     childWndThread.detach();
-    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
-    auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
-    m_imeWnd.InitImGui(m_hWnd, device, context);
+}
+
+// FIXME: is safe?
+void ImeApp::Shutdown()
+{
+    logger::LogStacktrace();
+    m_state.SetState(State::StateKey::SHUTDOWN);
+    logger::info("Force close ImeWnd...");
+    if (!m_imeWnd.SendNotifyMessageToIme(WM_QUIT, 0, 0))
+    {
+        logger::error("Can't close ImeWnd! May IME uninitialized?");
+    }
+    Uninitialize();
+}
+
+void ImeApp::SaveSettings()
+{
+    const auto config = Ime::ConvertSettingsToConfiguration(m_settings);
+    Ime::ConfigSerializer::SaveConfiguration(ConfigFilePath(), config);
 }
 
 void ImeApp::InstallHooks()
 {
-    D3DPresentHook         = std::make_unique<Hooks::D3DPresentHookData>(D3DPresent);
-    DispatchInputEventHook = std::make_unique<Hooks::DispatchInputEventHookData>(DispatchEvent);
-
-    Hooks::ScaleformHooks::Install();
-    Hooks::UiHooks::Install(m_settings);
+    Hooks::Scaleform::Install();
 }
 
 void ImeApp::UninstallHooks()
 {
-    D3DPresentHook         = nullptr;
-    DispatchInputEventHook = nullptr;
-
-    Hooks::UiHooks::Uninstall();
-    Hooks::ScaleformHooks::Uninstall();
+    Hooks::Scaleform::Uninstall();
 }
 
-void ImeApp::D3DPresent(const std::uint32_t ptr)
+void ImeApp::Draw()
 {
-    auto &app = GetInstance();
-    app.D3DPresentHook->Original(ptr);
-    if (!app.m_fInitialized.load())
+    if (!m_state.IsInitialized())
     {
         return;
     }
-    app.DoD3DPresent();
-}
+    UI::NewFrame();
 
-void ImeApp::DoD3DPresent()
-{
-    auto &app = GetInstance();
-    app.m_imeWnd.DrawIme(m_settings);
-}
+    m_imeWnd.Draw(m_settings);
 
-// we need set our keyboard to non-exclusive after game default.
-void ImeApp::DispatchEvent(RE::BSTEventSource<RE::InputEvent *> *a_dispatcher, RE::InputEvent **a_events)
-{
-    const auto &app = GetInstance();
-    Core::EventHandler::UpdateMessageFilter(app.m_settings, a_events);
-    app.DispatchInputEventHook->Original(a_dispatcher, a_events);
+    UI::EndFrame();
+    UI::Render();
 }
 
 auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -285,36 +394,21 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
     auto &app = GetInstance();
     switch (uMsg)
     {
-        /*case WM_ACTIVATE:
-            log_info("WM_ACTIVATE {:#x}, {:#x}", wParam, lParam);
-            if (LOWORD(wParam) != WA_INACTIVE)
-            {
-                ImeManager::GetInstance()->TryFocusIme();
-            }
-            break;
-        case WM_ACTIVATEAPP:
-            log_info("WM_ACTIVATEAPP {:#x}, {:#x}", wParam, lParam);
-            break;*/
         case CM_EXECUTE_TASK: {
             TaskQueue::GetInstance().ExecuteMainThreadTasks();
-            return S_OK;
+            return 0;
         }
         case WM_NCACTIVATE:
-            log_debug("WM_NCACTIVATE {:#x}, {:#x}", wParam, lParam);
             if (wParam == TRUE)
             {
-                ImeManagerComposer::GetInstance()->TryFocusIme();
+                ImeController::GetInstance()->SyncImeState();
             }
             break;
-        case WM_SETFOCUS:
-            log_info("WM_SETFOCUS {:#x}, {:#x}", wParam, lParam);
-            ImeManagerComposer::GetInstance()->TryFocusIme();
-            return S_OK;
         case WM_IME_SETCONTEXT:
             return ::DefWindowProc(hWnd, uMsg, wParam, 0);
         case WM_NCDESTROY: {
             app.Uninitialize();
-            break;
+            return 0;
         }
         default:
             break;
@@ -322,4 +416,3 @@ auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> 
     return RealWndProc(hWnd, uMsg, wParam, lParam);
 }
 } // namespace Ime
-} // namespace LIBC_NAMESPACE_DECL

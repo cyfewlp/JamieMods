@@ -1,21 +1,20 @@
 #include "tsf/TsfCompartment.h"
 
-#include "common/log.h"
+#include "log.h"
 
 #include <atlcomcli.h>
 
-namespace LIBC_NAMESPACE_DECL
-{
 auto Tsf::TsfCompartment::Initialize(
-    ITfThreadMgr *pThreadMgr, REFGUID guidCompartment, const CompartmentChangeCallback &callback
+    ITfThreadMgr *pThreadMgr, TfClientId tfClientId, REFGUID guidCompartment, const CompartmentChangeCallback &callback
 ) -> HRESULT
 {
     if (IsEqualGUID(m_guidCompartment, GUID_NULL) == 0)
     {
-        log_warn("TsfCompartment already initialized.");
+        logger::warn("TsfCompartment already initialized.");
         return S_FALSE;
     }
     HRESULT hresult   = E_FAIL;
+    m_tfClientId      = tfClientId;
     m_guidCompartment = guidCompartment;
     m_callback        = callback;
     if (const CComQIPtr<ITfCompartmentMgr> tfCompartmentMgr(pThreadMgr); tfCompartmentMgr != nullptr)
@@ -51,6 +50,20 @@ auto Tsf::TsfCompartment::UnInitialize() -> HRESULT
         m_tfCompartment.Release();
     }
     m_guidCompartment = GUID_NULL;
+    return hr;
+}
+
+auto Tsf::TsfCompartment::SetValue(ULONG value) const -> HRESULT
+{
+    HRESULT hr = S_OK;
+    if (m_tfCompartment != nullptr)
+    {
+        VARIANT var;
+        var.vt    = VT_I4;
+        var.ulVal = value;
+        hr        = m_tfCompartment->SetValue(m_tfClientId, &var);
+    }
+
     return hr;
 }
 
@@ -114,4 +127,3 @@ auto Tsf::TsfCompartment::OnChange(const GUID &rguid) -> HRESULT
     }
     return hresult;
 }
-} // namespace LIBC_NAMESPACE_DECL

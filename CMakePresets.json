@@ -1,8 +1,8 @@
 {
   "version": 3,
   "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 21,
+    "major": 4,
+    "minor": 2,
     "patch": 0
   },
   "configurePresets": [
@@ -43,6 +43,7 @@
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
         "USE_VCPKG": "ON",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/build/vcpkg_modules",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake",
         "VCPKG_HOST_TRIPLET": "$env{PROJECT_ARCHITECTURE}-$env{PROJECT_PLATFORM}-static-md",
         "VCPKG_TARGET_TRIPLET": "$env{PROJECT_ARCHITECTURE}-$env{PROJECT_PLATFORM}-static-md",
@@ -57,7 +58,7 @@
       },
       "environment": {
         "PROJECT_ARCHITECTURE": "x64",
-        "PROJECT_COMPILER_FLAGS": "/permissive- /Zc:preprocessor /EHsc /MP /W4 /WX /external:anglebrackets /external:W0"
+        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /MP /W4 /WX /external:anglebrackets /external:W0"
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -76,7 +77,7 @@
       },
       "environment": {
         "PROJECT_COMPILER": "clang",
-        "PROJECT_COMPILER_FLAGS": "-Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_consteval -D__cpp_lib_format"
+        "PROJECT_COMPILER_FLAGS": "-Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_consteval"
       }
     },
     {
@@ -89,7 +90,7 @@
       "environment": {
         "CC": "clang-cl",
         "CXX": "clang-cl",
-        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 -Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_lib_format"
+        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /W4 -Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class"
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -123,6 +124,13 @@
       }
     },
     {
+      "name": "builttype-RelWithDebInfo",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
       "name": "builttype-release",
       "hidden": true,
       "cacheVariables": {
@@ -131,6 +139,7 @@
     },
     {
       "name": "debug-cl-vs-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -142,7 +151,8 @@
       ]
     },
     {
-      "name": "debug-clang-ninjia-vcpkg",
+      "name": "debug-clang-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -154,7 +164,8 @@
       ]
     },
     {
-      "name": "debug-clangcl-ninjia-vcpkg",
+      "name": "debug-clangcl-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -166,7 +177,21 @@
       ]
     },
     {
+      "name": "RelWithDebInfo-clangcl-ninja-vcpkg",
+      "hidden": true,
+      "inherits": [
+        "common",
+        "x64",
+        "win32-unicode",
+        "generator-ninja",
+        "builttype-RelWithDebInfo",
+        "packaging-vcpkg",
+        "compiler-clang-cl"
+      ]
+    },
+    {
       "name": "release-cl-vs-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "packaging-vcpkg",
@@ -176,7 +201,8 @@
       ]
     },
     {
-      "name": "release-clangcl-ninjia-vcpkg",
+      "name": "release-clangcl-ninja-vcpkg",
+      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -186,20 +212,63 @@
         "packaging-vcpkg",
         "compiler-clang-cl"
       ]
+    },
+    {
+      "name": "general-debug-clangcl-ninja-vcpkg-imgui",
+      "description": "General debug configuration with clang-cl, Ninja, and vcpkg, including ImGui dependencies.",
+      "hidden": true,
+      "inherits": [
+        "debug-clangcl-ninja-vcpkg"
+      ],
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "imgui-deps"
+      }
+    },
+    {
+      "name": "simple-ime",
+      "hidden": true,
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "simple-ime-deps;imgui-deps;commonlib-sse-deps",
+        "ENABLE_SIMPLE_IME": "ON"
+      }
+    },
+    {
+      "name": "simple-ime-debug-clangcl-ninja-vcpkg",
+      "inherits": [
+        "debug-clangcl-ninja-vcpkg",
+        "simple-ime"
+      ]
+    },
+    {
+      "name": "simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg",
+      "inherits": [
+        "RelWithDebInfo-clangcl-ninja-vcpkg",
+        "simple-ime"
+      ]
+    },
+    {
+      "name": "simple-ime-release-clangcl-ninja-vcpkg",
+      "inherits": [
+        "release-clangcl-ninja-vcpkg",
+        "simple-ime"
+      ]
     }
   ],
   "buildPresets": [
     {
-      "name": "build-debug-clangcl-ninjia-vcpkg",
-      "description": "build debug with clang-cl",
-      "displayName": "Debug (clang-cl ninjia vcpkg)",
-      "configurePreset": "debug-clangcl-ninjia-vcpkg"
+      "name": "build-simple-ime-debug-clangcl-ninja-vcpkg",
+      "displayName": "Debug SimpleIME (clang-cl ninja vcpkg)",
+      "configurePreset": "simple-ime-debug-clangcl-ninja-vcpkg"
     },
     {
-      "name": "build-release-clangcl-ninjia-vcpkg",
-      "description": "build release with clang-cl",
-      "displayName": "Release (clang-cl ninjia vcpkg)",
-      "configurePreset": "release-clangcl-ninjia-vcpkg"
+      "name": "build-simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg",
+      "displayName": "RelWithDebInfo SimpleIME (clang-cl ninja vcpkg)",
+      "configurePreset": "simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg"
+    },
+    {
+      "name": "build-simple-ime-release-clangcl-ninja-vcpkg",
+      "displayName": "Release SimpleIME (clang-cl ninja vcpkg)",
+      "configurePreset": "simple-ime-release-clangcl-ninja-vcpkg"
     }
   ]
 }

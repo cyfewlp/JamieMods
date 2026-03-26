@@ -1,0 +1,63 @@
+[Settings]
+Settings = "Settings"
+Apply = "Apply"
+Cancel = "Cancel"
+
+[Settings.Appearance]
+DarkMode = "Dark Mode"
+Languages = "Languages"
+Zoom = "Zoom"
+ThemeColor = "Theme Color"
+ThemeBuilder = "Theme Builder###ThemeBuilder"
+ContrastLevel = "Contrast Level"
+VerticalCandidateList = "Show Candidate List Vertically"
+AutoToggleLanguageBar = "Auto Show/Hide Language Bar"
+
+[Settings.Behaviour]
+EnableMod = "Enable Mod"
+EnableModToolTip = "Unchecked will disable all mod features (disables keyboard)."
+EnableUnicodePaste = "Enable Unicode Paste"
+EnableUnicodePasteToolTip = "Enable or disable the mod-provided Unicode paste feature."
+FixInconsistentTextEntryCount = "Fix Inconsistent Text Entry Count"
+FixInconsistentTextEntryCountToolTip = "If checked, mod will attempt disable IME when it detects an inconsistent text entry count. It may cause some issuses if a 3rd party disabled Cursor but exists active text entry."
+Focus = "Focus"
+FocusTooltip = "IME is only enabled when a text entry is active and has keyboard focus."
+ForceFocusIme = "Request Focus"
+ImeEnabled = "IME Enabled"
+ImeEnabledTooltip = "By default, IME is only enabled when a text entry exists."
+KeepImeOpen = "Keep IME Open"
+KeepImeOpenTooltip = "Usually used to enable IME for text entries that do not support IME."
+States = "States"
+
+[Settings.FontBuilder]
+Add = "Add Font"
+Help = "Help"
+HelpTitle = "What is Font Builder?"
+Help1 = "The Font Builder is a tool designed to customize your ImGui font setup. You can assign different font files to specific Unicode ranges (e.g., Latin, CJK)."
+Help2 = "Glyph searching follows the font priority list. If a character is not found in the first font, the system will move to the next one in the sequence."
+Preview = "Preview"
+Reset = "Reset"
+SetAsDefault = "Set As Default Font"
+Warning = "Warning"
+WarningTitle = "Warning###Warning"
+Warning1 = "To ensure stability and performance, please avoid adding too many fonts or using font files that are excessively large. High memory usage from large fonts may lead to lag."
+
+[Settings.Sidebar]
+Appearance = "Appearance"
+Behaviour = "Behaviour"
+FontBuilder = "Font Builder"
+
+[Settings.Behaviour.ImePos]
+Policy = "IME window position update policy"
+UpdateByCaret = "Based on caret position"
+UpdateByCaretTooltip = "Automatically update the IME window based on the caret position of the currently active input box."
+UpdateByCursor = "Based on cursor position"
+UpdateByCursorTooltip = "Update the IME window position according to the current mouse cursor position."
+UpdateByNone = "None"
+UpdateByNoneTooltip = "IME window position is not updated automatically."
+
+[Settings.FontBuilder.PreviewPanel]
+BuilderFont = "Previewing Generated Font"
+Debouncing = "Updating..."
+NotSelectedFont = "No font selected (Previewing Default)"
+NotSupportedFont = "Unsupported font format."

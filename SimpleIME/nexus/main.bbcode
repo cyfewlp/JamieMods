@@ -1,0 +1,75 @@
+﻿[center][color=#FFD700][b]🧪 测试版 v2.0.0-beta 现已在 [url=https://github.com/cyfewlp/JamieMods/releases]GitHub[/url] 发布，欢迎体验并反馈问题！[/b][/color][/center]
+
+[center][img]https://i.imgur.gg/XxD8jz6-屏幕截图_2026-03-25_121918.png[/img][/center]
+
+[color=#E7E0E8]
+[center][size=5][color=#D3BCFD][b]SimpleIME[/b][/color][/size]
+[size=3]Native IME support for Skyrim SE/AE · 为上古卷轴5 SE/AE 提供输入法支持[/size][/center]
+
+[line]
+
+[size=4][color=#D3BCFD][b]What is this? · 这是什么？[/b][/color][/size]
+
+SimpleIME is a SKSE plugin that unlocks full IME (Input Method Editor) support in Skyrim SE/AE. It intercepts the OS input pipeline and renders a custom composition and candidate window using ImGui, allowing you to type Chinese, Japanese, Korean, and other multi-byte languages anywhere the game accepts text input.
+
+SimpleIME 是一个 SKSE 插件, 为上古卷轴5 SE/AE 解锁完整的输入法(IME)支持。它接管系统输入管道，并使用 ImGui 渲染合成窗口和候选词窗口，让你能够在游戏任意文本框中输入中文、日文、韩文等多字节语言。
+
+[line]
+
+[size=4][color=#D3BCFD][b]Why do I need it? · 为什么需要它？[/b][/color][/size]
+
+The base game doesn't require IME. But if you use [b]SkyUI[/b] or any mod built on the game's UI layer (inventory search, NPC search, crafting filters…), you will want to type in your own language.
+
+基础游戏不需要输入法，但如果你使用 [b]SkyUI[/b] 或任何基于游戏 UI 层的 Mod（如物品搜索、NPC 搜索、合成过滤……），你就需要用自己的语言输入。
+
+[line]
+
+[size=4][color=#D3BCFD][b]Features · 功能[/b][/color][/size]
+
+[list]
+[*][color=#CDC2DB]Automatic IME activation[/color] — the IME automatically activates when you focus on a text field and deactivates when you leave it; no manual toggling required.
+[color=#CDC2DB]自动激活输入法[/color] —— 当你聚焦在文本框时输入法会自动激活，离开时自动停用，无需手动切换;
+[*][color=#CDC2DB]IME switch support[/color] — the language bar shows the active input method and allows you to switch between them by UI without leaving the game.
+[color=#CDC2DB]输入法切换支持[/color] —— 语言栏显示当前激活的输入法，并允许你在游戏内通过 UI 切换输入法。
+[*][color=#CDC2DB]TSF-based IME[/color] — uses the modern Text Services Framework; composition and candidate list are rendered natively in-game via ImGui.
+[color=#CDC2DB]基于 TSF 的输入法集成[/color] —— 使用现代文字服务框架（TSF），合成字符串与候选词通过 ImGui 在游戏内原生渲染。
+[*][color=#CDC2DB]System default font[/color] — the IME window uses the system default font, ensuring proper display of all languages and symbols.
+[color=#CDC2DB]系统默认字体[/color] —— IME 窗口使用系统默认字体，确保所有语言和符号的正确显示。
+[*][color=#CDC2DB]Auto caret tracking[/color] — the IME window automatically follows the active text cursor on screen, including in scrollable fields.
+[color=#CDC2DB]自动追踪光标位置[/color] —— IME 窗口自动跟随当前激活的文本光标，支持可滚动的文本框。
+[*][color=#CDC2DB]Font Builder[/color] — browse all installed fonts (or load from a file path), preview them in real time, and assign separate fonts for Latin, CJK, and emoji glyphs. UI icons are provided by a repackaged minimal [url=https://lucide.dev]Lucide[/url] TTF.
+[color=#CDC2DB]字体构建器[/color] —— 浏览所有已安装字体（或从路径加载），实时预览，可为拉丁字符、CJK 字符、Emoji 分别指定不同字体。UI 图标由仅包含所用图标的精简版 [url=https://lucide.dev]Lucide[/url] 字体提供。
+[*][color=#CDC2DB]Theme Builder (Material You)[/color] — pick any seed color; the entire UI palette is generated in real time using Google's HCT color space. Supports dark and light mode.
+[color=#CDC2DB]主题构建器（Material You）[/color] —— 选择任意种子颜色，整套 UI 配色由 Google HCT 色彩空间实时生成，支持深色/浅色模式切换。
+[*][color=#CDC2DB]Unicode paste[/color] — paste Unicode text from the clipboard into any text field (Ctrl+V).
+[color=#CDC2DB]Unicode 粘贴[/color] —— 支持从剪贴板粘贴 Unicode 文本（Ctrl+V）到任意文本框。[/list]
+
+[line]
+
+[size=4][color=#D3BCFD][b]Quick Start · 快速开始[/b][/color][/size]
+
+[list]
+[*]Install a font mod that covers your language (e.g. a Chinese or Japanese font mod on Nexus).
+安装支持你语言的游戏字体 Mod（如支持中文/日文的字体 Mod）。
+[*]Enable your OS input method (e.g. Microsoft PinYin, Google Japanese IME).
+在系统中启用你的输入法（如微软拼音、Google 日语输入法）。
+[*]Launch the game. Press [b]F2[/b] (default) to open the Tool Window and verify the active input method is shown.
+启动游戏，按 [b]F2[/b]（默认）打开工具窗口，确认已显示当前激活的输入法。
+[*]Open any searchable UI (SkyUI inventory, console, etc.) and start typing.
+打开任意可搜索的界面（SkyUI 物品栏、控制台等），直接输入。
+[/list]
+
+[line]
+
+[size=4][color=#D3BCFD][b]More · 更多[/b][/color][/size]
+
+[url=https://www.nexusmods.com/skyrimspecialedition/articles/11841]📄 User Guide[/url] · [url=https://www.nexusmods.com/skyrimspecialedition/articles/11842]📄 使用指南（中文）[/url] · [url=https://www.nexusmods.com/skyrimspecialedition/articles/11843]📄 Compatibility & Mod Authors[/url] · [url=https://github.com/cyfewlp/JamieMods/blob/main/SimpleIME/CHANGELOG.md]📄 Changelog[/url]
+
+[line]
+
+[size=4][color=#D3BCFD][b]Source Code · 源代码[/b][/color][/size]
+
+[url=https://github.com/cyfewlp/JamieMods]https://github.com/cyfewlp/JamieMods[/url]
+
+Bug reports and pull requests are welcome. · 欢迎提交 Issue 和 PR。
+[/color]

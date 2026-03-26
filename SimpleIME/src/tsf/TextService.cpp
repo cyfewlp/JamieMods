@@ -1,85 +1,115 @@
 //
 // Created by jamie on 2025/2/22.
 //
-#include "common/log.h"
 #include "core/State.h"
+#include "log.h"
 #include "tsf/TextStore.h"
 #include "tsf/TsfSupport.h"
 
-namespace LIBC_NAMESPACE_DECL
-{
 namespace Tsf
 {
-HRESULT TextService::Initialize()
+auto TextService::Initialize(ITfThreadMgr *threadMgr, TfClientId clientId) -> HRESULT
 {
-    m_pTextStore           = new TextStore(this, &m_textEditor);
-    auto const &tsfSupport = TsfSupport::GetSingleton();
-    // callback
-    auto callback = [](const GUID * /*guid*/, const ULONG ulong) {
-        DoUpdateConversionMode(ulong);
-        return S_OK;
-    };
-    m_pCompartment = new TsfCompartment();
-    HRESULT hresult =
-        m_pCompartment->Initialize(tsfSupport.GetThreadMgr(), GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, callback);
-    if (SUCCEEDED(hresult))
+    HRESULT hr = threadMgr->QueryInterface(__uuidof(ITfThreadMgr), reinterpret_cast<void **>(&m_threadMgr));
+    if (FAILED(hr))
     {
-        hresult = m_pTextStore->Initialize(tsfSupport.GetThreadMgr(), tsfSupport.GetTfClientId());
+        logger::error("Can't get ITfThreadMgr: {:#X}", static_cast<uint32_t>(hr));
+        return hr;
     }
-    return hresult;
+    m_clientId                     = clientId;
+    m_textStore                    = new TextStore(this);
+    m_conversionModeCompartment    = new TsfCompartment();
+    m_keyboardOpenCloseCompartment = new TsfCompartment();
+
+    hr = m_conversionModeCompartment->Initialize(
+        m_threadMgr, clientId, GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, [](const GUID * /*guid*/, const ULONG ulong) {
+            UpdateConversionMode(ulong);
+            return S_OK;
+        }
+    );
+
+    if (SUCCEEDED(hr))
+    {
+        hr = m_keyboardOpenCloseCompartment->Initialize(
+            m_threadMgr, clientId, GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, [](const GUID *, const ULONG ulong) {
+                State::GetInstance().Set(State::KEYBOARD_OPEN, ulong != 0);
+                return S_OK;
+            }
+        );
+    }
+    if (SUCCEEDED(hr))
+    {
+        hr = m_textStore->Initialize(threadMgr, clientId);
+    }
+
+    return hr;
 }
 
-void TextService::UpdateConversionMode()
+void TextService::UpdateConversionMode() const
 {
-    ULONG convertionMode = 0;
-    if (SUCCEEDED(m_pCompartment->GetValue(convertionMode)))
+    ULONG conversionMode = 0;
+    if (SUCCEEDED(m_conversionModeCompartment->GetValue(conversionMode)))
     {
-        DoUpdateConversionMode(convertionMode);
+        UpdateConversionMode(conversionMode);
     }
 }
 
-void TextService::DoUpdateConversionMode(const ULONG convertionMode)
+void TextService::UpdateConversionMode(const ULONG conversionMode)
 {
-    log_trace("DoUpdateConversionMode");
-    if ((convertionMode & IME_CMODE_LANGUAGE) == TF_CONVERSIONMODE_ALPHANUMERIC)
+    State::GetInstance().GetConversionMode().Set(conversionMode);
+}
+
+auto TextService::OnFocus(bool focus) -> bool
+{
+    HRESULT hr = E_FAIL;
+    if (focus)
     {
-        State::GetInstance().Set(State::IN_ALPHANUMERIC);
+        hr = m_textStore->Focus();
+        UpdateConversionMode();
     }
     else
     {
-        State::GetInstance().Clear(State::IN_ALPHANUMERIC);
+        hr = m_textStore->ClearFocus();
     }
+    m_keyboardOpenCloseCompartment->SetValue(static_cast<DWORD>(focus)); // true -> open, false -> close
+    const auto succeeded = SUCCEEDED(hr);
+    if (succeeded)
+    {
+        State::GetInstance().Set(State::TEXT_SERVICE_FOCUS, focus);
+    }
+    return succeeded;
 }
 
-auto TextService::ProcessImeMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> bool
+auto TextService::SetConversionMode(DWORD conversionMode) -> bool
 {
-    switch (uMsg)
-    {
-        case WM_IME_NOTIFY:
-            if (!m_pTextStore->IsSupportCandidateUi())
-            {
-                if (m_fallbackTextService.ProcessImeMessage(hWnd, uMsg, wParam, lParam))
-                {
-                    m_candidateUi.Close();
-                    auto &candidateUi = m_fallbackTextService.GetCandidateUi();
-                    if (const auto &candidateList = candidateUi.UnsafeCandidateList(); candidateList.size() > 0)
-                    {
-                        for (const auto &candidate : candidateList)
-                        {
-                            m_candidateUi.PushBack(candidate);
-                        }
-                        candidateUi.Close();
-                        m_candidateUi.SetSelection(candidateUi.Selection());
-                        m_candidateUi.SetPageSize(candidateUi.PageSize());
-                        return true;
-                    }
-                }
-            }
-            break;
-        default:
-            break;
-    }
+    return SUCCEEDED(m_conversionModeCompartment->SetValue(conversionMode));
+}
+
+auto TextService::ProcessImeMessage(HWND /*hWnd*/, UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/) -> bool
+{
+    // This fallback is practically unnecessary.
+    // If the current environment supports TSF APIs but fails to provide a Candidate UI (UIElement),
+    // it is likely a severe system-level anomaly rather than a supported configuration.
+    //
+    // Logic: Our architecture already separates concerns by initializing a legacy Imm32
+    // TextService if TSF is disabled or fails to initialize. Therefore, within the
+    // TSF-enabled service, we assume UIElement support is guaranteed.
+    // switch (uMsg)
+    // {
+    //     case WM_IME_NOTIFY:
+    //         if (!m_pTextStore->IsSupportCandidateUi())
+    //         {
+    //             if (m_fallbackTextService.ProcessImeMessage(hWnd, uMsg, wParam, lParam))
+    //             {
+    //                 const std::unique_lock lock(m_mutex);
+    //                 m_candidateUi = m_fallbackTextService.GetCandidateUi();
+    //                 MarkDirty();
+    //             }
+    //         }
+    //         break;
+    //     default:
+    //         break;
+    // }
     return false;
 }
 } // namespace Tsf
-} // namespace LIBC_NAMESPACE_DECL

@@ -1,0 +1,50 @@
+[core]
+# 快捷键配置，格式: <key> 或 <modifier(s)> + <key>，多个部分用 '+' 分隔，忽略空格
+# <key>      : F1-F12, NumPad0-9, A-Z, 0-9 等 ImGui 支持的按键名
+# <modifier> : ctrl, shift, alt, super (可组合)
+# 示例: "F2", "ctrl + A", "ctrl + shift + alt + A"
+# 注意: 不支持多个普通键组合 (如 A + B)，末尾不能为 '+', F1-F12 不能和任何 <modifier> 组合(游戏限制), 非法配置将使用默认值
+#默认值为 F2
+shortcut = "f2"
+# 强烈建议开启，只需要保证您的系统版本大于 Window 8.1(除非您手动将 TSF 关闭了，或者您是某些极简系统). 关闭将使用 Imm32, 支持不如 TSF
+enable_tsf = true
+# 是否启用 Mod 功能
+enable_mod = true
+# 罕见的修复开关，打开时: 如果鼠标不可见，但依然存在激活的输入框, Mod 会主动禁用 IME 输入. 因为鼠标不可见通常意味着当前处于正常游戏阶段
+# 但是如果第三方 Menu 存在激活的输入框，但禁用了鼠标(例如某些极简 UI)，此开关可能会错误的禁用 IME，需要关闭此开关来修复这个问题
+fix_inconsistent_text_entry_count = true
+
+[core.logging]
+# "trace", "debug", "info", "warn", "error", "critical", "off"
+level = "info"
+flush_level = "info"
+
+[resources]
+# 翻译文件目录
+translation_dir = "Data/interface/SimpleIME"
+# [可选] 用于 SimpleIME 的字体文件路径列表，支持 ttf 和 otf 格式，Mod 会按照列表顺序加载字体并合并到一起
+# 如果列表为空或所有字体文件都无效，将使用系统默认字体
+# 示例: ["C:/Windows/Fonts/simhei.ttf", "C:/Windows/Fonts/seguiemj.ttf"]
+fonts = []
+
+[appearance]
+# UI缩放倍率，有效值为 0.5 - 2.0, 请使用 0.25 的整数倍
+# 可以指定为负数，表示应用当前显示器的缩放倍率
+zoom = -1.0
+theme_dark_mode = true
+language = "english"
+# 垂直显示候选词列表
+vertical_candidate_list = false
+# RGB 颜色, 不包含 alpha
+theme_source_color = 0x673AB7
+# IME 激活/隐藏的同时，自动激活/隐藏语言栏
+auto_toggle_language_bar = true
+# 对比度，-1.0 - 1.0，默认值为 0.0
+theme_contrast_level = 0.0
+# 错误信息显示持续时间 (秒)，-1 为不自动关闭
+error_display_duration = 10
+
+[input]
+pos_update_policy = "based_on_caret"
+enable_unicode_paste = true
+keep_ime_open = false

@@ -1,0 +1,3 @@
+toml
+colorama
+pre-commit

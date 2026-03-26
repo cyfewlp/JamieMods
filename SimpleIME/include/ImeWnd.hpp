@@ -3,33 +3,34 @@
 
 #pragma once
 
-#include "ImeUI.h"
 #include "core/State.h"
 #include "ime/ITextService.h"
-#include "tsf/LangProfileUtil.h"
+#include "tsf/InputMethodManager.h"
+#include "ui/ImeOverlay.h"
+#include "ui/ImeWindow.h"
 
 #include <atlcomcli.h>
-#include <d3d11.h>
 #include <windows.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-namespace LIBC_NAMESPACE_DECL
+namespace ImGuiEx::M3
 {
+class M3Styles;
+}
+
 namespace Ime
 {
-class ImmImeHandler;
-static inline auto g_tMainClassName = L"SimpleIME";
+static inline auto      g_MainClassName                  = L"SimpleIME";
+static constexpr size_t TRANSLATOR_DEBONCE_DELAY_SECONDS = 10LLU;
 
 class ImeWnd
 {
-    static constexpr WORD ID_EDIT_COPY  = 1;
-    static constexpr WORD ID_EDIT_PASTE = 2;
-    using State                         = Core::State;
+    using State = Core::State;
 
 public:
-    ImeWnd(Settings &settings);
+    ImeWnd() = default;
     ~ImeWnd();
 
     ImeWnd(ImeWnd &&a_imeWnd)                 = delete;
@@ -37,8 +38,8 @@ public:
     ImeWnd &operator=(ImeWnd &&a_imeWnd)      = delete;
     ImeWnd &operator=(const ImeWnd &a_imeWnd) = delete;
 
-    void Initialize() noexcept(false);
-    void UnInitialize() const noexcept;
+    void Initialize(bool enableTsf) noexcept(false);
+    void UnInitialize() noexcept;
 
     /**
      * Work on standalone thread and run own message loop.
@@ -46,59 +47,75 @@ public:
      * with COINIT_MULTITHREADED(crash logger) to affect our TSF code.
      *
      * @param hWndParent Main window (game window)
-     * @param pSettings
+     * @param settings @Settings
      */
-    void Start(HWND hWndParent, Settings *pSettings);
-    /**
-     * initialize ImGui. Work on UI thread.
-     */
-    void InitImGui(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context) const noexcept(false);
-    auto Focus() const -> void;
-    auto SetTsfFocus(bool focus) const -> bool;
-    auto IsFocused() const -> bool;
-    auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
-    auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
-    auto GetImeThreadId() const -> DWORD;
+    void CreateHost(HWND hWndParent, Settings &settings);
+    void Run() const;
 
-    constexpr auto GetHWND() const -> HWND
+    auto Focus() const -> void;
+    auto FocusTextService(bool focus) const -> bool;
+    auto IsFocused() const -> bool;
+    auto SendMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> LRESULT;
+    auto SendNotifyMessageToIme(UINT uMsg, WPARAM wparam, LPARAM lparam) const -> bool;
+
+    //! Must call from IME thread.
+    //! @see ImeController::CommitCandidate
+    void CommitCandidate(const DWORD index) const
     {
-        return m_hWnd;
+        if (m_textService)
+        {
+            m_textService->CommitCandidate(index);
+        }
     }
+
+    //! Must call from IME thread.
+    //! @see ImeController::SetConversionMode
+    void SetConversionMode(const DWORD conversionMode) const
+    {
+        if (m_textService)
+        {
+            m_textService->SetConversionMode(conversionMode);
+        }
+    }
+
+    //! Must call from IME thread.
+    //! @see ImeController::ActivateLangProfile
+    auto ActivateLanguageProfile(const GUID &guidProfile) const -> HRESULT;
+
+    auto GetHWND() const -> HWND { return m_hWnd; }
 
     /**
      * Focus to a parent window to abort IME
      */
     void AbortIme() const;
-    void DrawIme(Settings &settings) const;
-    void ShowToolWindow() const;
-    void ApplyUiSettings(Settings *pSettings) const;
+    void Draw(Settings &settings);
 
 private:
     static auto WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-    static auto GetThis(HWND hWnd) -> ImeWnd *;
-    static void NewFrame();
     static auto OnNccCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct) -> LRESULT;
-    static void OnCompositionResult(const std::wstring &compositionString);
+    static void TsfMessageLoop();
 
-    void        OnStart(Settings *pSettings);
-    static auto OnCreate() -> LRESULT;
-    auto        SaveSettings() const -> void;
-    auto        OnDestroy() const -> LRESULT;
-    void        InitializeTextService(const AppConfig &pAppConfig);
-    static auto IsImeWantMessage(const MSG &msg, ITfKeystrokeMgr *pKeystrokeMgr);
-    void        ForwardKeyboardMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
+    auto OnCreated(Settings &settings) -> void;
 
-    Settings                     &m_settings;
-    std::unique_ptr<ImeUI>        m_pImeUi       = nullptr;
-    std::unique_ptr<ITextService> m_pTextService = nullptr;
-    CComPtr<LangProfileUtil>      m_pLangProfileUtil;
-    HWND                          m_hWnd       = nullptr;
-    HWND                          m_hWndParent = nullptr;
-    WNDCLASSEXW                   wc{};
-    bool                          m_fEnableTsf = false;
-    bool                          m_fFocused   = false;
+    [[nodiscard]] auto OnDestroy() -> LRESULT;
+
+    void InitializeTextService();
+    void DrawImeStates();
+
+    DebounceTimer                   m_translatorLoadDebounceTimer{std::chrono::seconds(TRANSLATOR_DEBONCE_DELAY_SECONDS)};
+    std::unique_ptr<ImeWindow>      m_imeWindow             = nullptr;
+    std::unique_ptr<UI::ImeOverlay> m_imeOverlay            = nullptr;
+    std::unique_ptr<ITextService>   m_textService           = nullptr;
+    CComPtr<InputMethodManager>     m_inputMethodManager    = nullptr;
+    HWND                            m_hWnd                  = nullptr;
+    HWND                            m_hWndParent            = nullptr;
+    DWORD                           m_gameThreadId          = 0;
+    float                           m_uiScale               = 1.0F;
+    bool                            m_fWantUpdateUiScale    = true; ///< update scale in the first frame.
+    bool                            m_fFocused              = false;
+    bool                            m_fEnabledTsf           = true;
+    bool                            m_fJustWantCaptureMouse = false;
 };
-} // namespace SimpleIME
-} // namespace LIBC_NAMESPACE_DECL
+} // namespace Ime
 
 #endif
