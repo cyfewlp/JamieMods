@@ -16,43 +16,24 @@ public:
     static constexpr float DEFAULT_WINDOW_WIDTH_SMALL = 200;
 
     static constexpr float DEFAULT_OUTFIT_LIST_WINDOW_POS_X = DEFAULT_WINDOW_POS_X;
-    static constexpr float DEFAULT_MAIN_WINDOW_POS_X =
-        DEFAULT_OUTFIT_LIST_WINDOW_POS_X + DEFAULT_WINDOW_WIDTH_SMALL + 10;
+    static constexpr float DEFAULT_MAIN_WINDOW_POS_X        = DEFAULT_OUTFIT_LIST_WINDOW_POS_X + DEFAULT_WINDOW_WIDTH_SMALL + 10;
     static constexpr float DEFAULT_OUTFIT_EDIT_WINDOW_POS_X = DEFAULT_MAIN_WINDOW_POS_X + DEFAULT_WINDOW_WIDTH + 10;
 
     virtual ~BaseGui() = default;
 
-    virtual void Show()
-    {
-        m_show = true;
-    }
+    virtual void Show() { m_show = true; }
 
     virtual void OnRefresh() {}
 
-    void Hide()
-    {
-        m_show = false;
-    }
+    void Hide() { m_show = false; }
 
-    void ToggleShow()
-    {
-        m_show = !m_show;
-    }
+    void ToggleShow() { m_show = !m_show; }
 
-    bool IsShowing() const
-    {
-        return m_show;
-    }
+    bool IsShowing() const { return m_show; }
 
-    virtual void Focus()
-    {
-        m_focused = true;
-    }
+    virtual void Focus() { m_focused = true; }
 
-    auto IsFocused() const -> bool
-    {
-        return m_focused;
-    }
+    auto IsFocused() const -> bool { return m_focused; }
 
 protected:
     bool m_show = false;
@@ -60,4 +41,4 @@ protected:
 private:
     bool m_focused = false;
 };
-}
+} // namespace LIBC_NAMESPACE_DECL

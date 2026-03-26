@@ -20,10 +20,7 @@ struct ArmorView final
     using Armor           = RE::TESObjectARMO;
     using SlotEnumeration = SKSE::stl::enumeration<Slot, uint32_t>;
 
-    static bool IsArmorNonPlayable(const Armor *armor)
-    {
-        return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0;
-    }
+    static bool IsArmorNonPlayable(const Armor *armor) { return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0; }
 
     struct ArmorFilter final : ImGuiUtil::DebounceInput
     {
@@ -40,10 +37,7 @@ struct ArmorView final
 
         bool PassFilter(const Armor *armor) const;
 
-        void Clear()
-        {
-            passModList.clear();
-        }
+        void Clear() { passModList.clear(); }
     };
 
     struct ArmorMultiSelection : MultiSelection
@@ -60,10 +54,7 @@ struct ArmorView final
             return con;
         }
 
-        auto IsSelectSlot(Slot slot) const -> bool
-        {
-            return slotMask.all(slot);
-        }
+        auto IsSelectSlot(Slot slot) const -> bool { return slotMask.all(slot); }
 
         void Clear()
         {
@@ -83,20 +74,11 @@ struct ArmorView final
     public:
         explicit RankedArmor(const Armor *const armor, const size_t rank) : armor(armor), rank(rank) {}
 
-        [[nodiscard]] auto Rank() const -> size_t
-        {
-            return rank;
-        }
+        [[nodiscard]] auto Rank() const -> size_t { return rank; }
 
-        auto operator->() const -> const Armor *
-        {
-            return armor;
-        }
+        auto operator->() const -> const Armor * { return armor; }
 
-        operator const Armor *() const
-        {
-            return armor;
-        }
+        operator const Armor *() const { return armor; }
     };
 
 private:
@@ -154,16 +136,10 @@ public:
     auto               find_armor(const Armor *armor) const -> std::expected<size_t, error>;
     bool               no_select_any_slot() const;
 
-    [[nodiscard]] auto ViewData() const -> const std::vector<RankedArmor> &
-    {
-        return viewData;
-    }
+    [[nodiscard]] auto ViewData() const -> const std::vector<RankedArmor> & { return viewData; }
 
-    auto SwapViewData(std::vector<RankedArmor> &other) -> void
-    {
-        viewData.swap(other);
-    }
+    auto SwapViewData(std::vector<RankedArmor> &other) -> void { viewData.swap(other); }
 };
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // ARMORVIEW_H

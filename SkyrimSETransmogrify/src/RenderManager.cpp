@@ -174,9 +174,7 @@ void RenderManager::D3DInit()
     initialized.store(true);
 
     LOG(debug, "Hooking Skyrim WndProc...");
-    RealWndProc = reinterpret_cast<WNDPROC>(
-        SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RenderManager::WndProc))
-    );
+    RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(sd.OutputWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RenderManager::WndProc)));
     if (!RealWndProc)
     {
         LOG(err, "Hook WndProc failed!");
@@ -205,9 +203,7 @@ void RenderManager::ConfigImGui(HWND hwnd)
     io.MouseDrawCursor          = true;
     io.ConfigNavMoveSetMousePos = true;
 
-    io.Fonts->AddFontFromFileTTF(
-        config->eastAsiaFontFile.c_str(), config->fontSize, nullptr, io.Fonts->GetGlyphRangesChineseFull()
-    );
+    io.Fonts->AddFontFromFileTTF(config->eastAsiaFontFile.c_str(), config->fontSize, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 
     static ImFontConfig cfg;
     cfg.OversampleH = cfg.OversampleV = 1;

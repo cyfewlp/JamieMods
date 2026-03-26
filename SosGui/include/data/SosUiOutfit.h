@@ -29,16 +29,12 @@ private:
     bool                                   m_isFavorite = false;
 
 public:
-    explicit constexpr SosUiOutfit(OutfitId id, const std::string &name, bool favorite = false)
-        : m_id(id), m_name(name), m_isFavorite(favorite)
+    explicit constexpr SosUiOutfit(OutfitId id, const std::string &name, bool favorite = false) : m_id(id), m_name(name), m_isFavorite(favorite)
     {
         m_armors.fill(nullptr);
     }
 
-    [[nodiscard]] constexpr auto GetId() const -> OutfitId
-    {
-        return m_id;
-    }
+    [[nodiscard]] constexpr auto GetId() const -> OutfitId { return m_id; }
 
     void AddArmor(const Armor *armor);
 
@@ -46,40 +42,19 @@ public:
 
     auto GetArmorAt(uint32_t slotPos) const -> const Armor *;
 
-    auto HasSlot(uint32_t slotPos) const -> bool
-    {
-        return m_slotMask.all(static_cast<Slot>(1 << slotPos));
-    }
+    auto HasSlot(uint32_t slotPos) const -> bool { return m_slotMask.all(static_cast<Slot>(1 << slotPos)); }
 
-    auto IsConflictWith(const Armor *armor) const -> bool
-    {
-        return m_slotMask.any(armor->GetSlotMask());
-    }
+    auto IsConflictWith(const Armor *armor) const -> bool { return m_slotMask.any(armor->GetSlotMask()); }
 
-    void SetName(const std::string &newName)
-    {
-        m_name.assign(newName);
-    }
+    void SetName(const std::string &newName) { m_name.assign(newName); }
 
-    void SetFavorite(bool isFavorite)
-    {
-        m_isFavorite = isFavorite;
-    }
+    void SetFavorite(bool isFavorite) { m_isFavorite = isFavorite; }
 
-    [[nodiscard]] constexpr auto IsFavorite() const -> bool
-    {
-        return m_isFavorite;
-    }
+    [[nodiscard]] constexpr auto IsFavorite() const -> bool { return m_isFavorite; }
 
-    [[nodiscard]] auto GetName() const -> const std::string &
-    {
-        return m_name;
-    }
+    [[nodiscard]] auto GetName() const -> const std::string & { return m_name; }
 
-    [[nodiscard]] auto IsEmpty() const -> bool
-    {
-        return m_slotMask.underlying() == 0;
-    }
+    [[nodiscard]] auto IsEmpty() const -> bool { return m_slotMask.underlying() == 0; }
 
     void SetSlotPolicies(const uint32_t slotPos, const std::string &policy)
     {
@@ -90,10 +65,7 @@ public:
         m_slotPolicies.at(slotPos) = policy;
     }
 
-    [[nodiscard]] auto GetSlotPolicies() const -> const SlotPolicyArray &
-    {
-        return m_slotPolicies;
-    }
+    [[nodiscard]] auto GetSlotPolicies() const -> const SlotPolicyArray & { return m_slotPolicies; }
 
     auto GetUniqueArmors() const -> std::unordered_set<const Armor *>;
 };
@@ -109,25 +81,13 @@ public:
 
     explicit EditingOutfit(const SosUiOutfit *pOutfit) : m_sourceOutfit(pOutfit) {}
 
-    [[nodiscard]] auto GetSourceOutfit() const -> const SosUiOutfit *
-    {
-        return m_sourceOutfit;
-    }
+    [[nodiscard]] auto GetSourceOutfit() const -> const SosUiOutfit * { return m_sourceOutfit; }
 
-    auto operator->() const -> const SosUiOutfit *
-    {
-        return m_sourceOutfit;
-    }
+    auto operator->() const -> const SosUiOutfit * { return m_sourceOutfit; }
 
-    auto GetId() const -> OutfitId
-    {
-        return m_sourceOutfit->GetId();
-    }
+    auto GetId() const -> OutfitId { return m_sourceOutfit->GetId(); }
 
-    bool IsUntitled() const
-    {
-        return GetId() == UNTITLED_OUTFIT_ID;
-    }
+    bool IsUntitled() const { return GetId() == UNTITLED_OUTFIT_ID; }
 
     auto GetName() const
     {
@@ -135,25 +95,13 @@ public:
         return m_sourceOutfit->GetName();
     }
 
-    bool IsConflictWith(const RE::TESObjectARMO *armor) const
-    {
-        return m_sourceOutfit->IsConflictWith(armor);
-    }
+    bool IsConflictWith(const RE::TESObjectARMO *armor) const { return m_sourceOutfit->IsConflictWith(armor); }
 
-    bool IsEmpty() const
-    {
-        return m_sourceOutfit->IsEmpty();
-    }
+    bool IsEmpty() const { return m_sourceOutfit->IsEmpty(); }
 
-    auto GetArmorAt(uint32_t slotIdx) const -> const RE::TESObjectARMO *
-    {
-        return m_sourceOutfit->GetArmorAt(slotIdx);
-    }
+    auto GetArmorAt(uint32_t slotIdx) const -> const RE::TESObjectARMO * { return m_sourceOutfit->GetArmorAt(slotIdx); }
 
-    auto GetSlotPolicies() const -> const SosUiOutfit::SlotPolicyArray &
-    {
-        return m_sourceOutfit->GetSlotPolicies();
-    }
+    auto GetSlotPolicies() const -> const SosUiOutfit::SlotPolicyArray & { return m_sourceOutfit->GetSlotPolicies(); }
 };
 
 constexpr auto GetOutfitId(const SosUiOutfit &outfit)
@@ -165,4 +113,4 @@ constexpr auto GetOutfitName(const SosUiOutfit &outfit)
 {
     return outfit.GetName();
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

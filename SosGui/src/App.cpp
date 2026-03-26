@@ -102,8 +102,7 @@ void App::DoD3DInit()
     {
         throw InitFail("Can't initialize SosGui.");
     }
-    RealWndProc =
-        reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
+    RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
     if (RealWndProc == nullptr)
     {
         throw InitFail("Hook WndProc failed!");
@@ -111,4 +110,4 @@ void App::DoD3DInit()
     m_fInitialized.store(true);
     SosGuiMenu::RegisterMenu();
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

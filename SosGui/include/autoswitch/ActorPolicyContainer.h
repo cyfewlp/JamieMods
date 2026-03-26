@@ -75,10 +75,7 @@ public:
         {
         }
 
-        explicit PolicyEntry(const RE::FormID actorId, const Policy policy, const OutfitId id)
-            : actorId(actorId), policy(policy), outfitId(id)
-        {
-        }
+        explicit PolicyEntry(const RE::FormID actorId, const Policy policy, const OutfitId id) : actorId(actorId), policy(policy), outfitId(id) {}
     };
 
     typedef BOOST_MULTI_INDEX_MEMBER(PolicyEntry, RE::FormID, actorId) KeyByFormId;
@@ -133,10 +130,7 @@ public:
         }
     }
 
-    void Clear()
-    {
-        m_container.clear();
-    }
+    void Clear() { m_container.clear(); }
 
     auto TryFind(const RE::FormID formId, uint32_t uintPolicy) const -> boost::optional<Container::iterator>
     {
@@ -158,15 +152,9 @@ public:
         return m_container.find(boost::make_tuple(formId, policy));
     }
 
-    constexpr auto IsEmpty() const -> bool
-    {
-        return m_container.empty();
-    }
+    constexpr auto IsEmpty() const -> bool { return m_container.empty(); }
 
-    constexpr auto Size() const -> size_t
-    {
-        return m_container.size();
-    }
+    constexpr auto Size() const -> size_t { return m_container.size(); }
 
     template <typename Entry>
     auto erase(Entry &&entry) -> bool
@@ -199,30 +187,15 @@ public:
         }
     }
 
-    auto erase(const Container::iterator &where) -> Container::iterator
-    {
-        return m_container.erase(where);
-    }
+    auto erase(const Container::iterator &where) -> Container::iterator { return m_container.erase(where); }
 
-    auto begin() -> Container::iterator
-    {
-        return m_container.begin();
-    }
+    auto begin() -> Container::iterator { return m_container.begin(); }
 
-    auto begin() const -> Container::const_iterator
-    {
-        return m_container.begin();
-    }
+    auto begin() const -> Container::const_iterator { return m_container.begin(); }
 
-    auto end() -> Container::iterator
-    {
-        return m_container.end();
-    }
+    auto end() -> Container::iterator { return m_container.end(); }
 
-    auto end() const -> Container::const_iterator
-    {
-        return m_container.end();
-    }
+    auto end() const -> Container::const_iterator { return m_container.end(); }
 
     template <typename Func>
     void for_each(const RE::FormID actorId, Func &&func)
@@ -235,5 +208,5 @@ public:
         }
     }
 };
-}
-}
+} // namespace AutoSwitch
+} // namespace LIBC_NAMESPACE_DECL

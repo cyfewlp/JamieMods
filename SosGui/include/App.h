@@ -41,4 +41,4 @@ private:
 
     void DoD3DInit();
 };
-}
+} // namespace LIBC_NAMESPACE_DECL

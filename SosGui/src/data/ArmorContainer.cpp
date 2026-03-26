@@ -38,14 +38,9 @@ auto ArmorContainer::GetRank(const char *armorName, RE::FormID formId) const -> 
     {
         return m_container.size();
     }
-    auto foundIt = std::lower_bound(
-        m_container.begin(),
-        m_container.end(),
-        armorName,
-        [](const Armor *armor, const char *searchName) {
-            return util::StringCompactor()(armor->GetName(), searchName);
-        }
-    );
+    auto foundIt = std::lower_bound(m_container.begin(), m_container.end(), armorName, [](const Armor *armor, const char *searchName) {
+        return util::StringCompactor()(armor->GetName(), searchName);
+    });
 
     if (foundIt == m_container.end() || (*foundIt)->formID == formId)
     {
@@ -66,4 +61,4 @@ auto ArmorContainer::GetRank(const char *armorName, RE::FormID formId) const -> 
     return std::distance(m_container.begin(), foundIt);
 }
 
-}
+} // namespace LIBC_NAMESPACE_DECL

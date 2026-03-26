@@ -15,8 +15,7 @@ namespace LIBC_NAMESPACE_DECL
 namespace AutoSwitch
 {
 void ActorPolicyView::Draw(
-    const RE::Actor *currentActor, SosUiData &uiData, const SosDataCoordinator &dataCoordinator,
-    const OutfitService &outfitService
+    const RE::Actor *currentActor, SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService
 )
 {
     ImGuiScope::Child child("##LocationAutoSwitch", {0, 0}, ImGuiChildFlags_AutoResizeY);
@@ -35,14 +34,9 @@ void ActorPolicyView::Draw(
         return;
     }
     static uint32_t selectedPolicyId = 0;
-    if (const auto table = ImGuiScope::Table(
-            "##AutoSwitchStateList", 2, TableFlags().Resizable().SizingStretchProp().RowBg().Borders().flags
-        ))
+    if (const auto table = ImGuiScope::Table("##AutoSwitchStateList", 2, TableFlags().Resizable().SizingStretchProp().RowBg().Borders().flags))
     {
-        TableHeadersBuilder()
-            .Column("$SosGui_TableHeader_Location")
-            .Column("$SosGui_TableHeader_Location_State")
-            .CommitHeadersRow();
+        TableHeadersBuilder().Column("$SosGui_TableHeader_Location").Column("$SosGui_TableHeader_Location_State").CommitHeadersRow();
         for (Policy policy :
              {Policy::Combat,
               Policy::World,
@@ -66,8 +60,7 @@ void ActorPolicyView::Draw(
             {
                 auto       key        = std::format("$SkyOutSys_Text_Autoswitch{}", policyId);
                 const bool isSelected = selectedPolicyId == policyId;
-                if (constexpr auto flags = SelectableFlag().AllowOverlap().SpanAllColumns().flags;
-                    Selectable(key.c_str(), isSelected, flags))
+                if (constexpr auto flags = SelectableFlag().AllowOverlap().SpanAllColumns().flags; Selectable(key.c_str(), isSelected, flags))
                 {
                     selectedPolicyId = policyId;
 
@@ -91,9 +84,7 @@ void ActorPolicyView::Draw(
         if (selectId != INVALID_OUTFIT_ID)
         {
             +[&, selectId] {
-                return outfitService.SetActorStateOutfit(
-                    outfitSelectPopup->actor, outfitSelectPopup->selectPolicyId, selectId
-                );
+                return outfitService.SetActorStateOutfit(outfitSelectPopup->actor, outfitSelectPopup->selectPolicyId, selectId);
             };
         }
         if (isHided)
@@ -125,5 +116,5 @@ void ActorPolicyView::Column1Outfit(const RE::FormID actorId, const uint32_t pol
                           });
     ImGui::Text("%s", name.c_str());
 }
-}
-}
+} // namespace AutoSwitch
+} // namespace LIBC_NAMESPACE_DECL

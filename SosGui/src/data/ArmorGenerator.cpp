@@ -1,4 +1,5 @@
 #include "data/ArmorGenerator.h"
+
 #include "common/config.h"
 #include "common/log.h"
 #include "util/utils.h"
@@ -10,8 +11,7 @@
 #include <RE/T/TESObjectARMO.h>
 #include <functional>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 auto ArmorItemVisitor::Visit(RE::InventoryEntryData *a_entryData) -> RE::BSContainer::ForEachResult
 {
@@ -27,8 +27,7 @@ auto ArmorItemVisitor::Visit(RE::InventoryEntryData *a_entryData) -> RE::BSConta
 
 void FormIdArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor)> &&action)
 {
-    if (const auto foundArmor = RE::TESForm::LookupByID<RE::TESObjectARMO>(armorFormId);
-        foundArmor != nullptr)
+    if (const auto foundArmor = RE::TESForm::LookupByID<RE::TESObjectARMO>(armorFormId); foundArmor != nullptr)
     {
         action(foundArmor);
     }
@@ -42,8 +41,7 @@ void NearObjectsInventoryArmorGenerator::for_each(std::function<void(RE::TESObje
     }
     for (const auto &entry : nearObjects[wantVisitIndex]->GetInventory())
     {
-        if (const auto armor = skyrim_cast<RE::TESObjectARMO *>(entry.first);
-            armor != nullptr)
+        if (const auto armor = skyrim_cast<RE::TESObjectARMO *>(entry.first); armor != nullptr)
         {
             action(armor);
         }
@@ -54,7 +52,7 @@ void NearObjectsInventoryArmorGenerator::Update()
 {
     nearObjects.clear();
     const RE::PlayerCharacter *player = RE::PlayerCharacter::GetSingleton();
-    const RE::TESObjectCELL *  cell   = player->GetParentCell();
+    const RE::TESObjectCELL   *cell   = player->GetParentCell();
 
     cell->ForEachReference([this](RE::TESObjectREFR *objectRef) {
         if (const auto &name = objectRef->GetName(); !name || !name[0])
@@ -63,8 +61,7 @@ void NearObjectsInventoryArmorGenerator::Update()
         }
         for (const auto &entry : objectRef->GetInventory())
         {
-            if (const auto *armor = entry.first->As<RE::TESObjectARMO>();
-                armor && util::IsArmorCanDisplay(armor))
+            if (const auto *armor = entry.first->As<RE::TESObjectARMO>(); armor && util::IsArmorCanDisplay(armor))
             {
                 nearObjects.push_back(objectRef);
                 break;
@@ -114,7 +111,7 @@ void CarriedArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor
 
 void BasicArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor)> &&action)
 {
-    auto *      dataHandler = RE::TESDataHandler::GetSingleton();
+    auto       *dataHandler = RE::TESDataHandler::GetSingleton();
     const auto &armorArray  = dataHandler->GetFormArray<RE::TESObjectARMO>();
 
     for (const auto &armor : armorArray)
@@ -125,4 +122,4 @@ void BasicArmorGenerator::for_each(std::function<void(RE::TESObjectARMO *armor)>
         }
     }
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

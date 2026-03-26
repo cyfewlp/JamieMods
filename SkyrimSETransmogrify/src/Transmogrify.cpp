@@ -113,8 +113,7 @@ void Transmogrify::CombineEventSinks::Install()
 }
 
 RE::BSEventNotifyControl Transmogrify::CombineEventSinks::ProcessEvent(
-    const RE::TESActorLocationChangeEvent                                *a_event,
-    [[maybe_unused]] RE::BSTEventSource<RE::TESActorLocationChangeEvent> *a_eventSource
+    const RE::TESActorLocationChangeEvent *a_event, [[maybe_unused]] RE::BSTEventSource<RE::TESActorLocationChangeEvent> *a_eventSource
 )
 {
     /*auto actor = a_event->actor.get()->As<RE::Actor>();

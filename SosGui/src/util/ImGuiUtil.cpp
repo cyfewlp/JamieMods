@@ -1,8 +1,8 @@
 #include "util/ImGuiUtil.h"
+
 #include "common/config.h"
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 auto ImGuiUtil::TextScale(const char *content, float scale) -> void
 {
@@ -14,8 +14,8 @@ auto ImGuiUtil::TextScale(const char *content, float scale) -> void
 
 void ImGuiUtil::AddItemRectWithCol(const ImGuiCol colorIndex, const float thickness)
 {
-    auto *drawList = ImGui::GetWindowDrawList();
-    const auto color = ImGui::GetColorU32(colorIndex);
+    auto      *drawList = ImGui::GetWindowDrawList();
+    const auto color    = ImGui::GetColorU32(colorIndex);
     drawList->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), color, 0, ImDrawFlags_None, thickness);
 }
 
@@ -25,8 +25,8 @@ void ImGuiUtil::may_update_table_sort_dir(bool &ascend)
     {
         if (sortSpecs->SpecsDirty)
         {
-            const auto direction = sortSpecs->Specs[0].SortDirection;
-            ascend = direction == ImGuiSortDirection_Ascending;
+            const auto direction  = sortSpecs->Specs[0].SortDirection;
+            ascend                = direction == ImGuiSortDirection_Ascending;
             sortSpecs->SpecsDirty = false;
         }
     }
@@ -36,9 +36,7 @@ bool ImGuiUtil::DebounceInput::Draw(const char *label, const char *hintText)
 {
     ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F, ImGuiInputFlags_Tooltip);
     ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-    if (ImGui::InputTextWithHint(label, hintText, filter.InputBuf,
-                                 IM_ARRAYSIZE(filter.InputBuf),
-                                 ImGuiInputTextFlags_EscapeClearsAll))
+    if (ImGui::InputTextWithHint(label, hintText, filter.InputBuf, IM_ARRAYSIZE(filter.InputBuf), ImGuiInputTextFlags_EscapeClearsAll))
     {
         OnInput();
     }
@@ -53,4 +51,4 @@ void ImGuiUtil::DebounceInput::Clear()
     filter.Clear();
 }
 
-}
+} // namespace LIBC_NAMESPACE_DECL

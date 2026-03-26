@@ -9,59 +9,62 @@
 * [x] [[Bug Fix]]: The `viewData` is not cleared correctly when click `Import Settings` for the second time.
 * [x] Support adds armor from near all objects has inventory;
 * [x] ~~[[improvement]] Font: monaspace~~;#
-	* not need; Implement a system font selector; #DWrite
+    * not need; Implement a system font selector; #DWrite
 * [ ] [[improvement]] how to handle current actor active outfit?
 * [x] [[improvement]] Use `consteval` optimize `ImGuiUtil`  flags wrap class
 * [x] [[Bug Fix]] `ImGui` assert fail when scroll [[OutfitListView]].
 * [x] [[Bug Fix]] Can't found armor in `ArmorContainer`  after `Import Settings`
-	* `ArmorContainer` 
+    * `ArmorContainer`
 * [x] [[improvement]] setup our `imgui.ini`: `Data\interface\SosGui\imgui.ini`;
 * [x] [[improvement]] Add `Context` class: hold `popupList` field: All GUI share this `popupList`.
 * [x] [[improvement]] Disable interactive with armor view when outfit is `Untitled`;
-* [x] [[improvement]] Add [NerdFont](https://github.com/ryanoasis/nerd-fonts) and use the `SymbolsNerdFontMono-Regular` font as icon font;
-	* add `stb_image.h` to #CommonModule
-	* add `iconFont` field to `Context` class: setup in initialize `ImGui`;
+* [x] [[improvement]] Add [NerdFont](https://github.com/ryanoasis/nerd-fonts) and use the `SymbolsNerdFontMono-Regular`
+  font as icon font;
+    * add `stb_image.h` to #CommonModule
+    * add `iconFont` field to `Context` class: setup in initialize `ImGui`;
 * [x] [[Bug Fix]] Other Actor not setup active outfit when reopen GUI;
 * [x] [[Bug Fix]] Missing call `EndChild`: trigegr when click delete actor
 * [x] [[Bug Fix]] `OutfitService#GetActorAllStateOutfit`;
 * [x] [[improvement]] Refactor `m_autoSwitchOutfitSelectPopup`, `m_outfitSelectPopup`: Use `Context#popupList`;
 * [x] Test `AutoSwitchPolicyView` emplace;
-	* Add function `emplace_or_replace` to support replace existed key-value;
+    * Add function `emplace_or_replace` to support replace existed key-value;
 * [x] [[improvement]] Optimize wait_execute_on_ui?
-	* `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all `await_execute_on_ui` calls ;
+    * `coroutine` resume always on `MainThread` and `IMenu#PostDisplay` also called on `MainThread`. So, remove all
+      `await_execute_on_ui` calls ;
 * [x] [[improvement]] Optimize data class: ensure **DONOT** modify `DATA` class on UI thread;
-	* ~~consider use read/write lock~~
+    * ~~consider use read/write lock~~
 * [x] [[improvement]] `UiSetting`: be used hold the persist settings. May merge `Config` class to `Setting`
-	* Add `UiSettings#DefaultThemeIndex` to support select `ImGui` provide default theme;
-	* Call `ImGui#MarkIniSettingsDirty` when select a theme;
+    * Add `UiSettings#DefaultThemeIndex` to support select `ImGui` provide default theme;
+    * Call `ImGui#MarkIniSettingsDirty` when select a theme;
 * [x] [[improvement]] Sort Themes; Support select `ImGui` Default theme: classic, dark, light
+
 - [x] [[improvement]] cleanup `ImGui` when game quit
-	- ✅hook `WndProc` and process `WM_DESTROY` message?
-	- ❔Is game provided quit event?
+    - ✅hook `WndProc` and process `WM_DESTROY` message?
+    - ❔Is game provided quit event?
 - [x] [[Bug Fix]] Game can't quit: Is Introduced by `ImGui#Shutdown` by `WM_DESTORY` ?
 - [x] [[improvement]] search icon for all search input widgets;
 - [x] [[improvement]] Add filters icon:
-	- Click will open a popup: show all filters checkbox
+    - Click will open a popup: show all filters checkbox
 - [x] ~~[[improvement]] Bold font: bold font for table header;~~;
-	- Uneccary, just zoom out font size;
+    - Uneccary, just zoom out font size;
 - [x] [[improvement]] Move font scale, Theme config to Settings menu item;
 - [x] [[Bug Fix]] Theme was not applied correctly if theme index was set to `DefaultThemeIndex`;
 - [x] [[Bug Fix]] Mod refrence counter incorrect;
 - [ ] [[Bug Fix]] `SosNativeCaller` may resume on other thread;
-- [ ] [[improvement]] when Click `Sidebar`: Focus the associate window if it's not focused 
+- [ ] [[improvement]] when Click `Sidebar`: Focus the associate window if it's not focused
 - [x] [[improvement]] About popup
 - [ ] [[improvement]] shadow border for popup
 - [x] [[improvement]] Support select all installed fonts;
-	- ~~persist font path, style, face index;~~;
-	- persist font family and font index;
-	- read system default font: family, faceIndex;
-	- Always use system default font as fallback font;
-	- ❔clear font altas cached data when replaced default font?
-	- [ ] Support save `FontInfo`;
-	- [ ] Test `FontManger`?
+    - ~~persist font path, style, face index;~~;
+    - persist font family and font index;
+    - read system default font: family, faceIndex;
+    - Always use system default font as fallback font;
+    - ❔clear font altas cached data when replaced default font?
+    - [ ] Support save `FontInfo`;
+    - [ ] Test `FontManger`?
 - [ ] ensure safe skip SVG font
-	- enable SVG support or just warning user DONOT use SVG font ?
-	- `Noto Color Emoji` can't work with plutosvg + freetype.. This feature need delay, rollback SVG support ;
+    - enable SVG support or just warning user DONOT use SVG font ?
+    - `Noto Color Emoji` can't work with plutosvg + freetype.. This feature need delay, rollback SVG support ;
 - [x] [[improvement]] Add vertical padding for Menubar ;
 - [ ] gamepad control？
 - [x] rename Main window `SosGuiOptions`-> `Characters Edit Panel`?

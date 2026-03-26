@@ -229,8 +229,8 @@ auto SosGui::DrawPanels() -> void
 
         DrawTopModalPopup();
 
-        const auto &selectActorIndex     = m_characterEditPanel.GetSelectedActorIndex();
-        RE::Actor  *selectedActor        = GetSelectedActor(selectActorIndex);
+        const auto &selectActorIndex = m_characterEditPanel.GetSelectedActorIndex();
+        RE::Actor  *selectedActor    = GetSelectedActor(selectActorIndex);
         m_outfitListTable.Draw(m_context, selectedActor);
 
         const auto &editingOutfit = m_outfitListTable.GetEditingOutfit();
@@ -253,9 +253,7 @@ auto SosGui::DrawSidebar() -> float
     const float offsetY = viewport->WorkSize.y * 0.25;
 
     float width = 0.0;
-    if (ImGui::Begin(
-            "##MainSidebar", nullptr, ImGuiUtil::WindowFlags().AlwaysAutoResize().NoDecoration().NoDocking().NoMove()
-        ))
+    if (ImGui::Begin("##MainSidebar", nullptr, ImGuiUtil::WindowFlags().AlwaysAutoResize().NoDecoration().NoDocking().NoMove()))
     {
         width = ImGui::GetWindowWidth();
         ImGui::SetCursorPosY(offsetY);
@@ -365,9 +363,7 @@ void SosGui::Toolbar()
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
         ImGui::EndMenu();
     }
-    if (ImGuiUtil::MenuItem(
-            std::format("{} {}", m_fShowPanels ? NF_OCT_EYE : NF_OCT_EYE_CLOSED, "$SosGui_ToolBar_ShowOrHide"_T).c_str()
-        ))
+    if (ImGuiUtil::MenuItem(std::format("{} {}", m_fShowPanels ? NF_OCT_EYE : NF_OCT_EYE_CLOSED, "$SosGui_ToolBar_ShowOrHide"_T).c_str()))
     {
         m_fShowPanels = !m_fShowPanels;
     }
@@ -420,4 +416,4 @@ void SosGui::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
     func(controlMap, allow);
 }
 
-}
+} // namespace LIBC_NAMESPACE_DECL

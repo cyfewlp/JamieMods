@@ -94,8 +94,7 @@ auto SosDataCoordinator::RequestSetActorAutoSwitchState(const RE::Actor *actor, 
 
 auto SosDataCoordinator::RequestImportSettings() const -> Task
 {
-    if (const auto successVar = co_await SosNativeCaller::ImportSettings();
-        !successVar.IsBool() || !successVar.GetBool())
+    if (const auto successVar = co_await SosNativeCaller::ImportSettings(); !successVar.IsBool() || !successVar.GetBool())
     {
         m_uiData.PushErrorMessage("Can't import settings");
         co_return;
@@ -105,8 +104,7 @@ auto SosDataCoordinator::RequestImportSettings() const -> Task
 
 auto SosDataCoordinator::RequestExportSettings() const -> Task
 {
-    if (const RE::BSScript::Variable successVar = co_await SosNativeCaller::ExportSettings();
-        !successVar.IsBool() || !successVar.GetBool())
+    if (const RE::BSScript::Variable successVar = co_await SosNativeCaller::ExportSettings(); !successVar.IsBool() || !successVar.GetBool())
     {
         m_uiData.PushErrorMessage("Can't export settings");
         co_return;
@@ -116,8 +114,7 @@ auto SosDataCoordinator::RequestExportSettings() const -> Task
 auto SosDataCoordinator::RequestEnable(bool isEnabled) const -> Task
 {
     co_await SosNativeCaller::Enable(isEnabled);
-    if (RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled();
-        isEnabledVar.IsBool() && isEnabledVar.GetBool() != isEnabled)
+    if (RE::BSScript::Variable isEnabledVar = co_await SosNativeCaller::IsEnabled(); isEnabledVar.IsBool() && isEnabledVar.GetBool() != isEnabled)
     {
         m_uiData.PushErrorMessage("Can't set SkyrimOutfitSystem enabled state");
     }
@@ -166,4 +163,4 @@ auto SosDataCoordinator::HasQuickSlotSpell() -> bool
     }
     return false;
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

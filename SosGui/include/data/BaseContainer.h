@@ -3,69 +3,69 @@
 #include "util/utils.h"
 
 #include <boost/iterator/reverse_iterator.hpp>
+#include <format>
 #include <stdexcept>
 #include <type_traits>
-#include <format>
 
 namespace LIBC_NAMESPACE_DECL
 {
-    class BaseContainer
+class BaseContainer
+{
+protected:
+    static constexpr void validate_range(size_t elementCount, size_t startPos, size_t endPos)
     {
-    protected:
-        static constexpr void validate_range(size_t elementCount, size_t startPos, size_t endPos)
+        if (startPos >= elementCount)
         {
-            if (startPos >= elementCount)
-            {
-                throw std::out_of_range(std::format("Invalid startPos: {} out of range {}", startPos, elementCount));
-            }
-            if (startPos > endPos)
-            {
-                throw std::invalid_argument(std::format("startPos {} can't greater endPos {}", startPos, endPos));
-            }
+            throw std::out_of_range(std::format("Invalid startPos: {} out of range {}", startPos, elementCount));
         }
-
-        template <typename RankedIndex>
-        static constexpr void validate_range(const RankedIndex &index, size_t startPos, size_t endPos)
+        if (startPos > endPos)
         {
-            validate_range(index.size(), startPos, endPos);
+            throw std::invalid_argument(std::format("startPos {} can't greater endPos {}", startPos, endPos));
         }
+    }
 
-        template <typename RankedIndex, typename Func>
-        static void for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
+    template <typename RankedIndex>
+    static constexpr void validate_range(const RankedIndex &index, size_t startPos, size_t endPos)
+    {
+        validate_range(index.size(), startPos, endPos);
+    }
+
+    template <typename RankedIndex, typename Func>
+    static void for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
+    {
+        validate_range(index, startPos, endPos);
+        for (auto itBegin = index.nth(startPos); startPos < endPos && itBegin != index.end(); ++startPos, ++itBegin)
         {
-            validate_range(index, startPos, endPos);
-            for (auto itBegin = index.nth(startPos); startPos < endPos && itBegin != index.end(); ++startPos, ++itBegin)
-            {
-                func(*itBegin, startPos);
-            }
+            func(*itBegin, startPos);
         }
+    }
 
-        template <typename RankedIndex, typename Func>
-        static void reverse_for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
+    template <typename RankedIndex, typename Func>
+    static void reverse_for_each_on(const RankedIndex &index, size_t startPos, size_t endPos, Func &&func)
+    {
+        validate_range(index, startPos, endPos);
+        auto range = util::reverse_range(startPos, endPos, index.size());
+
+        auto it0 = boost::make_reverse_iterator(index.nth(range.first));
+        auto it1 = boost::make_reverse_iterator(index.nth(range.second));
+
+        for (auto itBegin = it0; startPos < endPos && itBegin != it1; ++startPos, ++itBegin)
         {
-            validate_range(index, startPos, endPos);
-            auto range = util::reverse_range(startPos, endPos, index.size());
-
-            auto it0 = boost::make_reverse_iterator(index.nth(range.first));
-            auto it1 = boost::make_reverse_iterator(index.nth(range.second));
-
-            for (auto itBegin = it0; startPos < endPos && itBegin != it1; ++startPos, ++itBegin)
-            {
-                func(*itBegin, startPos);
-            }
+            func(*itBegin, startPos);
         }
+    }
 
-        template <typename Func, typename Element>
-        static void do_each(Func &&func, const Element &element, size_t index)
+    template <typename Func, typename Element>
+    static void do_each(Func &&func, const Element &element, size_t index)
+    {
+        if constexpr (std::is_invocable_v<Func &&, const Element &, size_t>)
         {
-            if constexpr (std::is_invocable_v<Func &&, const Element &, size_t>)
-            {
-                func(element, index);
-            }
-            else if constexpr (std::is_invocable_v<Func &&, const Element &>)
-            {
-                func(element);
-            }
+            func(element, index);
         }
-    };
-}
+        else if constexpr (std::is_invocable_v<Func &&, const Element &>)
+        {
+            func(element);
+        }
+    }
+};
+} // namespace LIBC_NAMESPACE_DECL

@@ -30,22 +30,15 @@ class FontManager
         ComPtr<IDWriteFontFamily> pFontFamily = nullptr;
 
     public:
-        SystemFontFamily(const std::string &&familyName, const ComPtr<IDWriteFontFamily> &pFontFamily)
-            : pFontFamily(pFontFamily)
+        SystemFontFamily(const std::string &&familyName, const ComPtr<IDWriteFontFamily> &pFontFamily) : pFontFamily(pFontFamily)
         {
             this->familyName = std::make_unique<char[]>(familyName.size() + 1);
             familyName.copy(this->familyName.get(), familyName.length());
         }
 
-        [[nodiscard]] constexpr auto FamilyName() const -> std::string_view
-        {
-            return familyName.get();
-        }
+        [[nodiscard]] constexpr auto FamilyName() const -> std::string_view { return familyName.get(); }
 
-        [[nodiscard]] constexpr auto FontFamily() const -> const ComPtr<IDWriteFontFamily> &
-        {
-            return pFontFamily;
-        }
+        [[nodiscard]] constexpr auto FontFamily() const -> const ComPtr<IDWriteFontFamily> & { return pFontFamily; }
     };
 
     ImFont  *m_previewFont = nullptr;
@@ -89,6 +82,6 @@ private:
     void        RebuildPreviewFont();
     void        DrawFontsCombo(bool &rebuildFont);
 };
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // FONTMANAGER_H

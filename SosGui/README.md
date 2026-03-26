@@ -7,6 +7,7 @@ Main Window:
 Outfit Edit Panel
 
 ![[outfit_edit_panel.png]]
+
 ## Features
 
 * Armor candidates
@@ -17,13 +18,14 @@ Outfit Edit Panel
 * UiSettings
     * Store in `imgui.ini` with custom ini handlers
     * Support dynamic scale global font size by `imgui fetature/dynamic-fonts` branch;
-    * Support seletc system font; #DWrite 
-	    * By default, Mod use the system default font;
-		    ```c++
-		    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
-			```
-		 - And user can by change it in `Settings` panel;
-		 - ❗**NOT** support SVG font(like `Noto Color emoji`);
+    * Support seletc system font; #DWrite
+        * By default, Mod use the system default font;
+            ```c++
+            SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+            ```
+
+        - And user can by change it in `Settings` panel;
+        - ❗**NOT** support SVG font(like `Noto Color emoji`);
 
 ## Requirements
 
@@ -39,9 +41,12 @@ Outfit Edit Panel
   > Enable freetype SVG support
 
   This mod will load `ImThemes/themes.toml` and parse all available themes.
+
 ## Environment Varibles
 
-`MO2_MODS_PATH`: The `ModOrganizer2` mods folder. The `dll`, `pdb` and other required filed will auto copy to `MO2_MODS_PATH/{PLUGIN_NAME}` folder when build successful if seup this env varible;
+`MO2_MODS_PATH`: The `ModOrganizer2` mods folder. The `dll`, `pdb` and other required filed will auto copy to
+`MO2_MODS_PATH/{PLUGIN_NAME}` folder when build successful if seup this env varible;
+
 ## Build
 
 ```shell
@@ -51,6 +56,7 @@ cmake --build build\debug-clangcl-ninjia-vcpkg --target SosGui
 cd build\debug-clangcl-ninjia-vcpkg
 cpack
 ```
+
 ## Document
 
 Use [Obsidian](https://obsidian.md/) as document manage tool: `Wikilink` and `Backlink`

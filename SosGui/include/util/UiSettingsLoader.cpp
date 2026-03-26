@@ -87,4 +87,4 @@ void Settings::UiSettingsLoader::Save(UiSettings &uiSetting)
         log_error("UiSetting save fail: Unable to open file {} for writing.", filePath);
     }
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

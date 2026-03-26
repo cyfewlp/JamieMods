@@ -3,9 +3,5 @@
 #include <ranges>
 #include <string>
 
-
 // Demonstrate some basic assertions.
-TEST(ClipperTest, BasicAssertions)
-{
-
-}
+TEST(ClipperTest, BasicAssertions) {}

@@ -313,8 +313,7 @@ void FontManager::DrawFontFamilyCombo(bool &rebuildPreviewFont) noexcept
         for (size_t index = 0; index < m_fontFamilies.size(); index++)
         {
             const bool selected = static_cast<size_t>(m_fontInfo.familyIndex) == index;
-            if (const auto &fontFamily = m_fontFamilies[index];
-                ImGui::Selectable(fontFamily.FamilyName().data(), selected) && !selected)
+            if (const auto &fontFamily = m_fontFamilies[index]; ImGui::Selectable(fontFamily.FamilyName().data(), selected) && !selected)
             {
                 m_fontInfo.familyIndex = index;
                 m_fontInfo.fontIndex   = 0;
@@ -342,8 +341,9 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 + - * / = .,;:!? #&$%@|^)");
     ImGui::Text("The quick brown fox jumps over the lazy dog");
 
-    ImGui::Text("Emoji: "
-                "🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍"
+    ImGui::Text(
+        "Emoji: "
+        "🥰💀✌︎🌴🐢🐐🍄⚽🍻👑📸😬👀🚨🏡🐦‍🔥🍋‍🟩🍄‍🟫🙂‍"
     );
     ImGui::Text("Chinese: 快速的棕色狐狸跳过了懒惰的狗");
     ImGui::Text("Japanese: 速い茶色のキツネが怠惰な犬を飛び越えます");
@@ -507,21 +507,21 @@ void FontManager::GetAllFontFullName(IDWriteFontFamily *pFontFamily, std::vector
         {
             ComPtr<IDWriteLocalizedStrings> pInformation;
             BOOL                            exists = FALSE;
-            if (SUCCEEDED(pFont->GetInformationalStrings(DWRITE_INFORMATIONAL_STRING_FULL_NAME, &pInformation, &exists)
-                ) &&
-                exists)
+            if (SUCCEEDED(pFont->GetInformationalStrings(DWRITE_INFORMATIONAL_STRING_FULL_NAME, &pInformation, &exists)) && exists)
             {
                 std::string information;
                 GetLocalizedString(pInformation.Get(), information);
                 if (information.size() > 0)
                 {
-                    result.push_back(std::format(
-                        "{} ({} / {} / {})",
-                        information,
-                        weightToString(pFont->GetWeight()),
-                        styleToString(pFont->GetStyle()),
-                        stretchToString(pFont->GetStretch())
-                    ));
+                    result.push_back(
+                        std::format(
+                            "{} ({} / {} / {})",
+                            information,
+                            weightToString(pFont->GetWeight()),
+                            styleToString(pFont->GetStyle()),
+                            stretchToString(pFont->GetStretch())
+                        )
+                    );
                     continue;
                 }
             }
@@ -620,18 +620,15 @@ void FontManager::SetupFontInfo(FontInfo &fontInfo, IDWriteFont *pFont) const
             }
             if (ComPtr<IDWriteFontFace> pFontFace; SUCCEEDED(pFont->CreateFontFace(&pFontFace)))
             {
-                fontInfo.bold = pFont->GetWeight() >= DWRITE_FONT_WEIGHT_BOLD ||
-                                pFont->GetSimulations() == DWRITE_FONT_SIMULATIONS_BOLD;
-                fontInfo.oblique = pFont->GetStyle() == DWRITE_FONT_STYLE_OBLIQUE ||
-                                   pFont->GetSimulations() == DWRITE_FONT_SIMULATIONS_OBLIQUE;
+                fontInfo.bold    = pFont->GetWeight() >= DWRITE_FONT_WEIGHT_BOLD || pFont->GetSimulations() == DWRITE_FONT_SIMULATIONS_BOLD;
+                fontInfo.oblique = pFont->GetStyle() == DWRITE_FONT_STYLE_OBLIQUE || pFont->GetSimulations() == DWRITE_FONT_SIMULATIONS_OBLIQUE;
             }
         }
         const auto fontCount = pDefaultFontFamily->GetFontCount();
         for (uint32_t fontIndex = 0; fontIndex < fontCount; fontIndex++)
         {
             ComPtr<IDWriteFont3> pFont3;
-            if (ComPtr<IDWriteFont> pFont0;
-                SUCCEEDED(pDefaultFontFamily->GetFont(fontIndex, &pFont0)) && SUCCEEDED(pFont0.As(&pFont3)))
+            if (ComPtr<IDWriteFont> pFont0; SUCCEEDED(pDefaultFontFamily->GetFont(fontIndex, &pFont0)) && SUCCEEDED(pFont0.As(&pFont3)))
             {
                 if (pFont3->Equals(pFont))
                 {
@@ -666,4 +663,4 @@ void Settings::UiSettings::UpdateFontSize()
     m_Title3PxSize    = MulDiv(TITLE_3_PT_SIZE, dpiY, 72);
     m_Title4PxSize    = MulDiv(TITLE_4_PT_SIZE, dpiY, 72);
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

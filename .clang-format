@@ -54,7 +54,7 @@ AlignConsecutiveMacros:
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: Empty
 AllowShortBlocksOnASingleLine : Empty
-AllowShortFunctionsOnASingleLine : Inline
+AllowShortFunctionsOnASingleLine: Inline
 
 # namespace
 NamespaceIndentation: None

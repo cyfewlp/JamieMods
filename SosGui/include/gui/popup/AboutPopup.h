@@ -20,7 +20,7 @@ public:
 protected:
     void DoDraw(SosUiData &uiData, bool &confirmed) override;
 };
-}
-}
+} // namespace Popup
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // ABOUTPOPUP_H

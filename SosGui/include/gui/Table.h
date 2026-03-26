@@ -12,15 +12,9 @@ namespace LIBC_NAMESPACE_DECL
 
 struct TableHeadersBuilder
 {
-    TableHeadersBuilder()
-    {
-        ImGui::PushID("HeadersRow");
-    }
+    TableHeadersBuilder() { ImGui::PushID("HeadersRow"); }
 
-    ~TableHeadersBuilder()
-    {
-        ImGui::PopID();
-    }
+    ~TableHeadersBuilder() { ImGui::PopID(); }
 
     struct ColumnContext
     {
@@ -29,10 +23,7 @@ struct TableHeadersBuilder
         float                 initWidthOrWeight = 0.0F;
         TableHeadersBuilder  &tableBuilder;
 
-        explicit ColumnContext(const char *name, TableHeadersBuilder &tableBuilder)
-            : name(name), tableBuilder(tableBuilder)
-        {
-        }
+        explicit ColumnContext(const char *name, TableHeadersBuilder &tableBuilder) : name(name), tableBuilder(tableBuilder) {}
 
         constexpr auto WidthOrWeight(const float widthOrWeight) -> ColumnContext &
         {
@@ -60,16 +51,10 @@ struct TableHeadersBuilder
             return tableBuilder.Column(name);
         }
 
-        static constexpr void CommitHeadersRow()
-        {
-            return ImGui::TableHeadersRow();
-        }
+        static constexpr void CommitHeadersRow() { return ImGui::TableHeadersRow(); }
     };
 
-    auto Column(const char *columnName) -> ColumnContext
-    {
-        return ColumnContext(columnName, *this);
-    }
+    auto Column(const char *columnName) -> ColumnContext { return ColumnContext(columnName, *this); }
 };
 
-}
+} // namespace LIBC_NAMESPACE_DECL

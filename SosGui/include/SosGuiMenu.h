@@ -24,10 +24,7 @@ public:
 
     static void RegisterMenu();
 
-    static void ShutDown()
-    {
-        SosGui::ShutDown();
-    }
+    static void ShutDown() { SosGui::ShutDown(); }
 
     void PostDisplay() override;
     void OnShow();
@@ -36,10 +33,7 @@ public:
 
     void ToggleShow();
 
-    constexpr auto IsShowing() const -> bool
-    {
-        return m_fShow;
-    }
+    constexpr auto IsShowing() const -> bool { return m_fShow; }
 
 private:
     static auto Creator() -> IMenu *;
@@ -53,6 +47,6 @@ private:
     static auto GFxKeyToImGuiKey(RE::GFxKey::Code keyCode) -> ImGuiKey;
 };
 
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // SOSGUIMENU_H

@@ -61,9 +61,7 @@ bool OutfitListTable::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup) const
     if (auto *deleteOutfitPopup = dynamic_cast<Popup::DeleteOutfitPopup *>(modalPopup); deleteOutfitPopup)
     {
         +[&] {
-            return m_outfitService.DeleteOutfit(
-                deleteOutfitPopup->wanDeleteOutfitId, deleteOutfitPopup->wanDeleteOutfitName
-            );
+            return m_outfitService.DeleteOutfit(deleteOutfitPopup->wanDeleteOutfitId, deleteOutfitPopup->wanDeleteOutfitName);
         };
         return true;
     }
@@ -118,9 +116,7 @@ void OutfitListTable::OutfitDebounceInput::OnUpdate(const OutfitList &outfitList
 void OutfitListTable::CreateOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
 {
     ImGui::PushItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint(
-        "##CreateNewInput", "$SosGui_Hint_CreateOutfit"_T.c_str(), m_outfitNameBuf.data(), m_outfitNameBuf.size()
-    );
+    ImGui::InputTextWithHint("##CreateNewInput", "$SosGui_Hint_CreateOutfit"_T.c_str(), m_outfitNameBuf.data(), m_outfitNameBuf.size());
     ImGui::PopItemWidth();
 
     ImGuiScope::Disabled disabled(m_outfitNameBuf[0] == '\0');
@@ -190,8 +186,7 @@ void OutfitListTable::DrawToolWidgets()
     ImGui::Text(NF_OCT_SEARCH);
     ImGui::SameLine(0, 5);
     ImGuiScope::ItemWidth fltMinItemWidth(-FLT_MIN);
-    if (m_outfitFilterInput.Draw("##filter", "$SosGui_Hint_FilterOutfit"_T.c_str()) ||
-        prevOutfitSize != outfitList.size())
+    if (m_outfitFilterInput.Draw("##filter", "$SosGui_Hint_FilterOutfit"_T.c_str()) || prevOutfitSize != outfitList.size())
     {
         m_outfitFilterInput.OnUpdate(outfitList, uiSetting->showFavoriteOutfits);
         prevOutfitSize = outfitList.size();
@@ -227,7 +222,7 @@ void OutfitListTable::DrawOutfitTable(Context &context, RE::Actor *editingActor)
 
 void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editingActor)
 {
-    auto &outfitList = m_uiData.GetOutfitList();
+    auto       &outfitList      = m_uiData.GetOutfitList();
     //////////////////////////////////////////////////////////
     // Table Content
     const auto &actorOutfitMap  = m_uiData.GetActorOutfitMap();
@@ -302,7 +297,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         {
             static ImGuiID                                 editingInputId = 0;
             static std::array<char, MAX_OUTFIT_NAME_BYTES> renameBuf{};
-            constexpr auto onRequestRename = [](const ImGuiID inputId, const std::string &outfitName) {
+            constexpr auto                                 onRequestRename = [](const ImGuiID inputId, const std::string &outfitName) {
                 editingInputId = inputId;
                 strncpy_s(renameBuf.data(), renameBuf.size(), outfitName.c_str(), outfitName.size());
                 ImGui::ActivateItemByID(inputId);
@@ -319,9 +314,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
                     {
                         log_info("Rename outfit {} to {}", outfit->GetName(), renameBuf.data());
                         +[&] {
-                            return m_outfitService.RenameOutfit(
-                                outfit->GetId(), outfit->GetName(), std::string(renameBuf.data())
-                            );
+                            return m_outfitService.RenameOutfit(outfit->GetId(), outfit->GetName(), std::string(renameBuf.data()));
                         };
                     }
                     renameBuf[0]   = '\0';
@@ -332,8 +325,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
             {
                 bool const isSelected = m_outfitMultiSelection.Contains(static_cast<ImGuiID>(index));
                 ImGui::SetNextItemSelectionUserData(index);
-                if (constexpr auto flags =
-                        ImGuiUtil::SelectableFlag().AllowDoubleClick().AllowOverlap().SpanAllColumns().flags;
+                if (constexpr auto flags = ImGuiUtil::SelectableFlag().AllowDoubleClick().AllowOverlap().SpanAllColumns().flags;
                     ImGui::Selectable(outfit->GetName().c_str(), isSelected, flags))
                 {
                     const EditingOutfit currentEditing(outfit);
@@ -393,9 +385,7 @@ inline void OutfitListTable::PostDrawOutfits(MultiSelection &selection)
     selection.ApplyRequests(ImGui::EndMultiSelect());
 }
 
-void OutfitListTable::DrawOutfitTableContent(
-    std::vector<const SosUiOutfit *> outfitView, const bool ascend, const DrawOutfitEntry &drawOutfitEntry
-)
+void OutfitListTable::DrawOutfitTableContent(std::vector<const SosUiOutfit *> outfitView, const bool ascend, const DrawOutfitEntry &drawOutfitEntry)
 {
     ImGuiListClipper clipper;
     clipper.Begin(outfitView.size());
@@ -425,8 +415,7 @@ void OutfitListTable::DrawOutfitTableContent(
 }
 
 void OutfitListTable::OpenContextMenu(
-    Context &context, const uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit *outfit,
-    __out bool &acceptRename
+    Context &context, const uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit *outfit, __out bool &acceptRename
 )
 {
     ImGuiScope::PopupContextItem popUp("##OutfitListContextMenu");
@@ -507,8 +496,7 @@ void OutfitListTable::OnAcceptEditOutfit(const EditingOutfit &lastEdit, const Ed
 }
 
 // ReSharper disable once CppDFAUnreachableFunctionCall
-void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const OutfitId id, const std::string &outfitName)
-    const
+void OutfitListTable::OnAcceptActiveOutfit(RE::Actor *editingActor, const OutfitId id, const std::string &outfitName) const
 {
     +[&] {
         return m_outfitService.SetActorOutfit(editingActor, id, outfitName);
@@ -553,4 +541,4 @@ void OutfitListTable::OnAcceptDeleteOutfits()
     }
     m_outfitMultiSelection.Clear();
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

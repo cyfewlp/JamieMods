@@ -27,13 +27,10 @@ class OutfitSelectPopup : Popup::BasicPopup
     } debounceInput{};
 
 public:
-    void UpdateView(const OutfitList &outfitList)
-    {
-        debounceInput.UpdateView(outfitList);
-    }
+    void UpdateView(const OutfitList &outfitList) { debounceInput.UpdateView(outfitList); }
 
     bool Draw(const char *nameKey, const OutfitList &outfitList, __out OutfitId &selectId);
 };
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // OUTFITSELECTPOPUP_H

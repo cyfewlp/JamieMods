@@ -22,7 +22,7 @@ protected:
 
     static void ThemeCombo(SosUiData &uiData);
 };
-}
-}
+} // namespace Popup
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // SETTINGSPOPUP_H

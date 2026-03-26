@@ -98,4 +98,4 @@ void Popup::SettingsPopup::ThemeCombo(SosUiData &uiData)
         ImGui::MarkIniSettingsDirty();
     }
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

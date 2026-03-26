@@ -1,8 +1,8 @@
 #include "service/OutfitService.h"
 
-#include "autoswitch/ActorPolicyContainer.h"
 #include "SosDataType.h"
 #include "SosNativeCaller.h"
+#include "autoswitch/ActorPolicyContainer.h"
 #include "common/config.h"
 #include "data/OutfitList.h"
 #include "data/SosUiData.h"
@@ -29,8 +29,7 @@ auto OutfitService::CreateOutfit(std::string outfitName) const -> Task
         co_return;
     }
     co_await SosNativeCaller::CreateOutfit(std::string(outfitName));
-    if (const Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName));
-        !existVar.IsBool() || !existVar.GetBool())
+    if (const Variable existVar = co_await SosNativeCaller::IsOutfitExisting(std::string(outfitName)); !existVar.IsBool() || !existVar.GetBool())
     {
         m_uiData.PushErrorMessage("Can't get outfit list");
     }
@@ -45,8 +44,7 @@ auto OutfitService::CreateOutfitFromWorn(std::string outfitName) const -> Task
     std::string errorMessage("Can't create outfit from worn: ");
     if (auto *player = RE::PlayerCharacter::GetSingleton(); player != nullptr)
     {
-        if (const Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player);
-            wornArmorsVar.IsObjectArray())
+        if (const Variable wornArmorsVar = co_await SosNativeCaller::GetWornItems(player); wornArmorsVar.IsObjectArray())
         {
             const auto                       array = wornArmorsVar.GetArray();
             std::vector<RE::TESObjectARMO *> armors;
@@ -237,9 +235,7 @@ auto OutfitService::GetOutfitArmors(const OutfitId id, std::string outfitName) c
     m_outfitList.AddArmors(id, std::move(armors));
 }
 
-auto OutfitService::SetSlotPolicy(
-    const OutfitId id, std::string outfitName, const uint32_t slotPos, const SlotPolicy policy
-) const -> Task
+auto OutfitService::SetSlotPolicy(const OutfitId id, std::string outfitName, const uint32_t slotPos, const SlotPolicy policy) const -> Task
 {
     if (!m_outfitList.HasOutfit(id))
     {
@@ -306,16 +302,14 @@ auto OutfitService::GetActorAllStateOutfit(RE::Actor *actor) const -> Task
         {
             continue;
         }
-        if (const auto outfitId = outfitList.findIdByName(outfitVar.Unpack<std::string>());
-            outfitId != INVALID_OUTFIT_ID)
+        if (const auto outfitId = outfitList.findIdByName(outfitVar.Unpack<std::string>()); outfitId != INVALID_OUTFIT_ID)
         {
             view.emplace(actor->GetFormID(), policyId, outfitId);
         }
     }
 }
 
-auto OutfitService::SetActorStateOutfit(const RE::Actor *actor, uint32_t policyId, const OutfitId outfitId) const
-    -> Task
+auto OutfitService::SetActorStateOutfit(const RE::Actor *actor, uint32_t policyId, const OutfitId outfitId) const -> Task
 {
     if (policyId >= static_cast<uint32_t>(AutoSwitch::Policy::Count))
     {
@@ -338,4 +332,4 @@ auto OutfitService::SetActorStateOutfit(const RE::Actor *actor, uint32_t policyI
         view.emplace_or_replace(actorId, policyId, outfitId);
     }
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

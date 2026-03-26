@@ -1,4 +1,5 @@
 #include "data/SosUiOutfit.h"
+
 #include "common/config.h"
 
 #include <RE/B/BGSBipedObjectForm.h>
@@ -13,8 +14,7 @@ struct std::hash<RE::TESObjectARMO *>
     }
 };
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 void SosUiOutfit::AddArmor(const Armor *armor)
 {
@@ -83,4 +83,4 @@ auto SosUiOutfit::GetUniqueArmors() const -> std::unordered_set<const Armor *>
     }
     return ret;
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

@@ -45,35 +45,17 @@ public:
     bool     showFavoriteOutfits  = false;
     FontInfo fontInfo; // setting key: start with fontinfo
 
-    [[nodiscard]] constexpr float TextSmallPxSize() const
-    {
-        return m_TextSmallPxSize;
-    }
+    [[nodiscard]] constexpr float TextSmallPxSize() const { return m_TextSmallPxSize; }
 
-    [[nodiscard]] constexpr float TextPxSize() const
-    {
-        return m_TextPxSize;
-    }
+    [[nodiscard]] constexpr float TextPxSize() const { return m_TextPxSize; }
 
-    [[nodiscard]] constexpr float Title1PxSize() const
-    {
-        return m_Title1PxSize;
-    }
+    [[nodiscard]] constexpr float Title1PxSize() const { return m_Title1PxSize; }
 
-    [[nodiscard]] constexpr float Title2PxSize() const
-    {
-        return m_Title2PxSize;
-    }
+    [[nodiscard]] constexpr float Title2PxSize() const { return m_Title2PxSize; }
 
-    [[nodiscard]] constexpr float Title3PxSize() const
-    {
-        return m_Title3PxSize;
-    }
+    [[nodiscard]] constexpr float Title3PxSize() const { return m_Title3PxSize; }
 
-    [[nodiscard]] constexpr float Title4PxSize() const
-    {
-        return m_Title4PxSize;
-    }
+    [[nodiscard]] constexpr float Title4PxSize() const { return m_Title4PxSize; }
 
     void UpdateFontSize();
 
@@ -99,7 +81,7 @@ private:
     float m_Title3PxSize    = 0.0F;
     float m_Title4PxSize    = 0.0F;
 };
-}
-}
+} // namespace Settings
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // FONTSIZE_H

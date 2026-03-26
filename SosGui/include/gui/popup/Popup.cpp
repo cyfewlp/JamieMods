@@ -77,4 +77,4 @@ void Popup::DeleteOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
     RenderConfirmButtons(confirmed);
 }
 
-}
+} // namespace LIBC_NAMESPACE_DECL

@@ -11,8 +11,7 @@
 
 inline RE::InventoryChanges::IItemChangeVisitor::~IItemChangeVisitor() {}
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 struct ArmorItemVisitor final : RE::InventoryChanges::IItemChangeVisitor
 {
@@ -26,7 +25,7 @@ struct ArmorItemVisitor final : RE::InventoryChanges::IItemChangeVisitor
 class ArmorGenerator
 {
 public:
-    virtual      ~ArmorGenerator() = default;
+    virtual ~ArmorGenerator()                                                     = default;
     virtual void for_each(std::function<void(RE::TESObjectARMO *armor)> &&action) = 0;
 };
 
@@ -50,20 +49,11 @@ public:
 
     void Update();
 
-    [[nodiscard]] auto NearObjects() const -> const std::vector<RE::TESObjectREFR *> &
-    {
-        return nearObjects;
-    }
+    [[nodiscard]] auto NearObjects() const -> const std::vector<RE::TESObjectREFR *> & { return nearObjects; }
 
-    void SetWantVisitIndex(const size_t index)
-    {
-        wantVisitIndex = index;
-    }
+    void SetWantVisitIndex(const size_t index) { wantVisitIndex = index; }
 
-    [[nodiscard]] constexpr auto WantVisitIndex() const -> size_t
-    {
-        return wantVisitIndex;
-    }
+    [[nodiscard]] constexpr auto WantVisitIndex() const -> size_t { return wantVisitIndex; }
 };
 
 class InventoryArmorGenerator final : public ArmorGenerator
@@ -92,4 +82,4 @@ public:
     void for_each(std::function<void(RE::TESObjectARMO *armor)> &&action) override;
 };
 
-}
+} // namespace LIBC_NAMESPACE_DECL

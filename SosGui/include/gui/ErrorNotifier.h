@@ -6,6 +6,7 @@
 #define ERRORNOTIFIER_H
 
 #include "common/config.h"
+
 #include <time.h>
 
 namespace LIBC_NAMESPACE_DECL
@@ -31,12 +32,15 @@ public:
 
     void clearConfirmed()
     {
-        errors.erase(std::ranges::remove_if(errors,
-                                            [](const ErrorMsg &e) {
-                                                return e.confirmed;
-                                            })
-                         .begin(),
-                     errors.end());
+        errors.erase(
+            std::ranges::remove_if(
+                errors,
+                [](const ErrorMsg &e) {
+                    return e.confirmed;
+                }
+            ).begin(),
+            errors.end()
+        );
     }
 
     void show();
@@ -46,6 +50,6 @@ private:
 
     static std::string currentTime();
 };
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // ERRORNOTIFIER_H

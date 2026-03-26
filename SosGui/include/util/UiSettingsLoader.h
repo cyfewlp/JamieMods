@@ -18,7 +18,7 @@ public:
     static void Load(__out UiSettings &uiSetting);
     static void Save(__in UiSettings &uiSetting);
 };
-}
-}
+} // namespace Settings
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // UISETTINGLOADER_H

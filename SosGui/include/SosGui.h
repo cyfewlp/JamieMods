@@ -52,8 +52,8 @@ class SosGui : Cleanable
 
 public:
     SosGui()
-        : m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService),
-          m_outfitEditPanel(m_uiData, m_outfitService), m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel)
+        : m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService), m_outfitEditPanel(m_uiData, m_outfitService),
+          m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel)
     {
     }
 
@@ -99,4 +99,4 @@ private:
 
     static auto EnableQuickslot(bool enable) -> bool;
 };
-}
+} // namespace LIBC_NAMESPACE_DECL

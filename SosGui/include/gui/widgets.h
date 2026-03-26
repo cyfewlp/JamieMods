@@ -11,8 +11,7 @@
 
 #include <vector>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 struct MultiSelection : ImGuiSelectionBasicStorage
 {
@@ -42,26 +41,17 @@ struct MultiSelection : ImGuiSelectionBasicStorage
         return *this;
     }
 
-    auto Begin(const int itemSize) const
-    {
-        return ImGui::BeginMultiSelect(flags, Size, itemSize);
-    }
+    auto Begin(const int itemSize) const { return ImGui::BeginMultiSelect(flags, Size, itemSize); }
 
-    bool ContainsIndex(int idx)
-    {
-        return Contains(GetStorageIdFromIndex(idx));
-    }
+    bool ContainsIndex(int idx) { return Contains(GetStorageIdFromIndex(idx)); }
 
-    static auto End()
-    {
-        return ImGui::EndMultiSelect();
-    }
+    static auto End() { return ImGui::EndMultiSelect(); }
 };
 
 namespace widgets
 {
-bool DrawNearActorsCombo(const std::vector<RE::Actor*> &nearActors, RE::Actor **selectedActor, RE::Actor *defaultActor);
+bool DrawNearActorsCombo(const std::vector<RE::Actor *> &nearActors, RE::Actor **selectedActor, RE::Actor *defaultActor);
 }
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // WIDGETS_H

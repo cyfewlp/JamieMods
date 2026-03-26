@@ -74,4 +74,4 @@ bool OutfitSelectPopup::Draw(const char *nameKey, const OutfitList &outfitList, 
     ImGui::EndPopup();
     return true;
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

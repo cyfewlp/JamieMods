@@ -17,19 +17,13 @@ struct Context
 {
     std::list<std::unique_ptr<Popup::ModalPopup>> popupList;
 
-    void SetIconFont(ImFont *font)
-    {
-        iconFont = font;
-    }
+    void SetIconFont(ImFont *font) { iconFont = font; }
 
-    auto GetIconFont() const -> ImFont *
-    {
-        return iconFont;
-    }
+    auto GetIconFont() const -> ImFont * { return iconFont; }
 
 private:
     ImFont *iconFont = nullptr;
 };
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // CONTEXT_H

@@ -8,8 +8,7 @@
 #include <RE/T/TESForm.h>
 #include <RE/T/TESObjectARMO.h>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class ArmorContainer : BaseContainer
 {
@@ -17,10 +16,7 @@ class ArmorContainer : BaseContainer
 
     struct NameComparator
     {
-        bool operator()(const Armor *lhs, const Armor *rhs) const
-        {
-            return util::StringCompactor()(lhs->GetName(), rhs->GetName());
-        }
+        bool operator()(const Armor *lhs, const Armor *rhs) const { return util::StringCompactor()(lhs->GetName(), rhs->GetName()); }
     };
 
     std::vector<Armor *> m_container;
@@ -40,19 +36,10 @@ public:
      */
     auto GetRank(const char *armorName, RE::FormID formId) const -> size_t;
 
-    void Clear()
-    {
-        m_container.clear();
-    }
+    void Clear() { m_container.clear(); }
 
-    constexpr auto IsEmpty() const -> bool
-    {
-        return m_container.empty();
-    }
+    constexpr auto IsEmpty() const -> bool { return m_container.empty(); }
 
-    constexpr auto Size() const -> size_t
-    {
-        return m_container.size();
-    }
+    constexpr auto Size() const -> size_t { return m_container.size(); }
 };
-}
+} // namespace LIBC_NAMESPACE_DECL

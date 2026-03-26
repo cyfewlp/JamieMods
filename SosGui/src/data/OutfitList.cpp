@@ -1,6 +1,8 @@
 #include "data/OutfitList.h"
+
 #include "common/config.h"
 #include "data/id.h"
+
 #include <string>
 
 namespace LIBC_NAMESPACE_DECL
@@ -13,17 +15,20 @@ auto OutfitList::SetFavoriteOutfit(const OutfitId id, bool favorite) -> std::exp
     {
         return std::unexpected(unassociated_outfit_error{});
     }
-    m_outfitById.modify(outfitIt, [&](auto &outfit) { outfit.SetFavorite(favorite); });
+    m_outfitById.modify(outfitIt, [&](auto &outfit) {
+        outfit.SetFavorite(favorite);
+    });
     return {};
 }
 
 [[nodiscard]]
-auto OutfitList::SetFavoriteOutfit(const std::string &outfitName, bool favorite)
-    -> std::expected<void, unassociated_outfit_error>
+auto OutfitList::SetFavoriteOutfit(const std::string &outfitName, bool favorite) -> std::expected<void, unassociated_outfit_error>
 {
     if (auto outfitIt = m_outfitByName.find(outfitName); outfitIt != m_outfitByName.end())
     {
-        m_outfitByName.modify(outfitIt, [&](auto &outfit) { outfit.SetFavorite(favorite); });
+        m_outfitByName.modify(outfitIt, [&](auto &outfit) {
+            outfit.SetFavorite(favorite);
+        });
         return {};
     }
     return std::unexpected(unassociated_outfit_error{});
@@ -54,15 +59,19 @@ void OutfitList::RenameOutfit(const OutfitId id, const std::string &&newName)
 {
     if (auto where = m_outfitById.find(id); where != m_outfitById.end())
     {
-        m_outfitById.modify(where, [&](auto &outfit) { outfit.SetName(newName); });
+        m_outfitById.modify(where, [&](auto &outfit) {
+            outfit.SetName(newName);
+        });
     }
 }
 
-void OutfitList::AddArmor(const OutfitId id, const Armor* armor)
+void OutfitList::AddArmor(const OutfitId id, const Armor *armor)
 {
     if (auto where = m_outfitById.find(id); where != m_outfitById.end())
     {
-        m_outfitById.modify(where, [&](auto &outfit) { outfit.AddArmor(armor); });
+        m_outfitById.modify(where, [&](auto &outfit) {
+            outfit.AddArmor(armor);
+        });
     }
 }
 
@@ -97,4 +106,4 @@ auto OutfitList::findIdByName(const std::string &outfitName) const -> OutfitId
     return itByName->GetId();
 }
 
-}
+} // namespace LIBC_NAMESPACE_DECL

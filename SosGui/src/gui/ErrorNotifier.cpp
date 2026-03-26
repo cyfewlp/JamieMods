@@ -3,8 +3,8 @@
 //
 
 #include "gui/ErrorNotifier.h"
-#include "common/imgui/ImGuiFlags.h"
 
+#include "common/imgui/ImGuiFlags.h"
 #include "imgui.h"
 #include "util/ImGuiUtil.h"
 
@@ -21,9 +21,7 @@ void ErrorNotifier::show()
     ImGui::SetNextWindowPos({displaySize.x - 320, displaySize.y - 250}, ImGuiCond_Always);
 
     if (!ImGui::Begin(
-            "ErrorNotifier",
-            nullptr,
-            ImGuiUtil::WindowFlags().NoDecoration().AlwaysAutoResize().NoMove().NoSavedSettings().NoFocusOnAppearing()
+            "ErrorNotifier", nullptr, ImGuiUtil::WindowFlags().NoDecoration().AlwaysAutoResize().NoMove().NoSavedSettings().NoFocusOnAppearing()
         ))
     {
         ImGui::End();
@@ -72,4 +70,4 @@ std::string ErrorNotifier::currentTime()
     strftime(buf, sizeof(buf), "%X", &tstruct);
     return std::string(buf);
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

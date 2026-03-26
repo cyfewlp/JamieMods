@@ -35,9 +35,7 @@ void Input::ImGuiInputEventSink::SendKeyBoardEvent(std::uint32_t key, float valu
     ImGui::GetIO().AddKeyEvent(imguiKey, pressed);
 }
 
-RE::BSEventNotifyControl Input::ImGuiInputEventSink::ProcessEvent(
-    RE::InputEvent *const *a_evn, RE::BSTEventSource<RE::InputEvent *> *
-)
+RE::BSEventNotifyControl Input::ImGuiInputEventSink::ProcessEvent(RE::InputEvent *const *a_evn, RE::BSTEventSource<RE::InputEvent *> *)
 {
     if (!inputEventsEnabled) return RE::BSEventNotifyControl::kContinue;
 

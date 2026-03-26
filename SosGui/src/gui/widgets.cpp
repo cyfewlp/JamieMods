@@ -39,5 +39,5 @@ bool DrawNearActorsCombo(const std::vector<RE::Actor *> &nearActors, RE::Actor *
     }
     return clicked;
 }
-}
-}
+} // namespace widgets
+} // namespace LIBC_NAMESPACE_DECL

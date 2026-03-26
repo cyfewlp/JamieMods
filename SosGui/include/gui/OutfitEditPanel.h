@@ -30,10 +30,7 @@ public:
 private:
     static auto get_slot_name_key(uint32_t slotPos) -> std::string;
 
-    static bool IsArmorNonPlayable(const Armor *armor)
-    {
-        return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0;
-    }
+    static bool IsArmorNonPlayable(const Armor *armor) { return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0; }
 
     struct ArmorGeneratorTabBar
     {
@@ -63,10 +60,7 @@ private:
     public:
         const Armor *armor;
 
-        DeleteRequest(const OutfitId id, const Armor *const armor)
-            : OutfitModifyRequest("$SosGui_Popup_DeleteArmor", id), armor(armor)
-        {
-        }
+        DeleteRequest(const OutfitId id, const Armor *const armor) : OutfitModifyRequest("$SosGui_Popup_DeleteArmor", id), armor(armor) {}
 
         void OnConfirm(OutfitEditPanel *editPanel) override;
 
@@ -118,10 +112,7 @@ private:
     OutfitService &m_outfitService;
 
 public:
-    explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService)
-        : m_uiData(uiData), m_outfitService(outfitService)
-    {
-    }
+    explicit OutfitEditPanel(SosUiData &uiData, OutfitService &outfitService) : m_uiData(uiData), m_outfitService(outfitService) {}
 
     void Show() override
     {
@@ -157,30 +148,20 @@ private:
     void HighlightConflictSlot(Slot slot) const;
     void SlotPolicyCombo(const EditingOutfit &editingOutfit, const uint32_t &slotIdx) const;
 
-    auto GetGenerator() const -> ArmorGenerator *
-    {
-        return m_armorGeneratorTabBar.generator.get();
-    }
+    auto GetGenerator() const -> ArmorGenerator * { return m_armorGeneratorTabBar.generator.get(); }
 
     using DrawArmorEntry = std::function<void(const Armor *armor, size_t index)>;
     void DrawArmorGeneratorTabBar(const SosUiOutfit *editingOutfit);
     void DrawArmorViewFilter(const SosUiOutfit *editingOutfit);
     void DrawArmorView(Context &context, const EditingOutfit &editingOutfit);
-    void DrawArmorViewContent(
-        Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData
-    );
-    void DrawArmorViewTableContent(
-        const std::vector<ArmorView::RankedArmor> &viewData, const DrawArmorEntry &drawArmorEntry
-    );
+    void DrawArmorViewContent(Context &context, const EditingOutfit &editingOutfit, const std::vector<ArmorView::RankedArmor> &viewData);
+    void DrawArmorViewTableContent(const std::vector<ArmorView::RankedArmor> &viewData, const DrawArmorEntry &drawArmorEntry);
     void DrawArmorViewModNameFilterer(const SosUiOutfit *editingOutfit);
     void DrawArmorViewSlotFilterer(const SosUiOutfit *editing);
 
     void OnAcceptAddArmorToOutfit(Context &context, const EditingOutfit &editingOutfit, const Armor *armor);
 
-    static auto ToSlot(uint32_t slotPos) -> Slot
-    {
-        return slotPos >= RE::BIPED_OBJECT::kEditorTotal ? Slot::kNone : static_cast<Slot>(1 << slotPos);
-    }
+    static auto ToSlot(uint32_t slotPos) -> Slot { return slotPos >= RE::BIPED_OBJECT::kEditorTotal ? Slot::kNone : static_cast<Slot>(1 << slotPos); }
 
     static auto ToSlot(const RE::BIPED_OBJECT equipIndex) -> Slot
     {
@@ -192,4 +173,4 @@ private:
     }
 };
 
-}
+} // namespace LIBC_NAMESPACE_DECL

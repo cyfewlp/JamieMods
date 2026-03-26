@@ -80,10 +80,7 @@ public:
     {
         SosUiData *self;
 
-        bool await_ready() const noexcept
-        {
-            return false;
-        }
+        bool await_ready() const noexcept { return false; }
 
         auto await_suspend(std::coroutine_handle<> a_handle) const noexcept
         {
@@ -94,10 +91,7 @@ public:
         void await_resume() {}
     };
 
-    awaitable await_execute_on_ui()
-    {
-        return awaitable{this};
-    }
+    awaitable await_execute_on_ui() { return awaitable{this}; }
 
     void ExecuteUiTasks()
     {
@@ -129,15 +123,9 @@ public:
     // Actors
     ////////////////////////////////////////////////////////////////////////////
 
-    [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> &
-    {
-        return m_actors;
-    }
+    [[nodiscard]] auto GetActors() const -> const std::vector<RE::Actor *> & { return m_actors; }
 
-    [[nodiscard]] auto GetActors() -> std::vector<RE::Actor *> &
-    {
-        return m_actors;
-    }
+    [[nodiscard]] auto GetActors() -> std::vector<RE::Actor *> & { return m_actors; }
 
     void SetActors(const std::vector<RE::Actor *> &actors)
     {
@@ -156,25 +144,13 @@ public:
         }
     }
 
-    void RemoveActor(RE::Actor *actor)
-    {
-        std::erase(m_actors, actor);
-    }
+    void RemoveActor(RE::Actor *actor) { std::erase(m_actors, actor); }
 
-    [[nodiscard]] constexpr auto IsQuickSlotEnabled() const -> bool
-    {
-        return m_fQuickSlotEnabled;
-    }
+    [[nodiscard]] constexpr auto IsQuickSlotEnabled() const -> bool { return m_fQuickSlotEnabled; }
 
-    void SetQuickSlotEnabled(const bool fQuickSlotEnabled)
-    {
-        m_fQuickSlotEnabled = fQuickSlotEnabled;
-    }
+    void SetQuickSlotEnabled(const bool fQuickSlotEnabled) { m_fQuickSlotEnabled = fQuickSlotEnabled; }
 
-    [[nodiscard]] auto GetNearActors() const -> const std::vector<RE::Actor *> &
-    {
-        return m_NearActors;
-    }
+    [[nodiscard]] auto GetNearActors() const -> const std::vector<RE::Actor *> & { return m_NearActors; }
 
     void SetNearActors(std::vector<RE::Actor *> &nearActors)
     {
@@ -182,77 +158,44 @@ public:
         m_NearActors = std::move(nearActors);
     }
 
-    [[nodiscard]] auto IsEnabled() const -> bool
-    {
-        return m_enabled;
-    }
+    [[nodiscard]] auto IsEnabled() const -> bool { return m_enabled; }
 
-    void SetEnabled(const bool enabled)
-    {
-        m_enabled = enabled;
-    }
+    void SetEnabled(const bool enabled) { m_enabled = enabled; }
 
     [[nodiscard]] auto IsAutoSwitchEnabled(const RE::FormID actorId) const -> bool
     {
         return m_autoSwitchEnabled.contains(actorId) ? m_autoSwitchEnabled.at(actorId) : false;
     }
 
-    void SetAutoSwitchEnabled(const RE::FormID actorId, const bool autoSwitchEnabled)
-    {
-        m_autoSwitchEnabled[actorId] = autoSwitchEnabled;
-    }
+    void SetAutoSwitchEnabled(const RE::FormID actorId, const bool autoSwitchEnabled) { m_autoSwitchEnabled[actorId] = autoSwitchEnabled; }
 
-    auto GetAutoSwitchPolicyContainer() const -> const AutoSwitch::ActorPolicyContainer &
-    {
-        return m_autoSwitchPolicyContainer;
-    }
+    auto GetAutoSwitchPolicyContainer() const -> const AutoSwitch::ActorPolicyContainer & { return m_autoSwitchPolicyContainer; }
 
-    auto GetAutoSwitchPolicyContainer() -> AutoSwitch::ActorPolicyContainer &
-    {
-        return m_autoSwitchPolicyContainer;
-    }
+    auto GetAutoSwitchPolicyContainer() -> AutoSwitch::ActorPolicyContainer & { return m_autoSwitchPolicyContainer; }
 
     ////////////////////////////////////////////////////////////////////////////
     // SosUiOutfit
     ////////////////////////////////////////////////////////////////////////////
 
-    [[nodiscard]] auto GetOutfitList() const -> const OutfitList &
-    {
-        return m_outfitList;
-    }
+    [[nodiscard]] auto GetOutfitList() const -> const OutfitList & { return m_outfitList; }
 
-    [[nodiscard]] auto GetOutfitList() -> OutfitList &
-    {
-        return m_outfitList;
-    }
+    [[nodiscard]] auto GetOutfitList() -> OutfitList & { return m_outfitList; }
 
     ////////////////////////////////////////////////////////////////////////////
     // Active outfit
     ////////////////////////////////////////////////////////////////////////////
 
-    [[nodiscard]] auto GetActorOutfitMap() const -> const ActorOutfitMap &
-    {
-        return m_actorOutfitMap;
-    }
+    [[nodiscard]] auto GetActorOutfitMap() const -> const ActorOutfitMap & { return m_actorOutfitMap; }
 
-    [[nodiscard]] auto GetActorOutfitMap() -> ActorOutfitMap &
-    {
-        return m_actorOutfitMap;
-    }
+    [[nodiscard]] auto GetActorOutfitMap() -> ActorOutfitMap & { return m_actorOutfitMap; }
 
     ////////////////////////////////////////////////////////////////////////////
     // UI Error Messages
     ////////////////////////////////////////////////////////////////////////////
 
-    void PushErrorMessage(std::string &&message)
-    {
-        m_errorNotifier.addError(message);
-    }
+    void PushErrorMessage(std::string &&message) { m_errorNotifier.addError(message); }
 
-    [[nodiscard]] auto GetErrorNotifier() -> ErrorNotifier &
-    {
-        return m_errorNotifier;
-    }
+    [[nodiscard]] auto GetErrorNotifier() -> ErrorNotifier & { return m_errorNotifier; }
 };
-}
+} // namespace LIBC_NAMESPACE_DECL
 #endif // SOSUIDATA_H

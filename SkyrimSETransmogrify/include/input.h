@@ -18,9 +18,7 @@ class ImGuiInputEventSink : public Singleton<ImGuiInputEventSink>, public RE::BS
     friend class Singleton<ImGuiInputEventSink>;
 
 public:
-    RE::BSEventNotifyControl ProcessEvent(
-        RE::InputEvent *const *a_evn, RE::BSTEventSource<RE::InputEvent *> *
-    ) override;
+    RE::BSEventNotifyControl ProcessEvent(RE::InputEvent *const *a_evn, RE::BSTEventSource<RE::InputEvent *> *) override;
 
 private:
     void SendMouseEvent(std::uint32_t key, float value, bool pressed);

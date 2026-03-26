@@ -79,13 +79,12 @@ struct DeleteOutfitPopup final : ModalPopup
     std::string wanDeleteOutfitName;
 
     DeleteOutfitPopup(const OutfitId wanDeleteOutfitId, const std::string &wanDeleteOutfitName)
-        : ModalPopup("$SosGui_PopupName_ConfirmDeleteOutfit"), wanDeleteOutfitId(wanDeleteOutfitId),
-          wanDeleteOutfitName(wanDeleteOutfitName)
+        : ModalPopup("$SosGui_PopupName_ConfirmDeleteOutfit"), wanDeleteOutfitId(wanDeleteOutfitId), wanDeleteOutfitName(wanDeleteOutfitName)
     {
     }
 
 protected:
     void DoDraw(SosUiData &uiData, bool &confirmed) override;
 };
-}
-}
+} // namespace Popup
+} // namespace LIBC_NAMESPACE_DECL

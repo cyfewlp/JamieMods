@@ -6,8 +6,7 @@
 
 #include <common/log.h>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 namespace Translation
 {
@@ -47,8 +46,7 @@ auto TranslateIgnoreNested(const std::string &a_key, std::string &a_result) -> b
 
     const auto scaleformManager = RE::BSScaleformManager::GetSingleton();
     const auto loader           = scaleformManager ? scaleformManager->loader : nullptr;
-    const auto translator       =
-        loader ? loader->GetStateAddRef<RE::GFxTranslator>(RE::GFxState::StateType::kTranslator) : nullptr;
+    const auto translator       = loader ? loader->GetStateAddRef<RE::GFxTranslator>(RE::GFxState::StateType::kTranslator) : nullptr;
 
     if (!translator)
     {
@@ -83,5 +81,5 @@ auto TranslateIgnoreNested(const std::string &a_key) -> std::string
     TranslateIgnoreNested(a_key, result);
     return result;
 }
-}
-}
+} // namespace Translation
+} // namespace LIBC_NAMESPACE_DECL

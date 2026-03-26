@@ -47,9 +47,9 @@ public:
     {
     };
 
-    struct favorite_name_key
-        : composite_key<SosUiOutfit, BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, bool, IsFavorite),
-                        BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName)>
+    struct favorite_name_key : composite_key<
+                                   SosUiOutfit, BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, bool, IsFavorite),
+                                   BOOST_MULTI_INDEX_CONST_MEM_FUN(SosUiOutfit, const std::string &, GetName)>
     {
     };
 
@@ -81,8 +81,10 @@ private:
     struct unassociated_outfit_error : std::runtime_error
     {
         explicit unassociated_outfit_error()
-            : std::runtime_error("WARNING: The specify outfit id is invalid or unassociate outfit. Try reopen or "
-                                 "refresh outfit list")
+            : std::runtime_error(
+                  "WARNING: The specify outfit id is invalid or unassociate outfit. Try reopen or "
+                  "refresh outfit list"
+              )
         {
         }
     };
@@ -115,11 +117,9 @@ public:
         }
     }
 
-    [[nodiscard]] auto SetFavoriteOutfit(const OutfitId id, bool favorite)
-        -> std::expected<void, unassociated_outfit_error>;
+    [[nodiscard]] auto SetFavoriteOutfit(const OutfitId id, bool favorite) -> std::expected<void, unassociated_outfit_error>;
 
-    [[nodiscard]] auto SetFavoriteOutfit(const std::string &outfitName, bool favorite)
-        -> std::expected<void, unassociated_outfit_error>;
+    [[nodiscard]] auto SetFavoriteOutfit(const std::string &outfitName, bool favorite) -> std::expected<void, unassociated_outfit_error>;
 
     auto GetOutfitByNameRank(const size_t rank) const -> boost::optional<const SosUiOutfit &>;
 
@@ -127,7 +127,7 @@ public:
 
     void RenameOutfit(const OutfitId id, const std::string &&newName);
 
-    void AddArmor(const OutfitId id, const Armor* armor);
+    void AddArmor(const OutfitId id, const Armor *armor);
 
     template <typename Container>
     void AddArmors(const OutfitId id, const Container &armors)
@@ -143,16 +143,15 @@ public:
         }
     }
 
-    void DeleteOutfit(const OutfitId id) const
-    {
-        m_outfitById.erase(id);
-    }
+    void DeleteOutfit(const OutfitId id) const { m_outfitById.erase(id); }
 
     void DeleteArmor(const OutfitId id, const Armor *armor)
     {
         if (auto where = m_outfitById.find(id); where != m_outfitById.end())
         {
-            m_outfitById.modify(where, [&](auto &outfit) { outfit.RemoveArmor(armor); });
+            m_outfitById.modify(where, [&](auto &outfit) {
+                outfit.RemoveArmor(armor);
+            });
         }
     }
 
@@ -160,7 +159,9 @@ public:
     {
         if (auto where = m_outfitById.find(id); where != m_outfitById.end())
         {
-            m_outfitById.modify(where, [&](auto &outfit) { outfit.SetSlotPolicies(slotPos, std::move(policyString)); });
+            m_outfitById.modify(where, [&](auto &outfit) {
+                outfit.SetSlotPolicies(slotPos, std::move(policyString));
+            });
         }
     }
 
@@ -177,10 +178,7 @@ public:
         }
     }
 
-    constexpr void clear()
-    {
-        m_container.clear();
-    }
+    constexpr void clear() { m_container.clear(); }
 
     //////////////////////////////////////////////////////////////////////////
     // Query
@@ -191,30 +189,15 @@ public:
     auto TryFindIdByName(const std::string &outfitName) const -> boost::optional<OutfitId>;
     auto findIdByName(const std::string &outfitName) const -> OutfitId;
 
-    auto HasOutfit(const OutfitId &id) const -> bool
-    {
-        return m_outfitById.contains(id);
-    }
+    auto HasOutfit(const OutfitId &id) const -> bool { return m_outfitById.contains(id); }
 
-    [[nodiscard]] constexpr auto empty() const -> bool
-    {
-        return m_container.empty();
-    }
+    [[nodiscard]] constexpr auto empty() const -> bool { return m_container.empty(); }
 
-    [[nodiscard]] constexpr auto size() const -> size_t
-    {
-        return m_container.size();
-    }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_container.size(); }
 
-    [[nodiscard]] constexpr auto FavoriteRankedIndex() const -> const FavoriteIndex &
-    {
-        return m_favoriteIndex;
-    }
+    [[nodiscard]] constexpr auto FavoriteRankedIndex() const -> const FavoriteIndex & { return m_favoriteIndex; }
 
-    [[nodiscard]] constexpr auto NameRankedIndex() const -> const OutfitByName &
-    {
-        return m_outfitByName;
-    }
+    [[nodiscard]] constexpr auto NameRankedIndex() const -> const OutfitByName & { return m_outfitByName; }
 
     [[nodiscard]] auto ProjectToNameIterator(FavoriteIndex::iterator &iter) const -> OutfitByName::iterator
     {
@@ -269,4 +252,4 @@ public:
     }
 };
 
-}
+} // namespace LIBC_NAMESPACE_DECL

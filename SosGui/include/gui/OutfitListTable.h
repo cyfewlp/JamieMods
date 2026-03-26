@@ -54,15 +54,9 @@ class OutfitListTable final : public BaseGui
 
         explicit CreateOutfitPopup() : ModalPopup("$SosGui_CreateOutfit") {}
 
-        [[nodiscard]] auto GetFlags() const -> Flags
-        {
-            return m_flags;
-        }
+        [[nodiscard]] auto GetFlags() const -> Flags { return m_flags; }
 
-        auto GetOutfitName() const -> std::string
-        {
-            return std::string(m_outfitNameBuf.data(), m_outfitNameBuf.size());
-        }
+        auto GetOutfitName() const -> std::string { return std::string(m_outfitNameBuf.data(), m_outfitNameBuf.size()); }
 
     protected:
         void DoDraw(SosUiData &uiData, bool &confirmed) override;
@@ -94,10 +88,7 @@ public:
     // Only one modal popup can be rendered in the same time.
     bool OnModalPopupConfirmed(Popup::ModalPopup *modalPopup) const;
 
-    auto GetEditingOutfit() -> EditingOutfit &
-    {
-        return m_wantEdit;
-    }
+    auto GetEditingOutfit() -> EditingOutfit & { return m_wantEdit; }
 
 private:
     // refresh, filterer, favorite checkbox...
@@ -108,16 +99,13 @@ private:
 
     static void PreDrawOutfits(ImGuiListClipper &clipper, MultiSelection &selection);
     static void PostDrawOutfits(MultiSelection &selection);
-    void DrawOutfitTableContent(std::vector<const SosUiOutfit *> outfitView, bool ascend, const DrawOutfitEntry &drawOutfitEntry);
+    void        DrawOutfitTableContent(std::vector<const SosUiOutfit *> outfitView, bool ascend, const DrawOutfitEntry &drawOutfitEntry);
 
     /**
      * open a context menu if user right-clicks current row
      * @return true if the context menu is open.
      */
-    void OpenContextMenu(
-        Context &context, uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit *outfit,
-        __out bool &acceptRename
-    );
+    void OpenContextMenu(Context &context, uint32_t selectedItemCount, RE::Actor *editingActor, const SosUiOutfit *outfit, __out bool &acceptRename);
 
     void OnAcceptEditOutfit(const EditingOutfit &lastEdit, const EditingOutfit &editingOutfit) const;
     void OnAcceptActiveOutfit(RE::Actor *editingActor, OutfitId id, const std::string &outfitName) const;
@@ -125,4 +113,4 @@ private:
     void OnAcceptSetFavoriteOutfits(bool toFavorite);
     void OnAcceptDeleteOutfits();
 };
-}
+} // namespace LIBC_NAMESPACE_DECL

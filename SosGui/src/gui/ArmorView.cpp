@@ -34,9 +34,7 @@ bool ArmorView::ArmorFilter::Draw()
     ImGui::Text(NF_OCT_SEARCH);
 
     ImGui::SameLine();
-    bool needUpdate = DebounceInput::Draw(
-        "##ArmorFilter", Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name").c_str()
-    );
+    bool needUpdate = DebounceInput::Draw("##ArmorFilter", Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name").c_str());
     return needUpdate;
 }
 
@@ -98,8 +96,7 @@ void ArmorView::remove_armors_has_slot(Slot selectedSlots, Slot toRemoveSlot)
     multiSelection.Clear();
     for (auto itBegin = viewData.begin(); itBegin != viewData.end();)
     {
-        if (const auto &rankedArmor = *itBegin;
-            rankedArmor->HasPartOf(toRemoveSlot) && util::IsArmorHasNoneSlotOf(rankedArmor, selectedSlots))
+        if (const auto &rankedArmor = *itBegin; rankedArmor->HasPartOf(toRemoveSlot) && util::IsArmorHasNoneSlotOf(rankedArmor, selectedSlots))
         {
             itBegin = viewData.erase(itBegin);
         }
@@ -116,9 +113,7 @@ void ArmorView::add_armors_in_outfit(SosUiData &uiData, const SosUiOutfit *editi
     {
         if (auto result = add_armor(armor); !result.has_value())
         {
-            uiData.PushErrorMessage(
-                std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName())
-            );
+            uiData.PushErrorMessage(std::format("Can't restore armor {} from outfit {}", armor->GetName(), editingOutfit->GetName()));
         }
     }
 }
@@ -302,4 +297,4 @@ bool ArmorView::no_select_any_slot() const
 {
     return !checkAllSlot && slotFiltererSelected == 0;
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

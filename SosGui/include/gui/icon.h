@@ -29,6 +29,6 @@ constexpr auto *NF_OCT_PEOPLE      = "\xef\x93\xbd";     //\uf4fd
 constexpr auto *NF_MD_CLOSE        = "\xf3\xb0\x85\x96"; //\udb80\udd56
 constexpr auto *NF_MD_HELP         = "\xf3\xb0\x8b\x96"; //\udb80\uded6
 
-}
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // ICON_H

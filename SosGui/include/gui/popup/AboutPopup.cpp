@@ -33,5 +33,5 @@ void AboutPopup::DoDraw(SosUiData &, bool &)
     ImGui::SameLine();
     ImGui::TextLinkOpenURL("https://next.nexusmods.com/profile/JamieYin101");
 }
-}
-}
+} // namespace Popup
+} // namespace LIBC_NAMESPACE_DECL

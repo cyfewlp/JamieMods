@@ -15,9 +15,7 @@ struct InitWornFormHook
     static constexpr auto offset = REL::Offset(0x302);
 
     static void Install();
-    static void InitWornForm(
-        TESObjectARMO *a_armor, TESRace *a_race, BSTSmartPointer<BipedAnim> *a_biped, bool isFemale
-    );
+    static void InitWornForm(TESObjectARMO *a_armor, TESRace *a_race, BSTSmartPointer<BipedAnim> *a_biped, bool isFemale);
     using InitWornFormFunc = decltype(&InitWornForm);
     static inline REL::Relocation<InitWornFormFunc> originalFunc;
 };
@@ -59,8 +57,6 @@ private:
     static constexpr auto id = Offset::GFxLoader::CreateMovie;
     using CreateMovieFunc    = GFxMovieDef *(GFxLoader *, char *, GFxLoader::LoadConstants, std::size_t);
     static inline REL::Relocation<CreateMovieFunc> originalFunc;
-    static GFxMovieDef                            *MyCreateMovie(
-                                   GFxLoader *, char *a_filename, GFxLoader::LoadConstants a_loadConstants, std::size_t a_memoryArena
-                               );
+    static GFxMovieDef *MyCreateMovie(GFxLoader *, char *a_filename, GFxLoader::LoadConstants a_loadConstants, std::size_t a_memoryArena);
 };
 } // namespace Hooks

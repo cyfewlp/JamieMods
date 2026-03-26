@@ -26,7 +26,7 @@ target_link_libraries(${TEST_PROJ_NAME} PRIVATE GTest::gtest GTest::gtest_main G
 ## Set Output folder
 
 if (DEFINED ENV{MO2_MODS_PATH} AND IS_DIRECTORY "$ENV{MO2_MODS_PATH}")
-  set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
+    set(OUTPUT_FOLDER "$ENV{MO2_MODS_PATH}/${PROJECT_NAME}")
 endif ()
 
 ## Plugin setttings
@@ -106,33 +106,33 @@ target_link_libraries(
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
 if (DEFINED OUTPUT_FOLDER)
-  # If you specify an <OUTPUT_FOLDER> (including via environment variables)
-  # then we'll copy your mod files into Skyrim or a mod manager for you!
+    # If you specify an <OUTPUT_FOLDER> (including via environment variables)
+    # then we'll copy your mod files into Skyrim or a mod manager for you!
 
-  # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
-  set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
-  set(TRANSLATION_FOLDER "${OUTPUT_FOLDER}/Interface/translations")
-  set(Theme_FOLDER "${OUTPUT_FOLDER}/Interface/SosGui")
+    # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
+    set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
+    set(TRANSLATION_FOLDER "${OUTPUT_FOLDER}/Interface/translations")
+    set(Theme_FOLDER "${OUTPUT_FOLDER}/Interface/SosGui")
 
-  message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
+    message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
-  add_custom_command(
-      TARGET "${PROJECT_NAME}"
-      POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
-      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/${PROJECT_NAME}_english.txt" "${TRANSLATION_FOLDER}/${PROJECT_NAME}_english.txt"
-      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/common/themes.toml.txt" "${Theme_FOLDER}/themes.toml"
-      VERBATIM
-  )
-
-  # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_custom_command(
         TARGET "${PROJECT_NAME}"
         POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/${PROJECT_NAME}_english.txt" "${TRANSLATION_FOLDER}/${PROJECT_NAME}_english.txt"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_SOURCE_DIR}/common/themes.toml.txt" "${Theme_FOLDER}/themes.toml"
         VERBATIM
     )
-  endif ()
+
+    # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_custom_command(
+            TARGET "${PROJECT_NAME}"
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
+            VERBATIM
+        )
+    endif ()
 endif ()

@@ -22,9 +22,7 @@ void CharacterEditPanel::Focus()
     BaseGui::Focus();
 }
 
-void CharacterEditPanel::DrawOutfitSelectPopup(
-    RE::Actor *const &selectedActor, SosUiData &uiData, const OutfitService &outfitService
-)
+void CharacterEditPanel::DrawOutfitSelectPopup(RE::Actor *const &selectedActor, SosUiData &uiData, const OutfitService &outfitService)
 {
     OutfitId    selectId   = INVALID_OUTFIT_ID;
     const auto &outfitList = uiData.GetOutfitList();
@@ -49,9 +47,7 @@ void CharacterEditPanel::DrawOutfitSelectPopup(
     }
 }
 
-void CharacterEditPanel::Draw(
-    SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService
-)
+void CharacterEditPanel::Draw(SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService)
 {
     if (!IsShowing())
     {
@@ -63,8 +59,7 @@ void CharacterEditPanel::Draw(
     {
         DrawCharactersPanel(uiData, dataCoordinator);
 
-        if (const auto &actors = uiData.GetActors();
-            m_selectedActorIndex >= 0 && static_cast<size_t>(m_selectedActorIndex) < actors.size())
+        if (const auto &actors = uiData.GetActors(); m_selectedActorIndex >= 0 && static_cast<size_t>(m_selectedActorIndex) < actors.size())
         {
             if (const auto &selectedActor = actors.at(m_selectedActorIndex))
             {
@@ -93,8 +88,7 @@ void CharacterEditPanel::DrawCharactersPanel(SosUiData &uiData, const SosDataCoo
     ImGuiUtil::Text("$SkyOutSys_Text_AddActorSelection");
     ImGui::SameLine();
 
-    if (RE::Actor *selectedActor = nullptr;
-        widgets::DrawNearActorsCombo(uiData.GetNearActors(), &selectedActor, RE::PlayerCharacter::GetSingleton()))
+    if (RE::Actor *selectedActor = nullptr; widgets::DrawNearActorsCombo(uiData.GetNearActors(), &selectedActor, RE::PlayerCharacter::GetSingleton()))
     {
         +[&] {
             return dataCoordinator.RequestAddActor(selectedActor);
@@ -120,18 +114,12 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
 {
     const auto &actors = uiData.GetActors();
 
-    const ImGuiScope::Table charactersTable(
-        "##CharactersTable", 3, ImGuiUtil::TableFlags().Resizable().SizingStretchProp().flags
-    );
+    const ImGuiScope::Table charactersTable("##CharactersTable", 3, ImGuiUtil::TableFlags().Resizable().SizingStretchProp().flags);
     if (!charactersTable)
     {
         return;
     }
-    TableHeadersBuilder()
-        .Column("$Characters")
-        .Column("$SosGui_TableHeader_ActiveOutfit")
-        .Column("$Delete")
-        .CommitHeadersRow();
+    TableHeadersBuilder().Column("$Characters").Column("$SosGui_TableHeader_ActiveOutfit").Column("$Delete").CommitHeadersRow();
 
     int wantDeleteActorIndex = -1;
     int idx                  = 0;
@@ -190,4 +178,4 @@ inline auto CharacterEditPanel::GetSelectedActor(SosUiData &uiData) const -> RE:
     }
     return nullptr;
 }
-}
+} // namespace LIBC_NAMESPACE_DECL

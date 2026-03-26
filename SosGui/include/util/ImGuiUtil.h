@@ -134,9 +134,7 @@ constexpr auto MenuItem(const std::string_view &nameKey, const char *shortcut = 
     return ImGui::MenuItem(g_widgetName.c_str(), shortcut, selected);
 }
 
-constexpr auto BeginChild(
-    const char *windowId, const ImVec2 &size = ImVec2(0, 0), ImGuiChildFlags chiildFlags = ImGuiChildFlags_None
-) -> bool
+constexpr auto BeginChild(const char *windowId, const ImVec2 &size = ImVec2(0, 0), ImGuiChildFlags chiildFlags = ImGuiChildFlags_None) -> bool
 {
     Translation::Translate(windowId, g_widgetName);
     return ImGui::BeginChild(g_widgetName.c_str(), size, chiildFlags);
@@ -181,10 +179,7 @@ struct DebounceInput
 
     virtual ~DebounceInput() = default;
 
-    bool PassFilter(const char *text) const
-    {
-        return filter.PassFilter(text);
-    }
+    bool PassFilter(const char *text) const { return filter.PassFilter(text); }
 
     virtual void OnInput()
     {
@@ -198,7 +193,7 @@ struct DebounceInput
     virtual void Clear();
 };
 
-}
-}
+} // namespace ImGuiUtil
+} // namespace LIBC_NAMESPACE_DECL
 
 #endif // IMGUIUTIL_H

@@ -63,9 +63,7 @@ BOOL Transmogrify::HideWnd::Initialize(HWND a_parent)
 
 // we are override WM_COMPOSITION, so the default COMPOSITION window is unavailble,
 // So we need update our ImeUI::m_caretPos to render our COMPOSITION window.
-void Transmogrify::HideWnd::MyPlatform_SetImeDataFn(
-    [[maybe_unused]] ImGuiContext *ctx, ImGuiViewport *viewport, ImGuiPlatformImeData *data
-)
+void Transmogrify::HideWnd::MyPlatform_SetImeDataFn([[maybe_unused]] ImGuiContext *ctx, ImGuiViewport *viewport, ImGuiPlatformImeData *data)
 {
     auto *pThis = (HideWnd *)viewport->PlatformUserData;
     if (nullptr == pThis) return;

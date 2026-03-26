@@ -109,9 +109,7 @@ void Transmogrify::ImeUI::SendResultStringToSkyrim()
         pScaleFormMessageData->scaleformEvent = pCharEvent;
 
         LOG(debug, "send code {} to Skyrim", code);
-        RE::UIMessageQueue::GetSingleton()->AddMessage(
-            menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData
-        );
+        RE::UIMessageQueue::GetSingleton()->AddMessage(menuName, RE::UI_MESSAGE_TYPE::kScaleformEvent, pScaleFormMessageData);
     }
 }
 
@@ -130,9 +128,7 @@ void Transmogrify::ImeUI::RenderCompWindow(WcharBuf *compStrBuf)
     ImGui::BeginChild("CompositionWindow", childSize, 0, windowFlags);
     // render a underline
     ImGui::GetForegroundDrawList()->AddLine(
-        {caretPos.x, caretPos.y + childSize.y},
-        {caretPos.x + childSize.x, caretPos.y + childSize.y},
-        IM_COL32(125, 125, 125, 255)
+        {caretPos.x, caretPos.y + childSize.y}, {caretPos.x + childSize.x, caretPos.y + childSize.y}, IM_COL32(125, 125, 125, 255)
     ); // gray
     auto str = Transmogrify::utils::WideStrToStrUTF8(compStrBuf->szStr);
     ImGui::Text(str.c_str());

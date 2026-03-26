@@ -11,14 +11,13 @@
 #include <RE/V/Variable.h>
 #include <string>
 
-namespace
-LIBC_NAMESPACE_DECL
+namespace LIBC_NAMESPACE_DECL
 {
 class OutfitService
 {
     using Armor    = RE::TESObjectARMO;
     using Variable = RE::BSScript::Variable;
-    SosUiData & m_uiData;
+    SosUiData  &m_uiData;
     OutfitList &m_outfitList;
 
 public:
@@ -60,4 +59,4 @@ public:
 
     auto SetActorStateOutfit(const RE::Actor *actor, uint32_t policyId, OutfitId outfitId) const -> Task;
 };
-}
+} // namespace LIBC_NAMESPACE_DECL

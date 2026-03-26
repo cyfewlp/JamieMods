@@ -64,15 +64,15 @@ auto util::CreateTextureFromPng(const char *filename, int *width, int *height) -
     // ID3D11DeviceContext *context = reinterpret_cast<ID3D11DeviceContext *>(rendererData.context);
 
     REX::W32::D3D11_TEXTURE2D_DESC desc = {};
-    desc.width            = *width;
-    desc.height           = *height;
-    desc.mipLevels        = 1;
-    desc.arraySize        = 1;
-    desc.format           = REX::W32::DXGI_FORMAT_R8G8B8A8_UNORM;
-    desc.sampleDesc.count = 1;
-    desc.usage            = REX::W32::D3D11_USAGE_DEFAULT;
-    desc.bindFlags        = REX::W32::D3D11_BIND_SHADER_RESOURCE;
-    desc.cpuAccessFlags   = 0;
+    desc.width                          = *width;
+    desc.height                         = *height;
+    desc.mipLevels                      = 1;
+    desc.arraySize                      = 1;
+    desc.format                         = REX::W32::DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.sampleDesc.count               = 1;
+    desc.usage                          = REX::W32::D3D11_USAGE_DEFAULT;
+    desc.bindFlags                      = REX::W32::D3D11_BIND_SHADER_RESOURCE;
+    desc.cpuAccessFlags                 = 0;
 
     REX::W32::ID3D11Texture2D       *texture = nullptr;
     REX::W32::D3D11_SUBRESOURCE_DATA subResource;
@@ -93,4 +93,4 @@ auto util::CreateTextureFromPng(const char *filename, int *width, int *height) -
     stbi_image_free(image_data);
     return srv;
 }
-}
+} // namespace LIBC_NAMESPACE_DECL
