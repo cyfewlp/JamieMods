@@ -18,7 +18,6 @@
 #include "imguiex/m3/spec/text_field.h"
 #include "path_utils.h"
 #include "ui/Settings.h"
-#include "ui/imgui_system.h"
 
 #include <cassert>
 #include <imgui.h>

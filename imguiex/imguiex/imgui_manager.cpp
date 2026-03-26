@@ -1,23 +1,21 @@
 //
-// Created by jamie on 2026/1/16.
+// Created by jamie on 2026/3/26.
 //
-#include "ui/imgui_system.h"
 
-#include "ime/ImeController.h"
-#include "imgui.h"
+#include "imgui_manager.h"
+
+#include "ErrorNotifier.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
-#include "imguiex/ErrorNotifier.h"
-#include "imguiex/Material3.h"
-#include "imguiex/imguiex_m3.h"
 #include "log.h"
 #include "path_utils.h"
 
-namespace Ime::UI
+namespace ImGuiEx
 {
 
 namespace
 {
+
 bool g_initialized = false;
 
 auto AddFonts(const std::vector<std::string> &fontPaths) -> ImFont *
@@ -85,26 +83,22 @@ void EnableTextInputIfNeed()
 {
     static bool fWantTextInput = false;
     const bool  cWantTextInput = ImGui::GetIO().WantTextInput;
-    const auto *imeController  = ImeController::GetInstance();
 
     auto *controlMap = RE::ControlMap::GetSingleton();
     if (!fWantTextInput && cWantTextInput)
     {
         controlMap->AllowTextInput(true);
-        imeController->EnableIme(true);
         controlMap->StoreControls();
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false, false);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
         controlMap->AllowTextInput(false);
-        imeController->EnableIme(false);
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true, false);
         controlMap->LoadStoredControls();
     }
     fWantTextInput = cWantTextInput;
 }
-
 } // namespace
 
 void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
@@ -127,8 +121,9 @@ void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
     io.MouseDrawCursor          = true;
     io.ConfigNavMoveSetMousePos = false;
 
-    static auto iniPath = (utils::GetInterfacePath() / SIMPLE_IME / "imgui.ini").generic_string();
-    io.IniFilename      = iniPath.c_str();
+    const auto  pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+    static auto iniPath    = (utils::GetInterfacePath() / pluginName / "imgui.ini").generic_string();
+    io.IniFilename         = iniPath.c_str();
 
     g_initialized = true;
     logger::info("ImGui initialized!");
@@ -163,24 +158,6 @@ auto AddFont(const std::string &filePath) -> ImFont *
     return ImGui::GetIO().Fonts->AddFontFromFileTTF(filePath.c_str());
 }
 
-void InitializeM3(const std::filesystem::path &iconFontPath, const ImGuiEx::M3::SchemeConfig &schemeConfig)
-{
-    auto *iconFont = AddFont(iconFontPath.generic_string());
-    if (iconFont == nullptr)
-    {
-        logger::error("Cannot find icon font from {}, fallback to default primary font!", iconFontPath.generic_string());
-        iconFont = ImGui::GetFont();
-    }
-
-    ImGuiEx::M3::Context::CreateM3Styles(iconFont, {schemeConfig});
-    ImGuiEx::M3::SetupDefaultImGuiStyles(ImGui::GetStyle());
-}
-
-void DestroyM3()
-{
-    ImGuiEx::M3::Context::DestroyM3Styles();
-}
-
 void NewFrame()
 {
     ImGui_ImplDX11_NewFrame();
@@ -209,5 +186,4 @@ void Shutdown()
     }
     g_initialized = false;
 }
-
-} // namespace Ime::UI
+} // namespace ImGuiEx

@@ -15,12 +15,13 @@
 #include "hooks/WinHooks.h"
 #include "ime/ImeController.h"
 #include "imguiex/ErrorNotifier.h"
+#include "imguiex/imgui_manager.h"
+#include "imguiex/imguiex_m3.h"
 #include "log.h"
 #include "menu/ImeMenu.h"
 #include "menu/ToolWindowMenu.h"
 #include "path_utils.h"
 #include "ui/Settings.h"
-#include "ui/imgui_system.h"
 
 #include <basetsd.h>
 #include <future>
@@ -190,8 +191,8 @@ void ImeApp::OnInputLoaded()
 void ImeApp::Uninitialize()
 {
     SaveSettings();
-    UI::DestroyM3();
-    UI::Shutdown();
+    ImGuiEx::M3::Destroy();
+    ImGuiEx::Shutdown();
     Events::UnInstallEventSinks(); // should safety
     Hooks::WinHooks::Uninstall();  // should move to dll_detach, but it's safe.
     g_pInitErrorMessageShow.reset();
@@ -295,10 +296,10 @@ void ImeApp::Start(const RE::BSGraphics::RendererData &renderData)
     auto              *device      = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
     auto              *context     = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
 
-    UI::Initialize(m_hWnd, device, context);
+    ImGuiEx::Initialize(m_hWnd, device, context);
     const auto defaultFontFilePathList = GetDefaultFontFilePathList();
-    (void)UI::AddPrimaryFont(m_settings.resources.fontPathList, defaultFontFilePathList);
-    UI::InitializeM3(utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE, m_settings.appearance.schemeConfig);
+    (void)ImGuiEx::AddPrimaryFont(m_settings.resources.fontPathList, defaultFontFilePathList);
+    ImGuiEx::M3::Initialize(utils::GetInterfacePath() / SIMPLE_IME / Settings::ICON_FILE, m_settings.appearance.schemeConfig);
 
     std::thread childWndThread([&ensureInitialized, this] -> void {
         SetThreadDescription(GetCurrentThread(), L"SimpleIME Message Thread");
@@ -381,12 +382,12 @@ void ImeApp::Draw()
     {
         return;
     }
-    UI::NewFrame();
+    ImGuiEx::NewFrame();
 
     m_imeWnd.Draw(m_settings);
 
-    UI::EndFrame();
-    UI::Render();
+    ImGuiEx::EndFrame();
+    ImGuiEx::Render();
 }
 
 auto ImeApp::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> LRESULT

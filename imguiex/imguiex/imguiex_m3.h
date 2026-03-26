@@ -25,6 +25,16 @@ namespace ImGuiEx::M3
 constexpr int CHANNEL_FG = 1;
 constexpr int CHANNEL_BG = 0;
 
+/**
+ * @brief Initialize Material3 style.
+ * Should be called after initializing ImGui context and before the first frame.
+ * @param iconFontPath [REQUIRED] if the icon font load failed, will fallback to default font and cause icons not showing, so it's required to provide
+ * a valid icon font path.
+ * @param schemeConfig [REQUIRED] be used to initialize M3Styles ColorScheme.
+ */
+void Initialize(const std::filesystem::path &iconFontPath, const ImGuiEx::M3::SchemeConfig &schemeConfig);
+void Destroy();
+
 //! Same with Imgui::SameLine, but apply the current `M3Styles` scale.
 auto SameLine(float offsetFromStartX = 0.F, float spacingW = -1.F) -> void;
 

@@ -66,6 +66,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${IMGUIEX_DIR}/imguiex/M3ThemeBuilder.cpp
     ${IMGUIEX_DIR}/imguiex/ErrorNotifier.cpp
     ${IMGUIEX_DIR}/imguiex/ThemesLoader.cpp
+    ${IMGUIEX_DIR}/imguiex/imgui_manager.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.6.317"
 )
