@@ -111,6 +111,7 @@ void Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *context)
     g_initialized = false;
 
     logger::info("Initializing ImGui...");
+    IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplWin32_Init(hWnd);
     ImGui_ImplDX11_Init(device, context);

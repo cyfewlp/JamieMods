@@ -44,8 +44,7 @@ class SosGuiWindow : Cleanable
     OutfitListTable    m_outfitListTable;
     Context            m_context;
 
-    bool m_fShowPanels    = true;
-    bool m_fWantTextInput = true; // previous frame WantTextInput state
+    bool m_fShowPanels = true;
 
     AutoSwitch::ActorPolicyView        m_autoSwitchOutfitView{};
     std::unique_ptr<OutfitSelectPopup> m_outfitSelectPopup = nullptr;
@@ -57,7 +56,7 @@ public:
     {
     }
 
-    static auto Init(const RE::BSGraphics::RendererData &renderData, HWND hWnd) -> bool;
+    static auto Init(HWND hWnd, const RE::BSGraphics::RendererData &renderData) -> void;
     static auto ShutDown() -> void;
 
     void Show()
@@ -89,13 +88,6 @@ private:
     }
 
     void OnImportSettings();
-    void TrySetAllowTextInput();
-
-    static void NewFrame();
-
-    static void AllowTextInput(bool allow);
-
-    static void AllowTextInput1(RE::ControlMap *controlMap, bool allow);
 
     static auto EnableQuickslot(bool enable) -> bool;
 };

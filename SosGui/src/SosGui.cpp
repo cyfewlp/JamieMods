@@ -1,7 +1,8 @@
 #include "SosGui.h"
 
+#include "WCharUtils.h"
+#include "fonts/FontManager.h"
 #include "gui/UiSettings.h"
-#include "gui/font/FontManager.h"
 #include "gui/icon.h"
 #include "gui/popup/AboutPopup.h"
 #include "gui/popup/SettingsPopup.h"
@@ -10,6 +11,7 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "imguiex/ImGuiEx.h"
+#include "imguiex/imgui_manager.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "log.h"
 #include "task.h"
@@ -54,55 +56,27 @@ void SosGuiWindow::OutfitDebounceInput::updateView(const OutfitList &outfitList)
     });
 }
 
-auto SosGuiWindow::Init(const RE::BSGraphics::RendererData &renderData, const HWND hWnd) -> bool
+auto SosGuiWindow::Init(const HWND hWnd, const RE::BSGraphics::RendererData &renderData) -> void
 {
-    auto *device    = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
-    auto *context   = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
     auto *uiSetting = ::SosGui::Settings::UiSettings::GetInstance();
-    logger::info("Initializing ImGui...");
-
     Settings::Load(*uiSetting);
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    if (!ImGui_ImplWin32_Init(hWnd))
+    auto *device  = reinterpret_cast<ID3D11Device *>(renderData.forwarder);
+    auto *context = reinterpret_cast<ID3D11DeviceContext *>(renderData.context);
+    ImGuiEx::Initialize(hWnd, device, context);
+    if (const auto defaultFontFilePath = Fonts::GetDefaultFontFilePath(); !defaultFontFilePath.empty())
     {
-        throw InitFail("ImGui initialization failed (Win32)");
+        (void)ImGuiEx::AddPrimaryFont({WCharUtils::ToString(defaultFontFilePath)}, {});
     }
-
-    if (!ImGui_ImplDX11_Init(device, context))
-    {
-        throw InitFail("ImGui initialization failed (DX11)");
-    }
-
-    RECT     rect = {0, 0, 0, 0};
-    ImGuiIO &io   = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiEx::ConfigFlags().NavEnableKeyboard();
-    io.ConfigNavMoveSetMousePos = false;
-    ::GetClientRect(hWnd, &rect);
-    io.DisplaySize = ImVec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
 
     ImGui::StyleColorsDark();
-    static std::string IniFileName;
-
-    FontManager::GetInstance().Initialize();
-
-    IniFileName    = util::GetInterfaceFile(io.IniFilename);
-    io.IniFilename = IniFileName.c_str();
-
-    logger::info("ImGui initialized!");
-    return true;
 }
 
 auto SosGuiWindow::ShutDown() -> void
 {
     auto *uiSetting = Settings::UiSettings::GetInstance();
-    FontManager::GetInstance().SyncSettings(uiSetting);
     Settings::Save(*uiSetting);
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
+    ImGuiEx::Shutdown();
 }
 
 auto SosGuiWindow::Cleanup() -> void
@@ -143,38 +117,15 @@ auto SosGuiWindow::Refresh() const -> EagerTask
     co_await m_dataCoordinator.Refresh();
 }
 
-void SosGuiWindow::NewFrame()
-{
-    if (auto *ui = RE::UI::GetSingleton(); ui != nullptr)
-    {
-        POINT cursorPos;
-        if (ui->IsMenuOpen(RE::CursorMenu::MENU_NAME))
-        {
-            const auto *menuCursor = RE::MenuCursor::GetSingleton();
-            ImGui::GetIO().AddMouseSourceEvent(ImGuiMouseSource_Mouse);
-            ImGui::GetIO().AddMousePosEvent(menuCursor->cursorPosX, menuCursor->cursorPosY);
-        }
-        else if (GetCursorPos(&cursorPos) != FALSE)
-        {
-            ImGui::GetIO().AddMousePosEvent(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
-        }
-    }
-}
-
 auto SosGuiWindow::Render() -> void
 {
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    NewFrame();
-    ImGui::NewFrame();
-
-    TrySetAllowTextInput();
+    ImGuiEx::NewFrame();
 
     m_uiData.ExecuteUiTasks();
     DrawPanels();
 
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    ImGuiEx::Render();
+    ImGuiEx::EndFrame();
 }
 
 void SosGuiWindow::OnImportSettings()
@@ -182,21 +133,6 @@ void SosGuiWindow::OnImportSettings()
     m_characterEditPanel.OnRefresh();
     m_outfitListTable.OnRefresh();
     m_outfitEditPanel.OnRefresh();
-}
-
-void SosGuiWindow::TrySetAllowTextInput()
-{
-    const bool cWantTextInput = ImGui::GetIO().WantTextInput;
-    if (!m_fWantTextInput && cWantTextInput)
-    {
-        AllowTextInput(true);
-    }
-    else if (m_fWantTextInput && !cWantTextInput)
-    {
-        AllowTextInput(false);
-    }
-
-    m_fWantTextInput = cWantTextInput;
 }
 
 auto SosGuiWindow::DrawPanels() -> void
@@ -385,17 +321,5 @@ auto SosGuiWindow::EnableQuickslot(const bool enable) -> bool
         return true;
     }
     return false;
-}
-
-void SosGuiWindow::AllowTextInput(const bool allow)
-{
-    AllowTextInput1(RE::ControlMap::GetSingleton(), allow);
-}
-
-void SosGuiWindow::AllowTextInput1(RE::ControlMap *controlMap, bool allow)
-{
-    using func_t = decltype(&SosGuiWindow::AllowTextInput1);
-    static REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
-    func(controlMap, allow);
 }
 } // namespace SosGui

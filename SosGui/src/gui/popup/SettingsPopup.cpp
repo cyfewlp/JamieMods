@@ -4,9 +4,9 @@
 
 #include "SettingsPopup.h"
 
-#include "../font/FontManager.h"
 #include "Translation.h"
 #include "data/SosUiData.h"
+#include "fonts/FontManager.h"
 #include "gui/UiSettings.h"
 #include "imgui/ImThemeLoader.h"
 #include "imgui_internal.h"
@@ -16,8 +16,6 @@ namespace SosGui
 {
 void Popup::SettingsPopup::DoDraw(SosUiData &, bool &)
 {
-    FontManager::GetInstance().DrawPanel();
-
     ThemeCombo();
 }
 

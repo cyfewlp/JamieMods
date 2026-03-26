@@ -102,10 +102,7 @@ void App::DoD3DInit()
     }
 
     m_hWnd = reinterpret_cast<HWND>(swapChainDesc.outputWindow);
-    if (!SosGuiWindow::Init(renderData, m_hWnd))
-    {
-        throw InitFail("Can't initialize SosGui.");
-    }
+    SosGuiWindow::Init(m_hWnd, renderData);
     RealWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrA(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MainWndProc)));
     if (RealWndProc == nullptr)
     {

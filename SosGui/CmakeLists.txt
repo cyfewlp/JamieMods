@@ -46,13 +46,15 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_Basic_Sources}
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_FreeType_Sources}
-    ${CMAKE_SOURCE_DIR}/common/imgui/ImThemeLoader.cpp
+    ${JAMIE_MODS_COMMON_DIR}/imgui/ImThemeLoader.cpp
+    ${JAMIE_MODS_COMMON_DIR}/fonts/FontManager.cpp
     ${IMGUIEX_DIR}/imguiex/m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3_slider.cpp
     ${IMGUIEX_DIR}/imguiex/M3ThemeBuilder.cpp
     ${IMGUIEX_DIR}/imguiex/ErrorNotifier.cpp
     ${IMGUIEX_DIR}/imguiex/ThemesLoader.cpp
+    ${IMGUIEX_DIR}/imguiex/imgui_manager.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.rc
     MINIMUM_SKSE_VERSION "1.5.97"
     AUTHOR "Jamie"
@@ -67,6 +69,7 @@ target_include_directories(
     PRIVATE
     ${IMGUI_INCLUDE_DIRS}
     ${JAMIE_MODS_COMMON_DIR}
+    ${JAMIE_MODS_EXTERN_DIR}
     ${IMGUIEX_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${DETOURS_INCLUDE_DIRS}
@@ -84,6 +87,27 @@ target_link_libraries(
     MaterialYou
 )
 target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion -Wno-unused-command-line-argument)
+
+
+############################################################
+# Install
+set(interface_path interface/${PROJECT_NAME})
+
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/${PROJECT_NAME}.toml"
+    DESTINATION ${interface_path}
+    COMPONENT mod_interface_files
+)
+install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION SKSE/Plugins
+    COMPONENT mod_runtime
+)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+        DESTINATION SKSE/Plugins
+        COMPONENT mod_runtime
+    )
+endif ()
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)

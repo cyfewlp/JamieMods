@@ -112,6 +112,7 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
 {
     const auto &actors = uiData.GetActors();
 
+    int wantDeleteActorIndex = -1;
     if (ImGui::BeginTable("##CharactersTable", 3, ImGuiEx::TableFlags().Resizable().SizingStretchProp()))
     {
         ImGui::TableSetupColumn("$Characters"_T.c_str());
@@ -119,8 +120,7 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
         ImGui::TableSetupColumn("$Delete"_T.c_str());
         ImGui::TableHeadersRow();
 
-        int wantDeleteActorIndex = -1;
-        int idx                  = 0;
+        int idx = 0;
         for (const auto &actor : actors)
         {
             ImGui::PushID(idx);
@@ -158,16 +158,16 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
             ImGui::PopID();
             idx++;
         }
-        if (actors.empty()) return;
-
-        if (wantDeleteActorIndex != -1)
-        {
-            auto actor = actors[wantDeleteActorIndex];
-            +[&, actor] {
-                return dataCoordinator.RequestRemoveActor(actor);
-            };
-        }
         ImGui::EndTable();
+    }
+    if (actors.empty()) return;
+
+    if (wantDeleteActorIndex >= 0)
+    {
+        auto actor = actors[static_cast<size_t>(wantDeleteActorIndex)];
+        +[&, actor] {
+            return dataCoordinator.RequestRemoveActor(actor);
+        };
     }
 }
 

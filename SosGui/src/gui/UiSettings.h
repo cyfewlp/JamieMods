@@ -3,13 +3,23 @@
 //
 #pragma once
 
-#include "font/FontInfo.h"
-
 namespace SosGui::Settings
 {
 class UiSettings
 {
-    UiSettings();
+    UiSettings()
+    {
+        const HDC hdc  = GetDC(nullptr);
+        const int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+        ReleaseDC(nullptr, hdc);
+
+        m_TextSmallPxSize = static_cast<float>(MulDiv(TEXT_SMALL_PT_SIZE, dpiY, 72));
+        m_TextPxSize      = static_cast<float>(MulDiv(TEXT_PT_SIZE, dpiY, 72));
+        m_Title1PxSize    = static_cast<float>(MulDiv(TITLE_1_PT_SIZE, dpiY, 72));
+        m_Title2PxSize    = static_cast<float>(MulDiv(TITLE_2_PT_SIZE, dpiY, 72));
+        m_Title3PxSize    = static_cast<float>(MulDiv(TITLE_3_PT_SIZE, dpiY, 72));
+        m_Title4PxSize    = static_cast<float>(MulDiv(TITLE_4_PT_SIZE, dpiY, 72));
+    }
 
 public:
     static constexpr std::string_view     SETTING_NAME       = "UiSetting";
@@ -32,10 +42,9 @@ public:
         DefaultThemeIndex_Invalid = -4,
     };
 
-    int32_t  selectedThemeIndex   = DefaultThemeIndex_Invalid; // setting key: selectedThemeIndex
-    bool     includeTemplateArmor = true;
-    bool     showFavoriteOutfits  = false;
-    FontInfo fontInfo; // setting key: start with fontinfo
+    int32_t selectedThemeIndex   = DefaultThemeIndex_Invalid; // setting key: selectedThemeIndex
+    bool    includeTemplateArmor = true;
+    bool    showFavoriteOutfits  = false;
 
     [[nodiscard]] constexpr float TextSmallPxSize() const { return m_TextSmallPxSize; }
 

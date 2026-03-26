@@ -34,13 +34,6 @@ void Settings::Load(UiSettings &uiSetting)
         {
             return;
         }
-        uiSetting.fontInfo.filePath    = fontInfoTable["filePath"].value<std::string>().value_or("");
-        uiSetting.fontInfo.familyName  = fontInfoTable["familyName"].value<std::string>().value_or("");
-        uiSetting.fontInfo.familyIndex = fontInfoTable["familyIndex"].value<int32_t>().value_or(-1);
-        uiSetting.fontInfo.fontIndex   = fontInfoTable["fontIndex"].value<int32_t>().value_or(-1);
-        uiSetting.fontInfo.faceIndex   = fontInfoTable["faceIndex"].value<uint32_t>().value_or(0);
-        uiSetting.fontInfo.bold        = fontInfoTable["bold"].value<bool>().value_or(false);
-        uiSetting.fontInfo.oblique     = fontInfoTable["oblique"].value<bool>().value_or(false);
     }
     catch (toml::parse_error &e)
     {
@@ -53,20 +46,7 @@ void Settings::Save(UiSettings &uiSetting)
     const auto filePath = util::GetInterfaceFile("sosgui.toml");
 
     const auto tomlTable = toml::table{
-        {"UiSetting",
-         toml::table{
-             {"selectedThemeIndex", uiSetting.selectedThemeIndex},
-             {"FontInfo",
-              toml::table{
-                  {"filePath", uiSetting.fontInfo.filePath},
-                  {"familyName", uiSetting.fontInfo.familyName},
-                  {"familyIndex", uiSetting.fontInfo.familyIndex},
-                  {"fontIndex", uiSetting.fontInfo.fontIndex},
-                  {"faceIndex", uiSetting.fontInfo.faceIndex},
-                  {"bold", uiSetting.fontInfo.bold},
-                  {"oblique", uiSetting.fontInfo.oblique}
-              }}
-         }},
+        {"UiSetting", toml::table{{"selectedThemeIndex", uiSetting.selectedThemeIndex}}},
     };
     std::ofstream outFile;
     outFile.open(filePath, std::ios::out);
