@@ -1,8 +1,8 @@
-[center][size=5][color=#2EB2FF][b]SimpleIME — User Guide[/b][/color][/size][/center]
+[center][size=5][color=#D3BCFD][b]SimpleIME — User Guide[/b][/color][/size][/center]
 
 [line]
 
-[size=4][color=#2EB2FF][b]Tool Window[/b][/color][/size]
+[size=4][color=#D3BCFD][b]Tool Window[/b][/color][/size]
 
 Press [b]F2[/b] (default) to open/close the Tool Window. You can reassign this shortcut in Settings.
 
@@ -15,7 +15,7 @@ If the window goes off-screen after a resolution change, delete the [i][Window][
 
 [line]
 
-[size=4][color=#2EB2FF][b]Settings Reference[/b][/color][/size]
+[size=4][color=#D3BCFD][b]Settings Reference[/b][/color][/size]
 
 [list]
 [*][b]enable-tsf[/b] — Strongly recommended. Uses the modern Text Services Framework for IME integration. Disable only if your OS is very old or TSF has been manually turned off. IMM32 fallback exists but is not reliable for modern input methods.
@@ -25,19 +25,31 @@ If the window goes off-screen after a resolution change, delete the [i][Window][
 
 [line]
 
-[size=4][color=#2EB2FF][b]IME Actions & Shortcuts[/b][/color][/size]
+[size=4][color=#D3BCFD][b]IME Actions & Shortcuts[/b][/color][/size]
 
 All IME actions (composition, candidate selection) and shortcuts (e.g. [b]Ctrl+Space[/b] to switch input mode) work exactly as in any other Windows application. Refer to your input method's own documentation for the full shortcut list.
 
 [line]
 
-[size=4][color=#2EB2FF][b]Recommended: Microsoft IME[/b][/color][/size]
+[size=4][color=#D3BCFD][b]Recommended: Microsoft IME[/b][/color][/size]
 
 SimpleIME is primarily developed and tested against Microsoft's built-in input methods (Microsoft Pinyin, Microsoft Japanese IME). Third-party IMEs (iFly, Sogou, Baidu, etc.) may not fully conform to the TSF specification, which can cause missing features or incorrect behavior. I may add targeted workarounds over time, but full third-party IME support is not guaranteed.
 
 [line]
 
-[size=4][color=#2EB2FF][b]Known Issues[/b][/color][/size]
+[size=4][color=#D3BCFD][b]Event Interception[/b][/color][/size]
+
+[size=3][b]Interception while IME is active[/b][/size]
+
+While SimpleIME is active and a [color=#D3BCFD]valid input method[/color] is present, it intercepts all keyboard input events to prevent underlying menus from receiving raw character or key input. Pure character input is compensated via [i]WM_CHAR[/i] messages on the IME thread (e.g., typing in English mode with a CJK input method active). This is intentional — you generally do not want the underlying menu acting on raw keystrokes during IME composition.
+
+[size=3][b]Interception while the Settings window is open[/b][/size]
+
+When the SimpleIME settings window is opened from the language bar, it blocks all underlying menus from receiving any input. Think of it as just another menu — no different in nature from the inventory, map, or container menus.
+
+[line]
+
+[size=4][color=#D3BCFD][b]Known Issues[/b][/color][/size]
 
 [list]
 [*][b]Win+Shift+S during composition[/b] — Pressing the Snipping Tool shortcut while a CJK composition is active and switching windows at exactly the right moment can cause a crash. Root cause is under investigation.

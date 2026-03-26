@@ -1,8 +1,8 @@
-[center][size=5][color=#2EB2FF][b]SimpleIME — Compatibility & Mod Author Guide[/b][/color][/size][/center]
+[center][size=5][color=#D3BCFD][b]SimpleIME — Compatibility & Mod Author Guide[/b][/color][/size][/center]
 
 [line]
 
-[size=4][color=#2EB2FF][b]Compatibility Boundary[/b][/color][/size]
+[size=4][color=#D3BCFD][b]Compatibility Boundary[/b][/color][/size]
 
 During active text input, SimpleIME holds keyboard focus on the IME thread and owns that thread's Win32 message loop. This is the minimum state required for TSF to function correctly. SimpleIME does not attempt to work around mods that intercept the same pipeline — if another mod manipulates keyboard focus or hooks [i]WM_CHAR[/i] for the same window during this period, the two are considered incompatible.
 
@@ -16,7 +16,7 @@ During active text input, SimpleIME holds keyboard focus on the IME thread and o
 
 [line]
 
-[size=4][color=#2EB2FF][b]For Mod Authors[/b][/color][/size]
+[size=4][color=#D3BCFD][b]For Mod Authors[/b][/color][/size]
 
 Supporting SimpleIME in your mod is easy if you follow the game's existing text input conventions.
 
