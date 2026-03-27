@@ -8,7 +8,7 @@ import re
 import argparse
 
 PUA_START = 0xE000
-FONT_NAME = "simple-ime-icons"
+FONT_NAME = "lucide-icons"
 EM_SIZE = 1000  # font units per em
 VIEWPORT = EM_SIZE  # 1000
 CONTENT = EM_SIZE * 20.0 / 24.0  # ~833.33

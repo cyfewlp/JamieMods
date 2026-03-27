@@ -88,6 +88,9 @@ target_link_libraries(
 )
 target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion -Wno-unused-command-line-argument)
 
+include(${JAMIE_MODS_DIR}/cmake/build-lucide-icon.cmake)
+
+add_build_lucide_icons(${PROJECT_NAME} "sos-gui-icons.ttf")
 
 ############################################################
 # Install
@@ -95,6 +98,7 @@ set(interface_path interface/${PROJECT_NAME})
 
 install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/${PROJECT_NAME}.toml"
+    ${LUCIDE_ICON_OUT_TTF}
     DESTINATION ${interface_path}
     COMPONENT mod_interface_files
 )
