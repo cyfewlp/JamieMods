@@ -46,7 +46,7 @@ void ToolWindow::Draw(Settings &settings)
     {
         if (auto appBar = ImGuiEx::M3::AppBar(); appBar)
         {
-            appBar.LeadingIcon(ICON_GITHUB);
+            appBar.LeadingIcon(ICON_LAYERS);
             appBar.Title("SimpleIME", "Created By Jamie");
             if (appBar.TrailingIcon(ICON_X))
             {

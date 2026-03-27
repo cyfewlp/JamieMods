@@ -6,6 +6,7 @@
 
 #include "i18n/translator_manager.h"
 #include "menu/MenuNames.h"
+#include "path_utils.h"
 #include "utils/Utils.h"
 
 namespace Ime::UI
@@ -65,7 +66,7 @@ void HandleRequestAndSyncOverlayState(Settings::RuntimeData &runtimeData)
 ImeOverlay::ImeOverlay(ImGuiKeyChord shortcut, std::string_view language) : m_shortcut(shortcut)
 {
     i18n::SetTranslator(&m_translator);
-    i18n::UpdateTranslator(language, "english");
+    i18n::UpdateTranslator(language, "english", utils::GetInterfacePath() / SIMPLE_IME);
 }
 
 ImeOverlay::~ImeOverlay()

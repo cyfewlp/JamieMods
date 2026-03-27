@@ -60,6 +60,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_Backend_Win32_Dx11_Sources}
     ${ImGui_FreeType_Sources}
     ${JAMIE_MODS_COMMON_DIR}/fonts/FontManager.cpp
+    ${JAMIE_MODS_COMMON_DIR}/i18n/translator_manager.cpp
     ${IMGUIEX_DIR}/imguiex/m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3_slider.cpp
@@ -107,62 +108,8 @@ target_link_libraries(
 # close the unused param "/Zc:preprocessor" warnings
 target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion -Wno-unused-command-line-argument)
 
-include(FetchContent)
-
-############################################################
-# Auto pack icons
-FetchContent_Declare(
-    lucide
-    URL https://github.com/lucide-icons/lucide/releases/download/0.575.0/lucide-icons-0.575.0.zip
-    URL_HASH SHA256=254cca92a5686b03756b077cb931b935d1550982d1c6d64893eeb7ba047d5caa
-)
-
-FetchContent_MakeAvailable(lucide)
-
-set(ICON_FILE "simple-ime-icons.ttf")
-
-FetchContent_GetProperties(lucide)
-set(ICONS_DIR ${lucide_SOURCE_DIR})
-
-find_program(FONTFORGE_EXECUTABLE fontforge REQUIRED)
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
-set(ICON_LIST_FILE ${CMAKE_CURRENT_SOURCE_DIR}/assets/lucide/lucide-icons.txt)
-set(ICON_BUILD_SCRIPT ${JAMIE_MODS_DIR}/scripts/build_icons_font.py)
-
-set(ICON_GEN_DIR ${CMAKE_BINARY_DIR}/generated/icons)
-set(ICON_OUT_TTF ${ICON_GEN_DIR}/${ICON_FILE})
-set(ICON_OUT_HEADER ${ICON_GEN_DIR}/icons.h)
-
-# Read icon names and build a list of SVG dependencies
-file(STRINGS "${ICON_LIST_FILE}" ICON_NAMES)
-set(ICON_SVG_DEPS "")
-foreach(name IN LISTS ICON_NAMES)
-  string(STRIP "${name}" name)
-  if(name STREQUAL "")
-    continue()
-  endif()
-  # allow comments
-  string(SUBSTRING "${name}" 0 1 first_char)
-  if(first_char STREQUAL "#")
-    continue()
-  endif()
-  list(APPEND ICON_SVG_DEPS "${ICONS_DIR}/${name}.svg")
-endforeach()
-
-add_custom_command(
-    OUTPUT ${ICON_OUT_TTF} ${ICON_OUT_HEADER}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${ICON_GEN_DIR}
-
-    COMMAND ${FONTFORGE_EXECUTABLE} -script ${ICON_BUILD_SCRIPT} --icons_dir ${ICONS_DIR} --list ${ICON_LIST_FILE} --out ${ICON_GEN_DIR}
-
-    DEPENDS ${ICON_LIST_FILE} ${ICON_BUILD_SCRIPT} ${ICON_SVG_DEPS}
-    COMMENT "Generating icon font from Lucide (fetched via FetchContent)"
-    VERBATIM
-)
-
-add_custom_target(icons DEPENDS ${ICON_OUT_TTF} ${ICON_OUT_HEADER})
-add_dependencies(${PROJECT_NAME} icons)
+include(${JAMIE_MODS_DIR}/cmake/build-lucide-icon.cmake)
+add_build_lucide_icons(${PROJECT_NAME})
 
 ############################################################
 # CPACK
@@ -180,7 +127,7 @@ set(interface_path interface/${PROJECT_NAME})
 
 install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/config/${PROJECT_NAME}.toml"
-    "${ICON_OUT_TTF}"
+    "${LUCIDE_ICON_OUT_TTF}"
     DESTINATION ${interface_path}
     COMPONENT mod_interface_files
 )

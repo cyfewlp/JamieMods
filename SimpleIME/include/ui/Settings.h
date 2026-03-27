@@ -24,7 +24,7 @@ struct Settings
     };
     static constexpr std::wstring_view DEFAULT_EMOJI_FONT_FAMILY  = L"Segoe UI Emoji";
     static constexpr std::wstring_view DEFAULT_SYMBOL_FONT_FAMILY = L"Segoe UI Symbol";
-    static constexpr std::string_view  ICON_FILE                  = "simple-ime-icons.ttf";
+    static constexpr std::string_view  ICON_FILE                  = "lucide-icons.ttf";
     static constexpr auto              ZOOM_MAX                   = 2.0F;
     static constexpr auto              ZOOM_MIN                   = 0.5F;
     static constexpr int               ZOOM_STEP_PERCENT          = 25;

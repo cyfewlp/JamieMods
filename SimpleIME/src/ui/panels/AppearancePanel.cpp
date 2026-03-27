@@ -401,7 +401,7 @@ void AppearancePanel::DrawLanguagesCombo(Settings::Appearance &appearance) const
 
     if (clicked)
     {
-        i18n::UpdateTranslator(appearance.language, "english");
+        i18n::UpdateTranslator(appearance.language, "english", utils::GetInterfacePath() / SIMPLE_IME);
     }
 }
 } // namespace Ime

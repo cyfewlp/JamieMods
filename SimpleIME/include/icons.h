@@ -26,12 +26,12 @@ static auto constexpr ICON_FILE_CHECK           = ImGuiEx::icon<0xE006>;
 static auto constexpr ICON_FILE_QUESTION_MARK   = ImGuiEx::icon<0xE007>;
 // ICON_FOCUS -> U+E008 (focus.svg)
 static auto constexpr ICON_FOCUS                = ImGuiEx::icon<0xE008>;
-// ICON_GITHUB -> U+E009 (github.svg)
-static auto constexpr ICON_GITHUB               = ImGuiEx::icon<0xE009>;
-// ICON_INFO -> U+E00A (info.svg)
-static auto constexpr ICON_INFO                 = ImGuiEx::icon<0xE00A>;
-// ICON_KEYBOARD -> U+E00B (keyboard.svg)
-static auto constexpr ICON_KEYBOARD             = ImGuiEx::icon<0xE00B>;
+// ICON_INFO -> U+E009 (info.svg)
+static auto constexpr ICON_INFO                 = ImGuiEx::icon<0xE009>;
+// ICON_KEYBOARD -> U+E00A (keyboard.svg)
+static auto constexpr ICON_KEYBOARD             = ImGuiEx::icon<0xE00A>;
+// ICON_LAYERS -> U+E00B (layers.svg)
+static auto constexpr ICON_LAYERS               = ImGuiEx::icon<0xE00B>;
 // ICON_MOON -> U+E00C (moon.svg)
 static auto constexpr ICON_MOON                 = ImGuiEx::icon<0xE00C>;
 // ICON_MOVE -> U+E00D (move.svg)
