@@ -38,7 +38,7 @@ struct ModalPopup
     // The returen value indicates whether this popup has been closed
     virtual bool Draw(SosUiData &uiData, bool &confirmed, ImGuiWindowFlags flags = 0);
 
-    static void RenderMultilineMessage(const std::string &message);
+    static void RenderMultilineMessage(std::string_view message);
     static void RenderConfirmButtons(__out bool &confirmed);
 
 protected:

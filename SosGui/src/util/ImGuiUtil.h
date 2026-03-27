@@ -18,24 +18,6 @@ namespace SosGui::ImGuiUtil
 static std::string       g_widgetName;
 static constexpr ImColor RED_COLOR = ImColor(255, 0, 0, 255);
 
-static constexpr auto Button(const char *name, const ImVec2 &size = ImVec2(0, 0)) -> bool
-{
-    Translation::Translate(name, g_widgetName);
-    return ImGui::Button(g_widgetName.c_str(), size);
-}
-
-static constexpr auto CheckBox(const char *name, bool *isChecked) -> bool
-{
-    Translation::Translate(name, g_widgetName);
-    return ImGui::Checkbox(g_widgetName.c_str(), isChecked);
-}
-
-static constexpr auto CheckBox(const std::string &name, bool *isChecked) -> bool
-{
-    Translation::Translate(name.c_str(), g_widgetName);
-    return ImGui::Checkbox(g_widgetName.c_str(), isChecked);
-}
-
 template <size_t Size>
 constexpr auto InputText(const char *name, std::array<char, Size> &inputBuf) -> bool
 {
@@ -68,24 +50,6 @@ constexpr auto SetItemTooltip(String &&content) -> void
     ImGui::SetItemTooltip("%s", g_widgetName.c_str());
 }
 
-constexpr auto SeparatorText(const char *content) -> void
-{
-    Translation::Translate(content, g_widgetName);
-    ImGui::SeparatorText(g_widgetName.c_str());
-}
-
-constexpr auto TextWrapped(const char *content) -> void
-{
-    Translation::Translate(content, g_widgetName);
-    ImGui::TextWrapped("%s", g_widgetName.c_str());
-}
-
-constexpr auto TextWrapped(const std::string &&content) -> void
-{
-    Translation::Translate(content.c_str(), g_widgetName);
-    ImGui::TextWrapped("%s", g_widgetName.c_str());
-}
-
 template <typename ValueType>
 constexpr auto Value(const char *label, ValueType value) -> void
 {
@@ -103,18 +67,6 @@ constexpr auto Selectable(const std::string &string, bool isSelected, ImGuiSelec
 {
     Translation::Translate(string.c_str(), g_widgetName);
     return ImGui::Selectable(g_widgetName.c_str(), isSelected, flags);
-}
-
-constexpr auto BeginMenu(const char *nameKey) -> bool
-{
-    Translation::Translate(nameKey, g_widgetName);
-    return ImGui::BeginMenu(g_widgetName.c_str());
-}
-
-constexpr auto MenuItem(const std::string_view &nameKey, const char *shortcut = nullptr, bool selected = false) -> bool
-{
-    Translation::Translate(nameKey.data(), g_widgetName);
-    return ImGui::MenuItem(g_widgetName.c_str(), shortcut, selected);
 }
 
 constexpr auto BeginChild(const char *windowId, const ImVec2 &size = ImVec2(0, 0), ImGuiChildFlags chiildFlags = ImGuiChildFlags_None) -> bool

@@ -2,9 +2,11 @@
 
 #include "Translation.h"
 #include "gui/UiSettings.h"
+#include "i18n/translator_manager.h"
 #include "imgui.h"
 #include "imgui/ImThemeLoader.h"
 #include "imguiex/ErrorNotifier.h"
+#include "path_utils.h"
 #include "util/ImGuiUtil.h"
 #include "util/utils.h"
 
@@ -31,7 +33,7 @@ bool Popup::ModalPopup::Draw(SosUiData &uiData, bool &confirmed, ImGuiWindowFlag
     return showPopup;
 }
 
-void Popup::ModalPopup::RenderMultilineMessage(const std::string &message)
+void Popup::ModalPopup::RenderMultilineMessage(std::string_view message)
 {
     constexpr auto delim    = "\\n"sv;
     const auto    *viewport = ImGui::GetMainViewport();
@@ -59,14 +61,14 @@ void Popup::ModalPopup::RenderConfirmButtons(__out bool &confirmed)
     const float contentWidth = ImGui::GetContentRegionAvail().x;
     const auto  quarterWidth = contentWidth * 0.25F;
     ImGui::SetCursorPosX(quarterWidth * 0.5F);
-    if (ImGuiUtil::Button("$Yes", ImVec2(quarterWidth, 0.0F)))
+    if (ImGui::Button(Translate1("Yes"), ImVec2(quarterWidth, 0.0F)))
     {
         ConfirmAndClose(confirmed);
     }
     ImGui::SameLine();
 
     ImGui::SetCursorPosX(quarterWidth * 2.5F);
-    if (ImGuiUtil::Button("$No", ImVec2(quarterWidth, 0.0F)))
+    if (ImGui::Button(Translate1("No"), ImVec2(quarterWidth, 0.0F)))
     {
         ImGui::CloseCurrentPopup();
     }
@@ -74,8 +76,7 @@ void Popup::ModalPopup::RenderConfirmButtons(__out bool &confirmed)
 
 void Popup::DeleteOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
 {
-    const auto message = Translation::Translate("$SkyOutSys_Confirm_Delete_Text{}", true, wanDeleteOutfitName);
-    ImGui::Text("%s", message.c_str());
+    ImGuiUtil::Text(std::format("{} \"{}\"?", Translate("Panels.OutfitEdit.Delete"), wanDeleteOutfitName));
     RenderConfirmButtons(confirmed);
 }
 
@@ -138,7 +139,7 @@ void Popup::DrawSettingsPopup(std::string_view name)
         {
             try
             {
-                loader.UseTheme(index, util::GetInterfaceFile(ImTheme::THEME_FILE_NAME));
+                loader.UseTheme(index, utils::GetInterfaceFile(ImTheme::THEME_FILE_NAME));
                 settings->selectedThemeIndex = index;
             }
             catch (ImTheme::Loader::Error &e)

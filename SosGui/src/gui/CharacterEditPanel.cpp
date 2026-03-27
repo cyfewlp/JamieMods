@@ -7,6 +7,7 @@
 #include "data/SosUiData.h"
 #include "gui/icon.h"
 #include "gui/widgets.h"
+#include "i18n/translator_manager.h"
 #include "imgui.h"
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
@@ -155,7 +156,7 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
             }
 
             ImGui::TableNextColumn(); // remove character column
-            if (ImGuiUtil::Button("$Delete"))
+            if (ImGui::Button(Translate1("Delete")))
             {
                 wantDeleteActorIndex = idx;
             }

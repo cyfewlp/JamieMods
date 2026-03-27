@@ -68,3 +68,9 @@ constexpr auto Translate(const std::string_view key) -> std::string_view
     }
     return translator->Translate(::i18n::HashKey(key), key);
 }
+
+/// Look up @p key in the active translator. Returns @p key as-is if no translator is loaded.
+constexpr auto Translate1(const std::string_view key) -> const char *
+{
+    return Translate(key).data();
+}

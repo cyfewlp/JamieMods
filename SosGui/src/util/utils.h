@@ -20,17 +20,6 @@ constexpr auto IsArmorHasNoneSlotOf(const RE::TESObjectARMO *armor, RE::BIPED_MO
     return armor->bipedModelData.bipedObjectSlots.none(slot);
 }
 
-constexpr auto GetInterfaceFile(const char *fileName) -> std::string
-{
-    static const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-    return std::format("Data/Interface/{}/{}", pluginName, fileName);
-}
-
-constexpr auto GetInterfaceFile(const std::string_view &fileName) -> std::string
-{
-    return GetInterfaceFile(fileName.data());
-}
-
 auto IsArmorCanDisplay(const RE::TESObjectARMO *armor) -> bool;
 
 auto GetFormModFileName(const RE::TESForm *form) -> std::string_view;

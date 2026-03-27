@@ -107,8 +107,7 @@ void SosGuiMenu::OnShow()
 void SosGuiMenu::OnHide()
 {
     m_fShow = false;
-    m_sosGui->Cleanup();
-    m_sosGui = nullptr;
+    m_sosGui.reset();
     logger::debug("SosGuiMenu::kHide");
     auto &io = ImGui::GetIO();
     io.ClearInputKeys();

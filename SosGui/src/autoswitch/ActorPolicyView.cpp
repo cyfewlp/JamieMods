@@ -22,7 +22,7 @@ void ActorPolicyView::Draw(
 
     using namespace ImGuiUtil;
     bool fAutoSwitchEnabled = uiData.IsAutoSwitchEnabled(currentActor->GetFormID());
-    if (CheckBox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))
+    if (ImGui::Checkbox("$SkyOutSys_MCMHeader_Autoswitch", &fAutoSwitchEnabled))
     {
         +[&] {
             return dataCoordinator.RequestSetActorAutoSwitchState(currentActor, fAutoSwitchEnabled);

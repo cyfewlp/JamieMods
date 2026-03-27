@@ -6,6 +6,8 @@
 #include "gui/CharacterEditPanel.h"
 #include "gui/OutfitListTable.h"
 #include "gui/popup/OutfitSelectPopup.h"
+#include "i18n/Translator.h"
+#include "i18n/translator_manager.h"
 #include "service/OutfitService.h"
 #include "service/SosDataCoordinator.h"
 #include "task.h"
@@ -17,7 +19,7 @@
 
 namespace SosGui
 {
-class SosGuiWindow : Cleanable
+class SosGuiWindow
 {
     struct InitFail final : std::runtime_error
     {
@@ -43,18 +45,17 @@ class SosGuiWindow : Cleanable
     OutfitEditPanel    m_outfitEditPanel;
     OutfitListTable    m_outfitListTable;
     Context            m_context;
+    i18n::Translator   m_translator;
 
-    bool m_fShowPanels = true;
+    bool m_isShowPanels = true;
 
     AutoSwitch::ActorPolicyView        m_autoSwitchOutfitView{};
     std::unique_ptr<OutfitSelectPopup> m_outfitSelectPopup = nullptr;
 
 public:
-    SosGuiWindow()
-        : m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService), m_outfitEditPanel(m_uiData, m_outfitService),
-          m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel)
-    {
-    }
+    SosGuiWindow();
+
+    ~SosGuiWindow();
 
     static auto Init(HWND hWnd, const RE::BSGraphics::RendererData &renderData) -> void;
     static auto ShutDown() -> void;
@@ -65,8 +66,6 @@ public:
         m_outfitListTable.Show();
         m_outfitEditPanel.Show();
     }
-
-    void Cleanup() override;
 
     auto Refresh() const -> EagerTask;
     auto OnPostDisplay() -> void;

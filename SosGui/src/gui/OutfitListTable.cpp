@@ -8,6 +8,7 @@
 #include "gui/UiSettings.h"
 #include "gui/icon.h"
 #include "gui/widgets.h"
+#include "i18n/translator_manager.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imguiex/ImGuiEx.h"
@@ -34,7 +35,7 @@ void OutfitListTable::Show()
 
 void OutfitListTable::Focus()
 {
-    ImGui::SetWindowFocus("$SkyOutSys_MCMHeader_OutfitList"_T.c_str());
+    ImGui::SetWindowFocus(Translate1("Panels.Outfit.Title"));
     BaseGui::Focus();
 }
 
@@ -112,17 +113,17 @@ void OutfitListTable::OutfitDebounceInput::OnUpdate(const OutfitList &outfitList
 void OutfitListTable::CreateOutfitPopup::DoDraw(SosUiData &, bool &confirmed)
 {
     ImGui::PushItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##CreateNewInput", "$SosGui_Hint_CreateOutfit"_T.c_str(), m_outfitNameBuf.data(), m_outfitNameBuf.size());
+    ImGui::InputTextWithHint("##CreateNewInput", Translate1("Panels.Outfit.CreateHint"), m_outfitNameBuf.data(), m_outfitNameBuf.size());
     ImGui::PopItemWidth();
 
     ImGui::BeginDisabled(m_outfitNameBuf[0] == '\0');
-    if (ImGuiUtil::Button("$SkyOutSys_OContext_New"))
+    if (ImGui::Button(Translate1("Panels.Outfit.Create")))
     {
         ConfirmAndClose(confirmed);
         m_flags = Flags::CREATE_EMPTY;
     }
 
-    if (ImGuiUtil::Button("$SkyOutSys_OContext_NewFromWorn"))
+    if (ImGui::Button(Translate1("Panels.Outfit.CreateFromWorn")))
     {
         ConfirmAndClose(confirmed);
         m_flags = Flags::CREATE_FROM_WORN;
@@ -144,7 +145,7 @@ void OutfitListTable::Draw(Context &context, RE::Actor *editingActor)
 
     ImGui::SetNextWindowPos(ImVec2(DEFAULT_OUTFIT_LIST_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH_SMALL, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin(Translation::Translate("$SkyOutSys_MCMHeader_OutfitList").c_str(), &m_show, ImGuiEx::WindowFlags()))
+    if (ImGui::Begin(Translate1("Panels.Outfit.Title"), &m_show, ImGuiEx::WindowFlags()))
     {
         DrawToolWidgets();
         DrawOutfitTable(context, editingActor);
@@ -168,11 +169,11 @@ void OutfitListTable::DrawToolWidgets()
         };
     }
     ImGui::PopStyleColor();
-    ImGui::SetItemTooltip("%s", "$SosGui_Refresh{$SosGui_Outfit}"_T.c_str());
+    ImGui::SetItemTooltip("%s", Translate1("Panels.Outfit.Refresh"));
 
     auto *uiSetting = Settings::UiSettings::GetInstance();
     ImGui::SameLine();
-    if (ImGuiUtil::CheckBox("$SosGui_CheckBox_OnlyShowFavorites", &uiSetting->showFavoriteOutfits))
+    if (ImGui::Checkbox(Translate1("Panels.Outfit.ShowFavorites"), &uiSetting->showFavoriteOutfits))
     {
         m_outfitFilterInput.dirty = true;
     }
@@ -183,7 +184,7 @@ void OutfitListTable::DrawToolWidgets()
     ImGui::SameLine(0.F, 0.F);
 
     ImGui::PushItemWidth(-FLT_MIN);
-    if (m_outfitFilterInput.Draw("##filter", "$SosGui_Hint_FilterOutfit"_T.c_str()) || prevOutfitSize != outfitList.size())
+    if (m_outfitFilterInput.Draw("##filter", Translate1("Panels.Outfit.Filter")) || prevOutfitSize != outfitList.size())
     {
         m_outfitFilterInput.OnUpdate(outfitList, uiSetting->showFavoriteOutfits);
         prevOutfitSize = outfitList.size();
@@ -220,7 +221,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
 {
     ImGui::TableSetupScrollFreeze(1, 1);
     ImGui::TableSetupColumn("##Number", ImGuiEx::TableColumnFlags().NoSort().WidthFixed(), 56);
-    ImGui::TableSetupColumn("$SkyOutSys_MCM_OutfitList"_T.c_str(), ImGuiEx::TableColumnFlags().DefaultSort());
+    ImGui::TableSetupColumn(Translate1("Panels.Outfit.Title"), ImGuiEx::TableColumnFlags().DefaultSort());
     ImGui::TableHeadersRow();
 
     // Render our custom table header
@@ -235,7 +236,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
         {
             context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
         }
-        ImGui::SetItemTooltip("%s", "$SosGui_CreateOutfit"_T.c_str());
+        ImGui::SetItemTooltip("%s", Translate1("Panels.Outfit.Create"));
         ImGui::SameLine();
         ImGui::TableHeader(ImGui::TableGetColumnName(1));
         ImGui::PopFont();
@@ -257,12 +258,12 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertFloat4ToU32(ImColor(234, 51, 35)));
                 clicked = ImGuiUtil::IconButton(ICON_HEART);
                 ImGui::PopStyleColor();
-                ImGui::SetItemTooltip("%s", "$SkyOutSys_OContext_ToggleFavoriteOff"_T.c_str());
+                ImGui::SetItemTooltip("%s", Translate1("Panels.Outfit.UnmarkFavorite"));
             }
             else
             {
                 clicked = ImGuiUtil::IconButton(ICON_HEART_OFF);
-                ImGui::SetItemTooltip("%s", "$SkyOutSys_OContext_ToggleFavoriteOn"_T.c_str());
+                ImGui::SetItemTooltip("%s", Translate1("Panels.Outfit.MarkFavorite"));
             }
             if (clicked)
             {
@@ -415,22 +416,22 @@ void OutfitListTable::OpenContextMenu(
         ImGui::BeginDisabled(noEditingActor);
         if (noEditingActor)
         {
-            ImGuiUtil::Text("$SosGui_Hint_Select{$Characters}");
+            ImGuiUtil::Text(Translate("Panels.Outfit.MissingActorHint"));
         }
         const auto *actorName = noEditingActor ? "" : editingActor->GetName();
-        ImGui::Text("%s", Translation::Translate("$SosGui_EditingActor", actorName).c_str());
+        ImGuiUtil::Text(std::format("{} - {}", Translate1("EditingActor"), actorName));
         if (m_uiData.GetActorOutfitMap().IsActorOutfit(editingActor, outfit->GetId()))
         {
-            if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOff"))
+            if (ImGui::MenuItem(Translate1("Panels.Outfit.Disable")))
             {
                 OnAcceptActiveOutfit(editingActor, INVALID_OUTFIT_ID, "");
             }
         }
-        if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleOn"))
+        if (ImGui::MenuItem(Translate1("Panels.Outfit.Enable")))
         {
             OnAcceptActiveOutfit(editingActor, outfit->GetId(), outfitName);
         }
-        if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Rename"))
+        if (ImGui::MenuItem(Translate1("Panels.Outfit.Rename")))
         {
             acceptRename = true;
         }
@@ -438,19 +439,19 @@ void OutfitListTable::OpenContextMenu(
     }
 
     ImGui::Separator();
-    if (ImGuiUtil::MenuItem("$SosGui_CreateOutfit"))
+    if (ImGui::MenuItem(Translate1("Panels.Outfit.Create")))
     {
         context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
     }
-    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleFavoriteOn"))
+    if (ImGui::MenuItem(Translate1("Panels.Outfit.MarkFavorite")))
     {
         OnAcceptSetFavoriteOutfits(true);
     }
-    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_ToggleFavoriteOff"))
+    if (ImGui::MenuItem(Translate1("Panels.Outfit.UnmarkFavorite")))
     {
         OnAcceptSetFavoriteOutfits(false);
     }
-    if (ImGuiUtil::MenuItem("$SkyOutSys_OContext_Delete"))
+    if (ImGui::MenuItem(Translate1("Delete")))
     {
         if (selectedItemCount == 1)
         {

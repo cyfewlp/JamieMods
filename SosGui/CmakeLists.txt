@@ -48,6 +48,7 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     ${ImGui_FreeType_Sources}
     ${JAMIE_MODS_COMMON_DIR}/imgui/ImThemeLoader.cpp
     ${JAMIE_MODS_COMMON_DIR}/fonts/FontManager.cpp
+    ${JAMIE_MODS_COMMON_DIR}/i18n/translator_manager.cpp
     ${IMGUIEX_DIR}/imguiex/m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3.cpp
     ${IMGUIEX_DIR}/imguiex/imguiex_m3_slider.cpp
@@ -90,7 +91,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE -Wpedantic -Wshadow -Wconversion 
 
 include(${JAMIE_MODS_DIR}/cmake/build-lucide-icon.cmake)
 
-add_build_lucide_icons(${PROJECT_NAME} "sos-gui-icons.ttf")
+add_build_lucide_icons(${PROJECT_NAME})
 
 ############################################################
 # Install

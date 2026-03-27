@@ -24,11 +24,8 @@ public:
     using SlotEnumeration = SKSE::stl::enumeration<Slot, uint32_t>;
 
     static constexpr int MAX_FILTER_ARMOR_NAME = 256;
-    static constexpr int SOS_SLOT_OFFSET       = 30;
 
 private:
-    static auto get_slot_name_key(uint32_t slotPos) -> std::string;
-
     static bool IsArmorNonPlayable(const Armor *armor) { return (armor->formFlags & Armor::RecordFlags::kNonPlayable) != 0; }
 
     struct ArmorGeneratorTabBar

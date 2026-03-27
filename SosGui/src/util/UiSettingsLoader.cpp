@@ -7,6 +7,7 @@
 #define TOML_EXCEPTIONS 1
 
 #include "log.h"
+#include "path_utils.h"
 #include "toml++/toml.hpp"
 #include "utils.h"
 
@@ -14,7 +15,7 @@ namespace SosGui
 {
 void Settings::Load(UiSettings &uiSetting)
 {
-    const auto filePath = util::GetInterfaceFile("sosgui.toml");
+    const auto filePath = utils::GetInterfaceFile("sosgui.toml");
     logger::debug("Loading settings from file {}", filePath);
     try
     {
@@ -43,7 +44,7 @@ void Settings::Load(UiSettings &uiSetting)
 
 void Settings::Save(UiSettings &uiSetting)
 {
-    const auto filePath = util::GetInterfaceFile("sosgui.toml");
+    const auto filePath = utils::GetInterfaceFile("sosgui.toml");
 
     const auto tomlTable = toml::table{
         {"UiSetting", toml::table{{"selectedThemeIndex", uiSetting.selectedThemeIndex}}},

@@ -4,6 +4,7 @@
 #include "fonts/FontManager.h"
 #include "gui/UiSettings.h"
 #include "gui/icon.h"
+#include "i18n/translator_manager.h"
 #include "imgui.h"
 #include "imgui/ImThemeLoader.h"
 #include "imgui_impl_dx11.h"
@@ -13,20 +14,11 @@
 #include "imguiex/imguiex_enum_wrap.h"
 #include "imguiex/imguiex_m3.h"
 #include "log.h"
+#include "path_utils.h"
 #include "task.h"
 #include "util/ImGuiUtil.h"
 #include "util/UiSettingsLoader.h"
 
-#include <RE/C/ControlMap.h>
-#include <RE/C/CursorMenu.h>
-#include <RE/M/MenuCursor.h>
-#include <RE/P/PlayerCharacter.h>
-#include <RE/R/Renderer.h>
-#include <RE/S/SpellItem.h>
-#include <RE/T/TESForm.h>
-#include <RE/U/UI.h>
-#include <REL/Relocation.h>
-#include <SKSE/Impl/PCH.h>
 #include <windows.h>
 
 namespace SosGui
@@ -55,6 +47,24 @@ void SosGuiWindow::OutfitDebounceInput::updateView(const OutfitList &outfitList)
     });
 }
 
+SosGuiWindow::SosGuiWindow()
+    : m_outfitService(m_uiData), m_dataCoordinator(m_uiData, m_outfitService), m_outfitEditPanel(m_uiData, m_outfitService),
+      m_outfitListTable(m_uiData, m_outfitService, m_outfitEditPanel)
+{
+    i18n::SetTranslator(&m_translator);
+    const auto modInterfaceDir = utils::GetInterfacePath() / SKSE::PluginDeclaration::GetSingleton()->GetName();
+    i18n::UpdateTranslator("english", "english", modInterfaceDir);
+}
+
+SosGuiWindow::~SosGuiWindow()
+{
+    m_characterEditPanel.Cleanup();
+    m_outfitListTable.Cleanup();
+    m_outfitEditPanel.Cleanup();
+    m_isShowPanels = true;
+    i18n::SetTranslator(nullptr);
+}
+
 auto SosGuiWindow::Init(const HWND hWnd, const RE::BSGraphics::RendererData &renderData) -> void
 {
     auto *uiSetting = ::SosGui::Settings::UiSettings::GetInstance();
@@ -68,7 +78,7 @@ auto SosGuiWindow::Init(const HWND hWnd, const RE::BSGraphics::RendererData &ren
         (void)ImGuiEx::AddPrimaryFont({WCharUtils::ToString(defaultFontFilePath)}, {});
     }
 
-    ImGuiEx::M3::Initialize(util::GetInterfaceFile(Settings::UiSettings::ICON_FONT), ImGuiEx::M3::GetM3ClassicSchemeConfig());
+    ImGuiEx::M3::Initialize(utils::GetInterfaceFile(Settings::UiSettings::ICON_FONT), ImGuiEx::M3::GetM3ClassicSchemeConfig());
     ImGui::StyleColorsDark();
 }
 
@@ -78,14 +88,6 @@ auto SosGuiWindow::ShutDown() -> void
     Settings::Save(*uiSetting);
     ImGuiEx::M3::Destroy();
     ImGuiEx::Shutdown();
-}
-
-auto SosGuiWindow::Cleanup() -> void
-{
-    m_characterEditPanel.Cleanup();
-    m_outfitListTable.Cleanup();
-    m_outfitEditPanel.Cleanup();
-    m_fShowPanels = true;
 }
 
 void SosGuiWindow::DrawTopModalPopup()
@@ -141,7 +143,7 @@ auto SosGuiWindow::Draw() -> void
     DockSpace();
     ErrorNotifier::GetInstance().Show();
 
-    if (!m_fShowPanels)
+    if (!m_isShowPanels)
     {
         return;
     }
@@ -197,9 +199,9 @@ auto SosGuiWindow::DrawSidebar() -> float
             }
         };
 
-        FocusWindowButton(ICON_USERS, "$SosGui_CharacterEditPanel"_T.c_str(), m_characterEditPanel);
-        FocusWindowButton(ICON_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
-        FocusWindowButton(ICON_FILE_PLUS_CORNER, "$SosGui_EditOutfit"_T.c_str(), m_outfitEditPanel);
+        FocusWindowButton(ICON_USERS, Translate1("CharacterEditPanel"), m_characterEditPanel);
+        FocusWindowButton(ICON_SHIRT, Translate1("Outfit"), m_outfitListTable);
+        FocusWindowButton(ICON_FILE_PLUS_CORNER, Translate1("EditOutfit"), m_outfitEditPanel);
         ImGui::PopFont();
     }
     ImGui::End();
@@ -241,11 +243,11 @@ void SosGuiWindow::Toolbar()
 {
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 15);
     const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({3.0F, 3.0F});
-    if (ImGui::BeginMenu("$SosGui_ToolBar_File"_T.c_str()))
+    if (ImGui::BeginMenu(Translate1("ToolBar.File")))
     {
         {
             bool fEnabled = m_uiData.IsEnabled();
-            if (ImGui::Checkbox("$Enabled"_T.c_str(), &fEnabled))
+            if (ImGui::Checkbox(Translate1("Enabled"), &fEnabled))
             {
                 +[&] {
                     return m_dataCoordinator.RequestEnable(fEnabled);
@@ -255,57 +257,55 @@ void SosGuiWindow::Toolbar()
 
         {
             bool quickSlotEnabled = m_uiData.IsQuickSlotEnabled();
-            if (ImGui::Checkbox("$SkyOutSys_MCMHeader_Quickslots"_T.c_str(), &quickSlotEnabled))
+            if (ImGui::Checkbox(Translate1("ToolBar.Quickslots"), &quickSlotEnabled))
             {
                 if (EnableQuickslot(quickSlotEnabled))
                 {
                     m_uiData.SetQuickSlotEnabled(quickSlotEnabled);
                 }
             }
-            ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_EnableQuickslots"_T.c_str());
+            ImGui::SetItemTooltip("%s", Translate1("ToolBar.QuickslotsToolTip"));
         }
 
-        if (ImGui::MenuItem("$SkyOutSys_Text_Import"_T.c_str()))
+        if (ImGui::MenuItem(Translate1("ToolBar.Import")))
         {
             OnImportSettings();
             +[&] {
                 return m_dataCoordinator.RequestImportSettings();
             };
         }
-        ImGui::SetItemTooltip("%s", "$SkyOutSys_Desc_Import"_T.c_str());
 
-        if (ImGui::MenuItem("$SkyOutSys_Text_Export"_T.c_str()))
+        if (ImGui::MenuItem(Translate1("ToolBar.Export")))
         {
             +[&] {
                 return m_dataCoordinator.RequestExportSettings();
             };
         }
-        ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
         ImGui::EndMenu();
     }
-    if (ImGui::MenuItem("$SosGui_ToolBar_ShowOrHide"_T.c_str()))
+    if (ImGui::MenuItem(Translate1("ToolBar.ShowOrHide")))
     {
-        m_fShowPanels = !m_fShowPanels;
+        m_isShowPanels = !m_isShowPanels;
     }
-    if (ImGui::MenuItem("$SosGui_ToolBar_RefreshPlayerArmor"_T.c_str()))
+    if (ImGui::MenuItem(Translate1("ToolBar.RefreshPlayerArmor")))
     {
         util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
     }
-    if (ImGui::MenuItem("$SosGui_ToolBar_Settings"_T.c_str()))
+    if (ImGui::MenuItem(Translate1("ToolBar.Settings")))
     {
-        ImGuiUtil::OpenPopup("$SosGui_ToolBar_Settings"_T);
+        ImGuiUtil::OpenPopup(Translate1("ToolBar.Settings"));
     }
-    if (ImGui::MenuItem("$SosGui_ToolBar_Close"_T.c_str()))
+    if (ImGui::MenuItem(Translate1("ToolBar.Close")))
     {
         auto *messageQueue = RE::UIMessageQueue::GetSingleton();
         messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
     }
-    if (ImGui::MenuItem("$SosGui_About"_T.c_str()))
+    if (ImGui::MenuItem(Translate1("About")))
     {
         ImGuiUtil::OpenPopup("A Extra GUI for SkyrimOutfitSystemRE");
     }
 
-    Popup::DrawSettingsPopup("$SosGui_ToolBar_Settings"_T);
+    Popup::DrawSettingsPopup(Translate("ToolBar.Settings"));
     Popup::DrawAboutPopup("A Extra GUI for SkyrimOutfitSystemRE");
 
     ImGui::PopStyleVar();
