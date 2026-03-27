@@ -173,7 +173,7 @@ private:
     float                   m_currentScale = 0.0F;
 
 public:
-    constexpr explicit M3Styles(ColorScheme colors, ImFont *iconFont) : m_scheme(std::move(colors)), iconFont(iconFont) {}
+    constexpr explicit M3Styles(ColorScheme colors, ImFont *iconFont) : m_scheme(std::move(colors)), iconFont(iconFont) { UpdateScaling(1.0F); }
 
 private:
     static void UpdateTypeScaleScaling(detail::CachedTypeScale &cachedTypeScale, float newScale);
