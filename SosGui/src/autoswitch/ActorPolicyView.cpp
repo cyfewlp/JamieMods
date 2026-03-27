@@ -17,6 +17,7 @@ void ActorPolicyView::Draw(
     if (!ImGui::BeginChild("##LocationAutoSwitch", {0, 0}, ImGuiChildFlags_AutoResizeY))
     {
         ImGui::EndChild();
+        return;
     }
 
     using namespace ImGuiUtil;

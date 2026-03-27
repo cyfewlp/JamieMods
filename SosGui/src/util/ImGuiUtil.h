@@ -6,6 +6,7 @@
 
 #include "Translation.h"
 #include "imgui.h"
+#include "imguiex/ImGuiEx.h"
 
 #include <array>
 #include <string>
@@ -71,18 +72,6 @@ constexpr auto SeparatorText(const char *content) -> void
 {
     Translation::Translate(content, g_widgetName);
     ImGui::SeparatorText(g_widgetName.c_str());
-}
-
-constexpr auto Text(const char *content) -> void
-{
-    Translation::Translate(content, g_widgetName);
-    ImGui::Text("%s", g_widgetName.c_str());
-}
-
-constexpr auto Text(const std::string &&content) -> void
-{
-    Translation::Translate(content.c_str(), g_widgetName);
-    ImGui::Text("%s", g_widgetName.c_str());
 }
 
 constexpr auto TextWrapped(const char *content) -> void
@@ -161,6 +150,19 @@ constexpr void AddItemRect(const ImColor color, const float thickness = 1.0F)
 }
 
 void may_update_table_sort_dir(bool &ascend);
+
+constexpr void OpenPopup(std::string_view strId, ImGuiPopupFlags flags = ImGuiPopupFlags_None)
+{
+    const auto popupId = ImGui::GetID(ImGuiEx::TextStart(strId), ImGuiEx::TextEnd(strId));
+    ImGui::OpenPopup(popupId, flags);
+}
+
+constexpr void Text(std::string_view text)
+{
+    ImGui::TextUnformatted(ImGuiEx::TextStart(text), ImGuiEx::TextEnd(text));
+}
+
+bool IconButton(std::string_view icon, const ImVec2 &size = {});
 
 struct DebounceInput
 {

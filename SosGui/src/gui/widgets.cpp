@@ -23,7 +23,7 @@ bool DrawNearActorsCombo(const std::vector<RE::Actor *> &nearActors, RE::Actor *
     {
         for (const auto &nearActor : nearActors)
         {
-            ImGui::PushID(nearActor->formID);
+            ImGui::PushID(static_cast<int>(nearActor->formID));
             if (ImGui::Selectable(nearActor->GetName(), selectedFormID == nearActor->GetFormID()))
             {
                 *selectedActor = nearActor;

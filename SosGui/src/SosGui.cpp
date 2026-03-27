@@ -4,8 +4,6 @@
 #include "fonts/FontManager.h"
 #include "gui/UiSettings.h"
 #include "gui/icon.h"
-#include "gui/popup/AboutPopup.h"
-#include "gui/popup/SettingsPopup.h"
 #include "imgui.h"
 #include "imgui/ImThemeLoader.h"
 #include "imgui_impl_dx11.h"
@@ -13,6 +11,7 @@
 #include "imguiex/ImGuiEx.h"
 #include "imguiex/imgui_manager.h"
 #include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
 #include "log.h"
 #include "task.h"
 #include "util/ImGuiUtil.h"
@@ -69,6 +68,7 @@ auto SosGuiWindow::Init(const HWND hWnd, const RE::BSGraphics::RendererData &ren
         (void)ImGuiEx::AddPrimaryFont({WCharUtils::ToString(defaultFontFilePath)}, {});
     }
 
+    ImGuiEx::M3::Initialize(util::GetInterfaceFile(Settings::UiSettings::ICON_FONT), ImGuiEx::M3::GetM3ClassicSchemeConfig());
     ImGui::StyleColorsDark();
 }
 
@@ -76,6 +76,7 @@ auto SosGuiWindow::ShutDown() -> void
 {
     auto *uiSetting = Settings::UiSettings::GetInstance();
     Settings::Save(*uiSetting);
+    ImGuiEx::M3::Destroy();
     ImGuiEx::Shutdown();
 }
 
@@ -117,12 +118,12 @@ auto SosGuiWindow::Refresh() const -> EagerTask
     co_await m_dataCoordinator.Refresh();
 }
 
-auto SosGuiWindow::Render() -> void
+auto SosGuiWindow::OnPostDisplay() -> void
 {
     ImGuiEx::NewFrame();
 
     m_uiData.ExecuteUiTasks();
-    DrawPanels();
+    Draw();
 
     ImGuiEx::Render();
     ImGuiEx::EndFrame();
@@ -135,7 +136,7 @@ void SosGuiWindow::OnImportSettings()
     m_outfitEditPanel.OnRefresh();
 }
 
-auto SosGuiWindow::DrawPanels() -> void
+auto SosGuiWindow::Draw() -> void
 {
     DockSpace();
     ErrorNotifier::GetInstance().Show();
@@ -180,8 +181,8 @@ auto SosGuiWindow::DrawSidebar() -> float
         ImGui::SetCursorPosY(offsetY);
         const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({5.0F, 5.0F}).Color<ImGuiCol_Button>({});
         ImGui::PushFont(nullptr, Settings::UiSettings::GetInstance()->Title3PxSize());
-        auto FocusWindowButton = [](const char *iconClass, const char *tooltip, BaseGui &baseGui) {
-            auto isClick = ImGui::Button(iconClass);
+        auto FocusWindowButton = [](std::string_view icon, const char *tooltip, BaseGui &baseGui) {
+            auto isClick = ImGuiUtil::IconButton(icon);
             ImGui::SetItemTooltip("%s", tooltip);
             if (isClick)
             {
@@ -196,9 +197,9 @@ auto SosGuiWindow::DrawSidebar() -> float
             }
         };
 
-        FocusWindowButton(NF_OCT_PEOPLE, "$SosGui_CharacterEditPanel"_T.c_str(), m_characterEditPanel);
-        FocusWindowButton(NF_FA_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
-        FocusWindowButton(NF_FA_EDIT, "$SosGui_EditOutfit"_T.c_str(), m_outfitEditPanel);
+        FocusWindowButton(ICON_USERS, "$SosGui_CharacterEditPanel"_T.c_str(), m_characterEditPanel);
+        FocusWindowButton(ICON_SHIRT, "$SosGui_Outfit"_T.c_str(), m_outfitListTable);
+        FocusWindowButton(ICON_FILE_PLUS_CORNER, "$SosGui_EditOutfit"_T.c_str(), m_outfitEditPanel);
         ImGui::PopFont();
     }
     ImGui::End();
@@ -240,7 +241,7 @@ void SosGuiWindow::Toolbar()
 {
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, 15);
     const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({3.0F, 3.0F});
-    if (ImGui::BeginMenu(std::format("{} {}", NF_OCT_FILE, "$SosGui_ToolBar_File"_T).c_str()))
+    if (ImGui::BeginMenu("$SosGui_ToolBar_File"_T.c_str()))
     {
         {
             bool fEnabled = m_uiData.IsEnabled();
@@ -282,27 +283,31 @@ void SosGuiWindow::Toolbar()
         ImGuiUtil::SetItemTooltip("$SkyOutSys_Text_Export");
         ImGui::EndMenu();
     }
-    if (ImGuiUtil::MenuItem(std::format("{} {}", m_fShowPanels ? NF_OCT_EYE : NF_OCT_EYE_CLOSED, "$SosGui_ToolBar_ShowOrHide"_T).c_str()))
+    if (ImGui::MenuItem("$SosGui_ToolBar_ShowOrHide"_T.c_str()))
     {
         m_fShowPanels = !m_fShowPanels;
     }
-    if (ImGuiUtil::MenuItem(std::format("{} {}", NF_MD_REFRESH, "$SosGui_ToolBar_RefreshPlayerArmor"_T).c_str()))
+    if (ImGui::MenuItem("$SosGui_ToolBar_RefreshPlayerArmor"_T.c_str()))
     {
         util::RefreshActorArmor(RE::PlayerCharacter::GetSingleton());
     }
-    if (ImGui::MenuItem(std::format("{} {}", NF_OCT_GEAR, "$SosGui_ToolBar_Settings"_T).c_str()))
+    if (ImGui::MenuItem("$SosGui_ToolBar_Settings"_T.c_str()))
     {
-        m_context.popupList.push_back(std::make_unique<Popup::SettingsPopup>("$SosGui_ToolBar_Settings"));
+        ImGuiUtil::OpenPopup("$SosGui_ToolBar_Settings"_T);
     }
-    if (ImGui::MenuItem(std::format("{} {}", NF_MD_CLOSE, "$SosGui_ToolBar_Close"_T).c_str()))
+    if (ImGui::MenuItem("$SosGui_ToolBar_Close"_T.c_str()))
     {
         auto *messageQueue = RE::UIMessageQueue::GetSingleton();
         messageQueue->AddMessage("SosGuiMenu", RE::UI_MESSAGE_TYPE::kHide, nullptr);
     }
     if (ImGui::MenuItem("$SosGui_About"_T.c_str()))
     {
-        m_context.popupList.push_back(std::make_unique<Popup::AboutPopup>("$SosGui_About"));
+        ImGuiUtil::OpenPopup("A Extra GUI for SkyrimOutfitSystemRE");
     }
+
+    Popup::DrawSettingsPopup("$SosGui_ToolBar_Settings"_T);
+    Popup::DrawAboutPopup("A Extra GUI for SkyrimOutfitSystemRE");
+
     ImGui::PopStyleVar();
 }
 

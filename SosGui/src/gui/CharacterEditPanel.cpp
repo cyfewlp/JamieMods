@@ -9,11 +9,17 @@
 #include "gui/widgets.h"
 #include "imgui.h"
 #include "imguiex/imguiex_enum_wrap.h"
+#include "imguiex/imguiex_m3.h"
 #include "service/SosDataCoordinator.h"
 #include "task.h"
 
 namespace SosGui
 {
+namespace
+{
+constexpr auto OUTFIT_SELECT_LIST_POPUP_NAME = "Outfit List##OutfitSelectList";
+}
+
 void CharacterEditPanel::Focus()
 {
     ImGui::SetWindowFocus("$SosGui_CharacterEditPanel"_T.c_str());
@@ -27,7 +33,7 @@ void CharacterEditPanel::DrawOutfitSelectPopup(RE::Actor *const &selectedActor, 
 
     if (m_outfitSelectPopup)
     {
-        auto isHided = !m_outfitSelectPopup->Draw("Outfit List##OutfitSelectList", outfitList, selectId);
+        auto isHided = !m_outfitSelectPopup->Draw(OUTFIT_SELECT_LIST_POPUP_NAME, outfitList, selectId);
         if (selectId != INVALID_OUTFIT_ID)
         {
             if (const auto opt = outfitList.GetOutfitById(selectId); opt.has_value())
@@ -55,13 +61,12 @@ void CharacterEditPanel::Draw(SosUiData &uiData, const SosDataCoordinator &dataC
     ImGui::SetNextWindowSize(ImVec2(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("$SosGui_CharacterEditPanel"_T.c_str(), &m_show, ImGuiWindowFlags_NoNav))
     {
-        DrawCharactersPanel(uiData, dataCoordinator);
+        DrawCharactersPanel(uiData, dataCoordinator, outfitService);
 
         if (const auto &actors = uiData.GetActors(); m_selectedActorIndex >= 0 && static_cast<size_t>(m_selectedActorIndex) < actors.size())
         {
             if (const auto &selectedActor = actors.at(m_selectedActorIndex))
             {
-                DrawOutfitSelectPopup(selectedActor, uiData, outfitService);
                 m_autoSwitchOutfitView.Draw(selectedActor, uiData, dataCoordinator, outfitService);
             }
         }
@@ -69,10 +74,10 @@ void CharacterEditPanel::Draw(SosUiData &uiData, const SosDataCoordinator &dataC
     ImGui::End();
 }
 
-void CharacterEditPanel::DrawCharactersPanel(SosUiData &uiData, const SosDataCoordinator &dataCoordinator)
+void CharacterEditPanel::DrawCharactersPanel(SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService)
 {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-    if (ImGui::Button(NF_MD_REFRESH))
+    if (ImGuiUtil::IconButton(ICON_REFRESH_CW))
     {
         +[&] {
             return dataCoordinator.RequestActorList();
@@ -92,7 +97,7 @@ void CharacterEditPanel::DrawCharactersPanel(SosUiData &uiData, const SosDataCoo
             return dataCoordinator.RequestAddActor(selectedActor);
         };
     }
-    DrawCharactersTable(uiData, dataCoordinator);
+    DrawCharactersTable(uiData, dataCoordinator, outfitService);
 }
 
 static auto GetActorOutfitName(SosUiData &uiData, RE::Actor *actor) -> std::string
@@ -108,7 +113,7 @@ static auto GetActorOutfitName(SosUiData &uiData, RE::Actor *actor) -> std::stri
         .value_or("No outfit");
 }
 
-void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoordinator &dataCoordinator)
+void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService)
 {
     const auto &actors = uiData.GetActors();
 
@@ -132,22 +137,21 @@ void CharacterEditPanel::DrawCharactersTable(SosUiData &uiData, const SosDataCoo
                     ImGui::Selectable(actor->GetName(), isSelected, flags))
                 {
                     m_selectedActorIndex = idx;
+                    ImGui::OpenPopup(OUTFIT_SELECT_LIST_POPUP_NAME);
+                    m_outfitSelectPopup = std::make_unique<OutfitSelectPopup>();
+                    m_outfitSelectPopup->UpdateView(uiData.GetOutfitList());
                 }
                 if (isSelected)
                 {
                     ImGui::SetItemDefaultFocus();
                 }
+                DrawOutfitSelectPopup(actor, uiData, outfitService);
             }
 
             ImGui::TableNextColumn(); // active outfit column
             {
                 auto outfitName = GetActorOutfitName(uiData, actor);
-                if (ImGui::Selectable(outfitName.c_str(), false))
-                {
-                    m_selectedActorIndex = idx;
-                    m_outfitSelectPopup  = std::make_unique<OutfitSelectPopup>();
-                    m_outfitSelectPopup->UpdateView(uiData.GetOutfitList());
-                }
+                ImGuiUtil::Text(outfitName);
             }
 
             ImGui::TableNextColumn(); // remove character column

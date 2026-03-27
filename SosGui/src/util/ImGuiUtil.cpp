@@ -1,5 +1,8 @@
 #include "util/ImGuiUtil.h"
 
+#include "imguiex/Material3.h"
+#include "imguiex/m3/facade/icon_button.h"
+
 namespace SosGui
 {
 
@@ -21,6 +24,39 @@ void ImGuiUtil::may_update_table_sort_dir(bool &ascend)
             sortSpecs->SpecsDirty = false;
         }
     }
+}
+
+namespace
+{
+/**
+ * FIXME: Retrieve the icon directly from the @c ImFontAtlas::Fonts collection.
+ * @note **Assumed Convention:**
+ * This implementation relies on the following layout:
+ * 1. The Icon Font is never merged.
+ * 2. The Icon Font is always the second entry in the atlas index [1].
+ * 3. Fallback: If the icon font is unavailable, the default font will be used.
+ */
+auto GetIconFont() -> ImFont *
+{
+    ImFontAtlas *fontAtlas = ImGui::GetIO().Fonts;
+    if (fontAtlas->Fonts.size() > 1)
+    {
+        return fontAtlas->Fonts[1];
+    }
+    return ImGui::GetFont();
+}
+
+} // namespace
+
+auto ImGuiUtil::IconButton(std::string_view icon, const ImVec2 &size) -> bool
+{
+    constexpr auto iconSize = M3Spec::IconButtonSizing<ImGuiEx::M3::Spec::SizeTips::XSMALL>::IconSize;
+    const auto     pixels   = ImGuiEx::M3::Context::GetM3Styles().GetPixels(iconSize);
+    ImFont        *iconFont = GetIconFont();
+    ImGui::PushFont(iconFont, pixels);
+    const auto clicked = ImGui::Button(icon.data(), size);
+    ImGui::PopFont();
+    return clicked;
 }
 
 bool ImGuiUtil::DebounceInput::Draw(const char *label, const char *hintText)

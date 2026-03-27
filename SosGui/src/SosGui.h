@@ -69,11 +69,11 @@ public:
     void Cleanup() override;
 
     auto Refresh() const -> EagerTask;
-    auto Render() -> void;
+    auto OnPostDisplay() -> void;
 
 private:
     void DrawTopModalPopup();
-    auto DrawPanels() -> void;
+    auto Draw() -> void;
     auto DrawSidebar() -> float;
     void DockSpace();
     void Toolbar();

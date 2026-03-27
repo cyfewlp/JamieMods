@@ -139,7 +139,6 @@ private:
 
     static void PushError(Error error);
 
-    void DoDraw(Context &context, const EditingOutfit &editingOutfit);
     void DrawSideBar(const SosUiOutfit *editingOutfit);
     void UpdateWindowTitle(const std::string &outfitName);
 

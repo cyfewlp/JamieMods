@@ -156,7 +156,7 @@ void OutfitListTable::DrawToolWidgets()
 {
     auto &outfitList = m_uiData.GetOutfitList();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-    if (ImGui::Button(NF_MD_REFRESH))
+    if (ImGuiUtil::IconButton(ICON_REFRESH_CW))
     {
         OnRefresh();
         outfitList.clear();
@@ -179,8 +179,8 @@ void OutfitListTable::DrawToolWidgets()
     static size_t prevOutfitSize = 0;
 
     ImGui::AlignTextToFramePadding();
-    ImGui::Text(NF_OCT_SEARCH);
-    ImGui::SameLine(0, 5);
+    ImGuiUtil::IconButton(ICON_SEARCH);
+    ImGui::SameLine(0.F, 0.F);
 
     ImGui::PushItemWidth(-FLT_MIN);
     if (m_outfitFilterInput.Draw("##filter", "$SosGui_Hint_FilterOutfit"_T.c_str()) || prevOutfitSize != outfitList.size())
@@ -231,7 +231,7 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
     ImGui::TableNextColumn();
     {
         ImGui::PushFont(nullptr, Settings::UiSettings::GetInstance()->Title3PxSize());
-        if (ImGui::Button(NF_OCT_DIFF_ADDED))
+        if (ImGuiUtil::IconButton(ICON_FILE_PLUS_CORNER))
         {
             context.popupList.push_back(std::make_unique<CreateOutfitPopup>());
         }
@@ -255,13 +255,13 @@ void OutfitListTable::DrawOutfitTableContent(Context &context, RE::Actor *editin
             if (outfit->IsFavorite())
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertFloat4ToU32(ImColor(234, 51, 35)));
-                clicked = ImGui::Button(NF_OCT_HEART_FILL);
+                clicked = ImGuiUtil::IconButton(ICON_HEART);
                 ImGui::PopStyleColor();
                 ImGui::SetItemTooltip("%s", "$SkyOutSys_OContext_ToggleFavoriteOff"_T.c_str());
             }
             else
             {
-                clicked = ImGui::Button(NF_OCT_HEART_FILL);
+                clicked = ImGuiUtil::IconButton(ICON_HEART_OFF);
                 ImGui::SetItemTooltip("%s", "$SkyOutSys_OContext_ToggleFavoriteOn"_T.c_str());
             }
             if (clicked)

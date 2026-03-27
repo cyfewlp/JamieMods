@@ -15,24 +15,7 @@ namespace Popup
 {
 struct BasicPopup
 {
-    bool            wantOpen   = true;
     ImGuiPopupFlags popupFlags = 0;
-
-    constexpr void Open(ImGuiPopupFlags flags = 0)
-    {
-        wantOpen         = true;
-        this->popupFlags = flags;
-    }
-
-    auto Begin(const char *nameKey, ImGuiWindowFlags flags = 0) -> bool
-    {
-        if (wantOpen)
-        {
-            wantOpen = false;
-            ImGui::OpenPopup(nameKey, popupFlags);
-        }
-        return ImGui::BeginPopup(nameKey, flags);
-    }
 };
 
 struct ModalPopup
@@ -83,5 +66,9 @@ struct DeleteOutfitPopup final : ModalPopup
 protected:
     void DoDraw(SosUiData &uiData, bool &confirmed) override;
 };
+
+void DrawSettingsPopup(std::string_view name);
+void DrawAboutPopup(std::string_view name);
+
 } // namespace Popup
 } // namespace SosGui

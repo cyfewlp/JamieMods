@@ -31,7 +31,7 @@ bool ArmorView::ArmorFilter::PassFilter(const Armor *armor) const
 bool ArmorView::ArmorFilter::Draw()
 {
     ImGui::AlignTextToFramePadding();
-    ImGui::Text(NF_OCT_SEARCH);
+    ImGuiUtil::IconButton(ICON_SEARCH);
 
     ImGui::SameLine();
     bool needUpdate = DebounceInput::Draw("##ArmorFilter", Translation::Translate("$SkyOutSys_OEdit_AddFromList_Filter_Name").c_str());

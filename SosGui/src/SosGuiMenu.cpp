@@ -92,7 +92,7 @@ void SosGuiMenu::RegisterMenu()
 
 void SosGuiMenu::PostDisplay()
 {
-    m_sosGui->Render();
+    m_sosGui->OnPostDisplay();
 }
 
 void SosGuiMenu::OnShow()

@@ -97,25 +97,17 @@ void OutfitEditPanel::Draw(Context &context, const EditingOutfit &editingOutfit)
     ImGui::SetNextWindowSize({DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT}, ImGuiCond_FirstUseEver);
     if (ImGui::Begin(m_windowTitle.c_str(), &m_show))
     {
-        DoDraw(context, editingOutfit);
-    }
-    ImGui::End();
-}
+        if (m_editContext.dirty)
+        {
+            m_editContext.dirty = false;
+            m_armorView.reset_view(GetGenerator(), editingOutfit.GetSourceOutfit());
+        }
+        if (ImGui::BeginChild("##OutfitEditPanelSideBar", {200, 0}, ImGuiEx::ChildFlags().Borders().ResizeX()))
+        {
+            DrawSideBar(editingOutfit.GetSourceOutfit());
+        }
+        ImGui::EndChild();
 
-void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfit)
-{
-    if (m_editContext.dirty)
-    {
-        m_editContext.dirty = false;
-        m_armorView.reset_view(GetGenerator(), editingOutfit.GetSourceOutfit());
-    }
-    if (ImGui::BeginChild("##OutfitEditPanelSideBar", {200, 0}, ImGuiEx::ChildFlags().Borders().ResizeX()))
-    {
-        DrawSideBar(editingOutfit.GetSourceOutfit());
-    }
-    ImGui::EndChild();
-
-    {
         ImGui::SameLine();
         ImGui::BeginGroup();
         DrawOutfitPanel(context, editingOutfit);
@@ -124,6 +116,7 @@ void OutfitEditPanel::DoDraw(Context &context, const EditingOutfit &editingOutfi
         DrawArmorView(context, editingOutfit);
         ImGui::EndGroup();
     }
+    ImGui::End();
 }
 
 bool OutfitEditPanel::OnModalPopupConfirmed(Popup::ModalPopup *modalPopup)
@@ -410,7 +403,7 @@ void OutfitEditPanel::DrawArmorViewFilter(const SosUiOutfit *editingOutfit)
 {
     {
         const auto styleGuard = ImGuiEx::StyleGuard().Style<ImGuiStyleVar_FramePadding>({5.0f, 5.0f}).Color<ImGuiCol_Button>(ImVec4{});
-        if (ImGui::Button(NF_OCT_FILTER))
+        if (ImGuiUtil::IconButton(ICON_FILE_PLUS_CORNER))
         {
             ImGui::OpenPopup("Filters");
         }
@@ -463,14 +456,6 @@ void OutfitEditPanel::DrawArmorViewContent(Context &context, const EditingOutfit
     ImGui::TableSetupColumn("Playable", ImGuiEx::TableColumnFlags().NoSort());
     ImGui::TableSetupColumn("$Add", ImGuiEx::TableColumnFlags().NoSort());
     ImGui::TableHeadersRow();
-    ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-    for (int colIndex = 0; colIndex < 6; ++colIndex)
-    {
-        ImGui::TableSetColumnIndex(colIndex);
-        ImGui::PushFont(nullptr, Settings::UiSettings::GetInstance()->Title3PxSize());
-        ImGui::TableHeader(ImGui::TableGetColumnName(colIndex));
-        ImGui::PopFont();
-    }
 
     std::function<void()> onRequireAddArmor = [] {};
 
@@ -527,11 +512,11 @@ void OutfitEditPanel::DrawArmorViewContent(Context &context, const EditingOutfit
         {
             if (IsArmorNonPlayable(armor))
             {
-                ImGui::TextColored(ImColor(237, 28, 36), "%s", NF_OCT_X);
+                ImGuiUtil::IconButton(ICON_X);
             }
             else
             {
-                ImGui::TextColored(ImColor(34, 177, 76), "%s", NF_OCT_CHECK);
+                ImGuiUtil::IconButton(ICON_CHECK);
             }
         }
 

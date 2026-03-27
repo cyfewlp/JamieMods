@@ -32,7 +32,7 @@ public:
     static constexpr int                  TITLE_4_PT_SIZE    = 16;
     static constexpr std::array<float, 2> ICON_PADDING       = {5.0F, 5.0F};
     static constexpr std::array<float, 2> TABLE_ROW_PADDING  = {3.0F, 3.0F};
-    static constexpr std::string_view     ICON_FONT          = "SymbolsNerdFontMono-Regular.ttf";
+    static constexpr std::string_view     ICON_FONT          = "lucide-icons.ttf";
 
     enum DefaultThemeIndex
     {

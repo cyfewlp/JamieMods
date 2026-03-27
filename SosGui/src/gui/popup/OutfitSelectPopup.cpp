@@ -5,6 +5,7 @@
 
 #include "data/OutfitList.h"
 #include "gui/icon.h"
+#include "imguiex/imguiex_m3.h"
 
 namespace SosGui
 {
@@ -35,28 +36,32 @@ void OutfitSelectPopup::OutfitDebounceInput::UpdateView(const OutfitList &outfit
 bool OutfitSelectPopup::Draw(const char *nameKey, const OutfitList &outfitList, OutfitId &selectId)
 {
     selectId = INVALID_OUTFIT_ID;
-    if (!Begin(nameKey))
+    if (!ImGui::BeginPopup(nameKey))
     {
         return false;
     }
     ImGui::BeginChild("##ChildRegion", ImVec2(0, 250), ImGuiChildFlags_AutoResizeX);
 
     ImGui::AlignTextToFramePadding();
-    ImGui::Text(NF_OCT_SEARCH);
-    ImGui::SameLine(0, 5);
+    ImGuiUtil::IconButton(ICON_SEARCH);
+    ImGui::SameLine(0.F, 0.F);
     if (debounceInput.Draw("##filter", "filter outfit"))
     {
         debounceInput.UpdateView(outfitList);
     }
 
     ImGuiListClipper clipper;
-    clipper.Begin(debounceInput.viewData.size());
+    clipper.Begin(static_cast<int>(debounceInput.viewData.size()));
     while (clipper.Step())
     {
-        for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
+        if (!(0 <= clipper.DisplayStart && clipper.DisplayStart <= clipper.DisplayEnd))
         {
-            const auto &outfit = *debounceInput.viewData.at(index);
-            ImGui::PushID(index);
+            continue;
+        }
+        for (size_t index = static_cast<size_t>(clipper.DisplayStart); index < static_cast<size_t>(clipper.DisplayEnd); ++index)
+        {
+            const auto &outfit = *debounceInput.viewData[index];
+            ImGui::PushID(static_cast<int>(index));
             if (ImGui::Selectable(outfit.GetName().c_str(), false))
             {
                 selectId = outfit.GetId();

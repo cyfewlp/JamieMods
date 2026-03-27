@@ -26,8 +26,8 @@ private:
     AutoSwitch::ActorPolicyView        m_autoSwitchOutfitView{};
     int                                m_selectedActorIndex = 0;
 
-    void DrawCharactersPanel(SosUiData &uiData, const SosDataCoordinator &dataCoordinator);
-    void DrawCharactersTable(SosUiData &uiData, const SosDataCoordinator &dataCoordinator);
+    void DrawCharactersPanel(SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService);
+    void DrawCharactersTable(SosUiData &uiData, const SosDataCoordinator &dataCoordinator, const OutfitService &outfitService);
 
     auto GetSelectedActor(SosUiData &uiData) const -> RE::Actor *;
 };
