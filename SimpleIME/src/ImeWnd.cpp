@@ -102,16 +102,21 @@ void AutoToggleGameCursorIfNeeded(bool &justWantCaptureMouse)
     justWantCaptureMouse = cWantCaptureMouse;
 }
 
+inline auto WantToOpenOverlay(Settings &settings)
+{
+    return ImGui::IsKeyChordPressed(settings.shortcut) || settings.runtimeData.requestShowOverlay;
+}
+
 /**
  * The toolwindow and ImeWnd handle the shortcut at the same time.
  * - ToolWindow already released ? -> ImeWnd handle shortcut to response the open ToolWindow request.
  *                      alive    ? -> ToolWindow handle shortcut to response the open/pin/unpin/close ToolWindow request.
  * - Debounce timer passed? -> If toolwindow is alive, close it and release translator; otherwise, open toolwindow and load translator.
  */
-inline void ManageImeOverlayOnDemand(std::unique_ptr<UI::ImeOverlay> &imeOverlay, DebounceTimer &debounceTimer, const Settings &settings)
+inline void ManageImeOverlayOnDemand(std::unique_ptr<UI::ImeOverlay> &imeOverlay, DebounceTimer &debounceTimer, Settings &settings)
 {
     bool shouldOpenImeOverlay = false;
-    if (imeOverlay == nullptr && ImGui::IsKeyChordPressed(settings.shortcut))
+    if (imeOverlay == nullptr && WantToOpenOverlay(settings))
     {
         shouldOpenImeOverlay = true;
     }

@@ -187,9 +187,11 @@ auto ImeController::DoEnableIme(bool enable) const -> IImeModule::Result
             if (enable)
             {
                 m_settings->runtimeData.requestShowOverlay = true;
+                m_settings->runtimeData.requestHideOverlay = false;
             }
             else
             {
+                m_settings->runtimeData.requestShowOverlay = false;
                 m_settings->runtimeData.requestHideOverlay = true;
             }
         }
