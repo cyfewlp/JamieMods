@@ -26,7 +26,7 @@
 #include <cmath>
 #include <format>
 
-#if IMGUI_VERSION_NUM != 19263
+#if IMGUI_VERSION_NUM != 19261
     #error "ImGui version changed! imguiex_m3 only supports v1.92.6"
 #endif
 

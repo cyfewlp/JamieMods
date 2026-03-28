@@ -1,4 +1,4 @@
-if (NOT ${EXTERN_DIR})
+if (NOT EXTERN_DIR)
     message(FATAL_ERROR "Please set the EXTERN_DIR that contains the imgui source code before including this file.")
     return()
 endif ()
