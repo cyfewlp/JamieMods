@@ -1,26 +1,31 @@
+if (NOT ${EXTERN_DIR})
+    message(FATAL_ERROR "Please set the EXTERN_DIR that contains the imgui source code before including this file.")
+    return()
+endif ()
+
 include(${CMAKE_CURRENT_LIST_DIR}/jamiemods.common.cmake)
 
 set(IMGUI_INCLUDE_DIRS
-   ${JAMIE_MODS_EXTERN_DIR}/imgui
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends
+   ${EXTERN_DIR}/imgui
+   ${EXTERN_DIR}/imgui/backends
 )
 set(ImGui_Basic_Sources
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui.h
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui.cpp
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui_widgets.cpp
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui_tables.cpp
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui_draw.cpp
+   ${EXTERN_DIR}/imgui/imgui.h
+   ${EXTERN_DIR}/imgui/imgui.cpp
+   ${EXTERN_DIR}/imgui/imgui_widgets.cpp
+   ${EXTERN_DIR}/imgui/imgui_tables.cpp
+   ${EXTERN_DIR}/imgui/imgui_draw.cpp
 )
 set(ImGui_Backend_Win32_Dx11_Sources
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_win32.h
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_win32.cpp
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_dx11.h
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/backends/imgui_impl_dx11.cpp
+   ${EXTERN_DIR}/imgui/backends/imgui_impl_win32.h
+   ${EXTERN_DIR}/imgui/backends/imgui_impl_win32.cpp
+   ${EXTERN_DIR}/imgui/backends/imgui_impl_dx11.h
+   ${EXTERN_DIR}/imgui/backends/imgui_impl_dx11.cpp
 )
 set(ImGui_FreeType_Sources
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.h
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.cpp
+   ${EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.h
+   ${EXTERN_DIR}/imgui/misc/freetype/imgui_freetype.cpp
 )
 set(ImGui_Demo_Sources
-   ${JAMIE_MODS_EXTERN_DIR}/imgui/imgui_demo.cpp
+   ${EXTERN_DIR}/imgui/imgui_demo.cpp
 )
