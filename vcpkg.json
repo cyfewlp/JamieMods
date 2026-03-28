@@ -23,12 +23,6 @@
         "gtest",
         "benchmark"
       ]
-    },
-    "simple-ime-deps": {
-      "description": "Adds dependencies for SimpleIME.",
-      "dependencies": [
-        "detours"
-      ]
     }
   }
 }

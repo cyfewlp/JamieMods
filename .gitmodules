@@ -1,18 +1,7 @@
-[submodule "extern/imgui"]
-	path = extern/imgui
-	url = https://github.com/ocornut/imgui
-	branch = master
-[submodule "extern/CommonLibSSE-NG"]
-	path = extern/CommonLibSSE-NG
-	url = https://github.com/alandtse/CommonLibVR
-	branch = ng
 [submodule "extern/material-color-utilities"]
 	path = extern/material-color-utilities
 	url = https://github.com/material-foundation/material-color-utilities.git
 	branch = main
-[submodule "extern/doxygen-awesome-css"]
-	path = extern/doxygen-awesome-css
-	url = https://github.com/jothepro/doxygen-awesome-css.git
 [submodule "extern/imgui_test_engine"]
 	path = extern/imgui_test_engine
 	url = https://github.com/ocornut/imgui_test_engine.git

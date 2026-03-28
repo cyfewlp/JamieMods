@@ -51,36 +51,6 @@
       }
     },
     {
-      "name": "compiler-cl",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "cl.exe"
-      },
-      "environment": {
-        "PROJECT_ARCHITECTURE": "x64",
-        "PROJECT_COMPILER_FLAGS": "/permissive- /EHsc /MP /W4 /WX /external:anglebrackets /external:W0"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "intelliSenseMode": "windows-msvc-x64",
-          "enableMicrosoftCodeAnalysis": true,
-          "enableClangTidyCodeAnalysis": true
-        }
-      }
-    },
-    {
-      "name": "compiler-clang",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      },
-      "environment": {
-        "PROJECT_COMPILER": "clang",
-        "PROJECT_COMPILER_FLAGS": "-Wno-overloaded-virtual -Wno-delete-non-abstract-non-virtual-dtor -Wno-inconsistent-missing-override -Wno-reinterpret-base-class -D__cpp_consteval"
-      }
-    },
-    {
       "name": "compiler-clang-cl",
       "hidden": true,
       "cacheVariables": {
@@ -138,32 +108,6 @@
       }
     },
     {
-      "name": "debug-cl-vs-vcpkg",
-      "hidden": true,
-      "inherits": [
-        "common",
-        "x64",
-        "win32-unicode",
-        "packaging-vcpkg",
-        "generator-vs-2022",
-        "builttype-debug",
-        "compiler-cl"
-      ]
-    },
-    {
-      "name": "debug-clang-ninja-vcpkg",
-      "hidden": true,
-      "inherits": [
-        "common",
-        "x64",
-        "win32-unicode",
-        "packaging-vcpkg",
-        "generator-ninja",
-        "builttype-debug",
-        "compiler-clang"
-      ]
-    },
-    {
       "name": "debug-clangcl-ninja-vcpkg",
       "hidden": true,
       "inherits": [
@@ -178,7 +122,6 @@
     },
     {
       "name": "RelWithDebInfo-clangcl-ninja-vcpkg",
-      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -190,19 +133,7 @@
       ]
     },
     {
-      "name": "release-cl-vs-vcpkg",
-      "hidden": true,
-      "inherits": [
-        "common",
-        "packaging-vcpkg",
-        "generator-vs-2022",
-        "builttype-release",
-        "compiler-cl"
-      ]
-    },
-    {
       "name": "release-clangcl-ninja-vcpkg",
-      "hidden": true,
       "inherits": [
         "common",
         "x64",
@@ -212,63 +143,6 @@
         "packaging-vcpkg",
         "compiler-clang-cl"
       ]
-    },
-    {
-      "name": "general-debug-clangcl-ninja-vcpkg-imgui",
-      "description": "General debug configuration with clang-cl, Ninja, and vcpkg, including ImGui dependencies.",
-      "hidden": true,
-      "inherits": [
-        "debug-clangcl-ninja-vcpkg"
-      ],
-      "cacheVariables": {
-        "VCPKG_MANIFEST_FEATURES": "imgui-deps"
-      }
-    },
-    {
-      "name": "simple-ime",
-      "hidden": true,
-      "cacheVariables": {
-        "VCPKG_MANIFEST_FEATURES": "simple-ime-deps;imgui-deps;commonlib-sse-deps",
-        "ENABLE_SIMPLE_IME": "ON"
-      }
-    },
-    {
-      "name": "simple-ime-debug-clangcl-ninja-vcpkg",
-      "inherits": [
-        "debug-clangcl-ninja-vcpkg",
-        "simple-ime"
-      ]
-    },
-    {
-      "name": "simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg",
-      "inherits": [
-        "RelWithDebInfo-clangcl-ninja-vcpkg",
-        "simple-ime"
-      ]
-    },
-    {
-      "name": "simple-ime-release-clangcl-ninja-vcpkg",
-      "inherits": [
-        "release-clangcl-ninja-vcpkg",
-        "simple-ime"
-      ]
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "build-simple-ime-debug-clangcl-ninja-vcpkg",
-      "displayName": "Debug SimpleIME (clang-cl ninja vcpkg)",
-      "configurePreset": "simple-ime-debug-clangcl-ninja-vcpkg"
-    },
-    {
-      "name": "build-simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg",
-      "displayName": "RelWithDebInfo SimpleIME (clang-cl ninja vcpkg)",
-      "configurePreset": "simple-ime-RelWithDebInfo-clangcl-ninja-vcpkg"
-    },
-    {
-      "name": "build-simple-ime-release-clangcl-ninja-vcpkg",
-      "displayName": "Release SimpleIME (clang-cl ninja vcpkg)",
-      "configurePreset": "simple-ime-release-clangcl-ninja-vcpkg"
     }
   ]
 }
