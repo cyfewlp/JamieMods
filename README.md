@@ -1,29 +1,39 @@
-# Jamie Mods
+# JamieMods
 
-A personal collection of mods for Skyrim Special Edition / Anniversary Edition.
-The primary project is **SimpleIME** — adds IME support so Chinese, Japanese, Korean and other
-multi-byte languages can be typed in-game.
+Shared CMake library used by my Skyrim SE/AE mod projects.
+Provides common build infrastructure, ImGui extensions (MD3 component library),
+Material You theming, and utilities shared across mods.
 
-[![Nexus Mods](https://img.shields.io/badge/NexusMods-SimpleIME-orange?style=flat-square&logo=nexusmods)](https://www.nexusmods.com/skyrimspecialedition/mods/140136)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-## Projects
+## Projects using this library
 
-| Project                          | Description                               |
-|----------------------------------|-------------------------------------------|
-| [SimpleIME](SimpleIME/README.md) | Native IME input support for Skyrim SE/AE |
+| Project                                           | Description                               |
+| ------------------------------------------------- | ----------------------------------------- |
+| [SimpleIME](https://github.com/cyfewlp/SimpleIME) | Native IME input support for Skyrim SE/AE |
 
-## Getting started
+## Contents
+
+| Directory  | Description                                                                   |
+| ---------- | ----------------------------------------------------------------------------- |
+| `cmake/`   | Shared CMake modules (`imgui-config.cmake`, `version.rc.in`, `material-you/`) |
+| `imguiex/` | ImGui extension library — Material Design 3 component set                     |
+| `common/`  | Shared C++ headers (logging, hooks, path utils, i18n)                         |
+| `extern/`  | Third-party submodules (`material-color-utilities`, `imgui_test_engine`)      |
+| `scripts/` | Build-time Python scripts (icon font generation, etc.)                        |
+
+## Usage as a submodule
 
 ```bash
-git clone --recursive https://github.com/cyfewlp/JamieMods.git
-cd JamieMods
+git submodule add https://github.com/cyfewlp/JamieMods extern/JamieMods
+git submodule update --init --recursive
 ```
 
-If you already cloned without `--recursive`:
+In your `CMakeLists.txt`:
 
-```bash
-git submodule update --init --recursive
+```cmake
+add_subdirectory(extern/JamieMods EXCLUDE_FROM_ALL)
+include(extern/JamieMods/cmake/imgui-config.cmake)
 ```
 
 ## Requirements
@@ -34,13 +44,9 @@ git submodule update --init --recursive
 - [vcpkg](https://github.com/microsoft/vcpkg)
   - Clone or download, run `bootstrap-vcpkg.bat`, then set `VCPKG_ROOT` to the vcpkg folder.
 
-## Build
-
-See [SimpleIME/README.md](SimpleIME/README.md) for project-specific configure, build, and test instructions.
-
 ## Python tools
 
-Some scripts under `scripts/` and `SimpleIME/` require Python. Set up the environment once:
+Some build scripts require Python. Set up the environment once:
 
 ```shell
 python -m venv .venv
@@ -48,16 +54,10 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Notable scripts:
+## Third-party dependencies
 
-- `SimpleIME/extract_i18n.py` — checks translation key coverage; warns on missing or unused keys.
-
-## Credits
-
-| Library | Purpose |
-|---------|---------|
-| [CommonLibSSE-NG](https://github.com/alandtse/CommonLibVR) | Skyrim reverse-engineering backbone |
-| [Dear ImGui](https://github.com/ocornut/imgui) | In-game UI rendering |
-| [material-color-utilities](https://github.com/material-foundation/material-color-utilities) | Material You dynamic theming |
-| [ImThemes](https://github.com/Patitotective/ImThemes) | ImGui theme browser / exporter |
-| [Lucide](https://github.com/lucide-icons/lucide) | Icon SVGs (repackaged into a minimal TTF) |
+| Library                                                                                     | License    | Purpose                        |
+| ------------------------------------------------------------------------------------------- | ---------- | ------------------------------ |
+| [material-color-utilities](https://github.com/material-foundation/material-color-utilities) | Apache-2.0 | Material You dynamic theming   |
+| [imgui](https://github.com/ocornut/imgui)                                                   | MIT        | Immediate-mode GUI             |
+| [ImThemes](https://github.com/Patitotective/ImThemes)                                       | MIT        | ImGui theme browser / exporter |
