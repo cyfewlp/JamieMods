@@ -4,7 +4,7 @@ A condensed history of significant changes to SimpleIME.
 
 ---
 
-## 2.0.0-beta
+## 2.0.0
 
 ### Breaking Changes
 - **Focus Mode removed** — The Permanent / Temporary focus-mode system has been

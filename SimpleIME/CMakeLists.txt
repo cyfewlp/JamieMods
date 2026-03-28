@@ -9,7 +9,7 @@ project(
 # Pre-release label appended to the human-readable version string.
 # Leave empty for stable releases (e.g. set(PROJECT_VERSION_PRERELEASE "")).
 # The numeric FILEVERSION resource field always uses PROJECT_VERSION (2.0.0).
-set(PROJECT_VERSION_PRERELEASE "beta")
+# set(PROJECT_VERSION_PRERELEASE "beta")
 if(PROJECT_VERSION_PRERELEASE)
     set(PROJECT_VERSION_DISPLAY "${PROJECT_VERSION}-${PROJECT_VERSION_PRERELEASE}")
 else()
