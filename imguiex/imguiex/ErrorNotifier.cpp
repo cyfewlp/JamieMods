@@ -5,15 +5,14 @@
 #include "ErrorNotifier.h"
 
 #include "imgui.h"
-#include "imguiex_m3.h"
+#include "imguiex_enum_wrap.h"
 #include "log.h"
-#include "m3/facade/buttons.h"
 
 #include <ctime>
 
 namespace
 {
-inline auto GetLevelString(ErrorMsg::Level level)
+auto GetLevelString(ErrorMsg::Level level) -> const char *
 {
     switch (level)
     {
@@ -24,6 +23,7 @@ inline auto GetLevelString(ErrorMsg::Level level)
         case ErrorMsg::Level::error:
             return "Error";
     }
+    return "";
 }
 } // namespace
 
@@ -61,13 +61,10 @@ void ErrorNotifier::Show()
 
     constexpr size_t visibleMessages = 10;
 
-    auto      &m3Styles       = ImGuiEx::M3::Context::GetM3Styles();
-    const auto fontScope      = m3Styles.UseTextRole<ImGuiEx::M3::Spec::TextRole::LabelLarge>();
-    const auto width          = m3Styles.GetPixels(M3Spec::Layout::Compact::Breakpoint);
-    const auto height         = m3Styles.GetLastText().currText.lineHeight * visibleMessages;
+    const auto height         = ImGui::GetFontSize() * visibleMessages;
     const auto viewportHeight = ImGui::GetMainViewport()->Size.y;
 
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(0.0F, height), ImGuiCond_Always);
     ImGui::SetNextWindowPos({0.F, viewportHeight - height}, ImGuiCond_FirstUseEver);
 
     if (!ImGui::Begin("ErrorNotifier", nullptr, ImGuiEx::WindowFlags().NoDecoration().NoSavedSettings().NoFocusOnAppearing()))
@@ -76,12 +73,11 @@ void ErrorNotifier::Show()
         return;
     }
 
-    if (ImGuiEx::M3::Button("Clear all", ImGuiEx::M3::ButtonConfiguration{}.Text().XSmall()))
+    if (ImGui::Button("Clear all"))
     {
         errors.clear();
     }
 
-    const auto       styleGuard = ImGuiEx::StyleGuard().Color<ImGuiCol_Text>(m3Styles.Colors()[M3Spec::FilledButtonEnabled::LabelTextColor]);
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(errors.size()));
     auto current = std::chrono::system_clock::now();
@@ -116,15 +112,15 @@ void ErrorNotifier::renderMessage(const ErrorMsg &msg, size_t idx)
         errors[idx].confirmed = true;
     }
     ImGui::SameLine(0.F, 20.F);
-    ImGuiEx::M3::TextUnformatted(std::format("[{}] {}", GetLevelString(msg.level), msg.text));
+    ImGui::TextUnformatted(std::format("[{}] {}", GetLevelString(msg.level), msg.text).c_str());
 }
 
 std::string ErrorNotifier::currentTime()
 {
     const time_t now = time(nullptr);
-    tm           tstruct;
+    tm           tmStruct;
     char         buf[80];
-    localtime_s(&tstruct, &now);
-    strftime(buf, sizeof(buf), "%X", &tstruct);
+    localtime_s(&tmStruct, &now);
+    strftime(buf, sizeof(buf), "%X", &tmStruct);
     return std::string(buf);
 }
