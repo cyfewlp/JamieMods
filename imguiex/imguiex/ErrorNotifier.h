@@ -2,8 +2,7 @@
 // Created by jamie on 2025/5/5.
 //
 
-#ifndef ERRORNOTIFIER_H
-#define ERRORNOTIFIER_H
+#pragma once
 
 #include <algorithm>
 #include <chrono>
@@ -73,5 +72,3 @@ private:
 
     static std::string currentTime();
 };
-
-#endif // ERRORNOTIFIER_H

@@ -8,7 +8,9 @@
 #include "ImGuiEx.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "imgui_manager.h"
 #include "imguiex/Material3.h"
+#include "log.h"
 #include "m3/facade/buttons.h"
 #include "m3/facade/fab.h"
 #include "m3/facade/icon_button.h"
@@ -183,6 +185,24 @@ inline auto GetButtonState(const ImRect &bb, ImGuiID id, Spec::States &states) -
 }
 
 } // namespace
+
+void Initialize(const std::filesystem::path &iconFontPath, const SchemeConfig &schemeConfig)
+{
+    auto *iconFont = AddFont(iconFontPath.generic_string());
+    if (iconFont == nullptr)
+    {
+        logger::error("Cannot find icon font from {}, fallback to default primary font!", iconFontPath.generic_string());
+        iconFont = ImGui::GetFont();
+    }
+
+    Context::CreateM3Styles(iconFont, {schemeConfig});
+    SetupDefaultImGuiStyles(ImGui::GetStyle());
+}
+
+void Destroy()
+{
+    Context::DestroyM3Styles();
+}
 
 auto SameLine(float offsetFromStartX, float spacingW) -> void
 {
