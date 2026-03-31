@@ -22,6 +22,12 @@ constexpr auto GetInterfaceFile(const std::string_view &fileName) -> std::string
     const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
     return std::format(R"(Data\interface\{}\{})", pluginName, fileName);
 }
+
+constexpr auto GetPluginInterfaceDir() -> std::filesystem::path
+{
+    const auto &pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+    return std::format(R"(Data\interface\{})", pluginName);
+}
 #endif
 
 constexpr auto GetInterfacePath() -> std::filesystem::path
