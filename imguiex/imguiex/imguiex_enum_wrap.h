@@ -1039,8 +1039,8 @@ public:
     constexpr auto ScopeWindow() const -> MultiSelectFlags { return set(ImGuiMultiSelectFlags_ScopeWindow); }
     //! ImGuiMultiSelectFlags_ScopeRect
     constexpr auto ScopeRect() const -> MultiSelectFlags { return set(ImGuiMultiSelectFlags_ScopeRect); }
-    //! ImGuiMultiSelectFlags_SelectOnClick
-    constexpr auto SelectOnClick() const -> MultiSelectFlags { return set(ImGuiMultiSelectFlags_SelectOnClick); }
+    //! ImGuiMultiSelectFlags_SelectOnAuto
+    constexpr auto SelectOnAuto() const -> MultiSelectFlags { return set(ImGuiMultiSelectFlags_SelectOnAuto); }
     //! ImGuiMultiSelectFlags_SelectOnClickRelease
     constexpr auto SelectOnClickRelease() const -> MultiSelectFlags { return set(ImGuiMultiSelectFlags_SelectOnClickRelease); }
     //! ImGuiMultiSelectFlags_NavWrapX
