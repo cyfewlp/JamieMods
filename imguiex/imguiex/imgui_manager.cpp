@@ -73,9 +73,17 @@ void UpdateCursorPos()
     }
 }
 
+// Hook AllowTextInput (RELOCATION_ID 67252 / 68552)
+void AllowTextInput(RE::ControlMap *controlMap, bool allow)
+{
+    using func_t = decltype(&AllowTextInput);
+    static REL::Relocation<func_t> func{RELOCATION_ID(67252, 68552)};
+    func(controlMap, allow);
+}
+
 /**
  * @brief Notifies SkyrimSE to direct character events to ImeMenu.
- * We call @c ControlMap::AllowTextInput and @c ImeController::EnableIme to manage focus correctly.
+ * We call @c AllowTextInput and @c ImeController::EnableIme to manage focus correctly.
  * This avoids the IME remaining enabled if the underlying menu
  * also has a text entry field.
  */
@@ -87,13 +95,13 @@ void EnableTextInputIfNeed()
     auto *controlMap = RE::ControlMap::GetSingleton();
     if (!fWantTextInput && cWantTextInput)
     {
-        controlMap->AllowTextInput(true);
+        AllowTextInput(true);
         controlMap->StoreControls();
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false, false);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
-        controlMap->AllowTextInput(false);
+        AllowTextInput(false);
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true, false);
         controlMap->LoadStoredControls();
     }
