@@ -95,13 +95,13 @@ void EnableTextInputIfNeed()
     auto *controlMap = RE::ControlMap::GetSingleton();
     if (!fWantTextInput && cWantTextInput)
     {
-        AllowTextInput(true);
+        AllowTextInput(controlMap, true);
         controlMap->StoreControls();
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, false, false);
     }
     else if (fWantTextInput && !cWantTextInput)
     {
-        AllowTextInput(false);
+        AllowTextInput(controlMap, false);
         controlMap->ToggleControls(RE::UserEvents::USER_EVENT_FLAG::kMenu, true, false);
         controlMap->LoadStoredControls();
     }
